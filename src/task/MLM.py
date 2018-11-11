@@ -1,14 +1,13 @@
 
 from models.transformer.transformer import *
 
-
 class TransformerLM:
-    def __init__(self, voca_size, is_training):
+    def __init__(self, hp, voca_size, is_training):
         # define decoder inputs
         self.x = tf.placeholder(dtype=tf.int32, shape=[None, hp.seq_max])
         self.y = tf.placeholder(tf.int32, shape=(None, hp.seq_max))
 
-        self.enc = transformer_encode(self.x, voca_size, is_training)
+        self.enc = transformer_encode(self.x, hp, voca_size, is_training)
         # Decoder
 
         # Final linear projection
