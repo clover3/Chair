@@ -2,14 +2,20 @@ import csv
 import os
 from data_generator.common import *
 from data_generator.common import _get_or_generate_vocab
-corpus_dir = os.path.join(data_path, "stance_detection")
-vocab_size = 32000
+from data_generator.text_encoder import SubwordTextEncoder
 import random
 
-class DataLoader():
+
+corpus_dir = os.path.join(data_path, "stance_detection")
+vocab_size = 32000
+
+
+class DataLoader:
     def __init__(self):
         self.train_data = None
         self.dev_data = None
+        self.encoder = SubwordTextEncoder()
+
     def class_labels(self):
         return ["NONE", "AGAINST", "FAVOR"]
 
@@ -51,8 +57,7 @@ class DataLoader():
             self.load_train_data()
         return self.dev_data
 
-    @staticmethod
-    def encode(plain_data):
+    def encode(self, plain_data):
         tmp_dir = os.path.join(corpus_dir, "temp")
         if not os.path.exists(tmp_dir):
             os.mkdir(tmp_dir)
@@ -62,6 +67,6 @@ class DataLoader():
 
         for entry in plain_data:
             key = "inputs"
-            entry[key] = symbolizer_vocab.encode(entry[key])
+            entry[key] = self.encoder.encode(entry[key])
             yield entry
 
