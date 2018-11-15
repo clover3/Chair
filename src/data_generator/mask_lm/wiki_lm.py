@@ -11,10 +11,9 @@ class DataLoader():
     def __init__(self):
         self.train_data = None
         self.dev_data = None
-    def class_labels(self):
-        return ["NONE", "AGAINST", "FAVOR"]
 
-    def example_generator(self, corpus_path, select_target):
+
+    def example_generator(self, corpus_path):
         f = open(corpus_path, "r", encoding="utf-8", errors="ignore")
         reader = csv.reader(f, delimiter=',')
 
@@ -28,7 +27,7 @@ class DataLoader():
 
     def load_train_data(self):
         path = os.path.join(corpus_dir, "train.csv")
-        plain_data = self.example_generator(path, "atheism")
+        plain_data = self.example_generator(path)
         coded_data = list(self.encode(plain_data))
         random.seed(0)
         random.shuffle(coded_data)
