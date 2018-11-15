@@ -1,8 +1,9 @@
+
 import csv
 import os
 from data_generator.common import *
 from data_generator.common import _get_or_generate_vocab
-corpus_dir = os.path.join(data_path, "stance_detection")
+corpus_dir = os.path.join(data_path, "wiki_lm")
 vocab_size = 32000
 import random
 
@@ -14,7 +15,6 @@ class DataLoader():
         return ["NONE", "AGAINST", "FAVOR"]
 
     def example_generator(self, corpus_path, select_target):
-        label_list = self.class_labels()
         f = open(corpus_path, "r", encoding="utf-8", errors="ignore")
         reader = csv.reader(f, delimiter=',')
 
@@ -22,13 +22,9 @@ class DataLoader():
             if idx == 0: continue  # skip header
             # Works for both splits even though dev has some extra human labels.
             sent = row[0]
-            target = row[1]
-            label = label_list.index(row[2])
-            if target in select_target:
-                yield {
-                    "inputs": sent,
-                    "label": label
-                }
+            yield {
+                "inputs": sent,
+            }
 
     def load_train_data(self):
         path = os.path.join(corpus_dir, "train.csv")
@@ -40,28 +36,3 @@ class DataLoader():
         dev_size = len(coded_data) - train_size
         self.train_data = coded_data[:train_size]
         self.dev_data = coded_data[train_size:]
-
-    def train_data(self):
-        if self.dev_data is None:
-            self.load_train_data()
-        return self.train_data
-
-    def dev_data(self):
-        if self.dev_data is None:
-            self.load_train_data()
-        return self.dev_data
-
-    @staticmethod
-    def encode(plain_data):
-        tmp_dir = os.path.join(corpus_dir, "temp")
-        if not os.path.exists(tmp_dir):
-            os.mkdir(tmp_dir)
-
-        #symbolizer_vocab = _get_or_generate_vocab(
-#            corpus_dir, 'vocab.subword_text_encoder', vocab_size)
-
-        for entry in plain_data:
-            key = "inputs"
-            entry[key] = symbolizer_vocab.encode(entry[key])
-            yield entry
-
