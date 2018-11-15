@@ -10,11 +10,21 @@ corpus_dir = os.path.join(data_path, "stance_detection")
 vocab_size = 32000
 
 
+def get_train_text():
+    corpus_path = os.path.join(corpus_dir, "train.csv")
+    f = open(corpus_path, "r", encoding="utf-8", errors="ignore")
+    reader = csv.reader(f, delimiter=',')
+
+    for idx, row in enumerate(reader):
+        if idx == 0: continue  # skip header
+        # Works for both splits even though dev has some extra human labels.
+        sent = row[0]
+        yield sent
+
 class DataLoader:
-    def __init__(self):
+    def __init__(self, voca):
         self.train_data = None
         self.dev_data = None
-        self.encoder = SubwordTextEncoder()
 
     def class_labels(self):
         return ["NONE", "AGAINST", "FAVOR"]

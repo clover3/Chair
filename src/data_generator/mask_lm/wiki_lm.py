@@ -4,6 +4,8 @@ import os
 from data_generator.common import *
 from data_generator.common import _get_or_generate_vocab
 corpus_dir = os.path.join(data_path, "wiki_lm")
+train_path = os.path.join(corpus_dir, "enwiki_train.txt")
+
 vocab_size = 32000
 import random
 
@@ -26,8 +28,7 @@ class DataLoader():
             }
 
     def load_train_data(self):
-        path = os.path.join(corpus_dir, "train.csv")
-        plain_data = self.example_generator(path)
+        plain_data = self.example_generator(train_path)
         coded_data = list(self.encode(plain_data))
         random.seed(0)
         random.shuffle(coded_data)
