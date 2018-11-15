@@ -24,11 +24,19 @@ class DataLoader():
             sent = row[0]
             target = row[1]
             label = label_list.index(row[2])
-            if target in select_target:
+            if select_target is None:
+                f_include = True
+            else:
+                if target in select_target:
+                    f_include = True
+                else:
+                    f_include = False
+            if f_include:
                 yield {
                     "inputs": sent,
                     "label": label
                 }
+
 
     def load_train_data(self):
         path = os.path.join(corpus_dir, "train.csv")
