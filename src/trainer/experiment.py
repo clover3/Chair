@@ -7,11 +7,14 @@ from trainer.tf_module import *
 from models.transformer.hyperparams import Hyperparams
 from task.MLM import TransformerLM
 from task.classification import TransformerClassifier
+from sklearn.feature_extraction.text import CountVectorizer
 
 from data_generator.stance import stance_detection
+from task.metrics import stance_f1
 from log import log
 import path
 import os
+from models.baselines import svm
 
 # Experiment is the most outside module.
 # This module can reference any module in the system.
@@ -57,22 +60,63 @@ class Experiment:
     def temp_saver(self):
         self.save_model("interval")
 
+
+    def stance_baseline(self):
+        print("Experiment.stance_baseline()")
+        stance_data = stance_detection.DataLoader()
+
+        # TODO majority
+        stance_data.load_train_data()
+        stance_data.load_test_data()
+        label_count = Counter()
+
+        for entry in stance_data.train_data_raw:
+            label_count[entry["label"]] += 1
+
+        common_label, _ = label_count.most_common(1)[0]
+        pred_major = np.array([common_label] * len(stance_data.dev_data_raw))
+
+        # TODO word unigram SVM
+
+        train_x = [entry["inputs"] for entry in stance_data.train_data_raw]
+        train_y = [entry["label"] for entry in stance_data.train_data_raw]
+        dev_x = [entry["inputs"] for entry in stance_data.dev_data_raw]
+        dev_y = [entry["label"] for entry in stance_data.dev_data_raw]
+
+        pred_svm_uni = svm.train_svm_and_test(CountVectorizer(), train_x, train_y, dev_x)
+        pred_svm_ngram = svm.train_svm_and_test(svm.NGramFeature(), train_x, train_y, dev_x)
+
+        print("Major : {0:.02f}".format(stance_f1(pred_major, dev_y)))
+        print("unigram svm: {0:.02f}".format(stance_f1(pred_svm_uni, dev_y)))
+        print("ngram svm: {0:.02f}".format(stance_f1(pred_svm_ngram, dev_y)))
+
+        test_x = [entry["inputs"] for entry in stance_data.test_data_raw]
+        test_y = [entry["label"] for entry in stance_data.test_data_raw]
+
+        pred_major_test = np.array([common_label] * len(stance_data.test_data_raw))
+        pred_svm_uni_test = svm.train_svm_and_test(CountVectorizer(), train_x, train_y, test_x)
+        pred_svm_ngram_test = svm.train_svm_and_test(svm.NGramFeature(), train_x, train_y, test_x)
+
+        print("<Test>")
+        print("Major : {0:.02f}".format(stance_f1(pred_major_test, test_y)))
+        print("unigram svm: {0:.02f}".format(stance_f1(pred_svm_uni_test, test_y)))
+        print("ngram svm: {0:.02f}".format(stance_f1(pred_svm_ngram_test, test_y)))
+
+
     def train_stance(self):
-        print("train_stance")
+        print("Experiment.train_stance()")
         valid_freq = 1000
         voca_size = stance_detection.vocab_size
-        num_classes = 3
-        task = TransformerClassifier(self.hparam, voca_size, num_classes, True)
+        task = TransformerClassifier(self.hparam, voca_size, stance_detection.num_classes, True)
         train_op = self.get_train_op(task.loss)
 
 
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
 
-        data = stance_detection.DataLoader()
-        train_batches = get_batches(data.get_train_data(), self.hparam.batch_size)
-        dev_batches = get_batches(data.get_dev_data(), self.hparam.batch_size)
-
+        stance_data = stance_detection.DataLoader()
+        train_batches = get_batches(stance_data.get_train_data(), self.hparam.batch_size)
+        dev_batches = get_batches(stance_data.get_dev_data(), self.hparam.batch_size)
 
         def train_fn(batch, step_i):
             loss_val = batch_train(self.sess, batch, train_op, task)
@@ -83,19 +127,26 @@ class Experiment:
         def valid_fn():
             loss_list = []
             acc_list = []
+            logits_list = []
+            gold_list = []
             for batch in dev_batches:
                 input, target = batch
-                loss_val, acc = self.sess.run([task.loss, task.acc],
+                loss_val, acc, logits = self.sess.run([task.loss, task.acc, task.logits],
                                     feed_dict={
                                         task.x: input,
                                         task.y: target,
                                     })
                 loss_list.append(loss_val)
                 acc_list.append(acc)
+                logits_list.append(logits)
+                gold_list.append(target)
 
+            logits = np.concatenate(logits_list, axis=0)
+            pred = np.argmax(logits, axis=1)
+            f1 = stance_f1(pred, np.concatenate(gold_list, axis=0))
             self.merged = tf.summary.merge_all()
             avg_loss, avg_acc = average(loss_list), average(acc_list)
-            self.log.info("[Dev] : acc={0:.02f} loss={1:.04f}".format(avg_acc, avg_loss))
+            self.log.info("[Dev] F1={0:.02f} Acc={1:.02f} loss={2:.04f}".format(f1, avg_acc, avg_loss))
             return
 
         num_epoch = Hyperparams.num_epochs
@@ -106,6 +157,7 @@ class Experiment:
                                    self.temp_saver, self.save_interval)
             self.log.info("[Train] Epoch {} Done. Loss={}".format(i, loss))
 
+        valid_fn()
         self.save_model("after_train")
 
     def train_lm(self):
@@ -151,7 +203,12 @@ class Experiment:
         self.save_model("after_train")
 
     def save_model(self, name):
-        save_dir = os.path.join(self.model_dir, 'runs', name)
+        if not os.path.exists(self.model_dir):
+            os.mkdir(self.model_dir)
+        run_dir = os.path.join(self.model_dir, 'runs')
+        if not os.path.exists(run_dir):
+            os.mkdir(run_dir)
+        save_dir = os.path.join(run_dir, name)
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
         path = os.path.join(save_dir, "model")

@@ -8,7 +8,9 @@ vocab_filename = "shared_voca.txt"
 
 corpus_dir = os.path.join(data_path, "stance_detection")
 vocab_size = 32000
+num_classes = 3
 
+stance_label = ["NONE", "AGAINST", "FAVOR"]
 
 def get_train_text():
     corpus_path = os.path.join(corpus_dir, "train.csv")
@@ -26,17 +28,16 @@ class DataLoader:
     def __init__(self):
         self.train_data = None
         self.dev_data = None
+        self.test_data = None
+
 
         voca_path = os.path.join(data_path, vocab_filename)
         assert os.path.exists(voca_path)
         self.encoder = SubwordTextEncoder(voca_path)
         self.max_sequence = 140
 
-    def class_labels(self):
-        return ["NONE", "AGAINST", "FAVOR"]
-
     def example_generator(self, corpus_path, select_target):
-        label_list = self.class_labels()
+        label_list = stance_label
         f = open(corpus_path, "r", encoding="utf-8", errors="ignore")
         reader = csv.reader(f, delimiter=',')
 
@@ -62,14 +63,22 @@ class DataLoader:
 
     def load_train_data(self):
         path = os.path.join(corpus_dir, "train.csv")
-        plain_data = self.example_generator(path, "Atheism")
-        coded_data = list(self.encode(plain_data))
+        plain_data = list(self.example_generator(path, "Atheism"))
         random.seed(0)
-        random.shuffle(coded_data)
-        train_size = int(0.9 * len(coded_data))
-        dev_size = len(coded_data) - train_size
-        self.train_data = coded_data[:train_size]
-        self.dev_data = coded_data[train_size:]
+        random.shuffle(plain_data)
+
+        train_size = int(0.9 * len(plain_data))
+        dev_size = len(plain_data) - train_size
+        self.train_data_raw = plain_data[:train_size]
+        self.dev_data_raw = plain_data[train_size:]
+
+        self.train_data = self.encode(self.train_data_raw)
+        self.dev_data = self.encode(self.dev_data_raw)
+
+    def load_test_data(self):
+        path = os.path.join(corpus_dir, "test.csv")
+        self.test_data_raw = list(self.example_generator(path, "Atheism"))
+        self.test_data = self.encode(self.test_data_raw)
 
     @classmethod
     def dict2tuple(cls, data):
@@ -92,6 +101,12 @@ class DataLoader:
             self.load_train_data()
 
         return self.dict2tuple(self.dev_data)
+
+    def get_test_data(self):
+        if self.test_data is None:
+            self.load_test_data()
+
+        return self.dict2tuple(self.test_data)
 
     def encode(self, plain_data):
         for entry in plain_data:
