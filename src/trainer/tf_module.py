@@ -5,19 +5,25 @@ from misc_lib import *
 
 
 
-def epoch_runner(batches, step_fn, dev_fn=None, valid_freq = 1000):
+def epoch_runner(batches, step_fn,
+                 dev_fn=None, valid_freq = 1000,
+                 save_fn=None, save_interval=10000):
     l_loss =[]
     l_acc = []
-    valid_stop = 0
-    np.random.shuffle(batches)
-    for i, batch in enumerate(batches):
-        if dev_fn is not None:
-            if valid_freq == valid_stop :
-                dev_fn()
-                valid_stop = 0
-            valid_stop += 1
+    last_save = time.time()
 
-        loss, acc = step_fn(batch, i)
+    np.random.shuffle(batches)
+    for step_i, batch in enumerate(batches):
+        if dev_fn is not None:
+            if step_i % valid_freq == 0:
+                dev_fn()
+
+        if save_fn is not None:
+            if time.time() - last_save > save_interval:
+                save_fn()
+                last_save = time.time()
+
+        loss, acc = step_fn(batch, step_i)
         l_acc.append(acc)
         l_loss.append(loss)
     return average(l_loss), average(l_acc)
@@ -71,10 +77,10 @@ def get_batches(data, batch_size):
             idx = step * batch_size + i
             if idx >= len(Y):
                 break
-            x.append(X[idx])
+            x.append(np.array(X[idx]))
             y.append(Y[idx])
         if len(y) > 0:
-            new_data.append((np.array(x),np.array(y)))
+            new_data.append((np.array(x), np.array(y)))
     return new_data
 
 

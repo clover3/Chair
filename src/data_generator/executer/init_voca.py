@@ -5,6 +5,7 @@ from data_generator.stance import stance_detection
 from data_generator.mask_lm.wiki_lm import train_path
 from data_generator.generator_utils import get_or_generate_vocab_inner
 from data_generator.common import data_path
+
 def file_sampler(filepath, file_byte_budget=1e6):
     with tf.gfile.GFile(filepath, mode="r") as source_file:
         file_byte_budget_ = file_byte_budget
@@ -21,6 +22,7 @@ def file_sampler(filepath, file_byte_budget=1e6):
                 counter = 0
                 yield line
 
+
 vocab_filename = "shared_voca.txt"
 
 def init_shared_voca():
@@ -33,3 +35,5 @@ def init_shared_voca():
                                        vocab_generator)
 
 
+if __name__ == "__main__":
+    init_shared_voca()

@@ -1,10 +1,10 @@
 import csv
 import os
 from data_generator.common import *
-from data_generator.common import _get_or_generate_vocab
 from data_generator.text_encoder import SubwordTextEncoder
 import random
 
+vocab_filename = "shared_voca.txt"
 
 corpus_dir = os.path.join(data_path, "stance_detection")
 vocab_size = 32000
@@ -21,10 +21,16 @@ def get_train_text():
         sent = row[0]
         yield sent
 
+
 class DataLoader:
-    def __init__(self, voca):
+    def __init__(self):
         self.train_data = None
         self.dev_data = None
+
+        voca_path = os.path.join(data_path, vocab_filename)
+        assert os.path.exists(voca_path)
+        self.encoder = SubwordTextEncoder(voca_path)
+        self.max_sequence = 140
 
     def class_labels(self):
         return ["NONE", "AGAINST", "FAVOR"]
@@ -56,35 +62,42 @@ class DataLoader:
 
     def load_train_data(self):
         path = os.path.join(corpus_dir, "train.csv")
-        plain_data = self.example_generator(path, "atheism")
+        plain_data = self.example_generator(path, "Atheism")
         coded_data = list(self.encode(plain_data))
         random.seed(0)
         random.shuffle(coded_data)
-        train_size = 0.9 * len(coded_data)
+        train_size = int(0.9 * len(coded_data))
         dev_size = len(coded_data) - train_size
         self.train_data = coded_data[:train_size]
         self.dev_data = coded_data[train_size:]
 
-    def train_data(self):
-        if self.dev_data is None:
-            self.load_train_data()
-        return self.train_data
+    @classmethod
+    def dict2tuple(cls, data):
+        X = []
+        Y = []
+        for entry in data:
+            X.append(entry["inputs"])
+            Y.append(entry["label"])
 
-    def dev_data(self):
+        return X, Y
+
+    def get_train_data(self):
+        if self.train_data is None:
+            self.load_train_data()
+
+        return self.dict2tuple(self.train_data)
+
+    def get_dev_data(self):
         if self.dev_data is None:
             self.load_train_data()
-        return self.dev_data
+
+        return self.dict2tuple(self.dev_data)
 
     def encode(self, plain_data):
-        tmp_dir = os.path.join(corpus_dir, "temp")
-        if not os.path.exists(tmp_dir):
-            os.mkdir(tmp_dir)
-
-        #symbolizer_vocab = _get_or_generate_vocab(
-#            corpus_dir, 'vocab.subword_text_encoder', vocab_size)
-
         for entry in plain_data:
             key = "inputs"
-            entry[key] = self.encoder.encode(entry[key])
+            coded_text = self.encoder.encode(entry[key])
+            pad = (self.max_sequence - len(coded_text)) * [text_encoder.PAD_ID]
+            entry[key] = coded_text + pad
             yield entry
 

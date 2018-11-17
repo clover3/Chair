@@ -92,10 +92,11 @@ def embedding(inputs,
     ```
     '''
     with tf.variable_scope(scope, reuse=reuse):
+        xavier = tf.contrib.layers.xavier_initializer()
         lookup_table = tf.get_variable('lookup_table',
                                        dtype=tf.float32,
                                        shape=[vocab_size, num_units],
-                                       initializer=tf.contrib.layers.xavier_initializer())
+                                       initializer=xavier)
         if zero_pad:
             lookup_table = tf.concat((tf.zeros(shape=[1, num_units]),
                                       lookup_table[1:, :]), 0)
@@ -244,9 +245,31 @@ def multihead_attention(queries,
     return outputs
 
 
+
+
+class FFN:
+    """FFN class (Position-wise Feed-Forward Networks)"""
+
+    def __init__(self,
+                 w1_dim=200,
+                 w2_dim=100,
+                 dropout=0.1):
+
+        self.w1_dim = w1_dim
+        self.w2_dim = w2_dim
+        self.dropout = dropout
+
+    def dense_relu_dense(self, inputs):
+        output = tf.layers.dense(inputs, self.w1_dim, activation=tf.nn.relu)
+        output =tf.layers.dense(output, self.w2_dim)
+
+        return tf.nn.dropout(output, 1.0 - self.dropout)
+
+
+
 def feedforward(inputs,
                 num_units=[2048, 512],
-                scope="multihead_attention",
+                scope="feed_forward",
                 reuse=None):
     '''Point-wise feed forward net.
 
@@ -262,18 +285,13 @@ def feedforward(inputs,
     '''
     with tf.variable_scope(scope, reuse=reuse):
         # Inner layer
-        params = {"inputs": inputs, "filters": num_units[0], "kernel_size": 1,
-                  "activation": tf.nn.relu, "use_bias": True}
-        outputs = tf.layers.conv1d(**params)
-
-        # Readout layer
-        params = {"inputs": outputs, "filters": num_units[1], "kernel_size": 1,
-                  "activation": None, "use_bias": True}
-        outputs = tf.layers.conv1d(**params)
+        w1_dim = num_units[0]
+        w2_dim = num_units[1]
+        outputs = tf.layers.dense(inputs, w1_dim, activation=tf.nn.relu)
+        outputs = tf.layers.dense(outputs, w2_dim)
 
         # Residual connection
         outputs += inputs
-
         # Normalize
         outputs = normalize(outputs)
 

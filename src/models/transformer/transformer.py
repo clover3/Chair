@@ -3,7 +3,6 @@ import tensorflow as tf
 
 from models.transformer.modules import *
 import os, codecs
-from tqdm import tqdm
 
 
 def transformer_encode(x, hp, voca_size, is_training):
