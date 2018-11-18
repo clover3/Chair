@@ -40,10 +40,16 @@ import tensorflow as tf
 # Reserved tokens for things like padding and EOS symbols.
 PAD = "<pad>"
 EOS = "<EOS>"
-RESERVED_TOKENS = [PAD, EOS]
+C_MASK = "<mask>"
+C_CLS = "<cls>"
+C_SEP = "<sep>"
+SPEC_4 = "<SPEC4>"
+RESERVED_TOKENS = [PAD, EOS, C_MASK, C_CLS, C_SEP, SPEC_4]
 NUM_RESERVED_TOKENS = len(RESERVED_TOKENS)
 PAD_ID = RESERVED_TOKENS.index(PAD)  # Normally 0
 EOS_ID = RESERVED_TOKENS.index(EOS)  # Normally 1
+C_MASK_ID = RESERVED_TOKENS.index(C_MASK)  # Normally 1
+
 
 if six.PY2:
   RESERVED_TOKENS_BYTES = RESERVED_TOKENS

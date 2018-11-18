@@ -1,5 +1,8 @@
 
 from models.transformer.transformer import *
+from models.losses import *
+
+label_smoothing = 0.1
 
 class TransformerLM:
     def __init__(self, hp, voca_size, is_training):
@@ -12,14 +15,17 @@ class TransformerLM:
 
         # Final linear projection
         self.logits = tf.layers.dense(self.enc, voca_size)
-        self.preds = tf.to_int32(tf.arg_max(self.logits, dimension=-1))
+        self.preds = tf.to_int32(tf.argmax(self.logits, axis=-1))
         self.istarget = tf.to_float(tf.not_equal(self.y, 0))
         self.acc = tf.reduce_sum(tf.to_float(tf.equal(self.preds, self.y)) * self.istarget) / (tf.reduce_sum(self.istarget))
         tf.summary.scalar('acc', self.acc)
 
         if is_training:
             # Loss
-            self.y_smoothed = label_smoothing(tf.one_hot(self.y, depth=voca_size))
-            self.loss = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y_smoothed)
-            self.mean_loss = tf.reduce_sum(self.loss * self.istarget) / (tf.reduce_sum(self.istarget))
-            tf.summary.scalar('mean_loss', self.mean_loss)
+#            self.y_smoothed = label_smoothing(tf.one_hot(self.y, depth=voca_size))
+#            loss = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y_smoothed)
+#            self.loss = tf.reduce_sum(loss * self.istarget) / (tf.reduce_sum(self.istarget))
+
+            loss, weight = padded_cross_entropy(self.logits, self.y, label_smoothing)
+            self.loss = loss
+            tf.summary.scalar('loss', self.loss)

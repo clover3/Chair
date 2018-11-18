@@ -30,5 +30,5 @@ def baselines():
 
 
 if __name__ == '__main__':
-    action = "stance_only_train"
+    action = "lm_train"
     locals()[action]()

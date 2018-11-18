@@ -10,25 +10,29 @@ from task.classification import TransformerClassifier
 from sklearn.feature_extraction.text import CountVectorizer
 
 from data_generator.stance import stance_detection
+from data_generator.mask_lm import wiki_lm
 from task.metrics import stance_f1
 from log import log
 import path
 import os
 from models.baselines import svm
+from tensorflow.python.client import timeline
+
 
 # Experiment is the most outside module.
 # This module can reference any module in the system.
 
-
 def batch_train(sess, batch, train_op, model):
     input, target = batch
+
     loss_val, _ = sess.run([model.loss, train_op],
                                 feed_dict={
                                     model.x: input,
                                     model.y: target,
-                                })
-    return loss_val
+                                },
+                           )
 
+    return loss_val
 
 class Experiment:
     def __init__(self, hparam):
@@ -45,7 +49,8 @@ class Experiment:
     @staticmethod
     def init_sess():
         config = tf.ConfigProto(allow_soft_placement=True,
-                                log_device_placement=False)
+                                log_device_placement=False
+                                )
         config.gpu_options.allow_growth = True
 
         return tf.Session(config=config)
@@ -162,25 +167,45 @@ class Experiment:
 
     def train_lm(self):
         print("train_lm")
-        self.sess = self.init_sess()
-        valid_freq = 1000
-        voca_size = NotImplemented
-
+        valid_freq = 500
+        step_per_epoch = 4 * 1000 * 1000
+        voca_size = wiki_lm.vocab_size
 
         task = TransformerLM(self.hparam, voca_size, True)
         train_op = self.get_train_op(task.loss)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
 
-        train_data = data.get_train_data()
 
-        def train_fn(batch, step_i):
+        wiki_data = wiki_lm.DataLoader(self.hparam.seq_max)
+
+        train_data = wiki_data.get_train_generator()
+        test_data = wiki_data.get_test_generator()
+
+
+        def pack2batch(data_source):
+            X = []
+            Y = []
+            for i in range(self.hparam.batch_size):
+                x, y = data_source.__next__()
+                X.append(x)
+                Y.append(y)
+            return np.array(X), np.array(Y)
+
+        def train_fn(dummy, step_i):
+            batch = pack2batch(train_data)
             loss_val = batch_train(self.sess, batch, train_op, task)
             self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
             self.merged = tf.summary.merge_all()
             return loss_val, 0
 
-        step_fn = self.inject_saver(train_fn, self.temp_saver, self.save_interval)
 
-        dev_batch = NotImplemented
+        def get_dev_data():
+            num_batches= 5
+            for i in range(num_batches):
+                yield pack2batch(test_data)
+
+        dev_batch = list(get_dev_data())
 
         def valid_fn():
             loss_list = []
@@ -192,13 +217,25 @@ class Experiment:
                                         task.y: target,
                                     })
 
-                self.log.info("Validation : loss={0:.04f}".format(loss_val))
-                loss_list.append(loss_val)
 
+                loss_list.append(loss_val)
+            self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
             self.merged = tf.summary.merge_all()
 
-        batches = get_batches((X,Y), self.hparam.batch_size)
-        loss, _ = epoch_runner(batches, step_fn, valid_fn, valid_freq)
+        save_interval = 60
+        save_fn = self.temp_saver
+        step_fn = train_fn
+        last_save = time.time()
+        for step_i in range(step_per_epoch):
+            if step_i % valid_freq == 0:
+                valid_fn()
+
+            if save_fn is not None:
+                if time.time() - last_save > save_interval:
+                    save_fn()
+                    last_save = time.time()
+
+            step_fn(None, step_i)
 
         self.save_model("after_train")
 

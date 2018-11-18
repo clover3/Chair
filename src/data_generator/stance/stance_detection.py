@@ -3,12 +3,11 @@ import os
 from data_generator.common import *
 from data_generator.text_encoder import SubwordTextEncoder
 import random
+from data_generator.shared_setting import *
 
 vocab_filename = "shared_voca.txt"
 
 corpus_dir = os.path.join(data_path, "stance_detection")
-vocab_size = 32000
-num_classes = 3
 
 stance_label = ["NONE", "AGAINST", "FAVOR"]
 
@@ -29,7 +28,6 @@ class DataLoader:
         self.train_data = None
         self.dev_data = None
         self.test_data = None
-
 
         voca_path = os.path.join(data_path, vocab_filename)
         assert os.path.exists(voca_path)
