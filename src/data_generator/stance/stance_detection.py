@@ -5,6 +5,7 @@ from data_generator.text_encoder import SubwordTextEncoder
 import random
 from data_generator.shared_setting import *
 
+num_classes = 3
 vocab_filename = "shared_voca.txt"
 
 corpus_dir = os.path.join(data_path, "stance_detection")
@@ -24,7 +25,7 @@ def get_train_text():
 
 
 class DataLoader:
-    def __init__(self):
+    def __init__(self, max_sequence):
         self.train_data = None
         self.dev_data = None
         self.test_data = None
@@ -32,7 +33,7 @@ class DataLoader:
         voca_path = os.path.join(data_path, vocab_filename)
         assert os.path.exists(voca_path)
         self.encoder = SubwordTextEncoder(voca_path)
-        self.max_sequence = 140
+        self.max_sequence = max_sequence
 
     def example_generator(self, corpus_path, select_target):
         label_list = stance_label

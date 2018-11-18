@@ -15,8 +15,14 @@ def lm_train():
     e.train_lm()
 
 
+def stance_after_lm():
+    hp = Hyperparams()
+    e = Experiment(hp)
+    preload_id = ("interval", 1)
+    e.train_stance(preload_id)
 
-def stance_only_train():
+
+def stance_cold_start():
     hp = Hyperparams()
     e = Experiment(hp)
     e.train_stance()

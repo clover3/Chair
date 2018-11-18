@@ -11,6 +11,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 from data_generator.stance import stance_detection
 from data_generator.mask_lm import wiki_lm
+from data_generator import shared_setting
 from task.metrics import stance_f1
 from log import log
 import path
@@ -39,7 +40,7 @@ class Experiment:
         self.reg_lambda = 1e-1 # TODO apply it
         self.global_step = tf.Variable(0, name='global_step',
                                        trainable=False)
-        self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=1)
+        self.saver = None
         self.hparam = hparam
         self.save_interval = 10 * 60
         self.log = log.train_logger()
@@ -49,7 +50,7 @@ class Experiment:
     @staticmethod
     def init_sess():
         config = tf.ConfigProto(allow_soft_placement=True,
-                                log_device_placement=False
+                                log_device_placement=True
                                 )
         config.gpu_options.allow_growth = True
 
@@ -68,7 +69,8 @@ class Experiment:
 
     def stance_baseline(self):
         print("Experiment.stance_baseline()")
-        stance_data = stance_detection.DataLoader()
+        max_sequence= 140
+        stance_data = stance_detection.DataLoader(max_sequence)
 
         # TODO majority
         stance_data.load_train_data()
@@ -108,18 +110,25 @@ class Experiment:
         print("ngram svm: {0:.02f}".format(stance_f1(pred_svm_ngram_test, test_y)))
 
 
-    def train_stance(self):
+
+
+    def train_stance(self, preload_id = None):
         print("Experiment.train_stance()")
         valid_freq = 1000
         voca_size = stance_detection.vocab_size
         task = TransformerClassifier(self.hparam, voca_size, stance_detection.num_classes, True)
         train_op = self.get_train_op(task.loss)
 
-
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
 
-        stance_data = stance_detection.DataLoader()
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            self.load_model(name, id)
+
+
+        stance_data = stance_detection.DataLoader(self.hparam.seq_max)
         train_batches = get_batches(stance_data.get_train_data(), self.hparam.batch_size)
         dev_batches = get_batches(stance_data.get_dev_data(), self.hparam.batch_size)
 
@@ -169,6 +178,8 @@ class Experiment:
         print("train_lm")
         valid_freq = 500
         step_per_epoch = 4 * 1000 * 1000
+        save_interval = 1
+
         voca_size = wiki_lm.vocab_size
 
         task = TransformerLM(self.hparam, voca_size, True)
@@ -222,7 +233,6 @@ class Experiment:
             self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
             self.merged = tf.summary.merge_all()
 
-        save_interval = 60
         save_fn = self.temp_saver
         step_fn = train_fn
         last_save = time.time()
@@ -249,7 +259,26 @@ class Experiment:
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
         path = os.path.join(save_dir, "model")
+        if self.saver is None:
+            self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=1)
         self.saver.save(self.sess, path, global_step=self.global_step)
         self.log.info("Model saved at {} - {}".format(path, self.global_step))
 
 
+    def load_model(self, name, id):
+        run_dir = os.path.join(self.model_dir, 'runs')
+        save_dir = os.path.join(run_dir, name)
+        path = os.path.join(save_dir, "model-{}".format(id))
+
+        variables = tf.contrib.slim.get_variables_to_restore()
+
+        def condition(v):
+            return v.name.split('/')[0] == 'encoder'
+
+        variables_to_restore = [v for v in variables if condition(v)]
+        print("Restoring:")
+        for v in variables_to_restore:
+            print(v)
+
+        self.loader = tf.train.Saver(variables_to_restore, max_to_keep=1)
+        self.loader.restore(self.sess, path)
