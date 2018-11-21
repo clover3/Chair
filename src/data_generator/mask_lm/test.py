@@ -1,8 +1,8 @@
 
 
-from data_generator.mask_lm import wiki_lm
+from data_generator.mask_lm import chunk_lm
 
-data = wiki_lm.DataLoader(256)
+data = chunk_lm.DataLoader(256)
 
 
 train_x = data.get_train_generator()

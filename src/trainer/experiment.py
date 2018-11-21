@@ -10,7 +10,7 @@ from task.classification import TransformerClassifier
 from sklearn.feature_extraction.text import CountVectorizer
 
 from data_generator.stance import stance_detection
-from data_generator.mask_lm import wiki_lm
+from data_generator.mask_lm import enwiki
 from data_generator import shared_setting
 from task.metrics import stance_f1
 from log import log
@@ -50,7 +50,7 @@ class Experiment:
     @staticmethod
     def init_sess():
         config = tf.ConfigProto(allow_soft_placement=True,
-                                log_device_placement=True
+                                log_device_placement=False
                                 )
         config.gpu_options.allow_growth = True
 
@@ -112,10 +112,9 @@ class Experiment:
 
 
 
-    def train_stance(self, preload_id = None):
+    def train_stance(self, voca_size, preload_id = None):
         print("Experiment.train_stance()")
         valid_freq = 1000
-        voca_size = stance_detection.vocab_size
         task = TransformerClassifier(self.hparam, voca_size, stance_detection.num_classes, True)
         train_op = self.get_train_op(task.loss)
 
@@ -126,7 +125,6 @@ class Experiment:
             name = preload_id[0]
             id = preload_id[1]
             self.load_model(name, id)
-
 
         stance_data = stance_detection.DataLoader(self.hparam.seq_max)
         train_batches = get_batches(stance_data.get_train_data(), self.hparam.batch_size)
@@ -174,25 +172,23 @@ class Experiment:
         valid_fn()
         self.save_model("after_train")
 
-    def train_lm(self):
+    def train_lm_inf(self, exp_config):
         print("train_lm")
-        valid_freq = 500
-        step_per_epoch = 4 * 1000 * 1000
-        save_interval = 1
+        valid_freq = exp_config.valid_freq
+        step_per_epoch = exp_config.step_per_epoch
+        save_interval = exp_config.save_interval
+        setting = shared_setting.Enwiki2Stance()
+        voca_size = setting.vocab_size
 
-        voca_size = wiki_lm.vocab_size
+        data = enwiki.DataLoader(self.hparam.seq_max, setting)
 
         task = TransformerLM(self.hparam, voca_size, True)
         train_op = self.get_train_op(task.loss)
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
 
-
-        wiki_data = wiki_lm.DataLoader(self.hparam.seq_max)
-
-        train_data = wiki_data.get_train_generator()
-        test_data = wiki_data.get_test_generator()
-
+        train_data = data.get_train_generator()
+        test_data = data.get_test_generator()
 
         def pack2batch(data_source):
             X = []
@@ -212,7 +208,7 @@ class Experiment:
 
 
         def get_dev_data():
-            num_batches= 5
+            num_batches = 5
             for i in range(num_batches):
                 yield pack2batch(test_data)
 
@@ -233,7 +229,10 @@ class Experiment:
             self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
             self.merged = tf.summary.merge_all()
 
-        save_fn = self.temp_saver
+
+        def save_fn():
+            self.save_model("LM")
+
         step_fn = train_fn
         last_save = time.time()
         for step_i in range(step_per_epoch):
@@ -249,20 +248,64 @@ class Experiment:
 
         self.save_model("after_train")
 
+    def train_lm_batch(self, exp_config, data):
+        print("train_lm_batch")
+        valid_freq = exp_config.valid_freq
+        save_interval = exp_config.save_interval
+
+        task = TransformerLM(self.hparam, data.voca_size, True)
+        train_op = self.get_train_op(task.loss)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+
+        train_data = data.get_train_generator()
+        test_data = data.get_test_generator()
+
+        train_batches = get_batches(zip(*list(train_data)), self.hparam.batch_size)
+        test_batches = get_batches(zip(*list(test_data)), self.hparam.batch_size)
+
+        def train_fn(batch, step_i):
+            loss_val = batch_train(self.sess, batch, train_op, task)
+            self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
+            self.merged = tf.summary.merge_all()
+            return loss_val, 0
+
+        def valid_fn():
+            loss_list = []
+            for batch in test_batches:
+                input, target = batch
+                loss_val, = self.sess.run([task.loss, ],
+                                    feed_dict = {
+                                        task.x: input,
+                                        task.y: target,
+                                    })
+
+
+                loss_list.append(loss_val)
+            self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
+            self.merged = tf.summary.merge_all()
+
+        def save_fn():
+            self.save_model(exp_config.name)
+
+        for epoch_i in range(exp_config.num_epoch):
+            epoch_runner(train_batches, train_fn, valid_fn, valid_freq, save_fn, save_interval)
+
+        self.save_model("after_train")
+
     def save_model(self, name):
-        if not os.path.exists(self.model_dir):
-            os.mkdir(self.model_dir)
         run_dir = os.path.join(self.model_dir, 'runs')
-        if not os.path.exists(run_dir):
-            os.mkdir(run_dir)
         save_dir = os.path.join(run_dir, name)
-        if not os.path.exists(save_dir):
-            os.mkdir(save_dir)
+
+        exist_or_mkdir(self.model_dir)
+        exist_or_mkdir(run_dir)
+        exist_or_mkdir(save_dir)
+
         path = os.path.join(save_dir, "model")
         if self.saver is None:
             self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=1)
-        self.saver.save(self.sess, path, global_step=self.global_step)
-        self.log.info("Model saved at {} - {}".format(path, self.global_step))
+        ret = self.saver.save(self.sess, path, global_step=self.global_step)
+        self.log.info("Model saved at {} - {}".format(path, ret))
 
 
     def load_model(self, name, id):

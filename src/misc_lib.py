@@ -1,5 +1,5 @@
 import time
-
+import os
 
 def average(l):
     return sum(l) / len(l)
@@ -30,6 +30,11 @@ class TimeEstimator:
         if self.total_repeat * self.progress_tenth / 10 < self.time_count:
             print("{}0% completed".format(self.progress_tenth))
             self.progress_tenth += 1
+
+def exist_or_mkdir(dir_path):
+    if not os.path.exists(dir_path):
+        os.mkdir(dir_path)
+
 
 def score_sort(list):
     return sorted(list, key = lambda x:-x[1])

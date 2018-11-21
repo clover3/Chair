@@ -26,6 +26,6 @@ class TransformerLM:
 #            loss = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y_smoothed)
 #            self.loss = tf.reduce_sum(loss * self.istarget) / (tf.reduce_sum(self.istarget))
 
-            loss, weight = padded_cross_entropy(self.logits, self.y, label_smoothing)
-            self.loss = loss
+            loss_list, weight = padded_cross_entropy(self.logits, self.y, label_smoothing, reduce_sum=False)
+            self.loss = tf.reduce_mean(loss_list)
             tf.summary.scalar('loss', self.loss)
