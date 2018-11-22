@@ -1,5 +1,6 @@
 import os
 from data_generator.common import *
+from collections import defaultdict
 
 topics = ["atheism", "climate", "abortion", "feminism"]
 
@@ -20,4 +21,12 @@ def load_as_text_chunk(topic):
     collection = read_tsv(topic)
     for id, content in collection:
         yield content
+
+
+def load_per_user(topic):
+    collection = read_tsv(topic)
+    user_tweets = defaultdict(list)
+    for id, content in collection:
+        user_tweets[id].append(content)
+    return user_tweets
 

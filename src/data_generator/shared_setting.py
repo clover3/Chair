@@ -13,4 +13,4 @@ class Guardian2Stance:
 class Tweets2Stance:
     vocab_filename = "tweets_voca.txt"
     vocab_size = 32000
-
+    seq_length = 50

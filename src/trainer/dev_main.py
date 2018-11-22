@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 #print("LD_LIBRARY_PATH : {}".format(os.environ["LD_LIBRARY_PATH"]))
@@ -10,6 +10,9 @@ from trainer.ExperimentConfig import ExperimentConfig
 from models.transformer.hyperparams import *
 from data_generator import shared_setting
 from data_generator.mask_lm import enwiki, guardian, tweets
+from data_generator.pair_lm import loader
+from data_generator.stance import stance_detection
+from data_generator.data_parser import tweets
 
 def lm_train():
     hp = Hyperparams()
@@ -30,12 +33,12 @@ def lm_guardian_train():
     e.train_lm_batch(e_config, guardian_data)
 
 def lm_tweets_train():
-    hp = Hyperparams()
+    hp = HPTweets()
     data = tweets.TweetLoader("atheism", hp.seq_max, shared_setting.Tweets2Stance)
     e_config = ExperimentConfig()
     e_config.name = "LM_tweets"
     e_config.num_epoch = 30
-
+    e_config.save_interval = 30 * 60  # 30 minutes
     e = Experiment(hp)
     e.train_lm_batch(e_config, data)
 
@@ -45,9 +48,23 @@ def lm_tweets_train():
 def stance_after_lm():
     hp = HPFineTune()
     e = Experiment(hp)
-    preload_id = ("LM", 25911)
-    voca_size = shared_setting.Enwiki2Stance.vocab_size
-    e.train_stance(voca_size, preload_id)
+    preload_id = ("LM_tweets", 63460)
+    setting = shared_setting.Tweets2Stance
+    stance_data = stance_detection.DataLoader(hp.seq_max, setting.vocab_filename)
+    e.train_stance(setting.vocab_size, stance_data, preload_id)
+
+
+def pair_lm():
+    hp = HPPairTweet()
+    setting = shared_setting.Tweets2Stance
+    tweet_group = tweets.load_per_user("atheism")
+    data = loader.DataLoader(hp.sent_max, setting, tweet_group)
+    e_config = ExperimentConfig()
+    e_config.name = "LM_pair_tweets"
+    e_config.num_epoch = 30
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e = Experiment(hp)
+    e.train_pair_lm(e_config, data)
 
 
 def stance_after_guardian_lm():
@@ -73,5 +90,5 @@ def baselines():
 
 
 if __name__ == '__main__':
-    action = "lm_tweets_train"
+    action = "pair_lm"
     locals()[action]()

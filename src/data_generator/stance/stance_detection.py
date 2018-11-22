@@ -6,7 +6,6 @@ import random
 from data_generator.shared_setting import *
 
 num_classes = 3
-vocab_filename = "shared_voca.txt"
 
 corpus_dir = os.path.join(data_path, "stance_detection")
 
@@ -25,7 +24,7 @@ def get_train_text():
 
 
 class DataLoader:
-    def __init__(self, max_sequence):
+    def __init__(self, max_sequence, vocab_filename):
         self.train_data = None
         self.dev_data = None
         self.test_data = None
@@ -110,7 +109,7 @@ class DataLoader:
     def encode(self, plain_data):
         for entry in plain_data:
             key = "inputs"
-            coded_text = self.encoder.encode(entry[key])
+            coded_text = self.encoder.encode(entry[key])[:self.max_sequence]
             pad = (self.max_sequence - len(coded_text)) * [text_encoder.PAD_ID]
             entry[key] = coded_text + pad
             yield entry

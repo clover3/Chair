@@ -33,11 +33,9 @@ class DataLoader():
         random.seed(0)
 
         n_delete = int(self.seq_length * self.mask_rate)
-
         for sent in sents:
             delete_indice = random.sample(range(self.seq_length), n_delete)
             x = list(sent)
-            y = [0 for i in sent]
             for idx in delete_indice:
                 action = random.randrange(0,10)
                 if action < 8:
@@ -47,7 +45,7 @@ class DataLoader():
                     x[idx] = rand_char
                 else:
                     pass
-                y[idx] = sent[idx]
+            y = list(sent)
             yield x, y
 
     # Child classs will feed own text to case_generator

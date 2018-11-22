@@ -53,6 +53,13 @@ def reverse_voca(word2idx):
         idx2word[idx] = word
     return idx2word
 
+def slice_n_pad(seq, target_len, pad_id):
+    coded_text = seq[:target_len]
+    pad = (target_len - len(coded_text)) * [pad_id]
+    return coded_text + pad
+
+
+
 def get_textrizer(word2idx):
     idx2word = reverse_voca(word2idx)
     def textrize(indice):
