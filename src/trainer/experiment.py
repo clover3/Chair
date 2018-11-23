@@ -13,14 +13,16 @@ from sklearn.feature_extraction.text import CountVectorizer
 from data_generator.stance import stance_detection
 from data_generator.mask_lm import enwiki
 from data_generator import shared_setting
+from trainer.queue_feader import QueueFeader
 from task.metrics import stance_f1
 from log import log
 import path
 import os
 import pickle
+import threading
 from models.baselines import svm
 from tensorflow.python.client import timeline
-
+import shutil
 
 # Experiment is the most outside module.
 # This module can reference any module in the system.
@@ -104,7 +106,7 @@ class Experiment:
 
     def train_stance(self, voca_size, stance_data, preload_id = None):
         print("Experiment.train_stance()")
-        valid_freq = 1000
+        valid_freq = 10
         task = TransformerClassifier(self.hparam, voca_size, stance_detection.num_classes, True)
         train_op = self.get_train_op(task.loss)
 
@@ -150,7 +152,7 @@ class Experiment:
             self.log.info("[Dev] F1={0:.02f} Acc={1:.02f} loss={2:.04f}".format(f1, avg_acc, avg_loss))
             return
 
-        num_epoch = Hyperparams.num_epochs
+        num_epoch = self.hparam.num_epochs
         print("Start Training")
         for i in range(num_epoch):
             loss, _ = epoch_runner(train_batches, train_fn,
@@ -261,7 +263,8 @@ class Experiment:
 
         def train_fn(batch, step_i):
             loss_val = batch_train(self.sess, batch, train_op, task)
-            self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
+            self.log.debug("Step {0} train loss={1:.04f}".format(step_i,
+                                                                 loss_val))
             return loss_val, 0
 
         def valid_fn():
@@ -289,9 +292,23 @@ class Experiment:
 
         self.save_model(exp_config.name+"_final")
 
+    def setup_summary_writer(self):
+        summary_path = os.path.join(path.output_path, "summary")
+        exist_or_mkdir(summary_path)
+
+        self.run_metadata = tf.RunMetadata()
+        train_log_path = os.path.join(summary_path, "train")
+        test_log_path = os.path.join(summary_path, "test")
+        shutil.rmtree(train_log_path)
+        shutil.rmtree(test_log_path)
+        self.train_writer = tf.summary.FileWriter(train_log_path,
+                                                  self.sess.graph)
+        self.test_writer = tf.summary.FileWriter(test_log_path,
+                                                 self.sess.graph)
+
 
     def train_pair_lm(self, exp_config, data):
-        print("train_lm_ex")
+        print("train_pair_lm")
         valid_freq = exp_config.valid_freq
         save_interval = exp_config.save_interval
 
@@ -299,20 +316,117 @@ class Experiment:
         train_op = self.get_train_op(task.loss)
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer()
 
-        use_cache = False
-        if not use_cache:
-            print("Generating data")
+        def prepare_data():
             n_inputs = 3
 
-            train_data = data.get_train_generator()
+            train_data = data.get_train_batch()
             train_batches = get_batches_ex(list(train_data), self.hparam.batch_size, n_inputs)
 
             test_data = data.get_test_generator()
             test_batches = get_batches_ex(list(test_data), self.hparam.batch_size, n_inputs)
+            return train_batches, test_batches
+
+        use_cache = False
+        if not use_cache:
+            print("Generating data")
+            train_batches, test_batches = prepare_data()
             pickle.dump((train_batches, test_batches), open("batch_cache.pickle", "wb"))
         else:
             train_batches, test_batches = pickle.load(open("batch_cache.pickle", "rb"))
+
+        x, ys, yc = train_batches[0]
+        print("Batch per Epoch : {}".format(len(train_batches)))
+        print(x[0])
+        print(ys[0])
+        print(yc[0])
+        def batch2feed_dict(batch):
+            x, y_seq, y_cls = batch
+            feed_dict = {
+                task.x: x,
+                task.y_seq: y_seq,
+                task.y_cls: y_cls,
+            }
+            return feed_dict
+
+        def train_fn(batch, step_i):
+            loss_val, summary, _ ,\
+                cls_pred, seq_logits = self.sess.run([task.loss, self.merged, train_op,
+                                                  task.preds, task.seq_logits,
+                                                  ],
+                                        feed_dict = batch2feed_dict(batch)
+                                        )
+            self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
+            self.train_writer.add_summary(summary, self.g_step)
+            self.g_step += 1
+            return loss_val, 0
+
+        def valid_fn():
+            loss_list = []
+            for batch in test_batches[:20]:
+                loss_val, summary = self.sess.run([task.loss, self.merged],
+                                          feed_dict = batch2feed_dict(batch)
+                                          )
+                loss_list.append(loss_val)
+
+                self.test_writer.add_summary(summary, self.g_step)
+            self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
+
+        def save_fn():
+            self.save_model(exp_config.name)
+
+        self.g_step = 0
+        for epoch_i in range(exp_config.num_epoch):
+            epoch_runner(train_batches, train_fn, valid_fn, valid_freq, save_fn, save_interval, False)
+
+        self.save_model(exp_config.name+"_final")
+
+
+    def train_pair_lm_inf(self, exp_config, data_generator):
+        print("train_pair_lm_inf")
+        valid_freq = exp_config.valid_freq
+        max_step = 1000 * 1000 * 1000
+        save_interval = exp_config.save_interval
+
+        task = TransformerPairLM(self.hparam, data_generator.voca_size, 2, True)
+        train_op = self.get_train_op(task.loss)
+        n_inputs = 3
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer()
+        self.g_step = 0
+
+        def pack2batch(data_source):
+            X = []
+            Y = []
+            for i in range(self.hparam.batch_size):
+                x, y = data_source.__next__()
+                X.append(x)
+                Y.append(y)
+            return np.array(X), np.array(Y)
+
+        def get_dev_batches():
+            num_batches = 10
+            test_data = data_generator.get_test_generator(num_batches * self.hparam.batch_size)
+            test_batches = get_batches_ex(list(test_data), self.hparam.batch_size, n_inputs)
+            return test_batches
+
+        print("Generate dev batches")
+        dev_batch = list(get_dev_batches())
+
+        def generate_train_batch():
+            batch_size = self.hparam.batch_size
+            data = data_generator.get_train_batch(batch_size)
+            batches = get_batches_ex(list(data), batch_size, n_inputs)
+            return batches[0]
+
+        print("Init queue feader ")
+        max_reserve_batch = 100
+        queue_feader = QueueFeader(max_reserve_batch, generate_train_batch)
+        train_queue = queue_feader.queue
 
         def batch2feed_dict(batch):
             x, y_seq, y_cls = batch
@@ -324,29 +438,47 @@ class Experiment:
             return feed_dict
 
         def train_fn(batch, step_i):
-            loss_val, _ = self.sess.run([task.loss, train_op],
-                                        feed_dict=batch2feed_dict(batch)
-                                        )
+            loss_val, summary, _ , \
+            cls_pred, seq_logits = self.sess.run([task.loss, self.merged, train_op,
+                                                  task.preds, task.seq_logits,
+                                                  ],
+                                                 feed_dict = batch2feed_dict(batch)
+                                                 )
             self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
+            self.train_writer.add_summary(summary, self.g_step)
+            self.g_step += 1
             return loss_val, 0
 
         def valid_fn():
             loss_list = []
-            for batch in test_batches:
-                loss_val, = self.sess.run([task.loss, ],
-                                          feed_dict= batch2feed_dict(batch)
-                                          )
+            for batch in dev_batch:
+                loss_val, summary = self.sess.run([task.loss, self.merged],
+                                                  feed_dict = batch2feed_dict(batch)
+                                                  )
                 loss_list.append(loss_val)
+
+                self.test_writer.add_summary(summary, self.g_step)
             self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
-            self.merged = tf.summary.merge_all()
+
+
 
         def save_fn():
             self.save_model(exp_config.name)
 
-        for epoch_i in range(exp_config.num_epoch):
-            epoch_runner(train_batches, train_fn, valid_fn, valid_freq, save_fn, save_interval)
+        last_save = time.time()
+        for step_i in range(max_step):
+            if step_i % valid_freq == 0:
+                valid_fn()
 
-        self.save_model(exp_config.name+"_final")
+            if save_fn is not None:
+                if time.time() - last_save > save_interval:
+                    save_fn()
+                    last_save = time.time()
+
+            batch = train_queue.get()
+            train_fn(batch, step_i)
+            self.g_step += 1
+
 
     def save_model(self, name):
         run_dir = os.path.join(self.model_dir, 'runs')

@@ -18,12 +18,13 @@ def batch_train(sess, batch, train_op, model):
 
 def epoch_runner(batches, step_fn,
                  dev_fn=None, valid_freq = 1000,
-                 save_fn=None, save_interval=10000):
+                 save_fn=None, save_interval=10000,
+                 shuffle=True):
     l_loss =[]
     l_acc = []
     last_save = time.time()
-
-    np.random.shuffle(batches)
+    if shuffle:
+        np.random.shuffle(batches)
     for step_i, batch in enumerate(batches):
         if dev_fn is not None:
             if step_i % valid_freq == 0:
@@ -107,7 +108,7 @@ def get_batches_ex(data, batch_size, n_inputs):
             if idx >= len(data):
                 break
             for input_i in range(n_inputs):
-                b_unit[input_i ].append(data[i][input_i])
+                b_unit[input_i].append(data[idx][input_i])
         if len(b_unit[0]) > 0:
             batch = [np.array(b_unit[input_i]) for input_i in range(n_inputs)]
             new_data.append(batch)

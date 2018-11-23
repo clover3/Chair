@@ -6,7 +6,7 @@ from data_generator.mask_lm import enwiki
 from data_generator.generator_utils import get_or_generate_vocab_inner
 from data_generator.common import data_path
 from data_generator.data_parser import tweets
-from data_generator.shared_setting import Tweets2Stance
+from data_generator.shared_setting import Tweets2Stance, TopicTweets2Stance
 
 def file_sampler(filepath, file_byte_budget=1e6):
     with tf.gfile.GFile(filepath, mode="r") as source_file:
@@ -23,6 +23,22 @@ def file_sampler(filepath, file_byte_budget=1e6):
                 file_byte_budget_ -= len(line)
                 counter = 0
                 yield line
+
+
+def list_sampler(src_list, target_size = 1e6):
+    counter = 0
+    selected_size = 0
+    countermax = int(len(src_list)/target_size)
+    print(" Sampling {} from {}".format(target_size, len(src_list)))
+    for e in src_list:
+        if counter < countermax:
+            counter += 1
+        else:
+            if selected_size >= target_size:
+                break
+            selected_size += 1
+            counter = 0
+            yield e
 
 
 
@@ -48,16 +64,17 @@ def init_voca_stance_n_guardian():
 
 
 def init_voca_stance_n_tweets():
-    vocab_size = Tweets2Stance.vocab_size
+    topic = "hillary"
+    setting = TopicTweets2Stance(topic)
+
+    vocab_size = setting.vocab_size
     stance_text = stance_detection.get_train_text()
-    aux_text = tweets.load_as_text_chunk("atheism")
-    out_vocab_filename = Tweets2Stance.vocab_filename
+    sents = list(tweets.load_as_text_chunk(topic))
+    aux_text = list_sampler(sents)
+    out_vocab_filename = setting.vocab_filename
     vocab_generator = itertools.chain(stance_text, aux_text)
     return get_or_generate_vocab_inner(data_path, out_vocab_filename, vocab_size,
                                        vocab_generator)
-
-
-
 
 
 if __name__ == "__main__":

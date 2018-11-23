@@ -29,7 +29,13 @@ class TransformerPairLM:
             losses_cls = tf.nn.softmax_cross_entropy_with_logits_v2(
                 logits=self.cls_logits,
                 labels=tf.one_hot(self.y_cls, num_classes))
-            self.loss_seq = tf.reduce_mean(losses_seq)
+
+            self.loss_seq_sum = tf.reduce_sum(tf.reduce_mean(losses_seq, axis=0))
+            self.loss_seq_avg = tf.reduce_mean(losses_seq)
+
             self.loss_cls = tf.reduce_mean(losses_cls)
-            self.loss = self.loss_cls + self.loss_seq
+            self.loss = self.loss_cls + self.loss_seq_avg
+            tf.summary.scalar('loss_seq', self.loss_seq_sum)
+            tf.summary.scalar('loss_cls', self.loss_cls)
             tf.summary.scalar('loss', self.loss)
+            tf.summary.merge_all()

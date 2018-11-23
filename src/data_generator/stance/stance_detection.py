@@ -23,18 +23,28 @@ def get_train_text():
         yield sent
 
 
+dict_topic2full_desc = {
+            "atheism":"Atheism",
+            "feminism":"Feminist Movement",
+            "hillary":"Hillary Clinton",
+            "climate":"Climate Change is a Real Concern",
+            "abortion":"Legalization of Abortion",
+        }
+
 class DataLoader:
-    def __init__(self, max_sequence, vocab_filename):
+    def __init__(self, topic, max_sequence, vocab_filename):
         self.train_data = None
         self.dev_data = None
         self.test_data = None
+        self.topic = topic
 
         voca_path = os.path.join(data_path, vocab_filename)
         assert os.path.exists(voca_path)
         self.encoder = SubwordTextEncoder(voca_path)
         self.max_sequence = max_sequence
 
-    def example_generator(self, corpus_path, select_target):
+    def example_generator(self, corpus_path, topic):
+        select_target = dict_topic2full_desc[topic]
         label_list = stance_label
         f = open(corpus_path, "r", encoding="utf-8", errors="ignore")
         reader = csv.reader(f, delimiter=',')
@@ -61,7 +71,7 @@ class DataLoader:
 
     def load_train_data(self):
         path = os.path.join(corpus_dir, "train.csv")
-        plain_data = list(self.example_generator(path, "Atheism"))
+        plain_data = list(self.example_generator(path, self.topic))
         random.seed(0)
         random.shuffle(plain_data)
 
@@ -75,7 +85,7 @@ class DataLoader:
 
     def load_test_data(self):
         path = os.path.join(corpus_dir, "test.csv")
-        self.test_data_raw = list(self.example_generator(path, "Atheism"))
+        self.test_data_raw = list(self.example_generator(path, self.topic))
         self.test_data = self.encode(self.test_data_raw)
 
     @classmethod
