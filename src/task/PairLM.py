@@ -13,7 +13,7 @@ class TransformerPairLM:
 
         self.enc = transformer_encode(self.x, hp, voca_size, is_training)
         # Decoder
-        sep_idx = hp.sent_max +1
+        sep_idx = hp.sent_max
         # Final linear projection
         self.seq_logits = tf.layers.dense(self.enc, voca_size)
         self.cls_logits = tf.layers.dense(self.enc[:,sep_idx,:], num_classes)

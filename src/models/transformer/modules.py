@@ -287,7 +287,7 @@ def feedforward(inputs,
         # Inner layer
         w1_dim = num_units[0]
         w2_dim = num_units[1]
-        outputs = tf.layers.dense(inputs, w1_dim, activation=tf.nn.relu)
+        outputs = tf.layers.dense(inputs, w1_dim, activation=gelu_fast)
         outputs = tf.layers.dense(outputs, w2_dim)
 
         # Residual connection
@@ -332,3 +332,7 @@ def label_smoothing(inputs, epsilon=0.1):
     '''
     K = inputs.get_shape().as_list()[-1]  # number of channels
     return ((1 - epsilon) * inputs) + (epsilon / K)
+
+def gelu_fast(x):
+    return 0.5 * x * (1 + tf.tanh(x * 0.7978845608 * (1 + 0.044715 * x * x)))
+

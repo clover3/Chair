@@ -9,22 +9,19 @@ from data_generator.common import *
 from data_generator.text_encoder import SubwordTextEncoder
 from data_generator.text_encoder import C_MASK_ID, PAD_ID, SEP_ID
 from misc_lib import slice_n_pad, TimeEstimator
+from path import cache_path
 
 
 # grouped_dict : dict(key->list)
 def pos_neg_pair_sampling(grouped_dict, key_sampler, target_size):
     # from default setting, only group with more than 3 items will be sampled
 
-    group_names = list(grouped_dict.keys())
 
-    def sample_group(except_key = None):
-        gid = random.randint(0, len(group_names)-1)
-        sample_name = group_names[gid]
-        while except_key is not None and except_key == sample_name:
-            gid = random.randint(0, len(group_names) - 1)
-            sample_name = group_names[gid]
-
-        return sample_name
+    def sample_key(except_key = None):
+        sampled_key = key_sampler.sample()
+        while except_key is not None and except_key == sampled_key:
+            sampled_key = key_sampler.sample()
+        return sampled_key
 
     LABEL_POS = 1
     LABEL_NEG = 0
@@ -45,7 +42,7 @@ def pos_neg_pair_sampling(grouped_dict, key_sampler, target_size):
         items = grouped_dict[key]
         item1 = items[random.randint(0, len(items)-1)]
 
-        item_2_group = sample_group(key)
+        item_2_group = sample_key(key)
         l2 = grouped_dict[item_2_group]
         item_2_idx = random.randint(0, len(l2)-1)
         item2 = l2[item_2_idx]
@@ -54,6 +51,25 @@ def pos_neg_pair_sampling(grouped_dict, key_sampler, target_size):
     assert len(data) == target_size
     random.shuffle(data)
     return data
+
+
+class KeySampler:
+    def __init__(self, group_dict):
+        self.g2 = []
+        self.g = list(group_dict.keys())
+        for key, items in group_dict.items():
+            if len(items) > 3:
+                self.g2.append(key)
+
+    # Sample from all group
+    def sample(self):
+        end = len(self.g) - 1
+        return self.g[random.randint(0, end)]
+
+    # Sample from groups except first size
+    def sample2(self):
+        end = len(self.g2) - 1
+        return self.g2[random.randint(0, end)]
 
 
 class PairDataLoader():
@@ -66,6 +82,20 @@ class PairDataLoader():
         self.grouped_data = grouped_data
         self.train_group = None
         self.test_group = None
+        self.test_sampler = None
+        self.train_sampler = None
+
+    @classmethod
+    def load_from_pickle(cls, id):
+        pickle_name = "PairDataLoader_{}".format(id)
+        path = os.path.join(cache_path, pickle_name)
+        return pickle.load(open(path, "rb"))
+
+    def save_to_pickle(self, id):
+        pickle_name = "PairDataLoader_{}".format(id)
+        path = os.path.join(cache_path, pickle_name)
+        pickle.dump(self, open(path, "wb"))
+
 
     def encode(self, sent):
         tokens = self.encoder.encode(sent)
@@ -90,7 +120,6 @@ class PairDataLoader():
 
 
     def case_encoder(self, plain_insts):
-        random.seed(0)
         # sent1 : list[int]
         # label : int
         for sent1, sent2, label in plain_insts:
@@ -119,6 +148,11 @@ class PairDataLoader():
                 train_d[key] = items
         return train_d, test_d
 
+    def index_data(self):
+        if self.test_group is None:
+            self.split_train_test()
+
+
     def split_train_test(self):
         print("split_train_test 1")
         held_out_group = 4000
@@ -126,65 +160,6 @@ class PairDataLoader():
         print("split_train_test 2")
 
 
-        class KeySampler:
-            def __init__(self, group_dict):
-                self.interval = [1,4,16,64] # last is assumped to be 64
-
-                def find_group(n):
-                    last_group = len(self.interval) - 1
-                    for i in range(last_group):
-                        if n <= self.interval[i] :
-                            return i
-                        return last_group
-
-                self.sample_groups = list([list() for i in self.interval])
-                for key, items in group_dict.items():
-                    gid = find_group(len(items))
-                    self.sample_groups[gid].append(key)
-
-                self.sample_prior = []
-                for gid, g, in enumerate(self.sample_groups):
-                    a = self.interval[gid]
-                    sample_size = a * a * len(g)
-                    self.sample_prior.append(sample_size)
-                s = sum(self.sample_prior)
-                for i, v in enumerate(self.sample_prior):
-                    self.sample_prior[i] = v / s
-
-                s2 = sum(self.sample_prior[1:])
-                self.sample_prior2 = []
-                for i, v in enumerate(self.sample_prior[1:]):
-                    self.sample_prior2.append(v / s2)
-
-            # Sample from all group
-            def sample(self):
-                def select_group():
-                    dice = random.random()
-                    acc =0
-                    for i, v in enumerate(self.sample_prior):
-                        acc += v
-                        if dice < acc:
-                            return i
-                    return len(self.sample_prior)-1
-
-                sample_space = self.sample_groups[select_group()]
-                end = len(sample_space) - 1
-                return sample_space[random.randint(0, end)]
-
-            # Sample from groups except first size
-            def sample2(self):
-                def select_group():
-                    dice = random.random()
-                    acc =0
-                    for i, v in enumerate(self.sample_prior2):
-                        acc += v
-                        if dice < acc:
-                            return i
-                    return len(self.sample_prior2)-1
-
-                sample_space = self.sample_groups[1+select_group()]
-                end = len(sample_space) - 1
-                return sample_space[random.randint(0, end)]
 
         self.test_sampler = KeySampler(self.test_group)
         print("split_train_test 3")

@@ -1,4 +1,4 @@
-
+import time
 from multiprocessing import Process, Queue
 
 
@@ -7,6 +7,7 @@ class QueueFeader:
         self.queue = Queue(maxsize=max_elem)
         self.fn_gen_item = fn_gen_item
         self.t = Process(target=self.worker)
+        self.t.daemon = True
         self.t.start()
 
     def worker(self):
@@ -16,7 +17,8 @@ class QueueFeader:
             self.queue.put(batch, block=True)
 
     def get(self):
-        return self.queue.get(True)
+        ret = self.queue.get(True)
+        return ret
 
 
 

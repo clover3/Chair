@@ -34,9 +34,14 @@ def load_as_text_chunk(topic):
 
 
 def load_per_user(topic):
+    cnt =00
     collection = read_tsv(topic)
     user_tweets = defaultdict(list)
     for id, content in collection:
         user_tweets[id].append(content)
+        cnt += 1
+        if data_limit > 0 and cnt > data_limit:
+            break
+
     return user_tweets
 

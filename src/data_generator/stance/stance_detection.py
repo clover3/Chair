@@ -72,7 +72,6 @@ class DataLoader:
     def load_train_data(self):
         path = os.path.join(corpus_dir, "train.csv")
         plain_data = list(self.example_generator(path, self.topic))
-        random.seed(0)
         random.shuffle(plain_data)
 
         train_size = int(0.9 * len(plain_data))
@@ -124,3 +123,16 @@ class DataLoader:
             entry[key] = coded_text + pad
             yield entry
 
+
+class FineLoader(DataLoader):
+    def __init__(self, topic, max_sequence, vocab_filename, max_sent):
+        super(FineLoader, self).__init__(topic, max_sequence, vocab_filename)
+        self.max_sent = max_sent
+
+    def encode(self, plain_data):
+        for entry in plain_data:
+            key = "inputs"
+            coded_text = self.encoder.encode(entry[key])[:self.max_sent]
+            pad = (self.max_sequence - len(coded_text) - 1) * [text_encoder.PAD_ID]
+            entry[key] = coded_text + [text_encoder.SEP_ID] + pad
+            yield entry

@@ -40,6 +40,7 @@ def epoch_runner(batches, step_fn,
         l_loss.append(loss)
     return average(l_loss), average(l_acc)
 
+
 # a : [batch, 2]
 def cartesian_w2(a, b):
     r00 = tf.multiply(a[:,0], b[:,0]) # [None, ]
@@ -69,6 +70,32 @@ def recall(logits, y, axis=1):
     y_int = tf.cast(y, tf.bool)
     tp = tf.logical_and(pred, tf.equal(pred, y_int))
     return tf.count_nonzero(tp) / tf.count_nonzero(y_int)
+
+
+def f1(logits, y, axis=1):
+    predictions = tf.argmax(logits, axis=axis)
+
+    def f1_per_flag(flag_idx):
+        arr_gold_pos = tf.equal(y, flag_idx)
+        arr_pred_pos = tf.equal(predictions, flag_idx)
+        arr_true_pos = tf.logical_and(arr_gold_pos, arr_pred_pos)
+
+        n_true_pos = tf.count_nonzero(arr_true_pos)
+        n_pred_pos = tf.count_nonzero(arr_pred_pos)
+        n_gold = tf.count_nonzero(arr_gold_pos)
+
+        prec = n_true_pos / n_pred_pos
+        recall = n_true_pos / n_gold
+
+        if (prec + recall) == 0:
+            return 0
+        else:
+            return 2*prec*recall / (prec + recall)
+
+    f1_favor = f1_per_flag(2)
+    f1_against = f1_per_flag(1)
+
+    return (f1_favor + f1_against) / 2
 
 
 def label2logit(label, size):
