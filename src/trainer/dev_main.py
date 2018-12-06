@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
 #print("LD_LIBRARY_PATH : {}".format(os.environ["LD_LIBRARY_PATH"]))
@@ -9,10 +9,11 @@ from trainer.ExperimentConfig import ExperimentConfig
 
 from models.transformer.hyperparams import *
 from data_generator import shared_setting
-from data_generator.mask_lm import enwiki, guardian, tweets
+from data_generator.mask_lm import enwiki, guardian, tweets, author_as_doc
 from data_generator.pair_lm import loader
 from data_generator.stance import stance_detection
 from data_generator.data_parser import tweet_reader
+from data_generator.aux_pair.loader import AuxPairLoader
 
 def lm_train():
     hp = Hyperparams()
@@ -47,9 +48,9 @@ def lm_tweets_train():
 
 def stance_after_lm():
     hp = HPFineTunePair()
-    topic = "hillary"
+    topic = "atheism"
     e = Experiment(hp)
-    preload_id = ("LM_pair_tweets_hillary", 1242250)
+    preload_id = ("DLM_pair_tweets_atheism", 840965)
     setting = shared_setting.TopicTweets2Stance(topic)
     stance_data = stance_detection.FineLoader(topic, hp.seq_max, setting.vocab_filename, hp.sent_max)
     e.train_stance(setting.vocab_size, stance_data, preload_id)
@@ -109,6 +110,30 @@ def pair_lm():
     e.train_pair_lm(e_config, data)
 
 
+def document_lm():
+    hp = HPDocLM()
+    topic = "atheism"
+    setting = shared_setting.TopicTweets2Stance(topic)
+    use_cache = True
+
+
+    run_id = "{}_{}".format(topic, hp.seq_max)
+    if use_cache:
+        data = author_as_doc.AuthorAsDoc.load_from_pickle(run_id)
+    else:
+        tweet_group = tweet_reader.load_per_user(topic)
+        data = author_as_doc.AuthorAsDoc(hp.seq_max, setting, tweet_group)
+        data.index_data()
+        data.save_to_pickle(run_id)
+
+    e_config = ExperimentConfig()
+    e_config.name = "DLM_pair_tweets_{}".format(topic)
+    e_config.num_epoch = 1
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e = Experiment(hp)
+    e.train_doc_lm(e_config, data)
+
+
 def pair_lm_inf():
     hp = HPPairTweet()
     topic = "atheism"
@@ -130,6 +155,7 @@ def pair_lm_inf():
     e_config.save_interval = 30 * 60  # 30 minutes
     e = Experiment(hp)
     e.train_pair_lm_inf(e_config, data)
+
 
 def pair_feature():
     hp = HPPairFeatureTweet()
@@ -166,6 +192,20 @@ def stance_cold_start():
     e.train_stance(voca_size, stance_data)
 
 
+def stance_with_consistency():
+    hp = HPStanceConsistency()
+    topic = "atheism"
+    e = Experiment(hp)
+    e_config = ExperimentConfig()
+    e_config.name = "stance_consistency_{}".format(topic)
+
+    setting = shared_setting.TopicTweets2Stance(topic)
+    stance_data = stance_detection.DataLoader(topic, hp.seq_max, setting.vocab_filename)
+    tweet_group = tweet_reader.load_per_user(topic)
+    aux_data = AuxPairLoader(hp.seq_max, setting, tweet_group)
+    voca_size = setting.vocab_size
+    e.train_stance_consistency(voca_size, stance_data, aux_data)
+
 def baselines():
     hp = Hyperparams()
     e = Experiment(hp)
@@ -173,5 +213,5 @@ def baselines():
 
 
 if __name__ == '__main__':
-    action = "stance_after_feature"
+    action = "stance_after_lm"
     locals()[action]()

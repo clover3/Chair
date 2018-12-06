@@ -3,7 +3,7 @@ from data_generator.common import *
 from data_generator.data_parser import tweet_reader
 from data_generator.text_encoder import SubwordTextEncoder
 from data_generator.shared_setting import Tweets2Stance
-from data_generator.pair_lm.loader import pos_neg_pair_sampling
+from data_generator.group_sampler import pos_neg_pair_sampling
 from collections import Counter
 
 def avg_token_length():

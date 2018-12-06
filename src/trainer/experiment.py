@@ -149,7 +149,7 @@ class Experiment:
         random.seed(0)
 
         train_batches = get_batches(stance_data.get_train_data(), self.hparam.batch_size)
-        dev_batches = get_batches(stance_data.get_test_data(), self.hparam.batch_size)
+        dev_batches = get_batches(stance_data.get_dev_data(), self.hparam.batch_size)
 
         def train_fn(batch, step_i):
             loss_val = batch_train(self.sess, batch, train_op, task)
@@ -196,36 +196,63 @@ class Experiment:
 
 
 
-    def train_stance_consistency(self, voca_size, stance_data):
-        print("Experiment.train_stance()")
+    def train_stance_consistency(self, voca_size, stance_data, aux_data):
+        print("Experiment.train_stance_consistency()")
         valid_freq = 10
         feature_loc = 0
         task = ConsistentClassifier(self.hparam, voca_size, stance_detection.num_classes, True, feature_loc)
 
         train_op = self.get_train_op(task.loss)
+        train_aux = self.get_train_op(task.consist_loss)
 
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
 
         random.seed(0)
 
-        train_batches = get_batches(stance_data.get_train_data(), self.hparam.batch_size)
-        dev_batches = get_batches(stance_data.get_test_data(), self.hparam.batch_size)
-        aux_data = NotImplementedError
+        train_batches = get_batches(stance_data.get_train_data(), self.hparam.batch_size_sup)
+        dev_batches = get_batches(stance_data.get_test_data(), 16)
+        max_reserve_batch = 10
+        n_step = len(train_batches)
+
+        def generate_aux_epoch():
+            batch_size = self.hparam.batch_size_aux
+            data = aux_data.get_insts(batch_size * n_step)
+            batches = get_batches_ex(list(data), batch_size, 1)
+            assert len(batches) == n_step
+            assert batches[0][0].shape == (batch_size, 2, self.hparam.seq_max)
+            return batches
+
+        queue_feader = QueueFeader(max_reserve_batch, generate_aux_epoch)
+
 
         def train_fn(batch, step_i):
             s_batch, aux_input = batch
             input, target = s_batch
+            x_pair, = aux_input
             loss_val, s_loss, c_loss, _ = self.sess.run([task.loss, task.supervised_loss, task.consist_loss, train_op],
                                    feed_dict={
                                        task.x: input,
                                        task.y: target,
-                                       task.x_pair: aux_input
+                                       task.x_pair: x_pair
                                    },
                                    )
             self.log.debug("[Train] Step {0} loss={1:.04f} s_loss={2:.04f} c_loss={3:.04f}"
                            .format(step_i, loss_val, s_loss, c_loss))
             return loss_val, 0
+
+
+        def train_aux_fn(batch, step_i):
+            x_pair, = batch
+            c_loss, _ = self.sess.run([task.consist_loss, train_aux],
+                                   feed_dict={
+                                       task.x_pair: x_pair
+                                   },
+                                   )
+            self.log.debug("[Train Aux] Step {0} c_loss={1:.04f}"
+                           .format(step_i, c_loss))
+            return c_loss, 0
+
 
         valid_history = []
         def valid_fn():
@@ -235,7 +262,7 @@ class Experiment:
             gold_list = []
             for batch in dev_batches:
                 input, target = batch
-                loss_val, acc, logits = self.sess.run([task.loss, task.acc, task.logits],
+                loss_val, acc, logits = self.sess.run([task.supervised_loss, task.acc, task.logits],
                                     feed_dict={
                                         task.x: input,
                                         task.y: target,
@@ -249,23 +276,22 @@ class Experiment:
             pred = np.argmax(logits, axis=1)
             f1 = stance_f1(pred, np.concatenate(gold_list, axis=0))
             avg_loss, avg_acc = average(loss_list), average(acc_list)
-            self.log.info("[Dev] F1={0:.02f} Acc={1:.02f} loss={2:.04f}".format(f1, avg_acc, avg_loss))
+            self.log.info("[Dev] F1={0:.02f} Acc={1:.02f} s_loss={2:.04f}".format(f1, avg_acc, avg_loss))
             valid_history.append((avg_acc, f1))
             return
 
         num_epoch = self.hparam.num_epochs
         print("Start Training")
         for i in range(num_epoch):
-            n_step = len(train_batches)
-            aux_baches_per_epoch = aux_data.get(n_step)
-            t_batches = zip(train_batches, aux_baches_per_epoch)
+            aux_baches_per_epoch = queue_feader.get()
+            t_batches = list(zip(train_batches, aux_baches_per_epoch))
             loss, _ = epoch_runner(t_batches, train_fn,
                                    valid_fn, valid_freq,
                                    self.temp_saver, self.save_interval)
             self.log.info("[Train] Epoch {} Done. Loss={}".format(i, loss))
 
+
         valid_fn()
-        #self.save_model("after_train")
         return valid_history
 
 
@@ -667,6 +693,87 @@ class Experiment:
             train_fn(batch, step_i)
             self.g_step += 1
 
+
+    def train_doc_lm(self, exp_config, data_generator):
+        print("train_doc_lm")
+        valid_freq = exp_config.valid_freq
+        max_step = 1000 * 1000 * 1000
+        save_interval = exp_config.save_interval
+
+        task = TransformerLM(self.hparam, data_generator.voca_size, True)
+        train_op = self.get_train_op(task.loss)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        self.g_step = 0
+
+        def get_dev_batches():
+            num_batches = 10
+            test_data = data_generator.get_test_instances(num_batches * self.hparam.batch_size)
+            test_batches = get_batches_ex(list(test_data), self.hparam.batch_size, 2)
+            return test_batches
+
+        print("Generate dev batches")
+        dev_batch = list(get_dev_batches())
+
+        def generate_train_batch():
+            batch_size = self.hparam.batch_size
+            data = data_generator.get_train_instances(batch_size)
+            batches = get_batches_ex(list(data), batch_size, 2)
+            return batches[0]
+
+        print("Init queue feader ")
+        max_reserve_batch = 100
+        queue_feader = QueueFeader(max_reserve_batch, generate_train_batch)
+
+        def batch2feed_dict(batch):
+            x, y  = batch
+            feed_dict = {
+                task.x: x,
+                task.y: y,
+            }
+            return feed_dict
+
+        def train_fn(batch, step_i):
+            loss_val, summary, _ = self.sess.run([task.loss, self.merged, train_op,
+                                                  ],
+                                                 feed_dict=batch2feed_dict(batch)
+                                                 )
+            self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
+            self.train_writer.add_summary(summary, self.g_step)
+            self.g_step += 1
+            return loss_val, 0
+
+        def valid_fn():
+            loss_list = []
+            for batch in dev_batch:
+                loss_val, summary = self.sess.run([task.loss, self.merged],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+
+                self.test_writer.add_summary(summary, self.g_step)
+            self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
+
+        def save_fn():
+            self.save_model(exp_config.name)
+
+        last_save = time.time()
+        for step_i in range(max_step):
+            if step_i % valid_freq == 0:
+                valid_fn()
+
+            if save_fn is not None:
+                if time.time() - last_save > save_interval:
+                    save_fn()
+                    last_save = time.time()
+
+            batch = queue_feader.get()
+
+            x, y  = batch
+            train_fn(batch, step_i)
+            self.g_step += 1
 
     def train_pair_feature(self, exp_config, data_generator):
         print("train_pair_feature")

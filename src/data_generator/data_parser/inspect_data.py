@@ -1,6 +1,6 @@
 
 from collections import Counter
-from data_generator.data_parser.tweet_reader import load_per_user, topics
+from data_generator.data_parser.tweet_reader import load_per_user, topics, extract_mention
 
 
 def view_same_author():
@@ -49,7 +49,39 @@ def view_same_author():
             break
 
 
+def articles_per_author():
+    topic = topics[0]
+    print(topic)
+
+    user_tweets = load_per_user(topic)
+    cnt =0
+    for key, texts in user_tweets.items():
+        texts = list(set(texts))
+        if len(texts) > 4 :
+            ids = set()
+            print("Caller : ", key)
+            for t in texts:
+                found = set(extract_mention(t))
+                ids.update(found)
+                if found:
+                    print(t, end = "")
+
+            print("-----")
+            for user_id in ids:
+                if user_id in user_tweets:
+                    print("Callee ", user_id)
+                    texts2 = user_tweets[user_id]
+                    for t in texts2[:10]:
+                        print(t, end = "")
+                    print("-----")
+
+            cnt += 1
+
+            if cnt > 100 :
+                break
+
+
 if __name__ == "__main__":
-    view_same_author()
+    articles_per_author()
 
 

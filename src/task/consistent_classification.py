@@ -24,10 +24,9 @@ class ConsistentClassifier:
         #tf.summary.scalar('acc', self.acc)
         # Loss
         labels = tf.one_hot(self.y, num_classes)
-        self.loss_arr = tf.nn.softmax_cross_entropy_with_logits_v2(
+        self.s_loss_arr = tf.nn.softmax_cross_entropy_with_logits_v2(
             logits=self.logits,
             labels=labels)
-        self.supervised_loss = tf.reduce_mean(self.loss_arr)
         self.acc = tf_module.accuracy(self.logits, self.y)
 
 
@@ -40,6 +39,8 @@ class ConsistentClassifier:
             l = pred[:,0,Pros] * tf.log(pred[:,1,Against]) + pred[:,0,Against] * tf.log(pred[:,1,Pros])
             return -l
 
-        self.consist_loss = tf.reduce_mean(conflict_loss(pred))
-        self.loss = (1-hp.alpha) * self.supervised_loss + hp.alpha * self.consist_loss
+        self.consist_loss = hp.alpha * tf.reduce_mean(conflict_loss(pred))
+        self.supervised_loss = (1-hp.alpha) * tf.reduce_mean(self.s_loss_arr)
+
+        self.loss = self.supervised_loss + self.consist_loss
 

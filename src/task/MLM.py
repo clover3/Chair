@@ -22,9 +22,6 @@ class TransformerLM:
 
         if is_training:
             # Loss
-#            self.y_smoothed = label_smoothing(tf.one_hot(self.y, depth=voca_size))
-#            loss = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y_smoothed)
-#            self.loss = tf.reduce_sum(loss * self.istarget) / (tf.reduce_sum(self.istarget))
 
             loss_list, weight = padded_cross_entropy(self.logits, self.y, label_smoothing,
                                                      reduce_sum=False)

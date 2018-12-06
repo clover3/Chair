@@ -102,3 +102,10 @@ def left(pairs):
 
 def right(pairs):
     return list([b for a,b in pairs])
+
+
+def increment_circular(j, max_len):
+    j += 1
+    if j == max_len:
+        j = 0
+    return j
