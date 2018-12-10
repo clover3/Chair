@@ -50,9 +50,20 @@ def stance_after_lm():
     hp = HPFineTunePair()
     topic = "atheism"
     e = Experiment(hp)
-    preload_id = ("DLM_pair_tweets_atheism", 840965)
+    preload_id = ("DLM_pair_tweets_atheism", 1596093)
     setting = shared_setting.TopicTweets2Stance(topic)
     stance_data = stance_detection.FineLoader(topic, hp.seq_max, setting.vocab_filename, hp.sent_max)
+    e.train_stance(setting.vocab_size, stance_data, preload_id)
+
+
+def stance_warm():
+    hp = HPFineTunePair()
+    topic = "hillary"
+    e = Experiment(hp)
+    preload_id = ("after_stance", 400)
+    hp.seq_max = 50
+    setting = shared_setting.TopicTweets2Stance(topic)
+    stance_data = stance_detection.DataLoader(topic, hp.seq_max, setting.vocab_filename)
     e.train_stance(setting.vocab_size, stance_data, preload_id)
 
 
@@ -180,6 +191,28 @@ def pair_feature():
     e.train_pair_feature(e_config, data)
 
 
+def train_cold_sentiment():
+    hp = HPColdStart()
+    e = Experiment(hp)
+    topic = "hillary"
+    setting = shared_setting.TopicTweets2Stance(topic)
+    sentiment = stance_detection.SentimentLoader(topic, hp.seq_max, setting.vocab_filename)
+
+    voca_size = setting.vocab_size
+    e.train_stance(voca_size, sentiment)
+
+
+
+def stance_cold_start_simple():
+    hp = HPColdStart()
+    e = Experiment(hp)
+    topic = "atheism"
+    setting = shared_setting.SimpleTokner(topic)
+    stance_data = stance_detection.DataLoader(topic, hp.seq_max, setting.vocab_filename)
+
+    voca_size = setting.vocab_size
+    e.train_stance(voca_size, stance_data)
+
 
 def stance_cold_start():
     hp = HPColdStart()
@@ -209,9 +242,11 @@ def stance_with_consistency():
 def baselines():
     hp = Hyperparams()
     e = Experiment(hp)
-    e.stance_baseline()
+    topic = "hillary"
+    setting = shared_setting.TopicTweets2Stance(topic)
+    e.stance_baseline(topic, setting.vocab_filename)
 
 
 if __name__ == '__main__':
-    action = "stance_after_lm"
+    action = "stance_cold_start_simple"
     locals()[action]()

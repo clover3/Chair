@@ -32,7 +32,7 @@ def view_same_author():
 
 
     for i in range(50):
-        print("{} : {}".format(i,histogram[i]))
+        print("{} : {}".format(i, histogram[i]))
 
     print("#user with multi tweets : {}".format(n_multi_tweet))
     print("#user with multi tweets(filter) : {}".format(n_multi_tweet_filter))

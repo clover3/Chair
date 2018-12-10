@@ -62,10 +62,10 @@ class Experiment:
         self.save_model("interval")
 
 
-    def stance_baseline(self):
+    def stance_baseline(self, topic, voca_path):
         print("Experiment.stance_baseline()")
         max_sequence= 140
-        stance_data = stance_detection.DataLoader(max_sequence)
+        stance_data = stance_detection.DataLoader(topic, max_sequence, voca_path)
 
         # TODO majority
         stance_data.load_train_data()
@@ -149,7 +149,7 @@ class Experiment:
         random.seed(0)
 
         train_batches = get_batches(stance_data.get_train_data(), self.hparam.batch_size)
-        dev_batches = get_batches(stance_data.get_dev_data(), self.hparam.batch_size)
+        dev_batches = get_batches(stance_data.get_test_data(), self.hparam.batch_size)
 
         def train_fn(batch, step_i):
             loss_val = batch_train(self.sess, batch, train_op, task)
@@ -191,7 +191,7 @@ class Experiment:
             self.log.info("[Train] Epoch {} Done. Loss={}".format(i, loss))
 
         valid_fn()
-        #self.save_model("after_train")
+        self.save_model("after_stance")
         return valid_history
 
 

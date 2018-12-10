@@ -4,9 +4,12 @@ import itertools
 from data_generator.stance import stance_detection
 from data_generator.mask_lm import enwiki
 from data_generator.generator_utils import get_or_generate_vocab_inner
+from data_generator.text_encoder import TokenTextEncoder
 from data_generator.common import data_path
-from data_generator.data_parser import tweets
-from data_generator.shared_setting import Tweets2Stance, TopicTweets2Stance
+from data_generator.data_parser import tweet_reader
+from data_generator.shared_setting import Tweets2Stance, TopicTweets2Stance, SimpleTokner
+from data_generator.tokenizer import encode
+from misc_lib import flatten
 
 def file_sampler(filepath, file_byte_budget=1e6):
     with tf.gfile.GFile(filepath, mode="r") as source_file:
@@ -77,5 +80,16 @@ def init_voca_stance_n_tweets():
                                        vocab_generator)
 
 
+def init_token_voca():
+    topic = "atheism"
+    setting = SimpleTokner(topic)
+
+    stance_text = stance_detection.get_train_text()
+    token_list = list([l.split() for l in stance_text])
+    print(token_list[:20])
+    encoder = TokenTextEncoder(None, vocab_list=flatten(token_list))
+    encoder.store_to_file(setting.vocab_filename)
+
+
 if __name__ == "__main__":
-    init_voca_stance_n_tweets()
+    init_token_voca()

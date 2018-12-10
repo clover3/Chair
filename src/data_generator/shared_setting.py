@@ -23,3 +23,12 @@ class TopicTweets2Stance:
 
     def __init__(self, topic):
         self.vocab_filename = "tweets_{}_voca.txt".format(topic)
+
+
+class SimpleTokner:
+    vocab_filename = None
+    vocab_size = 32000
+    seq_length = 50
+
+    def __init__(self, topic):
+        self.vocab_filename = "ST_{}_voca.txt".format(topic)

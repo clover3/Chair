@@ -47,7 +47,7 @@ class HPColdStart:
     # data
     # training
     batch_size = 32  # alias = N
-    lr = 3e-4  # learning rate. In paper, learning rate is adjusted to the global step.
+    lr = 5e-5  # learning rate. In paper, learning rate is adjusted to the global step.
     logdir = 'logdir'  # log directory
 
     # model
@@ -56,8 +56,8 @@ class HPColdStart:
     #lm_seq_len = 512
     # Feel free to increase this if you are ambitious.
     hidden_units = 256 # alias = C
-    num_blocks = 1  # number of encoder/decoder blocks
-    num_epochs = 20
+    num_blocks = 12  # number of encoder/decoder blocks
+    num_epochs = 50
     num_heads = 8
     dropout_rate = 0.3
     sinusoid = False  # If True, use sinusoid. If false, positional embedding.
@@ -73,7 +73,7 @@ class HPFineTune:
 
     # model
     #seq_max = 140  # Maximum number of words in a sentence. alias = T.
-    seq_max = 50 # Maximum number of words in a sentence. alias = T.
+    seq_max = 200 # Maximum number of words in a sentence. alias = T.
     #lm_seq_len = 512
     # Feel free to increase this if you are ambitious.
     hidden_units = 512  # alias = C
@@ -100,7 +100,7 @@ class HPFineTunePair:
     # Feel free to increase this if you are ambitious.
     hidden_units = 256 # alias = C
     num_blocks = 12  # number of encoder/decoder blocks
-    num_epochs = 10
+    num_epochs = 20
     num_heads = 8
     dropout_rate = 0.0
     sinusoid = False  # If True, use sinusoid. If false, positional embedding.
