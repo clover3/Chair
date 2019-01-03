@@ -98,6 +98,28 @@ def f1(logits, y, axis=1):
     return (f1_favor + f1_against) / 2
 
 
+def f1_loss(logits, y):
+    c01 = tf.math.less(logits[:,0], logits[:,1])
+    c02 = tf.math.less(logits[:, 0], logits[:, 2])
+    c21 = tf.math.less(logits[:, 2], logits[:, 1])
+    c12 = tf.math.logical_not(c21)
+    losses = tf.losses.softmax_cross_entropy(y, logits)
+    pred1 = tf.cast(tf.math.logical_and(c01, c21), tf.float32)
+    gold1 = tf.cast(tf.math.equal(y[:,1], 1), tf.float32)
+    pred2 = tf.cast(tf.math.logical_and(c02, c12), tf.float32)
+    gold2 = tf.cast(tf.math.equal(y[:, 2], 1), tf.float32)
+
+    prec1 = tf.reduce_sum(pred1 * losses)
+    recall1 = tf.reduce_sum(gold1 * losses)
+    f1_1 = prec1 * recall1
+
+    prec2 = tf.reduce_sum(pred2 * losses)
+    recall2 = tf.reduce_sum(gold2 * losses)
+    f2_1 = prec2 * recall2
+    return f1_1 + f2_1
+
+
+
 def label2logit(label, size):
     r = np.zeros([size,])
     r[label] = 1

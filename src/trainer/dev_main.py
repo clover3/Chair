@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 #print("LD_LIBRARY_PATH : {}".format(os.environ["LD_LIBRARY_PATH"]))
@@ -48,9 +48,9 @@ def lm_tweets_train():
 
 def stance_after_lm():
     hp = HPFineTunePair()
-    topic = "atheism"
+    topic = "hillary"
     e = Experiment(hp)
-    preload_id = ("DLM_pair_tweets_atheism", 1596093)
+    preload_id = ("DLM_pair_tweets_hillary", 852967)
     setting = shared_setting.TopicTweets2Stance(topic)
     stance_data = stance_detection.FineLoader(topic, hp.seq_max, setting.vocab_filename, hp.sent_max)
     e.train_stance(setting.vocab_size, stance_data, preload_id)
@@ -123,9 +123,9 @@ def pair_lm():
 
 def document_lm():
     hp = HPDocLM()
-    topic = "atheism"
+    topic = "hillary"
     setting = shared_setting.TopicTweets2Stance(topic)
-    use_cache = True
+    use_cache = False
 
 
     run_id = "{}_{}".format(topic, hp.seq_max)
@@ -202,6 +202,55 @@ def train_cold_sentiment():
     e.train_stance(voca_size, sentiment)
 
 
+def train_aux():
+    hp = HPFineTunePair()
+    hp2 = HPTiny()
+    e = Experiment(hp)
+    topic = "hillary"
+    preload_id = ("DLM_pair_tweets_hillary", 131200)
+    setting = shared_setting.TopicTweets2Stance(topic)
+    sentiment = stance_detection.SentimentLoader(topic, hp.seq_max, setting.vocab_filename)
+    voca_size = setting.vocab_size
+    e.train_aux1(hp2, voca_size, sentiment, preload_id)
+
+
+def train_aux2():
+    hp = HPDocLM()
+    hp2 = HPTiny()
+    topic = "hillary"
+    preload_id = ("after_aux", 234)
+    setting = shared_setting.TopicTweets2Stance(topic)
+    use_cache = True
+    run_id = "{}_{}".format(topic, hp.seq_max)
+    if use_cache:
+        data = author_as_doc.AuthorAsDoc.load_from_pickle(run_id)
+    else:
+        tweet_group = tweet_reader.load_per_user(topic)
+        data = author_as_doc.AuthorAsDoc(hp.seq_max, setting, tweet_group)
+        data.index_data()
+        data.save_to_pickle(run_id)
+
+    e_config = ExperimentConfig()
+    e_config.name = "DLM_aux_pair_tweets_{}".format(topic)
+    e_config.num_epoch = 1
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e = Experiment(hp)
+    e.train_aux2(hp2, e_config, data, preload_id)
+
+
+def train_aux_stance():
+    hp = HPColdStart()
+    hp2 = HPTiny()
+    topic = "hillary"
+    preload_id = ("after_aux", 234)
+    setting = shared_setting.TopicTweets2Stance(topic)
+    stance_data = stance_detection.DataLoader(topic, hp.seq_max, setting.vocab_filename)
+    voca_size = setting.vocab_size
+
+    e = Experiment(hp)
+    e.train_aux_stance(hp2, voca_size, stance_data, preload_id)
+
+
 
 def stance_cold_start_simple():
     hp = HPColdStart()
@@ -247,6 +296,17 @@ def baselines():
     e.stance_baseline(topic, setting.vocab_filename)
 
 
+def feature_svm():
+    hp = HPFineTunePair()
+    topic = "atheism"
+    e = Experiment(hp)
+    preload_id = ("LM_reserve/DLM_pair_tweets_atheism", 217246)
+    setting = shared_setting.TopicTweets2Stance(topic)
+    stance_data = stance_detection.FineLoader(topic, hp.seq_max, setting.vocab_filename, hp.sent_max)
+    e.feature_svm(setting.vocab_size, stance_data, preload_id)
+
+
+
 if __name__ == '__main__':
-    action = "stance_cold_start_simple"
+    action = "stance_after_lm"
     locals()[action]()

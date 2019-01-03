@@ -1,7 +1,6 @@
 from models.transformer.transformer import *
 from trainer import tf_module
 
-
 class ConsistentClassifier:
     def __init__(self, hp, voca_size, num_classes, is_training, feature_loc = 0):
         # define decoder inputs
@@ -32,6 +31,7 @@ class ConsistentClassifier:
 
         logit_pair = tf.reshape(logits2, [-1, 2, num_classes])
         pred = tf.nn.softmax(logit_pair)
+        self.pred_pair = pred
 
         def conflict_loss(pred):
             Pros = 1
@@ -39,7 +39,24 @@ class ConsistentClassifier:
             l = pred[:,0,Pros] * tf.log(pred[:,1,Against]) + pred[:,0,Against] * tf.log(pred[:,1,Pros])
             return -l
 
-        self.consist_loss = hp.alpha * tf.reduce_mean(conflict_loss(pred))
+        tau = 0.6
+        #idk : I Don't Know
+        def idk_loss(pred):
+            s = 0
+            for i in range(3):
+                pred_no = pred[:,:,i]
+                p = 0.33
+                n_items = tf.reduce_sum(tf.ones_like(pred_no))
+                mean = n_items * p
+                dev = tf.sqrt(n_items * p * (1-p))
+                normal = tf.distributions.Normal(loc=mean, scale=dev)
+                l = -tf.log(normal.prob(tf.reduce_sum(pred_no)))
+                s += tf.maximum(l-4, 0)
+            return s
+
+
+        self.idk_loss = idk_loss(pred)
+        self.consist_loss = hp.alpha * (tf.reduce_mean(conflict_loss(pred)) + 0.2 * self.idk_loss)
         self.supervised_loss = (1-hp.alpha) * tf.reduce_mean(self.s_loss_arr)
 
         self.loss = self.supervised_loss + self.consist_loss

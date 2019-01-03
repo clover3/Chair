@@ -6,3 +6,4 @@ class ExperimentConfig:
     save_interval = 10 * 60
     num_epoch = 1
     name = "experiment"
+    load_names = ""

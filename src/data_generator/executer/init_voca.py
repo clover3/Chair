@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+import os
 import itertools
 from data_generator.stance import stance_detection
 from data_generator.mask_lm import enwiki
@@ -10,6 +10,7 @@ from data_generator.data_parser import tweet_reader
 from data_generator.shared_setting import Tweets2Stance, TopicTweets2Stance, SimpleTokner
 from data_generator.tokenizer import encode
 from misc_lib import flatten
+from data_generator.NLI import nli
 
 def file_sampler(filepath, file_byte_budget=1e6):
     with tf.gfile.GFile(filepath, mode="r") as source_file:
@@ -91,5 +92,25 @@ def init_token_voca():
     encoder.store_to_file(setting.vocab_filename)
 
 
+def init_voca_nli():
+    vocab_size = 32000
+    train_file = os.path.join(nli.corpus_dir, "train.tsv")
+
+    def file_reader(filename):
+        for idx, line in enumerate(tf.gfile.Open(filename, "rb")):
+            if idx == 0: continue  # skip header
+            line = line.strip().decode("utf-8")
+            split_line = line.split("\t")
+            # Works for both splits even though dev has some extra human labels.
+            s1, s2 = split_line[8:10]
+            yield s1
+            yield s2
+    vocab_generator = file_reader(train_file)
+    out_vocab_filename = "NLI_voca.txt"
+    return get_or_generate_vocab_inner(data_path, out_vocab_filename, vocab_size,
+                                       vocab_generator)
+
+
+
 if __name__ == "__main__":
-    init_token_voca()
+    init_voca_nli()

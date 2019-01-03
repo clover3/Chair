@@ -20,6 +20,8 @@ class TransformerClassifier:
         self.loss_arr = tf.nn.softmax_cross_entropy_with_logits_v2(
             logits=self.logits,
             labels=labels)
+        #self.s_loss_arr = tf_module.f1_loss(self.logits, labels)
+
         self.loss = tf.reduce_mean(self.loss_arr)
         #tf.summary.scalar('loss', self.loss)
         self.f1 = tf_module.f1(self.logits, self.y)

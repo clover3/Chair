@@ -1,7 +1,7 @@
 import csv
 import os
 from data_generator.common import *
-from data_generator.text_encoder import SubwordTextEncoder, TokenTextEncoder, SPEC_4
+from data_generator.text_encoder import SubwordTextEncoder, TokenTextEncoder, SPEC_4, CLS_ID
 import random
 from data_generator.shared_setting import *
 
@@ -122,7 +122,7 @@ class DataLoader:
     def encode(self, plain_data):
         for entry in plain_data:
             key = "inputs"
-            coded_text = self.encoder.encode(entry[key])[:self.max_sequence]
+            coded_text = [CLS_ID] + self.encoder.encode(entry[key])[:self.max_sequence-1]
             pad = (self.max_sequence - len(coded_text)) * [text_encoder.PAD_ID]
             entry[key] = coded_text + pad
             yield entry
@@ -231,7 +231,7 @@ class FineLoader(DataLoader):
     def encode(self, plain_data):
         for entry in plain_data:
             key = "inputs"
-            coded_text = self.encoder.encode(entry[key])[:self.max_sent]
+            coded_text = [CLS_ID] + self.encoder.encode(entry[key])[:self.max_sent-1]
             pad = (self.max_sequence - len(coded_text) - 1) * [text_encoder.PAD_ID]
             entry[key] = coded_text + [text_encoder.SEP_ID] + pad
             yield entry
