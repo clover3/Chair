@@ -59,14 +59,15 @@ def train_nli_with_reinforce():
     nli_setting.vocab_filename = "bert_voca.txt"
 
     e_config = ExperimentConfig()
-    e_config.name = "NLI_run_{}".format("cold_start")
+    e_config.name = "NLI_run_{}".format("nli_warm")
     e_config.num_epoch = 4
     e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert', 'cls_dense', 'aux_conflict']
 
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
-    load_id = ("NLI_run_B", "model-9736")
-    e.train_nli_ex(nli_setting, e_config, data_loader, None, True)
+    load_id = ("NLI_bert_w_explain", "model-91531")
+    e.train_nli_ex(nli_setting, e_config, data_loader, load_id, True)
 
 
 def train_nli_with_reinforce_old():
@@ -87,5 +88,5 @@ def train_nli_with_reinforce_old():
 
 
 if __name__ == '__main__':
-    action = "train_nli_with_reinforce_old"
+    action = "train_nli_with_reinforce"
     locals()[action]()

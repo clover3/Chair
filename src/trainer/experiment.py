@@ -1293,6 +1293,8 @@ class Experiment:
         variables = tf.contrib.slim.get_variables_to_restore()
         variables_to_restore = [v for v in variables if condition(v)]
         print("Restoring: {} {}".format(name, id))
+        for v in variables_to_restore:
+            print(v)
 
         self.loader = tf.train.Saver(variables_to_restore, max_to_keep=1)
         self.loader.restore(self.sess, path)

@@ -42,7 +42,11 @@ class DataLoader:
 
         if not using_alt_tokenizer:
             self.encoder = SubwordTextEncoder(voca_path)
+            self.sep_char = "_"
+            self.lower_case = False
         else:
+            self.lower_case = True
+            self.sep_char = "#"
             self.encoder = FullTokenizerWarpper(voca_path)
 
 
@@ -60,13 +64,16 @@ class DataLoader:
         explain_data = load_mnli_explain()
 
         def entry2inst(raw_entry):
-            entry = self.encode(raw_entry['p'].lower(), raw_entry['h'].lower())
+            entry = self.encode(raw_entry['p'], raw_entry['h'])
             return entry["input_ids"], entry["input_mask"], entry["segment_ids"]
 
         encoded_data = list([entry2inst(entry) for entry in explain_data])
         return encoded_data, explain_data
 
     def convert_index(self, raw_sentence, subtoken_ids, target_idx):
+        if self.lower_case:
+            raw_sentence = raw_sentence.lower()
+        #print("-------")
         #print("raw_sentence", raw_sentence)
         #print("subtoken_ids", subtoken_ids)
         #print("target_idx", target_idx)
@@ -74,23 +81,33 @@ class DataLoader:
         subword_tokens = self.encoder.decode_list(subtoken_ids)
         #print("subword_tokens", subword_tokens)
         #print("target subword", subword_tokens[target_idx])
+        if subword_tokens[target_idx].replace("_", "").replace(" ", "") == "":
+            target_idx = target_idx - 1
+            #print("Replace target_idx to previous", subword_tokens[target_idx])
         prev_text = "".join(subword_tokens[:target_idx])
         text_idx = 0
+        #print("prev text", prev_text)
+
+        def update_text_idx(target_char, text_idx):
+            while prev_text[text_idx] in [self.sep_char, " "]:
+                text_idx += 1
+            if target_char == prev_text[text_idx]:
+                text_idx += 1
+            return text_idx
 
         try:
-            for t_idx, t in enumerate(tokens):
-                for c in t:
-                    if c == prev_text[text_idx]:
-                        text_idx += 1
-                    elif prev_text[text_idx] == "_":
-                        text_idx += 1
-                        if c == prev_text[text_idx]:
-                            text_idx += 1
+            for t_idx, token in enumerate(tokens):
+                for c in token:
+                    # Here, previous char should equal prev_text[text_idx]
+                    text_idx = update_text_idx(c, text_idx)
+                    # Here, c should equal prev_text[text_idx-1]
+                    assert c == prev_text[text_idx-1]
+
         except IndexError:
             #print("target_token", tokens[t_idx])
             #print("t_idx", t_idx)
             return t_idx
-        return t_idx
+        raise Exception
 
     def test(self):
         sent = "Nonautomated First-Class and Standard-A mailers cannot ask for their mail to be processed by hand because it costs the postal service more."
