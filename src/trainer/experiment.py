@@ -3,7 +3,10 @@ from collections import Counter
 import random
 import warnings
 import tensorflow as tf
+from concurrent.futures import ProcessPoolExecutor, wait
+
 from trainer.tf_module import *
+from trainer.promise import *
 from models.transformer.hyperparams import Hyperparams
 from task.MLM import TransformerLM
 from task.PairLM import TransformerPairLM
@@ -19,6 +22,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from data_generator.stance import stance_detection
 from data_generator.mask_lm import enwiki
 from data_generator import shared_setting
+from data_generator.NLI.nli import eval_explain
+from data_generator.adhoc.ws import *
 from trainer.queue_feader import QueueFeader
 from task.metrics import stance_f1
 from log import log
@@ -28,10 +33,13 @@ import pickle
 import threading
 from models.baselines import svm
 from models.transformer.tranformer_nli import transformer_nli
+from models.transformer.transformer_adhoc import transformer_adhoc
+
 from tensorflow.python.client import timeline
 from misc_lib import delete_if_exist
 from attribution.deleter_trsfmr import *
-from evaluation import p_at_k_list, MAP
+from attribution.baselines import *
+from evaluation import *
 # Experiment is the most outside module.
 # This module can reference any module in the system.
 
@@ -74,7 +82,6 @@ class Experiment:
         max_sequence= 140
         stance_data = stance_detection.DataLoader(topic, max_sequence, voca_path)
 
-        # TODO majority
         stance_data.load_train_data()
         stance_data.load_test_data()
         label_count = Counter()
@@ -85,7 +92,6 @@ class Experiment:
         common_label, _ = label_count.most_common(1)[0]
         pred_major = np.array([common_label] * len(stance_data.dev_data_raw))
 
-        # TODO word unigram SVM
 
         train_x = [entry["inputs"] for entry in stance_data.train_data_raw]
         train_y = [entry["label"] for entry in stance_data.train_data_raw]
@@ -1398,6 +1404,69 @@ class Experiment:
                                    valid_fn, valid_freq,
                                    self.temp_saver, self.save_interval)
 
+    def nli_explain_baselines(self, nli_setting, exp_config, data_loader, preload_id):
+        enc_explain_dev, explain_dev = data_loader.get_dev_explain()
+        train_batches, dev_batches = self.load_nli_data(data_loader)
+
+        task = transformer_nli(self.hparam, nli_setting.vocab_size)
+        CONTRADICTION = 2
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            if exp_config.load_names :
+                self.load_model_white(name, id, exp_config.load_names)
+            elif name in exp_config.name:
+                self.load_model_all(name, id)
+            elif "NLI" in name:
+                self.load_model_white(name, id, ['bert', 'dense_cls'])
+            else:
+                self.load_model_bert(name, id)
+
+
+        def forward_run(inputs):
+            batches = get_batches_ex(inputs, self.hparam.batch_size, 3)
+            logit_list = []
+            for batch in batches:
+                x0, x1, x2 = batch
+                soft_out,  = self.sess.run([task.sout, ],
+                                               feed_dict={
+                                                task.x_list[0]: x0,
+                                                task.x_list[1]: x1,
+                                                task.x_list[2]: x2,
+                                               })
+                logit_list.append(soft_out)
+            return np.concatenate(logit_list)
+
+
+
+        idf_scorer = IdfScorer(train_batches)
+
+
+        def eval(method):
+            print("Eval")
+            begin = time.time()
+            explains = method(enc_explain_dev, 'conflict', forward_run)
+            assert len(explains) == len(explain_dev)
+            end = time.time()
+            print("Elapsed Time : {}".format(end- begin))
+
+            p_at_1, MAP_score = eval_explain(explains, data_loader)
+            print("P@1\t{}".format(p_at_1))
+            print("MAP\t{}".format(MAP_score))
+
+        todo_list = [
+                     ('random', explain_by_random),
+                    ('idf', idf_scorer.explain),
+                    ('deletion', explain_by_deletion),
+                     ]
+        for method_name, method in todo_list:
+            print(method_name)
+            eval(method)
+
+
 
     def train_nli_ex(self, nli_setting, exp_config, data_loader, preload_id, f_train_ex):
         enc_explain_dev, explain_dev = data_loader.get_dev_explain()
@@ -1428,7 +1497,7 @@ class Experiment:
 
 
         def batch2feed_dict(batch):
-            x0,x1,x2, y  = batch
+            x0, x1, x2, y  = batch
             feed_dict = {
                 task.x_list[0]: x0,
                 task.x_list[1]: x1,
@@ -1437,13 +1506,9 @@ class Experiment:
             }
             return feed_dict
 
-
-
-        def top_k_idx(arr, k):
-            return np.flip(np.argsort(arr))[:k]
-
         def eval():
             print("Eval")
+            begin = time.time()
             batches = get_batches_ex(enc_explain_dev, self.hparam.batch_size, 3)
 
             conf_logit_list = []
@@ -1458,31 +1523,12 @@ class Experiment:
                 conf_logit_list.append(conf_logit)
             conf_logit = np.concatenate(conf_logit_list)
             assert len(conf_logit) == len(explain_dev)
+            end = time.time()
+            print("Elapsed Time : {}".format(end- begin))
 
-            pred_list = []
-            gold_list = []
-            for idx, entry in enumerate(explain_dev):
-                conf_p, conf_h = data_loader.split_p_h(conf_logit[idx], enc_explain_dev[idx])
-                p, h = data_loader.split_p_h(enc_explain_dev[idx][0], enc_explain_dev[idx])
-
-                p_explain = []
-                for i in top_k_idx(conf_p, 10):
-                    v_i = data_loader.convert_index(entry['p'], p, i)
-                    score = conf_p[i]
-                    p_explain.append((score, v_i))
-                h_explain = []
-                for i in top_k_idx(conf_h, 10):
-                    v_i = data_loader.convert_index(entry['h'], h, i)
-                    score = conf_h[i]
-                    h_explain.append((score, v_i))
-
-                pred_list.append((p_explain, h_explain))
-                gold_list.append((entry['p_explain'], entry['h_explain']))
-
-
-            print("P@1 : {}".format(p_at_k_list(pred_list, gold_list, 1)))
-            print("MAP : {}".format(MAP(pred_list, gold_list)))
-
+            p_at_1, MAP_score = eval_explain(conf_logit, data_loader)
+            print("P@1 : {}".format(p_at_1))
+            print("MAP : {}".format(MAP_score))
 
         def train_classification(batch, step_i):
             loss_val, summary, acc,  _ = self.sess.run([task.loss, self.merged, task.acc, train_cls,
@@ -1497,6 +1543,30 @@ class Experiment:
             r = np.zeros_like(np_arr)
             r[np.argmax(np_arr)] = 1
             return r
+
+        def over_zero(np_arr):
+            return np.less(0, np_arr).astype(np.float32)
+
+        multi_deletion = True
+        if multi_deletion == True:
+            logit2tag = over_zero
+        else:
+            logit2tag = top_1_as_mask
+
+        def sample_size():
+            if multi_deletion:
+                prob = [(1,0.5), (2,0.2), (3,0.1), (4,0.1), (5,0.1)]
+                v = random.random()
+                for n, p in prob:
+                    v -= p
+                    if v < 0:
+                        return n
+                return 1
+            else:
+                return 1
+
+        def numpy_print(arr):
+            return "".join(["{0:.3f} ".format(v) for v in arr])
 
 
         def train_explain(batch, step_i):
@@ -1516,9 +1586,8 @@ class Experiment:
                     info = {}
                     info['init_logit'] = logits[i]
                     info['orig_input'] = (x0[i],x1[i],x2[i],y[i])
-                    conf_tags = top_1_as_mask(conf_logit[i])
-                    self.log2.debug("CONF: {}".format(conf_logit[i]))
-                    # TODO check if conf_tags is too large
+                    conf_tags = logit2tag(conf_logit[i])
+                    self.log2.debug("CONF: {}".format(numpy_print(conf_logit[i])))
                     tag_size = np.count_nonzero(conf_tags)
                     if tag_size > 10:
                         self.log.debug("#conflict token={}".format(tag_size))
@@ -1536,6 +1605,7 @@ class Experiment:
                     #deleted_indice_list.append(delete_indice)
 
                     for _ in range(compare_deletion_num):
+                        tag_size = sample_size()
                         indice_delete_random.append(len(new_batches))
                         x_list, delete_mask = random_delete(tag_size, x0[i], x1[i], x2[i])
                         new_batches.append(x_list)
@@ -1596,9 +1666,15 @@ class Experiment:
                 target_ce = logit2ce(alt_logits[info['idx_delete_tagged']])
                 input_x = info['orig_input']
 
-                target_ce_drop = init_ce - target_ce
+                predicted_action = deleted_mask_list[info['idx_delete_tagged']]
+                num_tag = np.count_nonzero(predicted_action)
+                penalty = (num_tag - 1) * 0.1
+                target_ce_drop = init_ce - target_ce - penalty
                 target_ce_drop_list.append(target_ce_drop)
-                good_action = deleted_mask_list[info['idx_delete_tagged']]
+                self.log2.debug(
+                    "target_ce_drop : {0:.4f}  n_token : {1}".format(target_ce_drop, num_tag))
+
+                good_action = predicted_action
                 best_ce_drop = target_ce_drop
                 for idx_delete_random in info['indice_delete_random']:
                     comp_ce = logit2ce(alt_logits[idx_delete_random])
@@ -1673,3 +1749,359 @@ class Experiment:
             loss, _ = epoch_runner(train_batches, train_ex_fn,
                                    valid_fn, valid_freq,
                                    save_fn, self.save_interval)
+
+
+
+    def rank_adhoc(self, exp_config, data_loader, preload_id):
+        begin = time.time()
+        def tprint(text):
+            nonlocal begin
+            elapse = time.time() - begin
+            print(" ... {0:.1f} sec".format(elapse))
+            print(text)
+            begin = time.time()
+        tprint("train_adhoc")
+        task = transformer_adhoc(self.hparam, data_loader.voca_size)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+
+        tprint("Loading Model...")
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            if exp_config.load_names:
+                self.load_model_white(name, id, exp_config.load_names)
+            else:
+                self.load_model_bert(name, id)
+        batch_size = self.hparam.batch_size
+        def batch2feed_dict(batch):
+            x0, x1, x2, y = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        encoder_unit = data_loader.encoder_unit
+
+        def get_score(query_docs_list):
+            def eval(runs):
+                data = []
+                for entry in runs:
+                    data.append((entry['input_ids'], entry['input_mask'], entry['segment_ids'], 0))
+                tprint("Packing batches (batch_size={})".format(batch_size))
+                batches = get_batches_ex(data, batch_size, 4)
+                tprint("Runing neural network prediction")
+                y_list = []
+                for batch in batches:
+                    y, = self.sess.run([task.logits, ],
+                                       feed_dict=batch2feed_dict(batch)
+                                       )
+                    y_list.append(y)
+                ys = np.concatenate(y_list)
+                return ys
+
+
+            with ProcessPoolExecutor(max_workers=8) as executor:
+                use_pickle = True
+                if not use_pickle:
+                    enc_payload = []
+                    for query, doc_list in query_docs_list:
+                        payload = []
+                        print("Doc encoding for query '{}'".format(query))
+                        for doc_id, text in doc_list:
+                            # future[List[dict]]
+                            runs_future = executor.submit(encoder_unit.encode_long_text, query, text)
+                            payload.append((doc_id, runs_future))
+
+                        for doc_id, runs_future, in payload:
+                            runs = runs_future.result()
+                            enc_payload.append((query, doc_id, runs))
+                        print("... Done")
+
+                    save_to_pickle(enc_payload, "enc_payload")
+                else:
+                    tprint("Loading from pickles")
+                    enc_payload = load_from_pickle("enc_payload")
+
+            tprint("Scheduling NN runs")
+            pk = PromiseKeeper(eval)
+            score_list_future = []
+            for query, doc_id, runs in enc_payload:
+                y_futures = list([MyPromise(x, pk).future() for x in runs])
+                score_list_future.append((query, doc_id, y_futures))
+
+            pk.do_duty()
+            tprint("Completed GPU computations")
+            per_query = defaultdict(list)
+            for query, doc_id, y_futures in score_list_future:
+                per_query[query].append((doc_id, sum_future(y_futures)))
+
+            result = []
+            for query, _ in query_docs_list:
+                result.append(per_query[query])
+            return result
+
+        def bm25_run(target_queries):
+            # query with BM25
+            # rescore
+            # compare score
+            result = []
+            for q in target_queries:
+                score = Counter()
+                for q_term in q.split():
+                    if q_term in tf_index:
+                        for doc_id, tf in tf_index[q_term].items():
+                            score[doc_id] += tf * idf[q_term]
+
+                top_docs = list(score.most_common(1000))
+                result.append((q, top_docs))
+            return result
+
+        use_pickle = True
+
+        if not use_pickle :
+            print("loading collection...")
+            collection = load_trec(trecText_path)
+            idf = Idf(collection.values())
+
+            print("building inverted index...")
+            inv_index = get_inverted_index(collection)
+            tf_index = get_tf_index(inv_index)
+            queries = list(load_queries())
+
+            save_data = (collection, idf, inv_index, tf_index, queries)
+            save_to_pickle(save_data, "trecTask_all_info")
+        else:
+            collection, idf, inv_index, tf_index, queries = load_from_pickle("trecTask_all_info")
+
+        queries = list(load_trec_queries())
+        unique_queries = list(set(right(queries)))
+        tprint("{} unique queries".format(len(unique_queries)))
+        bm25_result = bm25_run(unique_queries)
+
+        def rerank():
+            fout = path.open_pred_output("rerank_{}".format(exp_config.name))
+            tprint("rerank")
+            pay_load = []
+            for q, top_docs in bm25_result:
+                docs = list([(doc_id, collection[doc_id]) for doc_id in left(top_docs)])
+                pay_load.append((q, docs))
+
+            nn_result = get_score(pay_load)
+            q_rank = dict()
+            for query_idx, q_result in enumerate(nn_result):
+                q_result = list(q_result)
+                q_result.sort(key=lambda x:x[1], reverse=True)
+                print(q_result[:5])
+                print(q_result[-5:])
+                query = unique_queries[query_idx]
+                q_rank[query] = q_result
+
+            for query_id, query in queries:
+                q_result = q_rank[query]
+                rank_idx = 1
+                for doc_id, score in q_result:
+                    fout.write("{} Q0 {} {} {} galago\n".format(query_id, doc_id, rank_idx, score[0]))
+                    rank_idx += 1
+        rerank()
+
+    def train_adhoc(self, exp_config, data_loader, preload_id):
+        print("train_adhoc")
+        task = transformer_adhoc(self.hparam, data_loader.voca_size)
+        with tf.variable_scope("optimizer"):
+            train_op = self.get_train_op(task.loss)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+
+        print("Loading Model...")
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            if exp_config.load_names:
+                self.load_model_white(name, id, exp_config.load_names)
+            else:
+                self.load_model_bert(name, id)
+
+        print("get_dev_data...")
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+
+        encoder_unit = data_loader.encoder_unit
+        def get_score(query_docs_list):
+            def eval(runs):
+                data = []
+                for entry in runs:
+                    data.append((entry['input_ids'], entry['input_mask'], entry['segment_ids'], 0))
+                batches = get_batches_ex(data, batch_size, 4)
+                y_list = []
+                for batch in batches:
+                    y, = self.sess.run([task.y, ],
+                                       feed_dict=batch2feed_dict(batch)
+                                       )
+                    y_list.append(y)
+                ys = np.concatenate(y_list)
+                return ys
+
+
+            with ProcessPoolExecutor(max_workers=8) as executor:
+                use_pickle = True
+                if not use_pickle:
+                    enc_payload = []
+                    for query, doc_list in query_docs_list:
+                        payload = []
+                        print("Doc encoding for query '{}'".format(query))
+                        for doc_id, text in doc_list:
+                            # future[List[dict]]
+                            runs_future = executor.submit(encoder_unit.encode_long_text, query, text)
+                            payload.append((doc_id, runs_future))
+
+                        for doc_id, runs_future, in payload:
+                            runs = runs_future.result()
+                            enc_payload.append((query, doc_id, runs))
+                        print("... Done")
+
+                    save_to_pickle(enc_payload, "enc_payload")
+                else:
+                    enc_payload = load_from_pickle("enc_payload")
+
+            pk = PromiseKeeper(eval)
+            score_list_future = []
+            for query, doc_id, runs in enc_payload:
+                y_futures = list([MyPromise(x, pk).future() for x in runs])
+                score_list_future.append((query, doc_id, y_futures))
+
+            pk.do_duty()
+
+            per_query = defaultdict(list)
+            for query, doc_id, y_futures in score_list_future:
+                per_query[query].append((doc_id, sum_future(y_futures)))
+
+            result = []
+            for query, _ in query_docs_list:
+                result.append(per_query[query])
+            return result
+
+        use_pickle = True
+
+        if not use_pickle :
+            print("loading collection...")
+            collection = load_trec(trecText_path)
+            idf = Idf(collection.values())
+
+            print("building inverted index...")
+            inv_index = get_inverted_index(collection)
+            tf_index = get_tf_index(inv_index)
+            queries = list(load_queries())
+
+            save_data = (collection, idf, inv_index, tf_index, queries)
+            save_to_pickle(save_data, "trecTask_all_info")
+        else:
+            collection, idf, inv_index, tf_index, queries = load_from_pickle("trecTask_all_info")
+
+        def bm25_run():
+            # query with BM25
+            # rescore
+            # compare score
+            target_queries = queries[300:350]
+            result = []
+            for q in target_queries:
+                score = Counter()
+                for q_term in q.split():
+                    if q_term in tf_index:
+                        for doc_id, tf in tf_index[q_term].items():
+                            score[doc_id] += tf * idf[q_term]
+
+                top_docs = list(score.most_common(100))
+                result.append((q, top_docs))
+            return result
+
+        print("runing bm25...")
+        bm25_result_w_query = bm25_run()
+        def compare_bm25():
+            print("compare bm25")
+            pay_load = []
+            for q, top_docs in bm25_result_w_query:
+                docs = list([(doc_id, collection[doc_id]) for doc_id in left(top_docs)])
+                pay_load.append((q, docs))
+
+            bm25_result = right(bm25_result_w_query)
+            common_sizes = defaultdict(list)
+            for query_idx, q_result in enumerate(get_score(pay_load)):
+                print("bm25 length :", len(bm25_result[query_idx]))
+                print("nn length :", len(q_result))
+                assert len(q_result) == len(bm25_result[query_idx])
+                q_result = list(q_result)
+                q_result.sort(key=lambda x:x[1], reverse=True)
+
+                for k in [10,30,50]:
+                    topk_nn = set(left(q_result[:k]))
+                    topk_bm25 = set(left(bm25_result[query_idx][:k]))
+                    common_in_k = len(topk_nn.intersection(topk_bm25))
+                    common_sizes[k].append(common_in_k)
+            for k in common_sizes:
+                print("Common at {} : {}".format(k, average(common_sizes[k])))
+
+
+
+        def valid_fn():
+            compare_bm25()
+            loss_list = []
+            for batch in dev_batches:
+                loss_val, summary, = self.sess.run([task.loss, self.merged,],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+
+                self.test_writer.add_summary(summary, self.g_step)
+            self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
+
+
+        def train_fn(batch, step_i):
+            # normal train
+            loss_val, summary, _= self.sess.run([task.loss, self.merged, train_op],
+                                               feed_dict=batch2feed_dict(batch)
+                                               )
+            self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
+
+            self.g_step += 1
+            return loss_val, 0
+
+        def batch2feed_dict(batch):
+            x0, x1, x2, y = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        def save_fn():
+            self.save_model(exp_config.name, 100)
+
+        batch_size = self.hparam.batch_size
+        valid_freq = 25
+        last_save = time.time()
+        max_step = 1000 * 1000 * 1000
+        for step_i in range(max_step):
+            if step_i % valid_freq == 0:
+                valid_fn()
+
+            if save_fn is not None:
+                if time.time() - last_save > self.save_interval:
+                    save_fn()
+                    last_save = time.time()
+
+            batches = get_batches_ex(data_loader.get_train_data(batch_size), batch_size, 4)
+
+            train_fn(batches[0], step_i)
+            self.g_step += 1
+

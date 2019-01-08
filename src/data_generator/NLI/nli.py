@@ -1,31 +1,16 @@
 from data_generator.text_encoder import SubwordTextEncoder, TokenTextEncoder, CLS_ID, SEP_ID, EOS_ID
-from data_generator.tokenizer_b import FullTokenizerWarpper
+from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
 import tensorflow as tf
 import six
 import os
 import csv
 from path import data_path
 from cache import *
+from evaluation import *
 num_classes = 3
 
 corpus_dir = os.path.join(data_path, "nli")
 
-
-def _truncate_seq_pair(tokens_a, tokens_b, max_length):
-  """Truncates a sequence pair in place to the maximum length."""
-
-  # This is a simple heuristic which will always truncate the longer sequence
-  # one token at a time. This makes more sense than truncating an equal percent
-  # of tokens from each, since if one sequence is very short then each token
-  # that's truncated likely contains more information than a longer sequence.
-  while True:
-    total_length = len(tokens_a) + len(tokens_b)
-    if total_length <= max_length:
-      break
-    if len(tokens_a) > len(tokens_b):
-      tokens_a.pop()
-    else:
-      tokens_b.pop()
 
 class DataLoader:
     def __init__(self, max_sequence, vocab_filename, using_alt_tokenizer= False):
@@ -49,6 +34,8 @@ class DataLoader:
             self.sep_char = "#"
             self.encoder = FullTokenizerWarpper(voca_path)
 
+        self.dev_explain = None
+
 
     def get_train_data(self):
         if self.train_data is None:
@@ -61,14 +48,17 @@ class DataLoader:
         return self.dev_data
 
     def get_dev_explain(self):
-        explain_data = load_mnli_explain()
+        if self.dev_explain is None:
+            explain_data = load_mnli_explain()
 
-        def entry2inst(raw_entry):
-            entry = self.encode(raw_entry['p'], raw_entry['h'])
-            return entry["input_ids"], entry["input_mask"], entry["segment_ids"]
+            def entry2inst(raw_entry):
+                entry = self.encode(raw_entry['p'], raw_entry['h'])
+                return entry["input_ids"], entry["input_mask"], entry["segment_ids"]
 
-        encoded_data = list([entry2inst(entry) for entry in explain_data])
-        return encoded_data, explain_data
+            encoded_data = list([entry2inst(entry) for entry in explain_data])
+            self.dev_explain = encoded_data, explain_data
+
+        return self.dev_explain
 
     def convert_index(self, raw_sentence, subtoken_ids, target_idx):
         if self.lower_case:
@@ -308,3 +298,34 @@ def load_mnli_explain():
         })
     save_to_pickle(data, "mnli_explain")
     return data
+
+
+
+def eval_explain(conf_score, data_loader):
+    enc_explain_dev, explain_dev = data_loader.get_dev_explain()
+
+    pred_list = []
+    gold_list = []
+    for idx, entry in enumerate(explain_dev):
+        conf_p, conf_h = data_loader.split_p_h(conf_score[idx], enc_explain_dev[idx])
+
+        input_ids = enc_explain_dev[idx][0]
+        p, h = data_loader.split_p_h(input_ids, enc_explain_dev[idx])
+
+        p_explain = []
+        for i in top_k_idx(conf_p, 10):
+            v_i = data_loader.convert_index(entry['p'], p, i)
+            score = conf_p[i]
+            p_explain.append((score, v_i))
+        h_explain = []
+        for i in top_k_idx(conf_h, 10):
+            v_i = data_loader.convert_index(entry['h'], h, i)
+            score = conf_h[i]
+            h_explain.append((score, v_i))
+
+        pred_list.append((p_explain, h_explain))
+        gold_list.append((entry['p_explain'], entry['h_explain']))
+
+    p_at_1 = p_at_k_list(pred_list, gold_list, 1)
+    MAP_score = MAP(pred_list, gold_list)
+    return p_at_1, MAP_score

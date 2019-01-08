@@ -11,3 +11,12 @@ output_path = os.path.join(project_root, 'output')
 log_path = os.path.join(project_root, 'common.log')
 
 model_path = os.path.join(output_path, 'model')
+
+
+prediction_dir = os.path.join(output_path, "prediction")
+
+
+def open_pred_output(name):
+    path = os.path.join(prediction_dir, name)
+    fout = open(path, "w")
+    return fout

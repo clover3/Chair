@@ -1,4 +1,8 @@
 from misc_lib import *
+import numpy as np
+
+def top_k_idx(arr, k):
+    return np.flip(np.argsort(arr))[:k]
 
 
 def p_at_k_list(explains, golds, k):
@@ -47,3 +51,5 @@ def MAP(explains, golds):
             s2 = AP(pred_h, gold_h)
             score_list_h.append(s2)
     return average(score_list_p + score_list_h)
+
+
