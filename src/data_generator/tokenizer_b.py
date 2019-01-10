@@ -22,6 +22,7 @@ import collections
 import unicodedata
 import six
 import tensorflow as tf
+from data_generator.text_encoder import CLS_ID, SEP_ID, EOS_ID
 
 
 def convert_to_unicode(text):
@@ -373,3 +374,96 @@ def _is_punctuation(char):
   if cat.startswith("P"):
     return True
   return False
+
+
+class EncoderUnit:
+    def __init__(self, max_sequence, voca_path):
+        self.encoder = FullTokenizerWarpper(voca_path)
+        self.max_seq = max_sequence
+
+    def encode_long_text(self, query, text):
+        tokens_a = self.encoder.encode(query)
+        tokens_b = self.encoder.encode(text)
+        max_b_len = self.max_seq -(len(tokens_a) + 3)
+        idx  = 0
+        result = []
+        while idx < len(tokens_b):
+            sub_tokens_b = tokens_b[idx:idx+max_b_len]
+            result.append(self.encode_inner(tokens_a, sub_tokens_b))
+            idx += max_b_len
+        return result
+
+    def encode_long_text_single(self, text):
+        tokens_a = self.encoder.encode(text)
+        max_a_len = self.max_seq - 2
+        idx  = 0
+        result = []
+        while idx < len(tokens_a):
+            sub_tokens_a = tokens_a[idx:idx+max_a_len]
+            result.append(self.encode_inner(sub_tokens_a, []))
+            idx += max_a_len
+        return result
+
+    def encode_inner(self, tokens_a, tokens_b):
+        # Modifies `tokens_a` and `tokens_b` in place so that the total
+        # length is less than the specified length.
+        # Account for [CLS], [SEP], [SEP] with "- 3"
+        _truncate_seq_pair(tokens_a, tokens_b, self.max_seq - 3)
+
+        # The convention in BERT is:
+        # (a) For sequence pairs:
+        #  tokens:   [CLS] is this jack ##son ##ville ? [SEP] no it is not . [SEP]
+        #  type_ids: 0     0  0    0    0     0       0 0     1  1  1  1   1 1
+        # (b) For single sequences:
+        #  tokens:   [CLS] the dog is hairy . [SEP]
+        #  type_ids: 0     0   0   0  0     0 0
+        #
+        # Where "type_ids" are used to indicate whether this is the first
+        # sequence or the second sequence. The embedding vectors for `type=0` and
+        # `type=1` were learned during pre-training and are added to the wordpiece
+        # embedding vector (and position vector). This is not *strictly* necessary
+        # since the [SEP] token unambiguously separates the sequences, but it makes
+        # it easier for the model to learn the concept of sequences.
+        #
+        # For classification tasks, the first vector (corresponding to [CLS]) is
+        # used as as the "sentence vector". Note that this only makes sense because
+        # the entire model is fine-tuned.
+        tokens = []
+        segment_ids = []
+        tokens.append(CLS_ID)
+        segment_ids.append(0)
+        for token in tokens_a:
+            tokens.append(token)
+            segment_ids.append(0)
+        tokens.append(SEP_ID)
+        segment_ids.append(0)
+
+        if tokens_b:
+            for token in tokens_b:
+                tokens.append(token)
+                segment_ids.append(1)
+            tokens.append(SEP_ID)
+            segment_ids.append(1)
+
+        input_ids = tokens
+
+        # The mask has 1 for real tokens and 0 for padding tokens. Only real
+        # tokens are attended to.
+        input_mask = [1] * len(input_ids)
+
+        # Zero-pad up to the sequence length.
+        while len(input_ids) < self.max_seq:
+            input_ids.append(0)
+            input_mask.append(0)
+            segment_ids.append(0)
+
+        assert len(input_ids) == self.max_seq
+        assert len(input_mask) == self.max_seq
+        assert len(segment_ids) == self.max_seq
+
+        return {
+            "input_ids": input_ids,
+            "input_mask":input_mask,
+            "segment_ids": segment_ids
+        }
+

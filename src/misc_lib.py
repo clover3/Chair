@@ -1,10 +1,15 @@
 import time
 import os
 import shutil
+from time import gmtime, strftime
 
 def average(l):
     return sum(l) / len(l)
 
+
+def tprint(text):
+    tim_str = strftime("%H:%M:%S", gmtime())
+    print("{} : {}".format(tim_str, text))
 
 class TimeEstimator:
     def __init__(self, total_repeat, name = "", sample_size = 10):

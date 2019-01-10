@@ -1,20 +1,15 @@
-from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
+from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair, EncoderUnit
 from data_generator.text_encoder import SubwordTextEncoder, TokenTextEncoder, CLS_ID, SEP_ID, EOS_ID
-import xml.etree.ElementTree as ET
 
 import tensorflow as tf
 import csv
-import math
 from path import data_path
-from collections import Counter, defaultdict
-from cache import *
 from evaluation import *
-from data_generator.data_parser.trec import load_trec
 num_classes = 3
 import random
+from data_generator.data_parser.trec import *
 
 corpus_dir = os.path.join(data_path, "adhoc")
-trecText_path = os.path.join(corpus_dir, "trecText")
 
 
 def gen_trainable_iterator(n_per_query):
@@ -33,86 +28,6 @@ def gen_trainable_iterator(n_per_query):
                 yield query, x1, x2
             else:
                 yield query, x2, x1
-
-class EncoderUnit:
-    def __init__(self, max_sequence, voca_path):
-        self.encoder = FullTokenizerWarpper(voca_path)
-        self.max_seq = max_sequence
-
-    def encode_long_text(self, query, text):
-        tokens_a = self.encoder.encode(query)
-        tokens_b = self.encoder.encode(text)
-        max_b_len = self.max_seq -(len(tokens_a) + 3)
-        idx  = 0
-        result = []
-        while idx < len(tokens_b):
-            sub_tokens_b = tokens_b[idx:idx+max_b_len]
-            result.append(self.encode_inner(tokens_a, sub_tokens_b))
-            idx += max_b_len
-        return result
-
-    def encode_inner(self, tokens_a, tokens_b):
-        # Modifies `tokens_a` and `tokens_b` in place so that the total
-        # length is less than the specified length.
-        # Account for [CLS], [SEP], [SEP] with "- 3"
-        _truncate_seq_pair(tokens_a, tokens_b, self.max_seq - 3)
-
-        # The convention in BERT is:
-        # (a) For sequence pairs:
-        #  tokens:   [CLS] is this jack ##son ##ville ? [SEP] no it is not . [SEP]
-        #  type_ids: 0     0  0    0    0     0       0 0     1  1  1  1   1 1
-        # (b) For single sequences:
-        #  tokens:   [CLS] the dog is hairy . [SEP]
-        #  type_ids: 0     0   0   0  0     0 0
-        #
-        # Where "type_ids" are used to indicate whether this is the first
-        # sequence or the second sequence. The embedding vectors for `type=0` and
-        # `type=1` were learned during pre-training and are added to the wordpiece
-        # embedding vector (and position vector). This is not *strictly* necessary
-        # since the [SEP] token unambiguously separates the sequences, but it makes
-        # it easier for the model to learn the concept of sequences.
-        #
-        # For classification tasks, the first vector (corresponding to [CLS]) is
-        # used as as the "sentence vector". Note that this only makes sense because
-        # the entire model is fine-tuned.
-        tokens = []
-        segment_ids = []
-        tokens.append(CLS_ID)
-        segment_ids.append(0)
-        for token in tokens_a:
-            tokens.append(token)
-            segment_ids.append(0)
-        tokens.append(SEP_ID)
-        segment_ids.append(0)
-
-        if tokens_b:
-            for token in tokens_b:
-                tokens.append(token)
-                segment_ids.append(1)
-            tokens.append(SEP_ID)
-            segment_ids.append(1)
-
-        input_ids = tokens
-
-        # The mask has 1 for real tokens and 0 for padding tokens. Only real
-        # tokens are attended to.
-        input_mask = [1] * len(input_ids)
-
-        # Zero-pad up to the sequence length.
-        while len(input_ids) < self.max_seq:
-            input_ids.append(0)
-            input_mask.append(0)
-            segment_ids.append(0)
-
-        assert len(input_ids) == self.max_seq
-        assert len(input_mask) == self.max_seq
-        assert len(segment_ids) == self.max_seq
-
-        return {
-            "input_ids": input_ids,
-            "input_mask":input_mask,
-            "segment_ids": segment_ids
-        }
 
 class DataLoader:
     def __init__(self, max_sequence, vocab_filename, voca_size):
@@ -167,67 +82,13 @@ class DataLoader:
         return self.encoder_unit.encode_inner(tokens_a, tokens_b)
 
 
-def load_trec_queries():
-    query_path = os.path.join(corpus_dir, "test_query")
 
-    buffer = open(query_path, "r").read()
-    buffer = "<root>" + buffer + "</root>"
-    root = ET.fromstring(buffer)
-
-    for top in root:
-        query_id = top[0].text
-        query = top[1].text
-        yield query_id, query
-
-
-def load_queries():
+def load_marco_queries():
     query_path = os.path.join(corpus_dir, "queries.train.tsv")
     f = open(query_path, "r")
     for row in csv.reader(f, delimiter="\t"):
         yield row[1]
 
-
-def get_inverted_index(collection):
-    result = defaultdict(list)
-    for doc_id, doc in collection.items():
-        for word_pos, word in enumerate(doc.split()):
-            result[word].append((doc_id, word_pos))
-
-    return result
-
-def get_tf_index(inv_index):
-    result = dict()
-    for term, posting_list in inv_index.items():
-        count_list = Counter()
-        for doc_id, word_pos in posting_list:
-            count_list[doc_id] += 1
-        result[term] = count_list
-
-    return result
-
-
-
-class Idf:
-    def __init__(self, docs):
-        self.df = Counter()
-        self.idf = dict()
-        for doc in docs:
-            term_count = Counter()
-            for token in doc.split():
-                term_count[token] = 1
-            for elem, cnt in term_count.items():
-                self.df[elem] += 1
-        N = len(docs)
-
-        for term, df in self.df.items():
-            self.idf[term] = math.log(N/df)
-        self.default_idf = math.log(N/1)
-
-    def __getitem__(self, term):
-        if term in self.idf:
-            return self.idf[term]
-        else:
-            return self.default_idf
 
 def query_judge():
     def flatten_and_get_doc_id(postings_list):
@@ -253,7 +114,7 @@ def query_judge():
 
 
     def sample_debiase(tf_n_span):
-        max_occurence = 5
+        max_occurence = 2
 
         output = {}
         for score, span in tf_n_span:
@@ -265,7 +126,7 @@ def query_judge():
         return output
 
 
-    queries = load_queries()
+    queries = load_marco_queries()
     for query in queries:
         q_terms = query.split()
         postings_list= []
@@ -275,11 +136,13 @@ def query_judge():
                 break # Skip this query
             postings_list.append(postings)
 
-        print("Debug) Query ", query)
-        if not postings_list:
-            continue
 
+        if not postings_list:
+            print("Skip Query :", query)
+            continue
+        print("Query :", query)
         doc_id_list = flatten_and_get_doc_id(postings_list)
+        print("Docs : {}".format(len(doc_id_list)))
 
         spans = []
         if len(doc_id_list) > 1000:
@@ -293,8 +156,10 @@ def query_judge():
                 score = tfidf_span(q_terms, text_span)
                 spans.append((score, text_span))
                 loc_ptr += sample_shift()
-        stats = sample_debiase(spans)
-        yield query, stats
+        score_group = sample_debiase(spans)
+        for score in score_group:
+            print("{} : {}".format(score, len(score_group[score])))
+        yield query, score_group
 
 
 
@@ -303,4 +168,4 @@ def query_judge():
 
 if __name__ == '__main__':
     print("Generator")
-    load_trec_queries()
+    load_mobile_queries()

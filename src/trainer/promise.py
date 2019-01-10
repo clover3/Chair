@@ -37,8 +37,11 @@ def sum_future(futures):
     return sum([f.get() for f in futures])
 
 
-if __name__ == '__main__':
+def max_future(futures):
+    return max([f.get() for f in futures])
 
+
+if __name__ == '__main__':
     def list_fn(l):
         r = []
         for i in l:

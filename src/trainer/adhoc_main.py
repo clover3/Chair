@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
 from task.transformer_est import Transformer, Classification
@@ -19,7 +19,7 @@ def train_adhoc_with_reinforce():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Adhoc_{}".format("A")
+    e_config.name = "Adhoc_{}".format("E")
     e_config.num_epoch = 4
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert']
@@ -39,7 +39,7 @@ def run_adhoc_rank():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Adhoc_{}".format("A")
+    e_config.name = "Adhoc_{}_eval".format("E")
     e_config.num_epoch = 4
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert', 'reg_dense']
@@ -48,8 +48,44 @@ def run_adhoc_rank():
 
     data_loader = ws.DataLoader(hp.seq_max, vocab_filename, vocab_size)
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
-    load_id = ("Adhoc_A", 'model-1700')
+    load_id = ("Adhoc_E", 'model-75')
     e.rank_adhoc(e_config, data_loader, load_id)
+
+
+def run_ql_rank():
+    hp = hyperparams.HPQL()
+
+    e = Experiment(hp)
+
+    e_config = ExperimentConfig()
+    e_config.name = "Adhoc_{}".format("D")
+    e_config.num_epoch = 4
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert', 'cls']
+    vocab_size = 30522
+    vocab_filename = "bert_voca.txt"
+
+    data_loader = ws.DataLoader(hp.seq_max, vocab_filename, vocab_size)
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    e.rank_ql(e_config, data_loader, load_id)
+
+
+def test_ql():
+    hp = hyperparams.HPAdhoc()
+    hp.batch_size = 512
+
+    e = Experiment(hp)
+
+    e_config = ExperimentConfig()
+    e_config.name = "Adhoc_{}".format("C")
+    e_config.num_epoch = 4
+    e_config.load_names = ['bert', 'cls']
+    vocab_size = 30522
+    vocab_filename = "bert_voca.txt"
+
+    data_loader = ws.DataLoader(hp.seq_max, vocab_filename, vocab_size)
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    e.test_ql(e_config, data_loader, load_id)
 
 
 
