@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 
 from task.transformer_est import Transformer, Classification
@@ -21,9 +21,9 @@ def train_mscore_regression():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Contrv_{}".format("B")
+    e_config.name = "Contrv_{}".format("C")
     e_config.num_epoch = 4
-    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.save_interval = 10 * 60  # 10 minutes
     e_config.load_names = ['bert']
     vocab_size = 30522
     vocab_filename = "bert_voca.txt"
@@ -33,6 +33,27 @@ def train_mscore_regression():
     e.train_controversy_classification(e_config, data_loader, load_id)
 
 
+def test_mscore_eval():
+    hp = hyperparams.HPMscore()
+
+    e = Experiment(hp)
+
+    e_config = ExperimentConfig()
+    e_config.name = "Contrv_{}".format("B_eval")
+    e_config.num_epoch = 4
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert', 'reg_dense']
+    vocab_size = 30522
+    vocab_filename = "bert_voca.txt"
+
+    data_loader = mscore.DataLoader(hp.seq_max, vocab_filename, vocab_size)
+    load_id = ("Contrv_B", 'model-3001')
+    #load_id = ("Contrv_B", 'model-6006')
+
+    e.test_controversy_mscore(e_config, data_loader, load_id)
+
+
+
 
 def contrv_pred():
     hp = hyperparams.HPQL()
@@ -40,7 +61,7 @@ def contrv_pred():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Contrv_{}".format("A")
+    e_config.name = "Contrv_{}".format("B")
     e_config.num_epoch = 4
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert', 'cls']

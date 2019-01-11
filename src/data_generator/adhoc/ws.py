@@ -13,11 +13,11 @@ corpus_dir = os.path.join(data_path, "adhoc")
 
 
 def gen_trainable_iterator(n_per_query):
-    doc_sampling = query_judge()
+    doc_sampling = sample_query_eval_tfidf()
 
-    for query, stats in doc_sampling:
+    for query, score_group in doc_sampling:
         candidate = []
-        for score_group, span_list in stats.items():
+        for key_score, span_list in score_group.items():
             for score, span in span_list:
                 candidate.append((score,span))
         for i in range(n_per_query):
@@ -35,7 +35,7 @@ class DataLoader:
         self.dev_data = None
         self.test_data = None
 
-        inst_per_query = 20
+        inst_per_query = 30
         self.generator = gen_trainable_iterator(inst_per_query)
         self.iter = iter(self.generator)
         voca_path = os.path.join(data_path, vocab_filename)
@@ -90,7 +90,7 @@ def load_marco_queries():
         yield row[1]
 
 
-def query_judge():
+def sample_query_eval_tfidf():
     def flatten_and_get_doc_id(postings_list):
         doc_ids = []
         for postings in postings_list:
@@ -147,6 +147,8 @@ def query_judge():
         spans = []
         if len(doc_id_list) > 1000:
             doc_id_list = random.sample(doc_id_list, 1000)
+
+        max_score = 0
         for doc_id in doc_id_list:
             raw_document = collection[doc_id]
             loc_ptr = sample_shift()
@@ -154,8 +156,11 @@ def query_judge():
                 text_span = raw_document[loc_ptr:loc_ptr + window_size]
 
                 score = tfidf_span(q_terms, text_span)
+                max_score = max(score, max_score)
                 spans.append((score, text_span))
                 loc_ptr += sample_shift()
+        if max_score < 20:
+            continue
         score_group = sample_debiase(spans)
         for score in score_group:
             print("{} : {}".format(score, len(score_group[score])))

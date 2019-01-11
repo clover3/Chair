@@ -63,19 +63,40 @@ class DataLoader:
         self.encoder_unit = EncoderUnit(max_sequence, voca_path)
         self.client = TextReaderClient()
 
+        class UniformSampler:
+            def __init__(self, topics):
+                self.sample_space = topics
+
+            def sample(self):
+                return random.sample(self.sample_space, 2)
+
+
         class BiasSampler:
             def __init__(self, topics, score_dict):
-                self.count = Counter()
                 self.sample_space = []
+                self.sample_group = dict()
+
+                def score2key(score):
+                    return int(math.log(score+1, 1.1))
+
                 for topic in topics:
-                    score = score_dict[topic]
-                    if self.count[score] < 3:
-                        self.sample_space.append(topic)
-                        self.count[score] += 1
+                    key = score2key(score_dict[topic])
+                    if key not in self.sample_group:
+                        self.sample_group[key] = []
+                    self.sample_group[key].append(topic)
+
+                self.sample_space = list(self.sample_group.keys())
+
 
             # Sample from all group
             def sample(self):
-                return random.sample(self.sample_space, 2)
+                def pick1(l):
+                    return l[random.randrange(len(l))]
+
+                g1, g2 = random.sample(self.sample_space, 2)
+                t1 = pick1(self.sample_group[g1])
+                t2 = pick1(self.sample_group[g2])
+                return t1, t2
 
         self.train_sampler = BiasSampler(self.train_topics, self.mscore_dict)
         self.dev_sampler = BiasSampler(self.dev_topics, self.mscore_dict)

@@ -404,6 +404,13 @@ class EncoderUnit:
             idx += max_a_len
         return result
 
+
+    def encode_text_single(self, text):
+        tokens_a = self.encoder.encode(text)
+        max_a_len = self.max_seq - 2
+        sub_tokens_a = tokens_a[:max_a_len]
+        return self.encode_inner(sub_tokens_a, [])
+
     def encode_inner(self, tokens_a, tokens_b):
         # Modifies `tokens_a` and `tokens_b` in place so that the total
         # length is less than the specified length.

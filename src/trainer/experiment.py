@@ -37,7 +37,7 @@ import pickle
 import threading
 from models.baselines import svm
 from models.transformer.tranformer_nli import transformer_nli
-from models.transformer.transformer_controversy import transformer_controversy
+from models.transformer.transformer_controversy import transformer_controversy, transformer_controversy_fixed_encoding
 from models.transformer.transformer_adhoc import transformer_adhoc
 from models.transformer.transformer_lm import transformer_ql
 
@@ -78,6 +78,33 @@ class Experiment:
         train_op = optimizer.minimize(loss, global_step=self.global_step)
         return train_op
 
+
+    def get_train_op_with_score(self, loss, scope, name='Adam'):
+        self.global_step = tf.Variable(0, name='global_step', trainable=False)
+        tvars = tf.trainable_variables()
+        g_vars = ([var for var in tvars if var.name.split("/")[0] in scope])
+        print("Trainable variables")
+        for v in g_vars:
+            print(v)
+
+        optimizer = tf.train.AdamOptimizer(learning_rate=self.hparam.lr, beta1=0.9, beta2=0.98, epsilon=1e-8,
+                                           name=name)
+        train_op = optimizer.minimize(loss, global_step=self.global_step, var_list=g_vars)
+        return train_op
+
+
+    def get_train_op_with_black_list(self, loss, exclude_scope, name='Adam'):
+        self.global_step = tf.Variable(0, name='global_step', trainable=False)
+        tvars = tf.trainable_variables()
+        g_vars = ([var for var in tvars if not var.name.startswith(exclude_scope)])
+        print("Trainable variables")
+        for v in g_vars:
+            print(v)
+
+        optimizer = tf.train.AdamOptimizer(learning_rate=self.hparam.lr, beta1=0.9, beta2=0.98, epsilon=1e-8,
+                                           name=name)
+        train_op = optimizer.minimize(loss, global_step=self.global_step, var_list=g_vars)
+        return train_op
 
     def temp_saver(self):
         self.save_model("interval")
@@ -1765,7 +1792,7 @@ class Experiment:
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
         self.merged = tf.summary.merge_all()
-        rerank_size = 200
+        rerank_size = 1000
         tprint("Loading Model...")
         if preload_id is not None:
             name = preload_id[0]
@@ -1822,7 +1849,6 @@ class Experiment:
                         for doc_id, runs_future, in payload:
                             runs = runs_future.result()
                             enc_payload.append((query, doc_id, runs))
-                        print("... Done")
 
                     save_to_pickle(enc_payload, "enc_payload")
                 else:
@@ -1868,6 +1894,8 @@ class Experiment:
         #queries = list(load_mobile_queries())
         unique_queries = list(set(right(queries)))
         tprint("{} unique queries".format(len(unique_queries)))
+        for query in unique_queries:
+            print(query)
         bm25_result = bm25_run(unique_queries)
 
         def rerank():
@@ -1897,17 +1925,18 @@ class Experiment:
         rerank()
 
     def train_adhoc(self, exp_config, data_loader, preload_id):
-        print("train_adhoc")
+        tprint("train_adhoc")
         task = transformer_adhoc(self.hparam, data_loader.voca_size)
         with tf.variable_scope("optimizer"):
             train_op = self.get_train_op(task.loss)
-
+        self.log.name = exp_config.name
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
         self.merged = tf.summary.merge_all()
         self.setup_summary_writer(exp_config.name)
+        batch_size = self.hparam.batch_size
 
-        print("Loading Model...")
+        tprint("Loading Model...")
         if preload_id is not None:
             name = preload_id[0]
             id = preload_id[1]
@@ -1916,11 +1945,29 @@ class Experiment:
             else:
                 self.load_model_bert(name, id)
 
-        print("get_dev_data...")
+        tprint("get_dev_data...")
         dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
 
         encoder_unit = data_loader.encoder_unit
-        def get_score(query_docs_list):
+
+        def enc_query_doc_to_payload(query_docs_list):
+            with ProcessPoolExecutor(max_workers=8) as executor:
+                enc_payload = []
+                for query, doc_list in query_docs_list:
+                    payload = []
+                    print("Doc encoding for query '{}'".format(query))
+                    for doc_id, text in doc_list:
+                        # future[List[dict]]
+                        runs_future = executor.submit(encoder_unit.encode_long_text, query, text)
+                        payload.append((doc_id, runs_future))
+
+                    for doc_id, runs_future, in payload:
+                        runs = runs_future.result()
+                        enc_payload.append((query, doc_id, runs))
+                    print("... Done")
+            return enc_payload
+
+        def get_score_from_enc_payload(enc_payload, query_docs_list):
             def eval(runs):
                 data = []
                 for entry in runs:
@@ -1935,27 +1982,6 @@ class Experiment:
                 ys = np.concatenate(y_list)
                 return ys
 
-
-            with ProcessPoolExecutor(max_workers=8) as executor:
-                use_pickle = False
-                if not use_pickle:
-                    enc_payload = []
-                    for query, doc_list in query_docs_list:
-                        payload = []
-                        print("Doc encoding for query '{}'".format(query))
-                        for doc_id, text in doc_list:
-                            # future[List[dict]]
-                            runs_future = executor.submit(encoder_unit.encode_long_text, query, text)
-                            payload.append((doc_id, runs_future))
-
-                        for doc_id, runs_future, in payload:
-                            runs = runs_future.result()
-                            enc_payload.append((query, doc_id, runs))
-                        print("... Done")
-
-                    save_to_pickle(enc_payload, "enc_payload")
-                else:
-                    enc_payload = load_from_pickle("enc_payload")
 
             pk = PromiseKeeper(eval)
             score_list_future = []
@@ -1974,11 +2000,10 @@ class Experiment:
                 result.append(per_query[query])
             return result
 
-        collection, idf, inv_index, tf_index, queries = load_trec_data_proc()
+        collection, idf, inv_index, tf_index, _ = load_trec_data_proc()
+        queries = list(load_marco_queries())
 
         def bm25_run():
-            # query with BM25
-            # rescore
             # compare score
             target_queries = queries[300:350]
             result = []
@@ -1994,20 +2019,28 @@ class Experiment:
                 result.append((q, top_docs))
             return result
 
-        print("runing bm25...")
+        tprint("runing bm25...")
         bm25_result_w_query = bm25_run()
-        def compare_bm25():
-            print("compare bm25")
-            pay_load = []
+
+        def get_test_candidate_by_bm25():
+            query_docs_list = []
             for q, top_docs in bm25_result_w_query:
                 docs = list([(doc_id, collection[doc_id]) for doc_id in left(top_docs)])
-                pay_load.append((q, docs))
+                query_docs_list.append((q, docs))
+            return query_docs_list
+
+        query_docs_list = get_test_candidate_by_bm25()
+        enc_query_doc = None
+        def compare_bm25():
+            tprint("compare bm25")
+            nonlocal enc_query_doc
+            if enc_query_doc is None:
+                enc_query_doc = enc_query_doc_to_payload(query_docs_list)
 
             bm25_result = right(bm25_result_w_query)
+            score_result = get_score_from_enc_payload(enc_query_doc, query_docs_list)
             common_sizes = defaultdict(list)
-            for query_idx, q_result in enumerate(get_score(pay_load)):
-                print("bm25 length :", len(bm25_result[query_idx]))
-                print("nn length :", len(q_result))
+            for query_idx, q_result in enumerate(score_result):
                 assert len(q_result) == len(bm25_result[query_idx])
                 q_result = list(q_result)
                 q_result.sort(key=lambda x:x[1], reverse=True)
@@ -2023,7 +2056,7 @@ class Experiment:
 
 
         def valid_fn():
-            compare_bm25()
+            #compare_bm25()
             loss_list = []
             for batch in dev_batches:
                 loss_val, summary, = self.sess.run([task.loss, self.merged,],
@@ -2041,7 +2074,7 @@ class Experiment:
                                                feed_dict=batch2feed_dict(batch)
                                                )
             self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
-
+            self.train_writer.add_summary(summary, self.g_step)
             self.g_step += 1
             return loss_val, 0
 
@@ -2058,7 +2091,17 @@ class Experiment:
         def save_fn():
             self.save_model(exp_config.name, 100)
 
-        batch_size = self.hparam.batch_size
+
+
+        def generate_train_batch():
+            working_unit = 2
+            data_size = batch_size * working_unit
+            batches = get_batches_ex(data_loader.get_train_data(data_size), batch_size, 4)
+            return batches
+
+
+        queue_feader = QueueFeader(300, generate_train_batch, True)
+
         valid_freq = 25
         last_save = time.time()
         max_step = 1000 * 1000 * 1000
@@ -2071,9 +2114,8 @@ class Experiment:
                     save_fn()
                     last_save = time.time()
 
-            batches = get_batches_ex(data_loader.get_train_data(batch_size), batch_size, 4)
-
-            train_fn(batches[0], step_i)
+            batch = queue_feader.get()
+            train_fn(batch, step_i)
             self.g_step += 1
 
 
@@ -2309,16 +2351,25 @@ class Experiment:
         rerank()
 
 
-    def train_controversy_classification(self,exp_config, data_loader, preload_id):
-        task = transformer_controversy(self.hparam, data_loader.voca_size)
-        with tf.variable_scope("optimizer"):
-            train_op = self.get_train_op(task.loss)
+    def train_controversy_classification(self, exp_config, data_loader, preload_id):
+
+        if exp_config.name.startswith("Contrv_B"):
+            task = transformer_controversy(self.hparam, data_loader.voca_size)
+            with tf.variable_scope("optimizer"):
+                train_op = self.get_train_op(task.loss)
+        elif exp_config.name.startswith("Contrv_C"):
+            task = transformer_controversy(self.hparam, data_loader.voca_size)
+            with tf.variable_scope("optimizer"):
+                train_op = self.get_train_op_with_black_list(task.loss, 'bert/embeddings/word_embeddings')
+        else:
+            raise Exception("Undefined Model")
 
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
         self.merged = tf.summary.merge_all()
         self.setup_summary_writer(exp_config.name)
         batch_size = self.hparam.batch_size
+        self.log.name = exp_config.name
 
         print("Loading Model...")
         if preload_id is not None:
@@ -2372,6 +2423,7 @@ class Experiment:
                                           feed_dict=batch2feed_dict(batch)
                                           )
 
+                self.test_writer.add_summary(summary, self.g_step)
 
                 loss_list.append(loss_val)
             self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
@@ -2385,14 +2437,156 @@ class Experiment:
                 valid_fn()
 
             if save_fn is not None:
-                if time.time() - last_save > self.save_interval:
+                if time.time() - last_save > exp_config.save_interval:
                     save_fn()
                     last_save = time.time()
+                    if exp_config.save_interval < 120 * 60:
+                        exp_config.save_interval += 60 * 10
 
             batch = queue_feader.get()
 
             train_fn(batch, step_i)
             self.g_step += 1
+
+
+
+    def test_controversy_mscore(self,exp_config, data_loader, preload_id):
+        task = transformer_controversy(self.hparam, data_loader.voca_size)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        batch_size = self.hparam.batch_size
+
+        print("Loading Model...")
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            if exp_config.load_names:
+                self.load_model_white(name, id, exp_config.load_names)
+            else:
+                self.load_model_bert(name, id)
+
+        labels = controversy.load_label()
+        docs = controversy.load_docs()
+
+        docs_dict = dict(docs)
+
+        prior_cont = 0.35
+        encoder_unit = data_loader.encoder_unit
+
+        def get_score(docs):
+            def eval(runs):
+                tprint("Packing batches (batch_size={})".format(batch_size))
+                batches = get_batches_ex(runs, batch_size, 3)
+
+                tprint("Runing neural network prediction (#batch={})".format(len(batches)))
+                y_list = []
+                ticker = TimeEstimator(len(batches), sample_size=20)
+                for batch in batches:
+                    x0, x1, x2, = batch
+                    score, = self.sess.run([task.logits, ],
+                                           feed_dict={
+                                               task.x_list[0]: x0,
+                                               task.x_list[1]: x1,
+                                               task.x_list[2]: x2,
+                                           })
+                    score = score.reshape([-1])
+                    y_list.append(score)
+                    ticker.tick()
+                ys = np.concatenate(y_list)
+                return ys
+
+
+            with ProcessPoolExecutor(max_workers=8) as executor:
+                encoded_docs_f = []
+                for doc_id, text in docs:
+                    # future[List[dict]]
+                    runs_future = executor.submit(encoder_unit.encode_long_text_single, text)
+                    encoded_docs_f.append(runs_future)
+
+                encoded_docs = list([f.result() for f in encoded_docs_f])
+                tprint("... Done")
+
+
+            tprint("Scheduling NN runs")
+            pk = PromiseKeeper(eval)
+            score_list_future = []
+
+            for doc_idx in range(len(docs)):
+                y_futures = []
+                doc_id = docs[doc_idx][0]
+                for encoded in encoded_docs[doc_idx]:
+                    run = (encoded['input_ids'],
+                         encoded['input_mask'],
+                         encoded['segment_ids'],
+                         )
+                    y_futures.append(MyPromise(run, pk).future())
+
+                score_list_future.append((doc_id, y_futures))
+
+            pk.do_duty()
+            tprint("Completed GPU computations")
+            result = []
+            for doc_id, y_futures in score_list_future:
+                result.append((doc_id, max_future(y_futures)))
+
+            return result
+
+
+        scores = get_score(docs)
+
+
+        def compute_auc(y_scores, y_true):
+            assert len(y_scores) == len(y_true)
+            print(y_scores)
+            p, r, thresholds = roc_curve(y_true, y_scores)
+            return metrics.auc(p, r)
+
+        golds = list([labels[d] for d, _ in docs])
+        auc = compute_auc(right(scores), golds)
+
+        scores.sort(key=lambda x:x[1], reverse=True)
+
+        cut_idx = int(len(scores) * prior_cont)
+        cont_docs = scores[:cut_idx]
+
+
+        tp = 0
+        fp = 0
+        tn = 0
+        fn = 0
+        for doc_id, score in cont_docs:
+            text = docs_dict[doc_id]
+            print("Cont : {}".format(text[:100]))
+            print("Gold = {0} score = {1:.2f}".format(labels[doc_id], score))
+            if labels[doc_id] == 1:
+                tp += 1
+            else:
+                fp += 1
+
+        for doc_id, score in scores[cut_idx:]:
+            text = docs_dict[doc_id]
+            print("NotCont : {}".format(text[:100]))
+            print("Gold = {0} score = {1:.2f}".format(labels[doc_id], score))
+
+
+            if labels[doc_id] == 0:
+                tn += 1
+            else:
+                fn += 1
+
+        prec = tp / (tp+fp)
+        recall = tp / (tp + fn)
+        acc = (tp+tn) / (tp+fp+tn+fn)
+        f1 = 2*(prec*recall) / (prec+recall)
+        print("-------")
+        print("AUC\t", auc)
+        print("prec\t", prec)
+        print("recall\t", recall)
+        print("F1\t", f1)
+        print("acc\t", acc)
 
 
 

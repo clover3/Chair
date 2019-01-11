@@ -39,7 +39,7 @@ def run_adhoc_rank():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Adhoc_{}_eval".format("E")
+    e_config.name = "Adhoc_{}_eval2".format("E")
     e_config.num_epoch = 4
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert', 'reg_dense']
@@ -48,7 +48,7 @@ def run_adhoc_rank():
 
     data_loader = ws.DataLoader(hp.seq_max, vocab_filename, vocab_size)
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
-    load_id = ("Adhoc_E", 'model-75')
+    load_id = ("Adhoc_E", 'model-58338')
     e.rank_adhoc(e_config, data_loader, load_id)
 
 
