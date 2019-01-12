@@ -7,6 +7,7 @@ import math
 import os
 from cache import *
 from misc_lib import TimeEstimator
+from misc_lib import tprint
 
 corpus_dir = os.path.join(data_path, "adhoc")
 trecText_path = os.path.join(corpus_dir, "trecText")
@@ -112,6 +113,65 @@ class TrecParser2:
                 self.state = STATE_DOC
 
 
+class TrecParser3:
+    def __init__(self, end_doc):
+        self.lastEntry = None
+        self.text_arr = []
+        self.end_doc = end_doc
+        self.state = 2
+        self.n_meta = 0
+        self.line = 0
+
+    def feed(self, text):
+        STATE_ROOT = 2
+        STATE_DOC = 0
+        STATE_TEXT = 1
+        self.line += 1
+        if self.state == STATE_ROOT:
+            tag = text.strip()
+            if tag == "<DOC>":
+                self.state = STATE_DOC
+                self.lastEntry = {}
+                self.lastEntry["TEXT"] = ""
+            elif len(tag) == 0:
+                None
+
+        elif self.state == STATE_DOC:
+            tag = text.strip()
+            if tag.startswith("<DOCNO>"):
+                st = len("<DOCNO>")
+                ed = len(tag) - len("</DOCNO>")
+                assert tag[ed:] == "</DOCNO>"
+                self.lastEntry["DOCNO"] = tag[st:ed]
+            elif tag == "<TEXT>":
+                self.state = STATE_TEXT
+            elif tag == "</DOC>":
+                self.state = STATE_ROOT
+                self.lastEntry["TEXT"] = "".join(self.text_arr)
+                self.end_doc(self.lastEntry)
+                text_len = len(self.lastEntry["TEXT"])
+                if self.n_meta > 100 and text_len < 10:
+                    print("n_meta = {}".format(self.n_meta))
+                    print("text len= {}".format(text_len))
+                    print(self.line)
+                    print("-------")
+                self.n_meta = 0
+                self.text_arr = []
+            else:
+                self.n_meta += 1
+        elif self.state == STATE_TEXT:
+            end_tag = "</TEXT>\n"
+            if text.endswith(end_tag):
+                text = text[:-len(end_tag)]
+                #self.lastEntry["TEXT"] += text
+                self.text_arr.append(text)
+                self.state = STATE_DOC
+            else:
+                self.text_arr.append(text)
+                #self.lastEntry["TEXT"] += text
+
+
+
 def load_mobile_queries():
     query_path = os.path.join(corpus_dir, "test_query")
 
@@ -197,7 +257,10 @@ def load_trec(path, dialect = 0):
         parser = TrecParser(callback)
     elif dialect == 1:
         parser = TrecParser2(callback)
-    with open(path, encoding='utf-8') as f:
+    elif dialect == 2:
+        parser = TrecParser3(callback)
+
+    with open(path, encoding='utf-8', errors='ignore') as f:
         for buffer in f:
             try:
                 parser.feed(buffer)
@@ -213,11 +276,18 @@ def load_trec(path, dialect = 0):
     # if you can provide a file-like object it's as simple as
 
 
+def load_robust(docs_dir):
+    collections = dict()
+    for (dirpath, dirnames, filenames) in os.walk(docs_dir):
+        for name in filenames:
+            filepath = os.path.join(dirpath, name)
+            tprint(filepath)
+            collections.update(load_trec(filepath, 2))
+            break
+    return collections
 
+robust_path = "/mnt/scratch/youngwookim/data/robust04"
 
 if __name__ == '__main__':
+    load_robust("/mnt/scratch/youngwookim/data/robust04")
 
-    corpus = load_trec("../../../data/adhoc/trecText")
-    for doc in corpus:
-        print(doc)
-        print(corpus[doc][:30])

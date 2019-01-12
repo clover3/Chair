@@ -58,8 +58,6 @@ class DataLoader:
 
         return result
 
-
-
     def get_dev_data(self):
         result = []
         for i in range(160):
@@ -73,7 +71,6 @@ class DataLoader:
 
         for y, sent in [case1, case2]:
             entry = self.encode(query, sent)
-
             yield entry["input_ids"], entry["input_mask"], entry["segment_ids"], y
 
     def encode(self, query, text):
@@ -103,6 +100,7 @@ def sample_query_eval_tfidf():
 
     window_size = 200 * 3
     idf = Idf(collection.values())
+
     def sample_shift():
         return random.randrange(0, window_size * 4)
 
@@ -111,7 +109,6 @@ def sample_query_eval_tfidf():
 
     def tfidf_span(q_terms, text_span):
         return sum([text_span.count(q_i) * idf[q_i] for q_i in q_terms])
-
 
     def sample_debiase(tf_n_span):
         max_occurence = 2
@@ -135,7 +132,6 @@ def sample_query_eval_tfidf():
             if len(postings) < 5:
                 break # Skip this query
             postings_list.append(postings)
-
 
         if not postings_list:
             print("Skip Query :", query)
@@ -165,11 +161,6 @@ def sample_query_eval_tfidf():
         for score in score_group:
             print("{} : {}".format(score, len(score_group[score])))
         yield query, score_group
-
-
-
-
-
 
 if __name__ == '__main__':
     print("Generator")

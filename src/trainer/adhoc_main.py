@@ -32,6 +32,24 @@ def train_adhoc_with_reinforce():
 
 
 
+def train_adhoc_on_robust():
+    hp = hyperparams.HPAdhoc()
+    e = Experiment(hp)
+
+    e_config = ExperimentConfig()
+    e_config.name = "Adhoc_{}".format("F")
+    e_config.num_epoch = 4
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert']
+    vocab_size = 30522
+    vocab_filename = "bert_voca.txt"
+
+    data_loader = ws.DataLoader(hp.seq_max, vocab_filename, vocab_size)
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    e.train_adhoc2(e_config, data_loader, load_id)
+
+
+
 def run_adhoc_rank():
     hp = hyperparams.HPAdhoc()
     hp.batch_size = 512

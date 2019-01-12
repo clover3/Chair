@@ -474,3 +474,8 @@ class EncoderUnit:
             "segment_ids": segment_ids
         }
 
+    def encode_pair(self, text1, text2):
+        tokens_a = self.encoder.encode(text1)
+        tokens_b = self.encoder.encode(text2)
+        return self.encode_inner(tokens_a, tokens_b)
+
