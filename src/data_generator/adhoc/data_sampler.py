@@ -40,6 +40,8 @@ class DataSampler:
                 l = random.sample(range(len(candidate)), 2)
                 x1 = candidate[l[0]]
                 x2 = candidate[l[1]]
+                print(x1[0], x1[1][:100])
+                print(x2[0], x2[1][:100])
                 if x1[0] < x2[0]:
                     yield query, x1, x2
                 else:
@@ -104,8 +106,42 @@ class DataSampler:
             if max_score < self.threshold_boring_doc:
                 continue
             score_group = sample_debiase(spans)
+            for key in score_group:
+                print(key)
             yield query, score_group
 
+
+
+
+class DataWriter:
+    def __init__(self, max_sequence):
+        tprint("Loading data sampler")
+        mem_path = "/dev/shm/robust04.pickle"
+        self.data_sampler = pickle.load(open(mem_path, "rb"))
+        #self.data_sampler = DataSampler.init_from_pickle("robust04")
+        vocab_filename = "bert_voca.txt"
+        voca_path = os.path.join(data_path, vocab_filename)
+        self.encoder_unit = EncoderUnit(max_sequence, voca_path)
+        self.pair_generator = self.data_sampler.pair_generator()
+
+
+    def encode_pair(self, instance):
+        query, case1, case2 = instance
+        for y, sent in [case1, case2]:
+            entry =  self.encoder_unit.encode_pair(query, sent)
+            yield entry["input_ids"], entry["input_mask"], entry["segment_ids"]
+
+    def get_data(self, data_size):
+        assert data_size % 2 == 0
+        result = []
+        while len(result) < data_size:
+            raw_inst = self.pair_generator.__next__()
+            result += list(self.encode_pair(raw_inst))
+        return result
+
+    def write(self, path):
+        num_data = 16 * 100
+        pickle.dump(self.get_data(num_data), open(path, "wb"))
 
 class Server:
     def __init__(self, port, max_sequence):
@@ -168,16 +204,18 @@ def start_slaves(max_seq, port_start, n_slave):
         p.join()
 
 
-class DataLoader:
+class DataLoaderFromSocket:
     def __init__(self, port_start, batch_size, n_slave):
         self.port_start = port_start
         self.proxy = []
         self.queue_feeders = []
         self.batch_size = batch_size
         self.train_queue = Queue(maxsize=1000)
+        addr = "http://sydney2.cs.umass.edu"
         for slave_id in range(n_slave):
             port = self.port_start + slave_id
-            self.proxy.append(xmlrpc.client.ServerProxy('http://ingham.cs.umass.edu:{}'.format(port)))
+            server_addr = '{}:{}'.format(addr, port)
+            self.proxy.append(xmlrpc.client.ServerProxy(server_addr))
             t = threading.Thread(target=self.feed_queue, args=(slave_id,))
             t.daemon = True
             t.start()
@@ -199,8 +237,66 @@ class DataLoader:
         batches = get_batches_ex(result, batch_size, 3)
         return batches
 
-    def get_train_data(self):
+    def get_train_batch(self):
         return self.train_queue.get(block=True)
+
+
+class DataLoaderFromFile:
+    def __init__(self, batch_size, voca_size):
+        self.batch_size = batch_size
+        self.voca_size = voca_size
+        self.train_queue = Queue(maxsize=100)
+        t = threading.Thread(target=self.feed_queue)
+        t.daemon = True
+        t.start()
+
+        self.cur_idx = 0
+        self.file_idx = 0
+        self.cur_data = []
+        self.load_next_data()
+
+    def get_path(self, i):
+        filename = "data{}.pickle".format(i)
+        return os.path.join(data_path, "robust", filename)
+
+
+    def feed_queue(self):
+        print("feed_queue()")
+        while True:
+            batches = self.get_data(self.batch_size, 10)
+            for batch in batches:
+                self.train_queue.put(batch, True)
+
+    def get_dev_data(self):
+        n_batches = 10
+        return self.get_data(self.batch_size, n_batches)
+
+    def load_next_data(self):
+        path = self.get_path(self.file_idx)
+        self.file_idx += 1
+        next_path = self.get_path(self.file_idx)
+        if not os.path.exists(next_path):
+            print("WARNING next file is unavailable : {}".format(next_path))
+        self.cur_data = pickle.load(open(path, "rb"))
+        self.cur_idx = 0
+        return self.cur_data
+
+    def get_data(self, batch_size, n_batches):
+        st = self.cur_idx
+        ed = self.cur_idx + batch_size * n_batches
+        if ed > len(self.cur_data):
+            self.cur_data = self.load_next_data()
+            st = self.cur_idx
+            ed = self.cur_idx + batch_size * n_batches
+        result = self.cur_data[st:ed]
+        batches = get_batches_ex(result, batch_size, 3)
+        self.cur_idx = ed
+        return batches
+
+    def get_train_batch(self):
+        return self.train_queue.get(block=True)
+
+
 
 def init_sampler_robust04():
     marco_queries = list(load_marco_queries())
@@ -210,14 +306,9 @@ def init_sampler_robust04():
 
 
 if __name__ == '__main__':
-    todo = "slave"
-
-    port_start = 25182
-    n_slaves = 10
-    if todo == "slave":
-        start_slaves(200, port_start, n_slaves)
-    else:
-        loader = DataLoader(port_start, 16, n_slaves)
-        while True:
-            time.sleep(5)
-            tprint(loader.train_queue.qsize())
+    random.seed()
+    dw = DataWriter(200)
+    for i in range(10):
+        filename = "data{}.pickle".format(i)
+        path = os.path.join(data_path, "robust", filename)
+        dw.write(path)

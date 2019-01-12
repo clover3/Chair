@@ -142,7 +142,7 @@ class TrecParser3:
                 st = len("<DOCNO>")
                 ed = len(tag) - len("</DOCNO>")
                 assert tag[ed:] == "</DOCNO>"
-                self.lastEntry["DOCNO"] = tag[st:ed]
+                self.lastEntry["DOCNO"] = tag[st:ed].strip()
             elif tag == "<TEXT>":
                 self.state = STATE_TEXT
             elif tag == "</DOC>":
@@ -150,11 +150,6 @@ class TrecParser3:
                 self.lastEntry["TEXT"] = "".join(self.text_arr)
                 self.end_doc(self.lastEntry)
                 text_len = len(self.lastEntry["TEXT"])
-                if self.n_meta > 100 and text_len < 10:
-                    print("n_meta = {}".format(self.n_meta))
-                    print("text len= {}".format(text_len))
-                    print(self.line)
-                    print("-------")
                 self.n_meta = 0
                 self.text_arr = []
             else:
@@ -282,8 +277,9 @@ def load_robust(docs_dir):
         for name in filenames:
             filepath = os.path.join(dirpath, name)
             tprint(filepath)
-            collections.update(load_trec(filepath, 2))
-            break
+            d = load_trec(filepath, 2)
+            print(len(d))
+            collections.update(d)
     return collections
 
 robust_path = "/mnt/scratch/youngwookim/data/robust04"
