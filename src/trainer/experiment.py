@@ -1924,8 +1924,9 @@ class Experiment:
                     rank_idx += 1
         rerank()
 
-    def train_adhoc2(self, exp_config, data_loader, preload_id):
-        tprint("train_adhoc2")
+
+    def train_adhoc(self, exp_config, data_loader, preload_id):
+        tprint("train_adhoc")
         task = transformer_adhoc(self.hparam, data_loader.voca_size)
         with tf.variable_scope("optimizer"):
             train_op = self.get_train_op(task.loss)
@@ -1946,7 +1947,113 @@ class Experiment:
                 self.load_model_bert(name, id)
 
         tprint("get_dev_data...")
-        dev_batches = data_loader.get_dev_data()
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+
+        encoder_unit = data_loader.encoder_unit
+
+        def enc_query_doc_to_payload(query_docs_list):
+            with ProcessPoolExecutor(max_workers=8) as executor:
+                enc_payload = []
+                for query, doc_list in query_docs_list:
+                    payload = []
+                    print("Doc encoding for query '{}'".format(query))
+                    for doc_id, text in doc_list:
+                        # future[List[dict]]
+                        runs_future = executor.submit(encoder_unit.encode_long_text, query, text)
+                        payload.append((doc_id, runs_future))
+
+                    for doc_id, runs_future, in payload:
+                        runs = runs_future.result()
+                        enc_payload.append((query, doc_id, runs))
+                    print("... Done")
+            return enc_payload
+
+        def get_score_from_enc_payload(enc_payload, query_docs_list):
+            def eval(runs):
+                data = []
+                for entry in runs:
+                    data.append((entry['input_ids'], entry['input_mask'], entry['segment_ids'], 0))
+                batches = get_batches_ex(data, batch_size, 4)
+                y_list = []
+                for batch in batches:
+                    y, = self.sess.run([task.y, ],
+                                       feed_dict=batch2feed_dict(batch)
+                                       )
+                    y_list.append(y)
+                ys = np.concatenate(y_list)
+                return ys
+
+
+            pk = PromiseKeeper(eval)
+            score_list_future = []
+            for query, doc_id, runs in enc_payload:
+                y_futures = list([MyPromise(x, pk).future() for x in runs])
+                score_list_future.append((query, doc_id, y_futures))
+
+            pk.do_duty()
+
+            per_query = defaultdict(list)
+            for query, doc_id, y_futures in score_list_future:
+                per_query[query].append((doc_id, max_future(y_futures)))
+
+            result = []
+            for query, _ in query_docs_list:
+                result.append(per_query[query])
+            return result
+
+        collection, idf, inv_index, tf_index, _ = load_trec_data_proc()
+        queries = list(load_marco_queries())
+
+        def bm25_run():
+            # compare score
+            target_queries = queries[300:350]
+            result = []
+            for q in target_queries:
+                score = Counter()
+                print(q)
+                for q_term in q.split():
+                    if q_term in tf_index:
+                        for doc_id, tf in tf_index[q_term].items():
+                            score[doc_id] += tf * idf[q_term]
+
+                top_docs = list(score.most_common(100))
+                result.append((q, top_docs))
+            return result
+
+        tprint("runing bm25...")
+        bm25_result_w_query = bm25_run()
+
+        def get_test_candidate_by_bm25():
+            query_docs_list = []
+            for q, top_docs in bm25_result_w_query:
+                docs = list([(doc_id, collection[doc_id]) for doc_id in left(top_docs)])
+                query_docs_list.append((q, docs))
+            return query_docs_list
+
+        query_docs_list = get_test_candidate_by_bm25()
+        enc_query_doc = None
+        def compare_bm25():
+            tprint("compare bm25")
+            nonlocal enc_query_doc
+            if enc_query_doc is None:
+                enc_query_doc = enc_query_doc_to_payload(query_docs_list)
+
+            bm25_result = right(bm25_result_w_query)
+            score_result = get_score_from_enc_payload(enc_query_doc, query_docs_list)
+            common_sizes = defaultdict(list)
+            for query_idx, q_result in enumerate(score_result):
+                assert len(q_result) == len(bm25_result[query_idx])
+                q_result = list(q_result)
+                q_result.sort(key=lambda x:x[1], reverse=True)
+
+                for k in [10,30,50]:
+                    topk_nn = set(left(q_result[:k]))
+                    topk_bm25 = set(left(bm25_result[query_idx][:k]))
+                    common_in_k = len(topk_nn.intersection(topk_bm25))
+                    common_sizes[k].append(common_in_k)
+            for k in common_sizes:
+                print("Common at {} : {}".format(k, average(common_sizes[k])))
+
 
 
         def valid_fn():
@@ -1978,12 +2085,23 @@ class Experiment:
                 task.x_list[0]: x0,
                 task.x_list[1]: x1,
                 task.x_list[2]: x2,
+                task.y: y,
             }
             return feed_dict
 
         def save_fn():
             self.save_model(exp_config.name, 100)
 
+
+
+        def generate_train_batch():
+            working_unit = 2
+            data_size = batch_size * working_unit
+            batches = get_batches_ex(data_loader.get_train_data(data_size), batch_size, 4)
+            return batches
+
+
+        queue_feader = QueueFeader(300, generate_train_batch, True)
 
         valid_freq = 25
         last_save = time.time()
@@ -1997,13 +2115,159 @@ class Experiment:
                     save_fn()
                     last_save = time.time()
 
-            batch = data_loader.get_train_batch()
+            batch = queue_feader.get()
             train_fn(batch, step_i)
             self.g_step += 1
 
 
 
 
+    def train_adhoc2(self, exp_config, data_loader, preload_id):
+        tprint("train_adhoc2")
+        task = transformer_adhoc(self.hparam, data_loader.voca_size)
+        with tf.variable_scope("optimizer"):
+            train_op = self.get_train_op(task.loss)
+        self.log.name = exp_config.name
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        batch_size = self.hparam.batch_size
+
+        tprint("Loading Model...")
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            if exp_config.load_names:
+                self.load_model_white(name, id, exp_config.load_names)
+            else:
+                self.load_model_bert(name, id)
+
+        tprint("get_dev_data...")
+        dev_batches = data_loader.get_dev_data()
+        print(dev_batches[0])
+
+
+        def valid_fn():
+            #compare_bm25()
+            loss_list = []
+            for batch in dev_batches:
+                loss_val, summary, = self.sess.run([task.loss, self.merged,],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+
+                self.test_writer.add_summary(summary, self.g_step)
+            self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
+
+
+        def train_fn(batch, step_i):
+            # normal train
+            loss_val, summary, _= self.sess.run([task.loss, self.merged, train_op],
+                                               feed_dict=batch2feed_dict(batch)
+                                               )
+            self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
+            self.train_writer.add_summary(summary, self.g_step)
+            self.g_step += 1
+            return loss_val, 0
+
+        def batch2feed_dict(batch):
+            x0, x1, x2 = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+            }
+            return feed_dict
+
+        def save_fn():
+            self.save_model(exp_config.name, 30)
+
+
+        valid_freq = 25
+        last_save = time.time()
+        max_step = 1000 * 1000 * 1000
+        for step_i in range(max_step):
+            if step_i % valid_freq == 0:
+                valid_fn()
+
+            if save_fn is not None:
+                if time.time() - last_save > exp_config.save_interval:
+                    save_fn()
+                    last_save = time.time()
+
+            batch = data_loader.get_train_batch()
+            train_fn(batch, step_i)
+            self.g_step += 1
+
+
+    def predict_robust(self, exp_config, voca_size, preload_id, payload_path):
+        tprint("predict_robust")
+        task = transformer_adhoc(self.hparam, voca_size)
+        self.log.name = exp_config.name
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        batch_size = self.hparam.batch_size
+        def batch2feed_dict(batch):
+            x0, x1, x2 = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+            }
+            return feed_dict
+
+        tprint("Loading Model...")
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            if exp_config.load_names:
+                self.load_model_white(name, id, exp_config.load_names)
+            else:
+                self.load_model_bert(name, id)
+
+        payload = pickle.load(open(payload_path, "rb"))
+
+        def eval(runs):
+            data = []
+            for entry in runs:
+                data.append((entry['input_ids'], entry['input_mask'], entry['segment_ids']))
+            tprint("Packing batches (batch_size={})".format(batch_size))
+            batches = get_batches_ex(data, batch_size, 3)
+            tprint("Runing neural network prediction (#batch={})".format(len(batches)))
+            y_list = []
+            ticker = TimeEstimator(len(batches), sample_size=20)
+            for batch in batches:
+                y, = self.sess.run([task.logits, ],
+                                   feed_dict=batch2feed_dict(batch)
+                                   )
+                y_list.append(y)
+                ticker.tick()
+            ys = np.concatenate(y_list)
+            return ys
+
+        pk = PromiseKeeper(eval)
+        score_list_future = []
+        for doc_id, q_id, runs in payload:
+            y_futures = list([MyPromise(x, pk).future() for x in runs])
+            score_list_future.append((q_id, doc_id, y_futures))
+
+        pk.do_duty()
+        tprint("Completed GPU computations")
+        per_query = defaultdict(list)
+        for q_id, doc_id, y_futures in score_list_future:
+            per_query[q_id].append((doc_id, max_future(y_futures)))
+
+        fout = path.open_pred_output("rerank_{}".format(exp_config.name))
+        for q_id in per_query:
+            q_result = per_query[q_id]
+            q_result.sort(key=lambda x: x[1], reverse=True)
+
+            rank_idx = 1
+            for doc_id, score in q_result:
+                fout.write("{} Q0 {} {} {} galago\n".format(q_id, doc_id, rank_idx, score[0]))
+                rank_idx += 1
 
     def test_ql(self, exp_config, data_loader, preload_id):
         task = transformer_ql(self.hparam, data_loader.voca_size)
