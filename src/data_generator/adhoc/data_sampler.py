@@ -1,11 +1,16 @@
-from data_generator.adhoc.ws import *
 from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 import xmlrpc.client
-from trainer.tf_module import *
+from trainer.np_modules import *
 from multiprocessing import Process, Queue
 from trainer.queue_feader import QueueFeader
 import threading
+import pickle
+from path import data_path
+from data_generator.tokenizer_b import EncoderUnit
+import random
+import sys
+from misc_lib import *
 
 class DataSampler:
     def __init__(self, queries, collection):
@@ -307,8 +312,10 @@ def init_sampler_robust04():
 
 if __name__ == '__main__':
     random.seed()
+    start_i = int(sys.argv[1])
+    print("data:", start_i)
     dw = DataWriter(200)
-    for i in range(10):
+    for i in range(start_i, start_i + 100):
         filename = "data{}.pickle".format(i)
         path = os.path.join(data_path, "robust", filename)
         dw.write(path)

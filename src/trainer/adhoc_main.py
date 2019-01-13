@@ -148,5 +148,5 @@ def test_ql():
 
 
 if __name__ == '__main__':
-    action = "predict_adhoc_robust"
+    action = "train_adhoc_on_robust"
     locals()[action]()
