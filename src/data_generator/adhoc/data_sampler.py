@@ -8,6 +8,7 @@ import threading
 import pickle
 from path import data_path
 from data_generator.tokenizer_b import EncoderUnit
+from data_generator.data_parser.trec import *
 import random
 import sys
 from misc_lib import *

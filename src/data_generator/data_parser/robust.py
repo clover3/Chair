@@ -1,5 +1,6 @@
 import path
 import os
+import data_generator.data_parser.trec as trec
 from data_generator.data_parser.trec import load_trec
 robust_path = os.path.join(path.data_path, "robust")
 
@@ -40,8 +41,23 @@ def load_2k_rank():
     return ranked_list
 
 
+def sanity_check():
+    ranked_list = load_2k_rank()
+    collection = trec.load_robust(trec.robust_path)
+    def process(doc):
+        return doc.lower().split()
+    for q_id, listings in ranked_list.items():
+        for doc_id, rank, score in listings[:1]:
+            docs_path = os.path.join(path.data_path, "robust", "docs", doc_id)
+            content = process(collection[doc_id])
+            open(docs_path, "w").write(content)
+
+
+
 if __name__ == '__main__':
-    load_2k_rank()
-    ranked_lists = load_2k_rank()
+    queries = load_robust04_query()
+    for q_id in queries:
+        print("\t".join([q_id] + queries[q_id].split()))
+    #sanity_check()
 
 

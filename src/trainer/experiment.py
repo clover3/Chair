@@ -5,6 +5,7 @@ import warnings
 import tensorflow as tf
 from concurrent.futures import ProcessPoolExecutor, wait
 
+from adhoc.bm25 import score_BM25, get_bm25
 from trainer.tf_module import *
 from trainer.promise import *
 from models.transformer.hyperparams import Hyperparams
@@ -29,6 +30,9 @@ from data_generator.adhoc.ws import *
 from data_generator.data_parser.trec import *
 from data_generator.data_parser import controversy
 from trainer.queue_feader import QueueFeader
+from data_generator.data_parser import trec
+from data_generator.data_parser.robust import *
+
 from task.metrics import stance_f1
 from log import log
 import path
@@ -2145,8 +2149,6 @@ class Experiment:
 
         tprint("get_dev_data...")
         dev_batches = data_loader.get_dev_data()
-        print(dev_batches[0])
-
 
         def valid_fn():
             #compare_bm25()
@@ -2194,6 +2196,8 @@ class Experiment:
             if save_fn is not None:
                 if time.time() - last_save > exp_config.save_interval:
                     save_fn()
+                    if exp_config.save_interval < 120 * 60:
+                        exp_config.save_interval += 5 * 60
                     last_save = time.time()
 
             batch = data_loader.get_train_batch()
@@ -2346,6 +2350,59 @@ class Experiment:
             print(with_q, wo_q, with_q<wo_q)
 
 
+    def rank_robust_tfidf(self):
+        queries = load_robust04_query()
+        ranked_lists = load_2k_rank()
+
+        collection_len = 252359881
+
+        if True:
+            collection = trec.load_robust(trec.robust_path)
+            #inv_index = get_inverted_index(collection)
+            #sample_key = random.sample(list(collection.keys()), 40000)
+            #sample_collection = [collection[k] for k in sample_key]
+            #idf = Idf(list(sample_collection))
+            #ctf = collection_tf(list(sample_collection))
+            #save_to_pickle(ctf, "ctf")
+            #save_to_pickle(idf, "idf")
+            idf = load_from_pickle("idf")
+            #tf_index = get_tf_index(inv_index, True)
+            #save_to_pickle(tf_index, "tf_index")
+        else:
+            mem_path = "/dev/shm/robust04.pickle"
+            data_sampler = pickle.load(open(mem_path, "rb"))
+            collection = data_sampler.collection
+            inv_index = data_sampler.inv_index
+            tf_index = get_tf_index(inv_index, True)
+            idf = data_sampler.idf
+        top_k = 100
+        avdl = collection_len / len(collection)
+        print("len(collection)", len(collection))
+        print("avdl ", avdl)
+        fout = path.open_pred_output("rerank_{}".format("tfidf"))
+        for q_id in ranked_lists:
+            ranked = ranked_lists[q_id]
+            ranked.sort(key=lambda x:x[1])
+            assert ranked[0][1] == 1
+            new_score = Counter()
+            doc_ids = set([d_id for d_id, _, _ in ranked[:top_k]])
+
+            doc_len = dict()
+            for doc_id in doc_ids:
+                doc_len[doc_id] = len(collection[doc_id].split())
+            query = queries[q_id]
+            for doc_id in doc_ids:
+                doc = collection[doc_id]
+                new_score[doc_id] = get_bm25(query, doc, None, idf.df, N=len(collection), avdl=avdl)
+            new_list = list(new_score.items())
+            new_list.sort(key=lambda x:x[1], reverse=True)
+            for doc_id in doc_ids:
+                if doc_id not in new_score:
+                    new_list.append((doc_id, -1000))
+            rank_idx = 1
+            for doc_id, score in new_list:
+                fout.write("{} Q0 {} {} {} galago\n".format(q_id, doc_id, rank_idx, score))
+                rank_idx += 1
 
 
     def rank_ql(self, exp_config, data_loader, preload_id):

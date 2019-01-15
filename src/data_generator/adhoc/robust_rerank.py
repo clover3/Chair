@@ -5,14 +5,14 @@ from concurrent.futures import ProcessPoolExecutor, wait
 from data_generator.data_parser import trec
 from data_generator.tokenizer_b import EncoderUnit
 from path import data_path
-
+from collections import defaultdict
+from misc_lib import *
 import pickle
 
 def encode_pred_set(top_k):
     vocab_filename = "bert_voca.txt"
     max_sequence = 200
     voca_path = os.path.join(data_path, vocab_filename)
-    encoder_unit = EncoderUnit(max_sequence, voca_path)
     encoder_unit = EncoderUnit(max_sequence, voca_path)
     collection = trec.load_robust(trec.robust_path)
     print("Collection has #docs :", len(collection))
@@ -41,6 +41,23 @@ def encode_pred_set(top_k):
     pickle.dump(payload, open("payload{}.pickle".format(top_k), "wb"))
 
 
+def check_pred_set():
+    path = os.path.join(data_path, "robust", "payload100.pickle")
+    payload = pickle.load(open(path, "rb"))
+
+    sig_d = defaultdict(list)
+    for doc_id, q_id, runs in payload:
+        print(doc_id, len(runs))
+
+        for sig in ["FBIS", "LA0", "FT9"]:
+            if doc_id.startswith(sig):
+                sig_d[sig].append(len(runs))
+
+    for sig in sig_d:
+        print(sig, average(sig_d[sig]))
+
+
+
 if __name__ == '__main__':
-    encode_pred_set(100)
+    encode_pred_set(200)
 

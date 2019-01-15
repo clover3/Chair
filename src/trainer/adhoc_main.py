@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 
 from task.transformer_est import Transformer, Classification
@@ -12,6 +12,7 @@ from data_generator.adhoc import ws, data_sampler
 from trainer.experiment import Experiment
 from trainer.ExperimentConfig import ExperimentConfig
 import path
+from data_generator.adhoc.data_sampler import *
 
 
 def train_adhoc_with_reinforce():
@@ -39,7 +40,7 @@ def train_adhoc_on_robust():
     e_config = ExperimentConfig()
     e_config.name = "Adhoc_{}".format("F")
     e_config.num_epoch = 4
-    e_config.save_interval = 60 * 60  # 60 minutes
+    e_config.save_interval = 10 * 60  # 60 minutes
     e_config.load_names = ['bert']
     vocab_size = 30522
 
@@ -67,6 +68,12 @@ def predict_adhoc_robust():
     e.predict_robust(e_config, vocab_size, load_id, payload_path)
 
 
+def predict_tfidf_robust():
+    hp = hyperparams.HPAdhoc()
+    hp.batch_size = 512
+
+    e = Experiment(hp)
+    e.rank_robust_tfidf()
 
 
 def run_adhoc_rank_on_robust():
@@ -148,5 +155,5 @@ def test_ql():
 
 
 if __name__ == '__main__':
-    action = "train_adhoc_on_robust"
+    action = "predict_tfidf_robust"
     locals()[action]()

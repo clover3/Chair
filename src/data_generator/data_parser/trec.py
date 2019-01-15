@@ -8,6 +8,7 @@ import os
 from cache import *
 from misc_lib import TimeEstimator
 from misc_lib import tprint
+from adhoc.bm25 import stem_tokenize
 
 corpus_dir = os.path.join(data_path, "adhoc")
 trecText_path = os.path.join(corpus_dir, "trecText")
@@ -121,11 +122,30 @@ class TrecParser3:
         self.state = 2
         self.n_meta = 0
         self.line = 0
+        self.end_tag = ""
+
+
 
     def feed(self, text):
         STATE_ROOT = 2
         STATE_DOC = 0
-        STATE_TEXT = 1
+        STATE_CONTENT = 1
+
+        def is_start_known_tag(text):
+            text = text.strip()
+            if text and text[0] == "<":
+                if text.startswith("<DOCNO>"):
+                    return "<DOCNO>"
+                if text.startswith("<TEXT>"):
+                    return "<TEXT>"
+                if text.startswith("<HEADLINE>"):
+                    return "<HEADLINE>"
+                if text.startswith("<DATE>"):
+                    return "<DATE>"
+                if text.startswith("</DOC>"):
+                    return "</DOC>"
+            return False
+
         self.line += 1
         if self.state == STATE_ROOT:
             tag = text.strip()
@@ -137,27 +157,30 @@ class TrecParser3:
                 None
 
         elif self.state == STATE_DOC:
-            tag = text.strip()
-            if tag.startswith("<DOCNO>"):
-                st = len("<DOCNO>")
-                ed = len(tag) - len("</DOCNO>")
-                assert tag[ed:] == "</DOCNO>"
-                self.lastEntry["DOCNO"] = tag[st:ed].strip()
-            elif tag == "<TEXT>":
-                self.state = STATE_TEXT
-            elif tag == "</DOC>":
-                self.state = STATE_ROOT
-                self.lastEntry["TEXT"] = "".join(self.text_arr)
-                self.end_doc(self.lastEntry)
-                text_len = len(self.lastEntry["TEXT"])
-                self.n_meta = 0
-                self.text_arr = []
-            else:
-                self.n_meta += 1
-        elif self.state == STATE_TEXT:
-            end_tag = "</TEXT>\n"
-            if text.endswith(end_tag):
-                text = text[:-len(end_tag)]
+            tag = is_start_known_tag(text)
+            if tag:
+                text = text.strip()[len(tag):]
+                if tag == "<DOCNO>":
+                    ed = len(text) - len("</DOCNO>")
+                    assert text[ed:] == "</DOCNO>"
+                    self.lastEntry["DOCNO"] = text[:ed].strip()
+                elif tag in ["<TEXT>", "<HEADLINE>", "<DATE>"]:
+                    self.state = STATE_CONTENT
+                    self.end_tag = tag[:1] + "/" + tag[1:]
+                elif tag == "</DOC>":
+                    self.state = STATE_ROOT
+                    self.lastEntry["TEXT"] = "".join(self.text_arr)
+                    self.end_doc(self.lastEntry)
+                    text_len = len(self.lastEntry["TEXT"])
+                    self.n_meta = 0
+                    self.text_arr = []
+                else:
+                    self.n_meta += 1
+
+        if self.state == STATE_CONTENT:
+            end_tag = self.end_tag
+            if text.strip().endswith(end_tag):
+                text = text.strip()[:-len(end_tag)]
                 #self.lastEntry["TEXT"] += text
                 self.text_arr.append(text)
                 self.state = STATE_DOC
@@ -188,15 +211,37 @@ def get_inverted_index(collection):
 
     return result
 
-def get_tf_index(inv_index):
+def get_tf_index(inv_index, lower=False):
     result = dict()
     for term, posting_list in inv_index.items():
         count_list = Counter()
         for doc_id, word_pos in posting_list:
             count_list[doc_id] += 1
-        result[term] = count_list
+        if lower:
+            term = term.lower()
+            if term not in result:
+                result[term] = count_list
+            else:
+                for key in count_list.keys():
+                    result[term][key] += count_list[key]
+        else:
+            result[term] = count_list
+
 
     return result
+
+
+def collection_tf(docs):
+    ctf = Counter()
+    for doc in docs:
+        tokens = stem_tokenize(doc)
+        for t in tokens:
+            ctf[t] += 1
+    cl = sum(ctf.values())
+    for key in ctf:
+        ctf[key] = ctf[key] / cl
+
+    return ctf
 
 
 

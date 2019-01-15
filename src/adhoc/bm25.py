@@ -1,12 +1,14 @@
-
+from collections import Counter
 from math import log
-
+from data_generator.tokenizer_b import BasicTokenizer
+from krovetzstemmer import Stemmer
 k1 = 1.2
 k2 = 100
+k3 = 1
 b = 0.75
 R = 0.0
 
-
+stemmer = Stemmer()
 def score_BM25(n, f, qf, r, N, dl, avdl):
     K = compute_K(dl, avdl)
     first = log( ( (r + 0.5) / (R - r + 0.5) ) / ( (n - r + 0.5) / (N - n - R + r + 0.5)) )
@@ -14,12 +16,33 @@ def score_BM25(n, f, qf, r, N, dl, avdl):
     third = ((k2+1) * qf) / (k2 + qf)
     return first * second * third
 
+def BM25_2(f, df, N, dl, avdl):
+    first = (k1 + 1) * f / ( k1 * (1-b+b* dl / avdl ) + f)
+    second = log((N-df+0.5)/(df + 0.5))
+    return first * second
 
 def compute_K(dl, avdl):
     return k1 * ((1-b) + b * (float(dl)/float(avdl)) )
 
+tokenizer = BasicTokenizer(True)
+def stem_tokenize(text):
+    return list([stemmer.stem(t) for t in tokenizer.tokenize(text)])
 
-from invdx import build_data_structures
+mu = 1000
+def get_bm25(query, doc, ctf, df, N, avdl):
+    q_terms = stem_tokenize(query)
+    d_terms = stem_tokenize(doc)
+    q_tf = Counter(q_terms)
+    d_tf = Counter(d_terms)
+    score = 0
+    dl = len(d_terms)
+    for q_term in q_terms:
+        #tf = (d_tf[q_term] *dl / (mu+dl) + ctf[q_term] * mu / (mu+dl))
+        #score += score_BM25(n=df[q_term], f=tf, qf=q_tf[q_term], r=0, N=N,
+        #                   dl=len(d_terms), avdl=avdl)
+        score += BM25_2(d_tf[q_term], df[q_term], N, dl, avdl)
+    return score
+
 import operator
 
 
@@ -27,7 +50,7 @@ import operator
 class QueryProcessor:
     def __init__(self, queries, corpus):
         self.queries = queries
-        self.index, self.dlt = build_data_structures(corpus)
+        self.index, self.dlt = NotImplemented #build_data_structures(corpus)
 
     def run(self):
         results = []
