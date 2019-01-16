@@ -2,6 +2,7 @@ import time
 import os
 import shutil
 from time import gmtime, strftime
+import random
 
 def average(l):
     return sum(l) / len(l)
@@ -115,4 +116,6 @@ def increment_circular(j, max_len):
         j = 0
     return j
 
+def pick1(l):
+    return l[random.randrange(len(l))]
 

@@ -8,7 +8,7 @@ import os
 from cache import *
 from misc_lib import TimeEstimator
 from misc_lib import tprint
-from adhoc.bm25 import stem_tokenize
+#from adhoc.bm25 import stem_tokenize
 
 corpus_dir = os.path.join(data_path, "adhoc")
 trecText_path = os.path.join(corpus_dir, "trecText")
