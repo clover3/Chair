@@ -89,6 +89,26 @@ def baseline_explain():
     e.nli_explain_baselines(nli_setting, e_config, data_loader, load_id)
 
 
+
+def attribution_explain():
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+
+    e_config = ExperimentConfig()
+    e_config.name = "NLI_run_{}".format("nli_eval")
+    e_config.num_epoch = 4
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert', 'cls_dense']
+
+    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    load_id = ("NLI_run_nli_warm", "model-97332")
+    e.nli_attribution_baselines(nli_setting, e_config, data_loader, load_id)
+
+
+
 def train_nli_with_reinforce_old():
     hp = hyperparams.HPNLI2()
     e = Experiment(hp)
@@ -107,5 +127,5 @@ def train_nli_with_reinforce_old():
 
 
 if __name__ == '__main__':
-    action = "baseline_explain"
+    action = "attribution_explain"
     locals()[action]()

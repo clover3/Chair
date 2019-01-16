@@ -22,6 +22,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn import metrics
 from sklearn.metrics import precision_recall_curve, roc_curve
 
+
 from data_generator.stance import stance_detection
 from data_generator.mask_lm import enwiki
 from data_generator import shared_setting
@@ -40,7 +41,7 @@ import os
 import pickle
 import threading
 from models.baselines import svm
-from models.transformer.tranformer_nli import transformer_nli
+from models.transformer.tranformer_nli import transformer_nli, transformer_nli_embedding_in
 from models.transformer.transformer_controversy import transformer_controversy, transformer_controversy_fixed_encoding
 from models.transformer.transformer_adhoc import transformer_adhoc
 from models.transformer.transformer_lm import transformer_ql
@@ -49,6 +50,8 @@ from tensorflow.python.client import timeline
 from misc_lib import delete_if_exist
 from attribution.deleter_trsfmr import *
 from attribution.baselines import *
+from attribution.gradient import explain_by_gradient
+from attribution.deepexplain.tensorflow import DeepExplain
 from evaluation import *
 # Experiment is the most outside module.
 # This module can reference any module in the system.
@@ -1440,6 +1443,62 @@ class Experiment:
             loss, _ = epoch_runner(train_batches, train_fn,
                                    valid_fn, valid_freq,
                                    self.temp_saver, self.save_interval)
+
+    def nli_attribution_baselines(self, nli_setting, exp_config, data_loader, preload_id):
+        print("attribution_explain")
+        enc_explain_dev, explain_dev = data_loader.get_dev_explain()
+        #train_batches, dev_batches = self.load_nli_data(data_loader
+
+        self.sess = self.init_sess()
+        with DeepExplain(session=self.sess, graph=self.sess.graph) as de:
+            task = transformer_nli_embedding_in(self.hparam, nli_setting.vocab_size)
+            self.sess.run(tf.global_variables_initializer())
+            if preload_id is not None:
+                name = preload_id[0]
+                id = preload_id[1]
+                if exp_config.load_names :
+                    self.load_model_white(name, id, exp_config.load_names)
+                elif name in exp_config.name:
+                    self.load_model_all(name, id)
+                elif "NLI" in name:
+                    self.load_model_white(name, id, ['bert', 'dense_cls'])
+                else:
+                    self.load_model_bert(name, id)
+
+
+            target_label = 'conflict'
+            emb_outputs = task.encoded_embedding_out, task.attention_mask_out
+            emb_input = task.encoded_embedding_in, task.attention_mask_in
+            softmax_out = task.sout
+            def feed_end_input(batch):
+                x0, x1, x2 = batch
+                return {task.x_list[0]:x0,
+                        task.x_list[1]:x1,
+                        task.x_list[2]:x2,
+                        }
+
+            explain_prediction = {}
+            elapsed_time = {}
+            method_list = [ "elrp", "deeplift", "saliency","grad*input", "intgrad", ]
+            for method_name in method_list:
+                begin = time.time()
+
+                explains = explain_by_gradient(enc_explain_dev, method_name, target_label, self.sess, de,
+                                               feed_end_input, emb_outputs, emb_input, softmax_out)
+                end = time.time()
+                elapsed_time[method_name] = end - begin
+                explain_prediction[method_name] = explains
+
+            for method_name in method_list:
+                print(method_name)
+                print("Elapsed Time\t{}".format(elapsed_time[method_name]))
+                explains = explain_prediction[method_name]
+                p_at_1, MAP_score = eval_explain(explains, data_loader)
+                print("P@1\t{}".format(p_at_1))
+                print("MAP\t{}".format(MAP_score))
+
+
+
 
     def nli_explain_baselines(self, nli_setting, exp_config, data_loader, preload_id):
         enc_explain_dev, explain_dev = data_loader.get_dev_explain()
