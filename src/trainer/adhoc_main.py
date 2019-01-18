@@ -41,8 +41,7 @@ def train_adhoc_on_robust():
     e_config.load_names = ['bert']
     vocab_size = 30522
 
-    data_path = "/home/youngwookim/code/Chair/data/robust_payload"
-    data_loader = data_sampler.DataLoaderFromFile(hp.batch_size , vocab_size, data_path)
+    data_loader = data_sampler.DataLoaderFromFile(hp.batch_size , vocab_size)
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     e.train_adhoc2(e_config, data_loader, load_id)
 
