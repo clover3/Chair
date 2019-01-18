@@ -248,9 +248,10 @@ class DataLoaderFromSocket:
 
 
 class DataLoaderFromFile:
-    def __init__(self, batch_size, voca_size):
+    def __init__(self, batch_size, voca_size, corpus_path):
         self.batch_size = batch_size
         self.voca_size = voca_size
+        self.corpus_path = corpus_path
         self.train_queue = Queue(maxsize=100)
         t = threading.Thread(target=self.feed_queue)
         t.daemon = True
@@ -263,7 +264,7 @@ class DataLoaderFromFile:
 
     def get_path(self, i):
         filename = "data{}.pickle".format(i)
-        return os.path.join(data_path, "robust", filename)
+        return os.path.join(self.corpus_path, filename)
 
 
     def feed_queue(self):
@@ -279,10 +280,10 @@ class DataLoaderFromFile:
 
     def load_next_data(self):
         path = self.get_path(self.file_idx)
-        self.file_idx += 1
         next_path = self.get_path(self.file_idx)
         if not os.path.exists(next_path):
             print("WARNING next file is unavailable : {}".format(next_path))
+        self.file_idx += 1
         self.cur_data = pickle.load(open(path, "rb"))
         self.cur_idx = 0
         return self.cur_data
@@ -290,6 +291,7 @@ class DataLoaderFromFile:
     def get_data(self, batch_size, n_batches):
         st = self.cur_idx
         ed = self.cur_idx + batch_size * n_batches
+        print(" {} of {}".format(ed, len(self.cur_data)))
         if ed > len(self.cur_data):
             self.cur_data = self.load_next_data()
             st = self.cur_idx

@@ -50,8 +50,7 @@ from tensorflow.python.client import timeline
 from misc_lib import delete_if_exist
 from attribution.deleter_trsfmr import *
 from attribution.baselines import *
-from attribution.gradient import explain_by_gradient
-from attribution.deepexplain.tensorflow import DeepExplain
+#from attribution.deepexplain.tensorflow import DeepExplain
 from evaluation import *
 # Experiment is the most outside module.
 # This module can reference any module in the system.
@@ -1448,7 +1447,7 @@ class Experiment:
         print("attribution_explain")
         enc_explain_dev, explain_dev = data_loader.get_dev_explain()
         #train_batches, dev_batches = self.load_nli_data(data_loader
-
+        from attribution.gradient import explain_by_gradient
         self.sess = self.init_sess()
         with DeepExplain(session=self.sess, graph=self.sess.graph) as de:
             task = transformer_nli_embedding_in(self.hparam, nli_setting.vocab_size)
@@ -2310,19 +2309,40 @@ class Experiment:
             ys = np.concatenate(y_list)
             return ys
 
+        todo_list = [
+            (301, 325),
+            (326, 350),
+            (351, 375),
+            (376, 400),
+            (401, 450),
+            (426, 450),
+            (601, 625),
+            (626, 650),
+            (651, 675),
+            (676, 700),
+        ]
+        st, ed = todo_list[7]
+
+        def q_range(q_id):
+            return st <= int(q_id) <= ed
+
         pk = PromiseKeeper(eval)
         score_list_future = []
         for doc_id, q_id, runs in payload:
-            y_futures = list([MyPromise(x, pk).future() for x in runs])
-            score_list_future.append((q_id, doc_id, y_futures))
+            if q_range(q_id):
+                y_futures = list([MyPromise(x, pk).future() for x in runs])
+                score_list_future.append((q_id, doc_id, y_futures))
 
         pk.do_duty()
         tprint("Completed GPU computations")
         per_query = defaultdict(list)
+        f_out_log = path.open_pred_output("rerank_{}_detail_{}_{}".format(exp_config.name, st, ed))
         for q_id, doc_id, y_futures in score_list_future:
-            per_query[q_id].append((doc_id, max_future(y_futures)))
+            scores = list([f.get() for f in y_futures])
+            f_out_log.write("{} {} ".format(q_id, doc_id) + " ".join([str(s) for s in scores]) + "\n")
+            per_query[q_id].append((doc_id, max(scores)))
 
-        fout = path.open_pred_output("rerank_{}".format(exp_config.name))
+        fout = path.open_pred_output("rerank_{}_{}_{}".format(exp_config.name, st, ed))
         for q_id in per_query:
             q_result = per_query[q_id]
             q_result.sort(key=lambda x: x[1], reverse=True)
