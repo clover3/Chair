@@ -2269,8 +2269,7 @@ class Experiment:
             train_fn(batch, step_i)
             self.g_step += 1
 
-
-    def predict_robust(self, exp_config, voca_size, preload_id, payload_path):
+    def predict_robust(self, exp_config, voca_size, preload_id, payload_path, q_id_range):
         tprint("predict_robust")
         task = transformer_adhoc(self.hparam, voca_size)
         self.log.name = exp_config.name
@@ -2316,19 +2315,7 @@ class Experiment:
             ys = np.concatenate(y_list)
             return ys
 
-        todo_list = [
-            (301, 325),
-            (326, 350),
-            (351, 375),
-            (376, 400),
-            (401, 450),
-            (426, 450),
-            (601, 625),
-            (626, 650),
-            (651, 675),
-            (676, 700),
-        ]
-        st, ed = todo_list[7]
+        st, ed = q_id_range
 
         def q_range(q_id):
             return st <= int(q_id) <= ed

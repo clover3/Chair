@@ -55,14 +55,13 @@ def predict_adhoc_robust():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Adhoc_{}_eval".format("F")
+    e_config.name = "Adhoc_{}_eval".format("H")
     e_config.load_names = ['bert', 'reg_dense']
     vocab_size = 30522
-    vocab_filename = "bert_voca.txt"
     payload_path = os.path.join(path.data_path, "robust_payload", "payload_B_200.pickle")
-    #load_id = ("Adhoc_G", 'model-9650')
-    load_id = ("Adhoc_G", 'model-703')
-    e.predict_robust(e_config, vocab_size, load_id, payload_path)
+    from config.predict_adhoc_robust import q_id_range
+    load_id = ("Adhoc_H", 'model-74772')
+    e.predict_robust(e_config, vocab_size, load_id, payload_path, q_id_range)
 
 
 def predict_tfidf_robust():
@@ -152,5 +151,5 @@ def test_ql():
 
 
 if __name__ == '__main__':
-    action = "train_adhoc_on_robust"
+    action = "predict_adhoc_robust"
     locals()[action]()
