@@ -47,6 +47,7 @@ def train_nil_on_bert():
 
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     #load_id = ("NLI_bert_w_explain", 'model-91531')
+    load_id = ("NLI_Only_A", "model-0")
     e.train_nli_ex(nli_setting, e_config, data_loader, load_id, False)
 
 
@@ -67,7 +68,8 @@ def train_nli_with_reinforce():
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     #load_id = ("NLI_bert_w_explain", "model-91531")
-    load_id = ("NLIEx_A", "model-16910")
+    #load_id = ("NLIEx_A", "model-16910")
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     e.train_nli_ex(nli_setting, e_config, data_loader, load_id, True)
 
 

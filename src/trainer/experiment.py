@@ -2228,6 +2228,7 @@ class Experiment:
             self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
 
 
+
         def train_fn(batch, step_i):
             # normal train
             loss_val, summary, _= self.sess.run([task.loss, self.merged, train_op],
@@ -2250,7 +2251,7 @@ class Experiment:
         def save_fn():
             self.save_model(exp_config.name, 30)
 
-
+        print("dev")
         valid_freq = 25
         last_save = time.time()
         max_step = 1000 * 1000 * 1000

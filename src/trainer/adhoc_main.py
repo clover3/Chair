@@ -38,7 +38,7 @@ def train_adhoc_on_robust():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Adhoc_{}".format("F")
+    e_config.name = "Adhoc_{}".format("H")
     e_config.num_epoch = 4
     e_config.save_interval = 10 * 60  # 60 minutes
     e_config.load_names = ['bert']
@@ -155,5 +155,5 @@ def test_ql():
 
 
 if __name__ == '__main__':
-    action = "predict_tfidf_robust"
+    action = "train_adhoc_on_robust"
     locals()[action]()

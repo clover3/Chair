@@ -262,8 +262,8 @@ class DataLoaderFromFile:
         self.load_next_data()
 
     def get_path(self, i):
-        filename = "data{}.pickle".format(i)
-        return os.path.join(data_path, "robust", filename)
+        filename = "payload_{}.pickle".format(i)
+        return os.path.join(data_path, "robust", "train_data", filename)
 
 
     def feed_queue(self):
@@ -284,6 +284,7 @@ class DataLoaderFromFile:
         if not os.path.exists(next_path):
             print("WARNING next file is unavailable : {}".format(next_path))
         self.cur_data = pickle.load(open(path, "rb"))
+        random.shuffle(self.cur_data)
         self.cur_idx = 0
         return self.cur_data
 
