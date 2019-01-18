@@ -50,7 +50,7 @@ class transformer_nli:
 
         cl = tf.layers.dense(self.model.get_sequence_output(), 1, name="aux_conflict")
         cl = tf.reshape(cl, [-1, seq_length])
-        cl = tf.nn.sigmoid(cl)
+        cl = tf.nn.tanh(cl)
         #cl = tf.contrib.layers.layer_norm(cl)
         self.conf_logits = cl
         #self.pkc = self.conf_logits * self.rf_mask
@@ -116,7 +116,7 @@ class transformer_nli_embedding_in:
 
         cl = tf.layers.dense(self.model.get_sequence_output(), 1, name="aux_conflict")
         cl = tf.reshape(cl, [-1, seq_length])
-        cl = tf.nn.sigmoid(cl)
+        #cl = tf.nn.sigmoid(cl)
         #cl = tf.contrib.layers.layer_norm(cl)
         self.conf_logits = cl
         #self.pkc = self.conf_logits * self.rf_mask

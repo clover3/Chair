@@ -85,6 +85,12 @@ class Experiment:
         train_op = optimizer.minimize(loss, global_step=self.global_step)
         return train_op
 
+    def get_train_op2(self, loss, lr, name='Adam'):
+        self.global_step = tf.Variable(0, name='global_step', trainable=False)
+        optimizer = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.9, beta2=0.98, epsilon=1e-8,
+                                           name=name)
+        train_op = optimizer.minimize(loss, global_step=self.global_step)
+        return train_op
 
     def get_train_op_with_score(self, loss, scope, name='Adam'):
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
@@ -1497,9 +1503,6 @@ class Experiment:
                 print("P@1\t{}".format(p_at_1))
                 print("MAP\t{}".format(MAP_score))
 
-
-
-
     def nli_explain_baselines(self, nli_setting, exp_config, data_loader, preload_id):
         enc_explain_dev, explain_dev = data_loader.get_dev_explain()
         train_batches, dev_batches = self.load_nli_data(data_loader)
@@ -1562,15 +1565,13 @@ class Experiment:
             print(method_name)
             eval(method)
 
-
-
     def train_nli_ex(self, nli_setting, exp_config, data_loader, preload_id, f_train_ex):
         enc_explain_dev, explain_dev = data_loader.get_dev_explain()
 
         task = transformer_nli(self.hparam, nli_setting.vocab_size)
         with tf.variable_scope("optimizer"):
             train_cls = self.get_train_op(task.loss)
-            train_rl = self.get_train_op(task.rl_loss, name="rl")
+            train_rl = self.get_train_op2(task.rl_loss, 3e-3,name="rl")
 
         CONTRADICTION = 2
 
@@ -1643,7 +1644,7 @@ class Experiment:
         def over_zero(np_arr):
             return np.less(0, np_arr).astype(np.float32)
 
-        multi_deletion = True
+        multi_deletion = False
         if multi_deletion == True:
             logit2tag = over_zero
         else:
@@ -1686,7 +1687,7 @@ class Experiment:
                     self.log2.debug("CONF: {}".format(numpy_print(conf_logit[i])))
                     tag_size = np.count_nonzero(conf_tags)
                     if tag_size > 10:
-                        self.log.debug("#conflict token={}".format(tag_size))
+                        self.log2.debug("#conflict token={}".format(tag_size))
 
                     info['idx_delete_tagged'] = len(new_batches)
                     new_batches.append(token_delete(conf_tags, x0[i], x1[i], x2[i]))
@@ -1701,7 +1702,7 @@ class Experiment:
                     #deleted_indice_list.append(delete_indice)
 
                     for _ in range(compare_deletion_num):
-                        tag_size = sample_size()
+                        tag_size = 1 #sample_size()
                         indice_delete_random.append(len(new_batches))
                         x_list, delete_mask = random_delete(tag_size, x0[i], x1[i], x2[i])
                         new_batches.append(x_list)
@@ -1747,9 +1748,6 @@ class Experiment:
                 pos_reward_indice = np.int_(good_action)
                 loss_mask = -pos_reward_indice + np.ones_like(pos_reward_indice) * 0.1
                 x0,x1,x2,y = input_x
-
-                self.log2.debug("Good: {}".format(good_action))
-                self.log2.debug("Mask: {}".format(loss_mask))
                 reinforce_payload.append((x0, x1, x2, y, loss_mask))
 
 
@@ -1767,8 +1765,8 @@ class Experiment:
                 penalty = (num_tag - 1) * 0.1
                 target_ce_drop = init_ce - target_ce - penalty
                 target_ce_drop_list.append(target_ce_drop)
-                self.log2.debug(
-                    "target_ce_drop : {0:.4f}  n_token : {1}".format(target_ce_drop, num_tag))
+                #self.log2.debug(
+                #    "target_ce_drop : {0:.4f}  n_token : {1}".format(target_ce_drop, num_tag))
 
                 good_action = predicted_action
                 best_ce_drop = target_ce_drop
@@ -1785,7 +1783,14 @@ class Experiment:
                 pos_trial += 1
 
             match_rate = pos_win / pos_trial
-            self.log.debug("ce drop : {0:.4f}  suc_rate : {1:0.2f}".format(average(target_ce_drop_list), match_rate))
+            avg_ce_drop = average(target_ce_drop_list)
+            self.log.debug("ce drop : {0:.4f}  suc_rate : {1:0.2f}".format(avg_ce_drop, match_rate))
+            summary = tf.Summary()
+            summary.value.add(tag='CE_Drop', simple_value=avg_ce_drop)
+            summary.value.add(tag='Success', simple_value=match_rate)
+            self.train_writer.add_summary(summary, self.g_step)
+            self.train_writer.flush()
+
             #  update gradient
             def reinforce_commit():
                 batches = get_batches_ex(reinforce_payload, self.hparam.batch_size, 5)
@@ -1824,7 +1829,8 @@ class Experiment:
         def valid_fn():
             loss_list = []
             acc_list = []
-            eval()
+            if f_train_ex:
+                eval()
             for batch in dev_batches[:100]:
                 loss_val, summary, acc = self.sess.run([task.loss, self.merged, task.acc],
                                                   feed_dict=batch2feed_dict(batch)
@@ -1836,7 +1842,7 @@ class Experiment:
             self.log.info("Validation : loss={0:.04f} acc={1:.04f}".format(average(loss_list), average(acc_list)))
 
         def save_fn():
-            self.save_model(exp_config.name, 100)
+            self.save_model(exp_config.name, 10)
 
         train_batches, dev_batches = self.load_nli_data(data_loader)
         valid_freq = 25

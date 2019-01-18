@@ -18,6 +18,7 @@ def encode_pred_set(top_k):
     print("Collection has #docs :", len(collection))
     queries = load_robust04_query()
     ranked_lists = load_2k_rank()
+    window_size = 200 * 3
 
     payload = []
     with ProcessPoolExecutor(max_workers=8) as executor:
@@ -26,19 +27,33 @@ def encode_pred_set(top_k):
             ranked = ranked_lists[q_id]
             ranked.sort(key=lambda x:x[1])
             assert ranked[0][1] == 1
-
+            print(q_id)
             doc_ids = []
             for doc_id, rank, score, in ranked[:top_k]:
                 doc_ids.append(doc_id)
 
                 raw_query = queries[q_id]
                 content = collection[doc_id]
-                runs_future = executor.submit(encoder_unit.encode_long_text, raw_query, content)
-                future_list.append((doc_id, q_id, runs_future))
-        for doc_id, q_id, runs_future in future_list:
-            payload.append((doc_id, q_id, runs_future.result()))
+                idx = 0
+                f_list = []
+                while idx < len(content):
+                    span = content[idx:idx + window_size]
+                    f = executor.submit(encoder_unit.encode_pair, raw_query, span)
+                    idx += window_size
+                    f_list.append(f)
+                #runs_future = executor.submit(encoder_unit.encode_long_text, raw_query, content)
+                future_list.append((doc_id, q_id, f_list))
 
-    pickle.dump(payload, open("payload{}.pickle".format(top_k), "wb"))
+        def get_flist(f_list):
+            r = []
+            for f in f_list:
+                r.append(f.result())
+            return r
+
+        for doc_id, q_id, f_list in future_list:
+            payload.append((doc_id, q_id, get_flist(f_list)))
+
+    pickle.dump(payload, open("payload_B_{}.pickle".format(top_k), "wb"))
 
 
 def check_pred_set():
