@@ -56,6 +56,47 @@ def encode_pred_set(top_k):
     pickle.dump(payload, open("payload_B_{}.pickle".format(top_k), "wb"))
 
 
+def write_payload_in_plain(top_k):
+    vocab_filename = "bert_voca.txt"
+    max_sequence = 200
+    voca_path = os.path.join(data_path, vocab_filename)
+    collection = trec.load_robust(trec.robust_path)
+    print("Collection has #docs :", len(collection))
+    queries = load_robust04_query()
+    ranked_lists = load_2k_rank()
+    window_size = 200 * 3
+
+    payload = []
+    for q_id in ranked_lists:
+        ranked = ranked_lists[q_id]
+        ranked.sort(key=lambda x:x[1])
+        assert ranked[0][1] == 1
+        doc_ids = []
+        for doc_id, rank, score, in ranked[:top_k]:
+            doc_ids.append(doc_id)
+
+            raw_query = queries[q_id]
+            content = collection[doc_id]
+            idx = 0
+            doc_query_list = []
+            while idx < len(content):
+                span = content[idx:idx + window_size]
+                doc_query_list.append((raw_query, span))
+                idx += window_size
+            #runs_future = executor.submit(encoder_unit.encode_long_text, raw_query, content)
+            payload.append((q_id, doc_id, doc_query_list))
+
+    total_n = len(payload)
+    step = 1000
+    print(total_n)
+    idx = 0
+    while idx < total_n:
+        name = "payload200_part_{}".format(idx)
+        path = os.path.join(data_path, "robust", "payload_plain_parts", name)
+        pickle.dump(payload[idx: idx+step], open(path, "wb") )
+        idx += step
+
+
 def check_pred_set():
     path = os.path.join(data_path, "robust", "payload100.pickle")
     payload = pickle.load(open(path, "rb"))
@@ -74,5 +115,5 @@ def check_pred_set():
 
 
 if __name__ == '__main__':
-    encode_pred_set(200)
-
+    #encode_pred_set(200)
+    write_payload_in_plain(200)
