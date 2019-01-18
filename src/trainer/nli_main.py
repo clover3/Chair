@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 
 from task.transformer_est import Transformer, Classification
@@ -38,7 +38,7 @@ def train_nil_on_bert():
     nli_setting.vocab_size = 30522
     nli_setting.vocab_filename = "bert_voca.txt"
     e_config = ExperimentConfig()
-    e_config.name = "NLI_bert_{}".format("w_explain")
+    e_config.name = "NLI_Only_{}".format("A")
     e_config.num_epoch = 4
     e_config.save_interval = 30 * 60  # 30 minutes
 
@@ -47,7 +47,7 @@ def train_nil_on_bert():
 
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     #load_id = ("NLI_bert_w_explain", 'model-91531')
-    e.train_nli_ex(nli_setting, e_config, data_loader, load_id, True)
+    e.train_nli_ex(nli_setting, e_config, data_loader, load_id, False)
 
 
 
@@ -59,14 +59,15 @@ def train_nli_with_reinforce():
     nli_setting.vocab_filename = "bert_voca.txt"
 
     e_config = ExperimentConfig()
-    e_config.name = "NLI_run_{}".format("nli_warm")
+    e_config.name = "NLIEx_{}".format("B")
     e_config.num_epoch = 4
     e_config.save_interval = 30 * 60  # 30 minutes
-    e_config.load_names = ['bert', 'cls_dense', 'aux_conflict']
+    e_config.load_names = ['bert'] #, 'cls_dense', 'aux_conflict']
 
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
-    load_id = ("NLI_bert_w_explain", "model-91531")
+    #load_id = ("NLI_bert_w_explain", "model-91531")
+    load_id = ("NLIEx_A", "model-16910")
     e.train_nli_ex(nli_setting, e_config, data_loader, load_id, True)
 
 
@@ -127,5 +128,5 @@ def train_nli_with_reinforce_old():
 
 
 if __name__ == '__main__':
-    action = "attribution_explain"
+    action = "train_nli_with_reinforce"
     locals()[action]()
