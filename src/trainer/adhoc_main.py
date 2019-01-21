@@ -1,6 +1,3 @@
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
-
 
 from task.transformer_est import Transformer, Classification
 from models.transformer import bert
@@ -38,12 +35,11 @@ def train_adhoc_on_robust():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Adhoc_{}".format("F")
+    e_config.name = "Adhoc_{}".format("H")
     e_config.num_epoch = 4
     e_config.save_interval = 10 * 60  # 60 minutes
     e_config.load_names = ['bert']
     vocab_size = 30522
-
 
     data_loader = data_sampler.DataLoaderFromFile(hp.batch_size , vocab_size)
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
@@ -59,21 +55,21 @@ def predict_adhoc_robust():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Adhoc_{}_eval".format("F")
+    e_config.name = "Adhoc_{}_eval".format("H")
     e_config.load_names = ['bert', 'reg_dense']
     vocab_size = 30522
-    vocab_filename = "bert_voca.txt"
-    payload_path = os.path.join(path.data_path, "robust", "payload10.pickle")
-    load_id = ("Adhoc_F", 'model-296')
-    e.predict_robust(e_config, vocab_size, load_id, payload_path)
+    payload_path = os.path.join(path.data_path, "robust_payload", "payload_B_200.pickle")
+    from config.predict_adhoc_robust import q_id_range
+    load_id = ("Adhoc_H", 'model-74772')
+    e.predict_robust(e_config, vocab_size, load_id, payload_path, q_id_range)
 
 
-def predict_tfidf_robust():
+def predict_bm25_robust():
     hp = hyperparams.HPAdhoc()
     hp.batch_size = 512
 
     e = Experiment(hp)
-    e.rank_robust_tfidf()
+    e.rank_robust_bm25()
 
 
 def run_adhoc_rank_on_robust():
@@ -155,5 +151,5 @@ def test_ql():
 
 
 if __name__ == '__main__':
-    action = "predict_tfidf_robust"
+    action = "predict_bm25_robust"
     locals()[action]()

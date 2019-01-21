@@ -12,6 +12,8 @@ from data_generator.data_parser.trec import *
 import random
 import sys
 from misc_lib import *
+from data_generator.adhoc.ws import load_marco_queries
+from adhoc.bm25 import get_bm25
 
 class DataSampler:
     def __init__(self, queries, collection):
@@ -31,8 +33,6 @@ class DataSampler:
     def init_from_pickle(cls, pickle_name):
         return load_from_pickle(pickle_name)
 
-    def tfidf_span(self, q_terms, text_span):
-        return sum([text_span.count(q_i) * self.idf[q_i] for q_i in q_terms])
 
     def pair_generator(self):
         ranked_list = self.ranked_list_generate()
@@ -41,13 +41,13 @@ class DataSampler:
             for key_score, span_list in score_group.items():
                 for score, span in span_list:
                     candidate.append((score, span))
-            print("candidate len : {}".format(len(candidate)))
+            #print("candidate len : {}".format(len(candidate)))
             for i in range(self.inst_per_query):
                 l = random.sample(range(len(candidate)), 2)
                 x1 = candidate[l[0]]
                 x2 = candidate[l[1]]
-                print(x1[0], x1[1][:100])
-                print(x2[0], x2[1][:100])
+                #print(x1[0], x1[1][:100])
+                #print(x2[0], x2[1][:100])
                 if x1[0] < x2[0]:
                     yield query, x1, x2
                 else:
@@ -76,6 +76,8 @@ class DataSampler:
                 if len(output[score_grouper]) < max_occurence:
                     output[score_grouper].append((score, span))
             return output
+        collection_len = 252359881
+        avdl = collection_len / len(self.collection)
 
         random.shuffle(self.queries)
         for query in self.queries:
@@ -105,7 +107,7 @@ class DataSampler:
                 while loc_ptr < len(raw_document):
                     text_span = raw_document[loc_ptr:loc_ptr + window_size]
 
-                    score = self.tfidf_span(q_terms, text_span)
+                    score = get_bm25(q_terms, text_span, self.idf.df, N=len(self.collection), avdl=avdl)
                     max_score = max(score, max_score)
                     spans.append((score, text_span))
                     loc_ptr += sample_shift()
@@ -122,9 +124,9 @@ class DataSampler:
 class DataWriter:
     def __init__(self, max_sequence):
         tprint("Loading data sampler")
-        mem_path = "/dev/shm/robust04.pickle"
-        self.data_sampler = pickle.load(open(mem_path, "rb"))
-        #self.data_sampler = DataSampler.init_from_pickle("robust04")
+        #mem_path = "/dev/shm/robust04.pickle"
+        #self.data_sampler = pickle.load(open(mem_path, "rb"))
+        self.data_sampler = DataSampler.init_from_pickle("robust04")
         vocab_filename = "bert_voca.txt"
         voca_path = os.path.join(data_path, vocab_filename)
         self.encoder_unit = EncoderUnit(max_sequence, voca_path)
@@ -140,13 +142,15 @@ class DataWriter:
     def get_data(self, data_size):
         assert data_size % 2 == 0
         result = []
+        ticker = TimeEstimator(data_size)
         while len(result) < data_size:
             raw_inst = self.pair_generator.__next__()
             result += list(self.encode_pair(raw_inst))
+            ticker.tick()
         return result
 
-    def write(self, path):
-        num_data = 16 * 100
+    def write(self, path, num_data):
+        assert num_data % 2 == 0
         pickle.dump(self.get_data(num_data), open(path, "wb"))
 
 class Server:
@@ -262,8 +266,8 @@ class DataLoaderFromFile:
         self.load_next_data()
 
     def get_path(self, i):
-        filename = "data{}.pickle".format(i)
-        return os.path.join(data_path, "robust", filename)
+        filename = "payload_{}.pickle".format(i)
+        return os.path.join(data_path, "robust", "train_data", filename)
 
 
     def feed_queue(self):
@@ -284,6 +288,7 @@ class DataLoaderFromFile:
         if not os.path.exists(next_path):
             print("WARNING next file is unavailable : {}".format(next_path))
         self.cur_data = pickle.load(open(path, "rb"))
+        random.shuffle(self.cur_data)
         self.cur_idx = 0
         return self.cur_data
 
@@ -303,6 +308,18 @@ class DataLoaderFromFile:
         return self.train_queue.get(block=True)
 
 
+def write_data():
+    random.seed()
+    start_i = int(sys.argv[1])
+    print("data:", start_i)
+    seq_len = 200
+    block_len = 16 * 1000  # it will be about 20 MB
+    dw = DataWriter(seq_len)
+
+    filename = "data{}.pickle".format(start_i)
+    path = os.path.join(data_path, "robust_train_3", filename)
+    dw.write(path, block_len)
+
 
 def init_sampler_robust04():
     marco_queries = list(load_marco_queries())
@@ -311,12 +328,6 @@ def init_sampler_robust04():
     save_to_pickle(data_sampler,"robust04")
 
 
+
 if __name__ == '__main__':
-    random.seed()
-    start_i = int(sys.argv[1])
-    print("data:", start_i)
-    dw = DataWriter(200)
-    for i in range(start_i, start_i + 100):
-        filename = "data{}.pickle".format(i)
-        path = os.path.join(data_path, "robust", filename)
-        dw.write(path)
+    write_data()
