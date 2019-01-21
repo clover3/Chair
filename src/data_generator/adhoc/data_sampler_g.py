@@ -39,11 +39,13 @@ def load_marco_query(path):
 
 
 def debiased_sampling(ranked_list):
-    output = {}
+    output = dict() 
     for doc_id, rank, score in ranked_list:
         score_grouper = int(float(score) + 0.8)
         if score_grouper not in output:
-            output[score_grouper] = (doc_id, score)
+            output[score_grouper] = list()
+        if len(output[score_grouper]) < 2:
+            output[score_grouper].append((doc_id, score))
     return list(output.values())
 
 
@@ -69,14 +71,17 @@ class DataSampler:
             if len(ranked_list) < 20 :
                 continue
 
-            sample_space = debiased_sampling(ranked_list)
-            if len(sample_space) < 20 : 
-                continue
+            sample_space = []
+            for span_list in debiased_sampling(ranked_list):
+                for score, span in span_list:
+                    sample_space.append((score, span))
             # Sample 5 pairs from ranked list
             # Sample 3 pairs, where one is from ranked_list and one is from other than ranked list
+            print(sample_space)
 
             for i in range(self.n_sample_ranked):
                 (doc_id_1, score_1), (doc_id_2, score_2) = random.sample(sample_space, 2)
+                print((score_1, score_2))
 
                 if score_1 < score_2:
                     sampled.append((query, doc_id_1, doc_id_2))

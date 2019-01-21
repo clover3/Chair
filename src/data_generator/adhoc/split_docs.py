@@ -27,7 +27,7 @@ def split_docs():
             text_span = content[loc_ptr:loc_ptr + window_size]
             new_id = doc_id + "_{}".format(loc_ptr)
             write(new_id, text_span)
-            loc_ptr += sample_shift()
+            loc_ptr += window_size #sample_shift()
 
 
 if __name__ == "__main__":
