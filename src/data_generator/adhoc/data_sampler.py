@@ -288,7 +288,6 @@ class DataLoaderFromFile:
         if not os.path.exists(next_path):
             print("WARNING next file is unavailable : {}".format(next_path))
         self.cur_data = pickle.load(open(path, "rb"))
-        random.shuffle(self.cur_data)
         self.cur_idx = 0
         return self.cur_data
 
