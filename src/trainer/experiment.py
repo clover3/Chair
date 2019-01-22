@@ -1570,7 +1570,7 @@ class Experiment:
         task = transformer_nli(self.hparam, nli_setting.vocab_size)
         with tf.variable_scope("optimizer"):
             train_cls = self.get_train_op(task.loss)
-            train_rl = self.get_train_op2(task.rl_loss, 3e-3,name="rl")
+            train_rl = self.get_train_op(task.rl_loss, name="rl")
 
         CONTRADICTION = 2
 
@@ -1643,7 +1643,7 @@ class Experiment:
         def over_zero(np_arr):
             return np.less(0, np_arr).astype(np.float32)
 
-        multi_deletion = False
+        multi_deletion = True
         if multi_deletion == True:
             logit2tag = over_zero
         else:
@@ -1651,7 +1651,8 @@ class Experiment:
 
         def sample_size():
             if multi_deletion:
-                prob = [(1,0.5), (2,0.2), (3,0.1), (4,0.1), (5,0.1)]
+                #prob = [(1,0.5), (2,0.2), (3,0.1), (4,0.1), (5,0.1)]
+                prob = [(1,0.9), (2,0.1)]
                 v = random.random()
                 for n, p in prob:
                     v -= p
@@ -1677,6 +1678,7 @@ class Experiment:
             compare_deletion_num = 20
             new_batches = []
             deleted_mask_list = []
+            tag_size_list = []
             for i in range(len(logits)):
                 if pred[i] == CONTRADICTION:
                     info = {}
@@ -1685,6 +1687,7 @@ class Experiment:
                     conf_tags = logit2tag(conf_logit[i])
                     self.log2.debug("CONF: {}".format(numpy_print(conf_logit[i])))
                     tag_size = np.count_nonzero(conf_tags)
+                    tag_size_list.append(tag_size)
                     if tag_size > 10:
                         self.log2.debug("#conflict token={}".format(tag_size))
 
@@ -1701,7 +1704,7 @@ class Experiment:
                     #deleted_indice_list.append(delete_indice)
 
                     for _ in range(compare_deletion_num):
-                        tag_size = 1 #sample_size()
+                        tag_size = sample_size()
                         indice_delete_random.append(len(new_batches))
                         x_list, delete_mask = random_delete(tag_size, x0[i], x1[i], x2[i])
                         new_batches.append(x_list)
@@ -1709,6 +1712,9 @@ class Experiment:
 
                     info['indice_delete_random'] = indice_delete_random
                     instance_infos.append(info)
+            if tag_size_list:
+                self.log2.debug("avg conflict token#={}".format(average(tag_size_list)))
+
             # Try deletions runs
             if len(new_batches) == 0:
                 return
@@ -1749,6 +1755,11 @@ class Experiment:
                 x0,x1,x2,y = input_x
                 reinforce_payload.append((x0, x1, x2, y, loss_mask))
 
+            def supervise(good_action, input_x):
+                label = np.int_(good_action)
+                x0, x1, x2, y = input_x
+                self.log2.debug("Label: {}".format(label))
+                reinforce_payload.append((x0, x1, x2, y, label))
 
             # calc reward
             target_ce_drop_list = []
@@ -1776,7 +1787,8 @@ class Experiment:
                         best_ce_drop = comp_ce_drop
                         good_action = deleted_mask_list[idx_delete_random]
 
-                reinforce_one(good_action, input_x)
+                #reinforce_one(good_action, input_x)
+                supervise(good_action, input_x)
                 if target_ce_drop >= best_ce_drop:
                     pos_win += 1
                 pos_trial += 1
@@ -1793,11 +1805,12 @@ class Experiment:
             #  update gradient
             def reinforce_commit():
                 batches = get_batches_ex(reinforce_payload, self.hparam.batch_size, 5)
+                rl_loss_list = []
                 for batch in batches:
                     x0, x1, x2, y, rf_mask = batch
-                    _, rl_loss, conf_logits, verbose_loss = self.sess.run([train_rl, task.rl_loss,
+                    _, rl_loss, conf_logits,  = self.sess.run([train_rl, task.rl_loss,
                                                                                 task.conf_logits,
-                                                                                task.verbose_loss],
+                                                                                ],
                                             feed_dict={
                                                 task.x_list[0]: x0,
                                                 task.x_list[1]: x1,
@@ -1805,6 +1818,8 @@ class Experiment:
                                                 task.y : y,
                                                 task.rf_mask : rf_mask,
                                             })
+                    rl_loss_list.append(rl_loss)
+                summary.value.add(tag='RL_Loss', simple_value=average(rl_loss_list))
             reinforce_commit()
 
 
@@ -2447,7 +2462,7 @@ class Experiment:
             print(with_q, wo_q, with_q<wo_q)
 
 
-    def rank_robust_tfidf(self):
+    def rank_robust_bm25(self):
         queries = load_robust04_query()
         ranked_lists = load_2k_rank()
 
@@ -2476,7 +2491,7 @@ class Experiment:
         avdl = collection_len / len(collection)
         print("len(collection)", len(collection))
         print("avdl ", avdl)
-        fout = path.open_pred_output("rerank_{}".format("tfidf"))
+        fout = path.open_pred_output("rerank_{}".format("bm25"))
         for q_id in ranked_lists:
             ranked = ranked_lists[q_id]
             ranked.sort(key=lambda x:x[1])
@@ -2490,12 +2505,12 @@ class Experiment:
             query = queries[q_id]
             for doc_id in doc_ids:
                 doc = collection[doc_id]
-                new_score[doc_id] = get_bm25(query, doc, None, idf.df, N=len(collection), avdl=avdl)
+                new_score[doc_id] = get_bm25(query, doc, idf.df, N=len(collection), avdl=avdl)
             new_list = list(new_score.items())
             new_list.sort(key=lambda x:x[1], reverse=True)
             for doc_id in doc_ids:
                 if doc_id not in new_score:
-                    new_list.append((doc_id, -1000))
+                    assert False
             rank_idx = 1
             for doc_id, score in new_list:
                 fout.write("{} Q0 {} {} {} galago\n".format(q_id, doc_id, rank_idx, score))

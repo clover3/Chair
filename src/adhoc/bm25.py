@@ -2,6 +2,8 @@ from collections import Counter
 from math import log
 from data_generator.tokenizer_b import BasicTokenizer
 from krovetzstemmer import Stemmer
+import nltk
+
 k1 = 1.2
 k2 = 100
 k3 = 1
@@ -26,10 +28,10 @@ def compute_K(dl, avdl):
 
 tokenizer = BasicTokenizer(True)
 def stem_tokenize(text):
-    return list([stemmer.stem(t) for t in tokenizer.tokenize(text)])
+    return list([stemmer.stem(t) for t in nltk.word_tokenize(text)])
 
 mu = 1000
-def get_bm25(query, doc, ctf, df, N, avdl):
+def get_bm25(query, doc, df, N, avdl):
     q_terms = stem_tokenize(query)
     d_terms = stem_tokenize(doc)
     q_tf = Counter(q_terms)
@@ -44,8 +46,6 @@ def get_bm25(query, doc, ctf, df, N, avdl):
     return score
 
 import operator
-
-
 
 class QueryProcessor:
     def __init__(self, queries, corpus):

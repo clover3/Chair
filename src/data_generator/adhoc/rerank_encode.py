@@ -2,7 +2,7 @@ import os
 from data_generator.tokenizer_b import EncoderUnit
 from path import data_path
 import pickle
-
+import sys
 
 def encode(input_path, output_path):
     payload = pickle.load(open(input_path, "rb"))
@@ -23,7 +23,8 @@ def encode(input_path, output_path):
 
 
 if __name__ == '__main__':
-    data_id = 0
-    input_path = "REPLACE/payload200_part_{}".format(data_id)
-    output_path = "REPLACE/enc_payload200_part_{}".format(data_id)
+    data_id = int(sys.argv[1])
+    print(data_id)
+    input_path = "/mnt/nfs/work3/youngwookim/code/Chair/data/robust/payload_plain_parts/payload200_part_{}".format(data_id)
+    output_path = "/mnt/nfs/work3/youngwookim/code/Chair/data/robust/payload_encoded_parts/enc_payload200_part_{}".format(data_id)
     encode(input_path, output_path)

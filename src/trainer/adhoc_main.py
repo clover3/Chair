@@ -67,12 +67,12 @@ def predict_adhoc_robust():
     e.predict_robust(e_config, vocab_size, load_id, payload_path, task_idx)
 
 
-def predict_tfidf_robust():
+def predict_bm25_robust():
     hp = hyperparams.HPAdhoc()
     hp.batch_size = 512
 
     e = Experiment(hp)
-    e.rank_robust_tfidf()
+    e.rank_robust_bm25()
 
 
 def run_adhoc_rank_on_robust():
@@ -154,5 +154,5 @@ def test_ql():
 
 
 if __name__ == '__main__':
-    action = "predict_adhoc_robust"
+    action = "predict_bm25_robust"
     locals()[action]()
