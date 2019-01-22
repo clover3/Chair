@@ -1,0 +1,5 @@
+
+This files are generated from BM25 function of galago.
+
+A problem is that they do not contain lower ranked documents,
+thus neural network may be unstable on unseen types of data.

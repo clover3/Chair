@@ -36,15 +36,15 @@ def train_adhoc_on_robust():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Adhoc_{}".format("I2")
+    e_config.name = "Adhoc_{}".format("J")
     e_config.num_epoch = 4
     e_config.save_interval = 10 * 60  # 60 minutes
-    e_config.load_names = ['bert', 'reg_dense']
+    e_config.load_names = ['bert'] #, 'reg_dense']
     vocab_size = 30522
 
     data_loader = data_sampler.DataLoaderFromFile(hp.batch_size, vocab_size)
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
-    load_id = ("Adhoc_I2", 'model-290')
+    #load_id = ("Adhoc_I2", 'model-290')
     e.train_adhoc2(e_config, data_loader, load_id)
 
 
@@ -57,13 +57,13 @@ def predict_adhoc_robust():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Adhoc_{}_eval".format("I2")
+    e_config.name = "Adhoc_{}_eval".format("J")
     e_config.load_names = ['bert', 'reg_dense']
     vocab_size = 30522
     payload_path = os.path.join(path.data_path, "robust_payload", "payload_B_200.pickle")
     task_idx = int(sys.argv[1])
     print(task_idx)
-    load_id = ("Adhoc_I2", 'model-1320')
+    load_id = ("Adhoc_J", 'model-2043')
     e.predict_robust(e_config, vocab_size, load_id, payload_path, task_idx)
 
 
@@ -154,5 +154,5 @@ def test_ql():
 
 
 if __name__ == '__main__':
-    action = "predict_bm25_robust"
+    action = "predict_adhoc_robust"
     locals()[action]()

@@ -2233,12 +2233,15 @@ class Experiment:
             #compare_bm25()
             acc_list = []
             loss_list = []
-            for batch in dev_batches:
+            for idx, batch in enumerate(dev_batches):
                 loss_val, summary, logits = self.sess.run([task.loss, self.merged, task.logits],
                                                   feed_dict=batch2feed_dict(batch)
                                                   )
                 acc_list.append(logits2acc(logits))
                 loss_list.append(loss_val)
+                v_step = self.g_step + idx - int(len(dev_batches) / 2)
+                self.test_writer.add_summary(summary, v_step)
+
 
             self.log.info("Validation : loss={0:.04f} acc={1:.02f}".
                           format(average(loss_list), average(acc_list)))
