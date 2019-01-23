@@ -44,3 +44,7 @@ def get_batches_ex(data, batch_size, n_inputs):
             new_data.append(batch)
 
     return new_data
+
+
+def numpy_print(arr):
+    return "".join(["{0:.3f} ".format(v) for v in arr])

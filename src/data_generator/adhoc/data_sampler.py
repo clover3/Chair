@@ -328,6 +328,5 @@ def init_sampler_robust04():
     save_to_pickle(data_sampler,"robust04")
 
 
-
 if __name__ == '__main__':
     write_data()
