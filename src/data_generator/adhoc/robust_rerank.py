@@ -69,7 +69,7 @@ def write_payload_in_plain(top_k):
     payload = []
     for q_id in ranked_lists:
         ranked = ranked_lists[q_id]
-        ranked.sort(key=lambda x:x[1])
+        ranked.sort(key=lambda x: x[1])
         assert ranked[0][1] == 1
         doc_ids = []
         for doc_id, rank, score, in ranked[:top_k]:
@@ -87,6 +87,8 @@ def write_payload_in_plain(top_k):
             payload.append((q_id, doc_id, doc_query_list))
 
     total_n = len(payload)
+
+
     step = 1000
     print(total_n)
     idx = 0

@@ -14,6 +14,7 @@ import sys
 from misc_lib import *
 from data_generator.adhoc.ws import load_marco_queries
 from adhoc.bm25 import get_bm25
+from config.input_path import train_data_dir
 
 class DataSampler:
     def __init__(self, queries, collection):
@@ -266,8 +267,9 @@ class DataLoaderFromFile:
         self.load_next_data()
 
     def get_path(self, i):
-        filename = "payload_{}.pickle".format(i)
-        return os.path.join(data_path, "robust", "train_data", filename)
+        filename = "data{}.pickle".format(i)
+        return os.path.join(train_data_dir, filename)
+
 
 
     def feed_queue(self):
@@ -288,7 +290,6 @@ class DataLoaderFromFile:
         if not os.path.exists(next_path):
             print("WARNING next file is unavailable : {}".format(next_path))
         self.cur_data = pickle.load(open(path, "rb"))
-        random.shuffle(self.cur_data)
         self.cur_idx = 0
         return self.cur_data
 
@@ -325,7 +326,7 @@ def init_sampler_robust04():
     marco_queries = list(load_marco_queries())
     robust_colleciton = load_robust(robust_path)
     data_sampler = DataSampler(marco_queries, robust_colleciton)
-    save_to_pickle(data_sampler,"robust04")
+    save_to_pickle(data_sampler, "robust04")
 
 
 if __name__ == '__main__':

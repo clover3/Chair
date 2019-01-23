@@ -1,21 +1,25 @@
 import os
 from os.path import dirname
+import time
 
 project_root = os.path.abspath(dirname(dirname((os.path.abspath(__file__)))))
 src_path = os.path.join(project_root, "src")
 config_dir_path = os.path.join(src_path, "config")
 meta_run_path = os.path.join(project_root, "gypsum", "meta_run.sh")
-format_path = os.path.join(config_dir_path, "predict_adhoc_robust.py.format")
-config_path = os.path.join(config_dir_path, "predict_adhoc_robust.py")
-
+sh_format_path = os.path.join(project_root, "gypsum", "adhoc_main_arg.sh.format")
+sh_path_prefix = os.path.join(project_root, "gypsum", "adhoc_main_arg.sh")
 
 def run_job(i):
-    content = open(format_path, "r").read()
-    content = content.replace("${idx}", str(i))
-    open(config_path, "w").write(content)
-    os.system("sh " + meta_run_path)
+    content = open(sh_format_path, "r").read()
+    content = content.replace("${arg}", str(i))
+    sh_path = sh_path_prefix + "_{}".format(i)
+    open(sh_path, "w").write(content)
 
+    sh_cmd = "sbatch -p m40-short --gres=gpu:1 " + sh_path
+    os.system(sh_cmd)
+    time.sleep(1)
 
+# (3,9)
 for i in range(10):
     run_job(i)
 

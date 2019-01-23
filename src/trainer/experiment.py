@@ -1347,8 +1347,8 @@ class Experiment:
         variables = tf.contrib.slim.get_variables_to_restore()
         variables_to_restore = [v for v in variables if condition(v)]
         print("Restoring: {} {}".format(name, id))
-        for v in variables_to_restore:
-            print(v)
+        #for v in variables_to_restore:
+        #    print(v)
 
         self.loader = tf.train.Saver(variables_to_restore, max_to_keep=1)
         self.loader.restore(self.sess, path)
@@ -2485,25 +2485,39 @@ class Experiment:
 
         def valid_fn():
             #compare_bm25()
+            acc_list = []
             loss_list = []
-            for batch in dev_batches:
-                loss_val, summary, = self.sess.run([task.loss, self.merged,],
+            for idx, batch in enumerate(dev_batches):
+                loss_val, summary, logits = self.sess.run([task.loss, self.merged, task.logits],
                                                   feed_dict=batch2feed_dict(batch)
                                                   )
+                acc_list.append(logits2acc(logits))
                 loss_list.append(loss_val)
+                v_step = self.g_step + idx - int(len(dev_batches) / 2)
+                self.test_writer.add_summary(summary, v_step)
 
-                self.test_writer.add_summary(summary, self.g_step)
-            self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
 
+            self.log.info("Validation : loss={0:.04f} acc={1:.02f}".
+                          format(average(loss_list), average(acc_list)))
 
+        def logits2acc(logits):
+            paired = np.reshape(logits, [-1, 2])
+            n = paired.shape[0]
+            acc = np.count_nonzero((paired[: ,1] - paired[:, 0]) > 0)
+            return acc / n
 
         def train_fn(batch, step_i):
             # normal train
-            loss_val, summary, _= self.sess.run([task.loss, self.merged, train_op],
+            loss_val, summary, logits, _= self.sess.run([task.loss, self.merged, task.logits, train_op],
                                                feed_dict=batch2feed_dict(batch)
                                                )
-            self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
+            acc = logits2acc(logits)
+            self.log.debug("Step {0} train loss={1:.04f} acc={2:.02f}".format(step_i, loss_val, acc))
             self.train_writer.add_summary(summary, self.g_step)
+            summary = tf.Summary()
+            summary.value.add(tag='acc', simple_value=acc)
+            self.train_writer.add_summary(summary, self.g_step)
+            self.train_writer.flush()
             self.g_step += 1
             return loss_val, 0
 
@@ -2538,7 +2552,7 @@ class Experiment:
             train_fn(batch, step_i)
             self.g_step += 1
 
-    def predict_robust(self, exp_config, voca_size, preload_id, payload_path, q_id_range):
+    def predict_robust(self, exp_config, voca_size, preload_id, payload_path, task_idx):
         tprint("predict_robust")
         task = transformer_adhoc(self.hparam, voca_size)
         self.log.name = exp_config.name
@@ -2584,7 +2598,20 @@ class Experiment:
             ys = np.concatenate(y_list)
             return ys
 
-        st, ed = q_id_range
+        q_id_list = [
+            (301, 325),
+            (326, 350),
+            (351, 375),
+            (376, 400),
+            (401, 425),
+            (426, 450),
+            (601, 625),
+            (626, 650),
+            (651, 675),
+            (676, 700),
+        ]
+
+        st, ed = q_id_list[task_idx]
 
         def q_range(q_id):
             return st <= int(q_id) <= ed
@@ -2599,10 +2626,10 @@ class Experiment:
         pk.do_duty()
         tprint("Completed GPU computations")
         per_query = defaultdict(list)
-        f_out_log = path.open_pred_output("rerank_{}_detail_{}_{}".format(exp_config.name, st, ed))
+        #f_out_log = path.open_pred_output("rerank_{}_detail_{}_{}".format(exp_config.name, st, ed))
         for q_id, doc_id, y_futures in score_list_future:
             scores = list([f.get() for f in y_futures])
-            f_out_log.write("{} {} ".format(q_id, doc_id) + " ".join([str(s) for s in scores]) + "\n")
+            #f_out_log.write("{} {} ".format(q_id, doc_id) + " ".join([str(s) for s in scores]) + "\n")
             per_query[q_id].append((doc_id, max(scores)))
 
         fout = path.open_pred_output("rerank_{}_{}_{}".format(exp_config.name, st, ed))
