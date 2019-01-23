@@ -43,7 +43,7 @@ import threading
 from models.baselines import svm
 from models.transformer.tranformer_nli import transformer_nli, transformer_nli_embedding_in
 from models.transformer.transformer_controversy import transformer_controversy, transformer_controversy_fixed_encoding
-from models.transformer.transformer_adhoc import transformer_adhoc
+from models.transformer.transformer_adhoc import transformer_adhoc, transformer_adhoc_ex
 from models.transformer.transformer_lm import transformer_ql
 
 from tensorflow.python.client import timeline
@@ -2207,7 +2207,8 @@ class Experiment:
 
     def train_adhoc2(self, exp_config, data_loader, preload_id):
         tprint("train_adhoc2")
-        task = transformer_adhoc(self.hparam, data_loader.voca_size)
+        #task = transformer_adhoc(self.hparam, data_loader.voca_size)
+        task = transformer_adhoc_ex(self.hparam, data_loader.voca_size)
         with tf.variable_scope("optimizer"):
             train_op = self.get_train_op(task.loss)
         self.log.name = exp_config.name
@@ -2300,7 +2301,8 @@ class Experiment:
 
     def predict_robust(self, exp_config, voca_size, preload_id, payload_path, task_idx):
         tprint("predict_robust")
-        task = transformer_adhoc(self.hparam, voca_size)
+        #task = transformer_adhoc(self.hparam, voca_size)
+        task = transformer_adhoc_ex(self.hparam, voca_size)
         self.log.name = exp_config.name
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
@@ -2372,10 +2374,10 @@ class Experiment:
         pk.do_duty()
         tprint("Completed GPU computations")
         per_query = defaultdict(list)
-        #f_out_log = path.open_pred_output("rerank_{}_detail_{}_{}".format(exp_config.name, st, ed))
+        f_out_log = path.open_pred_output("detail_rerank_{}_{}_{}".format(exp_config.name, st, ed))
         for q_id, doc_id, y_futures in score_list_future:
             scores = list([f.get() for f in y_futures])
-            #f_out_log.write("{} {} ".format(q_id, doc_id) + " ".join([str(s) for s in scores]) + "\n")
+            f_out_log.write("{} {} ".format(q_id, doc_id) + " ".join([str(s) for s in scores]) + "\n")
             per_query[q_id].append((doc_id, max(scores)))
 
         fout = path.open_pred_output("rerank_{}_{}_{}".format(exp_config.name, st, ed))

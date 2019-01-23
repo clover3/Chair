@@ -15,7 +15,7 @@ def run_job(i):
     sh_path = sh_path_prefix + "_{}".format(i)
     open(sh_path, "w").write(content)
 
-    sh_cmd = "sbatch -p m40-short --gres=gpu:1 " + sh_path
+    sh_cmd = "sbatch -p 1080ti-short --gres=gpu:1 " + sh_path
     os.system(sh_cmd)
     time.sleep(1)
 
