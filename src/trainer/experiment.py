@@ -1717,13 +1717,14 @@ class Experiment:
 
                     info['indice_delete_random'] = indice_delete_random
                     instance_infos.append(info)
-            if tag_size_list:
-                avg_tag_size = average(tag_size_list)
-                self.log2.debug("avg conflict token#={}".format(avg_tag_size))
 
             # Try deletions runs
             if len(new_batches) == 0:
                 return
+
+            avg_tag_size = average(tag_size_list)
+            self.log2.debug("avg tagged token#={}".format(avg_tag_size))
+
             alt_batches = get_batches_ex(new_batches, self.hparam.batch_size, 3)
             num_test_batches = len(alt_batches)
             alt_logits = []
@@ -2033,7 +2034,7 @@ class Experiment:
 
             ## Step 3) Calc reward
             def calc_reward(alt_logits, instance_infos, deleted_mask_list):
-                models_movement_list = []
+                models_score_list = []
                 reinforce_payload_list = []
                 pos_win = 0
                 pos_trial = 0
@@ -2043,26 +2044,32 @@ class Experiment:
                     input_x = info['orig_input']
 
                     predicted_action = deleted_mask_list[info['idx_delete_tagged']]
-                    models_movement = action_score(init_output, models_after_output, predicted_action)
-                    models_movement_list.append(models_movement)
+                    models_score = action_score(init_output, models_after_output, predicted_action)
+                    models_score_list.append(models_score)
                     #self.log2.debug(
                     #    "target_ce_drop : {0:.4f}  n_token : {1}".format(target_ce_drop, num_tag))
 
                     good_action = predicted_action
-                    best_movement = models_movement
+                    best_score = models_score
                     for idx_delete_random in info['indice_delete_random']:
                         alt_after_output = alt_logits[idx_delete_random]
                         random_action = deleted_mask_list[idx_delete_random]
-                        alt_movement = action_score(init_output, alt_after_output, random_action)
-                        if alt_movement > best_movement :
-                            best_movement = alt_movement
+                        alt_score = action_score(init_output, alt_after_output, random_action)
+                        if alt_score > best_score :
+                            best_score = alt_score
                             good_action = random_action
 
                     reward_payload = reinforce_one(good_action, input_x)
                     reinforce_payload_list.append(reward_payload)
-                    if models_movement >= best_movement:
+                    if models_score >= best_score:
                         pos_win += 1
                     pos_trial += 1
+
+                match_rate = pos_win / pos_trial
+                avg_score = average(models_score_list)
+                self.log.debug("drop score : {0:.4f}  suc_rate : {1:0.2f}".format(avg_score, match_rate))
+                summary.value.add(tag='CE_Drop', simple_value=avg_score)
+                summary.value.add(tag='Success', simple_value=match_rate)
                 return reinforce_payload_list
             reinforce_payload = calc_reward(alt_logits, instance_infos, deleted_mask_list)
 
