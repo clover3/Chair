@@ -290,6 +290,7 @@ class DataLoaderFromFile:
         if not os.path.exists(next_path):
             print("WARNING next file is unavailable : {}".format(next_path))
         self.cur_data = pickle.load(open(path, "rb"))
+        print("Loaded data {}".format(self.file_idx-1))
         self.cur_idx = 0
         return self.cur_data
 

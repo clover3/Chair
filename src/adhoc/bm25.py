@@ -23,6 +23,13 @@ def BM25_2(f, df, N, dl, avdl):
     second = log((N-df+0.5)/(df + 0.5))
     return first * second
 
+
+def BM25_reverse(score, df, N, dl, avdl):
+    K = k1 * (1- b+b*dl / avdl)
+    idf = log((N-df+0.5)/(df + 0.5))
+    tf = (score - K) / ( (k1+1)* idf -score )
+    return tf
+
 def compute_K(dl, avdl):
     return k1 * ((1-b) + b * (float(dl)/float(avdl)) )
 
