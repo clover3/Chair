@@ -22,7 +22,7 @@ class transformer_nli:
         input_mask = tf.placeholder(tf.int64, [None, seq_length])
         segment_ids = tf.placeholder(tf.int64, [None, seq_length])
         label_ids = tf.placeholder(tf.int64, [None])
-        method = 2
+        method = 1
         if method == 1:
             self.rf_mask = tf.placeholder(tf.float32, [None, seq_length])
         elif method == 2:
@@ -135,3 +135,4 @@ class transformer_nli_embedding_in:
         num_tagged = tf.nn.relu(self.conf_logits+1)
         self.verbose_loss = tf.reduce_mean(tf.reduce_sum(num_tagged, axis=1))
         self.rl_loss = tf.reduce_mean(rl_loss_list)
+
