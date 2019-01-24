@@ -48,6 +48,7 @@ from models.transformer.tranformer_nli import transformer_nli, transformer_nli_e
 from models.transformer.transformer_controversy import transformer_controversy, transformer_controversy_fixed_encoding
 from models.transformer.transformer_adhoc import transformer_adhoc, transformer_adhoc_ex
 from models.transformer.transformer_lm import transformer_ql
+from models.transformer.ScoreCombiner import *
 
 from tensorflow.python.client import timeline
 from misc_lib import delete_if_exist
@@ -2550,6 +2551,93 @@ class Experiment:
                     last_save = time.time()
 
             batch = data_loader.get_train_batch()
+            train_fn(batch, step_i)
+            self.g_step += 1
+
+
+
+
+    def train_score_merger(self, exp_config, data_loader):
+        tprint("train_score_merger")
+        #task = ScoreCombinerMax(self.hparam)
+        task = ScoreCombinerF1(self.hparam)
+        with tf.variable_scope("optimizer"):
+            train_op = self.get_train_op(task.loss)
+        self.log.name = exp_config.name
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        batch_size = self.hparam.batch_size
+
+        tprint("get_dev_data...")
+        dev_batches = data_loader.get_dev_data(batch_size)
+
+        def valid_fn():
+            #compare_bm25()
+            acc_list = []
+            loss_list = []
+            for idx, batch in enumerate(dev_batches):
+                loss_val, summary, logits = self.sess.run([task.loss, self.merged, task.logits],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                acc_list.append(logits2acc(logits))
+                loss_list.append(loss_val)
+                v_step = self.g_step + idx - int(len(dev_batches) / 2)
+                self.test_writer.add_summary(summary, v_step)
+
+            self.log.info("Validation : loss={0:.04f} acc={1:.02f}".
+                          format(average(loss_list), average(acc_list)))
+
+        def logits2acc(logits):
+            paired = np.reshape(logits, [-1, 2])
+            n = paired.shape[0]
+            acc = np.count_nonzero((paired[: ,1] - paired[:, 0]) > 0)
+            return acc / n
+
+        def train_fn(batch, step_i):
+            # normal train
+            loss_val, summary, logits, _= self.sess.run([task.loss, self.merged, task.logits, train_op],
+                                               feed_dict=batch2feed_dict(batch)
+                                               )
+            acc = logits2acc(logits)
+            self.log.debug("Step {0} train loss={1:.04f} acc={2:.02f}".format(step_i, loss_val, acc))
+            self.train_writer.add_summary(summary, self.g_step)
+            summary = tf.Summary()
+            summary.value.add(tag='acc', simple_value=acc)
+            self.train_writer.add_summary(summary, self.g_step)
+            self.train_writer.flush()
+            self.g_step += 1
+            return loss_val, 0
+
+        def batch2feed_dict(batch):
+            x0, x1, x2 = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+            }
+            return feed_dict
+
+        def save_fn():
+            self.save_model(exp_config.name, 30)
+
+
+        print("dev")
+        valid_freq = 25
+        last_save = time.time()
+        max_step = 1000 * 1000 * 1000
+        for step_i in range(max_step):
+            if step_i % valid_freq == 0:
+                valid_fn()
+
+            if save_fn is not None:
+                if time.time() - last_save > exp_config.save_interval:
+                    save_fn()
+                    last_save = time.time()
+
+            batch = data_loader.get_train_batch(batch_size)
+
             train_fn(batch, step_i)
             self.g_step += 1
 

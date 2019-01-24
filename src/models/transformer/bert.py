@@ -465,7 +465,7 @@ def get_activation(activation_string):
 
   if not activation_string:
     return None
-
+  transformer_model
   act = activation_string.lower()
   if act == "linear":
     return None

@@ -8,6 +8,7 @@ import tensorflow as tf
 from data_generator.adhoc import ws, data_sampler
 from trainer.experiment import Experiment
 from trainer.ExperimentConfig import ExperimentConfig
+from data_generator.adhoc import score_loader
 import path
 from data_generator.adhoc.data_sampler import *
 
@@ -152,8 +153,17 @@ def test_ql():
     e.test_ql(e_config, data_loader, load_id)
 
 
+def train_score_merger():
+    hp = hyperparams.HPMerger()
+    e = Experiment(hp)
+    e_config = ExperimentConfig()
+    e_config.name = "Merger_{}".format("A")
+    e_config.num_epoch = 4
+
+    data_loader = score_loader.DataLoader(hp.seq_max, hp.hidden_units)
+    e.train_score_merger(e_config, data_loader)
 
 
 if __name__ == '__main__':
-    action = "predict_adhoc_robust"
+    action = "train_score_merger"
     locals()[action]()
