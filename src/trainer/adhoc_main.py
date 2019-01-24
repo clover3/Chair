@@ -8,6 +8,7 @@ import tensorflow as tf
 from data_generator.adhoc import ws, data_sampler
 from trainer.experiment import Experiment
 from trainer.ExperimentConfig import ExperimentConfig
+from data_generator.adhoc import score_loader
 import path
 from data_generator.adhoc.data_sampler import *
 
@@ -32,17 +33,19 @@ def train_adhoc_with_reinforce():
 
 def train_adhoc_on_robust():
     hp = hyperparams.HPAdhoc()
+    #hp.batch_size = 16 * 3
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Adhoc_{}".format("H")
+    e_config.name = "Adhoc_{}".format("K")
     e_config.num_epoch = 4
     e_config.save_interval = 10 * 60  # 60 minutes
-    e_config.load_names = ['bert']
+    e_config.load_names = ['bert'] #, 'reg_dense']
     vocab_size = 30522
 
-    data_loader = data_sampler.DataLoaderFromFile(hp.batch_size , vocab_size)
+    data_loader = data_sampler.DataLoaderFromFile(hp.batch_size, vocab_size)
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    #load_id = ("Adhoc_I2", 'model-290')
     e.train_adhoc2(e_config, data_loader, load_id)
 
 
@@ -55,13 +58,15 @@ def predict_adhoc_robust():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Adhoc_{}_eval".format("H")
-    e_config.load_names = ['bert', 'reg_dense']
+    e_config.name = "Adhoc_{}_eval".format("K")
+    #e_config.load_names = ['bert', 'reg_dense']
+    e_config.load_names = ['bert', 'dense1', 'dense_reg']
     vocab_size = 30522
     payload_path = os.path.join(path.data_path, "robust_payload", "payload_B_200.pickle")
-    from config.predict_adhoc_robust import q_id_range
-    load_id = ("Adhoc_H", 'model-74772')
-    e.predict_robust(e_config, vocab_size, load_id, payload_path, q_id_range)
+    task_idx = int(sys.argv[1])
+    print(task_idx)
+    load_id = ("Adhoc_K", 'model-11719')
+    e.predict_robust(e_config, vocab_size, load_id, payload_path, task_idx)
 
 
 def predict_bm25_robust():
@@ -85,7 +90,7 @@ def run_adhoc_rank_on_robust():
     vocab_size = 30522
     vocab_filename = "bert_voca.txt"
 
-    data_loader = data_sampler.DataLoaderFromFile(hp.batch_size , vocab_size)
+    data_loader = data_sampler.DataLoaderFromFile(hp.batch_size, vocab_size)
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     load_id = ("Adhoc_E", 'model-58338')
     e.rank_adhoc(e_config, data_loader, load_id)
@@ -148,8 +153,17 @@ def test_ql():
     e.test_ql(e_config, data_loader, load_id)
 
 
+def train_score_merger():
+    hp = hyperparams.HPMerger()
+    e = Experiment(hp)
+    e_config = ExperimentConfig()
+    e_config.name = "Merger_{}".format("A")
+    e_config.num_epoch = 4
+
+    data_loader = score_loader.DataLoader(hp.seq_max, hp.hidden_units)
+    e.train_score_merger(e_config, data_loader)
 
 
 if __name__ == '__main__':
-    action = "predict_bm25_robust"
+    action = "train_score_merger"
     locals()[action]()
