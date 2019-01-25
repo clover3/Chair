@@ -274,6 +274,7 @@ class DataLoaderFromFile:
         t.daemon = True
         t.start()
 
+
         self.cur_idx = 0
         self.file_idx = 0
         self.cur_data = []

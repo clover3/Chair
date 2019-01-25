@@ -33,7 +33,7 @@ def train_adhoc_with_reinforce():
 
 def train_adhoc_on_robust():
     hp = hyperparams.HPAdhoc()
-    #hp.batch_size = 16 * 3
+    hp.batch_size = 16 * 3
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
@@ -47,7 +47,6 @@ def train_adhoc_on_robust():
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     #load_id = ("Adhoc_I2", 'model-290')
     e.train_adhoc2(e_config, data_loader, load_id)
-
 
 
 
@@ -94,7 +93,6 @@ def run_adhoc_rank_on_robust():
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     load_id = ("Adhoc_E", 'model-58338')
     e.rank_adhoc(e_config, data_loader, load_id)
-
 
 
 def run_adhoc_rank():
@@ -154,7 +152,7 @@ def test_ql():
 
 
 def train_score_merger():
-    hp = hyperparams.HPMerger()
+    hp = hyperparams.HPMerger_BM25()
     e = Experiment(hp)
     e_config = ExperimentConfig()
     e_config.name = "Merger_{}".format("A")
@@ -164,6 +162,37 @@ def train_score_merger():
     e.train_score_merger(e_config, data_loader)
 
 
+def train_score_merger_on_vector():
+    hp = hyperparams.HPMerger()
+    e = Experiment(hp)
+    e_config = ExperimentConfig()
+    e_config.name = "MergerE_{}".format("B")
+    e_config.num_epoch = 4
+
+    data_loader = score_loader.NetOutputLoader(hp.seq_max, hp.hidden_units, hp.batch_size)
+    e.train_score_merger(e_config, data_loader)
+
+
+def pool_adhoc():
+    hp = hyperparams.HPAdhoc()
+    hp.batch_size = 512
+
+    e = Experiment(hp)
+
+    e_config = ExperimentConfig()
+    e_config.name = "Adhoc_{}_pool".format("J")
+    #e_config.load_names = ['bert', 'reg_dense']
+    e_config.load_names = ['bert', 'dense1', 'dense_reg']
+    vocab_size = 30522
+    task_idx = int(sys.argv[1])
+    print(task_idx)
+    payload_path = os.path.join(path.data_path, "robust", "dp", "dp_train_{}.pickle".format(task_idx))
+
+    load_id = ("Adhoc_J", 'model-9475')
+    e.predict_for_pooling(e_config, vocab_size, load_id, payload_path)
+
+
+
 if __name__ == '__main__':
-    action = "train_score_merger"
+    action = "train_adhoc_on_robust"
     locals()[action]()

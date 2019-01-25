@@ -46,7 +46,7 @@ import threading
 from models.baselines import svm
 from models.transformer.tranformer_nli import transformer_nli, transformer_nli_embedding_in
 from models.transformer.transformer_controversy import transformer_controversy, transformer_controversy_fixed_encoding
-from models.transformer.transformer_adhoc import transformer_adhoc, transformer_adhoc_ex
+from models.transformer.transformer_adhoc import transformer_adhoc, transformer_adhoc2
 from models.transformer.transformer_lm import transformer_ql
 from models.transformer.ScoreCombiner import *
 
@@ -2438,7 +2438,6 @@ class Experiment:
             batches = get_batches_ex(data_loader.get_train_data(data_size), batch_size, 4)
             return batches
 
-
         queue_feader = QueueFeader(300, generate_train_batch, True)
 
         valid_freq = 25
@@ -2463,9 +2462,11 @@ class Experiment:
     def train_adhoc2(self, exp_config, data_loader, preload_id):
         tprint("train_adhoc2")
         #task = transformer_adhoc(self.hparam, data_loader.voca_size)
-        task = transformer_adhoc_ex(self.hparam, data_loader.voca_size)
+        task = transformer_adhoc2(self.hparam, data_loader.voca_size)
         with tf.variable_scope("optimizer"):
             train_op = self.get_train_op(task.loss)
+            train_rl = self.get_train_op(task.rl_loss, name="rl")
+
         self.log.name = exp_config.name
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
@@ -2508,7 +2509,148 @@ class Experiment:
             acc = np.count_nonzero((paired[: ,1] - paired[:, 0]) > 0)
             return acc / n
 
-        def train_fn(batch, step_i):
+        def train_explain(batch, step_i):
+            summary = tf.Summary()
+
+            ## Step 1) Prepare deletion RUNS
+            def generate_alt_runs(batch):
+                logits, ex_logit = self.sess.run([task.logits, task.conf_logits
+                                                  ],
+                                                 feed_dict=batch2feed_dict(batch)
+                                                 )
+                x0, x1, x2, y = batch
+
+                pred = np.argmax(logits, axis=1)
+                compare_deletion_num = 20
+                instance_infos = []
+                new_batches = []
+                deleted_mask_list = []
+                tag_size_list = []
+                for i in range(len(logits)):
+                    if pred[i] == ENTAILMENT:
+                        info = {}
+                        info['init_logit'] = logits[i]
+                        info['orig_input'] = (x0[i], x1[i], x2[i], y[i])
+                        ex_tags = logit2tag(ex_logit[i])
+                        self.log2.debug("EX_Score : {}".format(numpy_print(ex_logit[i])))
+                        tag_size = np.count_nonzero(ex_tags)
+                        tag_size_list.append(tag_size)
+                        if tag_size > 10:
+                            self.log2.debug("#Tagged token={}".format(tag_size))
+
+                        info['idx_delete_tagged'] = len(new_batches)
+                        new_batches.append(token_delete(ex_tags, x0[i], x1[i], x2[i]))
+                        deleted_mask_list.append(ex_tags)
+
+                        indice_delete_random = []
+
+                        for _ in range(compare_deletion_num):
+                            tag_size = sample_size()
+                            indice_delete_random.append(len(new_batches))
+                            x_list, delete_mask = random_delete(tag_size, x0[i], x1[i], x2[i])
+                            new_batches.append(x_list)
+                            deleted_mask_list.append(delete_mask)
+
+                        info['indice_delete_random'] = indice_delete_random
+                        instance_infos.append(info)
+                if tag_size_list:
+                    avg_tag_size = average(tag_size_list)
+                    self.log2.debug("avg Tagged token#={}".format(avg_tag_size))
+                return new_batches, instance_infos, deleted_mask_list
+
+            new_batches, instance_infos, deleted_mask_list = generate_alt_runs(batch)
+
+            if not new_batches:
+                return
+            ## Step 2) Execute deletion Runs
+            alt_logits = forward_runs(new_batches)
+
+            def reinforce_one(good_action, input_x):
+                pos_reward_indice = np.int_(good_action)
+                loss_mask = -pos_reward_indice + np.ones_like(pos_reward_indice) * 0.1
+                x0, x1, x2, y = input_x
+                reward_payload = (x0, x1, x2, y, loss_mask)
+                return reward_payload
+
+            def action_score(before_prob, after_prob, action):
+                num_tag = np.count_nonzero(action)
+                penalty = (num_tag - 1) * 0.1 if num_tag > 1 else 0
+                if explain_tag == 'conflict':
+                    score = before_prob[2] - after_prob[2]
+                elif explain_tag == 'match':
+                    # Increase of neutral
+                    score = (before_prob[2] + before_prob[0]) - (after_prob[2] + after_prob[0])
+                    # ( 1 - before_prob[1] ) - (1 - after_prob[1]) = after_prob[1] - before_prob[1] = increase of neutral
+                elif explain_tag == 'mismatch':
+                    score = before_prob[1] - after_prob[1]
+                else:
+                    assert False
+
+                score = score - penalty
+                return score
+
+            ## Step 3) Calc reward
+            def calc_reward(alt_logits, instance_infos, deleted_mask_list):
+                models_movement_list = []
+                reinforce_payload_list = []
+                pos_win = 0
+                pos_trial = 0
+                for info in instance_infos:
+                    init_output = info['init_logit']
+                    models_after_output = alt_logits[info['idx_delete_tagged']]
+                    input_x = info['orig_input']
+
+                    predicted_action = deleted_mask_list[info['idx_delete_tagged']]
+                    models_movement = action_score(init_output, models_after_output, predicted_action)
+                    models_movement_list.append(models_movement)
+                    # self.log2.debug(
+                    #    "target_ce_drop : {0:.4f}  n_token : {1}".format(target_ce_drop, num_tag))
+
+                    good_action = predicted_action
+                    best_movement = models_movement
+                    for idx_delete_random in info['indice_delete_random']:
+                        alt_after_output = alt_logits[idx_delete_random]
+                        random_action = deleted_mask_list[idx_delete_random]
+                        alt_movement = action_score(init_output, alt_after_output, random_action)
+                        if alt_movement > best_movement:
+                            best_movement = alt_movement
+                            good_action = random_action
+
+                    reward_payload = reinforce_one(good_action, input_x)
+                    reinforce_payload_list.append(reward_payload)
+                    if models_movement >= best_movement:
+                        pos_win += 1
+                    pos_trial += 1
+                return reinforce_payload_list
+
+            reinforce_payload = calc_reward(alt_logits, instance_infos, deleted_mask_list)
+
+            def commit_reward(reinforce_payload):
+                batches = get_batches_ex(reinforce_payload, self.hparam.batch_size, 5)
+                rl_loss_list = []
+                for batch in batches:
+                    x0, x1, x2, y, rf_mask = batch
+                    _, rl_loss, conf_logits, = self.sess.run([train_rl, task.rl_loss,
+                                                              task.conf_logits,
+                                                              ],
+                                                             feed_dict={
+                                                                 task.x_list[0]: x0,
+                                                                 task.x_list[1]: x1,
+                                                                 task.x_list[2]: x2,
+                                                                 task.y: y,
+                                                                 task.rf_mask: rf_mask,
+                                                             })
+                    rl_loss_list.append(rl_loss)
+                return average(rl_loss_list)
+
+            ## Step 4) Update gradient
+            avg_rl_loss = commit_reward(reinforce_payload)
+
+            summary.value.add(tag='RL_Loss', simple_value=avg_rl_loss)
+            self.train_writer.add_summary(summary, self.g_step)
+            self.train_writer.flush()
+
+        def train_score(batch, step_i):
             # normal train
             loss_val, summary, logits, _= self.sess.run([task.loss, self.merged, task.logits, train_op],
                                                feed_dict=batch2feed_dict(batch)
@@ -2522,6 +2664,10 @@ class Experiment:
             self.train_writer.flush()
             self.g_step += 1
             return loss_val, 0
+
+        def train_fn(batch, step_i):
+            train_explain(batch, step_i)
+            return train_score(batch, step_i)
 
         def batch2feed_dict(batch):
             x0, x1, x2 = batch
@@ -2556,11 +2702,10 @@ class Experiment:
 
 
 
-
     def train_score_merger(self, exp_config, data_loader):
         tprint("train_score_merger")
         #task = ScoreCombinerMax(self.hparam)
-        task = ScoreCombinerF1(self.hparam)
+        task = ScoreCombinerFF(self.hparam)
         with tf.variable_scope("optimizer"):
             train_op = self.get_train_op(task.loss)
         self.log.name = exp_config.name
@@ -2641,10 +2786,11 @@ class Experiment:
             train_fn(batch, step_i)
             self.g_step += 1
 
+
     def predict_robust(self, exp_config, voca_size, preload_id, payload_path, task_idx):
         tprint("predict_robust")
         #task = transformer_adhoc(self.hparam, voca_size)
-        task = transformer_adhoc_ex(self.hparam, voca_size)
+        task = transformer_adhoc2(self.hparam, voca_size)
         self.log.name = exp_config.name
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
@@ -2731,6 +2877,74 @@ class Experiment:
             for doc_id, score in q_result:
                 fout.write("{} Q0 {} {} {} galago\n".format(q_id, doc_id, rank_idx, score[0]))
                 rank_idx += 1
+
+    def predict_for_pooling(self, exp_config, voca_size, preload_id, payload_path):
+        tprint("predict_for_pooling")
+        task = transformer_adhoc(self.hparam, voca_size)
+        self.log.name = exp_config.name
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        batch_size = self.hparam.batch_size
+
+        def batch2feed_dict(batch):
+            x0, x1, x2 = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+            }
+            return feed_dict
+        payload = pickle.load(open(payload_path, "rb"))
+
+        tprint("Loading Model...")
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            if exp_config.load_names:
+                self.load_model_white(name, id, exp_config.load_names)
+            else:
+                self.load_model_bert(name, id)
+
+
+        def eval(inputs):
+            batches = get_batches_ex(inputs, batch_size, 3)
+            ticker = TimeEstimator(len(batches), sample_size=20)
+            y_list = []
+            enc_list = []
+
+            def np_append(dst_lst, np_arr):
+                for i in range(len(np_arr)):
+                    dst_lst.append( np_arr[i])
+
+            for batch in batches:
+                y, enc = self.sess.run([task.logits, task.enc],
+                                   feed_dict=batch2feed_dict(batch)
+                                   )
+                np_append(y_list, y)
+                np_append(enc_list, enc)
+                ticker.tick()
+            return list(zip(y_list, enc_list))
+
+        pk = PromiseKeeper(eval)
+        f_result = []
+        for run1, run2 in payload:
+            futures_1 = []
+            for e in run1:
+                futures_1.append(MyPromise(e, pk).future())
+            futures_2 = []
+            for e in run2:
+                futures_2.append(MyPromise(e, pk).future())
+            f_result.append((futures_1, futures_2))
+        pk.do_duty()
+
+        result = []
+        for r1, r2 in f_result:
+            result.append((list_future(r1), list_future(r2)))
+
+        save_name = payload_path + ".output"
+        pickle.dump(result, open(save_name, "wb"))
+
 
     def test_ql(self, exp_config, data_loader, preload_id):
         task = transformer_ql(self.hparam, data_loader.voca_size)
