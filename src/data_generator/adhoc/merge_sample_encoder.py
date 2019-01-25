@@ -2,7 +2,7 @@ import os
 from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 import xmlrpc.client
-from data_generator.data_parser.trec import load_trec
+from data_generator.data_parser.trec import load_trec, load_robust
 import random
 import csv
 from path import data_path
@@ -25,18 +25,18 @@ def load_marco_query(path):
 class MasterEncoder:
     def __init__(self, query_path, doc_id_path):
         print("Master : Loading corpus")
-        self.docs = load_trec("/mnt/nfs/work3/youngwookim/code/adhoc/robus/rob04.split.txt", 2)
+        self.docs = load_robust("/mnt/nfs/work3/youngwookim/data/robust04")
         self.query = load_marco_query(query_path)
         self.slave_addr = [
             "http://compute-0-1:18202",
             "http://compute-0-2:18202",
             "http://compute-0-3:18202",
             "http://compute-0-4:18202",
-            "http://compute-0-1:18202",
-            "http://compute-0-2:18202",
-            "http://compute-0-3:18202",
-            "http://compute-0-4:18202",
+            "http://compute-0-5:18202",
             "http://compute-0-6:18202",
+            "http://compute-0-7:18202",
+            "http://compute-0-8:18202",
+            "http://compute-0-10:18202",
             "http://compute-0-11:18202",
         ]
 
@@ -46,6 +46,8 @@ class MasterEncoder:
         while idx < len(content):
             span = content[idx:idx + window_size]
             yield span
+            idx += window_size
+
 
     def encoder_thread(self, slave_id):
         st = slave_id * 10000
@@ -53,18 +55,24 @@ class MasterEncoder:
         slave_proxy = xmlrpc.client.ServerProxy(self.slave_addr[slave_id])
         slave_fn = slave_proxy.encode
 
+        def split_encoder(l):
+            step = 200
+            idx = 0
+            r = []
+            while idx < len(l):
+                r += slave_fn(l[idx:idx+step])
+                idx += step
+                if idx % 1000 == 200:
+                    print(idx)
+            return r
+
         print("{}] Load sampled".format(slave_id))
-        dir_path = "/mnt/nfs/work3/youngwookim/code/adhoc/robus/pair_samples"
+        dir_path = "/mnt/nfs/work3/youngwookim/code/adhoc/robus/marco_query_doc_results"
+
         sample_filename = os.path.join(dir_path, "merger_train_{}.pickle".format(slave_id))
         sampled = pickle.load(open(sample_filename, "rb"))
 
-        pk = PromiseKeeper(slave_fn)
-        X_list = list(range(10))
-        y_list = []
-        for x in X_list:
-            y = MyPromise(x, pk).future()
-            y_list.append(y)
-
+        pk = PromiseKeeper(split_encoder)
         future_list = []
         for q_id_1, doc_id_1, q_id_2, doc_id_2 in sampled:
             q1 = self.query[q_id_1]
@@ -80,6 +88,7 @@ class MasterEncoder:
             future_list.append((runs_1, runs_2))
 
         payload = []
+        print("Flushing")
         pk.do_duty()
         for r1, r2 in future_list:
             payload.append( (list_future(r1), list_future(r2)) )
