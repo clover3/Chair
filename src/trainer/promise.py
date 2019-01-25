@@ -41,6 +41,10 @@ def max_future(futures):
     return max([f.get() for f in futures])
 
 
+def list_future(futures):
+    return list([f.get() for f in futures])
+
+
 if __name__ == '__main__':
     def list_fn(l):
         r = []

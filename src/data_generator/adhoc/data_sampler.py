@@ -53,6 +53,23 @@ class DataSampler:
                     yield query, x1, x2
                 else:
                     yield query, x2, x1
+    
+    def tfidf_span(self, q_terms, text_span):
+        return sum([text_span.count(q_i) * self.idf[q_i] for q_i in q_terms])
+
+    def check_worthy(self, q_terms, doc_id_list):
+        max_score = 0
+        window_size = 200 * 3
+        for doc_id in doc_id_list: 
+            raw_document = self.collection[doc_id]
+            loc_ptr = 0
+            while loc_ptr < len(raw_document):
+                text_span = raw_document[loc_ptr:loc_ptr + window_size]
+
+                score = self.tfidf_span(q_terms, text_span)
+                max_score = max(score, max_score)
+                loc_ptr += window_size
+        return max_score >= self.threshold_boring_doc
 
     def ranked_list_generate(self):
         def flatten_and_get_doc_id(postings_list):
@@ -100,26 +117,22 @@ class DataSampler:
             if len(doc_id_list) > 1000:
                 doc_id_list = random.sample(doc_id_list, 1000)
 
-            max_score = 0
+            if not self.check_worthy(q_terms, doc_id_list):
+                continue
+                
             # Scan docs and retrieve spans
             for doc_id in doc_id_list:
                 raw_document = self.collection[doc_id]
                 loc_ptr = sample_shift()
                 while loc_ptr < len(raw_document):
                     text_span = raw_document[loc_ptr:loc_ptr + window_size]
-
-                    score = get_bm25(q_terms, text_span, self.idf.df, N=len(self.collection), avdl=avdl)
-                    max_score = max(score, max_score)
+                    score = get_bm25(" ".join(q_terms), text_span, self.idf.df, N=len(self.collection), avdl=avdl)
                     spans.append((score, text_span))
                     loc_ptr += sample_shift()
-            if max_score < self.threshold_boring_doc:
-                continue
             score_group = sample_debiase(spans)
             for key in score_group:
                 print(key)
             yield query, score_group
-
-
 
 
 class DataWriter:
@@ -143,7 +156,7 @@ class DataWriter:
     def get_data(self, data_size):
         assert data_size % 2 == 0
         result = []
-        ticker = TimeEstimator(data_size)
+        ticker = TimeEstimator(data_size, sample_size=100)
         while len(result) < data_size:
             raw_inst = self.pair_generator.__next__()
             result += list(self.encode_pair(raw_inst))
@@ -260,6 +273,7 @@ class DataLoaderFromFile:
         t = threading.Thread(target=self.feed_queue)
         t.daemon = True
         t.start()
+
 
         self.cur_idx = 0
         self.file_idx = 0

@@ -119,3 +119,14 @@ def increment_circular(j, max_len):
 def pick1(l):
     return l[random.randrange(len(l))]
 
+def pair_shuffle(l):
+    new_l = []
+    for idx in range(0, len(l), 2):
+        new_l.append( (l[idx], l[idx+1]) )
+
+    random.shuffle(new_l)
+    result = []
+    for a,b in new_l:
+        result.append(a)
+        result.append(b)
+    return result
