@@ -25,6 +25,36 @@ def token_delete(binary_tag, x0, x1, x2):
     return x0_new, x1_new, x2_new
 
 
+
+
+def token_replace(binary_tag, x0, x1, x2, random_token):
+    assert len(x0) == len(x1)
+    assert len(x0) == len(x2)
+    assert len(x0) == len(binary_tag)
+
+    length = len(binary_tag)
+    x0_new = []
+    x1_new = []
+    x2_new = []
+
+    for i in range(length):
+        if not binary_tag[i]:
+            x0_new.append(x0[i])
+            x1_new.append(x1[i])
+            x2_new.append(x2[i])
+        else:
+            x0_new.append(random_token())
+            x1_new.append(x1[i])
+            x2_new.append(x2[i])
+
+    while len(x0_new) < len(x0):
+        x0_new.append(0)
+        x1_new.append(0)
+        x2_new.append(0)
+    return x0_new, x1_new, x2_new
+
+
+
 def random_delete(num_del, x0, x1, x2):
     num_del = max(num_del, 1)
     length = len(x0)
@@ -48,6 +78,78 @@ def random_delete(num_del, x0, x1, x2):
             x2_new.append(x2[i])
             mask.append(0)
         else:
+            mask.append(1)
+
+    while len(x0_new) < len(x0):
+        x0_new.append(0)
+        x1_new.append(0)
+        x2_new.append(0)
+    x_list = x0_new, x1_new, x2_new
+    return x_list, mask
+
+
+
+def random_delete_with_mask(num_del, x0, x1, x2, q_mask):
+    num_del = max(num_del, 1)
+    length = len(x0)
+
+    sample_space = []
+    for i in range(length):
+        if q_mask[i] > 0 :
+            sample_space.append(i)
+    num_del = min(num_del, len(sample_space))
+
+    del_indice = random.sample(sample_space, num_del)
+    x0_new = []
+    x1_new = []
+    x2_new = []
+    mask = []
+
+    for i in range(length):
+        if i not in del_indice:
+            x0_new.append(x0[i])
+            x1_new.append(x1[i])
+            x2_new.append(x2[i])
+            mask.append(0)
+        else:
+            mask.append(1)
+
+    while len(x0_new) < len(x0):
+        x0_new.append(0)
+        x1_new.append(0)
+        x2_new.append(0)
+    x_list = x0_new, x1_new, x2_new
+    return x_list, mask
+
+
+
+
+def random_replace_with_mask(num_del, x0, x1, x2, q_mask, random_token):
+    num_del = max(num_del, 1)
+    length = len(x0)
+
+    sample_space = []
+    for i in range(length):
+        if q_mask[i] > 0 :
+            sample_space.append(i)
+    num_del = min(num_del, len(sample_space))
+
+    del_indice = random.sample(sample_space, num_del)
+    x0_new = []
+    x1_new = []
+    x2_new = []
+    mask = []
+
+    for i in range(length):
+        if i not in del_indice:
+            x0_new.append(x0[i])
+            x1_new.append(x1[i])
+            x2_new.append(x2[i])
+            mask.append(0)
+        else:
+            x0_new.append(random_token())
+            x1_new.append(x1[i])
+            x2_new.append(x2[i])
             mask.append(1)
 
     while len(x0_new) < len(x0):

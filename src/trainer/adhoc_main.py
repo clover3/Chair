@@ -1,4 +1,3 @@
-
 from task.transformer_est import Transformer, Classification
 from models.transformer import bert
 from models.transformer import hyperparams
@@ -11,7 +10,7 @@ from trainer.ExperimentConfig import ExperimentConfig
 from data_generator.adhoc import score_loader
 import path
 from data_generator.adhoc.data_sampler import *
-
+import sys
 
 def train_adhoc_with_reinforce():
     hp = hyperparams.HPAdhoc()
@@ -50,6 +49,25 @@ def train_adhoc_on_robust():
 
 
 
+def train_adhoc_ex_on_robust():
+    hp = hyperparams.HPAdhoc()
+    hp.batch_size = 16
+    e = Experiment(hp)
+
+    e_config = ExperimentConfig()
+    e_config.name = "Adhoc_{}".format("L")
+    e_config.num_epoch = 4
+    e_config.save_interval = 10 * 60  # 60 minutes
+    e_config.load_names = ['bert', 'reg_dense']
+    vocab_size = 30522
+
+    data_loader = data_sampler.DataLoaderFromFile(hp.batch_size, vocab_size)
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    load_id = ("Adhoc_J", 'model-9475')
+    e.train_adhoc_ex(e_config, data_loader, load_id)
+
+
+
 def predict_adhoc_robust():
     hp = hyperparams.HPAdhoc()
     hp.batch_size = 512
@@ -62,10 +80,47 @@ def predict_adhoc_robust():
     e_config.load_names = ['bert', 'dense1', 'dense_reg']
     vocab_size = 30522
     payload_path = os.path.join(path.data_path, "robust_payload", "payload_B_200.pickle")
-    task_idx = int(sys.argv[1])
+    task_idx = int(sys.argv[2])
     print(task_idx)
-    load_id = ("Adhoc_K", 'model-11719')
+    load_id = ("Adhoc_K", 'model-6397')
     e.predict_robust(e_config, vocab_size, load_id, payload_path, task_idx)
+
+
+
+def predict_adhoc_robust_L():
+    hp = hyperparams.HPAdhoc()
+    hp.batch_size = 512
+
+    e = Experiment(hp)
+
+    e_config = ExperimentConfig()
+    e_config.name = "Adhoc_{}_eval".format("L")
+    #e_config.load_names = ['bert', 'reg_dense']
+    e_config.load_names = ['bert', 'reg_dense', 'aux_q_info']
+    vocab_size = 30522
+    payload_path = os.path.join(path.data_path, "robust_payload", "payload_B_200.pickle")
+    task_idx = int(sys.argv[2])
+    print(task_idx)
+
+    q_id_list = [
+        (301, 325),
+        (326, 350),
+        (351, 375),
+        (376, 400),
+        (401, 425),
+        (426, 450),
+        (601, 625),
+        (626, 650),
+        (651, 675),
+        (676, 700),
+    ]
+    st, ed = q_id_list[task_idx]
+
+    load_id = ("Adhoc_L", 'model-644')
+    middle_result = e.predict_robust_L_part1(e_config, vocab_size, load_id, payload_path, (st, ed))
+
+    preload_id2 = ("MergerE_C2", 'model-10650')
+    e.predict_robust_L_part2(e_config, middle_result, preload_id2, (st,ed) )
 
 
 def predict_bm25_robust():
@@ -166,11 +221,12 @@ def train_score_merger_on_vector():
     hp = hyperparams.HPMerger()
     e = Experiment(hp)
     e_config = ExperimentConfig()
-    e_config.name = "MergerE_{}".format("B")
+    e_config.name = "MergerE_{}".format("C2")
     e_config.num_epoch = 4
 
     data_loader = score_loader.NetOutputLoader(hp.seq_max, hp.hidden_units, hp.batch_size)
-    e.train_score_merger(e_config, data_loader)
+    load_id = ("MergerE_C", 'model-5325')
+    e.train_score_merger(e_config, data_loader, load_id)
 
 
 def pool_adhoc():
@@ -180,19 +236,19 @@ def pool_adhoc():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Adhoc_{}_pool".format("J")
+    e_config.name = "Adhoc_{}_pool".format("K")
     #e_config.load_names = ['bert', 'reg_dense']
     e_config.load_names = ['bert', 'dense1', 'dense_reg']
     vocab_size = 30522
-    task_idx = int(sys.argv[1])
+    task_idx = int(sys.argv[2])
     print(task_idx)
     payload_path = os.path.join(path.data_path, "robust", "dp", "dp_train_{}.pickle".format(task_idx))
 
-    load_id = ("Adhoc_J", 'model-9475')
+    load_id = ("Adhoc_L", 'model-644')
     e.predict_for_pooling(e_config, vocab_size, load_id, payload_path)
 
 
 
 if __name__ == '__main__':
-    action = "train_adhoc_on_robust"
+    action = sys.argv[1]
     locals()[action]()

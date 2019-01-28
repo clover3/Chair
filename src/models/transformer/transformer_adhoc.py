@@ -96,8 +96,10 @@ class transformer_adhoc2:
                                     padding='VALID',
                                     data_format='NHWC')
         # [None, 1, hidden, 1]
-        pooled_rep = tf.reshape(pooled_rep, [-1, hp.hidden_units])
-        logits = tf.layers.dense(pooled_rep, 1, name="dense_reg")
+        self.doc_v = tf.placeholder_with_default(tf.reshape(pooled_rep, [-1, hp.hidden_units]),
+                                                 (None, hp.hidden_units), name='pooled_rep')
+
+        logits = tf.layers.dense(self.doc_v, 1, name="dense_reg")
         self.logits = logits
         paired = tf.reshape(logits, [-1, 2])
         losses = tf.maximum(hp.alpha - (paired[:, 1] - paired[:, 0]) , 0)
@@ -126,6 +128,7 @@ class transformer_adhoc_ex:
         segment_ids = tf.placeholder(tf.int64, [None, seq_length])
         scores = tf.placeholder(tf.float32, [None])
         self.rf_mask = tf.placeholder(tf.float32, [None, seq_length])
+        self.q_mask = tf.placeholder(tf.float32, [None, seq_length])
 
         self.x_list = [input_ids, input_mask, segment_ids]
         self.y = scores
@@ -146,6 +149,7 @@ class transformer_adhoc_ex:
             enc = self.model.get_all_encoder_layers()
         self.enc = enc
         logits = tf.layers.dense(enc, 1, name="reg_dense") # [ None, 1]
+        logits = tf.reshape(logits, [-1])
         self.logits = logits
 
         paired = tf.reshape(logits, [-1, 2])
@@ -158,7 +162,14 @@ class transformer_adhoc_ex:
 
         cl = tf.layers.dense(self.model.get_sequence_output(), 1, name="aux_q_info")
         cl = tf.reshape(cl, [-1, seq_length])
-        self.ex_logits = cl
-        rl_loss_list = tf.reduce_sum(self.ex_logits * tf.cast(self.rf_mask, tf.float32), axis=1)
+        self.cl = cl
+        self.bias = tf.Variable(0.0)
+        self.ex_logits = (cl + self.bias) * self.q_mask
+        rl_loss_list = tf.nn.relu(1 - self.ex_logits * self.rf_mask)
+        rl_loss_list = tf.reduce_mean(rl_loss_list, axis=1)
 
         self.rl_loss = tf.reduce_mean(rl_loss_list)
+
+        labels = tf.greater(self.rf_mask, 0)
+        hinge_losses = tf.losses.hinge_loss(labels, self.ex_logits, weights=self.q_mask)
+        self.hinge_loss = tf.reduce_sum(hinge_losses)

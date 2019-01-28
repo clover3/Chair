@@ -18,7 +18,7 @@ class MyFuture:
         self.Y = None
 
     def get(self):
-        if self.Y == None:
+        if self.Y is None:
             raise Exception("Please Wait")
         return self.Y
 

@@ -54,7 +54,7 @@ def encode(vector_list, max_seq, dim):
     segment_ids.append(0)
     for vector in vector_list:
         if len(vector) < dim:
-            padded_vector = vector + (dim - len(vector)) * [0]
+            padded_vector = list(vector) + (dim - len(vector)) * [0]
         else:
             padded_vector = vector[:dim]
         tokens.append(padded_vector)
@@ -135,7 +135,7 @@ class NetOutputLoader:
             out_v_1 = []
             for score, vector in output:
                 #new_v = [score]
-                new_v = vector
+                new_v = [score] + vector
                 out_v_1.append(new_v)
 
             result.append(encode(out_v_1, self.max_seq, self.dim))
