@@ -18,7 +18,7 @@ class MyFuture:
         self.Y = None
 
     def get(self):
-        if self.Y == None:
+        if self.Y is None:
             raise Exception("Please Wait")
         return self.Y
 
@@ -42,7 +42,7 @@ def max_future(futures):
 
 
 def list_future(futures):
-    return ([f.get for f in futures])
+    return list([f.get() for f in futures])
 
 
 if __name__ == '__main__':

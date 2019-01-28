@@ -112,7 +112,7 @@ class HPAdhoc:
     alpha = 0.1
 
 
-class HPMerger:
+class HPMerger_BM25:
     '''Hyperparameters'''
     # data
     # training
@@ -126,6 +126,31 @@ class HPMerger:
     #lm_seq_len = 512
     # Feel free to increase this if you are ambitious.
     hidden_units = 32  # alias = C
+    num_blocks = 4  # number of encoder/decoder blocks
+    num_epochs = 20
+    num_heads = 8
+    dropout_rate = 0.1
+    sinusoid = False  # If True, use sinusoid. If false, positional embedding.
+    type_vocab_size = 2
+    intermediate_size = 128
+    alpha = 1
+
+
+
+class HPMerger:
+    '''Hyperparameters'''
+    # data
+    # training
+    batch_size = 32  # alias = N
+    lr = 1e-4  # learning rate. In paper, learning rate is adjusted to the global step.
+    logdir = 'logdir'  # log directory
+
+    # model
+    #seq_max = 140  # Maximum number of words in a sentence. alias = T.
+    seq_max = 40 # number of instance to merge
+    #lm_seq_len = 512
+    # Feel free to increase this if you are ambitious.
+    hidden_units = 128  # alias = C
     num_blocks = 4  # number of encoder/decoder blocks
     num_epochs = 20
     num_heads = 8
