@@ -58,6 +58,7 @@ from attribution.deleter_trsfmr import *
 from attribution.baselines import *
 #from attribution.deepexplain.tensorflow import DeepExplain
 from evaluation import *
+from explain import visualize
 # Experiment is the most outside module.
 # This module can reference any module in the system.
 
@@ -1457,7 +1458,7 @@ class Experiment:
 
     def nli_attribution_baselines(self, nli_setting, exp_config, data_loader, preload_id):
         print("attribution_explain")
-        enc_explain_dev, explain_dev = data_loader.get_dev_explain()
+        enc_explain_dev, explain_dev = data_loader.get_dev_explain_0()
         #train_batches, dev_batches = self.load_nli_data(data_loader
         from attribution.gradient import explain_by_gradient
         self.sess = self.init_sess()
@@ -1504,12 +1505,12 @@ class Experiment:
                 print(method_name)
                 print("Elapsed Time\t{}".format(elapsed_time[method_name]))
                 explains = explain_prediction[method_name]
-                p_at_1, MAP_score = eval_explain(explains, data_loader)
+                p_at_1, MAP_score = eval_explain_0(explains, data_loader)
                 print("P@1\t{}".format(p_at_1))
                 print("MAP\t{}".format(MAP_score))
 
     def nli_explain_baselines(self, nli_setting, exp_config, data_loader, preload_id):
-        enc_explain_dev, explain_dev = data_loader.get_dev_explain()
+        enc_explain_dev, explain_dev = data_loader.get_dev_explain_0()
         train_batches, dev_batches = self.load_nli_data(data_loader)
 
         task = transformer_nli(self.hparam, nli_setting.vocab_size)
@@ -1557,7 +1558,7 @@ class Experiment:
             end = time.time()
             print("Elapsed Time : {}".format(end- begin))
 
-            p_at_1, MAP_score = eval_explain(explains, data_loader)
+            p_at_1, MAP_score = eval_explain_0(explains, data_loader)
             print("P@1\t{}".format(p_at_1))
             print("MAP\t{}".format(MAP_score))
 
@@ -1570,10 +1571,10 @@ class Experiment:
             print(method_name)
             eval(method)
 
-    def train_nli_ex(self, nli_setting, exp_config, data_loader, preload_id, f_train_ex):
-        enc_explain_dev, explain_dev = data_loader.get_dev_explain()
+    def train_nli_ex_0(self, nli_setting, exp_config, data_loader, preload_id, f_train_ex):
+        enc_explain_dev, explain_dev = data_loader.get_dev_explain_0()
 
-        task = transformer_nli(self.hparam, nli_setting.vocab_size)
+        task = transformer_nli(self.hparam, nli_setting.vocab_size, 2)
         with tf.variable_scope("optimizer"):
             train_cls = self.get_train_op(task.loss)
             train_rl = self.get_train_op(task.rl_loss, name="rl")
@@ -1628,7 +1629,7 @@ class Experiment:
             end = time.time()
             print("Elapsed Time : {}".format(end- begin))
 
-            p_at_1, MAP_score = eval_explain(conf_logit, data_loader)
+            p_at_1, MAP_score = eval_explain_0(conf_logit, data_loader)
             print("P@1 : {}".format(p_at_1))
             print("MAP : {}".format(MAP_score))
             summary = tf.Summary()
@@ -1868,20 +1869,21 @@ class Experiment:
             self.log.info("Validation : loss={0:.04f} acc={1:.04f}".format(average(loss_list), average(acc_list)))
 
         def save_fn():
-            self.save_model(exp_config.name, 10)
+            self.save_model(exp_config.name, 2)
 
         train_batches, dev_batches = self.load_nli_data(data_loader)
-        valid_freq = 25
+        valid_freq = 1000
         num_epochs = exp_config.num_epoch
         for i_epoch in range(num_epochs):
             loss, _ = epoch_runner(train_batches, train_ex_fn,
                                    valid_fn, valid_freq,
                                    save_fn, self.save_interval)
 
-
-    def train_nli_ex2(self, nli_setting, exp_config, data_loader, preload_id):
-
-        task = transformer_nli(self.hparam, nli_setting.vocab_size)
+    # Refactored version of explain train
+    def train_nli_ex_1(self, nli_setting, exp_config, data_loader, preload_id, explain_tag):
+        enc_explain_dev, explain_dev = data_loader.get_dev_explain(explain_tag)
+        method = 1
+        task = transformer_nli(self.hparam, nli_setting.vocab_size, method)
         with tf.variable_scope("optimizer"):
             train_cls = self.get_train_op(task.loss)
             train_rl = self.get_train_op(task.rl_loss, name="rl")
@@ -1909,6 +1911,37 @@ class Experiment:
             }
             return feed_dict
 
+
+        def eval():
+            print("Eval")
+            begin = time.time()
+            batches = get_batches_ex(enc_explain_dev, self.hparam.batch_size, 3)
+
+            conf_logit_list = []
+            for batch in batches:
+                x0, x1, x2 = batch
+                logits, conf_logit = self.sess.run([task.sout, task.conf_logits ],
+                                               feed_dict={
+                                                task.x_list[0]: x0,
+                                                task.x_list[1]: x1,
+                                                task.x_list[2]: x2,
+                                               })
+                conf_logit_list.append(conf_logit)
+            conf_logit = np.concatenate(conf_logit_list)
+            assert len(conf_logit) == len(explain_dev)
+            end = time.time()
+            print("Elapsed Time : {}".format(end- begin))
+
+            p_at_1, MAP_score = eval_explain(conf_logit, data_loader, explain_tag)
+            print("P@1 : {}".format(p_at_1))
+            print("MAP : {}".format(MAP_score))
+            summary = tf.Summary()
+            summary.value.add(tag='P@1', simple_value=p_at_1)
+            summary.value.add(tag='MAP', simple_value=MAP_score)
+            self.train_writer.add_summary(summary, self.g_step)
+            self.train_writer.flush()
+
+
         def train_classification(batch, step_i):
             loss_val, summary, acc,  _ = self.sess.run([task.loss, self.merged, task.acc, train_cls,
                                              ],
@@ -1918,10 +1951,19 @@ class Experiment:
             self.train_writer.add_summary(summary, self.g_step)
             return loss_val, acc
 
+        def top_1_as_mask(np_arr):
+            r = np.zeros_like(np_arr)
+            r[np.argmax(np_arr)] = 1
+            return r
+
         def over_zero(np_arr):
             return np.less(0, np_arr).astype(np.float32)
 
-        logit2tag = over_zero
+        multi_deletion = True
+        if multi_deletion == True:
+            logit2tag = over_zero
+        else:
+            logit2tag = top_1_as_mask
 
         def sample_size():
             prob = [(1,0.5), (2,0.2), (3,0.1), (4,0.1), (5,0.1)]
@@ -1933,9 +1975,22 @@ class Experiment:
                     return n
             return 1
 
-        ENTAILMENT = 0
 
-        explain_tag = 'conflict' # 'match' 'mismatch'
+        ENTAILMENT = 0
+        NEUTRAL = 1
+        CONTRADICTION = 2
+
+        target_class = {
+            'conflict' : CONTRADICTION,
+            'match': ENTAILMENT,
+            'dontcare': ENTAILMENT,
+            'mismatch': NEUTRAL,
+        }[explain_tag]
+        print(target_class)
+
+        def save_payload(reinforce_payload, step_i):
+            path_save = os.path.join(path.data_path, "nli_temp", "reinforce{}.pickle".format(step_i))
+            pickle.dump(reinforce_payload, open(path_save, "wb"))
 
         def forward_runs(insts):
             alt_batches = get_batches_ex(insts, self.hparam.batch_size, 3)
@@ -1965,13 +2020,13 @@ class Experiment:
                 x0, x1, x2, y = batch
 
                 pred = np.argmax(logits, axis=1)
-                compare_deletion_num = 20
+                compare_deletion_num = 5
                 instance_infos = []
                 new_batches = []
                 deleted_mask_list = []
                 tag_size_list = []
                 for i in range(len(logits)):
-                    if pred[i] == ENTAILMENT:
+                    if pred[i] == target_class:
                         info = {}
                         info['init_logit'] = logits[i]
                         info['orig_input'] = (x0[i], x1[i], x2[i], y[i])
@@ -1989,7 +2044,10 @@ class Experiment:
                         indice_delete_random = []
 
                         for _ in range(compare_deletion_num):
-                            tag_size = sample_size()
+                            if multi_deletion:
+                                tag_size = sample_size()
+                            else:
+                                tag_size = 1
                             indice_delete_random.append(len(new_batches))
                             x_list, delete_mask = random_delete(tag_size, x0[i], x1[i], x2[i])
                             new_batches.append(x_list)
@@ -2016,20 +2074,57 @@ class Experiment:
                 reward_payload = (x0, x1, x2, y, loss_mask)
                 return reward_payload
 
+            def reinforce_binary(good_action, input_x):
+                pos_reward_indice = np.int_(good_action)
+                loss_mask = pos_reward_indice + np.ones_like(pos_reward_indice) * (-0.5)
+                x0, x1, x2, y = input_x
+                reward_payload = (x0, x1, x2, y, loss_mask)
+                return reward_payload
+
+            def supervise(good_action, input_x):
+                label = np.int_(good_action)
+                x0, x1, x2, y = input_x
+                reward_payload = (x0, x1, x2, y, label)
+                return reward_payload
+
+            def reinforce_two(good_action, bad_action, input_x):
+                pos_reward_indice = np.int_(np.logical_and(good_action, np.logical_not(bad_action)))
+                neg_reward_indice = np.int_(np.logical_and(bad_action, np.logical_not(good_action)))
+                loss_mask = -pos_reward_indice + neg_reward_indice
+                x0,x1,x2,y = input_x
+
+                self.log2.debug("Good: {}".format(good_action))
+                self.log2.debug("Bad : {}".format(bad_action))
+                self.log2.debug("Mask: {}".format(loss_mask))
+                return (x0, x1, x2, y, loss_mask)
+
+            if method < 2:
+                reinforce = reinforce_one
+            elif method == 2:
+                reinforce = supervise
+            elif method == 3:
+                reinforce = reinforce_binary
+
+
+
             def action_score(before_prob, after_prob, action):
                 num_tag = np.count_nonzero(action)
-                penalty = (num_tag - 1) * 0.1 if num_tag > 1 else 0
+                penalty = (num_tag - 3) * 0.1 if num_tag > 3 else 0
                 if explain_tag == 'conflict':
-                    score = before_prob[2] - after_prob[2]
+                    score = (before_prob[2] - before_prob[0]) - (after_prob[2] - after_prob[0])
                 elif explain_tag == 'match':
                     # Increase of neutral
+                    assert False
                     score = (before_prob[2] + before_prob[0]) - (after_prob[2] + after_prob[0])
                      # ( 1 - before_prob[1] ) - (1 - after_prob[1]) = after_prob[1] - before_prob[1] = increase of neutral
                 elif explain_tag == 'mismatch':
+                    assert False
                     score = before_prob[1] - after_prob[1]
+                elif explain_tag == 'dontcare':
+                    assert False
+                    score = sum([math.fabs(before_prob[i]-after_prob[i]) for i in [0,1,2]])
                 else:
                     assert False
-
                 score = score - penalty
                 return score
 
@@ -2039,6 +2134,7 @@ class Experiment:
             def calc_reward(alt_logits, instance_infos, deleted_mask_list):
                 models_score_list = []
                 reinforce_payload_list = []
+                num_tag_list = []
                 pos_win = 0
                 pos_trial = 0
                 for info in instance_infos:
@@ -2047,6 +2143,8 @@ class Experiment:
                     input_x = info['orig_input']
 
                     predicted_action = deleted_mask_list[info['idx_delete_tagged']]
+                    num_tag = np.count_nonzero(predicted_action)
+                    num_tag_list.append(num_tag)
                     models_score = action_score(init_output, models_after_output, predicted_action)
                     models_score_list.append(models_score)
                     #self.log2.debug(
@@ -2062,7 +2160,7 @@ class Experiment:
                             best_score = alt_score
                             good_action = random_action
 
-                    reward_payload = reinforce_one(good_action, input_x)
+                    reward_payload = reinforce(good_action, input_x)
                     reinforce_payload_list.append(reward_payload)
                     if models_score >= best_score:
                         pos_win += 1
@@ -2071,7 +2169,8 @@ class Experiment:
                 match_rate = pos_win / pos_trial
                 avg_score = average(models_score_list)
                 self.log.debug("drop score : {0:.4f}  suc_rate : {1:0.2f}".format(avg_score, match_rate))
-                summary.value.add(tag='CE_Drop', simple_value=avg_score)
+                summary.value.add(tag='#Tags', simple_value=average(num_tag_list))
+                summary.value.add(tag='Score', simple_value=avg_score)
                 summary.value.add(tag='Success', simple_value=match_rate)
                 return reinforce_payload_list
             reinforce_payload = calc_reward(alt_logits, instance_infos, deleted_mask_list)
@@ -2094,6 +2193,7 @@ class Experiment:
                     rl_loss_list.append(rl_loss)
                 return average(rl_loss_list)
 
+            save_payload(reinforce_payload, step_i)
             ## Step 4) Update gradient
             avg_rl_loss = commit_reward(reinforce_payload)
 
@@ -2111,7 +2211,8 @@ class Experiment:
         def valid_fn():
             loss_list = []
             acc_list = []
-            for batch in dev_batches[:100]:
+            eval()
+            for batch in dev_batches[:10]:
                 loss_val, summary, acc = self.sess.run([task.loss, self.merged, task.acc],
                                                   feed_dict=batch2feed_dict(batch)
                                                   )
@@ -2122,7 +2223,7 @@ class Experiment:
             self.log.info("Validation : loss={0:.04f} acc={1:.04f}".format(average(loss_list), average(acc_list)))
 
         def save_fn():
-            self.save_model(exp_config.name, 10)
+            self.save_model(exp_config.name, 1)
 
         train_batches, dev_batches = self.load_nli_data(data_loader)
         valid_freq = 25
@@ -2131,6 +2232,191 @@ class Experiment:
             loss, _ = epoch_runner(train_batches, train_ex_fn,
                                    valid_fn, valid_freq,
                                    save_fn, self.save_interval)
+
+
+
+    # Refactored version of explain train
+    def train_nli_ex_with_premade_data(self, nli_setting, exp_config, data_loader, preload_id, explain_tag):
+        enc_explain_dev, explain_dev = data_loader.get_dev_explain(explain_tag)
+        method = 1
+        task = transformer_nli(self.hparam, nli_setting.vocab_size, method)
+        with tf.variable_scope("optimizer"):
+            train_rl = self.get_train_op(task.rl_loss, name="rl")
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            if exp_config.load_names:
+                self.load_model_white(name, id, exp_config.load_names)
+            else:
+                assert False
+
+        def eval():
+            print("Eval")
+            begin = time.time()
+            batches = get_batches_ex(enc_explain_dev, self.hparam.batch_size, 3)
+
+            conf_logit_list = []
+            for batch in batches:
+                x0, x1, x2 = batch
+                logits, conf_logit = self.sess.run([task.sout, task.conf_logits ],
+                                               feed_dict={
+                                                task.x_list[0]: x0,
+                                                task.x_list[1]: x1,
+                                                task.x_list[2]: x2,
+                                               })
+                conf_logit_list.append(conf_logit)
+            conf_logit = np.concatenate(conf_logit_list)
+            assert len(conf_logit) == len(explain_dev)
+            end = time.time()
+            print("Elapsed Time : {}".format(end- begin))
+
+            p_at_1, MAP_score = eval_explain(conf_logit, data_loader, explain_tag)
+            print("P@1 : {}".format(p_at_1))
+            print("MAP : {}".format(MAP_score))
+            summary = tf.Summary()
+            summary.value.add(tag='P@1', simple_value=p_at_1)
+            summary.value.add(tag='MAP', simple_value=MAP_score)
+            self.train_writer.add_summary(summary, self.g_step)
+            self.train_writer.flush()
+
+
+        ENTAILMENT = 0
+        NEUTRAL = 1
+        CONTRADICTION = 2
+
+        target_class = {
+            'conflict' : CONTRADICTION,
+            'match': ENTAILMENT,
+            'dontcare': ENTAILMENT,
+            'mismatch': NEUTRAL,
+        }[explain_tag]
+        print(target_class)
+
+        def train_explain(reinforce_payload, step_i):
+            def commit_reward(reinforce_payload):
+                batches = get_batches_ex(reinforce_payload, self.hparam.batch_size, 5)
+                rl_loss_list = []
+                for batch in batches:
+                    x0, x1, x2, y, rf_mask = batch
+                    _, rl_loss, conf_logits,  = self.sess.run([train_rl, task.rl_loss,
+                                                                                task.conf_logits,
+                                                                                ],
+                                            feed_dict={
+                                                task.x_list[0]: x0,
+                                                task.x_list[1]: x1,
+                                                task.x_list[2]: x2,
+                                                task.y : y,
+                                                task.rf_mask : rf_mask,
+                                            })
+                    rl_loss_list.append(rl_loss)
+                return average(rl_loss_list)
+
+            ## Step 4) Update gradient
+            avg_rl_loss = commit_reward(reinforce_payload)
+
+
+        def train_ex_fn(payload, step_i):
+            loss_val, acc = 0, 0
+            train_explain(payload, step_i)
+            self.g_step += 1
+            return loss_val, acc
+
+        def valid_fn():
+            eval()
+
+        train_batches, dev_batches = self.load_nli_data(data_loader)
+        valid_freq = 25
+        num_epochs = exp_config.num_epoch
+        for i_epoch in range(1):
+            step_size = 5200
+            for step_i in range(step_size):
+                if step_i % valid_freq == 0:
+                    valid_fn()
+
+                path_save = os.path.join(path.data_path, "nli_temp", "reinforce{}.pickle".format(step_i))
+                if os.path.exists(path_save):
+                    reinforce_payload = pickle.load(open(path_save, "rb"))
+                    train_ex_fn(reinforce_payload, step_i)
+
+
+    def nli_visualization(self, nli_setting, exp_config, data_loader, preload_id):
+        print("nli_visualization")
+        explain_tag = 'conflict'
+        enc_explain_dev, explain_dev = data_loader.get_dev_explain_1()
+        task = transformer_nli(self.hparam, nli_setting.vocab_size)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            if exp_config.load_names :
+                self.load_model_white(name, id, exp_config.load_names)
+            else:
+                assert False
+
+        def eval():
+            print("Eval")
+            begin = time.time()
+            batches = get_batches_ex(enc_explain_dev, self.hparam.batch_size, 3)
+
+            conf_logit_list = []
+            for batch in batches:
+                x0, x1, x2 = batch
+                logits, conf_logit = self.sess.run([task.sout, task.conf_logits ],
+                                               feed_dict={
+                                                task.x_list[0]: x0,
+                                                task.x_list[1]: x1,
+                                                task.x_list[2]: x2,
+                                               })
+                conf_logit_list.append(conf_logit)
+            conf_logit = np.concatenate(conf_logit_list)
+            assert len(conf_logit) == len(explain_dev)
+            end = time.time()
+            print("Elapsed Time : {}".format(end- begin))
+
+            p_at_1, MAP_score = eval_explain(conf_logit, data_loader, enc_explain_dev)
+            print("P@1 : {}".format(p_at_1))
+            print("MAP : {}".format(MAP_score))
+        eval()
+        conf_logit_list = []
+        batches = get_batches_ex(enc_explain_dev, self.hparam.batch_size, 3)
+        logit_list = []
+        for batch in batches:
+            x0, x1, x2 = batch
+            logits, conf_logit = self.sess.run([task.sout, task.conf_logits],
+                                               feed_dict={
+                                                   task.x_list[0]: x0,
+                                                   task.x_list[1]: x1,
+                                                   task.x_list[2]: x2,
+                                               })
+            conf_logit_list.append(conf_logit)
+            logit_list.append(logits)
+        conf_logit = np.concatenate(conf_logit_list)
+        logits = np.concatenate(logit_list)
+        predictions = logits.argmax(axis=1)
+
+        result = []
+        for idx, entry in enumerate(explain_dev):
+            #if predictions[idx] == 0:
+            conf_p, conf_h = data_loader.split_p_h(conf_logit[idx], enc_explain_dev[idx])
+            prem, hypo, p_indice, h_indice = entry
+            input_ids = enc_explain_dev[idx][0]
+            p_enc, h_enc = data_loader.split_p_h(input_ids, enc_explain_dev[idx])
+            p_tokens = data_loader.encoder.decode_list(p_enc)
+            h_tokens = data_loader.encoder.decode_list(h_enc)
+
+            result.append((conf_p, conf_h, p_tokens, h_tokens))
+
+        save_to_pickle(result, exp_config.name)
+        visualize.visualize(result, exp_config.name)
+
+
 
     def rank_adhoc(self, exp_config, data_loader, preload_id):
         tprint("train_adhoc")
@@ -2877,6 +3163,12 @@ class Experiment:
         tprint("get_dev_data...")
         dev_batches = data_loader.get_dev_data(batch_size)
 
+        def add_tf_summary(writer, tag, value):
+            summary = tf.Summary()
+            summary.value.add(tag=tag, simple_value=value)
+            writer.add_summary(summary, self.g_step)
+            writer.flush()
+
         def valid_fn():
             #compare_bm25()
             acc_list = []
@@ -2890,8 +3182,11 @@ class Experiment:
                 v_step = self.g_step + idx - int(len(dev_batches) / 2)
                 self.test_writer.add_summary(summary, v_step)
 
+            acc = average(acc_list)
             self.log.info("Validation : loss={0:.04f} acc={1:.02f}".
-                          format(average(loss_list), average(acc_list)))
+                          format(average(loss_list), acc))
+            add_tf_summary(self.test_writer, 'acc', acc)
+
 
         def logits2acc(logits):
             paired = np.reshape(logits, [-1, 2])
@@ -2907,10 +3202,8 @@ class Experiment:
             acc = logits2acc(logits)
             self.log.debug("Step {0} train loss={1:.04f} acc={2:.02f}".format(step_i, loss_val, acc))
             self.train_writer.add_summary(summary, self.g_step)
-            summary = tf.Summary()
-            summary.value.add(tag='acc', simple_value=acc)
-            self.train_writer.add_summary(summary, self.g_step)
-            self.train_writer.flush()
+            add_tf_summary(self.train_writer, 'acc', acc)
+
             self.g_step += 1
             return loss_val, 0
 
@@ -2934,7 +3227,12 @@ class Experiment:
         for step_i in range(max_step):
             if step_i % valid_freq == 0:
                 valid_fn()
-                save_fn()
+
+
+            if save_fn is not None:
+                if time.time() - last_save > exp_config.save_interval:
+                    save_fn()
+                    last_save = time.time()
 
             batch = data_loader.get_train_batch(batch_size)
 
@@ -3119,15 +3417,23 @@ class Experiment:
         tprint("Completed GPU computations")
         self.sess.close()
         tf.reset_default_graph()
-        f_out_log = path.open_pred_output("detail_rerank_{}_{}_{}".format(exp_config.name, st, ed))
+
+        tail = "middle_rerank_{}_{}_{}".format(exp_config.name, st, ed)
+
+        fout = open(os.path.join(path.prediction_dir, tail), "wb")
+
+        middle = []
         for q_id, doc_id, y_futures in score_list_future:
             def fetch(f):
                 y, v = f.get()
                 return y
 
-            scores = list([fetch(f) for f in y_futures])
-            f_out_log.write("{} {} ".format(q_id, doc_id) + " ".join([str(s) for s in scores]) + "\n")
+            p = list([f.get() for f in y_futures])
 
+            entry = (q_id, doc_id, p)
+            middle.append(entry)
+
+        pickle.dump(middle, fout)
         return score_list_future
 
     def predict_robust_L_part2(self, exp_config, score_list_future, preload_id2, interval):

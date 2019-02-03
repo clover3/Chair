@@ -137,7 +137,7 @@ class NetOutputLoader:
                 #new_v = [score]
                 new_v = [score] + vector
                 out_v_1.append(new_v)
-
+            out_v_1.sort(key=lambda x:x[0], reverse=True)
             result.append(encode(out_v_1, self.max_seq, self.dim))
 
         return result

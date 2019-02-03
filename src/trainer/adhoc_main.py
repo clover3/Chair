@@ -119,7 +119,7 @@ def predict_adhoc_robust_L():
     load_id = ("Adhoc_L", 'model-644')
     middle_result = e.predict_robust_L_part1(e_config, vocab_size, load_id, payload_path, (st, ed))
 
-    preload_id2 = ("MergerE_C2", 'model-10650')
+    preload_id2 = ("MergerE_C (copy)", 'model-3075')
     e.predict_robust_L_part2(e_config, middle_result, preload_id2, (st,ed) )
 
 
@@ -221,12 +221,10 @@ def train_score_merger_on_vector():
     hp = hyperparams.HPMerger()
     e = Experiment(hp)
     e_config = ExperimentConfig()
-    e_config.name = "MergerE_{}".format("C2")
-    e_config.num_epoch = 4
+    e_config.name = "MergerE_{}".format("D")
 
     data_loader = score_loader.NetOutputLoader(hp.seq_max, hp.hidden_units, hp.batch_size)
-    load_id = ("MergerE_C", 'model-5325')
-    e.train_score_merger(e_config, data_loader, load_id)
+    e.train_score_merger(e_config, data_loader)
 
 
 def pool_adhoc():
@@ -236,9 +234,9 @@ def pool_adhoc():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Adhoc_{}_pool".format("K")
+    e_config.name = "Adhoc_{}_pool".format("L")
     #e_config.load_names = ['bert', 'reg_dense']
-    e_config.load_names = ['bert', 'dense1', 'dense_reg']
+    e_config.load_names = ['bert', 'reg_dense', 'aux_q_info']
     vocab_size = 30522
     task_idx = int(sys.argv[2])
     print(task_idx)

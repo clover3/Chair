@@ -83,7 +83,7 @@ def encode_payload(idx):
 
     
     result = []
-    for runs_1, runs_2 in doc_pairs[idx:]:
+    for runs_1, runs_2 in doc_pairs:
         enc_run_1 = [] 
         for query, text, in runs_1:
             entry = encoder_unit.encode_pair(query, text)

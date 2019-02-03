@@ -2,7 +2,6 @@
 
 from models.transformer.bert import *
 
-
 class ScoreCombinerFF:
     def __init__(self, hp):
         seq_length = hp.seq_max
@@ -30,6 +29,27 @@ class ScoreCombinerFF:
         losses = tf.maximum(hp.alpha - (paired[:, 1] - paired[:, 0]), 0)
         self.loss = tf.reduce_mean(losses)
         tf.summary.scalar('loss', self.loss)
+
+
+class ScoreCombinerLSTM:
+    def __init__(self, hp):
+        seq_length = hp.seq_max
+        input_tensor = tf.placeholder(tf.float32, [None, seq_length, hp.hidden_units])
+        input_mask = tf.placeholder(tf.int64, [None, seq_length])
+        segment_ids = tf.placeholder(tf.int64, [None, seq_length])
+        self.x_list = [input_tensor, input_mask, segment_ids]
+        hidden_dropout_prob = 0.1
+        data_size = seq_length * hp.hidden_units
+
+        in_tensor = NotImplemented
+
+        self.logits = tf.layers.dense(in_tensor, 1)  # [None, hp.hidden_units]
+        paired = tf.reshape(self.logits, [-1, 2])
+        losses = tf.maximum(hp.alpha - (paired[:, 1] - paired[:, 0]), 0)
+        self.loss = tf.reduce_mean(losses)
+        tf.summary.scalar('loss', self.loss)
+
+
 
 
 class ScoreCombinerF1:

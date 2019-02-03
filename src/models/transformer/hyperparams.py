@@ -21,7 +21,7 @@ class Hyperparams:
     sinusoid = False  # If True, use sinusoid. If false, positional embedding.
 
 
-class HPDefault:
+class  HPDefault:
     '''Hyperparameters'''
     # data
     # training

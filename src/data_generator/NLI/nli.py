@@ -34,7 +34,8 @@ class DataLoader:
             self.sep_char = "#"
             self.encoder = FullTokenizerWarpper(voca_path)
 
-        self.dev_explain = None
+        self.dev_explain_0 = None
+        self.dev_explain_1 = None
 
 
     def get_train_data(self):
@@ -47,19 +48,41 @@ class DataLoader:
             self.dev_data = list(self.example_generator(self.dev_file))
         return self.dev_data
 
-    def get_dev_explain(self):
-        if self.dev_explain is None:
-            explain_data = load_mnli_explain()
+    def get_dev_explain(self, target):
+        if target == 'conflict':
+            return self.get_dev_explain_0()
+        elif target == 'align':
+            return self.get_dev_explain_1(target)
+        else:
+            assert False
+
+    def get_dev_explain_0(self):
+        if self.dev_explain_0 is None:
+            explain_data = load_mnli_explain_0()
 
             def entry2inst(raw_entry):
                 entry = self.encode(raw_entry['p'], raw_entry['h'])
                 return entry["input_ids"], entry["input_mask"], entry["segment_ids"]
 
             encoded_data = list([entry2inst(entry) for entry in explain_data])
-            self.dev_explain = encoded_data, explain_data
+            self.dev_explain_0 = encoded_data, explain_data
 
-        return self.dev_explain
+        return self.dev_explain_0
 
+    def get_dev_explain_1(self, tag):
+        if self.dev_explain_1 is None:
+            explain_data = list(load_nli_explain_1(tag))
+
+            def entry2inst(raw_entry):
+                entry = self.encode(raw_entry[0], raw_entry[1])
+                return entry["input_ids"], entry["input_mask"], entry["segment_ids"]
+
+            encoded_data = list([entry2inst(entry) for entry in explain_data])
+            self.dev_explain_1 = encoded_data, explain_data
+        return self.dev_explain_1
+
+    # To compare, concatenate the model's tokens with space removed
+    #
     def convert_index(self, raw_sentence, subtoken_ids, target_idx):
         if self.lower_case:
             raw_sentence = raw_sentence.lower()
@@ -77,6 +100,7 @@ class DataLoader:
         prev_text = "".join(subword_tokens[:target_idx])
         text_idx = 0
         #print("prev text", prev_text)
+        # now we want to find a token from raw_sentence which appear after prev_text equivalent
 
         def update_text_idx(target_char, text_idx):
             while prev_text[text_idx] in [self.sep_char, " "]:
@@ -120,6 +144,7 @@ class DataLoader:
 
             yield entry["input_ids"], entry["input_mask"], entry["segment_ids"], l
 
+    # split the np_arr, which is an attribution scores
     def split_p_h(self, np_arr, input_x):
         input_ids, _, seg_idx = input_x
 
@@ -225,6 +250,56 @@ def load_nli_explain():
         yield premise, hypothesis, tokens_premise, tokens_hypothesis
 
 
+def load_nli_explain_1(name):
+
+    path_idx = os.path.join(corpus_dir, "{}.txt".format(name))
+    path_text = os.path.join(corpus_dir, "{}.csv".format(name))
+
+    reader = csv.reader(open(path_text, "r"), delimiter=',')
+
+    texts_list = []
+    for row in reader:
+        premise = row[0]
+        hypothesis = row[1]
+        texts_list.append((premise, hypothesis))
+
+    f = open(path_idx, "r")
+    indice_list = []
+    for line in f:
+        p_indice, h_indice = line.split(",")
+        p_indice = list([int(t) for t in p_indice.split(" ")])
+        h_indice = list([int(t) for t in h_indice.split(" ")])
+        indice_list.append((p_indice, h_indice))
+
+    def complement(source, whole):
+        return list(set(whole) - set(source))
+
+    texts_list = texts_list[:len(indice_list)]
+    debug = False
+    for (prem, hypo), (p_indice, h_indice) in zip(texts_list, indice_list):
+        p_tokens = prem.split()
+        h_tokens = hypo.split()
+        if name == "align":
+            p_indice = complement(p_indice, range(len(p_tokens)))
+            h_indice = complement(h_indice, range(len(h_tokens)))
+        if debug:
+            print(len(p_tokens), len(p_indice),len(h_tokens), len(h_indice))
+            for idx in p_indice:
+                print(p_tokens[idx], end=" ")
+            print(" | ", end="")
+            for idx in range(len(p_tokens)):
+                if idx not in p_indice:
+                    print(p_tokens[idx], end=" ")
+            print("")
+            for idx in h_indice:
+                print(h_tokens[idx], end=" ")
+            print(" | ", end="")
+            for idx in range(len(h_tokens)):
+                if idx not in h_indice:
+                    print(h_tokens[idx], end=" ")
+            print("")
+        yield prem, hypo, p_indice, h_indice
+
 def load_nli(path):
     label_list = ["entailment", "neutral", "contradiction", ]
 
@@ -236,7 +311,7 @@ def load_nli(path):
         l = label_list.index(split_line[-1])
         yield s1, s2, l
 
-def load_mnli_explain():
+def load_mnli_explain_0():
     return load_from_pickle("mnli_explain")
     explation = load_nli_explain()
     dev_file = os.path.join(corpus_dir, "dev_matched.tsv")
@@ -300,27 +375,66 @@ def load_mnli_explain():
     return data
 
 
+def eval_explain(conf_score, data_loader, tag):
+    if tag == 'conflict':
+        return eval_explain_0(conf_score, data_loader)
+    else:
+        return eval_explain_1(conf_score, data_loader, tag)
 
-def eval_explain(conf_score, data_loader):
-    enc_explain_dev, explain_dev = data_loader.get_dev_explain()
+
+def eval_explain_1(conf_score, data_loader, tag):
+    enc_explain_dev, explain_dev = data_loader.get_dev_explain_1(tag)
 
     pred_list = []
     gold_list = []
     for idx, entry in enumerate(explain_dev):
         conf_p, conf_h = data_loader.split_p_h(conf_score[idx], enc_explain_dev[idx])
+        prem, hypo, p_indice, h_indice = entry
+        input_ids = enc_explain_dev[idx][0]
+        p_enc, h_enc = data_loader.split_p_h(input_ids, enc_explain_dev[idx])
+
+        p_explain = []
+        h_explain = []
+
+        for i in top_k_idx(conf_p, 10):
+            # Convert the index of model's tokenization into space tokenized index
+            v_i = data_loader.convert_index(prem, p_enc, i)
+            score = conf_p[i]
+            p_explain.append((score, v_i))
+
+        for i in top_k_idx(conf_h, 10):
+            v_i = data_loader.convert_index(hypo, h_enc, i)
+            score = conf_h[i]
+            h_explain.append((score, v_i))
+
+        pred_list.append((p_explain, h_explain))
+        gold_list.append((p_indice, h_indice))
+
+    p_at_1 = p_at_k_list(pred_list, gold_list, 1)
+    MAP_score = MAP(pred_list, gold_list)
+    return p_at_1, MAP_score
+
+
+def eval_explain_0(conf_score, data_loader):
+    enc_explain_dev, explain_dev = data_loader.get_dev_explain_0()
+
+    pred_list = []
+    gold_list = []
+    for idx, entry in enumerate(explain_dev):
+        attr_p, attr_h = data_loader.split_p_h(conf_score[idx], enc_explain_dev[idx])
 
         input_ids = enc_explain_dev[idx][0]
         p, h = data_loader.split_p_h(input_ids, enc_explain_dev[idx])
 
         p_explain = []
-        for i in top_k_idx(conf_p, 10):
+        for i in top_k_idx(attr_p, 10):
             v_i = data_loader.convert_index(entry['p'], p, i)
-            score = conf_p[i]
+            score = attr_p[i]
             p_explain.append((score, v_i))
         h_explain = []
-        for i in top_k_idx(conf_h, 10):
+        for i in top_k_idx(attr_h, 10):
             v_i = data_loader.convert_index(entry['h'], h, i)
-            score = conf_h[i]
+            score = attr_h[i]
             h_explain.append((score, v_i))
 
         pred_list.append((p_explain, h_explain))
@@ -329,3 +443,5 @@ def eval_explain(conf_score, data_loader):
     p_at_1 = p_at_k_list(pred_list, gold_list, 1)
     MAP_score = MAP(pred_list, gold_list)
     return p_at_1, MAP_score
+
+

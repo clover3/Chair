@@ -8,7 +8,7 @@ data_path = os.path.join(project_root, 'data')
 output_path = os.path.join(project_root, 'output')
 
 def train_logger():
-    log = logging.getLogger('Training')
+    log = logging.getLogger('Training 2')
     ch = logging.FileHandler(os.path.join(output_path, "train.log"))
     log.setLevel(logging.DEBUG)
     format_str = '%(levelname)s\t%(name)s \t%(asctime)s %(message)s'
@@ -22,7 +22,7 @@ def train_logger():
 
 
 def aux_logger():
-    log = logging.getLogger('Aux1')
+    log = logging.getLogger('Aux2')
     ch = logging.FileHandler(os.path.join(output_path, "aux.log"))
     log.setLevel(logging.DEBUG)
     format_str = '%(levelname)s\t%(name)s \t%(asctime)s %(message)s'

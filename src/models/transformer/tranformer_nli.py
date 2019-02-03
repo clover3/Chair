@@ -5,7 +5,7 @@ from data_generator.NLI import nli
 from trainer import tf_module
 
 class transformer_nli:
-    def __init__(self, hp, voca_size):
+    def __init__(self, hp, voca_size, method):
         config = bert.BertConfig(vocab_size=voca_size,
                                  hidden_size=hp.hidden_units,
                                  num_hidden_layers=hp.num_blocks,
@@ -22,8 +22,7 @@ class transformer_nli:
         input_mask = tf.placeholder(tf.int64, [None, seq_length])
         segment_ids = tf.placeholder(tf.int64, [None, seq_length])
         label_ids = tf.placeholder(tf.int64, [None])
-        method = 1
-        if method == 1:
+        if method == 0 or method == 1 or method == 3:
             self.rf_mask = tf.placeholder(tf.float32, [None, seq_length])
         elif method == 2:
             self.rf_mask = tf.placeholder(tf.int32, [None, seq_length])
@@ -50,20 +49,24 @@ class transformer_nli:
         self.acc = task.acc
         tf.summary.scalar('loss', self.loss)
         tf.summary.scalar('acc', self.acc)
-
-
-        if method == 1:
+        if method == 0:
             cl = tf.layers.dense(self.model.get_sequence_output(), 1, name="aux_conflict")
             cl = tf.reshape(cl, [-1, seq_length])
-            #cl = tf.nn.tanh(cl)
+            cl = tf.nn.sigmoid(cl)
+            # cl = tf.contrib.layers.layer_norm(cl)
+            self.conf_logits = cl
+            # self.pkc = self.conf_logits * self.rf_mask
+            # rl_loss_list = tf.reduce_sum(self.pkc, axis=1)
+            rl_loss_list = tf.reduce_sum(self.conf_logits * tf.cast(self.rf_mask, tf.float32), axis=1)
+            self.rl_loss = tf.reduce_mean(rl_loss_list)
+        elif method == 1:
+            cl = tf.layers.dense(self.model.get_sequence_output(), 1, name="aux_conflict")
+            cl = tf.reshape(cl, [-1, seq_length])
+            #cl = tf.nn.sigmoid(cl)
             cl = tf.contrib.layers.layer_norm(cl)
             self.conf_logits = cl
             self.pkc = self.conf_logits * self.rf_mask
-            #rl_loss_list = tf.reduce_sum(self.pkc, axis=1)
             rl_loss_list = tf.reduce_sum(self.conf_logits * self.rf_mask , axis=1)
-
-
-            num_tagged = tf.nn.relu(self.conf_logits+1)
             self.rl_loss = tf.reduce_mean(rl_loss_list)
         elif method == 2:
             cl = tf.layers.dense(self.model.get_sequence_output(), 2, name="aux_conflict")
@@ -71,6 +74,18 @@ class transformer_nli:
             losses = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(self.rf_mask, 2), logits=cl)
             self.conf_logits = probs[:,:,1] - 0.5
             self.rl_loss = tf.reduce_mean(losses)
+        elif method == 3:
+            cl = tf.layers.dense(self.model.get_sequence_output(), 1, name="aux_conflict")
+            cl = tf.reshape(cl, [-1, seq_length])
+            self.bias = tf.Variable(0.0)
+            self.conf_logits = (cl + self.bias)
+            rl_loss_list = tf.nn.relu(1 - self.conf_logits * self.rf_mask)
+            rl_loss_list = tf.reduce_mean(rl_loss_list, axis=1)
+            self.rl_loss = tf.reduce_mean(rl_loss_list)
+            labels = tf.greater(self.rf_mask, 0)
+            hinge_losses = tf.losses.hinge_loss(labels, self.conf_logits)
+            self.hinge_loss = tf.reduce_sum(hinge_losses)
+
 
 
 class transformer_nli_embedding_in:

@@ -4,6 +4,8 @@ import numpy as np
 def top_k_idx(arr, k):
     return np.flip(np.argsort(arr))[:k]
 
+def bottom_k_idx(arr, k):
+    return np.argsort(arr)[:k]
 
 def p_at_k_list(explains, golds, k):
     def p_at_k(rank_list, gold_set, k):
