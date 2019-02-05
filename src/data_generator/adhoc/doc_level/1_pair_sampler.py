@@ -63,7 +63,7 @@ def generate_data(run_id):
                 result.append((q_id, doc_id_1, q_id, doc_id_2))
             else:
                 result.append((q_id, doc_id_2, q_id, doc_id_1))
-    pickle.dump(result, open("merger_idpair_{}.pickle".format(run_id), "wb"))
+    pickle.dump(result, open("id_pair_{}.pickle".format(run_id), "wb"))
 
 
 if __name__ == "__main__":
