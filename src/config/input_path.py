@@ -7,3 +7,5 @@ import os
 train_data_name = "train_data_old"
 #train_data_name = "dp"
 train_data_dir = os.path.join(data_path, "robust", train_data_name)
+
+galago_judge_path = ""

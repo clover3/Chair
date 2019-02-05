@@ -221,7 +221,7 @@ def train_score_merger_on_vector():
     hp = hyperparams.HPMerger()
     e = Experiment(hp)
     e_config = ExperimentConfig()
-    e_config.name = "MergerE_{}".format("D")
+    e_config.name = "MergerE_{}".format("E")
 
     data_loader = score_loader.NetOutputLoader(hp.seq_max, hp.hidden_units, hp.batch_size)
     e.train_score_merger(e_config, data_loader)
@@ -240,7 +240,7 @@ def pool_adhoc():
     vocab_size = 30522
     task_idx = int(sys.argv[2])
     print(task_idx)
-    payload_path = os.path.join(path.data_path, "robust", "dp", "dp_train_{}.pickle".format(task_idx))
+    payload_path = os.path.join(path.data_path, "robust", "dp", "merger_plainpair_{}.pickle".format(task_idx))
 
     load_id = ("Adhoc_L", 'model-644')
     e.predict_for_pooling(e_config, vocab_size, load_id, payload_path)
