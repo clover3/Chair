@@ -36,9 +36,9 @@ class DataSampler:
     def tfidf_span(self, q_terms, text_span):
         return sum([text_span.count(q_i) * self.idf[q_i] for q_i in q_terms])
 
-    def check_worthy(self, q_terms, doc_id_list):
+    def check_worthy(self, q_terms, doc_id_list, seq_len):
         max_score = 0
-        window_size = 200 * 3
+        window_size = seq_len * 3
         for doc_id in doc_id_list:
             raw_document = self.collection[doc_id]
             loc_ptr = 0
@@ -50,8 +50,8 @@ class DataSampler:
                 loc_ptr += window_size
         return max_score >= self.threshold_boring_doc
 
-    def pair_generator(self):
-        ranked_list = self.ranked_list_generate()
+    def pair_generator(self, seq_len):
+        ranked_list = self.ranked_list_generate(seq_len)
         for query, score_group in ranked_list:
             candidate = []
             for key_score, span_list in score_group.items():
@@ -69,7 +69,7 @@ class DataSampler:
                 else:
                     yield query, x2, x1
 
-    def ranked_list_generate(self):
+    def ranked_list_generate(self, seq_len):
         def flatten_and_get_doc_id(postings_list):
             doc_ids = []
             for postings in postings_list:
@@ -78,7 +78,7 @@ class DataSampler:
             return doc_ids
 
         def sample_size():
-            window_size = 200 * 3
+            window_size = seq_len * 3
             return random.randrange(0, window_size * 10)
 
         def sample_shift():
@@ -119,7 +119,7 @@ class DataSampler:
             if len(doc_id_list) > 1000:
                 doc_id_list = random.sample(doc_id_list, 1000)
 
-            if not self.check_worthy(q_terms, doc_id_list):
+            if not self.check_worthy(q_terms, doc_id_list, seq_len):
                 continue
 
             # Scan docs and retrieve spans
