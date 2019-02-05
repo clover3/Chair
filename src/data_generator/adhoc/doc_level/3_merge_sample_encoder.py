@@ -15,7 +15,7 @@ def split_text(content):
 
 
 def encode_payload(idx):
-    doc_pairs = pickle.load(open("../output/plain_pair_{}.pickle".format(idx), "rb"))
+    doc_pairs = pickle.load(open("../output/plain_pair_0{}.pickle".format(idx), "rb"))
     vocab_filename = "bert_voca.txt"
     voca_path = os.path.join(data_path, vocab_filename)
     max_sequence = 200

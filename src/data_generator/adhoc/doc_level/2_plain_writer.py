@@ -40,7 +40,7 @@ def pickle_payload(slave_id):
     for i in range(n_block):
         st = i * step
         ed = (i+1) * step
-        name = str(slave_id) + str(i)
+        name = str(slave_id) + "_" + str(i)
         pickle.dump(inst[st:ed], open("../output/plain_pair_{}.pickle".format(name), "wb"))
 
 
