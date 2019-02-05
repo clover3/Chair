@@ -20,9 +20,8 @@ def pickle_payload(slave_id):
     query = load_marco_query(query_path)
 
     print("{}] Load sampled".format(slave_id))
-    dir_path = "/mnt/nfs/work3/youngwookim/code/adhoc/robus/marco_query_doc_results"
 
-    sample_filename = os.path.join(dir_path, "id_pair_{}.pickle".format(slave_id))
+    sample_filename =  "id_pair_{}.pickle".format(slave_id)
     sampled = pickle.load(open(sample_filename, "rb"))
 
     inst = []
