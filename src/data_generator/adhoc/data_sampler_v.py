@@ -178,7 +178,7 @@ def write_data():
     start_i = 0
     print("data:", start_i)
     seq_len = 2000
-    block_len = 16 * 1000  # it will be about 200 MB
+    block_len = 16 * 100  # it will be about 200 MB
     dw = DataWriter(seq_len)
 
     filename = "data{}.pickle".format(start_i)
