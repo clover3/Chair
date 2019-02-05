@@ -147,7 +147,7 @@ class DataWriter:
         vocab_filename = "bert_voca.txt"
         voca_path = os.path.join(data_path, vocab_filename)
         self.encoder_unit = EncoderUnit(max_sequence, voca_path)
-        self.pair_generator = self.data_sampler.pair_generator()
+        self.pair_generator = self.data_sampler.pair_generator(max_sequence)
 
 
     def encode_pair(self, instance):
