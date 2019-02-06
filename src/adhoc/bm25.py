@@ -36,9 +36,12 @@ def compute_K(dl, avdl):
 
 
 class StemmerCache:
-    def __init__(self):
+    def __init__(self, cache = None):
         self.stemmer = Stemmer()
-        self.cache = dict()
+        if cache is not None:
+            self.cache = cache
+        else:
+            self.cache = dict()
 
     def stem(self, t):
         if t in self.cache:
@@ -47,14 +50,16 @@ class StemmerCache:
             r = self.stemmer.stem(t)
             self.cache[t] = r
             if len(self.cache) % 1000 == 0:
-                pickle.dump(self, open("stemmer.pickle", "wb"))
+                pickle.dump(self.cache, open("stemmer.pickle", "wb"))
             return r
 
 def load_stemmer():
     if os.path.exists("stemmer.pickle"):
-        return pickle.load(open("stemmer.pickle", "rb"))
+        cache = pickle.load(open("stemmer.pickle", "rb"))
     else:
-        return StemmerCache()
+        cache = None
+
+    return StemmerCache(cache)
 
 stemmer = load_stemmer()
 
