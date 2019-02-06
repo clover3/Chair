@@ -2790,9 +2790,14 @@ class Experiment:
                 v_step = self.g_step + idx - int(len(dev_batches) / 2)
                 self.test_writer.add_summary(summary, v_step)
 
-
+            acc = average(acc_list)
             self.log.info("Validation : loss={0:.04f} acc={1:.02f}".
-                          format(average(loss_list), average(acc_list)))
+                          format(average(loss_list), acc))
+            summary = tf.Summary()
+            summary.value.add(tag='acc', simple_value=acc)
+            self.test_writer.add_summary(summary, self.g_step)
+            self.test_writer.flush()
+
 
         def logits2acc(logits):
             paired = np.reshape(logits, [-1, 2])
@@ -2825,7 +2830,7 @@ class Experiment:
             return feed_dict
 
         def save_fn():
-            self.save_model(exp_config.name, 5)
+            self.save_model(exp_config.name, 1)
 
         print("dev")
         valid_freq = 25
