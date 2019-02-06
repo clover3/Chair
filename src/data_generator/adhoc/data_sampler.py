@@ -25,7 +25,7 @@ class DataSampler:
         self.min_posting = 5
         self.inst_per_query = 30
         self.queries = queries
-        self.window_size = 200 * 3
+
 
 
     def save_to_pickle(self, pickle_name):
@@ -72,6 +72,7 @@ class DataSampler:
         return max_score >= self.threshold_boring_doc
 
     def ranked_list_generate(self):
+        self.window_size = 512 * 3
         def flatten_and_get_doc_id(postings_list):
             doc_ids = []
             for postings in postings_list:
