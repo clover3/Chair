@@ -103,7 +103,7 @@ class NetOutputLoader:
         self.load_next_data()
 
     def get_path(self, i):
-        filename = "merger_plainpair_{}.pickle.output".format(i)
+        filename = "merger_train_{}.pickle.output".format(i)
         return os.path.join(train_data_dir, filename)
 
     def feed_queue(self):

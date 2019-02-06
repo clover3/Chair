@@ -36,7 +36,7 @@ def train_adhoc_on_robust():
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
-    e_config.name = "Adhoc_{}".format("K")
+    e_config.name = "Adhoc_{}".format("FAD")
     e_config.num_epoch = 4
     e_config.save_interval = 10 * 60  # 60 minutes
     e_config.load_names = ['bert'] #, 'reg_dense']
@@ -46,6 +46,27 @@ def train_adhoc_on_robust():
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     #load_id = ("Adhoc_I2", 'model-290')
     e.train_adhoc2(e_config, data_loader, load_id)
+
+
+
+
+def train_adhoc_fad():
+    hp = hyperparams.HPFAD()
+    hp.batch_size = 16
+    e = Experiment(hp)
+
+    e_config = ExperimentConfig()
+    e_config.name = "Adhoc_{}".format("FAD")
+    e_config.num_epoch = 4
+    e_config.save_interval = 10 * 60  # 60 minutes
+    e_config.load_names = ['bert'] #, 'reg_dense']
+    vocab_size = 30522
+
+    data_loader = data_sampler.DataLoaderFromFile(hp.batch_size, vocab_size)
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    #load_id = ("Adhoc_I2", 'model-290')
+    e.train_adhoc2(e_config, data_loader, load_id)
+
 
 
 
@@ -240,7 +261,7 @@ def pool_adhoc():
     vocab_size = 30522
     task_idx = int(sys.argv[2])
     print(task_idx)
-    payload_path = os.path.join(path.data_path, "robust", "dp", "merger_plainpair_{}.pickle".format(task_idx))
+    payload_path = os.path.join(path.data_path, "robust", "robust_train_merge", "merger_train_{}.pickle".format(task_idx))
 
     load_id = ("Adhoc_L", 'model-644')
     e.predict_for_pooling(e_config, vocab_size, load_id, payload_path)

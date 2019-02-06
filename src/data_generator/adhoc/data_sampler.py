@@ -25,6 +25,7 @@ class DataSampler:
         self.min_posting = 5
         self.inst_per_query = 30
         self.queries = queries
+        self.window_size = 200 * 3
 
 
     def save_to_pickle(self, pickle_name):
@@ -59,16 +60,15 @@ class DataSampler:
 
     def check_worthy(self, q_terms, doc_id_list):
         max_score = 0
-        window_size = 200 * 3
-        for doc_id in doc_id_list: 
+        for doc_id in doc_id_list:
             raw_document = self.collection[doc_id]
             loc_ptr = 0
             while loc_ptr < len(raw_document):
-                text_span = raw_document[loc_ptr:loc_ptr + window_size]
+                text_span = raw_document[loc_ptr:loc_ptr + self.window_size]
 
                 score = self.tfidf_span(q_terms, text_span)
                 max_score = max(score, max_score)
-                loc_ptr += window_size
+                loc_ptr += self.window_size
         return max_score >= self.threshold_boring_doc
 
     def ranked_list_generate(self):
@@ -79,9 +79,8 @@ class DataSampler:
                     doc_ids.append(doc_id)
             return doc_ids
 
-        window_size = 200 * 3
         def sample_shift():
-            return random.randrange(0, window_size * 4)
+            return random.randrange(0, self.window_size * 4)
 
         def sample_debiase(tf_n_span):
             max_occurence = 2
@@ -125,7 +124,7 @@ class DataSampler:
                 raw_document = self.collection[doc_id]
                 loc_ptr = sample_shift()
                 while loc_ptr < len(raw_document):
-                    text_span = raw_document[loc_ptr:loc_ptr + window_size]
+                    text_span = raw_document[loc_ptr:loc_ptr + self.window_size]
                     score = get_bm25(" ".join(q_terms), text_span, self.idf.df, N=len(self.collection), avdl=avdl)
                     spans.append((score, text_span))
                     loc_ptr += sample_shift()
@@ -274,7 +273,6 @@ class DataLoaderFromFile:
         t.daemon = True
         t.start()
 
-
         self.cur_idx = 0
         self.file_idx = 0
         self.cur_data = []
@@ -328,13 +326,14 @@ def write_data():
     random.seed()
     start_i = int(sys.argv[1])
     print("data:", start_i)
-    seq_len = 200
+    seq_len = 512
     block_len = 16 * 1000  # it will be about 20 MB
     dw = DataWriter(seq_len)
 
-    filename = "data{}.pickle".format(start_i)
-    path = os.path.join(data_path, "robust_train_3", filename)
-    dw.write(path, block_len)
+    for j in range(100):
+        filename = "data{}_{}.pickle".format(start_i, j)
+        path = os.path.join(data_path, "robust_train_5", filename)
+        dw.write(path, block_len)
 
 
 def init_sampler_robust04():
