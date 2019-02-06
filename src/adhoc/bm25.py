@@ -4,7 +4,7 @@ from data_generator.tokenizer_b import BasicTokenizer
 from krovetzstemmer import Stemmer
 import nltk
 import pickle
-
+import os
 k1 = 1.2
 k2 = 100
 k3 = 1
@@ -36,8 +36,9 @@ def compute_K(dl, avdl):
 
 
 class StemmerCache:
-    stemmer = Stemmer()
-    cache = dict()
+    def __init__(self):
+        self.stemmer = Stemmer()
+        self.cache = dict()
 
     def stem(self, t):
         if t in self.cache:
@@ -45,11 +46,17 @@ class StemmerCache:
         else:
             r = self.stemmer.stem(t)
             self.cache[t] = r
-            if len(self.cache) % 10000 == 0:
+            if len(self.cache) % 1000 == 0:
                 pickle.dump(self, open("stemmer.pickle", "wb"))
             return r
 
-stemmer = StemmerCache()
+def load_stemmer():
+    if os.path.exists("stemmer.pickle"):
+        return pickle.load(open("stemmer.pickle", "rb"))
+    else:
+        return StemmerCache()
+
+stemmer = load_stemmer()
 
 tokenizer = BasicTokenizer(True)
 def stem_tokenize(text):
