@@ -12,7 +12,7 @@ class DataSampler:
         self.idf = Idf(list(self.collection.values()))
         self.threshold_boring_doc = 20
         self.min_posting = 5
-        self.inst_per_query = 30
+        self.inst_per_query = 50
         self.queries = queries
 
     def save_to_pickle(self, pickle_name):
@@ -90,6 +90,8 @@ class DataSampler:
             q_terms = query.split()
             postings_list = []
             for qterm in q_terms:
+                if self.idf.df[qterm] > 100000:
+                    continue
                 postings = self.inv_index[qterm]
                 if len(postings) < self.min_posting:
                     break  # Skip this query
@@ -123,17 +125,20 @@ class DataSampler:
             yield query, score_group
 
 
-def save_data_samples():
+def save_data_samples(job_id):
     data_sampler = DataSampler.init_from_pickle("robust04")
+    random.seed()
     pair_generator = data_sampler.pair_generator()
     block_size = 1000
-    for i in range(100):
+    step = 100
+    for i in range(step):
+        block_id = step * job_id + i
         result = []
         while len(result) < block_size:
             raw_inst = pair_generator.__next__()
             result.append(raw_inst)
 
-        pickle.dump(result, open("../output/plain512/{}.pickle".format(i), "wb"))
+        pickle.dump(result, open("../output/plain512/{}.pickle".format(block_id), "wb"))
 
 def encode(job_id):
     cache_path = os.path.join(path.cache_path, "sub_tokens.pickle")
@@ -146,8 +151,9 @@ def encode(job_id):
 
 
 if __name__ == '__main__':
+    job_id = int(sys.argv[2])
     if sys.argv[1] == "encode":
-        encode(int(sys.argv[2]))
+        encode(job_id)
     elif sys.argv[1] == "sample":
-        save_data_samples()
+        save_data_samples(job_id)
 
