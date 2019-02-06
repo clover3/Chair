@@ -175,6 +175,7 @@ def encoder_demon():
             job_id, _ = filename.split(".")
             encode_path = get_encoded_path(job_id)
             if not os.path.exists(encode_path):
+                print("Encoding {}".format(job_id))
                 encode(int(job_id))
         time.sleep(30)
 
