@@ -3,6 +3,7 @@ from math import log
 from data_generator.tokenizer_b import BasicTokenizer
 from krovetzstemmer import Stemmer
 import nltk
+import pickle
 
 k1 = 1.2
 k2 = 100
@@ -10,7 +11,7 @@ k3 = 1
 b = 0.75
 R = 0.0
 
-stemmer = Stemmer()
+
 def score_BM25(n, f, qf, r, N, dl, avdl):
     K = compute_K(dl, avdl)
     first = log( ( (r + 0.5) / (R - r + 0.5) ) / ( (n - r + 0.5) / (N - n - R + r + 0.5)) )
@@ -32,6 +33,23 @@ def BM25_reverse(score, df, N, dl, avdl):
 
 def compute_K(dl, avdl):
     return k1 * ((1-b) + b * (float(dl)/float(avdl)) )
+
+
+class StemmerCache:
+    stemmer = Stemmer()
+    cache = dict()
+
+    def stem(self, t):
+        if t in self.cache:
+            return self.cache[t]
+        else:
+            r = self.stemmer.stem(t)
+            self.cache[t] = r
+            if len(self.cache) % 10000 == 0:
+                pickle.dump(self, open("stemmer.pickle", "wb"))
+            return r
+
+stemmer = StemmerCache()
 
 tokenizer = BasicTokenizer(True)
 def stem_tokenize(text):

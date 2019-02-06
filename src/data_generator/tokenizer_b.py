@@ -281,6 +281,7 @@ class WordpieceTokenizer(object):
     self.vocab = vocab
     self.unk_token = unk_token
     self.max_input_chars_per_word = max_input_chars_per_word
+    self.cache = dict()
 
   def tokenize(self, text):
     """Tokenizes a piece of text into its word pieces.
@@ -299,6 +300,8 @@ class WordpieceTokenizer(object):
     Returns:
       A list of wordpiece tokens.
     """
+    if text in self.cache:
+        return self.cache[text]
 
     text = convert_to_unicode(text)
 
@@ -333,6 +336,7 @@ class WordpieceTokenizer(object):
         output_tokens.append(self.unk_token)
       else:
         output_tokens.extend(sub_tokens)
+    self.cache[text] = output_tokens
     return output_tokens
 
 
