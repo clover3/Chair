@@ -1,4 +1,4 @@
-
+import sys
 import path
 from data_generator.data_parser.trec import *
 from misc_lib import *
