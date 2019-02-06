@@ -1,9 +1,9 @@
 import sys
-import path
 from data_generator.data_parser.trec import *
 from misc_lib import *
 from adhoc.bm25 import get_bm25
 from data_generator.cached_tokenizer import EncoderUnit
+import path
 
 class DataSampler:
     def __init__(self, queries, collection):
@@ -149,8 +149,21 @@ def encode(job_id):
     vocab_filename = "bert_voca.txt"
     voca_path = os.path.join(data_path, vocab_filename)
     encoder = EncoderUnit(cache_path=cache_path, max_sequence=512, voca_path=voca_path)
-    result = pickle.load(open("../output/plain512/{}.pickle".format(job_id), "rb"))
+    source = pickle.load(open("../output/plain512/{}.pickle".format(job_id), "rb"))
 
+    def encode_pair(instance):
+        query, case1, case2 = instance
+        for y, sent in [case1, case2]:
+            entry =  encoder.encode_pair(query, sent)
+            yield entry["input_ids"], entry["input_mask"], entry["segment_ids"]
+
+    result = []
+    for entry in source:
+        result += list(encode_pair(entry))
+
+    filename = "data{}_{}.pickle".format(1, job_id)
+    save_path = os.path.join(data_path, "robust_train_5", filename)
+    pickle.dump(result, open(save_path, "wb"))
 
 
 
