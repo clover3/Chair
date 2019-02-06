@@ -144,6 +144,11 @@ def save_data_samples(job_id):
 
         pickle.dump(result, open("../output/plain512/{}.pickle".format(block_id), "wb"))
 
+def get_encoded_path(job_id):
+    filename = "data{}_{}.pickle".format(1, job_id)
+    save_path = os.path.join(data_path, "robust_train_5", filename)
+    return save_path
+
 def encode(job_id):
     cache_path = os.path.join(path.cache_path, "sub_tokens.pickle")
     vocab_filename = "bert_voca.txt"
@@ -161,16 +166,26 @@ def encode(job_id):
     for entry in source:
         result += list(encode_pair(entry))
 
-    filename = "data{}_{}.pickle".format(1, job_id)
-    save_path = os.path.join(data_path, "robust_train_5", filename)
-    pickle.dump(result, open(save_path, "wb"))
+    pickle.dump(result, open(get_encoded_path(job_id), "wb"))
 
+
+def encoder_demon():
+    while True:
+        for filename in os.listdir("../output/plain512/"):
+            job_id, _ = filename.split(".")
+            encode_path = get_encoded_path(job_id)
+            if not os.path.exists(encode_path):
+                encode(int(job_id))
+        time.sleep(30)
 
 
 if __name__ == '__main__':
-    job_id = int(sys.argv[2])
     if sys.argv[1] == "encode":
+        job_id = int(sys.argv[2])
         encode(job_id)
     elif sys.argv[1] == "sample":
+        job_id = int(sys.argv[2])
         save_data_samples(job_id)
+    elif sys.argv[1] == "daemon":
+        encoder_demon()
 
