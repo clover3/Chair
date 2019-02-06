@@ -15,7 +15,7 @@ def build_tokenzier_cache(job_id):
     robust_colleciton = load_robust(robust_path)
 
     doc_ids = list(robust_colleciton.keys())
-    block_size = 10000
+    block_size = 1000
     st = job_id * block_size
     ed = (job_id + 1) * block_size
 
@@ -23,7 +23,6 @@ def build_tokenzier_cache(job_id):
 
     for doc_id in doc_ids[st:ed]:
         text = robust_colleciton[doc_id]
-        encoder_unit.encoder.encode()
         for token in full_tokenizer.basic_tokenizer.tokenize(text):
             if token not in sub_token_dict:
                 sub_tokens = full_tokenizer.wordpiece_tokenizer.tokenize(token)
