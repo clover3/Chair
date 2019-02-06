@@ -28,18 +28,24 @@ class DataSampler:
             candidate = []
             for key_score, span_list in score_group.items():
                 for score, span in span_list:
-                    candidate.append((score, span))
+                    candidate.append(span)
             # print("candidate len : {}".format(len(candidate)))
             for i in range(self.inst_per_query):
                 l = random.sample(range(len(candidate)), 2)
-                x1 = candidate[l[0]]
-                x2 = candidate[l[1]]
+                span1 = candidate[l[0]]
+                span2 = candidate[l[1]]
+
+                score1 = self.get_bm25(query, span1)
+                score2 = self.get_bm25(query, span2)
                 # print(x1[0], x1[1][:100])
                 # print(x2[0], x2[1][:100])
-                if x1[0] < x2[0]:
-                    yield query, x1, x2
+                if score1 < score2:
+                    yield query, (score1, span1), (score2, span2)
                 else:
-                    yield query, x2, x1
+                    yield query, (score2, span2), (score1, span1)
+
+    def get_bm25(self, query, text):
+        return get_bm25(query, text, self.idf.df, N=len(self.collection), avdl=self.avdl)
 
     def tfidf_span(self, q_terms, text_span):
         return sum([text_span.count(q_i) * self.idf[q_i] for q_i in q_terms])
@@ -83,15 +89,13 @@ class DataSampler:
             return output
 
         collection_len = 252359881
-        avdl = collection_len / len(self.collection)
+        self.avdl = collection_len / len(self.collection)
 
         random.shuffle(self.queries)
         for query in self.queries:
             q_terms = query.split()
             postings_list = []
             for qterm in q_terms:
-                if self.idf.df[qterm] > 100000:
-                    continue
                 postings = self.inv_index[qterm]
                 if len(postings) < self.min_posting:
                     break  # Skip this query
@@ -116,7 +120,7 @@ class DataSampler:
                 loc_ptr = sample_shift()
                 while loc_ptr < len(raw_document):
                     text_span = raw_document[loc_ptr:loc_ptr + self.window_size]
-                    score = get_bm25(" ".join(q_terms), text_span, self.idf.df, N=len(self.collection), avdl=avdl)
+                    score = self.tfidf_span(q_terms, text_span)
                     spans.append((score, text_span))
                     loc_ptr += sample_shift()
             score_group = sample_debiase(spans)
