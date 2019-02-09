@@ -48,6 +48,10 @@ class DataLoader:
             self.dev_data = list(self.example_generator(self.dev_file))
         return self.dev_data
 
+    def get_train_infos(self):
+        infos = list(self.info_generator(self.train_file))
+        return infos
+
     def get_dev_explain(self, target):
         if target == 'conflict':
             return self.get_dev_explain_0()
@@ -144,6 +148,18 @@ class DataLoader:
 
             yield entry["input_ids"], entry["input_mask"], entry["segment_ids"], l
 
+    def info_generator(self, filename):
+        label_list = self.class_labels()
+        for idx, line in enumerate(tf.gfile.Open(filename, "rb")):
+            if idx == 0: continue  # skip header
+            line = line.strip().decode("utf-8")
+            split_line = line.split("\t")
+            # Works for both splits even though dev has some extra human labels.
+            s1, s2 = split_line[8:10]
+            bp1, bp2 = split_line[4:6] # bp : Binary Parse
+            l = label_list.index(split_line[-1])
+            yield s1, s2, bp1, bp2
+
     # split the np_arr, which is an attribution scores
     def split_p_h(self, np_arr, input_x):
         input_ids, _, seg_idx = input_x
@@ -225,6 +241,7 @@ class DataLoader:
             "input_mask":input_mask,
             "segment_ids": segment_ids
         }
+
 
 
 def load_nli_explain():
