@@ -266,7 +266,7 @@ class DataLoaderFromSocket:
 
 
 class DataLoaderFromFile:
-    def __init__(self, batch_size, voca_size):
+    def __init__(self, batch_size, voca_size, start_file_idx = 0):
         self.batch_size = batch_size
         self.voca_size = voca_size
         self.train_queue = Queue(maxsize=100)
@@ -275,7 +275,7 @@ class DataLoaderFromFile:
         t.start()
 
         self.cur_idx = 0
-        self.file_idx = 0
+        self.file_idx = start_file_idx
         self.cur_data = []
         self.load_next_data()
 

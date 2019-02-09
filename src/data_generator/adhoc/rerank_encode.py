@@ -8,7 +8,7 @@ def encode(input_path, output_path):
     payload = pickle.load(open(input_path, "rb"))
     vocab_filename = "bert_voca.txt"
     voca_path = os.path.join(data_path, vocab_filename)
-    max_sequence = 200
+    max_sequence = 512
     encoder_unit = EncoderUnit(max_sequence, voca_path)
     result = []
     print("Encode...")
@@ -25,6 +25,7 @@ def encode(input_path, output_path):
 if __name__ == '__main__':
     data_id = int(sys.argv[1])
     print(data_id)
-    input_path = "/mnt/nfs/work3/youngwookim/code/Chair/data/robust/payload_plain_parts/payload200_part_{}".format(data_id)
-    output_path = "/mnt/nfs/work3/youngwookim/code/Chair/data/robust/payload_encoded_parts/enc_payload200_part_{}".format(data_id)
+    input_path = "/mnt/nfs/work3/youngwookim/code/Chair/data/robust/payload_512_2k_plain_parts/payload512_part_{}".format(data_id)
+    output_path = "/mnt/nfs/work3/youngwookim/code/Chair/data/robust/payload_512_2k_encoded_parts/enc_payload512_part_{}".format(data_id)
     encode(input_path, output_path)
+

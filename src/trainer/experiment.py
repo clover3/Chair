@@ -3247,8 +3247,13 @@ class Experiment:
 
     def predict_robust(self, exp_config, voca_size, preload_id, payload_path, task_idx):
         tprint("predict_robust")
-        #task = transformer_adhoc(self.hparam, voca_size)
-        task = transformer_adhoc2(self.hparam, voca_size)
+        if exp_config.name.startswith("Adhoc_J"):
+            task = transformer_adhoc(self.hparam, voca_size)
+        elif exp_config.name.startswith("Adhoc_K"):
+            task = transformer_adhoc2(self.hparam, voca_size)
+        else:
+            assert False
+
         self.log.name = exp_config.name
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
@@ -4116,7 +4121,6 @@ class Experiment:
         print("recall\t", recall)
         print("F1\t", f1)
         print("acc\t", acc)
-
 
 
     def controv_lm(self, exp_config, data_loader, preload_id):

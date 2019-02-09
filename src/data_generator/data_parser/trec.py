@@ -327,7 +327,7 @@ def load_robust(docs_dir):
             collections.update(d)
     return collections
 
-robust_path = "/mnt/scratch/youngwookim/data/robust04"
+from config.input_path import robust_path
 
 if __name__ == '__main__':
     load_robust("/mnt/scratch/youngwookim/data/robust04")

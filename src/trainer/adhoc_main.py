@@ -48,6 +48,41 @@ def train_adhoc_on_robust():
     e.train_adhoc2(e_config, data_loader, load_id)
 
 
+def train_adhoc512():
+    hp = hyperparams.HPFAD()
+    hp.batch_size = 16
+    e = Experiment(hp)
+
+    e_config = ExperimentConfig()
+    e_config.name = "Adhoc_J_{}".format("512")
+    e_config.num_epoch = 4
+    e_config.save_interval = 10 * 60  # 60 minutes
+    e_config.load_names = ['bert', 'reg_dense']
+    vocab_size = 30522
+
+    data_loader = data_sampler.DataLoaderFromFile(hp.batch_size, vocab_size, 171)
+    #load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    load_id = ("Adhoc_J_512", 'model-6189')
+    e.train_adhoc2(e_config, data_loader, load_id)
+
+
+def predict_adhoc512():
+    hp = hyperparams.HPFAD()
+    hp.batch_size = 16
+    e = Experiment(hp)
+
+    e_config = ExperimentConfig()
+    e_config.name = "Adhoc_J_{}".format("512")
+    e_config.num_epoch = 4
+    e_config.save_interval = 10 * 60  # 60 minutes
+    e_config.load_names = ['bert', 'reg_dense']
+    vocab_size = 30522
+
+    payload_path = os.path.join(path.data_path, "robust_payload", "enc_payload_512.pickle")
+    task_idx = int(sys.argv[2])
+    print(task_idx)
+    load_id = ("Adhoc_J_512", 'model-6180')
+    e.predict_robust(e_config, vocab_size, load_id, payload_path, task_idx)
 
 
 def train_adhoc_fad():
@@ -89,7 +124,26 @@ def train_adhoc_ex_on_robust():
 
 
 
-def predict_adhoc_robust():
+def predict_adhoc_robust_J():
+    hp = hyperparams.HPAdhoc()
+    hp.batch_size = 512
+
+    e = Experiment(hp)
+
+    e_config = ExperimentConfig()
+    e_config.name = "Adhoc_{}_eval".format("J")
+    e_config.load_names = ['bert', 'reg_dense']
+    vocab_size = 30522
+    payload_path = os.path.join(path.data_path, "robust_payload", "payload_B_200.pickle")
+    #payload_path = os.path.join(path.data_path, "robust_payload", "payload_desc.pickle")
+    task_idx = int(sys.argv[2])
+    print(task_idx)
+    load_id = ("Adhoc_J", 'model-9475')
+    e.predict_robust(e_config, vocab_size, load_id, payload_path, task_idx)
+
+
+
+def predict_adhoc_robust_K():
     hp = hyperparams.HPAdhoc()
     hp.batch_size = 512
 
@@ -97,10 +151,10 @@ def predict_adhoc_robust():
 
     e_config = ExperimentConfig()
     e_config.name = "Adhoc_{}_eval".format("K")
-    #e_config.load_names = ['bert', 'reg_dense']
     e_config.load_names = ['bert', 'dense1', 'dense_reg']
     vocab_size = 30522
-    payload_path = os.path.join(path.data_path, "robust_payload", "payload_B_200.pickle")
+    #payload_path = os.path.join(path.data_path, "robust_payload", "payload_B_200.pickle")
+    payload_path = os.path.join(path.data_path, "robust_payload", "payload_desc.pickle")
     task_idx = int(sys.argv[2])
     print(task_idx)
     load_id = ("Adhoc_K", 'model-6397')

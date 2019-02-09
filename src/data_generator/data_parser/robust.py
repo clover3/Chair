@@ -41,6 +41,33 @@ def load_2k_rank():
     return ranked_list
 
 
+def load_robust04_desc():
+    q_path =os.path.join(robust_path, "04.testset")
+    f = open(q_path, "r")
+
+    STATE_DEF = 0
+    STATE_DESC = 2
+    state = STATE_DEF
+    queries = dict()
+    for line in f:
+        if state == STATE_DEF:
+            if line.startswith("<num>"):
+                _, _, q_id = line.split()
+            if line.startswith("<desc>"):
+                state = STATE_DESC
+                desc = ""
+        elif state == STATE_DESC:
+            if line.startswith("<narr>"):
+                queries[q_id] = desc
+                state = STATE_DEF
+            else:
+                desc += line
+
+    print("Total of {} queries".format(len(queries)))
+    return queries
+
+
+
 def sanity_check():
     ranked_list = load_2k_rank()
     collection = trec.load_robust(trec.robust_path)
@@ -55,7 +82,8 @@ def sanity_check():
 
 
 if __name__ == '__main__':
-    queries = load_robust04_query()
+    #queries = load_robust04_query()
+    queries = load_robust04_desc()
     for q_id in queries:
         print("\t".join([q_id] + queries[q_id].split()))
     #sanity_check()
