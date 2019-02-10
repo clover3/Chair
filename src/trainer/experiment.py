@@ -56,7 +56,6 @@ from tensorflow.python.client import timeline
 from misc_lib import delete_if_exist
 from attribution.deleter_trsfmr import *
 from attribution.baselines import *
-#from attribution.deepexplain.tensorflow import DeepExplain
 from evaluation import *
 from explain import visualize
 # Experiment is the most outside module.
@@ -1357,6 +1356,12 @@ class Experiment:
         self.loader = tf.train.Saver(variables_to_restore, max_to_keep=1)
         self.loader.restore(self.sess, path)
 
+    def load_model_white2(self, preload_id, include_namespace):
+        if preload_id is None:
+            return
+        name = preload_id[0]
+        id = preload_id[1]
+        self.load_model_white(name, id, include_namespace)
 
     def load_model_bert(self, name, id):
         run_dir = os.path.join(self.model_dir, 'runs')
@@ -1388,21 +1393,40 @@ class Experiment:
         self.loader = tf.train.Saver(variables, max_to_keep=1)
         self.loader.restore(self.sess, path)
 
+    def pickle_cacher(self, pickle_name, get_fn, use_pickle):
+        pickle_path = os.path.join(path.cache_path, pickle_name)
+        if not use_pickle:
+            obj = get_fn()
+            pickle.dump(obj, open(pickle_path, "wb"))
+        else:
+            obj = pickle.load(open(pickle_path, "rb"))
+        return obj
 
     def load_nli_data(self, data_loader):
         # load data
         print("Loading Data")
         pickle_name = "nli_{}".format(self.hparam.batch_size)
-        pickle_path = os.path.join(path.cache_path, pickle_name)
 
-        use_pickle = True
-        if use_pickle :
-            train_batches, dev_batches = pickle.load(open(pickle_path, "rb"))
-        else:
+        def get_data():
             train_batches = get_batches_ex(data_loader.get_train_data(), self.hparam.batch_size, 4)
             dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
-            pickle.dump((train_batches, dev_batches), open(pickle_path, "wb"))
-        return train_batches, dev_batches
+            return train_batches, dev_batches
+
+        return self.pickle_cacher(pickle_name, get_data, use_pickle=True)
+
+    def load_nli_data_with_info(self, data_loader):
+        print("Loading Data")
+        pickle_name = "nli_plus_{}".format(self.hparam.batch_size)
+
+        def get_data():
+            train_batches = get_batches_ex(data_loader.get_train_data(), self.hparam.batch_size, 4)
+            dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+            train_batches_info = list_batch_grouping(data_loader.get_train_infos(), self.hparam.batch_size)
+
+            assert len(train_batches) == len(train_batches_info)
+            return train_batches, train_batches_info, dev_batches
+
+        return self.pickle_cacher(pickle_name, get_data, use_pickle=True)
 
     def train_nli(self, nli_setting, exp_config, data_loader):
         print("train_nli")
@@ -1458,10 +1482,12 @@ class Experiment:
 
     def nli_attribution_baselines(self, nli_setting, exp_config, data_loader, preload_id):
         print("attribution_explain")
+        target = 'conflict'
         enc_explain_dev, explain_dev = data_loader.get_dev_explain_0()
         #train_batches, dev_batches = self.load_nli_data(data_loader
         from attribution.gradient import explain_by_gradient
         self.sess = self.init_sess()
+        from attribution.deepexplain.tensorflow import DeepExplain
         with DeepExplain(session=self.sess, graph=self.sess.graph) as de:
             task = transformer_nli_embedding_in(self.hparam, nli_setting.vocab_size)
             self.sess.run(tf.global_variables_initializer())
@@ -1505,14 +1531,14 @@ class Experiment:
                 print(method_name)
                 print("Elapsed Time\t{}".format(elapsed_time[method_name]))
                 explains = explain_prediction[method_name]
-                p_at_1, MAP_score = eval_explain_0(explains, data_loader)
+                p_at_1, MAP_score = eval_explain(explains, data_loader, target)
                 print("P@1\t{}".format(p_at_1))
                 print("MAP\t{}".format(MAP_score))
 
     def nli_explain_baselines(self, nli_setting, exp_config, data_loader, preload_id):
         enc_explain_dev, explain_dev = data_loader.get_dev_explain_0()
         train_batches, dev_batches = self.load_nli_data(data_loader)
-
+        target = 'conflict'
         task = transformer_nli(self.hparam, nli_setting.vocab_size)
         CONTRADICTION = 2
 
@@ -1558,7 +1584,7 @@ class Experiment:
             end = time.time()
             print("Elapsed Time : {}".format(end- begin))
 
-            p_at_1, MAP_score = eval_explain_0(explains, data_loader)
+            p_at_1, MAP_score = eval_explain(explains, data_loader, target)
             print("P@1\t{}".format(p_at_1))
             print("MAP\t{}".format(MAP_score))
 
@@ -1573,7 +1599,7 @@ class Experiment:
 
     def train_nli_ex_0(self, nli_setting, exp_config, data_loader, preload_id, f_train_ex):
         enc_explain_dev, explain_dev = data_loader.get_dev_explain_0()
-
+        target = 'conflict'
         task = transformer_nli(self.hparam, nli_setting.vocab_size, 2)
         with tf.variable_scope("optimizer"):
             train_cls = self.get_train_op(task.loss)
@@ -1629,7 +1655,7 @@ class Experiment:
             end = time.time()
             print("Elapsed Time : {}".format(end- begin))
 
-            p_at_1, MAP_score = eval_explain_0(conf_logit, data_loader)
+            p_at_1, MAP_score = eval_explain(conf_logit, data_loader, target)
             print("P@1 : {}".format(p_at_1))
             print("MAP : {}".format(MAP_score))
             summary = tf.Summary()
@@ -1893,13 +1919,7 @@ class Experiment:
         self.merged = tf.summary.merge_all()
         self.setup_summary_writer(exp_config.name)
 
-        if preload_id is not None:
-            name = preload_id[0]
-            id = preload_id[1]
-            if exp_config.load_names :
-                self.load_model_white(name, id, exp_config.load_names)
-            else:
-                assert False
+        self.load_model_white2(preload_id, exp_config.load_names)
 
         def batch2feed_dict(batch):
             x0, x1, x2, y  = batch
@@ -2343,6 +2363,59 @@ class Experiment:
                 if os.path.exists(path_save):
                     reinforce_payload = pickle.load(open(path_save, "rb"))
                     train_ex_fn(reinforce_payload, step_i)
+
+    def train_nli_smart(self, nli_setting, exp_config, data_loader, preload_id, explain_tag):
+        enc_explain_dev, explain_dev = data_loader.get_dev_explain(explain_tag)
+        method = 1
+        task = transformer_nli(self.hparam, nli_setting.vocab_size, method)
+        with tf.variable_scope("optimizer"):
+            train_cls = self.get_train_op(task.loss)
+            train_rl = self.get_train_op(task.rl_loss, name="rl")
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        self.load_model_white2(preload_id, exp_config.load_names)
+
+        def batch2feed_dict(batch):
+            x0, x1, x2, y = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        ENTAILMENT = 0
+        NEUTRAL = 1
+        CONTRADICTION = 2
+
+        target_class = {
+            'conflict': CONTRADICTION,
+            'match': ENTAILMENT,
+            'dontcare': ENTAILMENT,
+            'mismatch': NEUTRAL,
+        }[explain_tag]
+        print(target_class)
+
+        def forward_runs(insts):
+            alt_batches = get_batches_ex(insts, self.hparam.batch_size, 3)
+            alt_logits = []
+            for batch in alt_batches:
+                x0, x1, x2 = batch
+                logits, = self.sess.run([task.sout, ],
+                                        feed_dict={
+                                            task.x_list[0]: x0,
+                                            task.x_list[1]: x1,
+                                            task.x_list[2]: x2,
+                                        })
+
+                alt_logits.append(logits)
+            alt_logits = np.concatenate(alt_logits)
+            return alt_logits
+
 
 
     def nli_visualization(self, nli_setting, exp_config, data_loader, preload_id):

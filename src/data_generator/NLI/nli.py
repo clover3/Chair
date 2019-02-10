@@ -52,6 +52,9 @@ class DataLoader:
         infos = list(self.info_generator(self.train_file))
         return infos
 
+    def get_dev_explain_infos(self):
+        return list(self.info_generator(self.dev_file))
+
     def get_dev_explain(self, target):
         if target == 'conflict':
             return self.get_dev_explain_0()

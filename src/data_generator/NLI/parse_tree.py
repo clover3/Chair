@@ -1,5 +1,6 @@
 from misc_lib import pick1
 
+
 class Node(object):
     def __init__(self, idx, data):
         self.idx = idx
@@ -17,12 +18,13 @@ class Node(object):
     def is_inner(self):
         return self.idx == -1
 
+
 class Tree:
     def __init__(self):
         self.root = NotImplemented
         self.all_nodes = None
 
-    def get_all_nodes(self, travel_again = False):
+    def get_all_nodes(self, travel_again=False):
         if self.all_nodes is None or travel_again:
 
             def recurse(node):
@@ -53,6 +55,7 @@ def str_to_subtree(elems):
             assert False
     return parent
 
+
 def binary_parse_to_tree(binary_parse_str):
     stack = []
     tokens = binary_parse_str.split()
@@ -77,13 +80,51 @@ def binary_parse_to_tree(binary_parse_str):
     return stack[0]
 
 
+# Output : Find indice of subword_tokens that covers indice of parse_tokens
+# Lowercase must be processed
+# indice is for parse_tokens
+def translate_index(parse_tokens, subword_tokens, indice):
+    sep_char = "#"
+    result = []
+
+    for target_index in indice:
+        prev_text = "".join(parse_tokens[:target_index])
+        pt_idx = 0
+        print("Target_index", target_index)
+        print("prev_text : " + prev_text)
+
+        # find the index in subword_tokens that covers
+        f_inside = False
+        for t_idx, token in enumerate(subword_tokens):
+            for c in token:
+                # Here, previous char should equal prev_text[text_idx]
+                if c in [sep_char, " "]:
+                    continue
+
+                if c == prev_text[pt_idx]:
+                    pt_idx += 1
+                else:
+                    assert False
+                # Here, c should equal prev_text[text_idx-1]
+                assert c == prev_text[pt_idx - 1]
+            if f_inside:
+                print("Keep adding : " + token)
+                result.append(t_idx)
+                if pt_idx == len(prev_text):
+                    break
+            else:
+                if pt_idx == len(prev_text):
+                    print("Add begin : " + token)
+                    result.append(t_idx)
+                    prev_text += parse_tokens[target_index]
+                    f_inside = True
+    return result
 
 def test():
     from data_generator.NLI.nli import DataLoader
     data_loader = DataLoader(123, "bert_voca.txt", True)
     for s1, s2, bp1, bp2 in data_loader.get_train_infos():
-
-        tree1 = binary_parse_to_tree(bp1)#.travel_print()
+        tree1 = binary_parse_to_tree(bp1)
         tree2 = binary_parse_to_tree(bp2)
 
 

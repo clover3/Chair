@@ -46,5 +46,19 @@ def get_batches_ex(data, batch_size, n_inputs):
     return new_data
 
 
+def list_batch_grouping(data, batch_size):
+    step_size = int((len(data) + batch_size - 1) / batch_size)
+    new_data = []
+    for step in range(step_size):
+        batch = []
+        for i in range(batch_size):
+            idx = step * batch_size + i
+            if idx >= len(data):
+                break
+            batch.append(data[idx])
+        new_data.append(batch)
+    return new_data
+
+
 def numpy_print(arr):
     return "".join(["{0:.3f} ".format(v) for v in arr])
