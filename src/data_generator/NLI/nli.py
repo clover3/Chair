@@ -7,9 +7,13 @@ import csv
 from path import data_path
 from cache import *
 from evaluation import *
+import unicodedata
+
 num_classes = 3
 
 corpus_dir = os.path.join(data_path, "nli")
+
+
 
 
 class DataLoader:
@@ -58,7 +62,7 @@ class DataLoader:
     def get_dev_explain(self, target):
         if target == 'conflict':
             return self.get_dev_explain_0()
-        elif target == 'align':
+        elif target == 'match':
             return self.get_dev_explain_1(target)
         else:
             assert False
@@ -90,7 +94,7 @@ class DataLoader:
 
     # To compare, concatenate the model's tokens with space removed
     #
-    def convert_index(self, raw_sentence, subtoken_ids, target_idx):
+    def convert_index_out(self, raw_sentence, subtoken_ids, target_idx):
         if self.lower_case:
             raw_sentence = raw_sentence.lower()
         #print("-------")
@@ -130,6 +134,14 @@ class DataLoader:
             return t_idx
         raise Exception
 
+    def convert_indice_in(self, tokens, input_x, indice, seg_idx):
+        sub_tokens = self.split_p_h(input_x[0], input_x)
+        subword_tokens = self.encoder.decode_list(sub_tokens[seg_idx])
+        start_idx = [1, 1 + len(sub_tokens[0]) + 1][seg_idx]
+        in_segment_indice = translate_index(tokens, subword_tokens, indice)
+        return list([start_idx + idx for idx in in_segment_indice])
+
+
     def test(self):
         sent = "Nonautomated First-Class and Standard-A mailers cannot ask for their mail to be processed by hand because it costs the postal service more."
         subtoken_ids = self.encoder.encode(sent)
@@ -164,7 +176,8 @@ class DataLoader:
             yield s1, s2, bp1, bp2
 
     # split the np_arr, which is an attribution scores
-    def split_p_h(self, np_arr, input_x):
+    @staticmethod
+    def split_p_h(np_arr, input_x):
         input_ids, _, seg_idx = input_x
 
         for i in range(len(input_ids)):
@@ -245,6 +258,125 @@ class DataLoader:
             "segment_ids": segment_ids
         }
 
+
+def _run_strip_accents(text):
+    """Strips accents from a piece of text."""
+    text = unicodedata.normalize("NFD", text)
+    output = []
+    for char in text:
+        cat = unicodedata.category(char)
+        if cat == "Mn":
+            continue
+        output.append(char)
+    return "".join(output)
+
+# Output : Find indice of subword_tokens that covers indice of parse_tokens
+# Lowercase must be processed
+# indice is for parse_tokens
+def translate_index(parse_tokens, subword_tokens, indice):
+    print_buf = ""
+    result = []
+    def dbgprint(s):
+        nonlocal print_buf
+        print_buf += s + "\n"
+        
+    try:
+        sep_char = "#"
+        def normalize_pt(text):
+            r = text.replace("``", "\"").replace("''", "\"").replace("`", "'").replace("”", "\"")  \
+                .replace("-lrb-", "(").replace("-rrb-", ")")\
+                .replace("-lsb-", "[").replace("-rsb-", "]")\
+                .replace("…", "...")\
+                .replace("«", "\"")
+            #    .replace("&", "&amp;")
+            return _run_strip_accents(r)
+
+        def normalize_pt_str(s):
+            #if "&amp;" not in s and "& amp" not in s:
+            #    s = s.replace("&", "&amp;")
+            return s
+
+        def normalize_sw(text):
+            s = text.replace("”", "\"").replace("“", "\"").replace("…", "...").replace("«", "\"")
+            return s
+
+
+        parse_tokens = list([normalize_pt(t.lower()) for t in parse_tokens])
+        subword_tokens = list([normalize_sw(t) for t in subword_tokens])
+        dbgprint("----")
+        dbgprint("parse_tokens : " + " ".join(parse_tokens))
+        dbgprint("subword_tokens : " + " ".join(subword_tokens))
+        for target_index in indice:
+            if target_index > len(subword_tokens):
+                break
+            pt_begin = normalize_pt_str("".join(parse_tokens[:target_index]))
+
+            pt_idx = 0
+            dbgprint("Target_index {}".format(target_index))
+            dbgprint("prev_text : " + pt_begin)
+
+            # find the index in subword_tokens that covers
+
+            # Step 1 : Find begin of parse_tokens[target_idx]
+            swt_idx = 0
+            sw_idx = 0
+            while pt_idx < len(pt_begin):
+                token = subword_tokens[swt_idx]
+                if sw_idx == 0:
+                    dbgprint(token)
+
+                c = token[sw_idx]
+                if c in [sep_char, " "]:
+                    sw_idx += 1
+                elif c == pt_begin[pt_idx]:
+                    sw_idx += 1
+                    pt_idx += 1
+                    assert c == pt_begin[pt_idx - 1]
+                else:
+                    raise Exception("Non matching 1 : {} not equal {}".format(c, pt_begin[pt_idx]) )
+                    assert False
+
+                if sw_idx == len(token): # Next token
+                    swt_idx += 1
+                    sw_idx = 0
+
+            while subword_tokens[swt_idx][sw_idx] in [sep_char, " "]:
+                sw_idx += 1
+
+            dbgprint("")
+            if subword_tokens[swt_idx] == "[UNK]":
+                continue
+            assert pt_idx == len(pt_begin)
+            if not parse_tokens[target_index][0] == subword_tokens[swt_idx][sw_idx]:
+                print("swt_idx = {} sw_idx= {}".format(swt_idx, sw_idx))
+                raise Exception("Non matching 2 : {} not equal {}".format(parse_tokens[target_index][0], subword_tokens[swt_idx][sw_idx]) )
+            # Step 2 : Add till parse_tokens[target_idx] ends
+            pt_end = normalize_pt_str("".join(parse_tokens[:target_index + 1]))
+            dbgprint("pt_end : " + pt_end)
+            while pt_idx < len(pt_end):
+                token = subword_tokens[swt_idx]
+                if len(result) == 0 or result[-1] != swt_idx:
+                    dbgprint("Append {} ({})".format(swt_idx, token))
+                    result.append(swt_idx)
+
+                c = token[sw_idx]
+                if c in [sep_char, " "]:
+                    sw_idx += 1
+                elif c == pt_end[pt_idx]:
+                    sw_idx += 1
+                    pt_idx += 1
+                    assert c == pt_end[pt_idx - 1]
+                else:
+                    raise Exception("Non matching 3 : {} not equal {}".format(c, pt_begin[pt_idx]))
+                    assert False
+
+                if sw_idx == len(token): # Next token
+                    swt_idx += 1
+                    sw_idx = 0
+    except Exception as e:
+        print(e)
+        print(print_buf)
+    return result
 
 
 def load_nli_explain():
@@ -418,12 +550,12 @@ def eval_explain_1(conf_score, data_loader, tag):
 
         for i in top_k_idx(conf_p, 10):
             # Convert the index of model's tokenization into space tokenized index
-            v_i = data_loader.convert_index(prem, p_enc, i)
+            v_i = data_loader.convert_index_out(prem, p_enc, i)
             score = conf_p[i]
             p_explain.append((score, v_i))
 
         for i in top_k_idx(conf_h, 10):
-            v_i = data_loader.convert_index(hypo, h_enc, i)
+            v_i = data_loader.convert_index_out(hypo, h_enc, i)
             score = conf_h[i]
             h_explain.append((score, v_i))
 
@@ -448,12 +580,12 @@ def eval_explain_0(conf_score, data_loader):
 
         p_explain = []
         for i in top_k_idx(attr_p, 10):
-            v_i = data_loader.convert_index(entry['p'], p, i)
+            v_i = data_loader.convert_index_out(entry['p'], p, i)
             score = attr_p[i]
             p_explain.append((score, v_i))
         h_explain = []
         for i in top_k_idx(attr_h, 10):
-            v_i = data_loader.convert_index(entry['h'], h, i)
+            v_i = data_loader.convert_index_out(entry['h'], h, i)
             score = attr_h[i]
             h_explain.append((score, v_i))
 

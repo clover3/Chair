@@ -1,6 +1,7 @@
 
 import random
-
+from data_generator.NLI.parse_tree import *
+from data_generator.NLI import nli
 
 def token_delete(binary_tag, x0, x1, x2):
     assert len(x0) == len(x1)
@@ -87,6 +88,40 @@ def random_delete(num_del, x0, x1, x2):
     x_list = x0_new, x1_new, x2_new
     return x_list, mask
 
+
+
+def tree_delete(num_del, info, idx_trans_fn, x0, x1, x2):
+    s1, s2, bp1, bp2 = info
+
+    tree_prem = binary_parse_to_tree(bp1)
+    tree_hypo = binary_parse_to_tree(bp2)
+    input_x = x0, x1, x2
+
+    def sample_any():
+        sel = random.randint(0,1)
+        tree = [tree_prem, tree_hypo][sel]
+
+        node = tree.sample_any_node()
+        indice = node.all_leave_idx()
+        parse_tokens = tree.leaf_tokens()
+        return idx_trans_fn(parse_tokens, input_x, indice, sel)
+
+    def sample_leave():
+        idx = random.randint(0, 1)
+        tree = [tree_prem, tree_hypo][idx]
+        node = tree.sample_leaf_node()
+        return node.all_leave_idx()
+
+
+    indice = []
+    for i in range(num_del):
+        indice += sample_any()
+
+    mask = [0] * len(x0)
+    for idx in indice:
+        mask[idx] = 1
+
+    return token_delete(mask, x0, x1, x2), mask
 
 
 def random_delete_with_mask(num_del, x0, x1, x2, q_mask):

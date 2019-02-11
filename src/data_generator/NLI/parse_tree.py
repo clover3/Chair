@@ -18,11 +18,20 @@ class Node(object):
     def is_inner(self):
         return self.idx == -1
 
+    def all_leave_idx(self):
+        if self.is_inner():
+            result = []
+            for c in self.children:
+                result += c.all_leave_idx()
+            return result
+        else:
+            return [self.idx]
 
 class Tree:
-    def __init__(self):
-        self.root = NotImplemented
+    def __init__(self, root):
+        self.root = root
         self.all_nodes = None
+        self.leaf_nodes = None
 
     def get_all_nodes(self, travel_again=False):
         if self.all_nodes is None or travel_again:
@@ -37,13 +46,31 @@ class Tree:
 
         return self.all_nodes
 
+    def get_leaf_nodes(self):
+        if self.leaf_nodes is None:
+            self.leaf_nodes = []
+            all_nodes = self.get_all_nodes()
+            for node in all_nodes:
+                if not node.is_inner():
+                    self.leaf_nodes.append(node)
+        return self.leaf_nodes
+
     def sample_any_node(self):
         return pick1(self.get_all_nodes())
 
+    def sample_leaf_node(self):
+        return pick1(self.get_leaf_nodes())
+
+    def print_leaves(self):
+        for node in self.get_all_nodes():
+            if not node.is_inner():
+                print("{}] {}".format(node.idx, node.data), end=" ")
+        print()
+
+    def leaf_tokens(self):
+        return list([n.data for n in self.get_leaf_nodes()])
 
 def str_to_subtree(elems):
-    assert len(elems) > 1  # assume there is no case that only one elem in the subtree
-
     parent = Node(-1, "inner")
     for elem in elems:
         if type(elem) == Node:
@@ -75,50 +102,15 @@ def binary_parse_to_tree(binary_parse_str):
 
             stack.append((idx,token))
             idx += 1
+    if "(" not in binary_parse_str:
+        stack.append(str_to_subtree([stack.pop()]))
 
     assert len(stack) == 1
-    return stack[0]
+    return Tree(stack[0])
 
 
-# Output : Find indice of subword_tokens that covers indice of parse_tokens
-# Lowercase must be processed
-# indice is for parse_tokens
-def translate_index(parse_tokens, subword_tokens, indice):
-    sep_char = "#"
-    result = []
 
-    for target_index in indice:
-        prev_text = "".join(parse_tokens[:target_index])
-        pt_idx = 0
-        print("Target_index", target_index)
-        print("prev_text : " + prev_text)
 
-        # find the index in subword_tokens that covers
-        f_inside = False
-        for t_idx, token in enumerate(subword_tokens):
-            for c in token:
-                # Here, previous char should equal prev_text[text_idx]
-                if c in [sep_char, " "]:
-                    continue
-
-                if c == prev_text[pt_idx]:
-                    pt_idx += 1
-                else:
-                    assert False
-                # Here, c should equal prev_text[text_idx-1]
-                assert c == prev_text[pt_idx - 1]
-            if f_inside:
-                print("Keep adding : " + token)
-                result.append(t_idx)
-                if pt_idx == len(prev_text):
-                    break
-            else:
-                if pt_idx == len(prev_text):
-                    print("Add begin : " + token)
-                    result.append(t_idx)
-                    prev_text += parse_tokens[target_index]
-                    f_inside = True
-    return result
 
 def test():
     from data_generator.NLI.nli import DataLoader
@@ -126,6 +118,9 @@ def test():
     for s1, s2, bp1, bp2 in data_loader.get_train_infos():
         tree1 = binary_parse_to_tree(bp1)
         tree2 = binary_parse_to_tree(bp2)
+
+        tree1.print_leaves()
+        tree2.print_leaves()
 
 
 

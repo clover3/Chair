@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 
 from task.transformer_est import Transformer, Classification
@@ -75,6 +75,35 @@ def train_nli_with_reinforce():
     #load_id = ("NLIEx_D", "model-1317")
     load_id = ("NLI_run_A", 'model-0')
     e.train_nli_ex_1(nli_setting, e_config, data_loader, load_id, explain_tag)
+
+
+
+
+def train_nli_tree_rf():
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+
+    e_config = ExperimentConfig()
+    e_config.name = "NLIEx_{}".format("I_match")
+    e_config.num_epoch = 1
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert', 'cls_dense'] #, 'aux_conflict']
+
+    #explain_tag = 'conflict'  # 'dontcare'  'match' 'mismatch'
+    explain_tag = 'match'
+
+    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    #load_id = ("NLI_run_nli_warm", "model-97332")
+    #load_id = ("NLIEx_A", "model-16910")
+    #load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    #load_id = ("NLIEx_D", "model-1964")
+    #load_id = ("NLIEx_D", "model-1317")
+    load_id = ("NLI_run_A", 'model-0')
+    e.train_nli_smart(nli_setting, e_config, data_loader, load_id, explain_tag)
+
 
 
 
@@ -175,5 +204,5 @@ def train_nli_with_reinforce_old():
 
 
 if __name__ == '__main__':
-    action = "train_nli_with_premade"
+    action = "train_nli_tree_rf"
     locals()[action]()
