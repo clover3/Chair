@@ -288,16 +288,22 @@ def translate_index(parse_tokens, subword_tokens, indice):
                 .replace("-lsb-", "[").replace("-rsb-", "]")\
                 .replace("…", "...")\
                 .replace("«", "\"")
+            if "#" == r:
+                r = "shop;"
             #    .replace("&", "&amp;")
             return _run_strip_accents(r)
 
         def normalize_pt_str(s):
-            #if "&amp;" not in s and "& amp" not in s:
-            #    s = s.replace("&", "&amp;")
+            if "&" in s and "&amp;" not in s and "& amp" not in s:
+                sw_str = "".join(subword_tokens)
+                if "&amp;" in sw_str:
+                    s = s.replace("&", "&amp;")
             return s
 
         def normalize_sw(text):
             s = text.replace("”", "\"").replace("“", "\"").replace("…", "...").replace("«", "\"")
+            if s == "#":
+                s = "shop;"
             return s
 
 

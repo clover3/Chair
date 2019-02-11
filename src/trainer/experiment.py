@@ -38,7 +38,7 @@ from data_generator.data_parser import controversy
 from data_generator.data_parser import trec
 from data_generator.data_parser.robust import *
 import data_generator.adhoc.score_loader as score_loader
-
+import data_generator.NLI.enlidef as ENLIDef
 from task.metrics import stance_f1
 from log import log
 import path
@@ -1534,12 +1534,10 @@ class Experiment:
                 print("P@1\t{}".format(p_at_1))
                 print("MAP\t{}".format(MAP_score))
 
-    def nli_explain_baselines(self, nli_setting, exp_config, data_loader, preload_id):
+    def nli_explain_baselines(self, nli_setting, exp_config, data_loader, preload_id, explain_tag):
         enc_explain_dev, explain_dev = data_loader.get_dev_explain_0()
         train_batches, dev_batches = self.load_nli_data(data_loader)
-        target = 'conflict'
-        task = transformer_nli(self.hparam, nli_setting.vocab_size)
-        CONTRADICTION = 2
+        task = transformer_nli(self.hparam, nli_setting.vocab_size, 1)
 
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
@@ -1577,12 +1575,12 @@ class Experiment:
         def eval(method):
             print("Eval")
             begin = time.time()
-            explains = method(enc_explain_dev, 'conflict', forward_run)
+            explains = method(enc_explain_dev, explain_tag, forward_run)
             assert len(explains) == len(explain_dev)
             end = time.time()
             print("Elapsed Time : {}".format(end- begin))
 
-            p_at_1, MAP_score = eval_explain(explains, data_loader, target)
+            p_at_1, MAP_score = eval_explain(explains, data_loader, explain_tag)
             print("P@1\t{}".format(p_at_1))
             print("MAP\t{}".format(MAP_score))
 
@@ -1993,16 +1991,7 @@ class Experiment:
             return 1
 
 
-        ENTAILMENT = 0
-        NEUTRAL = 1
-        CONTRADICTION = 2
-
-        target_class = {
-            'conflict' : CONTRADICTION,
-            'match': ENTAILMENT,
-            'dontcare': ENTAILMENT,
-            'mismatch': NEUTRAL,
-        }[explain_tag]
+        target_class = ENLIDef.get_target_class(explain_tag)
         print(target_class)
 
         def save_payload(reinforce_payload, step_i):
@@ -2302,17 +2291,7 @@ class Experiment:
             self.train_writer.add_summary(summary, self.g_step)
             self.train_writer.flush()
 
-
-        ENTAILMENT = 0
-        NEUTRAL = 1
-        CONTRADICTION = 2
-
-        target_class = {
-            'conflict' : CONTRADICTION,
-            'match': ENTAILMENT,
-            'dontcare': ENTAILMENT,
-            'mismatch': NEUTRAL,
-        }[explain_tag]
+        target_class = ENLIDef.get_target_class(explain_tag)
         print(target_class)
 
         def train_explain(reinforce_payload, step_i):
@@ -2414,16 +2393,7 @@ class Experiment:
             self.train_writer.add_summary(summary, self.g_step)
             self.train_writer.flush()
 
-        ENTAILMENT = 0
-        NEUTRAL = 1
-        CONTRADICTION = 2
-
-        target_class = {
-            'conflict': CONTRADICTION,
-            'match': ENTAILMENT,
-            'dontcare': ENTAILMENT,
-            'mismatch': NEUTRAL,
-        }[explain_tag]
+        target_class = ENLIDef.get_target_class(explain_tag)
         print(target_class)
 
         def over_zero(np_arr):

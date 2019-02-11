@@ -13,7 +13,7 @@ def get_real_len(x1, seq_len):
 # forward_run :
 #  input : list of [x0,x1,x2]
 #  output: list of softmax val
-def explain_by_deletion(data, target_label, forward_run):
+def explain_by_deletion(data, target_tag, forward_run):
     inputs = []
     inputs_info = []
     base_indice = []
@@ -46,9 +46,9 @@ def explain_by_deletion(data, target_label, forward_run):
             inputs_info.append(info)
 
     logits_list = forward_run(inputs)
-    if target_label == 'conflict':
+    if target_tag == 'conflict':
         logit_attrib_list = logits_list[:, 2] - logits_list[:, 0]
-    elif target_label == 'match':
+    elif target_tag == 'match':
         logit_attrib_list = logits_list[:, 2] + logits_list[:, 0] - logits_list[:, 1]
 
     assert len(logits_list) == len(inputs)

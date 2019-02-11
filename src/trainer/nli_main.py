@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 
 from task.transformer_est import Transformer, Classification
@@ -162,9 +162,11 @@ def baseline_explain():
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert', 'cls_dense']
 
+    #explain_tag = 'conflict'  # 'dontcare'  'match' 'mismatch'
+    explain_tag = 'match'
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
-    load_id = ("NLI_bert_w_explain", "model-91531")
-    e.nli_explain_baselines(nli_setting, e_config, data_loader, load_id)
+    load_id = ("NLI_run_A", 'model-0')
+    e.nli_explain_baselines(nli_setting, e_config, data_loader, load_id, explain_tag)
 
 
 
@@ -183,6 +185,7 @@ def attribution_explain():
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     load_id = ("NLI_run_nli_warm", "model-97332")
+    load_id = ("NLI_run_A", 'model-0')
     e.nli_attribution_baselines(nli_setting, e_config, data_loader, load_id)
 
 
@@ -204,5 +207,5 @@ def train_nli_with_reinforce_old():
 
 
 if __name__ == '__main__':
-    action = "train_nli_tree_rf"
+    action = "baseline_explain"
     locals()[action]()
