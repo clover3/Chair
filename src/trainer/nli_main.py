@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 
 from task.transformer_est import Transformer, Classification
@@ -16,17 +16,19 @@ from trainer.ExperimentConfig import ExperimentConfig
 
 
 def train_nil():
-    hp = hyperparams.HPDefault()
+    hp = hyperparams.HPBert()
     e = Experiment(hp)
     nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
 
     e_config = ExperimentConfig()
-    e_config.name = "NLI_run_{}".format("A")
-    e_config.num_epoch = 2
+    e_config.name = "NLI_bare_{}".format("A")
+    e_config.num_epoch = 8
     e_config.save_interval = 30 * 60  # 30 minutes
 
 
-    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename)
+    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     e.train_nli(nli_setting, e_config, data_loader)
 
 
@@ -38,8 +40,8 @@ def train_nil_on_bert():
     nli_setting.vocab_size = 30522
     nli_setting.vocab_filename = "bert_voca.txt"
     e_config = ExperimentConfig()
-    e_config.name = "NLI_run_{}".format("A")
-    e_config.num_epoch = 2
+    e_config.name = "NLI_Only_{}".format("B")
+    e_config.num_epoch = 3
     e_config.save_interval = 30 * 60  # 30 minutes
 
 
@@ -60,7 +62,7 @@ def train_nli_with_reinforce():
     nli_setting.vocab_filename = "bert_voca.txt"
 
     e_config = ExperimentConfig()
-    e_config.name = "NLIEx_{}".format("H")
+    e_config.name = "NLIEx_{}".format("N")
     e_config.num_epoch = 1
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert', 'cls_dense'] #, 'aux_conflict']
@@ -87,13 +89,13 @@ def train_nli_tree_rf():
     nli_setting.vocab_filename = "bert_voca.txt"
 
     e_config = ExperimentConfig()
-    e_config.name = "NLIEx_{}".format("I_match")
+    e_config.name = "NLIEx_{}".format("J_match_Tree")
     e_config.num_epoch = 1
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert', 'cls_dense'] #, 'aux_conflict']
 
-    #explain_tag = 'conflict'  # 'dontcare'  'match' 'mismatch'
-    explain_tag = 'match'
+    explain_tag = 'match'  # 'dontcare'  'match' 'mismatch'
+    #explain_tag = 'match'
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     #load_id = ("NLI_run_nli_warm", "model-97332")
@@ -129,6 +131,21 @@ def train_nli_with_premade():
     e.train_nli_ex_with_premade_data(nli_setting, e_config, data_loader, load_id, explain_tag)
 
 
+def test_dev_acc():
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+
+    e_config = ExperimentConfig()
+    e_config.name = "NLIEx_Test"
+    e_config.load_names = ['bert', 'cls_dense']#, 'aux_conflict']
+
+    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    load_id = ("NLI_bare_A", 'model-195608')
+    e.test_acc(nli_setting, e_config, data_loader, load_id)
+
 
 def analyze_nli_ex():
     hp = hyperparams.HPBert()
@@ -138,7 +155,7 @@ def analyze_nli_ex():
     nli_setting.vocab_filename = "bert_voca.txt"
 
     e_config = ExperimentConfig()
-    e_config.name = "NLIEx_{}_align".format("E")
+    e_config.name = "NLIEx_{}_test".format("H")
     e_config.num_epoch = 4
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert' ,'cls_dense', 'aux_conflict']
@@ -146,7 +163,10 @@ def analyze_nli_ex():
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     load_id = ("NLIEx_E_align", "model-23621")
-    e.nli_visualization(nli_setting, e_config, data_loader, load_id)
+    load_id = ("NLIEx_I_match", "model-1238")
+    load_id = ("NLIEx_K", "model-11900")
+    explain_tag = 'conflict'
+    e.nli_visualization(nli_setting, e_config, data_loader, load_id, explain_tag)
 
 
 def baseline_explain():
@@ -185,8 +205,29 @@ def attribution_explain():
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     load_id = ("NLI_run_nli_warm", "model-97332")
-    load_id = ("NLI_run_A", 'model-0')
+    load_id = ("NLI_Only_B", 'model-0')
     e.nli_attribution_baselines(nli_setting, e_config, data_loader, load_id)
+
+
+def test_fidelity():
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+
+    e_config = ExperimentConfig()
+    e_config.name = "NLIEx_{}".format("H_eval")
+    e_config.num_epoch = 4
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert', 'cls_dense', 'aux_conflict']
+    explain_tag = 'conflict'
+
+    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    load_id = ("NLIEx_H", 'model-6301')
+    #load_id = ("NLI_run_A", 'model-0')
+    e.eval_fidelity(nli_setting, e_config, data_loader, load_id, explain_tag)
+
 
 
 
@@ -207,5 +248,5 @@ def train_nli_with_reinforce_old():
 
 
 if __name__ == '__main__':
-    action = "baseline_explain"
+    action = "train_nli_with_reinforce"
     locals()[action]()

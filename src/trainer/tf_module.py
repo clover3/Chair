@@ -41,6 +41,33 @@ def epoch_runner(batches, step_fn,
     return average(l_loss), average(l_acc)
 
 
+def step_runner(batches, step_fn,
+                 dev_fn=None, valid_freq = 1000,
+                 save_fn=None, save_interval=10000,
+                 steps=999999,
+                 shuffle=True):
+    l_loss =[]
+    l_acc = []
+    last_save = time.time()
+    if shuffle:
+        np.random.shuffle(batches)
+    for step_i, batch in enumerate(batches[:steps]):
+        if dev_fn is not None:
+            if step_i % valid_freq == 0:
+                dev_fn()
+
+        if save_fn is not None:
+            if time.time() - last_save > save_interval:
+                save_fn()
+                last_save = time.time()
+
+        loss, acc = step_fn(batch, step_i)
+        l_acc.append(acc)
+        l_loss.append(loss)
+
+    return average(l_loss), average(l_acc)
+
+
 # a : [batch, 2]
 def cartesian_w2(a, b):
     r00 = tf.multiply(a[:,0], b[:,0]) # [None, ]
@@ -119,6 +146,17 @@ def f1_loss(logits, y):
     return f1_1 + f2_1
 
 
+def correlation_coefficient_loss(y_true, y_pred):
+    x = y_true
+    y = y_pred
+    mx = tf.reduce_mean(x, axis=1, keep_dims=True)
+    my = tf.reduce_mean(y, axis=1, keep_dims=True)
+    xm, ym = x-mx, y-my
+    r_num = tf.reduce_sum(tf.multiply(xm,ym), axis=1, keep_dims=True)
+    r_den = tf.sqrt(tf.multiply(tf.reduce_sum(tf.square(xm), axis=1, keep_dims=True), tf.reduce_sum(tf.square(ym), axis=1, keep_dims=True)))
+    r = r_num / (r_den + 0.00000001)
+    r = tf.maximum(tf.minimum(r, 1.0), -1.0)
+    return -r
 
 
 

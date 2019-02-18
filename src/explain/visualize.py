@@ -32,7 +32,10 @@ def visualize(result, out_name):
                 print("{}({}) ".format(token, scores[i]), end="")
 
                 r = int((scores[i] - min_score) * 255 / (max_score - min_score))
-
+                if r > 100:
+                    r = 100
+                else:
+                    r = 0
                 f.write(print_color_html(token, r))
             print()
             f.write("</tr>")

@@ -26,6 +26,12 @@ def token_delete(binary_tag, x0, x1, x2):
     return x0_new, x1_new, x2_new
 
 
+def token_delete_with_indice(indice, x0, x1, x2):
+    mask = [0] * len(x0)
+    for idx in indice:
+        mask[idx] = 1
+
+    return token_delete(mask, x0, x1, x2)
 
 
 def token_replace(binary_tag, x0, x1, x2, random_token):

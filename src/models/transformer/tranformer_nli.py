@@ -5,7 +5,7 @@ from data_generator.NLI import nli
 from trainer import tf_module
 
 class transformer_nli:
-    def __init__(self, hp, voca_size, method):
+    def __init__(self, hp, voca_size, method, is_training=True):
         config = bert.BertConfig(vocab_size=voca_size,
                                  hidden_size=hp.hidden_units,
                                  num_hidden_layers=hp.num_blocks,
@@ -22,16 +22,15 @@ class transformer_nli:
         input_mask = tf.placeholder(tf.int64, [None, seq_length])
         segment_ids = tf.placeholder(tf.int64, [None, seq_length])
         label_ids = tf.placeholder(tf.int64, [None])
-        if method == 0 or method == 1 or method == 3:
+        if method in [0,1,3,4]:
             self.rf_mask = tf.placeholder(tf.float32, [None, seq_length])
-        elif method == 2:
+        elif method in [2,5]:
             self.rf_mask = tf.placeholder(tf.int32, [None, seq_length])
 
         self.x_list = [input_ids, input_mask, segment_ids]
         self.y = label_ids
 
         use_one_hot_embeddings = use_tpu
-        is_training = True
         self.model = bert.BertModel(
             config=config,
             is_training=is_training,
@@ -40,7 +39,7 @@ class transformer_nli:
             token_type_ids=segment_ids,
             use_one_hot_embeddings=use_one_hot_embeddings)
 
-        pred, loss = task.predict(self.model.get_sequence_output(), label_ids, is_training)
+        pred, loss = task.predict(self.model.get_sequence_output(), label_ids, True)
 
         self.logits = task.logits
         self.sout = tf.nn.softmax(self.logits)
@@ -63,7 +62,7 @@ class transformer_nli:
             cl = tf.layers.dense(self.model.get_sequence_output(), 1, name="aux_conflict")
             cl = tf.reshape(cl, [-1, seq_length])
             #cl = tf.nn.sigmoid(cl)
-            cl = tf.contrib.layers.layer_norm(cl)
+            #cl = tf.contrib.layers.layer_norm(cl)
             self.conf_logits = cl
             self.pkc = self.conf_logits * self.rf_mask
             rl_loss_list = tf.reduce_sum(self.conf_logits * self.rf_mask , axis=1)
@@ -85,11 +84,26 @@ class transformer_nli:
             labels = tf.greater(self.rf_mask, 0)
             hinge_losses = tf.losses.hinge_loss(labels, self.conf_logits)
             self.hinge_loss = tf.reduce_sum(hinge_losses)
+        elif method == 4:
+            cl = tf.layers.dense(self.model.get_sequence_output(), 1, name="aux_conflict")
+            cl = tf.reshape(cl, [-1, seq_length])
+            cl = tf.contrib.layers.layer_norm(cl)
+            self.conf_logits = cl
+            labels = tf.greater(self.rf_mask, 0)
+            hinge_losses = tf.losses.hinge_loss(labels, self.conf_logits)
+            self.rl_loss = hinge_losses
+        elif method == 5:
+            cl = tf.layers.dense(self.model.get_sequence_output(), 1, name="aux_conflict")
+            cl = tf.reshape(cl, [-1, seq_length])
+            cl = tf.contrib.layers.layer_norm(cl)
+            self.conf_logits = cl
+            self.labels = tf.cast(tf.greater(self.rf_mask, 0), tf.float32)
+            self.rl_loss = tf_module.correlation_coefficient_loss(cl, self.labels)
 
 
 
 class transformer_nli_embedding_in:
-    def __init__(self, hp, voca_size):
+    def __init__(self, hp, voca_size, is_training):
         config = bert.BertConfig(vocab_size=voca_size,
                                  hidden_size=hp.hidden_units,
                                  num_hidden_layers=hp.num_blocks,
@@ -114,7 +128,6 @@ class transformer_nli_embedding_in:
         self.encoded_embedding_in = tf.placeholder(tf.float32, [None, seq_length, hp.hidden_units])
         self.attention_mask_in = tf.placeholder(tf.float32, [None, seq_length, seq_length])
         use_one_hot_embeddings = use_tpu
-        is_training = True
         self.model = bert.BertEmbeddingInOut(
             config=config,
             is_training=is_training,
@@ -128,7 +141,7 @@ class transformer_nli_embedding_in:
         self.encoded_embedding_out = self.model.embedding_output
         self.attention_mask_out = self.model.attention_mask
 
-        pred, loss = task.predict(self.model.get_sequence_output(), label_ids, is_training)
+        pred, loss = task.predict(self.model.get_sequence_output(), label_ids, True)
 
         self.logits = task.logits
         self.sout = tf.nn.softmax(self.logits)
