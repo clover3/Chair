@@ -8,7 +8,8 @@ def top_k_idx(arr, k):
 def bottom_k_idx(arr, k):
     return np.argsort(arr)[:k]
 
-def p_at_k_list(explains, golds, k):
+
+def p_at_k_list_inner(explains, golds, k):
     def p_at_k(rank_list, gold_set, k):
         tp = 0
         for score, e in rank_list[:k]:
@@ -27,7 +28,16 @@ def p_at_k_list(explains, golds, k):
         if gold_h:
             s2 = p_at_k(pred_h, gold_h, k)
             score_list_h.append(s2)
+    return score_list_p , score_list_h
+
+def p_at_k_list(explains, golds, k):
+    score_list_p, score_list_h = p_at_k_list_inner(explains, golds, k)
     return average(score_list_p + score_list_h)
+
+
+def p_at_k_list_ind(explains, golds, k):
+    score_list_p, score_list_h = p_at_k_list_inner(explains, golds, k)
+    return average(score_list_p), average(score_list_h)
 
 def p_at_s_list(explains, golds):
     def p_at_stop(rank_list, gold_set):
@@ -144,6 +154,7 @@ def PR_AUC_ind(explains, golds):
             s2 = per_inst_AUC(pred_h, gold_h)
             score_list_h.append(s2)
     return average(score_list_p), average(score_list_h)
+
 
 def PR_AUC(explains, golds):
     p_auc, h_auc = PR_AUC_ind(explains, golds)

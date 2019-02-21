@@ -6,6 +6,8 @@ from path import data_path
 from cache import *
 from evaluation import *
 import unicodedata
+from data_generator.NLI.enlidef import *
+import copy
 
 num_classes = 3
 
@@ -64,6 +66,45 @@ class DataLoader:
             return self.get_dev_explain_1(target)
         else:
             assert False
+
+    def get_pair_dev(self):
+        explain_data = list(load_nli_explain_2("pairing", "match"))
+
+        def entry2inst(raw_entry):
+            entry = self.encode(raw_entry[0], raw_entry[1])
+            return entry["input_ids"], entry["input_mask"], entry["segment_ids"]
+
+        def mark(raw_entry):
+            enc_entry = entry2inst(raw_entry)
+            enc_entry_p = copy.deepcopy(enc_entry)
+            enc_entry_h = copy.deepcopy(enc_entry)
+            x0_p, x1_p, x2_p = enc_entry_p
+            prem, hypo, p_indice, h_indice = raw_entry
+            for idx in p_indice:
+                loc = idx + 1
+                x2_p[loc] = get_segment_marker(x2_p[loc])
+
+            out1 = (x0_p, x1_p, x2_p)
+
+            x0_h, x1_h, x2_h = enc_entry_h
+            for i in range(len(x2_h)):
+                if x2_h[i] == 1:
+                    p_begin = i
+                    break
+
+            assert x2_h[p_begin] == 1
+            for idx in h_indice:
+                loc = p_begin + idx
+                x2_h[loc] = get_segment_marker(x2_h[loc])
+            out2 = (x0_h, x1_h, x2_h)
+
+            return (out1, raw_entry), (out2, raw_entry)
+
+        p_data, h_data = zip(*list([mark(entry) for entry in explain_data]))
+        p_enc, p_info = zip(*list(p_data))
+        h_enc, h_info = zip(*list(h_data))
+
+        return p_enc, h_enc, explain_data
 
     def get_dev_explain_0(self):
         if self.dev_explain_0 is None:
@@ -481,9 +522,6 @@ def load_nli_explain_1(name):
     for (prem, hypo), (p_indice, h_indice) in zip(texts_list, indice_list):
         p_tokens = prem.split()
         h_tokens = hypo.split()
-        if name == "align":
-            p_indice = complement(p_indice, range(len(p_tokens)))
-            h_indice = complement(h_indice, range(len(h_tokens)))
         if debug:
             print(len(p_tokens), len(p_indice),len(h_tokens), len(h_indice))
             for idx in p_indice:
@@ -501,6 +539,52 @@ def load_nli_explain_1(name):
                     print(h_tokens[idx], end=" ")
             print("")
         yield prem, hypo, p_indice, h_indice
+
+def load_nli_explain_2(name_idx, name_text):
+    path_idx = os.path.join(corpus_dir, "{}.csv".format(name_idx))
+    path_text = os.path.join(corpus_dir, "{}.csv".format(name_text))
+
+    reader = csv.reader(open(path_text, "r"), delimiter=',')
+
+    texts_list = []
+    for row in reader:
+        premise = row[0]
+        hypothesis = row[1]
+        texts_list.append((premise, hypothesis))
+
+    reader2 = csv.reader(open(path_idx, "r"), delimiter=",")
+    indice_list = []
+    for row in reader2:
+        p_indice, h_indice = row[0], row[1]
+        p_indice = list([int(t) for t in p_indice.strip().split()])
+        h_indice = list([int(t) for t in h_indice.strip().split()])
+        indice_list.append((p_indice, h_indice))
+
+    texts_list = texts_list[:len(indice_list)]
+    debug = False
+    for (prem, hypo), (p_indice, h_indice) in zip(texts_list, indice_list):
+        p_tokens = prem.split()
+        h_tokens = hypo.split()
+        if debug:
+            print(len(p_tokens), len(p_indice),len(h_tokens), len(h_indice))
+            for idx in p_indice:
+                print(p_tokens[idx], end=" ")
+            print(" | ", end="")
+            for idx in range(len(p_tokens)):
+                if idx not in p_indice:
+                    print(p_tokens[idx], end=" ")
+            print("")
+            for idx in h_indice:
+                print(h_tokens[idx], end=" ")
+            print(" | ", end="")
+            for idx in range(len(h_tokens)):
+                if idx not in h_indice:
+                    print(h_tokens[idx], end=" ")
+            print("")
+        yield prem, hypo, p_indice, h_indice
+
+
+
 
 def load_nli(path):
     label_list = ["entailment", "neutral", "contradiction", ]

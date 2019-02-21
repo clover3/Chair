@@ -159,6 +159,12 @@ def correlation_coefficient_loss(y_true, y_pred):
     return -r
 
 
+def cossim(v1, v2):
+    v1_n = tf.nn.l2_normalize(v1, axis=1)
+    v2_n = tf.nn.l2_normalize(v2, axis=1)
+    return tf.losses.cosine_distance(v1_n, v2_n, axis=1)
+
+
 
 def init_session():
     config = tf.ConfigProto(allow_soft_placement=True,

@@ -95,6 +95,34 @@ def random_delete(num_del, x0, x1, x2):
     return x_list, mask
 
 
+def seq_delete(num_del, info, idx_trans_fn, x0, x1, x2):
+    length = len(x0)
+    last_valid = 0
+    for i in range(length):
+        if x2[i] > 0 :
+            last_valid = i
+    num_del = min(num_del, last_valid)
+
+    def sample_len():
+        l = 1
+        v = random.random()
+        while v < 0.5 and l < length:
+            l = l * 2
+        return min(l, length)
+
+    indice = []
+    for i in range(num_del):
+        del_len = sample_len()
+        start_idx = pick1(range(last_valid+1))
+        end_idx = min(start_idx+del_len, last_valid+1)
+        for idx in range(start_idx, end_idx):
+            indice.append(idx)
+
+    mask = [0] * len(x0)
+    for idx in indice:
+        mask[idx] = 1
+
+    return token_delete(mask, x0, x1, x2), mask
 
 def tree_delete(num_del, info, idx_trans_fn, x0, x1, x2):
     s1, s2, bp1, bp2 = info

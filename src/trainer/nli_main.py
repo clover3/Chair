@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 
 from task.transformer_est import Transformer, Classification
@@ -62,7 +62,7 @@ def train_nli_with_reinforce():
     nli_setting.vocab_filename = "bert_voca.txt"
 
     e_config = ExperimentConfig()
-    e_config.name = "NLIEx_{}".format("N")
+    e_config.name = "NLIEx_{}".format("R")
     e_config.num_epoch = 1
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert', 'cls_dense'] #, 'aux_conflict']
@@ -78,10 +78,7 @@ def train_nli_with_reinforce():
     load_id = ("NLI_run_A", 'model-0')
     e.train_nli_ex_1(nli_setting, e_config, data_loader, load_id, explain_tag)
 
-
-
-
-def train_nli_tree_rf():
+def train_pairing():
     hp = hyperparams.HPBert()
     e = Experiment(hp)
     nli_setting = NLI()
@@ -89,7 +86,26 @@ def train_nli_tree_rf():
     nli_setting.vocab_filename = "bert_voca.txt"
 
     e_config = ExperimentConfig()
-    e_config.name = "NLIEx_{}".format("J_match_Tree")
+    e_config.name = "NLIEx_{}".format("S")
+    e_config.num_epoch = 1
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert', 'cls_dense']# 'aux_conflict']
+
+    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    load_id = ("NLIEx_P_match", "model-1636")
+    PAIRING_NLI = 6
+    e.train_nli_smart(nli_setting, e_config, data_loader, load_id, 'match', PAIRING_NLI)
+
+
+def train_nli_smart_rf():
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+
+    e_config = ExperimentConfig()
+    e_config.name = "NLIEx_{}".format("P_match")
     e_config.num_epoch = 1
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert', 'cls_dense'] #, 'aux_conflict']
@@ -104,7 +120,8 @@ def train_nli_tree_rf():
     #load_id = ("NLIEx_D", "model-1964")
     #load_id = ("NLIEx_D", "model-1317")
     load_id = ("NLI_run_A", 'model-0')
-    e.train_nli_smart(nli_setting, e_config, data_loader, load_id, explain_tag)
+
+    e.train_nli_smart(nli_setting, e_config, data_loader, load_id, explain_tag, 1)
 
 
 
@@ -155,7 +172,7 @@ def analyze_nli_ex():
     nli_setting.vocab_filename = "bert_voca.txt"
 
     e_config = ExperimentConfig()
-    e_config.name = "NLIEx_{}_test".format("H")
+    e_config.name = "NLIEx_{}_test".format("P")
     e_config.num_epoch = 4
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert' ,'cls_dense', 'aux_conflict']
@@ -163,9 +180,9 @@ def analyze_nli_ex():
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     load_id = ("NLIEx_E_align", "model-23621")
-    load_id = ("NLIEx_I_match", "model-1238")
-    load_id = ("NLIEx_K", "model-11900")
-    explain_tag = 'conflict'
+    #load_id = ("NLIEx_I_match", "model-1238")
+    load_id = ("NLIEx_P_match", "model-1636")
+    explain_tag = 'match'
     e.nli_visualization(nli_setting, e_config, data_loader, load_id, explain_tag)
 
 
@@ -248,5 +265,5 @@ def train_nli_with_reinforce_old():
 
 
 if __name__ == '__main__':
-    action = "train_nli_with_reinforce"
+    action = "train_pairing"
     locals()[action]()
