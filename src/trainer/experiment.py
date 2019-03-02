@@ -41,7 +41,7 @@ from models.transformer.transformer_adhoc import transformer_adhoc, transformer_
 from models.transformer.transformer_lm import transformer_ql
 from models.transformer.ScoreCombiner import *
 
-from attribution.eval import eval_explain, eval_pairing
+from attribution.eval import eval_explain, eval_pairing, predict_translate
 from attribution.baselines import *
 from attribution.eval import eval_fidelity
 from evaluation import *
@@ -1472,8 +1472,8 @@ class Experiment:
 
     def nli_attribution_baselines(self, nli_setting, exp_config, data_loader, preload_id):
         print("attribution_explain")
-        target = 'match'
-        enc_explain_dev, explain_dev = data_loader.get_dev_explain_0()
+        target = 'conflict'
+        enc_explain_dev, explain_dev = data_loader.get_dev_explain(target)
         #train_batches, dev_batches = self.load_nli_data(data_loader
         from attribution.gradient import explain_by_gradient
         self.sess = self.init_sess()
@@ -1494,7 +1494,6 @@ class Experiment:
                     self.load_model_bert(name, id)
 
 
-            target_label = 'conflict'
             emb_outputs = task.encoded_embedding_out, task.attention_mask_out
             emb_input = task.encoded_embedding_in, task.attention_mask_in
             softmax_out = task.sout
@@ -1508,18 +1507,17 @@ class Experiment:
             explain_prediction = {}
             elapsed_time = {}
             #method_list = [ "elrp", "deeplift", "saliency","grad*input", "intgrad", ]
-            method_list = ["deeplift", "saliency", "grad*input", "intgrad", ]
+            method_list = ["saliency", "grad*input", "intgrad", ]
             for method_name in method_list:
                 print(method_name)
                 begin = time.time()
 
-                explains = explain_by_gradient(enc_explain_dev, method_name, target_label, self.sess, de,
+                explains = explain_by_gradient(enc_explain_dev, method_name, target, self.sess, de,
                                                feed_end_input, emb_outputs, emb_input, softmax_out)
                 end = time.time()
                 elapsed_time[method_name] = end - begin
                 explain_prediction[method_name] = explains
 
-            for method_name in method_list:
                 print(method_name)
                 print("Elapsed Time\t{}".format(elapsed_time[method_name]))
                 explains = explain_prediction[method_name]
@@ -1528,6 +1526,50 @@ class Experiment:
                 print("P@1\t{}".format(p_at_1))
                 print("MAP\t{}".format(MAP_score))
                 print("AUC\t{}".format(auc_score))
+
+    def nli_attribution_predict(self, nli_setting, exp_config, data_loader, preload_id, data_id):
+        enc_payload, plain_payload = data_loader.get_test_data(data_id)
+
+        target_label = 'conflict'
+        from attribution.gradient import explain_by_gradient
+        self.sess = self.init_sess()
+        from attribution.deepexplain.tensorflow import DeepExplain
+        with DeepExplain(session=self.sess, graph=self.sess.graph) as de:
+            task = transformer_nli_embedding_in(self.hparam, nli_setting.vocab_size, False)
+            self.sess.run(tf.global_variables_initializer())
+            if preload_id is not None:
+                name = preload_id[0]
+                id = preload_id[1]
+                if exp_config.load_names :
+                    self.load_model_white(name, id, exp_config.load_names)
+                elif name in exp_config.name:
+                    self.load_model_all(name, id)
+                elif "NLI" in name:
+                    self.load_model_white(name, id, ['bert', 'dense_cls'])
+                else:
+                    self.load_model_bert(name, id)
+
+
+            emb_outputs = task.encoded_embedding_out, task.attention_mask_out
+            emb_input = task.encoded_embedding_in, task.attention_mask_in
+            softmax_out = task.sout
+            def feed_end_input(batch):
+                x0, x1, x2 = batch
+                return {task.x_list[0]:x0,
+                        task.x_list[1]:x1,
+                        task.x_list[2]:x2,
+                        }
+
+            #method_list = [ "elrp", "deeplift", "saliency","grad*input", "intgrad", ]
+            method_list = ["deeplift", "saliency", "grad*input", "intgrad", ]
+            for method_name in method_list:
+                print(method_name)
+
+                explains = explain_by_gradient(enc_payload, method_name, target_label, self.sess, de,
+                                               feed_end_input, emb_outputs, emb_input, softmax_out)
+
+                pred_list = predict_translate(explains, data_loader, enc_payload, plain_payload)
+                save_to_pickle(pred_list, "pred_{}_{}".format(method_name, data_id))
 
     def nli_explain_baselines(self, nli_setting, exp_config, data_loader, preload_id, explain_tag):
         enc_explain_dev, explain_dev = data_loader.get_dev_explain(explain_tag)
@@ -1591,6 +1633,7 @@ class Experiment:
         for method_name, method in todo_list:
             print(method_name)
             eval(method)
+
 
     def train_nli_ex_0(self, nli_setting, exp_config, data_loader, preload_id, f_train_ex):
         enc_explain_dev, explain_dev = data_loader.get_dev_explain_0()
@@ -1904,7 +1947,7 @@ class Experiment:
 
     # Refactored version of explain train
     def test_acc(self, nli_setting, exp_config, data_loader, preload_id):
-        method = 1
+        method = 6
         task = transformer_nli(self.hparam, nli_setting.vocab_size, method, False)
 
         self.sess = self.init_sess()
@@ -1940,10 +1983,116 @@ class Experiment:
         print(preload_id)
         valid_fn()
 
+    def nli_interactive(self, nli_setting, exp_config, data_loader, preload_id):
+        task = transformer_nli(self.hparam, nli_setting.vocab_size, 1, False)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+
+        self.load_model_white2(preload_id, exp_config.load_names)
+
+        def batch2feed_dict(batch):
+            x0, x1, x2, y = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        train_batches, dev_batches = self.load_nli_data(data_loader)
+
+        def predict(sents):
+            data = []
+            for sent1, sent2 in sents:
+                entry = data_loader.encode(sent1, sent2)
+                l = entry["input_ids"], entry["input_mask"], entry["segment_ids"], 0
+                data.append(l)
+
+            batches = get_batches_ex(data, self.hparam.batch_size, 4)
+            logits, = self.sess.run([task.sout], feed_dict=batch2feed_dict(batches[0]))
+            return logits
+
+        terminate = False
+        sents = []
+        while not terminate:
+            msg = input("Enter:")
+            if msg == "!EOI":
+                r = predict([(sents[0], sents[1]), (sents[1], sents[0])])
+                print(r)
+                sents = []
+            elif msg == "!EXIT":
+                terminate = True
+            else:
+                sents.append(msg)
+
+        print(preload_id)
+
+    # Refactored version of explain train
+    def predict_rf(self, nli_setting, exp_config, data_loader, preload_id, data_id):
+        method = 1
+        task = transformer_nli(self.hparam, nli_setting.vocab_size, method, False)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+
+        self.load_model_white2(preload_id, exp_config.load_names)
+
+        def batch2feed_dict(batch):
+            x0, x1, x2, y  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        train_batches, dev_batches = self.load_nli_data(data_loader)
+        def valid_fn():
+            loss_list = []
+            acc_list = []
+            for batch in dev_batches:
+                loss_val, summary, acc = self.sess.run([task.loss, self.merged, task.acc],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+                acc_list.append(acc)
+
+                self.test_writer.add_summary(summary, self.g_step)
+            print("Validation : loss={0:.04f} acc={1:.04f}".format(average(loss_list), average(acc_list)))
+        print(preload_id)
+        #valid_fn()
+
+        enc_payload, plain_payload = data_loader.get_test_data(data_id)
+
+        batches = get_batches_ex(enc_payload, self.hparam.batch_size, 3)
+
+        conf_logit_list = []
+        for batch in batches:
+            x0, x1, x2 = batch
+            logits, conf_logit = self.sess.run([task.sout, task.conf_logits ],
+                                           feed_dict={
+                                            task.x_list[0]: x0,
+                                            task.x_list[1]: x1,
+                                            task.x_list[2]: x2,
+                                           })
+            conf_logit_list.append(conf_logit)
+        conf_logit = np.concatenate(conf_logit_list)
+
+        pred_list = predict_translate(conf_logit, data_loader, enc_payload, plain_payload)
+        save_to_pickle(pred_list, "pred_{}_{}".format(exp_config.name, data_id))
+
+
     # Refactored version of explain train
     def train_nli_ex_1(self, nli_setting, exp_config, data_loader, preload_id, explain_tag):
         enc_explain_dev, explain_dev = data_loader.get_dev_explain(explain_tag)
-        method = 1
+        method = 5
         task = transformer_nli(self.hparam, nli_setting.vocab_size, method)
         with tf.variable_scope("optimizer"):
             train_cls = self.get_train_op(task.loss)
@@ -2144,14 +2293,12 @@ class Experiment:
                 self.log2.debug("Mask: {}".format(loss_mask))
                 return (x0, x1, x2, y, loss_mask)
 
-            if method < 2:
+            if method in [0,1,4,5]:
                 reinforce = reinforce_one
-            elif method in [2,5]:
+            elif method in [2]:
                 reinforce = supervise
             elif method == 3:
                 reinforce = reinforce_binary
-            elif method == 4:
-                reinforce = reinforce_one
 
 
 
@@ -2286,7 +2433,7 @@ class Experiment:
     # Refactored version of explain train
     def train_nli_ex_with_premade_data(self, nli_setting, exp_config, data_loader, preload_id, explain_tag):
         enc_explain_dev, explain_dev = data_loader.get_dev_explain(explain_tag)
-        method = 1
+        method = 5
         task = transformer_nli(self.hparam, nli_setting.vocab_size, method)
         with tf.variable_scope("optimizer"):
             train_rl = self.get_train_op(task.rl_loss, name="rl")
@@ -2370,8 +2517,14 @@ class Experiment:
         def valid_fn(step_i):
             eval(step_i)
 
+
+        def save_fn():
+            self.save_model(exp_config.name, 1)
+
+        save_interval = 10 * 60
         valid_freq = 100
         num_epochs = exp_config.num_epoch
+        last_save = time.time()
         for i_epoch in range(1):
             step_size = 5200
             for step_i in range(step_size):
@@ -2382,6 +2535,10 @@ class Experiment:
                 if os.path.exists(path_save):
                     reinforce_payload = pickle.load(open(path_save, "rb"))
                     train_ex_fn(reinforce_payload, step_i)
+
+                if time.time() - last_save > save_interval:
+                    save_fn()
+                    last_save = time.time()
 
     def train_nli_smart(self, nli_setting, exp_config, data_loader, preload_id, explain_tag, method):
         print("train_nli_smart")
@@ -2395,8 +2552,6 @@ class Experiment:
         with tf.variable_scope("optimizer"):
             train_cls = self.get_train_op(task.loss)
             train_rl = self.get_train_op(task.rl_loss, name="rl")
-            if method == PAIRING_NLI:
-                train_pr = self.get_train_op(task.pr_loss, name="pr")
 
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
@@ -2453,13 +2608,13 @@ class Experiment:
                 pair_logit_list = []
                 for batch in batches:
                     x0, x1, x2 = batch
-                    logits, pair_logit = self.sess.run([task.sout, task.pair_logits],
+                    logits, conf_logits = self.sess.run([task.sout, task.conf_logits],
                                                        feed_dict={
                                                            task.x_list[0]: x0,
                                                            task.x_list[1]: x1,
                                                            task.x_list[2]: x2,
                                                        })
-                    pair_logit_list.append(pair_logit)
+                    pair_logit_list.append(conf_logits)
                 pair_logits = np.concatenate(pair_logit_list)
                 return pair_logits
 
@@ -2481,13 +2636,18 @@ class Experiment:
             self.train_writer.add_summary(summary, self.g_step)
             self.train_writer.flush()
 
-        target_class = ENLIDef.get_target_class(explain_tag)
-        print(target_class)
+        target_class_set = ENLIDef.get_target_class_set(explain_tag)
+        print("target class : ", target_class_set)
 
         def over_zero(np_arr):
             return np.less(0, np_arr).astype(np.float32)
 
         logit2tag = over_zero
+
+        def top_1_as_mask(np_arr):
+            r = np.zeros_like(np_arr)
+            r[np.argmax(np_arr)] = 1
+            return r
 
         def forward_runs(insts):
             alt_batches = get_batches_ex(insts, self.hparam.batch_size, 3)
@@ -2519,6 +2679,11 @@ class Experiment:
 
                 conf_logit_list.append(conf_logits)
             return np.concatenate(conf_logit_list)
+
+        def save_payload(reinforce_payload, step_i):
+            path_save = os.path.join(path.data_path, "nli_payload", explain_tag,
+                                     "{}.pickle".format(step_i))
+            pickle.dump(reinforce_payload, open(path_save, "wb"))
 
         def sample_target_mask(batch):
             x0, x1, x2, y = batch
@@ -2568,6 +2733,7 @@ class Experiment:
 
         sample_deleter = seq_delete
 
+        loss_window = MovingWindow(self.hparam.batch_size)
         def train_explain(batch, batch_info, step_i):
             summary = tf.Summary()
 
@@ -2590,13 +2756,13 @@ class Experiment:
 
 
                 pred = np.argmax(logits, axis=1)
-                compare_deletion_num = 5
+                compare_deletion_num = self.hparam.compare_deletion_num
                 instance_infos = []
                 new_batches = []
                 deleted_mask_list = []
                 tag_size_list = []
                 for i in range(len(logits)):
-                    if pred[i] == target_class:
+                    if pred[i] in target_class_set:
                         info = {}
                         info['init_logit'] = logits[i]
                         info['orig_input'] = (x0[i], x1[i], x2[i], y[i])
@@ -2653,7 +2819,6 @@ class Experiment:
                     score = (before_prob[2] + before_prob[0]) - (after_prob[2] + after_prob[0])
                      # ( 1 - before_prob[1] ) - (1 - after_prob[1]) = after_prob[1] - before_prob[1] = increase of neutral
                 elif explain_tag == 'mismatch':
-                    assert False
                     score = before_prob[1] - after_prob[1]
                 elif explain_tag == 'dontcare':
                     assert False
@@ -2708,6 +2873,7 @@ class Experiment:
                 return reinforce_payload_list
 
             reinforce_payload = calc_reward(alt_logits, instance_infos, deleted_mask_list)
+            save_payload(reinforce_payload, step_i)
 
             def commit_reward(reinforce_payload):
                 batches = get_batches_ex(reinforce_payload, self.hparam.batch_size, 5)
@@ -2725,12 +2891,14 @@ class Experiment:
                                                 task.rf_mask : rf_mask,
                                             })
                     rl_loss_list.append(rl_loss)
+                    loss_window.append(rl_loss, len(x0))
                 return average(rl_loss_list)
 
             ## Step 4) Update gradient
-            avg_rl_loss = commit_reward(reinforce_payload)
+            _ = commit_reward(reinforce_payload)
 
-            summary.value.add(tag='RL_Loss', simple_value=avg_rl_loss)
+            window_rl_loss = loss_window.get_average()
+            summary.value.add(tag='RL_Loss', simple_value=window_rl_loss)
             self.train_writer.add_summary(summary, self.g_step)
             self.train_writer.flush()
 
@@ -2747,40 +2915,46 @@ class Experiment:
 
             def generate_alt_runs(batch, mark_loc):
 
-                logits, ex_logit, pr_logits = self.sess.run([task.sout, task.conf_logits, task.pair_logits
+                logits, ex_logit = self.sess.run([task.sout, task.conf_logits,
                                                   ],
                                                  feed_dict=batch2feed_dict(batch)
                                                  )
                 x0, x1, x2, y = batch
                 pred = np.argmax(logits, axis=1)
-                compare_deletion_num = 5
+                compare_deletion_num = 20
                 instance_infos = []
                 new_batches = []
                 deleted_mask_list = []
                 for i in range(len(logits)):
-                    if pred[i] == target_class: ## Do we need?
-                        info = {}
-                        info['init_conf'] = ex_logit[i]
-                        info['pr_mark'] = mark_loc[i]
-                        info['orig_input'] = (x0[i], x1[i], x2[i], y[i])
-                        pr_tags = logit2tag(pr_logits[i])
-                        self.log2.debug("pr_scores : {}".format(numpy_print(pr_logits[i])))
+                    info = {}
+                    info['init_logits'] = logits[i]
+                    info['pr_mark'] = mark_loc[i]
+                    info['orig_input'] = (x0[i], x1[i], x2[i], y[i])
+                    pr_tags = top_1_as_mask(ex_logit[i])
+                    self.log2.debug("pr_scores : {}".format(numpy_print(ex_logit[i])))
 
-                        info['idx_delete_tagged'] = len(new_batches)
-                        new_batches.append(token_delete(pr_tags, x0[i], x1[i], x2[i]))
-                        deleted_mask_list.append(pr_tags)
+                    info['idx_delete_tagged'] = len(new_batches)
+                    new_batches.append(token_delete(pr_tags, x0[i], x1[i], x2[i]))
+                    deleted_mask_list.append(pr_tags)
+                    new_batches.append(seq_replace_inner(pr_tags, mark_loc[i], x0[i], x1[i], x2[i]))
+                    deleted_mask_list.append(pr_tags)
+                    indice_delete_random = []
 
-                        indice_delete_random = []
+                    for _ in range(compare_deletion_num):
+                        #x_list, delete_mask = sample_deleter(sample_size(), None, data_loader.convert_indice_in,
+                                                          #x0[i], x1[i], x2[i])
+                        x_list_del, x_list_replace, replace_mask = seq_replace(sample_size(), mark_loc[i], x0[i], x1[i], x2[i])
+                        indice_delete_random.append(len(new_batches))
+                        new_batches.append(x_list_del)
+                        deleted_mask_list.append(replace_mask)
 
-                        for _ in range(compare_deletion_num):
-                            indice_delete_random.append(len(new_batches))
-                            x_list, delete_mask = sample_deleter(sample_size(), None, data_loader.convert_indice_in,
-                                                              x0[i], x1[i], x2[i])
-                            new_batches.append(x_list)
-                            deleted_mask_list.append(delete_mask)
+                        indice_delete_random.append(len(new_batches))
+                        new_batches.append(x_list_replace)
+                        deleted_mask_list.append(replace_mask)
 
-                        info['indice_delete_random'] = indice_delete_random
-                        instance_infos.append(info)
+
+                    info['indice_delete_random'] = indice_delete_random
+                    instance_infos.append(info)
                 return new_batches, instance_infos, deleted_mask_list
 
             ## Step 1) Prepare deletion RUNS
@@ -2789,7 +2963,7 @@ class Experiment:
             if not new_batches:
                 return
             ## Step 2) Execute deletion Runs
-            alt_ex_logits = fetch_confs(new_batches)
+            alt_logits = forward_runs(new_batches)
 
             def reinforce_one(good_action, input_x):
                 pos_reward_indice = np.int_(good_action)
@@ -2800,44 +2974,57 @@ class Experiment:
 
             reinforce = reinforce_one
 
-
-            def action_score_pr(pr_mark, before_ex1, after_ex1, action):
+            s1_win = 0
+            s2_win = 0
+            def action_score_pr(pr_mark, before_logits, delete_logits, replace_logits, action):
                 num_tag = np.count_nonzero(action)
                 penalty = (num_tag - 4) * 0.1 if num_tag > 3 else 0
 
-                score = 0
-                for index in pr_mark:
-                    score += before_ex1[index] - after_ex1[index]
-                score -= penalty
-                return score
+                s1 = replace_logits[0] - before_logits[0]
+                s2 = replace_logits[0] - delete_logits[0]
 
+                score = max(s1, s2)
+                nonlocal s1_win, s2_win
+                if s1 > s2 :
+                    s1_win += 1
+                elif s2 > s1:
+                    s2_win += 1
+                return score - penalty
 
-            def select_best(alt_ex_logits, instance_infos, deleted_mask_list):
+            def select_best(alt_logits, instance_infos, deleted_mask_list):
                 models_score_list = []
                 reinforce_payload_list = []
                 num_tag_list = []
                 pos_win = 0
                 pos_trial = 0
                 for info in instance_infos:
-                    init_ex_logit = info['init_conf']
-                    models_after_ex_logits = alt_ex_logits[info['idx_delete_tagged']]
+                    init_logit = info['init_logits']
+                    models_delete_logits = alt_logits[info['idx_delete_tagged']]
+                    models_replace_logits = alt_logits[info['idx_delete_tagged']+1]
                     input_x = info['orig_input']
                     pr_mark = info['pr_mark'] # list[index]
 
                     predicted_action = deleted_mask_list[info['idx_delete_tagged']]
                     num_tag = np.count_nonzero(predicted_action)
                     num_tag_list.append(num_tag)
-                    models_score = action_score_pr(pr_mark, init_ex_logit, models_after_ex_logits, predicted_action)
+                    models_score = action_score_pr(pr_mark, init_logit, models_delete_logits, models_replace_logits, predicted_action)
                     models_score_list.append(models_score)
                     #self.log2.debug(
                     #    "target_ce_drop : {0:.4f}  n_token : {1}".format(target_ce_drop, num_tag))
 
                     good_action = predicted_action
                     best_score = models_score
-                    for idx_delete_random in info['indice_delete_random']:
-                        alt_after_ex_logits = alt_ex_logits[idx_delete_random]
+
+                    alt_run_indice = info['indice_delete_random']
+                    n_runs = len(alt_run_indice)
+                    assert n_runs % 2 == 0
+                    for i in range(0, n_runs, 2):
+                        idx_delete_random = info['indice_delete_random'][i]
+                        idx_replace_random = info['indice_delete_random'][i]
+                        delete_logits = alt_logits[idx_delete_random]
+                        replace_logits = alt_logits[idx_replace_random]
                         random_action = deleted_mask_list[idx_delete_random]
-                        alt_score = action_score_pr(pr_mark, init_ex_logit, alt_after_ex_logits, random_action)
+                        alt_score = action_score_pr(pr_mark, init_logit, delete_logits, replace_logits, random_action)
                         if alt_score > best_score :
                             best_score = alt_score
                             good_action = random_action
@@ -2850,37 +3037,184 @@ class Experiment:
 
                 match_rate = pos_win / pos_trial
                 avg_score = average(models_score_list)
+                self.log.debug(" s1_win/s2_win = {}/{}".format(s1_win, s2_win))
                 self.log.debug("[PR] drop score : {0:.4f}  suc_rate : {1:0.2f}".format(avg_score, match_rate))
                 summary.value.add(tag='#Tags_PR', simple_value=average(num_tag_list))
                 summary.value.add(tag='Score_PR', simple_value=avg_score)
                 summary.value.add(tag='Success_PR', simple_value=match_rate)
                 return reinforce_payload_list
 
-            reinforce_payload = select_best(alt_ex_logits, instance_infos, deleted_mask_list)
+            reinforce_payload = select_best(alt_logits, instance_infos, deleted_mask_list)
 
 
             def commit_reward(reinforce_payload):
                 batches = get_batches_ex(reinforce_payload, self.hparam.batch_size, 5)
-                pr_loss_list = []
+                rl_loss_list = []
                 for batch in batches:
                     x0, x1, x2, y, loss_mask = batch
-                    _, pr_loss, = self.sess.run([train_pr, task.pr_loss,
+                    _, rl_loss, = self.sess.run([train_rl, task.rl_loss,
                                                                                 ],
                                             feed_dict={
                                                 task.x_list[0]: x0,
                                                 task.x_list[1]: x1,
                                                 task.x_list[2]: x2,
                                                 task.y : y,
-                                                task.pr_mask : loss_mask,
+                                                task.rf_mask : loss_mask,
                                             })
-                    pr_loss_list.append(pr_loss)
-                return average(pr_loss_list)
+                    rl_loss_list.append(rl_loss)
+                return average(rl_loss_list)
 
             avg_rl_loss = commit_reward(reinforce_payload)
 
             summary.value.add(tag='PR_Loss', simple_value=avg_rl_loss)
             self.train_writer.add_summary(summary, self.g_step)
             self.train_writer.flush()
+
+
+        def train_explain_with_addition_neutral(batch_c, step_i):
+            summary = tf.Summary()
+            def sample_size():
+                prob = [(1,0.8), (2,0.2)]
+                v = random.random()
+                for n, p in prob:
+                    v -= p
+                    if v < 0:
+                        return n
+                return 1
+
+            def generate_alt_runs(batch):
+                logits, ex_logit = self.sess.run([task.sout, task.conf_logits,
+                                                  ],
+                                                 feed_dict=batch2feed_dict(batch)
+                                                 )
+                x0, x1, x2, y = batch
+                pred = np.argmax(logits, axis=1)
+                compare_deletion_num = 30
+                instance_infos = []
+                new_batches = []
+                deleted_mask_list = []
+                for i in range(len(logits)):
+                    if pred[i] == target_class:
+                        info = {}
+                        info['init_logits'] = logits[i]
+                        info['orig_input'] = (x0[i], x1[i], x2[i], y[i])
+                        pr_tags = top_1_as_mask(ex_logit[i])
+                        self.log2.debug("pr_scores : {}".format(numpy_print(ex_logit[i])))
+
+                        indice_delete_random = []
+
+                        for _ in range(compare_deletion_num):
+                            #x_list, delete_mask = sample_deleter(sample_size(), None, data_loader.convert_indice_in,
+                                                              #x0[i], x1[i], x2[
+                            x_list_del, delete_mask = sample_deleter(sample_size(), None, data_loader.convert_indice_in,
+                                                              x0[i], x1[i], x2[i])
+
+                            indice_delete_random.append(len(new_batches))
+                            new_batches.append(x_list_del)
+                            deleted_mask_list.append(delete_mask)
+
+                            x_list_add, src_mask = add_seq_hypo2prem(x0[i], x1[i], x2[i])
+                            indice_delete_random.append(len(new_batches))
+                            new_batches.append(x_list_add)
+                            deleted_mask_list.append(src_mask)
+
+                        info['indice_delete_random'] = indice_delete_random
+                        instance_infos.append(info)
+                return new_batches, instance_infos, deleted_mask_list
+
+            ## Step 1) Prepare deletion RUNS
+            new_batches, instance_infos, deleted_mask_list = generate_alt_runs(batch_c)
+
+            if not new_batches:
+                return
+            ## Step 2) Execute deletion Runs
+            alt_logits = forward_runs(new_batches)
+
+            def reinforce_one(good_action, input_x):
+                pos_reward_indice = np.int_(good_action)
+                loss_mask = -pos_reward_indice + np.ones_like(pos_reward_indice) * 0.5
+                x0,x1,x2,y = input_x
+                reward_payload = (x0, x1, x2, y, loss_mask)
+                return reward_payload
+
+            reinforce = reinforce_one
+
+            s1_win = 0
+            s2_win = 0
+            def action_score(before_logits, alt_logits, action):
+                num_tag = np.count_nonzero(action)
+                penalty = (num_tag - 4) * 0.07 if num_tag > 3 else 0
+                score = (before_logits[1] - alt_logits[1])
+                return score - penalty
+
+            def select_best(alt_logits, instance_infos, deleted_mask_list):
+                models_score_list = []
+                reinforce_payload_list = []
+                num_tag_list = []
+                for info in instance_infos:
+                    init_logit = info['init_logits']
+                    input_x = info['orig_input']
+
+                    good_action = None
+                    best_score = -999
+
+                    alt_run_indice = info['indice_delete_random']
+                    n_runs = len(alt_run_indice)
+                    assert n_runs % 2 == 0
+                    best_i = 0
+                    for i in range(0, n_runs):
+                        idx_alt = info['indice_delete_random'][i]
+                        alt_logit = alt_logits[idx_alt]
+                        alt_action = deleted_mask_list[idx_alt]
+
+                        alt_score = action_score(init_logit, alt_logit, alt_action)
+                        if alt_score > best_score :
+                            best_score = alt_score
+                            good_action = alt_action
+                            best_i = i
+
+                    nonlocal s1_win, s2_win
+                    if best_i % 2 == 0:
+                        s1_win += 1
+                    else:
+                        s2_win += 1
+                    reward_payload = reinforce(good_action, input_x)
+                    reinforce_payload_list.append(reward_payload)
+
+                avg_score = average(models_score_list)
+                self.log.debug(" s1_win/s2_win = {}/{}".format(s1_win, s2_win))
+                self.log.debug("[PR] drop score : {0:.4f}".format(avg_score))
+                summary.value.add(tag='#Tags_PR', simple_value=average(num_tag_list))
+                summary.value.add(tag='Score_PR', simple_value=avg_score)
+                return reinforce_payload_list
+
+            reinforce_payload = select_best(alt_logits, instance_infos, deleted_mask_list)
+
+
+            def commit_reward(reinforce_payload):
+                batches = get_batches_ex(reinforce_payload, self.hparam.batch_size, 5)
+                rl_loss_list = []
+                for batch in batches:
+                    x0, x1, x2, y, loss_mask = batch
+                    _, rl_loss, = self.sess.run([train_rl, task.rl_loss,
+                                                                                ],
+                                            feed_dict={
+                                                task.x_list[0]: x0,
+                                                task.x_list[1]: x1,
+                                                task.x_list[2]: x2,
+                                                task.y : y,
+                                                task.rf_mask : loss_mask,
+                                            })
+                    rl_loss_list.append(rl_loss)
+                return average(rl_loss_list)
+
+            avg_rl_loss = commit_reward(reinforce_payload)
+
+            summary.value.add(tag='PR_Loss', simple_value=avg_rl_loss)
+            self.train_writer.add_summary(summary, self.g_step)
+            self.train_writer.flush()
+
+
 
         def train_classification(batch, step_i):
             loss_val, summary, acc,  _ = self.sess.run([task.loss, self.merged, task.acc, train_cls,
@@ -2894,12 +3228,16 @@ class Experiment:
 
         def train_fn(batch, step_i):
             batch_c, batch_info = batch
-            mark_loc, mark_batch = sample_target_mask(batch_c)
-            loss_val, acc = train_classification(mark_batch, step_i)
-            if step_i %2 == 0 :
-                train_explain(mark_batch, batch_info, step_i)
-                if method == PAIRING_NLI:
-                    train_pairing(mark_batch, mark_loc, step_i)
+            if method == PAIRING_NLI:
+                mark_loc, mark_batch = sample_target_mask(batch_c)
+                loss_val, acc = train_classification(mark_batch, step_i)
+                train_pairing(mark_batch, mark_loc, step_i)
+            #elif explain_tag == 'mismatch':
+            #    loss_val, acc = train_classification(batch_c, step_i)
+            #    train_explain_with_addition_neutral(batch_c, step_i)
+            else:
+                loss_val, acc = train_classification(batch_c, step_i)
+                train_explain(batch_c, batch_info, step_i)
             self.g_step += 1
             return loss_val, acc
 
@@ -2919,10 +3257,11 @@ class Experiment:
 
 
         def valid_fn():
-            eval_tag()
             eval_acc()
             if method == PAIRING_NLI:
                 eval_pair()
+            else:
+                eval_tag()
 
         def save_fn():
             self.save_model(exp_config.name, 1)
@@ -2977,44 +3316,149 @@ class Experiment:
             for metric in scores.keys():
                 print("{}\t{}".format(metric, scores[metric]))
         eval()
-        conf_logit_list = []
-        batches = get_batches_ex(enc_explain_dev, self.hparam.batch_size, 3)
-        logit_list = []
-        for batch in batches:
-            x0, x1, x2 = batch
+        train_batches, train_batches_info, dev_batches = self.load_nli_data_with_info(data_loader)
+
+        result = []
+        #batches = get_batches_ex(enc_explain_dev, self.hparam.batch_size, 3)
+        for batch in dev_batches[20:100]:
+            x0, x1, x2, y = batch
             logits, conf_logit = self.sess.run([task.sout, task.conf_logits],
                                                feed_dict={
                                                    task.x_list[0]: x0,
                                                    task.x_list[1]: x1,
                                                    task.x_list[2]: x2,
                                                })
-            conf_logit_list.append(conf_logit)
-            logit_list.append(logits)
-        conf_logit = np.concatenate(conf_logit_list)
-        logits = np.concatenate(logit_list)
-        predictions = logits.argmax(axis=1)
+            predictions = logits.argmax(axis=1)
 
-        l_suc = []
-        l_fail = []
-        for idx, entry in enumerate(explain_dev):
 
-            conf_p, conf_h = data_loader.split_p_h(conf_logit[idx], enc_explain_dev[idx])
-            #prem, hypo, p_indice, h_indice = entry
-            input_ids = enc_explain_dev[idx][0]
-            p_enc, h_enc = data_loader.split_p_h(input_ids, enc_explain_dev[idx])
-            p_tokens = data_loader.encoder.decode_list(p_enc)
-            h_tokens = data_loader.encoder.decode_list(h_enc)
-            if predictions[idx] == target_class:
-                l_suc.append((conf_p, conf_h, p_tokens, h_tokens))
+            for idx in range(len(x0)):
+                input_ids = x0[idx]
+                conf_p, conf_h = data_loader.split_p_h_with_input_ids(conf_logit[idx], input_ids)
+                #prem, hypo, p_indice, h_indice = entry
+
+                p_enc, h_enc = data_loader.split_p_h_with_input_ids(input_ids, input_ids)
+                p_tokens = data_loader.encoder.decode_list(p_enc)
+                h_tokens = data_loader.encoder.decode_list(h_enc)
+                result.append((conf_p, conf_h, p_tokens, h_tokens, predictions[idx], y[idx]))
+
+        #save_to_pickle(result, exp_config.name)
+        visualize.visualize(result, exp_config.name)
+        #visualize.word_stat(result, exp_config.name)
+        #visualize.make_explain_sentence(result, exp_config.name)
+
+
+
+    def nli_visualization_pairing(self, nli_setting, exp_config, data_loader, preload_id):
+        print("nli_visualization_pairing")
+        task = transformer_nli(self.hparam, nli_setting.vocab_size, 6, False)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            if exp_config.load_names :
+                self.load_model_white(name, id, exp_config.load_names)
             else:
-                print("{} Fail : {}".format(idx, logits[idx]))
-                l_fail.append((conf_p, conf_h, p_tokens, h_tokens))
+                assert False
 
-        print(" suc/fail = {} / {} ".format(len(l_suc), len(l_fail)))
-        result = l_suc + l_fail
+        train_batches, train_batches_info, dev_batches = self.load_nli_data_with_info(data_loader)
+
+        def sample_target_mask(batch):
+            x0, x1, x2, y = batch
+
+            def sample_it(input_ids, segment_ids):
+                num_mark = 1
+                length = len(segment_ids)
+                last_valid = 0
+                for i in range(length):
+                    if segment_ids[i] > 0:
+                        last_valid = i
+
+                def sample_len():
+                    l = 1
+                    v = random.random()
+                    while v < 0.25 and l < length:
+                        l = l * 2
+                    return min(l, length)
+
+                indice = []
+                for i in range(num_mark):
+                    mark_len = sample_len()
+                    start_idx = pick1(range(last_valid))
+                    while input_ids[start_idx] == SEP_ID or input_ids[start_idx] == CLS_ID:
+                        start_idx = pick1(range(last_valid))
+                    end_idx = min(start_idx + mark_len, last_valid)
+
+                    begin_segment_id = segment_ids[start_idx]
+                    for idx in range(start_idx, end_idx):
+                        if segment_ids[idx] != begin_segment_id:
+                            break
+                        if input_ids[idx] == SEP_ID:
+                            break
+                        indice.append(idx)
+
+                for idx in indice:
+                    segment_ids[idx] = ENLIDef.get_segment_marker(segment_ids[idx])
+
+                return indice, segment_ids
+
+            n_inst = len(batch)
+            indice_list = []
+            marked_inputs = []
+            for i in range(n_inst):
+                indice, x2_new = sample_it(x0[i], x2[i])
+                marked_inputs.append((x0[i], x1[i], x2_new, y[i]))
+                indice_list.append(indice)
+
+            mark_batches = get_batches_ex(marked_inputs, self.hparam.batch_size, 4)
+            return indice_list, mark_batches[0]
+
+        result = []
+        #batches = get_batches_ex(enc_explain_dev, self.hparam.batch_size, 3)
+        for batch in dev_batches[20:100]:
+
+            indice_list, mark_batch = sample_target_mask(batch)
+            x0, x1, x2, y = mark_batch
+            logits, conf_logit = self.sess.run([task.sout, task.conf_logits],
+                                               feed_dict={
+                                                   task.x_list[0]: x0,
+                                                   task.x_list[1]: x1,
+                                                   task.x_list[2]: x2,
+                                               })
+            predictions = logits.argmax(axis=1)
+
+            print(self.hparam.batch_size)
+            print(len(indice_list))
+            print(len(x0))
+
+            for idx in range(len(x0)):
+                input_ids = x0[idx]
+                conf_p, conf_h = data_loader.split_p_h_with_input_ids(conf_logit[idx], input_ids)
+                #prem, hypo, p_indice, h_indice = entry
+
+                p_enc, h_enc = data_loader.split_p_h_with_input_ids(input_ids, input_ids)
+                p_tokens = data_loader.encoder.decode_list(p_enc)
+                h_tokens = data_loader.encoder.decode_list(h_enc)
+
+                if indice_list[idx][0] < len(p_tokens) + 1:
+                    conf_p = np.zeros_like(conf_p)
+                    for j in indice_list[idx]:
+                        conf_p[j-1] = 1
+                    conf_h = conf_h
+                else: ## Mark was hypothesis
+                    conf_p = conf_p
+                    conf_h = np.zeros_like(conf_h)
+                    offset = len(p_tokens) + 2
+                    for j in indice_list[idx]:
+                        conf_h[j-offset] = 1
+
+                    result.append((conf_p, conf_h, p_tokens, h_tokens, predictions[idx], y[idx]))
+
         save_to_pickle(result, exp_config.name)
         visualize.visualize(result, exp_config.name)
-        visualize.make_explain_sentence(result, exp_config.name)
+        #visualize.make_explain_sentence(result, exp_config.name)
+
+
 
     def eval_fidelity(self, nli_setting, exp_config, data_loader, preload_id, explain_tag):
         method = 1
@@ -3112,6 +3556,89 @@ class Experiment:
 
         for num_delete in sorted(acc_list.keys()):
             print("{}\t{}".format(num_delete, acc_list[num_delete]))
+
+
+
+    def eval_fidelity_gradient(self, nli_setting, exp_config, data_loader, preload_id, explain_tag):
+        print("eval_fidelity_gradient")
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+
+
+        target_class = ENLIDef.get_target_class(explain_tag)
+
+        train_batches, train_batches_info, dev_batches = self.load_nli_data_with_info(data_loader)
+        def batch2feed_dict(batch):
+            x0, x1, x2, y = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+
+        def forward_runs(insts):
+            alt_batches = get_batches_ex(insts, self.hparam.batch_size, 3)
+            alt_logits = []
+            for batch in alt_batches:
+                x0, x1, x2 = batch
+                enc, att = self.sess.run(emb_outputs, feed_dict=feed_end_input(batch))
+
+                logits, = self.sess.run([task.sout, ],
+                                               feed_dict={
+                                                task.encoded_embedding_in: enc,
+                                                task.attention_mask_in: att
+                                               })
+
+                alt_logits.append(logits)
+            alt_logits = np.concatenate(alt_logits)
+            return alt_logits
+
+        def flatten_filter_batches(batches, target_class):
+            output = []
+            for batch in batches:
+                x0, x1, x2, y = batch
+                for i in range(len(x0)):
+                    if y[i] == target_class:
+                        output.append((x0[i], x1[i], x2[i]))
+            return output
+
+        flat_dev_batches = flatten_filter_batches(dev_batches, target_class)[:320]
+
+        from attribution.gradient import explain_by_gradient
+        self.sess = self.init_sess()
+        from attribution.deepexplain.tensorflow import DeepExplain
+        with DeepExplain(session=self.sess, graph=self.sess.graph) as de:
+            task = transformer_nli_embedding_in(self.hparam, nli_setting.vocab_size, False)
+            self.sess.run(tf.global_variables_initializer())
+            self.load_model_white2(preload_id, exp_config.load_names)
+
+            emb_outputs = task.encoded_embedding_out, task.attention_mask_out
+            emb_input = task.encoded_embedding_in, task.attention_mask_in
+            softmax_out = task.sout
+            def feed_end_input(batch):
+                x0, x1, x2 = batch
+                return {task.x_list[0]:x0,
+                        task.x_list[1]:x1,
+                        task.x_list[2]:x2,
+                        }
+
+
+            #enc_explain_dev, explain_dev = data_loader.get_dev_explain(explain_tag)
+
+            contrib_method = "grad*input"
+
+            contrib_score = explain_by_gradient(flat_dev_batches, contrib_method, explain_tag, self.sess, de,
+                                           feed_end_input, emb_outputs, emb_input, softmax_out)
+
+            acc_list = eval_fidelity(contrib_score, flat_dev_batches, forward_runs, explain_tag)
+
+            print(contrib_method)
+            for num_delete in sorted(acc_list.keys()):
+                print("{}\t{}".format(num_delete, acc_list[num_delete]))
+
 
 
 

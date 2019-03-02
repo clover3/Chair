@@ -11,7 +11,7 @@ def eval_explain(conf_score, data_loader, tag):
 
 
 def eval_pairing(pair_logits_p, pair_logits_h, data_loader, enc_list, pair_infos):
-    max_k = 30
+    max_k = 9999
     pred_list = []
     gold_list = []
     for idx, entry in enumerate(pair_infos):
@@ -42,9 +42,8 @@ def eval_pairing(pair_logits_p, pair_logits_h, data_loader, enc_list, pair_infos
             if v_i not in p_set:
                 h_explain.append((score, v_i))
                 p_set.add(v_i)
-
         pred_list.append((p_explain, h_explain))
-        gold_list.append((p_indice, h_indice))
+        gold_list.append((h_indice, p_indice))  # p_explain should be matched to p_indice
 
     p1_p, p1_h = p_at_k_list_ind(pred_list, gold_list, 1)
     # p_at_20 = p_at_k_list(pred_list, gold_list, 20)
@@ -59,9 +58,42 @@ def eval_pairing(pair_logits_p, pair_logits_h, data_loader, enc_list, pair_infos
     }
     return scores_p, scores_h
 
+def predict_translate(conf_score, data_loader, enc_payload, plain_payload):
+    max_k = 999
+    pred_list = []
+    for idx, entry in enumerate(plain_payload):
+        conf_p, conf_h = data_loader.split_p_h(conf_score[idx], enc_payload[idx])
+        prem, hypo = entry
+        input_ids = enc_payload[idx][0]
+        p_enc, h_enc = data_loader.split_p_h(input_ids, enc_payload[idx])
+        p_explain = []
+        h_explain = []
+
+        p_set = set()
+        for i in top_k_idx(conf_p, max_k):
+            # Convert the index of model's tokenization into space tokenized index
+            v_i = data_loader.convert_index_out(prem, p_enc, i)
+            score = conf_p[i]
+
+            if v_i not in p_set:
+                p_explain.append((score, v_i))
+                p_set.add(v_i)
+
+        h_set = set()
+        for i in top_k_idx(conf_h, max_k):
+            v_i = data_loader.convert_index_out(hypo, h_enc, i)
+            score = conf_h[i]
+
+            if v_i not in h_set:
+                h_explain.append((score, v_i))
+                h_set.add(v_i)
+
+        pred_list.append((p_explain, h_explain))
+    return pred_list
+
 def eval_explain_1(conf_score, data_loader, tag):
     enc_explain_dev, explain_dev = data_loader.get_dev_explain_1(tag)
-    max_k = 30
+    max_k = 999
     pred_list = []
     gold_list = []
     for idx, entry in enumerate(explain_dev):
@@ -125,7 +157,18 @@ def eval_explain_1(conf_score, data_loader, tag):
             "MAP_h": MAP_h,
         }
         return scores
-
+    elif tag == 'mismatch':
+        p1_p, p1_h = p_at_k_list_ind(pred_list, gold_list, 1)
+        #p_at_20 = p_at_k_list(pred_list, gold_list, 20)
+        p_auc, h_auc = PR_AUC_ind(pred_list, gold_list)
+        MAP_score = MAP(pred_list, gold_list)
+        MAP_p, MAP_h = MAP_ind(pred_list, gold_list)
+        scores = {
+            "P@1": p1_h,
+            "AUC": h_auc,
+            "MAP":MAP_h,
+        }
+        return scores
 
 def eval_explain_0(conf_score, data_loader):
     enc_explain_dev, explain_dev = data_loader.get_dev_explain_0()

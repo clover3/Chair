@@ -5,6 +5,8 @@ from time import gmtime, strftime
 import random
 
 def average(l):
+    if len(l) == 0:
+        return 0
     return sum(l) / len(l)
 
 
@@ -130,3 +132,19 @@ def pair_shuffle(l):
         result.append(a)
         result.append(b)
     return result
+
+
+class MovingWindow:
+    def __init__(self, window_size):
+        self.window_size = window_size
+        self.history = []
+
+    def append(self, average, n_item):
+        all_span = self.history + [average] * n_item
+        self.history = all_span[-self.window_size:]
+
+    def get_average(self):
+        if not self.history:
+            return 0
+        else:
+            return average(self.history)

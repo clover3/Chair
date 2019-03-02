@@ -22,9 +22,9 @@ class transformer_nli:
         input_mask = tf.placeholder(tf.int64, [None, seq_length])
         segment_ids = tf.placeholder(tf.int64, [None, seq_length])
         label_ids = tf.placeholder(tf.int64, [None])
-        if method in [0,1,3,4,6]:
+        if method in [0,1,3,4,5,6]:
             self.rf_mask = tf.placeholder(tf.float32, [None, seq_length])
-        elif method in [2,5]:
+        elif method in [2]:
             self.rf_mask = tf.placeholder(tf.int32, [None, seq_length])
 
         self.x_list = [input_ids, input_mask, segment_ids]
@@ -61,12 +61,11 @@ class transformer_nli:
         elif method == 1:
             cl = tf.layers.dense(self.model.get_sequence_output(), 1, name="aux_conflict")
             cl = tf.reshape(cl, [-1, seq_length])
-            #cl = tf.nn.sigmoid(cl)
             cl = tf.contrib.layers.layer_norm(cl)
             self.conf_logits = cl
-            rl_loss_list = tf_module.cossim(cl, self.rf_mask)
+            #rl_loss_list = tf_module.cossim(cl, self.rf_mask)
             #self.pkc = self.conf_logits * self.rf_mask
-            #rl_loss_list = tf.reduce_sum(self.conf_logits * self.rf_mask , axis=1)
+            rl_loss_list = tf.reduce_sum(self.conf_logits * self.rf_mask , axis=1)
             self.rl_loss = tf.reduce_mean(rl_loss_list)
         elif method == 2:
             cl = tf.layers.dense(self.model.get_sequence_output(), 2, name="aux_conflict")
@@ -96,32 +95,34 @@ class transformer_nli:
         elif method == 5:
             cl = tf.layers.dense(self.model.get_sequence_output(), 1, name="aux_conflict")
             cl = tf.reshape(cl, [-1, seq_length])
-            cl = tf.contrib.layers.layer_norm(cl)
+            #cl = tf.contrib.layers.layer_norm(cl)
             self.conf_logits = cl
             self.labels = tf.cast(tf.greater(self.rf_mask, 0), tf.float32)
-            self.rl_loss = tf.reduce_mean(tf_module.correlation_coefficient_loss(cl, self.labels))
+            self.rl_loss = tf.reduce_mean(tf_module.correlation_coefficient_loss(cl, -self.rf_mask))
             print(self.rl_loss.shape)
         elif method == 6:
-            cl1 = tf.layers.dense(self.model.get_sequence_output(), hp.hidden_units, name="aux_conflict1")
-            cl = tf.layers.dense(cl1, 1, name="aux_conflict2")
+            cl = tf.layers.dense(self.model.get_sequence_output(), 1, name="aux_conflict")
+            #cl = tf.layers.dense(cl1, 1, name="aux_conflict2")
             cl = tf.reshape(cl, [-1, seq_length])
             #cl = tf.nn.sigmoid(cl)
-            cl = tf.contrib.layers.layer_norm(cl)
+            #cl = tf.contrib.layers.layer_norm(cl)
             self.conf_logits = cl
-            rl_loss_list = tf.reduce_sum(self.conf_logits * self.rf_mask , axis=1)
-            self.rl_loss = tf.reduce_mean(rl_loss_list)
-            with tf.device("/device:GPU:1"):
-                pl = tf.layers.dense(self.model.get_sequence_output(), hp.hidden_units, name="aux_pairing1")
-                pl = tf.layers.dense(pl, 1, name="aux_pairing2")
-                pl = tf.reshape(pl, [-1, seq_length])
-                pl = tf.contrib.layers.layer_norm(pl)
-                self.pair_logits = pl
-                self.pr_mask = tf.placeholder(tf.float32, [None, seq_length])
-                labels = tf.greater(self.pr_mask, 0)
-                hinge_losses = tf.losses.hinge_loss(labels, self.pair_logits)
-                pr_loss_list = tf.reduce_sum(self.pair_logits * self.pr_mask, axis=1)
-                pr_loss_list = hinge_losses
-                self.pr_loss = tf.reduce_mean(pr_loss_list)
+            #rl_loss_list = tf.reduce_sum(self.conf_logits * self.rf_mask , axis=1)
+            self.rl_loss = tf.reduce_mean(tf_module.correlation_coefficient_loss(cl, -self.rf_mask))
+
+#            self.rl_loss = tf.reduce_mean(rl_loss_list)
+            #with tf.device("/device:GPU:1"):
+            #    pl = tf.layers.dense(self.model.get_sequence_output(), hp.hidden_units, name="aux_pairing1")
+            #    pl = tf.layers.dense(pl, 1, name="aux_pairing2")
+            #    pl = tf.reshape(pl, [-1, seq_length])
+            #    pl = tf.contrib.layers.layer_norm(pl)
+            #    self.pair_logits = pl
+            #    self.pr_mask = tf.placeholder(tf.float32, [None, seq_length])
+            #    labels = tf.greater(self.pr_mask, 0)
+            #    #hinge_losses = tf.losses.hinge_loss(labels, self.pair_logits)
+            #    pr_loss_list = tf.reduce_sum(self.pair_logits * self.pr_mask, axis=1)
+            #    #pr_loss_list = hinge_losses
+            #    self.pr_loss = tf.reduce_mean(pr_loss_list)
 
 
 

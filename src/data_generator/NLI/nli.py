@@ -62,7 +62,7 @@ class DataLoader:
     def get_dev_explain(self, target):
         if target == 'conflict':
             return self.get_dev_explain_0()
-        elif target == 'match':
+        elif target == 'match' or target == 'mismatch':
             return self.get_dev_explain_1(target)
         else:
             assert False
@@ -130,6 +130,21 @@ class DataLoader:
             encoded_data = list([entry2inst(entry) for entry in explain_data])
             self.dev_explain_1 = encoded_data, explain_data
         return self.dev_explain_1
+
+    def get_test_data(self, data_id):
+        if data_id.startswith("test_"):
+            NotImplemented
+        else:
+            if data_id == 'conflict':
+                data = self.get_dev_explain_0()
+                encoded_data, explain_data = data
+                plain_data = list([(entry['p'], entry['h']) for entry in explain_data])
+            elif data_id == 'match':
+                data = self.get_dev_explain('match')
+                encoded_data, explain_data = data
+                plain_data = list([(entry[0], entry[1]) for entry in explain_data])
+
+        return encoded_data, plain_data
 
     # enc_explain_dev = list[ input_ids, input_mask, segment_ids]
     # explain_dev = list[prem, hypo, p_indice, h_indice]
@@ -264,6 +279,10 @@ class DataLoader:
     @staticmethod
     def split_p_h(np_arr, input_x):
         input_ids, _, seg_idx = input_x
+        return DataLoader.split_p_h_with_input_ids(np_arr, input_ids)
+
+    @staticmethod
+    def split_p_h_with_input_ids(np_arr, input_ids):
 
         for i in range(len(input_ids)):
             if input_ids[i] == SEP_ID:
@@ -271,10 +290,10 @@ class DataLoader:
                 break
 
         p = np_arr[1:idx_sep1]
-        for i in range(idx_sep1+1, len(input_ids)):
+        for i in range(idx_sep1 + 1, len(input_ids)):
             if input_ids[i] == SEP_ID:
                 idx_sep2 = i
-        h = np_arr[idx_sep1+1:idx_sep2]
+        h = np_arr[idx_sep1 + 1:idx_sep2]
         return p, h
 
     def encode(self, text_a, text_b):
@@ -471,7 +490,7 @@ def translate_index(parse_tokens, subword_tokens, indice):
 
 
 def load_nli_explain():
-    path = os.path.join(corpus_dir, "nli explain.csv")
+    path = os.path.join(corpus_dir, "conflict.csv")
     f = open(path, "r")
     reader = csv.reader(f, delimiter=',')
 
@@ -510,8 +529,8 @@ def load_nli_explain_1(name):
     indice_list = []
     for line in f:
         p_indice, h_indice = line.split(",")
-        p_indice = list([int(t) for t in p_indice.split(" ")])
-        h_indice = list([int(t) for t in h_indice.split(" ")])
+        p_indice = list([int(t) for t in p_indice.strip().split()])
+        h_indice = list([int(t) for t in h_indice.strip().split()])
         indice_list.append((p_indice, h_indice))
 
     def complement(source, whole):
@@ -556,6 +575,51 @@ def load_nli_explain_2(name_idx, name_text):
     indice_list = []
     for row in reader2:
         p_indice, h_indice = row[0], row[1]
+        p_indice = list([int(t) for t in p_indice.strip().split()])
+        h_indice = list([int(t) for t in h_indice.strip().split()])
+        indice_list.append((p_indice, h_indice))
+
+    texts_list = texts_list[:len(indice_list)]
+    debug = False
+    for (prem, hypo), (p_indice, h_indice) in zip(texts_list, indice_list):
+        p_tokens = prem.split()
+        h_tokens = hypo.split()
+        if debug:
+            print(len(p_tokens), len(p_indice),len(h_tokens), len(h_indice))
+            for idx in p_indice:
+                print(p_tokens[idx], end=" ")
+            print(" | ", end="")
+            for idx in range(len(p_tokens)):
+                if idx not in p_indice:
+                    print(p_tokens[idx], end=" ")
+            print("")
+            for idx in h_indice:
+                print(h_tokens[idx], end=" ")
+            print(" | ", end="")
+            for idx in range(len(h_tokens)):
+                if idx not in h_indice:
+                    print(h_tokens[idx], end=" ")
+            print("")
+        yield prem, hypo, p_indice, h_indice
+
+
+def load_nli_explain_3(name_idx, name_text):
+    path_idx = os.path.join(corpus_dir, "{}.csv".format(name_idx))
+    path_text = os.path.join(corpus_dir, "{}.csv".format(name_text))
+
+    reader = csv.reader(open(path_text, "r"), delimiter=',')
+
+    texts_list = []
+    for row in reader:
+        premise = row[0]
+        hypothesis = row[1]
+        texts_list.append((premise, hypothesis))
+
+    reader2 = csv.reader(open(path_idx, "r"), delimiter=",")
+    indice_list = []
+    for row in reader2:
+        id = int(row[0])
+        p_indice, h_indice = row[1], row[2]
         p_indice = list([int(t) for t in p_indice.strip().split()])
         h_indice = list([int(t) for t in h_indice.strip().split()])
         indice_list.append((p_indice, h_indice))
@@ -659,5 +723,17 @@ def load_mnli_explain_0():
         })
     save_to_pickle(data, "mnli_explain")
     return data
+
+
+
+def reformat_mnli_explain_0():
+    data = load_mnli_explain_0()
+
+    text_list = []
+    indice_list = []
+
+    for entry in data:
+        text_list.append((entry['p'], entry['h']))
+        indice_list.append((entry['p_explain', 'h_explain']))
 
 

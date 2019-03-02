@@ -1,3 +1,4 @@
+from collections import Counter
 
 def make_explain_sentence(result, out_name):
     # For entailment, filter out tokens that are same across sentences.
@@ -79,6 +80,19 @@ def print_color_html(word, r):
     #    html = "<td>&nbsp;{}&nbsp;</td>".format(word)
     return html
 
+def print_color_html_2(word, raw_score):
+    r = int(raw_score * 30)
+    if r > 0:
+        r = 255 - r
+        bg_color = ("%02x" % r) + ("%02x" % r) + "ff"
+    else:
+        r = 255 + r
+        bg_color = "ff" + ("%02x" % r) + ("%02x" % r)
+
+    html = "<td bgcolor=\"#{}\">&nbsp;{}&nbsp;</td>".format(bg_color, word)
+    #    html = "<td>&nbsp;{}&nbsp;</td>".format(word)
+    return html
+
 def visualize(result, out_name):
     f = open("../{}.html".format(out_name), "w")
 
@@ -86,11 +100,13 @@ def visualize(result, out_name):
     f.write("<body>")
     f.write("<div width=\"400\">")
     for entry in result:
-        pred_p, pred_h, prem, hypo = entry
+        f.write("<div>\n")
+        pred_p, pred_h, prem, hypo, pred, y = entry
 
         #max_score = max(max(pred_p), max(pred_h))
         #min_score = min(min(pred_p), min(pred_h))
-
+        f.write("Pred : {} \n".format(pred))
+        f.write("Gold : {}<br>\n".format(y))
         f.write("<tr>")
         for display_name, tokens, scores in [("Premise", prem, pred_p), ("Hypothesis", hypo, pred_h)]:
             f.write("<td><b>{}<b></td>\n".format(display_name))
@@ -98,14 +114,17 @@ def visualize(result, out_name):
 
             max_score = max(scores)
             min_score = min(scores)
+            if max_score == min_score:
+                max_score = min_score + 3
             for i, token in enumerate(tokens):
                 print("{}({}) ".format(token, scores[i]), end="")
 
                 r = int((scores[i] - min_score) * 255 / (max_score - min_score))
-                if r > 100:
+                if scores[i] > 100:
                     r = 100
                 else:
                     r = 0
+                #f.write(print_color_html_2(token, scores[i]))
                 f.write(print_color_html(token, r))
             print()
             f.write("</tr>")
@@ -118,3 +137,34 @@ def visualize(result, out_name):
     f.write("</div>")
     f.write("</body>")
     f.write("</html>")
+
+
+
+def word_stat(result, out_name):
+    top_cnt = {
+        'Premise': Counter(),
+        'Hypothesis': Counter(),
+    }
+    for entry in result:
+        pred_p, pred_h, prem, hypo, pred, y = entry
+
+        #max_score = max(max(pred_p), max(pred_h))
+        #min_score = min(min(pred_p), min(pred_h))
+        if y == 2:
+            for display_name, tokens, scores in [("Premise", prem, pred_p), ("Hypothesis", hypo, pred_h)]:
+                best_score = -909
+                best_token = None
+                for i, token in enumerate(tokens):
+                    if scores[i] > best_score:
+                        best_score = scores[i]
+                        best_token = token
+
+                top_cnt[display_name][best_token] += 1
+
+
+    for display_name in ["Premise", "Hypothesis"]:
+        print(display_name)
+        total = sum(top_cnt[display_name].values())
+        for key, item in top_cnt[display_name].most_common(10):
+            print("{}\t{}\t{}".format(key, item, item/total))
+

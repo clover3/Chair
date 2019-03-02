@@ -128,6 +128,12 @@ def PR_AUC_ind(explains, golds):
         y_pred_list = []
         y_gold_list = []
         tie_break = 1
+
+        all_pred_set = set([e for _, e in pred])
+        for ge in gold:
+            if ge not in all_pred_set:
+                print("WARNING {} is not in {}".format(ge, all_pred_set))
+
         for score, e in pred:
             y_pred_list.append(score + tie_break)
             tie_break -= 0.01

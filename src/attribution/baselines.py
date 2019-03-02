@@ -70,6 +70,88 @@ def explain_by_deletion(data, target_tag, forward_run):
     return explains
 
 
+
+# forward_run :
+#  input : list of [x0,x1,x2]
+#  output: list of softmax val
+def explain_by_seq_deletion(data, target_tag, forward_run):
+    inputs = []
+    inputs_info = []
+    base_indice = []
+
+
+    for entry in data:
+        x0, x1, x2 = entry
+        base_case = entry
+        base_case_idx = len(inputs_info)
+        base_indice.append(base_case_idx)
+        inputs.append(base_case)
+
+        seq_len = len(x0)
+        real_len = get_real_len(x1, seq_len)
+        info = {
+            'base_case_idx': base_case_idx,
+            'type': 'base_run',
+            'seq_len' : seq_len,
+        }
+        inputs_info.append(info)
+
+        def sample_len():
+            l = 1
+            v = random.random()
+            while v < 0.25 and l < real_len:
+                l = l * 2
+            return min(l, real_len)
+
+        for _ in range(real_len):
+            mark_len = sample_len()
+            start_idx = pick1(range(real_len))
+            end_idx = min(start_idx + mark_len, real_len)
+
+            begin_segment_id = x2[start_idx]
+
+            mask = np.zeros([seq_len])
+            for idx in range(start_idx, end_idx):
+                if x2[idx+1] != begin_segment_id or x2[idx] != begin_segment_id:
+                    break
+                mask[idx] = 1
+
+            new_case = token_delete(mask, x0,x1,x2)
+            info = {
+                'base_case_idx': base_case_idx,
+                'type': 'mod',
+                'mod_mask': mask
+            }
+            inputs.append(new_case)
+            inputs_info.append(info)
+
+    logits_list = forward_run(inputs)
+    if target_tag == 'conflict':
+        logit_attrib_list = logits_list[:, 2] - logits_list[:, 0]
+    elif target_tag == 'match':
+        logit_attrib_list = logits_list[:, 2] + logits_list[:, 0] - logits_list[:, 1]
+
+    assert len(logits_list) == len(inputs)
+
+    explains = []
+    for case_idx in base_indice:
+        base_ce = logit_attrib_list[case_idx]
+        idx = case_idx + 1
+        seq_len = inputs_info[case_idx]['seq_len']
+        attrib_scores = np.zeros([seq_len]) - 100
+        while idx < len(inputs_info) and inputs_info[idx]['base_case_idx'] == case_idx:
+            after_ce = logit_attrib_list[idx]
+            diff_ce = base_ce - after_ce
+            score = diff_ce
+            mod_idx = inputs_info[idx]['mod_idx']
+            attrib_scores[mod_idx] = score
+            idx += 1
+
+        explains.append(attrib_scores)
+    return explains
+
+
+
 def explain_by_random(data, target_tag, forward_run):
     explains = []
 
@@ -186,7 +268,8 @@ class TreeDeletion:
                 delete_indice = mask2indice(delete_mask)
                 score = diff_ce - penalty(delete_indice)
                 for i in delete_indice:
-                    attrib_scores[i] = score
+                    if score > attrib_scores[i]:
+                        attrib_scores[i] = score
                 idx += 1
 
             explains.append(attrib_scores)

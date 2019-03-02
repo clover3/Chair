@@ -24,13 +24,20 @@ def explain_by_gradient(data, method_name, label_type, sess, de, feed_end_input,
         actual_len.append(real_len)
     seq_len = len(data[0][0])
 
+
+    T_attrib_list = []
+    for i in range(3):
+        T_attrib = de.prepare(method_name, softmax_output[:, i], stop, x_input, None, None)
+        T_attrib_list.append(T_attrib)
+
     def fetch_salience(batch):
         xi = get_emb(batch)
         stop_val = xi
 
         emb2logit_attribution =[]
         for i in range(3):
-            fl = de.explain(method_name, softmax_output[:, i], stop, x_input, xi, stop_val)
+            fl = de.explain_prepared(T_attrib_list[i], method_name, softmax_output[:, i], stop, x_input, xi, stop_val)
+    #        fl = de.explain(method_name, softmax_output[:, i], stop, x_input, xi, stop_val)
             # len(fl) == 1
             # fl has shape [-1, max_seq, emb_dim]
             emb2logit_attribution.append(fl[0])

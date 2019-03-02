@@ -153,7 +153,8 @@ def correlation_coefficient_loss(y_true, y_pred):
     my = tf.reduce_mean(y, axis=1, keep_dims=True)
     xm, ym = x-mx, y-my
     r_num = tf.reduce_sum(tf.multiply(xm,ym), axis=1, keep_dims=True)
-    r_den = tf.sqrt(tf.multiply(tf.reduce_sum(tf.square(xm), axis=1, keep_dims=True), tf.reduce_sum(tf.square(ym), axis=1, keep_dims=True)))
+    #r_den = tf.sqrt(tf.multiply(tf.reduce_sum(tf.square(xm), axis=1, keep_dims=True)), tf.reduce_sum(tf.square(ym), axis=1, keep_dims=True)))
+    r_den = tf.sqrt(tf.reduce_sum(tf.square(xm), axis=1, keep_dims=True))
     r = r_num / (r_den + 0.00000001)
     r = tf.maximum(tf.minimum(r, 1.0), -1.0)
     return -r

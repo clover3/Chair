@@ -16,6 +16,16 @@ def get_target_class(explain_tag):
     return target_class
 
 
+def get_target_class_set(explain_tag):
+    target_class = {
+        'conflict': [CONTRADICTION],
+        'match': [ENTAILMENT, CONTRADICTION, NEUTRAL],
+        'dontcare': ENTAILMENT,
+        'mismatch': [NEUTRAL],
+    }[explain_tag]
+    return target_class
+
+
 def get_segment_marker(segment_id):
     if segment_id == 0:
         return MARK_PREM
