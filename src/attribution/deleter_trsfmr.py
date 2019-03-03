@@ -273,6 +273,7 @@ def seq_delete(num_del, info, idx_trans_fn, x0, x1, x2):
         v = random.random()
         while v < 0.5 and l < length:
             l = l * 2
+            v = random.random()
         return min(l, length)
 
     indice = []

@@ -33,6 +33,7 @@ from data_generator.data_parser import controversy
 from data_generator.data_parser.robust import *
 import data_generator.adhoc.score_loader as score_loader
 import data_generator.NLI.enlidef as ENLIDef
+from data_generator.ubuntu import ubuntu
 from task.metrics import stance_f1
 from models.baselines import svm
 from models.transformer.tranformer_nli import transformer_nli, transformer_nli_embedding_in
@@ -1470,6 +1471,13 @@ class Experiment:
                                    valid_fn, valid_freq,
                                    save_fn, self.save_interval)
 
+        steps = int(len(train_batches) * 0.5)
+        loss, _ = step_runner(train_batches, train_fn,
+                               valid_fn, valid_freq,
+                               save_fn, self.save_interval,
+                              steps=steps)
+
+
     def nli_attribution_baselines(self, nli_setting, exp_config, data_loader, preload_id):
         print("attribution_explain")
         target = 'conflict'
@@ -1943,6 +1951,12 @@ class Experiment:
             loss, _ = epoch_runner(train_batches, train_ex_fn,
                                    valid_fn, valid_freq,
                                    save_fn, self.save_interval)
+
+        steps = int(len(train_batches) * 0.5)
+        loss, _ = step_runner(train_batches, train_ex_fn,
+                               valid_fn, valid_freq,
+                               save_fn, self.save_interval,
+                              steps=steps)
 
 
     # Refactored version of explain train
@@ -3639,8 +3653,127 @@ class Experiment:
             for num_delete in sorted(acc_list.keys()):
                 print("{}\t{}".format(num_delete, acc_list[num_delete]))
 
+    def gen_ubuntu_data(self, data_loader):
+
+        all_len = 12724
+        intervals = []
+        st = 0
+        while st < all_len:
+            ed = st + 500
+            intervals.append((st, ed))
+            st = ed
+
+        all_data = []
+        with ProcessPoolExecutor(max_workers=32) as executor:
+            future_list = []
+            for interval in intervals:
+                future = executor.submit(ubuntu.gen_ubuntu_data_part, interval)
+                future_list.append((interval, future))
+
+            for interval,future in future_list:
+                train_insts = future.result()
+                all_data += train_insts
+        save_to_pickle(all_data, "ubuntu_train")
 
 
+
+    def train_ubuntu(self, exp_config, data_loader, preload_id):
+        tprint("train_ubuntu")
+        task = transformer_adhoc(self.hparam, data_loader.voca_size)
+        with tf.variable_scope("optimizer"):
+            train_op = self.get_train_op(task.loss)
+        self.log.name = exp_config.name
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        batch_size = self.hparam.batch_size
+
+        tprint("Loading Model...")
+        self.load_model_white2(preload_id, exp_config.load_names)
+        tprint("Loading data...")
+        dev_data = data_loader.get_dev_data()
+        dev_runs, golds = data_loader.flatten_payload(dev_data)
+        dev_batches = get_batches_ex(dev_runs, self.hparam.batch_size, 3)
+
+        #train_data = data_loader.get_train_data()
+        #train_batches = get_batches_ex(train_data, self.hparam.batch_size, 3)
+        train_batches = load_from_pickle("ubuntu_train_batch16_0")
+
+        def valid_fn():
+            logits_all = []
+            for idx, batch in enumerate(dev_batches):
+                x0, x1, x2 = batch
+                feed_dict = {
+                    task.x_list[0]: x0,
+                    task.x_list[1]: x1,
+                    task.x_list[2]: x2,
+                }
+
+                logits, = self.sess.run([task.logits],
+                                                  feed_dict=feed_dict
+                                                  )
+
+                logits = np.reshape(logits, [-1])
+                logits_all += list(logits)
+
+            idx = 0
+            preds = []
+            for gold in golds:
+                inst_size = len(gold)
+                scores = logits_all[idx:idx+inst_size]
+                pred = np.flip(np.argsort(scores))
+                preds.append(pred)
+            map_score = MAP_rank(preds, golds)
+
+            self.log.info("Validation : map={0:.02f}".format(map_score))
+            summary = tf.Summary()
+            summary.value.add(tag='MAP', simple_value=map_score)
+            self.test_writer.add_summary(summary, self.g_step)
+            self.test_writer.flush()
+
+
+        def logits2acc(logits):
+            paired = np.reshape(logits, [-1, 2])
+            n = paired.shape[0]
+            acc = np.count_nonzero((paired[: ,1] - paired[:, 0]) > 0)
+            return acc / n
+
+        def train_fn(batch, step_i):
+            # normal train
+            loss_val, summary, logits, _= self.sess.run([task.loss, self.merged, task.logits, train_op],
+                                               feed_dict=batch2feed_dict(batch)
+                                               )
+            acc = logits2acc(logits)
+            self.log.debug("Step {0} train loss={1:.04f} acc={2:.02f}".format(step_i, loss_val, acc))
+            self.train_writer.add_summary(summary, self.g_step)
+            summary = tf.Summary()
+            summary.value.add(tag='acc', simple_value=acc)
+            self.train_writer.add_summary(summary, self.g_step)
+            self.train_writer.flush()
+            self.g_step += 1
+            return loss_val, 0
+
+        def batch2feed_dict(batch):
+            x0, x1, x2 = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+            }
+            return feed_dict
+
+        def save_fn():
+            self.save_model(exp_config.name, 1)
+
+        print("Start Training")
+        valid_freq = 25
+        train_fn(train_batches[0], 0)
+        for i in range(exp_config.num_epoch):
+            loss, _ = epoch_runner(train_batches, train_fn,
+                                   valid_fn, valid_freq,
+                                   save_fn, self.save_interval)
+            self.log.info("[Train] Epoch {} Done. Loss={}".format(i, loss))
 
     def rank_adhoc(self, exp_config, data_loader, preload_id):
         tprint("train_adhoc")

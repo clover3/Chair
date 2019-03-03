@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 
 from task.transformer_est import Transformer, Classification
@@ -9,6 +9,7 @@ from data_generator.shared_setting import NLI
 from trainer.tf_module import *
 import tensorflow as tf
 from data_generator.NLI import nli
+from data_generator.ubuntu import ubuntu
 from trainer.experiment import Experiment
 from trainer.ExperimentConfig import ExperimentConfig
 
@@ -23,8 +24,8 @@ def train_nil():
     nli_setting.vocab_filename = "bert_voca.txt"
 
     e_config = ExperimentConfig()
-    e_config.name = "NLI_bare_{}".format("A")
-    e_config.num_epoch = 8
+    e_config.name = "NLI_only_{}".format("B")
+    e_config.num_epoch = 2
     e_config.save_interval = 30 * 60  # 30 minutes
 
 
@@ -40,8 +41,8 @@ def train_nil_on_bert():
     nli_setting.vocab_size = 30522
     nli_setting.vocab_filename = "bert_voca.txt"
     e_config = ExperimentConfig()
-    e_config.name = "NLI_Only_{}".format("B")
-    e_config.num_epoch = 3
+    e_config.name = "NLI_Only_{}".format("C")
+    e_config.num_epoch = 2
     e_config.save_interval = 30 * 60  # 30 minutes
 
 
@@ -108,15 +109,15 @@ def train_nli_smart_rf():
     nli_setting.vocab_filename = "bert_voca.txt"
 
     e_config = ExperimentConfig()
-    e_config.name = "NLIEx_{}".format("Y_conflict")
+    e_config.name = "NLIEx_{}".format("Y_match")
     e_config.num_epoch = 1
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert', 'cls_dense'] #, 'aux_conflict']
 
     #explain_tag = 'match'  # 'dontcare'  'match' 'mismatch'
-    #explain_tag = 'match'
+    explain_tag = 'match'
     #explain_tag = 'mismatch'
-    explain_tag = 'conflict'
+    #explain_tag = 'conflict'
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     #load_id = ("NLI_run_nli_warm", "model-97332")
@@ -167,7 +168,8 @@ def test_dev_acc():
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     #load_id = ("NLI_bare_A", 'model-195608')
     load_id = ("NLIEx_S", 'model-4417')
-    load_id = ("NLI_Only_B", 'model-0')
+    load_id = ("NLIEx_Y_conflict", "model-9636")
+    load_id = ("NLI_only_C", 'model-60618')
 
     e.test_acc(nli_setting, e_config, data_loader, load_id)
 
@@ -363,6 +365,40 @@ def train_nli_with_reinforce_old():
     e.train_nli_ex_0(nli_setting, e_config, data_loader, load_id, True)
 
 
+def train_ubuntu():
+    hp = hyperparams.HPUbuntu()
+    hp.batch_size = 16
+    e = Experiment(hp)
+    voca_setting = NLI()
+    voca_setting.vocab_size = 30522
+    voca_setting.vocab_filename = "bert_voca.txt"
+
+    e_config = ExperimentConfig()
+    e_config.name = "Ubuntu_{}".format("A")
+    e_config.num_epoch = 1
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert']#, 'cls_dense'] #, 'aux_conflict']
+
+    data_loader = ubuntu.DataLoader(hp.seq_max, voca_setting.vocab_filename, voca_setting.vocab_size, True)
+    #load_id = ("NLI_run_nli_warm", "model-97332")
+    #load_id = ("NLIEx_A", "model-16910")
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+
+    e.train_ubuntu(e_config, data_loader, load_id)
+
+
+def ubuntu_train_gen():
+    hp = hyperparams.HPUbuntu()
+    e = Experiment(hp)
+    voca_setting = NLI()
+    voca_setting.vocab_size = 30522
+    voca_setting.vocab_filename = "bert_voca.txt"
+
+    data_loader = ubuntu.DataLoader(hp.seq_max, voca_setting.vocab_filename, voca_setting.vocab_size, True)
+    ubuntu.batch_encode(0)
+    #e.gen_ubuntu_data(data_loader)
+
+
 if __name__ == '__main__':
-    action = "test_dev_acc"
+    action = "train_ubuntu"
     locals()[action]()
