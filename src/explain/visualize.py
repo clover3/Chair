@@ -114,13 +114,18 @@ def visualize(result, out_name):
 
             max_score = max(scores)
             min_score = min(scores)
+            cut = sorted(scores)[int(len(scores)*0.2)]
             if max_score == min_score:
                 max_score = min_score + 3
+
+            def normalize(score):
+                return int((score - min_score) * 255 / (max_score - min_score))
+
             for i, token in enumerate(tokens):
                 print("{}({}) ".format(token, scores[i]), end="")
 
-                r = int((scores[i] - min_score) * 255 / (max_score - min_score))
-                if scores[i] > 100:
+                r = normalize(scores[i])
+                if r > 100:
                     r = 100
                 else:
                     r = 0

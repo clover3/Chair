@@ -302,11 +302,10 @@ def batch_encode(idx):
     st = idx * 500
     obj = load_from_pickle("ubuntu_train_{}".format(st))
     assert len(obj) % 2 == 0
-    data_loader = DataLoader(512, "bert_voca.txt", True)
-    batch_size = 32
+    batch_size = 16
     from trainer.tf_module import get_batches_ex
     batches = get_batches_ex(obj, batch_size, 3)
-    save_to_pickle(batches, "ubuntu_train_batch32_{}".format(idx))
+    save_to_pickle(batches, "ubuntu_train_batch_16_{}".format(idx))
 
 
 

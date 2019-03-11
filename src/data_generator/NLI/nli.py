@@ -133,7 +133,7 @@ class DataLoader:
 
     def get_test_data(self, data_id):
         if data_id.startswith("test_"):
-            NotImplemented
+            encoded_data, plain_data = self.load_plain_text(data_id)
         else:
             if data_id == 'conflict':
                 data = self.get_dev_explain_0()
@@ -145,6 +145,16 @@ class DataLoader:
                 plain_data = list([(entry[0], entry[1]) for entry in explain_data])
 
         return encoded_data, plain_data
+
+    def load_plain_text(self, data_id):
+        data = load_plain_text(data_id + ".csv")
+
+        def entry2inst(raw_entry):
+            entry = self.encode(raw_entry[0], raw_entry[1])
+            return entry["input_ids"], entry["input_mask"], entry["segment_ids"]
+
+        encoded_data = list([entry2inst(entry) for entry in data])
+        return encoded_data, data
 
     # enc_explain_dev = list[ input_ids, input_mask, segment_ids]
     # explain_dev = list[prem, hypo, p_indice, h_indice]
@@ -607,7 +617,7 @@ def load_nli_explain_3(name_idx, name_text):
     path_idx = os.path.join(corpus_dir, "{}.csv".format(name_idx))
     path_text = os.path.join(corpus_dir, "{}.csv".format(name_text))
 
-    reader = csv.reader(open(path_text, "r"), delimiter=',')
+    reader = csv.reader(open(path_text, "r", errors='ignore'), delimiter=',')
 
     texts_list = []
     for row in reader:
@@ -647,6 +657,20 @@ def load_nli_explain_3(name_idx, name_text):
             print("")
         yield prem, hypo, p_indice, h_indice
 
+
+
+def load_plain_text(file_name):
+    path_text = os.path.join(corpus_dir, file_name)
+
+    reader = csv.reader(open(path_text, "r", encoding="utf-8", errors='ignore'), delimiter=',')
+
+    texts_list = []
+    for row in reader:
+        premise = row[0]
+        hypothesis = row[1]
+        texts_list.append((premise, hypothesis))
+
+    return texts_list
 
 
 

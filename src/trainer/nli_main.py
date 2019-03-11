@@ -169,7 +169,7 @@ def test_dev_acc():
     #load_id = ("NLI_bare_A", 'model-195608')
     load_id = ("NLIEx_S", 'model-4417')
     load_id = ("NLIEx_Y_conflict", "model-9636")
-    load_id = ("NLI_only_C", 'model-60618')
+    load_id = ("NLI_Only_C", 'model-0')
 
     e.test_acc(nli_setting, e_config, data_loader, load_id)
 
@@ -183,7 +183,8 @@ def analyze_nli_ex():
     explain_tag = 'match'
 
     e_config = ExperimentConfig()
-    e_config.name = "NLIEx_{}_analyze2".format(explain_tag)
+    #e_config.name = "NLIEx_{}_premade_analyze".format(explain_tag)
+    e_config.name = "NLIEx_{}_analyze".format(explain_tag)
     e_config.num_epoch = 4
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert' ,'cls_dense', 'aux_conflict']
@@ -194,7 +195,7 @@ def analyze_nli_ex():
     #load_id = ("NLIEx_I_match", "model-1238")
 
     if explain_tag == 'conflict':
-        load_id = ("NLIEx_O", "model-10278")
+        load_id = ("NLIEx_Y_conflict", "model-12039")
         #load_id = ("NLIEx_HB", "model-2684")
     elif explain_tag == 'match':
         load_id = ("NLIEx_P_match", "model-1636")
@@ -271,17 +272,17 @@ def predict_rf():
     nli_setting.vocab_size = 30522
     nli_setting.vocab_filename = "bert_voca.txt"
     #data_id = 'conflict'
-    data_id = 'match'
+    data_id = 'test_mismatch'
 
     e_config = ExperimentConfig()
     #e_config.name = "O_conflict"
-    e_config.name = "P_match"
+    e_config.name = "W_mismatch"
     e_config.load_names = ['bert', 'cls_dense', 'aux_conflict']
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     #load_id = ("NLI_bare_A", 'model-195608')
     #load_id = ("NLIEx_O", 'model-10278')
-    load_id = ("NLIEx_P_match", "model-1636")
+    load_id = ("NLIEx_W_mismatch", "model-12030")
     e.predict_rf(nli_setting, e_config, data_loader, load_id, data_id)
 
 def attribution_predict():
@@ -295,11 +296,29 @@ def attribution_predict():
     e_config.name = "NLI_run_{}".format("nli_eval")
     e_config.load_names = ['bert', 'cls_dense']
 
-    data_id = 'conflict'
+    target_label =  "match"
+    data_id = "test_{}".format(target_label)
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
-    load_id = ("NLI_Only_B", 'model-0')
-    e.nli_attribution_predict(nli_setting, e_config, data_loader, load_id, data_id)
+    load_id = ("NLI_Only_C", 'model-0')
+    e.nli_attribution_predict(nli_setting, e_config, data_loader, load_id, target_label, data_id)
 
+
+def baseline_predict():
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+
+    e_config = ExperimentConfig()
+    e_config.name = "NLI_run_{}".format("nli_eval")
+    e_config.load_names = ['bert', 'cls_dense']
+
+    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    load_id = ("NLI_Only_C", 'model-0')
+    target_label =  "mismatch"
+    data_id = "test_{}".format(target_label)
+    e.nli_baselin_predict(nli_setting, e_config, data_loader, load_id, target_label, data_id)
 
 
 def attribution_explain():
@@ -341,8 +360,8 @@ def test_fidelity():
     explain_tag = 'conflict'
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
-    #load_id = ("NLIEx_H", 'model-6301')
-    load_id = ("NLI_run_A", 'model-0')
+    load_id = ("NLIEx_Y_conflict", 'model-12039')
+    #load_id = ("NLI_Only_C", 'model-0')
     #e.eval_fidelity(nli_setting, e_config, data_loader, load_id, explain_tag)
     e.eval_fidelity_gradient(nli_setting, e_config, data_loader, load_id, explain_tag)
 
@@ -377,12 +396,13 @@ def train_ubuntu():
     e_config.name = "Ubuntu_{}".format("A")
     e_config.num_epoch = 1
     e_config.save_interval = 30 * 60  # 30 minutes
-    e_config.load_names = ['bert']#, 'cls_dense'] #, 'aux_conflict']
+    e_config.load_names = ['bert', 'reg_dense'] #, 'aux_conflict']
 
     data_loader = ubuntu.DataLoader(hp.seq_max, voca_setting.vocab_filename, voca_setting.vocab_size, True)
     #load_id = ("NLI_run_nli_warm", "model-97332")
     #load_id = ("NLIEx_A", "model-16910")
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    load_id = ("Ubuntu_A", "model-5145")
 
     e.train_ubuntu(e_config, data_loader, load_id)
 
@@ -395,10 +415,24 @@ def ubuntu_train_gen():
     voca_setting.vocab_filename = "bert_voca.txt"
 
     data_loader = ubuntu.DataLoader(hp.seq_max, voca_setting.vocab_filename, voca_setting.vocab_size, True)
-    ubuntu.batch_encode(0)
+    for i in range(3,30):
+        ubuntu.batch_encode(i)
     #e.gen_ubuntu_data(data_loader)
 
 
+def test_ubuntu():
+    hp = hyperparams.HPUbuntu()
+    hp.batch_size = 16
+    e = Experiment(hp)
+    voca_setting = NLI()
+    voca_setting.vocab_size = 30522
+    voca_setting.vocab_filename = "bert_voca.txt"
+
+    data_loader = ubuntu.DataLoader(hp.seq_max, voca_setting.vocab_filename, voca_setting.vocab_size, True)
+
+    e.test_valid_ubuntu(data_loader)
+
+
 if __name__ == '__main__':
-    action = "train_ubuntu"
+    action = "analyze_nli_ex"
     locals()[action]()

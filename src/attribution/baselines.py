@@ -49,6 +49,8 @@ def explain_by_deletion(data, target_tag, forward_run):
         logit_attrib_list = logits_list[:, 2] - logits_list[:, 0]
     elif target_tag == 'match':
         logit_attrib_list = logits_list[:, 2] + logits_list[:, 0] - logits_list[:, 1]
+    elif target_tag == 'mismatch':
+        logit_attrib_list = logits_list[:, 1]
 
     assert len(logits_list) == len(inputs)
 
@@ -58,11 +60,15 @@ def explain_by_deletion(data, target_tag, forward_run):
         idx = case_idx + 1
         seq_len = inputs_info[case_idx]['seq_len']
         attrib_scores = np.zeros([seq_len]) - 100
+
+        mod_set = set()
         while idx < len(inputs_info) and inputs_info[idx]['base_case_idx'] == case_idx:
             after_ce = logit_attrib_list[idx]
             diff_ce = base_ce - after_ce
             score = diff_ce
             mod_idx = inputs_info[idx]['mod_idx']
+            assert mod_idx not in mod_set
+            mod_set.add(mod_idx)
             attrib_scores[mod_idx] = score
             idx += 1
 
@@ -130,6 +136,8 @@ def explain_by_seq_deletion(data, target_tag, forward_run):
         logit_attrib_list = logits_list[:, 2] - logits_list[:, 0]
     elif target_tag == 'match':
         logit_attrib_list = logits_list[:, 2] + logits_list[:, 0] - logits_list[:, 1]
+    elif target_tag == 'mismatch':
+        logit_attrib_list = logits_list[:, 1]
 
     assert len(logits_list) == len(inputs)
 
@@ -143,8 +151,12 @@ def explain_by_seq_deletion(data, target_tag, forward_run):
             after_ce = logit_attrib_list[idx]
             diff_ce = base_ce - after_ce
             score = diff_ce
-            mod_idx = inputs_info[idx]['mod_idx']
-            attrib_scores[mod_idx] = score
+            mod_mask = inputs_info[idx]['mod_mask']
+            for j in range(len(mod_mask)):
+                if mod_mask[j] :
+                    if score > attrib_scores[j] :
+                        attrib_scores[j] = score
+
             idx += 1
 
         explains.append(attrib_scores)

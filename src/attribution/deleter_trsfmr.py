@@ -30,7 +30,6 @@ def token_delete_with_indice(indice, x0, x1, x2):
     mask = [0] * len(x0)
     for idx in indice:
         mask[idx] = 1
-
     return token_delete(mask, x0, x1, x2)
 
 

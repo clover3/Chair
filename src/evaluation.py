@@ -97,22 +97,23 @@ def MAP_rank(preds, golds):
     def AP(pred, gold):
         n_pred_pos = 0
         tp = 0
-        sum = 0
+        sum_prec = 0
         for idx in pred:
             n_pred_pos += 1
             if gold[idx] == 1:
                 tp += 1
-                sum += (tp / n_pred_pos)
-        return sum / len(gold)
+                sum_prec += (tp / n_pred_pos)
+        return sum_prec / sum(gold)
 
     scores = []
     for pred, gold, in zip(preds, golds):
-        scores.append(AP(pred, gold))
+        if sum(gold) > 0:
+            scores.append(AP(pred, gold))
 
     return average(scores)
 
 
-def MAP_ind(explains, golds):
+def MAP_inner(explains, golds):
     def AP(pred, gold):
         n_pred_pos = 0
         tp = 0
@@ -135,6 +136,12 @@ def MAP_ind(explains, golds):
         if gold_h:
             s2 = AP(pred_h, gold_h)
             score_list_h.append(s2)
+    return score_list_p , score_list_h
+
+
+
+def MAP_ind(explains, golds):
+    score_list_p, score_list_h = MAP_inner(explains, golds)
     return average(score_list_p), average(score_list_h)
 
 

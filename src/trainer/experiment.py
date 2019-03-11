@@ -1535,10 +1535,8 @@ class Experiment:
                 print("MAP\t{}".format(MAP_score))
                 print("AUC\t{}".format(auc_score))
 
-    def nli_attribution_predict(self, nli_setting, exp_config, data_loader, preload_id, data_id):
+    def nli_attribution_predict(self, nli_setting, exp_config, data_loader, preload_id, target_label, data_id):
         enc_payload, plain_payload = data_loader.get_test_data(data_id)
-
-        target_label = 'conflict'
         from attribution.gradient import explain_by_gradient
         self.sess = self.init_sess()
         from attribution.deepexplain.tensorflow import DeepExplain
@@ -1569,7 +1567,7 @@ class Experiment:
                         }
 
             #method_list = [ "elrp", "deeplift", "saliency","grad*input", "intgrad", ]
-            method_list = ["deeplift", "saliency", "grad*input", "intgrad", ]
+            method_list = ["saliency", "grad*input", "intgrad", ]
             for method_name in method_list:
                 print(method_name)
 
@@ -1579,11 +1577,44 @@ class Experiment:
                 pred_list = predict_translate(explains, data_loader, enc_payload, plain_payload)
                 save_to_pickle(pred_list, "pred_{}_{}".format(method_name, data_id))
 
+    def nli_baselin_predict(self, nli_setting, exp_config, data_loader, preload_id, explain_tag, data_id):
+        enc_payload, plain_payload = data_loader.get_test_data(data_id)
+        task = transformer_nli(self.hparam, nli_setting.vocab_size, 1)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.load_model_white2(preload_id, exp_config.load_names)
+        def forward_run(inputs):
+            batches = get_batches_ex(inputs, self.hparam.batch_size, 3)
+            logit_list = []
+            for batch in batches:
+                x0, x1, x2 = batch
+                soft_out,  = self.sess.run([task.sout, ],
+                                               feed_dict={
+                                                task.x_list[0]: x0,
+                                                task.x_list[1]: x1,
+                                                task.x_list[2]: x2,
+                                               })
+                logit_list.append(soft_out)
+            return np.concatenate(logit_list)
+
+        train_batches, dev_batches = self.load_nli_data(data_loader)
+        idf_scorer = IdfScorer(train_batches)
+
+        todo_list = [
+                    ('deletion_seq', explain_by_seq_deletion),
+               #     ('random', explain_by_random),
+               #     ('idf', idf_scorer.explain),
+               #     ('deletion', explain_by_deletion),
+                 ]
+        for method_name, method in todo_list:
+            explains = method(enc_payload, explain_tag, forward_run)
+            pred_list = predict_translate(explains, data_loader, enc_payload, plain_payload)
+            save_to_pickle(pred_list, "pred_{}_{}".format(method_name, data_id))
+
     def nli_explain_baselines(self, nli_setting, exp_config, data_loader, preload_id, explain_tag):
         enc_explain_dev, explain_dev = data_loader.get_dev_explain(explain_tag)
         train_batches, dev_batches = self.load_nli_data(data_loader)
         paired_info = data_loader.match_explain_info(enc_explain_dev, explain_dev)
-        tree_deletion = TreeDeletion(paired_info, data_loader.convert_indice_in)
 
 
         task = transformer_nli(self.hparam, nli_setting.vocab_size, 1)
@@ -1633,7 +1664,7 @@ class Experiment:
                 print("{}\t{}".format(metric, scores[metric]))
 
         todo_list = [
-                    ('tree deletion', tree_deletion.explain),
+                    ('deletion_seq', explain_by_seq_deletion),
                     ('random', explain_by_random),
                     ('idf', idf_scorer.explain),
                     ('deletion', explain_by_deletion),
@@ -3334,7 +3365,7 @@ class Experiment:
 
         result = []
         #batches = get_batches_ex(enc_explain_dev, self.hparam.batch_size, 3)
-        for batch in dev_batches[20:100]:
+        for batch in dev_batches[0:320]:
             x0, x1, x2, y = batch
             logits, conf_logit = self.sess.run([task.sout, task.conf_logits],
                                                feed_dict={
@@ -3475,7 +3506,7 @@ class Experiment:
 
 
     def eval_fidelity(self, nli_setting, exp_config, data_loader, preload_id, explain_tag):
-        method = 1
+        method = 5
         task = transformer_nli(self.hparam, nli_setting.vocab_size, method, is_training=False)
 
         self.sess = self.init_sess()
@@ -3557,19 +3588,34 @@ class Experiment:
         valid_fn()
         #enc_explain_dev, explain_dev = data_loader.get_dev_explain(explain_tag)
 
-        contrib_method = "sensitivity"
+        for contrib_method in ["sensitivity", "rl", "random"]:
+            if contrib_method == "rl":
+                contrib_score = fetch_contrib(flat_dev_batches)
+            elif contrib_method == "sensitivity":
+                contrib_score = np.stack(explain_by_deletion(flat_dev_batches, explain_tag, forward_runs))
+            elif contrib_method == "random":
+                contrib_score = np.stack(explain_by_random(flat_dev_batches, explain_tag, forward_runs))
+            else:
+                assert False
 
-        if contrib_method == "rl":
-            contrib_score = fetch_contrib(flat_dev_batches)
-        elif contrib_method == "sensitivity":
-            contrib_score = np.stack(explain_by_deletion(flat_dev_batches, explain_tag, forward_runs))
-        else:
-            assert False
+            def demo():
+                l = len(contrib_score)
+                for i in range(l):
+                    x0, x1, x2 = flat_dev_batches[i]
+                    tokens = data_loader.encoder.decode_list(x0)
+                    for w in tokens:
+                        print(w, end=" ")
+                    print("")
+                    for idx in np.flip(np.argsort(contrib_score[i]))[:20]:
+                        print(idx, tokens[idx])
+                    print("----")
 
-        acc_list = eval_fidelity(contrib_score, flat_dev_batches, forward_runs, explain_tag)
+            #demo()
+            acc_list = eval_fidelity(contrib_score, flat_dev_batches, forward_runs, explain_tag)
 
-        for num_delete in sorted(acc_list.keys()):
-            print("{}\t{}".format(num_delete, acc_list[num_delete]))
+            print(contrib_method)
+            for num_delete in sorted(acc_list.keys()):
+                print("{}\t{}".format(num_delete, acc_list[num_delete]))
 
 
 
@@ -3619,7 +3665,7 @@ class Experiment:
                         output.append((x0[i], x1[i], x2[i]))
             return output
 
-        flat_dev_batches = flatten_filter_batches(dev_batches, target_class)[:320]
+        flat_dev_batches = flatten_filter_batches(dev_batches, target_class)[:2000]
 
         from attribution.gradient import explain_by_gradient
         self.sess = self.init_sess()
@@ -3642,7 +3688,7 @@ class Experiment:
 
             #enc_explain_dev, explain_dev = data_loader.get_dev_explain(explain_tag)
 
-            contrib_method = "grad*input"
+            contrib_method = "intgrad" #"grad*input"#"saliency"#
 
             contrib_score = explain_by_gradient(flat_dev_batches, contrib_method, explain_tag, self.sess, de,
                                            feed_end_input, emb_outputs, emb_input, softmax_out)
@@ -3676,6 +3722,23 @@ class Experiment:
         save_to_pickle(all_data, "ubuntu_train")
 
 
+    def test_valid_ubuntu(self, data_loader):
+        dev_data = data_loader.get_dev_data()
+        dev_runs, golds = data_loader.flatten_payload(dev_data)
+        preds = []
+
+        for gold in golds:
+            inst_size = len(gold)
+            scores = [random.random() for _ in range(inst_size)]
+            print(gold)
+            pred = np.flip(np.argsort(scores))
+            print(pred)
+            preds.append(pred)
+
+        assert len(preds) == len(golds)
+        map_score = MAP_rank(preds, golds)
+        print("random MAP : ", map_score)
+
 
     def train_ubuntu(self, exp_config, data_loader, preload_id):
         tprint("train_ubuntu")
@@ -3698,7 +3761,6 @@ class Experiment:
 
         #train_data = data_loader.get_train_data()
         #train_batches = get_batches_ex(train_data, self.hparam.batch_size, 3)
-        train_batches = load_from_pickle("ubuntu_train_batch16_0")
 
         def valid_fn():
             logits_all = []
@@ -3722,8 +3784,13 @@ class Experiment:
             for gold in golds:
                 inst_size = len(gold)
                 scores = logits_all[idx:idx+inst_size]
-                pred = np.flip(np.argsort(scores))
+                pred = np.argsort(scores)
+                print(pred)
+                print(gold)
                 preds.append(pred)
+                idx = idx + inst_size
+
+                assert len(pred) == inst_size
             map_score = MAP_rank(preds, golds)
 
             self.log.info("Validation : map={0:.02f}".format(map_score))
@@ -3767,13 +3834,15 @@ class Experiment:
             self.save_model(exp_config.name, 1)
 
         print("Start Training")
-        valid_freq = 25
-        train_fn(train_batches[0], 0)
+        valid_freq = 333
+        valid_fn()
         for i in range(exp_config.num_epoch):
-            loss, _ = epoch_runner(train_batches, train_fn,
-                                   valid_fn, valid_freq,
-                                   save_fn, self.save_interval)
-            self.log.info("[Train] Epoch {} Done. Loss={}".format(i, loss))
+            for data_id in range(0,26):
+                train_batches = load_from_pickle("ubuntu_train_batch_16_{}".format(data_id))
+                loss, _ = epoch_runner(train_batches, train_fn,
+                                       valid_fn, valid_freq,
+                                       save_fn, self.save_interval)
+                self.log.info("[Train] Epoch {}-{} Done. Loss={}".format(i, data_id, loss))
 
     def rank_adhoc(self, exp_config, data_loader, preload_id):
         tprint("train_adhoc")

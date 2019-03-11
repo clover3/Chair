@@ -54,11 +54,14 @@ def explain_by_gradient(data, method_name, label_type, sess, de, feed_end_input,
     assert emb2logit.shape[0] == len(data)
     emb2logit_ce = emb2logit[:, 2] - emb2logit[:, 0]
     emb2logit_ec_n = emb2logit[:, 2] + emb2logit[:, 0] - emb2logit[:, 1]
+    emb2logit_n = emb2logit[:, 1]
 
     if label_type == "conflict":
         attrib = emb2logit_ce
     elif label_type == 'match':
         attrib = emb2logit_ec_n
+    elif label_type == 'mismatch':
+        attrib = emb2logit_n
     else:
         raise NotImplementedError
 
