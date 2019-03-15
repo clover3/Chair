@@ -92,8 +92,23 @@ def precision(logits, y, axis=1):
     return tf.count_nonzero(tp) / tf.count_nonzero(pred)
 
 
+def precision_b(pred, y):
+    y_int = tf.cast(y, tf.bool)
+    tp = tf.logical_and(pred, tf.equal(pred,y_int))
+    return tf.count_nonzero(tp) / tf.count_nonzero(pred)
+
+
+
+
 def recall(logits, y, axis=1):
     pred = tf.cast(tf.argmax(logits, axis=axis), tf.bool)
+    y_int = tf.cast(y, tf.bool)
+    tp = tf.logical_and(pred, tf.equal(pred, y_int))
+    return tf.count_nonzero(tp) / tf.count_nonzero(y_int)
+
+
+
+def recall_b(pred, y):
     y_int = tf.cast(y, tf.bool)
     tp = tf.logical_and(pred, tf.equal(pred, y_int))
     return tf.count_nonzero(tp) / tf.count_nonzero(y_int)

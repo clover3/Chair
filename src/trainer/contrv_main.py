@@ -9,10 +9,10 @@ from data_generator.shared_setting import NLI
 from trainer.tf_module import *
 import tensorflow as tf
 from data_generator.adhoc import ws
-from data_generator.controversy import mscore
+from data_generator.controversy import mscore, title
 from trainer.experiment import Experiment
 from trainer.ExperimentConfig import ExperimentConfig
-
+from trainer.controversy_experiments import ControversyExperiment
 
 
 def train_mscore_regression():
@@ -33,7 +33,7 @@ def train_mscore_regression():
     e.train_controversy_classification(e_config, data_loader, load_id)
 
 
-def test_mscore_eval():
+def mscore_eval():
     hp = hyperparams.HPMscore()
 
     e = Experiment(hp)
@@ -73,6 +73,37 @@ def contrv_pred():
     e.controv_lm(e_config, data_loader, load_id)
 
 
+def cie():
+    hp = hyperparams.HPCIE()
+    e = Experiment(hp)
+    e_config = ExperimentConfig()
+    e_config.name = "cie"
+    e_config.num_epoch = 40
+    e_config.save_interval = 10 * 60  # 30 minutes
+    e_config.load_names = ['bert']
+    vocab_size = 30522
+    vocab_filename = "bert_voca.txt"
+
+    is_span = 1
+    data_loader = title.DataLoader(hp.seq_max, vocab_filename, vocab_size, is_span)
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    if is_span:
+        e.controversy_cie_span_train(e_config, data_loader, load_id)
+    else:
+        e.controversy_cie_train(e_config, data_loader, load_id)
+
+
+def keyword_extract():
+    e = ControversyExperiment()
+    e.view_keyword()
+
+
+def lm():
+    e = ControversyExperiment()
+    e.lm_baseline()
+
+
 if __name__ == '__main__':
-    action = "train_mscore_regression"
+    action = "lm"
     locals()[action]()
+

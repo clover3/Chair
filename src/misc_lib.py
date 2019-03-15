@@ -148,3 +148,11 @@ class MovingWindow:
             return 0
         else:
             return average(self.history)
+
+
+def get_first(x):
+    return x[0]
+
+
+def get_second(x):
+    return x[1]

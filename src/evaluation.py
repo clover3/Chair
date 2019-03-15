@@ -1,6 +1,8 @@
 from misc_lib import *
 import numpy as np
 from sklearn.metrics import precision_recall_curve, auc
+from sklearn.metrics import roc_curve
+from sklearn import metrics
 
 def top_k_idx(arr, k):
     return np.flip(np.argsort(arr))[:k]
@@ -191,3 +193,22 @@ def PR_AUC_ind(explains, golds):
 def PR_AUC(explains, golds):
     p_auc, h_auc = PR_AUC_ind(explains, golds)
     return (p_auc + h_auc) / 2
+
+
+def compute_auc(y_scores, y_true):
+    assert len(y_scores) == len(y_true)
+    pairs = list(zip(y_scores, y_true))
+    pairs.sort(key=lambda x:x[0], reverse=True)
+    y_scores, y_true = zip(*pairs)
+
+    p, r, thresholds = roc_curve(y_true, y_scores)
+    return metrics.auc(p, r)
+
+
+def compute_pr_auc(y_scores, y_true):
+    assert len(y_scores) == len(y_true)
+    pairs = list(zip(y_scores, y_true))
+    pairs.sort(key=lambda x:x[0], reverse=True)
+    y_scores, y_true = zip(*pairs)
+    prec_list, recall_list, _ = precision_recall_curve(y_true, y_scores)
+    return auc(recall_list, prec_list)

@@ -41,6 +41,7 @@ from models.transformer.transformer_controversy import transformer_controversy
 from models.transformer.transformer_adhoc import transformer_adhoc, transformer_adhoc2, transformer_adhoc_ex
 from models.transformer.transformer_lm import transformer_ql
 from models.transformer.ScoreCombiner import *
+from models.transformer.cie import token_regression, span_selection
 
 from attribution.eval import eval_explain, eval_pairing, predict_translate
 from attribution.baselines import *
@@ -5706,3 +5707,234 @@ class Experiment:
         print("F1\t", f1)
         print("acc\t", acc)
 
+
+    def controversy_cie_train(self, exp_config, data_loader, preload_id):
+        print("controversy_cie_train")
+        task = token_regression(self.hparam, data_loader.voca_size)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+
+        with tf.variable_scope("optimizer"):
+            train_cls = self.get_train_op(task.loss)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        self.load_model_white2(preload_id, exp_config.load_names)
+
+        def batch2feed_dict(batch):
+            x0, x1, x2, y = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+
+        def train_fn(batch, step_i):
+            loss_val, summary, prec, recall,  _ = self.sess.run([task.loss, self.merged, task.prec, task.recall, train_cls,
+                                             ],
+                                            feed_dict=batch2feed_dict(batch)
+                                            )
+            self.log.debug("Step {0} train loss={1:.04f} prec={2:.03f} recall={3:.03f}".format(step_i, loss_val,
+                                                                                               prec, recall))
+            self.train_writer.add_summary(summary, self.g_step)
+            return loss_val, prec
+
+        def save_fn():
+            self.save_model(exp_config.name, 1)
+
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+        train_batches = get_batches_ex(data_loader.get_train_data(), self.hparam.batch_size, 4)
+
+        def valid_fn():
+            loss_list = []
+            prec_list = []
+            recall_list = []
+            for batch in dev_batches:
+                loss_val, summary, prec, recall = self.sess.run([task.loss, self.merged, task.prec, task.recall],
+                                                       feed_dict=batch2feed_dict(batch)
+                                                       )
+                loss_list.append(loss_val)
+                prec_list.append(prec)
+                recall_list.append(recall)
+
+                self.test_writer.add_summary(summary, self.g_step)
+            self.log.info("Validation : loss={0:.04f} prec={1:.04f} recall={2:.03f}".format(average(loss_list),
+                                                                                            average(prec_list), average(recall_list)))
+
+        valid_freq = 5
+        for i in range(exp_config.num_epoch):
+            loss, _ = epoch_runner(train_batches, train_fn,
+                                   valid_fn, valid_freq,
+                                   save_fn, self.save_interval)
+
+
+    def controversy_cie_span_train(self, exp_config, data_loader, preload_id):
+        print("controversy_cie_train")
+        task = span_selection(self.hparam, data_loader.voca_size)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+
+        with tf.variable_scope("optimizer"):
+            train_cls = self.get_train_op(task.loss)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        self.load_model_white2(preload_id, exp_config.load_names)
+
+        def batch2feed_dict(batch):
+            x0, x1, x2, b, e = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.begin: b,
+                task.end: e,
+            }
+            return feed_dict
+
+        def prec_recall(souts, batch):
+            _, _, _, begin_bin, end_bin = batch
+
+            def precision(pred, y):
+                y_bool = y.astype(np.bool)
+                tp = np.logical_and(y_bool, np.equal(pred, y))
+                return np.count_nonzero(tp) / np.count_nonzero(pred)
+
+            def recall(pred, y):
+                y_bool = y.astype(np.bool)
+                tp = np.logical_and(y_bool, np.equal(pred, y))
+                return np.count_nonzero(tp) / np.count_nonzero(y)
+
+            n_inst, seq_len = begin_bin.shape
+
+            begin = np.argmax(begin_bin, axis=1)
+            end = np.argmax(end_bin, axis=1)
+            assert len(souts) == len(begin)
+            pred_idx = np.argmax(souts, axis=1)
+
+
+            n_tp = 0
+            n_pred = 0
+            n_gold = 0
+            for i in range(n_inst):
+                gold = np.zeros([seq_len], dtype=int)
+                pred = np.zeros([seq_len], dtype=int)
+                for j in range(begin[i], end[i]+1):
+                    gold[j] = 1
+
+                for j in range(pred_idx[i,0], pred_idx[i,1]):
+                    pred[j] = 1
+
+                tp = np.logical_and(gold, np.equal(pred, gold))
+                n_tp += np.count_nonzero(tp)
+                n_pred += np.count_nonzero(pred)
+                n_gold += np.count_nonzero(gold)
+
+            p = n_tp / n_pred if n_pred > 0 else 0
+            r = n_tp / n_gold if n_gold > 0 else 0
+
+            f1 = 2 * p * r / (p+r) if p+r > 0 else 0
+            return p, r, f1
+
+        def baselines():
+            def random_method(batch):
+                _, _, _, begin_bin, end_bin = batch
+                n_inst, seq_len = begin_bin.shape
+                sout = np.random.rand(n_inst, seq_len, 2)
+                for i in range(n_inst):
+                    for j in range(100, seq_len):
+                        sout[i, j, 0] = 0
+                        sout[i,j, 1] = 0
+                return sout
+
+            def cont10word(batch):
+                input_ids, _, _, begin_bin, end_bin = batch
+                n_inst, seq_len = begin_bin.shape
+
+                controversy_wid = data_loader.encoder.encode("controversy")[0]
+                sout = np.zeros((n_inst, seq_len, 2))
+                for i in range(n_inst):
+                    cnt = 0
+                    select = False
+                    for j in range(seq_len):
+                        if input_ids[i,j] == controversy_wid :
+                            select = True
+                            sout[i, j, 0] = 1
+                        elif select:
+                            cnt += 1
+                            if cnt == 10:
+                                sout[i, j, 1] = 1
+                return sout
+
+
+            todo = [
+                (random_method, "random"),
+                (cont10word, "10word"),
+            ]
+            for method, method_name in todo:
+                prec_list = []
+                recall_list = []
+                f1_list = []
+                for batch in dev_batches:
+                    sout = method(batch)
+                    prec, recall, f1 = prec_recall(sout, batch)
+                    prec_list.append(prec)
+                    recall_list.append(recall)
+                    f1_list.append(f1)
+                self.log.info("{0} : prec={1:.04f} recall={2:.03f} f1={3:.03f}".format(method_name, average(prec_list),
+                                                                                                average(recall_list),
+                                                                                               average(f1_list)))
+
+        def train_fn(batch, step_i):
+            loss_val, summary, sout, _ = self.sess.run([task.loss, self.merged, task.sout, train_cls,
+                                                                ],
+                                                               feed_dict=batch2feed_dict(batch)
+                                                               )
+
+            prec, recall, f1 = prec_recall(sout, batch)
+            self.log.debug("Step {0} train loss={1:.04f} prec={2:.03f} recall={3:.03f} f1={4:.03f}".format(step_i, loss_val,
+                                                                                               prec, recall, f1))
+            self.train_writer.add_summary(summary, self.g_step)
+            return loss_val, 0
+
+        def save_fn():
+            self.save_model(exp_config.name, 1)
+
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 5)
+        train_batches = get_batches_ex(data_loader.get_train_data(), self.hparam.batch_size, 5)
+        baselines()
+        def valid_fn():
+            loss_list = []
+            prec_list = []
+            recall_list = []
+            f1_list = []
+            for batch in dev_batches:
+                loss_val, sout, summary = self.sess.run([task.loss, task.sout, self.merged],
+                                                                feed_dict=batch2feed_dict(batch)
+                                                                )
+                prec, recall, f1 = prec_recall(sout, batch)
+                loss_list.append(loss_val)
+                prec_list.append(prec)
+                recall_list.append(recall)
+                f1_list.append(f1)
+
+                self.test_writer.add_summary(summary, self.g_step)
+            self.log.info("Validation : loss={0:.04f} prec={1:.04f} recall={2:.03f} f1={3:.03f}".format(average(loss_list),
+                                                                                            average(prec_list),
+                                                                                            average(recall_list),
+                                                                                           average(f1_list)))
+
+        valid_freq = 5
+        for i in range(exp_config.num_epoch):
+            loss, _ = epoch_runner(train_batches, train_fn,
+                                   valid_fn, valid_freq,
+                                   save_fn, self.save_interval)

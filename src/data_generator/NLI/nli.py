@@ -397,7 +397,7 @@ def translate_index(parse_tokens, subword_tokens, indice):
     try:
         sep_char = "#"
         def normalize_pt(text):
-            r = text.replace("``", "\"").replace("''", "\"").replace("`", "'").replace("”", "\"")  \
+            r = text.replace("``", "\"").replace("''", "\"").replace("`", "'").replace("”", "\"").replace("“", "\"")  \
                 .replace("-lrb-", "(").replace("-rrb-", ")")\
                 .replace("-lsb-", "[").replace("-rsb-", "]")\
                 .replace("…", "...")\
