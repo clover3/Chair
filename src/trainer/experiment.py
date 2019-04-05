@@ -2077,6 +2077,147 @@ class Experiment:
 
         print(preload_id)
 
+
+    def nli_interactive_list(self, nli_setting, exp_config, data_loader, preload_id):
+        task = transformer_nli(self.hparam, nli_setting.vocab_size, 1, False)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+
+        self.load_model_white2(preload_id, exp_config.load_names)
+
+        def batch2feed_dict(batch):
+            x0, x1, x2, y = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        train_batches, dev_batches = self.load_nli_data(data_loader)
+
+        def predict(sents):
+            data = []
+            for sent1, sent2 in sents:
+                entry = data_loader.encode(sent1, sent2)
+                l = entry["input_ids"], entry["input_mask"], entry["segment_ids"], 0
+                data.append(l)
+
+            batches = get_batches_ex(data, self.hparam.batch_size, 4)
+            logit_list = []
+            for batch in batches:
+                logits, = self.sess.run([task.sout], feed_dict=batch2feed_dict(batch))
+                logit_list.append(logits)
+
+            logits = np.concatenate(logit_list)
+            return logits
+
+        terminate = False
+
+        msg = ""
+        while not terminate:
+            sents = []
+            msg = input("Enter:")
+            while msg != "!EOI":
+                sents.append(msg)
+                msg = input("Enter:")
+
+
+            #sents = msg.split("\n")
+            n = len(sents)
+            print("{} lines".format(n))
+
+
+
+            payload = []
+            info = []
+            for i in range(n):
+                for j in range(n):
+                    if i== j:
+                        continue
+                    payload.append((sents[i], sents[j]))
+
+
+            r = predict(payload)
+
+            assert len(r) == len(payload)
+
+            pred = r.argmax(axis=1)
+            for i in range(len(payload)):
+                if pred[i] != 1:
+                    s1, s2 = payload[i]
+                    print("\n")
+                    print(s1)
+                    print(s2)
+                    label = {0:"Ent", 2:"Contradiction"}
+                    print(label[pred[i]])
+
+
+
+    def nli_interactive_visual(self, nli_setting, exp_config, data_loader, preload_id):
+        task = transformer_nli(self.hparam, nli_setting.vocab_size, 1, False)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+
+        self.load_model_white2(preload_id, exp_config.load_names)
+
+        def batch2feed_dict(batch):
+            x0, x1, x2, y = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        def predict(sents):
+            data = []
+            for sent1, sent2 in sents:
+                entry = data_loader.encode(sent1, sent2)
+                l = entry["input_ids"], entry["input_mask"], entry["segment_ids"], 0
+                data.append(l)
+
+            batches = get_batches_ex(data, self.hparam.batch_size, 4)
+            logits, conf = self.sess.run([task.sout, task.conf_logits], feed_dict=batch2feed_dict(batches[0]))
+            predictions = logits.argmax(axis=1)
+            x0, x1, x2, y = batches[0]
+            result = []
+            for idx in range(len(x0)):
+                input_ids = x0[idx]
+                conf_p, conf_h = data_loader.split_p_h_with_input_ids(conf[idx], input_ids)
+                #prem, hypo, p_indice, h_indice = entry
+
+                p_enc, h_enc = data_loader.split_p_h_with_input_ids(input_ids, input_ids)
+                p_tokens = data_loader.encoder.decode_list(p_enc)
+                h_tokens = data_loader.encoder.decode_list(h_enc)
+                result.append((conf_p, conf_h, p_tokens, h_tokens, predictions[idx], y[idx]))
+            visualize.visual_stream(result)
+            return logits
+
+        terminate = False
+        sents = []
+        while not terminate:
+            msg = input("Enter:")
+            if msg == "!EOI":
+                r = predict([(sents[0], sents[1]), (sents[1], sents[0])])
+                print(r)
+                sents = []
+            elif msg == "!EXIT":
+                terminate = True
+            else:
+                sents.append(msg)
+
+        print(preload_id)
+
+
     # Refactored version of explain train
     def predict_rf(self, nli_setting, exp_config, data_loader, preload_id, data_id):
         method = 1

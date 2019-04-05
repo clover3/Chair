@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 
 from task.transformer_est import Transformer, Classification
@@ -220,9 +220,28 @@ def interactive():
 
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
-    load_id = ("NLI_run_A", 'model-0')
+    load_id = ("NLI_Only_B", 'model-0')
 
-    e.nli_interactive(nli_setting, e_config, data_loader, load_id)
+    e.nli_interactive_list(nli_setting, e_config, data_loader, load_id)
+
+def interactive_visual():
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+
+    e_config = ExperimentConfig()
+    e_config.name = "NLIInterative"
+    e_config.num_epoch = 1
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert', 'cls_dense', 'aux_conflict']
+    load_id = ("NLIEx_U_mismatch", "model-10265")
+    load_id = ("NLIEx_Y_conflict", 'model-12039')
+
+    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+
+    e.nli_interactive_visual(nli_setting, e_config, data_loader, load_id)
 
 
 def analyze_nli_pair():
@@ -434,5 +453,5 @@ def test_ubuntu():
 
 
 if __name__ == '__main__':
-    action = "analyze_nli_ex"
+    action = "interactive_visual"
     locals()[action]()

@@ -114,6 +114,17 @@ def MAP_rank(preds, golds):
 
     return average(scores)
 
+def AP(pred, gold):
+    n_pred_pos = 0
+    tp = 0
+    sum_prec = 0
+    for idx in pred:
+        n_pred_pos += 1
+        if gold[idx] == 1:
+            tp += 1
+            sum_prec += (tp / n_pred_pos)
+    return sum_prec / sum(gold.values())
+
 
 def MAP_inner(explains, golds):
     def AP(pred, gold):
@@ -212,3 +223,7 @@ def compute_pr_auc(y_scores, y_true):
     y_scores, y_true = zip(*pairs)
     prec_list, recall_list, _ = precision_recall_curve(y_true, y_scores)
     return auc(recall_list, prec_list)
+
+def compute_acc(y_scores, y_true):
+    assert len(y_scores) == len(y_true)
+    return metrics.accuracy_score(y_true, y_scores)

@@ -144,6 +144,56 @@ def visualize(result, out_name):
     f.write("</html>")
 
 
+def visual_stream(result):
+    f = open("visual_stream.html", "w")
+    f.write("<html>")
+    f.write("<body>")
+    f.write("<div width=\"400\">")
+    for entry in result:
+        f.write("<div>\n")
+        pred_p, pred_h, prem, hypo, pred, y = entry
+
+        #max_score = max(max(pred_p), max(pred_h))
+        #min_score = min(min(pred_p), min(pred_h))
+        f.write("Pred : {} \n".format(pred))
+        f.write("Gold : {}<br>\n".format(y))
+        f.write("<tr>")
+        for display_name, tokens, scores in [("Premise", prem, pred_p), ("Hypothesis", hypo, pred_h)]:
+            f.write("<td><b>{}<b></td>\n".format(display_name))
+            f.write("<table style=\"border:1px solid\">")
+
+            max_score = max(scores)
+            min_score = min(scores)
+            cut = sorted(scores)[int(len(scores)*0.2)]
+            if max_score == min_score:
+                max_score = min_score + 3
+
+            def normalize(score):
+                return int((score - min_score) * 255 / (max_score - min_score))
+
+            for i, token in enumerate(tokens):
+                print("{}({}) ".format(token, scores[i]), end="")
+
+                r = normalize(scores[i])
+                if r > 100:
+                    r = 100
+                else:
+                    r = 0
+                #f.write(print_color_html_2(token, scores[i]))
+                f.write(print_color_html(token, r))
+            print()
+            f.write("</tr>")
+            f.write("</tr></table>")
+
+        f.write("</tr>")
+
+        f.write("</div><hr>")
+
+    f.write("</div>")
+    f.write("</body>")
+    f.write("</html>")
+
+
 
 def word_stat(result, out_name):
     top_cnt = {

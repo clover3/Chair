@@ -63,7 +63,7 @@ def contrv_pred():
     e_config = ExperimentConfig()
     e_config.name = "Contrv_{}".format("B")
     e_config.num_epoch = 4
-    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.save_interval = 30 * 60  # 30 minuteslm_protest
     e_config.load_names = ['bert', 'cls']
     vocab_size = 30522
     vocab_filename = "bert_voca.txt"
@@ -101,6 +101,11 @@ def keyword_extract():
 def lm():
     e = ControversyExperiment()
     e.lm_baseline()
+
+
+def lm_protest():
+    e = ControversyExperiment()
+    e.lm_protest_baseline()
 
 
 if __name__ == '__main__':

@@ -73,7 +73,11 @@ def cross_check():
 
 
 def load_pseudo_controversy_docs(name):
-    dir_path = os.path.join(scope_dir, "pseudo_controversy_docs", name)
+    dir_path = os.path.join(scope_dir, "pseudo_docs", name)
+    return load_dir_docs(dir_path)
+
+
+def load_dir_docs(dir_path):
     f = []
     for (dirpath, dirnames, filenames) in os.walk(dir_path):
         f.extend(filenames)
@@ -84,7 +88,7 @@ def load_pseudo_controversy_docs(name):
         file_path = os.path.join(dir_path, filename)
         lines = open(file_path, "r").readlines()
         if len(lines) < 1:
-            print("Broken file : ",filename)
+            print("Broken file : ", filename)
             continue
         doc_rank = int(filename.split(".")[0])
         doc_name = lines[0].split(":")[1].strip()
@@ -99,8 +103,11 @@ def load_pseudo_controversy_docs(name):
 
 
 def load_tf(name):
-    file_path = os.path.join(scope_dir, "pseudo_controversy_docs", name)
+    file_path = os.path.join(scope_dir, "pseudo_docs", name)
+    return load_tf_inner(file_path)
 
+
+def load_tf_inner(file_path):
     f = open(file_path, "r", encoding="utf-8")
     lines = f.readlines()
     tf_dict = Counter()
@@ -116,7 +123,6 @@ def load_tf(name):
         tf_dict[word] = tf
 
     return ctf, tf_dict
-
 
 
 if __name__ == '__main__':

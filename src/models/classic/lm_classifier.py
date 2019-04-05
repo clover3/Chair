@@ -17,6 +17,7 @@ class LMClassifer:
         self.smoothing = 0.1
         self.stemmer = stemmer
         self.fulltext = False
+        self.supervised = False
 
     def build(self, c_docs, bg_tf, bg_ctf):
         stopwords = load_stopwords()
@@ -74,6 +75,10 @@ class LMClassifer:
     # x : list of str
     # y : list of binary label
     def build2(self, x, y):
+        stopwords = load_stopwords()
+        self.stopword = stopwords
+        self.supervised = True
+
         self.NC = collections.Counter()
         self.C = collections.Counter()
         def update(counter, tokens):
@@ -93,6 +98,34 @@ class LMClassifer:
         vectors = []
         for idx, s in enumerate(x):
             tokens = self.tokenize(s)
+            odd = self.log_odd_binary(tokens)
+            vectors.append((odd, y[idx]))
+        vectors.sort(key=lambda x:x[0], reverse=True)
+
+        total = len(vectors)
+        p =  np.count_nonzero(y)
+        fp = 0
+        max_acc = 0
+        self.opt_alpha = 0
+        for idx, (odd, label) in enumerate(vectors):
+            alpha = odd - 1e-8
+            if label == 0:
+                fp += 1
+
+            tp = (idx+1) - fp
+            fn = p - tp
+            tn = total - (idx+1) - fn
+            acc = (tp + tn) / (total)
+            if acc > max_acc:
+                self.opt_alpha = alpha
+                max_acc = acc
+
+        print("Train acc : {}".format(max_acc))
+
+    def tune_alpha(self, x, y):
+        vectors = []
+        for idx, s in enumerate(x):
+            tokens = self.tokenize(s)
             odd = self.log_odd(tokens)
             vectors.append((odd, y[idx]))
         vectors.sort(key=lambda x:x[0], reverse=True)
@@ -100,7 +133,6 @@ class LMClassifer:
         total = len(vectors)
         p =  np.count_nonzero(y)
         fp = 0
-
         max_acc = 0
         self.opt_alpha = 0
         for idx, (odd, label) in enumerate(vectors):
@@ -119,7 +151,6 @@ class LMClassifer:
         print("Train acc : {}".format(max_acc))
 
 
-
     def predict(self, data):
         y = []
         for idx, s in enumerate(data):
@@ -130,7 +161,10 @@ class LMClassifer:
         return np.array(y)
 
     def log_odd_text(self, text):
-        return self.log_odd(self.tokenize(text))
+        if not self.supervised:
+            return self.log_odd(self.tokenize(text))
+        else:
+            return self.log_odd_binary(self.tokenizer(text))
 
     def term_odd(self, token):
         if token in self.stopword:
@@ -204,7 +238,13 @@ class LMClassifer:
             return logC - logNC
 
         sum_odd = 0
-        for token in tokens:
-            sum_odd += per_token_odd(token)
-        return sum_odd
+        if self.fulltext:
+            for token in set(tokens):
+                s = per_token_odd(token)
+                sum_odd += s
+        else:
+            for token, _ in self.get_tf10(tokens):
+                s = per_token_odd(token)
+                sum_odd += s
 
+        return sum_odd
