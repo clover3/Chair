@@ -1,4 +1,3 @@
-
 import json
 import path
 import os
@@ -14,9 +13,4 @@ def load_data(split):
         entry = json.loads(line)
         X.append((entry['id'], entry['text']))
         Y[entry['id']] = entry['label']
-
-
     return X, Y
-
-
-

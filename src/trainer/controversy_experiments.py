@@ -2,6 +2,8 @@ from data_generator.data_parser import controversy, load_protest
 from summarization.tokenizer import *
 from summarization.text_rank import TextRank
 from models.classic.lm_classifier import LMClassifer
+from models.classic.lm_ex import LMClassifierEx
+
 from evaluation import compute_auc, compute_pr_auc, compute_acc, AP
 from krovetzstemmer import Stemmer
 from nltk.tokenize import wordpunct_tokenize
@@ -137,13 +139,30 @@ class ControversyExperiment:
         classifier = LMClassifer(tokenizer, stemmer)
         classifier.build(cont_docs_text, bg_tf, bg_ctf,)
 
-        classifier.smoothing = 0.01
+        def get_ap(y_rank):
+            y_rank.sort(key=lambda x:x[1], reverse=True)
+            return AP(left(y_rank), dev_Y)
+
 
         print(len(dev_Y))
         print(sum(dev_Y.values()))
+
+        """
+        param = Counter()
+        for sm in range(1,9):
+            classifier.smoothing = sm / 100
+            y_rank_method = []
+            for name, doc in dev_X:
+                s = classifier.log_odd_text(doc)
+                y_rank_method.append((name, s))
+            param[sm] = get_ap(y_rank_method)
+        print(param)
+        """
+        classifier.smoothing = 0.01
         y_rank_method = []
         y_rank_rand = []
         y_rank_sup = []
+        y_rank_hand = []
         y_list = []
         for name, doc in dev_X:
             s = classifier.log_odd_text(doc)
@@ -153,6 +172,14 @@ class ControversyExperiment:
             y_rank_sup.append((name, s2))
             y_list.append(dev_Y[name])
 
+            s3 = 0
+            if "protest" in doc:
+                s3 += 0.3
+            if "police" in doc:
+                s3 += 0.1
+            #if "murder" in doc or "robber" in doc:
+            #    s3 += -0.1
+            y_rank_hand.append((name, s3))
             tf10 = []
             for t, _ in classifier.get_tf10(classifier.tokenize(doc)):
                 tf10.append(t)
@@ -169,10 +196,63 @@ class ControversyExperiment:
                 print("{}\t{}".format(term, c2.log_odd_binary([term])))
             print()
 
-        def get_ap(y_rank):
-            y_rank.sort(key=lambda x:x[1], reverse=True)
-            return AP(left(y_rank), dev_Y)
-
         print("AP(LM) :", get_ap(y_rank_method))
         print("AP(Random) :", get_ap(y_rank_rand))
         print("AP(Sup) :", get_ap(y_rank_sup))
+        print("AP(Hand) :", get_ap(y_rank_hand))
+
+
+        mid = int(len(y_rank_method) / 2)
+        print("Wiki", y_rank_method[0])
+        print("Wiki",  y_rank_method[mid])
+        print("Sup", y_rank_sup[0])
+        print("Sup", y_rank_sup[mid])
+
+
+    
+    def lm_protext_ex(self):
+        train_X, train_Y = load_protest.load_data("train")
+        dev_X, dev_Y = load_protest.load_data("dev")
+
+        stemmer = Stemmer()
+        dir_protest = os.path.join(path.data_path, "protest", "pseudo_docs", "dbpedia")
+        dir_crime = os.path.join(path.data_path, "protest", "crime_docs")
+        tf_path = os.path.join(path.data_path, "protest", "pseudo_docs", "tf_dump_100.txt")
+        tokenizer = lambda x: tokenize(x, set(), False)
+
+        n_docs = 3000
+        protest_docs = controversy.load_dir_docs(dir_protest)[:n_docs]
+        protest_docs = list([x[2] for x in protest_docs])
+
+        crime_docs = controversy.load_dir_docs(dir_crime)[:1000]
+        crime_docs = list([x[2] for x in crime_docs])
+        bg_ctf, bg_tf = controversy.load_tf_inner(tf_path)
+        print("Using {} docs".format(len(protest_docs)))
+
+        classifier = LMClassifierEx(tokenizer, stemmer)
+        classifier.build([protest_docs, crime_docs], bg_tf, bg_ctf)
+        classifier.smoothing = 0.01
+
+        x_list = list([x[1] for x in train_X])
+        y_list = list([train_Y[x[0]] for x in train_X])
+
+        classifier.fulltext = True
+        def get_ap(y_rank):
+            y_rank.sort(key=lambda x: x[1], reverse=True)
+            return AP(left(y_rank), dev_Y)
+
+        classifier.tune_alpha(x_list, y_list)
+
+        y_rank_method = []
+        for name, doc in dev_X:
+            s = classifier.get_score(doc)
+            y_rank_method.append((name, s))
+        print("AP(LM_ex) :", get_ap(y_rank_method))
+
+        classifier.alpha_list = [0,-9999,0]
+        y_rank_method = []
+        for name, doc in dev_X:
+            s = classifier.get_score(doc)
+            y_rank_method.append((name, s))
+        print("AP(LM_ex) before tune:", get_ap(y_rank_method))
+

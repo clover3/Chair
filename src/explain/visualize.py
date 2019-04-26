@@ -144,6 +144,55 @@ def visualize(result, out_name):
     f.write("</html>")
 
 
+def visualize_single(result, out_name):
+    f = open("../{}.html".format(out_name), "w")
+
+    f.write("<html>")
+    f.write("<body>")
+    f.write("<div width=\"400\">")
+    for entry in result:
+        f.write("<div>\n")
+        tokens, scores, pred, y = entry
+
+        #max_score = max(max(pred_p), max(pred_h))
+        #min_score = min(min(pred_p), min(pred_h))
+        f.write("Pred : {} \n".format(pred))
+        f.write("Gold : {}<br>\n".format(y))
+        f.write("<tr>")
+        f.write("<table style=\"border:1px solid\">")
+
+        max_score = max(scores)
+        min_score = min(scores)
+        if max_score == min_score:
+            max_score = min_score + 3
+
+        def normalize(score):
+            return int((score - min_score) * 255 / (max_score - min_score))
+
+        for i, token in enumerate(tokens):
+            print("{}({}) ".format(token, scores[i]), end="")
+
+            r = normalize(scores[i])
+            if r > 100:
+                r = 100
+            else:
+                r = 0
+            #f.write(print_color_html_2(token, scores[i]))
+            f.write(print_color_html(token, r))
+        print()
+        f.write("</tr>")
+        f.write("</tr></table>")
+
+        f.write("</tr>")
+
+        f.write("</div><hr>")
+
+    f.write("</div>")
+    f.write("</body>")
+    f.write("</html>")
+
+
+
 def visual_stream(result):
     f = open("visual_stream.html", "w")
     f.write("<html>")

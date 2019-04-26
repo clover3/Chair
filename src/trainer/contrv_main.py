@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 
 from task.transformer_est import Transformer, Classification
@@ -9,7 +9,7 @@ from data_generator.shared_setting import NLI
 from trainer.tf_module import *
 import tensorflow as tf
 from data_generator.adhoc import ws
-from data_generator.controversy import mscore, title
+from data_generator.controversy import mscore, title, protest
 from trainer.experiment import Experiment
 from trainer.ExperimentConfig import ExperimentConfig
 from trainer.controversy_experiments import ControversyExperiment
@@ -106,9 +106,25 @@ def lm():
 def lm_protest():
     e = ControversyExperiment()
     e.lm_protest_baseline()
+    e.lm_protext_ex()
 
+
+def protest_bert():
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    e_config = ExperimentConfig()
+    e_config.name = "protest"
+    e_config.num_epoch = 1
+    e_config.save_interval = 1 * 60  # 1 minutes
+    e_config.load_names = ['bert']
+    vocab_size = 30522
+    vocab_filename = "bert_voca.txt"
+
+    data_loader = protest.DataLoader(hp.seq_max, vocab_filename, vocab_size)
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    e.train_protest(e_config, data_loader, load_id)
 
 if __name__ == '__main__':
-    action = "lm"
+    action = "protest_bert"
     locals()[action]()
 

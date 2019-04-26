@@ -32,9 +32,17 @@ def stance_f1(predictions, gold):
 
 
 def eval_3label(pred_y, gold_y):
-    assert len(pred_y) == len(gold_y)
-    def eval_per_flag(flag_idx):
+    return eval_n_label(3, pred_y, gold_y)
 
+
+def eval_2label(pred_y, gold_y):
+    return eval_n_label(2, pred_y, gold_y)
+
+
+def eval_n_label(n, pred_y, gold_y):
+    assert len(pred_y) == len(gold_y)
+
+    def eval_per_flag(flag_idx):
         arr_gold_pos = np.equal(gold_y, flag_idx)
         arr_pred_pos = np.equal(pred_y, flag_idx)
         arr_true_pos = np.logical_and(arr_gold_pos, arr_pred_pos)
@@ -54,10 +62,10 @@ def eval_3label(pred_y, gold_y):
         return prec, recall, f1
 
     all_result = []
-    for i in range(3):
-        p,r,f1 = eval_per_flag(i)
+    for i in range(n):
+        p, r, f1 = eval_per_flag(i)
         e = {'precision': p,
-         'recall':r,
-         'f1':f1}
+             'recall': r,
+             'f1': f1}
         all_result.append(e)
     return all_result
