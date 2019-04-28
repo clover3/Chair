@@ -156,3 +156,12 @@ def get_first(x):
 
 def get_second(x):
     return x[1]
+
+
+class OpTime:
+
+
+    def time_op(self, fn):
+        begin = time.time()
+        ret = fn()
+

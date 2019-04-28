@@ -1,6 +1,6 @@
 from trainer.arg_experiment import ArgExperiment
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 from models.transformer import hyperparams
 from trainer.experiment import Experiment
 from trainer.ExperimentConfig import ExperimentConfig
@@ -49,18 +49,30 @@ def train_bert():
     load_id = ("NLI_Only_B", 'model-0')
 
     f1_list = []
-    for topic in ukp.all_topics[1:]:
+    for topic in ukp.all_topics:
         e = Experiment(hp)
-        e_config.name = "arg_{}".format(topic)
+        print("BERT")
+        e_config.name = "arg_key_neccesary_{}".format(topic)
         data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt")
         f1_last = e.train_ukp(e_config, data_loader, load_id)
         print(topic)
         print(f1_last)
         f1_list.append((topic, f1_last))
-
+    print("BERT")
     print(f1_list)
 
 
+def failure_analysis():
+    for topic in ukp.all_topics:
+        hp = hyperparams.HPBert()
+        e = Experiment(hp)
+        e_config = ExperimentConfig()
+        e_config.voca_size = 30522
+        e_config.load_names = ['bert']
+        e_config.name = "arg_b_{}".format(topic)
+        e.failure_ukp(e_config, topic)
+
+
 if __name__ == '__main__':
-    action = "train_bert"
+    action = "failure_analysis"
     locals()[action]()

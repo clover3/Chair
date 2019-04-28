@@ -6,10 +6,12 @@ from sklearn.neural_network import MLPClassifier
 
 from task.metrics import eval_3label, eval_2label
 
+
 from models.classic.stopword import load_stopwords
 from summarization import tokenizer
 from summarization.text_rank import TextRank
-from misc_lib import flatten, average
+from cie import claim_gen
+from misc_lib import flatten, average, tprint
 from cie.arg import kl
 
 import numpy as np
@@ -242,7 +244,6 @@ class ArgExperiment:
 
 
     def summarize(self):
-
         topic = ukp.all_topics[0]
         data_loader = ukp.DataLoader(topic)
         stopwords = load_stopwords()
@@ -250,14 +251,31 @@ class ArgExperiment:
         def tokenize(x):
             return tokenizer.tokenize(x, stopwords)
 
+        def sent_score(token_sent, bow_score):
+            score = 0
+            factor = 1
+            for t in token_sent:
+                score += bow_score[t] * factor
+                factor *= 0.5
+            return score
+
+
 
         def is_argument(entry):
             return entry['annotation'] == "Argument_for" or entry['annotation'] == "Argument_against"
 
         for topic in ukp.all_topics:
-            print("-----------")
-            print(topic)
             entries = data_loader.all_data[topic]
-            token_sents = list([tokenize(e['sentence']) for e in entries if e['set'] == 'train'])
+            raw_sents = list([e['sentence'] for e in entries if e['set'] == 'train'])
+            token_sents = list(map(tokenize, raw_sents))
+            tprint("Runing TextRank")
             text_rank = TextRank(token_sents)
+            tr_score = Counter(text_rank.run(flatten(token_sents)))
+            tprint("claim_gen.generate")
+
+            raw_sents.sort(key=lambda x: sent_score(tokenize(x), tr_score), reverse=True)
+            for i in range(10):
+                print(raw_sents[i])
+
+            #claim_gen.generate(raw_sents, tr_score)
 

@@ -215,7 +215,7 @@ def appear_at_least(dependency_edges, k):
             yield edge
 
 
-# generate triple
+# generate a sentence
 def generate(all_sents, bow_score):
     relation_counter = Counter()
     random.shuffle(all_sents)

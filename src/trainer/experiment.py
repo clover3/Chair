@@ -35,6 +35,7 @@ from data_generator.data_parser.trec import *
 from data_generator.data_parser import controversy
 from data_generator.data_parser.robust import *
 from data_generator.data_parser import controversy, load_protest
+from data_generator.argmining import ukp
 
 import data_generator.adhoc.score_loader as score_loader
 import data_generator.NLI.enlidef as ENLIDef
@@ -1332,7 +1333,7 @@ class Experiment:
         self.loader = tf.train.Saver(variables_to_restore, max_to_keep=1)
         self.loader.restore(self.sess, path)
 
-    def load_model_white(self, name, id, include_namespace):
+    def load_model_white(self, name, id, include_namespace, verbose=True):
         run_dir = os.path.join(self.model_dir, 'runs')
         save_dir = os.path.join(run_dir, name)
         path = os.path.join(save_dir, "{}".format(id))
@@ -1344,19 +1345,20 @@ class Experiment:
 
         variables = tf.contrib.slim.get_variables_to_restore()
         variables_to_restore = [v for v in variables if condition(v)]
-        print("Restoring: {} {}".format(name, id))
-        for v in variables_to_restore:
-            print(v)
+        if verbose:
+            print("Restoring: {} {}".format(name, id))
+            for v in variables_to_restore:
+                print(v)
 
         self.loader = tf.train.Saver(variables_to_restore, max_to_keep=1)
         self.loader.restore(self.sess, path)
 
-    def load_model_white2(self, preload_id, include_namespace):
+    def load_model_white2(self, preload_id, include_namespace, verbose=True):
         if preload_id is None:
             return
         name = preload_id[0]
         id = preload_id[1]
-        self.load_model_white(name, id, include_namespace)
+        self.load_model_white(name, id, include_namespace, verbose)
 
     def load_model_bert(self, name, id):
         run_dir = os.path.join(self.model_dir, 'runs')
@@ -6319,4 +6321,97 @@ class Experiment:
         return f1
 
 
+
+    def failure_ukp(self, exp_config, topic):
+        tf.reset_default_graph()
+        task = transformer_nli(self.hparam, exp_config.voca_size, 0, True)
+        data_loader = ukp.BertDataLoader(topic, True, self.hparam.seq_max, "bert_voca.txt")
+
+        def load_available():
+            run_dir = os.path.join(self.model_dir, 'runs')
+            save_dir = os.path.join(run_dir, exp_config.name)
+            model_id = None
+            for (dirpath, dirnames, filenames) in os.walk(save_dir):
+                for filename in filenames:
+                    if ".meta" in filename:
+                        print(filename)
+                        model_id = filename[:-5]
+
+            print(model_id)
+            assert model_id is not None
+            self.load_model_white2((exp_config.name, model_id), ['bert', "cls_dense"], False)
+
+        def batch2feed_dict(batch):
+            x0,x1,x2, y  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        load_available()
+
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+
+        idx_for = data_loader.labels.index("Argument_for")
+        idx_against = data_loader.labels.index("Argument_against")
+
+        def valid_fn():
+            loss_list = []
+            logit_list = []
+            gold_y = []
+
+            for batch in dev_batches:
+                x0, x1, x2, y = batch
+                loss_val, logits, summary = self.sess.run([task.loss, task.logits, self.merged],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+                logit_list.append(logits)
+                gold_y.append(y)
+                self.test_writer.add_summary(summary, self.g_step)
+            self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
+
+            logit_list = np.concatenate(logit_list)
+            gold_y = np.concatenate(gold_y)
+            pred_y = np.argmax(logit_list, axis=1)
+
+            all_result = eval_3label(pred_y, gold_y)
+            for_result = all_result[idx_for]
+            against_result = all_result[idx_against]
+            f1 = sum([result['f1'] for result in all_result]) / 3
+            print("F1", f1)
+            print("P_arg+", for_result['precision'])
+            print("R_arg+", for_result['recall'])
+            print("P_arg-", against_result['precision'])
+            print("R_arg-", against_result['recall'])
+            return all_result
+
+        valid_fn()
+        logit_list = []
+        for batch in dev_batches:
+            loss_val, logits, summary = self.sess.run([task.loss, task.logits, self.merged],
+                                                      feed_dict=batch2feed_dict(batch)
+                                                      )
+            logit_list.append(logits)
+        logit_list = np.concatenate(logit_list)
+        pred_list = np.argmax(logit_list, axis=1)
+
+        entries = data_loader.all_data[topic]
+        val_entries = list([e for e in entries if e['set'] == 'val'])
+        assert len(pred_list) == len(val_entries)
+
+        print(topic)
+        for pred, entry in zip(pred_list, val_entries):
+            print("[{}]".format(topic))
+            print(entry['sentence'])
+            print('gold:', entry['annotation'])
+            if pred != data_loader.annotation2label(entry['annotation']):
+                print('pred:', data_loader.labels[pred])
 

@@ -5,6 +5,7 @@ import tensorflow as tf
 
 from models.transformer.transformer import transformer_encode
 from models.losses import *
+from models.transformer import bert
 from trainer import tf_module
 
 
@@ -88,4 +89,5 @@ class Transformer:
         optimizer = tf.train.AdamOptimizer(learning_rate=self.hp.lr, beta1=0.9, beta2=0.98, epsilon=1e-8)
         train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
         return train_op
+
 

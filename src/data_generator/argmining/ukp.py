@@ -57,7 +57,7 @@ class BertDataLoader(DataLoader):
         self.encoder = FullTokenizerWarpper(voca_path)
 
     def encode(self, x, y, topic):
-        topic_str = topic + " is good."
+        topic_str = topic + " is necessary."
         entry = self.encode_pair(topic_str, x)
         return entry["input_ids"], entry["input_mask"], entry["segment_ids"], y
 
