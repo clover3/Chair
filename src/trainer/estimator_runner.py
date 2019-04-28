@@ -57,6 +57,10 @@ tf.flags.DEFINE_string(
     "data_dir", default="",
     help="")
 
+tf.flags.DEFINE_string(
+    "init_checkpoint", None,
+    "Initial checkpoint (usually from a pre-trained BERT model).")
+
 FLAGS = tf.flags.FLAGS
 
 
@@ -118,28 +122,32 @@ class EstimatorRunner:
 
     def train_causal(self):
         hp = hyperparams.HPCausal()
+        tpu_cluster_resolver = None
+
         if FLAGS.use_tpu:
             model_dir = FLAGS.model_dir
             hp.batch_size = FLAGS.batch_size
             data_dir = FLAGS.data_dir
             input_pattern = os.path.join(data_dir, "Thus.train_*")
+            tpu_cluster_resolver = tf.contrib.cluster_resolver.TPUClusterResolver(
+                FLAGS.tpu)
+            init_checkpoint = FLAGS.init_checkpoint
         else:
             model_dir = get_model_dir("causal")
             input_pattern = os.path.join(path.data_path, "causal", "Thus.train_*")
+            init_checkpoint = os.path.join(path.model_path, "runs", FLAGS.init_checkpoint)
 
         vocab_size = 30522
         num_train_steps = 10000
 
         task = Classification(3)
-        model = transformer_est.TransformerEst(hp, vocab_size, task, FLAGS.use_tpu)
+        model = transformer_est.TransformerEst(hp, vocab_size, task, FLAGS.use_tpu, init_checkpoint)
         param = {
             'feature_columns': self.get_feature_column(),
             'n_classes': 3,
             'batch_size': hp.batch_size
         }
 
-        tpu_cluster_resolver = tf.contrib.cluster_resolver.TPUClusterResolver(
-            FLAGS.tpu)
 
         is_per_host = tf.contrib.tpu.InputPipelineConfig.PER_HOST_V2
         run_config = tf.contrib.tpu.RunConfig(

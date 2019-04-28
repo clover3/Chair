@@ -33,7 +33,7 @@ class Classification:
     def __init__(self, num_classes):
         self.num_classes = num_classes
 
-    def predict(self, enc, Y, is_training):
+    def predict(self, enc, Y, is_predict):
         feature_loc = 0
         logits = tf.layers.dense(enc[:,feature_loc,:], self.num_classes, name="cls_dense")
         labels = tf.one_hot(Y, self.num_classes)
@@ -41,7 +41,7 @@ class Classification:
         self.acc = tf_module.accuracy(logits, Y)
         self.logits = logits
 
-        if is_training:
+        if not is_predict:
             loss_arr = tf.nn.softmax_cross_entropy_with_logits_v2(
                 logits=logits,
                 labels=labels)
@@ -83,7 +83,7 @@ class Transformer:
 
     def predict(self, X, Y, is_training):
         self.enc = transformer_encode(X, self.hp, self.voca_size, is_training)
-        return self.task.predict(self.enc, Y, is_training)
+        return self.task.network(self.enc, Y, is_training)
 
     def get_train_op(self, loss):
         optimizer = tf.train.AdamOptimizer(learning_rate=self.hp.lr, beta1=0.9, beta2=0.98, epsilon=1e-8)
