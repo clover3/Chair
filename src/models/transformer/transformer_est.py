@@ -52,12 +52,17 @@ class TransformerEst:
             train_op = self.get_train_op(loss)
         elif mode == tf.estimator.ModeKeys.EVAL:
             predictions, loss = self.network(features, mode)
-            def metric_fn(acc, loss):
+
+            def metric_fn(logits, loss_arr, label_ids):
+                predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+                accuracy = tf.metrics.accuracy(label_ids, predictions)
+                loss = tf.metrics.mean(loss_arr)
+
                 return {
-                    "eval_acc": acc,
+                    "eval_acc": accuracy,
                     "eval_loss": loss,
                 }
-            eval_metrics = (metric_fn, [self.task.acc, self.task.loss])
+            eval_metrics = (metric_fn, [self.task.logits, self.task.loss_arr, self.label_ids])
         else:
             predictions = self.network(features, mode)
             loss = 1
@@ -105,7 +110,7 @@ class TransformerEst:
         input_ids = features["input_ids"]
         input_mask = features["input_mask"]
         segment_ids = features["segment_ids"]
-        label_ids = features["label_ids"]
+        self.label_ids = features["label_ids"]
 
         is_training = (tf.estimator.ModeKeys.TRAIN == mode)
         self.model = bert.BertModel(
@@ -117,8 +122,7 @@ class TransformerEst:
             use_one_hot_embeddings=self.use_one_hot_embeddings)
 
         enc = self.model.get_sequence_output()
-        is_predict = (tf.estimator.ModeKeys.PREDICT == mode)
-        return self.task.predict(enc, label_ids, is_predict)
+        return self.task.predict_ex(enc, self.label_ids, mode)
 
     def get_train_op(self, loss):
         optimizer = tf.train.AdamOptimizer(learning_rate=self.hp.lr, beta1=0.9, beta2=0.98, epsilon=1e-8)

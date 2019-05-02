@@ -33,19 +33,27 @@ class Classification:
     def __init__(self, num_classes):
         self.num_classes = num_classes
 
-    def predict(self, enc, Y, is_predict):
+    def predict(self, enc, Y, is_train):
+        if is_train:
+            mode = tf.estimator.ModeKeys.TRAIN
+        else:
+            mode = tf.estimator.ModeKeys.EVAL
+        return self.predict_ex(enc, Y, mode)
+
+    def predict_ex(self, enc, Y, mode):
         feature_loc = 0
         logits = tf.layers.dense(enc[:,feature_loc,:], self.num_classes, name="cls_dense")
         labels = tf.one_hot(Y, self.num_classes)
         preds = tf.to_int32(tf.argmax(logits, axis=-1))
         self.acc = tf_module.accuracy(logits, Y)
         self.logits = logits
-
-        if not is_predict:
-            loss_arr = tf.nn.softmax_cross_entropy_with_logits_v2(
+        tf.summary.scalar("acc", self.acc)
+        if mode == tf.estimator.ModeKeys.TRAIN or mode == tf.estimator.ModeKeys.EVAL:
+            self.loss_arr = tf.nn.softmax_cross_entropy_with_logits_v2(
                 logits=logits,
                 labels=labels)
-            self.loss = tf.reduce_mean(loss_arr)
+            self.loss = tf.reduce_mean(self.loss_arr)
+            tf.summary.scalar("loss", self.loss)
             return preds, self.loss
         else:
             return preds

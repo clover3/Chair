@@ -3,6 +3,7 @@ from summarization.tokenizer import *
 from summarization.text_rank import TextRank
 from models.classic.lm_classifier import LMClassifer
 from models.classic.lm_ex import LMClassifierEx
+from models.controversy import *
 
 from evaluation import compute_auc, compute_pr_auc, compute_acc, AP
 from krovetzstemmer import Stemmer
@@ -21,18 +22,18 @@ class ControversyExperiment:
 
 
     def view_docs(self):
-        docs = controversy.load_docs()
+        docs = controversy.load_clue303_docs()
         for filename, doc in docs:
             print(doc)
 
 
     def view_keyword(self):
-        docs = controversy.load_docs()
+        docs = controversy.load_clue303_docs()
         token_docs = dict()
         for filename, doc in docs:
             token_docs[filename] = tokenize(doc, set())
 
-        labels = controversy.load_label()
+        labels = controversy.load_clue303_label()
 
         tr = TextRank(token_docs.values())
         for key in token_docs:
@@ -45,7 +46,7 @@ class ControversyExperiment:
 
     def lm_baseline(self):
         stemmer = Stemmer()
-        docs = controversy.load_docs()
+        docs = controversy.load_clue303_docs()
         cont_docs = controversy.load_pseudo_controversy_docs("dbpedia")[:7500]
         print("Using {} docs".format(len(cont_docs)))
         tokenizer = lambda x: tokenize(x, set(), False)
@@ -54,7 +55,7 @@ class ControversyExperiment:
 
         print("Loading collection stats")
         bg_ctf, bg_tf = controversy.load_tf("tf_dump_100.txt")
-        labels = controversy.load_label()
+        labels = controversy.load_clue303_label()
         bg_ctf = sum(bg_tf.values())
         cont_docs_text = list([x[2] for x in cont_docs])
         print("Building classifier ")
@@ -105,6 +106,24 @@ class ControversyExperiment:
         print("AUC :", compute_auc(y_scores, y_list))
         print("PR AUC :", compute_pr_auc(y_scores, y_list))
 
+
+    def eval_amsterdam(self):
+
+        ams_X, ams_Y = amsterdam.get_dev_data(False)
+        clue_X, clue_Y = controversy.load_clueweb_testset()
+        model_wiki_doc = get_wiki_doc_lm()
+        model_dbpedia = get_dbpedia_contrv_lm()
+
+        models = [("Amsterdam",model_wiki_doc), ("MH16", model_dbpedia)]
+        test_sets = [("Ams18", [ams_X, ams_Y]), ("Clueweb",[clue_X, clue_Y])]
+
+        for set_name, test_set in test_sets:
+            dev_X, dev_Y = test_set
+            print(set_name)
+            for name, model in models:
+                scores = model.score(dev_X)
+                auc = compute_auc(scores, dev_Y)
+                print("{}\t{}".format(name, auc))
 
 
 

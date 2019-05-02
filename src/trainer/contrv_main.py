@@ -124,7 +124,14 @@ def protest_bert():
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     e.train_protest(e_config, data_loader, load_id)
 
+
+def lm_amsterdam():
+    e = ControversyExperiment()
+    e.eval_amsterdam()
+
+
+
 if __name__ == '__main__':
-    action = "protest_bert"
+    action = "lm_amsterdam"
     locals()[action]()
 

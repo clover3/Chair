@@ -11,15 +11,15 @@ import glob
 import re
 
 scope_dir = os.path.join(data_path, "controversy")
-corpus_dir = os.path.join(scope_dir, "clueweb")
+clueweb_dir = os.path.join(scope_dir, "clueweb")
 #corpus_dir = os.path.join(scope_dir, "web_hard")
 
 def clean_text(text):
     return re.sub(r"<.*?>", " ", text)
 
 
-def load_docs():
-    docs_dir = os.path.join(corpus_dir, "docs")
+def load_clue303_docs():
+    docs_dir = os.path.join(clueweb_dir, "docs")
     f = []
     for (dirpath, dirnames, filenames) in os.walk(docs_dir):
         f.extend(filenames)
@@ -39,13 +39,13 @@ def load_docs():
 
 
 def load_rating():
-    rating_path = os.path.join(corpus_dir, "avg_rating.txt")
+    rating_path = os.path.join(clueweb_dir, "avg_rating.txt")
     f = open(rating_path, "r")
     for line in f:
         doc_id, rating = line.split()
         yield doc_id, float(rating)
 
-def load_label():
+def load_clue303_label():
     ratings = load_rating()
 
     labels = dict()
@@ -55,18 +55,27 @@ def load_label():
         else:
             labels[doc_id] = 0
 
-    num_cont = sum(labels.values())
     return labels
 
 
+def load_clueweb_testset():
+    labels = load_clue303_label()
+    docs = load_clue303_docs()
+
+    dev_X = []
+    dev_Y = []
+    for name, doc in docs:
+        dev_X.append(doc)
+        dev_Y.append(labels[name])
+    return dev_X, dev_Y
+
+
 def cross_check():
-    labels = load_label()
-    docs = load_docs()
+    labels = load_clue303_label()
+    docs = load_clue303_docs()
 
     print(len(labels))
     print(len(docs))
-
-
 
     for doc_id, text in docs:
         print(doc_id, labels[doc_id], len(text))
@@ -88,7 +97,7 @@ def load_dir_docs(dir_path):
         file_path = os.path.join(dir_path, filename)
         lines = open(file_path, "r").readlines()
         if len(lines) < 1:
-            print("Broken file : ", filename)
+            #print("Broken file : ", filename)
             continue
         doc_rank = int(filename.split(".")[0])
         doc_name = lines[0].split(":")[1].strip()

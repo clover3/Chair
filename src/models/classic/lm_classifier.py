@@ -17,6 +17,7 @@ class LMClassifer:
         self.smoothing = 0.1
         self.stemmer = stemmer
         self.fulltext = False
+        print("LM using ", "full text" if self.fulltext else "top 10 keyword")
         self.supervised = False
 
     def build(self, c_docs, bg_tf, bg_ctf):
@@ -153,18 +154,28 @@ class LMClassifer:
 
     def predict(self, data):
         y = []
-        for idx, s in enumerate(data):
-            tokens = self.tokenize(s)
-            odd = self.log_odd(tokens)
+        scores = self.score(data)
+        for odd in scores:
             y.append(int(odd > self.opt_alpha))
 
         return np.array(y)
 
-    def log_odd_text(self, text):
+    def score(self, data):
+        scores = []
+        for idx, s in enumerate(data):
+            odd = self.log_odd_text(s)
+            scores.append(odd)
+        return scores
+
+
+    def log_odd_tokens(self, tokens):
         if not self.supervised:
-            return self.log_odd(self.tokenize(text))
+            return self.log_odd(tokens)
         else:
-            return self.log_odd_binary(self.tokenizer(text))
+            return self.log_odd_binary(tokens)
+
+    def log_odd_text(self, text):
+        return self.log_odd_tokens(self.tokenize(text))
 
     def term_odd(self, token):
         if token in self.stopword:

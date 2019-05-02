@@ -138,16 +138,9 @@ class EstimatorRunner:
             init_checkpoint = os.path.join(path.model_path, "runs", FLAGS.init_checkpoint)
 
         vocab_size = 30522
-        num_train_steps = 10000
 
         task = Classification(3)
         model = transformer_est.TransformerEst(hp, vocab_size, task, FLAGS.use_tpu, init_checkpoint)
-        param = {
-            'feature_columns': self.get_feature_column(),
-            'n_classes': 3,
-            'batch_size': hp.batch_size
-        }
-
 
         is_per_host = tf.contrib.tpu.InputPipelineConfig.PER_HOST_V2
         run_config = tf.contrib.tpu.RunConfig(
@@ -170,12 +163,15 @@ class EstimatorRunner:
         input_files = tf.gfile.Glob(input_pattern)
         for input_file in input_files:
             tf.logging.info("  %s" % input_file)
+
+        train_files = input_files[1:]
+        eval_files = input_files[:1]
         tf.enable_eager_execution()
 
         tf.logging.info("***** Running training *****")
         tf.logging.info("  Batch size = %d", hp.batch_size)
         train_input_fn = input_fn_builder(
-            input_files=input_files,
+            input_files=train_files,
             max_seq_length=hp.seq_max,
             is_training=True)
 
@@ -208,20 +204,22 @@ class EstimatorRunner:
                     print(format_str % (datetime.now(), self._step, loss_value,
                                         examples_per_sec, sec_per_batch))
 
-        hook = _LoggerHook(1000)
+        hook = _LoggerHook(100)
         estimator.train(input_fn=train_input_fn,
                         hooks= [hook],
                         max_steps = FLAGS.train_steps
                         )
 
         eval_input_fn = input_fn_builder(
-            input_files=input_files,
+            input_files=eval_files,
             max_seq_length=hp.seq_max,
             is_training=False)
 
         result = estimator.evaluate(
             input_fn=eval_input_fn,
+            steps=20,
             )
+
         tf.logging.info("***** Eval results *****")
         for key in sorted(result.keys()):
             tf.logging.info("  %s = %s", key, str(result[key]))
