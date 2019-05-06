@@ -165,3 +165,52 @@ class OpTime:
         begin = time.time()
         ret = fn()
 
+def lmap(func, iterable_something):
+    return list([func(e) for e in iterable_something])
+
+
+def flat_apply_stack(list_fn, list_of_list, verbose=True):
+    item_loc = []
+
+    flat_items = []
+    for idx1, l in enumerate(list_of_list):
+        for idx2, item in enumerate(l):
+            flat_items.append(item)
+            item_loc.append(idx1)
+
+    if verbose:
+        print("Total of {} items".format(len(flat_items)))
+    results = list_fn(flat_items)
+
+    assert len(results) == len(flat_items)
+
+    stack = []
+    cur_list = []
+    line_no = 0
+    for idx, item in enumerate(results):
+        while idx >=0 and item_loc[idx] != line_no:
+            assert len(cur_list) == len(list_of_list[line_no])
+            stack.append(cur_list)
+            line_no += 1
+            cur_list = []
+        cur_list.append(item)
+    stack.append(cur_list)
+    return stack
+
+
+
+def parallel_run(input_list, list_fn, split_n):
+    def chunks(l, n):
+        """Yield successive n-sized chunks from l."""
+        for i in range(0, len(l), n):
+            yield l[i:i + n]
+
+    from pathos.multiprocessing import ProcessingPool as Pool
+    p = Pool(split_n, daemon=True)
+    args = chunks(input_list, split_n)
+    result_list_list = p.map(list_fn, args)
+
+    result = []
+    for result_list in result_list_list:
+        result.extend(result_list)
+    return result

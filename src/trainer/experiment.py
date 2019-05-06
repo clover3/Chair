@@ -40,12 +40,14 @@ from data_generator.argmining import ukp
 import data_generator.adhoc.score_loader as score_loader
 import data_generator.NLI.enlidef as ENLIDef
 from data_generator.ubuntu import ubuntu
+
 from models.baselines import svm
 from models.transformer.tranformer_nli import transformer_nli, transformer_nli_embedding_in
 from models.transformer.transformer_controversy import transformer_controversy
 from models.transformer.transformer_paired import transformer_paired
 from models.transformer.transformer_adhoc import transformer_adhoc, transformer_adhoc2, transformer_adhoc_ex
 from models.transformer.transformer_lm import transformer_ql
+from models.transformer.transformer_multitask import transformer_mt
 from models.transformer.ScoreCombiner import *
 from models.transformer.cie import token_regression, span_selection
 from models.transformer.transformer_binary import transformer_binary
@@ -6634,11 +6636,179 @@ class Experiment:
         val_entries = list([e for e in entries if e['set'] == 'val'])
         assert len(pred_list) == len(val_entries)
 
-        print(topic)
+        print("[{}]".format(topic))
         for pred, entry in zip(pred_list, val_entries):
-            print("[{}]".format(topic))
             print(entry['sentence'])
-            print('gold:', entry['annotation'])
-            if pred != data_loader.annotation2label(entry['annotation']):
-                print('pred:', data_loader.labels[pred])
+            result = "wrong" if pred != data_loader.annotation2label(entry['annotation']) else "correct"
+            gold_y = data_loader.labels.index(entry['annotation'])
+            print(result, "{}({})".format(pred, gold_y))
+
+
+
+
+    def train_next_sent(self, exp_config, data_loader1, data_loader2, load_name):
+        print("train_next_sent")
+
+        tf.reset_default_graph()
+        model = transformer_mt(self.hparam, exp_config.voca_size, [3, 3], True)
+        with tf.variable_scope("optimizer"):
+            train_cls1 = self.get_train_op(model.loss)
+            train_cls2 = self.get_train_op(model.loss2)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge([model.summary['loss2'], model.summary['acc2']])
+        self.setup_summary_writer(exp_config.name)
+        print("Loading model : ", load_name)
+
+
+        def load_available():
+            run_dir = os.path.join(self.model_dir, 'runs')
+            save_dir = os.path.join(run_dir, load_name)
+            model_id = None
+            for (dirpath, dirnames, filenames) in os.walk(save_dir):
+                for filename in filenames:
+                    if ".meta" in filename:
+                        print(filename)
+                        model_id = filename[:-5]
+
+            print(model_id)
+            assert model_id is not None
+            self.load_model_white2((load_name, model_id), ['bert', "cls_dense"], False)
+
+        load_available()
+        #self.load_model_white2(preload_id, exp_config.load_names)
+
+        def batch2feed_dict(y_idx, batch):
+            x0,x1,x2, y  = batch
+            feed_dict = {
+                model.x_list[0]: x0,
+                model.x_list[1]: x1,
+                model.x_list[2]: x2,
+                model.y[y_idx]: y,
+            }
+            return feed_dict
+
+        def forward_run(inputs):
+            batches = get_batches_ex(inputs, self.hparam.batch_size, 3)
+            logit_list = []
+            for batch in batches:
+                x0, x1, x2 = batch
+                logits,  = self.sess.run([model.sout, ],
+                                               feed_dict={
+                                                model.x_list[0]: x0,
+                                                model.x_list[1]: x1,
+                                                model.x_list[2]: x2,
+                                               })
+                logit_list.append(logits)
+            return np.concatenate(logit_list)
+
+        train_1_freq = 5
+        def train_fn(batch, step_i):
+            if step_i % train_1_freq == 0:
+                task1_step = int(step_i / train_1_freq)
+                train1(task1_step)
+            return train2(batch, step_i)
+
+        def train1(step_i):
+            step_mod = step_i % len(train_batches1)
+            batch = train_batches1[step_mod]
+            loss_val, _ = self.sess.run([model.loss, train_cls1,
+                                                  ],
+                                                 feed_dict=batch2feed_dict(0, batch)
+                                                 )
+            self.log.debug("Step {0} train1 loss={1:.04f}".format(step_i, loss_val))
+            return loss_val, 0
+
+        def train2(batch, step_i):
+            loss_val, summary, _ = self.sess.run([model.loss2, self.merged, train_cls2,
+                                             ],
+                                            feed_dict=batch2feed_dict(1, batch)
+                                            )
+            self.log.debug("Step {0} train2 loss={1:.04f}".format(step_i, loss_val))
+            #self.train_writer.add_summary(summary, self.g_step)
+            self.g_step += 1
+            return loss_val, 0
+
+        def get_train_data():
+            return get_batches_ex(data_loader2.get_train_data(), self.hparam.batch_size, 4)
+        print("Encoding train2")
+        train_batches2 = self.pickle_cacher(exp_config.name + "train", get_train_data, False)
+        print("Total of {} steps".format(len(train_batches2)))
+        dev_batches1 = get_batches_ex(data_loader1.get_dev_data(), self.hparam.batch_size, 4)
+        train_batches1 = get_batches_ex(data_loader1.get_train_data(), self.hparam.batch_size, 4)
+
+        print("Encoding dev2")
+        dev_batches2 = get_batches_ex(data_loader2.get_dev_data(), self.hparam.batch_size, 4)
+
+        def get_f1(logit_list, gold_y_list):
+            logit_list = np.concatenate(logit_list)
+            gold_y = np.concatenate(gold_y_list)
+            pred_y = np.argmax(logit_list, axis=1)
+
+            all_result = eval_3label(pred_y, gold_y)
+            f1 = sum([result['f1'] for result in all_result]) / 3
+            return f1
+
+        def valid_task2():
+            loss_list = []
+            logit_list = []
+            gold_y = []
+
+            for batch in dev_batches2:
+                x0, x1, x2, y = batch
+                loss_val, logits, summary = self.sess.run([model.loss2, model.logits2, self.merged],
+                                                  feed_dict=batch2feed_dict(1, batch)
+                                                  )
+                loss_list.append(loss_val)
+                logit_list.append(logits)
+                gold_y.append(y)
+                self.test_writer.add_summary(summary, self.g_step)
+
+            self.log.info("Valid2 : NextPred loss={0:.04f}".format(average(loss_list)))
+            self.log.info("Valid2 : NextPred F1={0:.04f}".format(get_f1(logit_list, gold_y)))
+
+
+        def valid_stance():
+            loss_list = []
+            logit_list = []
+            gold_y = []
+
+            for batch in dev_batches1:
+                x0, x1, x2, y = batch
+                loss_val, logits = self.sess.run([model.loss, model.logits],
+                                                  feed_dict=batch2feed_dict(0, batch)
+                                                  )
+                loss_list.append(loss_val)
+                logit_list.append(logits)
+                gold_y.append(y)
+            self.log.info("Valid1 : Stance loss={0:.04f}".format(average(loss_list)))
+
+            f1 = get_f1(logit_list, gold_y)
+            #print("Stance F1", f1)
+            self.log.info("Valid1 : Stance F1={0:.04f}".format(f1))
+
+
+
+        valid2_freq = 10
+        valid2_count = 0
+        def valid_fn():
+            nonlocal valid2_count
+            if valid2_count % valid2_freq == 0:
+                valid_stance()
+            valid2_count += 1
+            valid_task2()
+
+
+        def save_fn():
+            self.save_model(exp_config.name, 1)
+
+        valid_freq = 10
+        # train_op
+        print("Train epoch")
+        num_epochs = exp_config.num_epoch
+        for i_epoch in range(num_epochs):
+            loss, _ = epoch_runner(train_batches2, train_fn,
+                                   valid_fn, valid_freq,
+                                   save_fn, exp_config.save_interval)
 

@@ -12,7 +12,6 @@ all_topics = ["abortion", "cloning", "death_penalty", "gun_control",
 
 class DataLoader:
     def __init__(self, target_topic, is_3way=True):
-
         self.test_topic = target_topic
         self.train_topics = list(set(all_topics) - {target_topic})
         self.all_data = {topic : ukp.load(topic) for topic in all_topics}
@@ -60,7 +59,18 @@ class BertDataLoader(DataLoader):
         self.encoder = FullTokenizerWarpper(voca_path)
 
     def encode(self, x, y, topic):
-        topic_str = topic + " is necessary."
+        def expand_topic(t):
+            return {"abortion":"abortion, woman, choice",
+             "cloning": "cloning , research ",
+             "death_penalty": "death penalty , punishment , execution , justice ",
+             "gun_control":"gun control , rifles , firearms ",
+             "marijuana_legalization": "marijuana legalization , cannabis , drug ",
+            "minimum_wage": "minimum wage , labor  , worker ",
+            "nuclear_energy": "nuclear energy , power , plant ",
+            "school_uniforms": "school uniforms"}[t]
+
+        topic_str = topic + " is good."
+        topic_str = expand_topic(topic)
         entry = self.encode_pair(topic_str, x)
         return entry["input_ids"], entry["input_mask"], entry["segment_ids"], y
 

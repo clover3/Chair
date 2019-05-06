@@ -133,6 +133,24 @@ def load_tf_inner(file_path):
 
     return ctf, tf_dict
 
+def load_guardian():
+    dir_path = os.path.join(scope_dir, "guardian")
+    todo = [
+        ("guardianC.txt", 1) , ("guardianNC.txt",0)
+    ]
+    X = []
+    Y = []
+    for name, label in todo:
+        path = os.path.join(dir_path, name)
+        docs = open(path, "r").readlines()
+        X.extend(docs)
+        Y.extend([label for _ in docs])
+    return X, Y
+
+def load_guardian16_signal():
+    path = os.path.join(scope_dir, "LM_train_docs.pickle")
+    return pickle.load(open(path, "rb"))
+
 
 if __name__ == '__main__':
     cross_check()

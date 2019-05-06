@@ -1,6 +1,10 @@
 import logging
 
 import os
+logger_id = os.environ["LOGGER"]
+if logger_id is None:
+    logger_id = "1"
+
 from os.path import dirname
 
 project_root = os.path.abspath(dirname(dirname(dirname(os.path.abspath(__file__)))))
@@ -8,8 +12,8 @@ data_path = os.path.join(project_root, 'data')
 output_path = os.path.join(project_root, 'output')
 
 def train_logger():
-    log = logging.getLogger('Training 2')
-    ch = logging.FileHandler(os.path.join(output_path, "train.log"))
+    log = logging.getLogger('Training')
+    ch = logging.FileHandler(os.path.join(output_path, "train_{}.log".format(logger_id)))
     log.setLevel(logging.DEBUG)
     format_str = '%(levelname)s\t%(name)s \t%(asctime)s %(message)s'
     formatter = logging.Formatter(format_str,
@@ -22,7 +26,7 @@ def train_logger():
 
 
 def aux_logger():
-    log = logging.getLogger('Aux2')
+    log = logging.getLogger('Aux')
     ch = logging.FileHandler(os.path.join(output_path, "aux.log"))
     log.setLevel(logging.DEBUG)
     format_str = '%(levelname)s\t%(name)s \t%(asctime)s %(message)s'

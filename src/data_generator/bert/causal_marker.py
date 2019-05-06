@@ -3,6 +3,7 @@ from misc_lib import pick1
 import re
 import os
 import path
+from text_lib import line_split
 
 NO_MARKER = 0
 CAUSAL_MARKER = 1
@@ -281,10 +282,6 @@ def write_instance_to_example_files(instances, tokenizer, max_seq_length, output
 
   tf.logging.info("Wrote %d total instances", total_written)
 
-
-def line_split(line):
-  s1 = re.sub(r'(\w[A-Z]|[0-9a-z])([.!?]) ([A-Z])', r'\1\2__|__\3', line)
-  return s1.split('__|__')
 
 def parse_grep_result(filename):
   document = []

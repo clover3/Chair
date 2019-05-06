@@ -2,11 +2,18 @@ from data_generator.data_parser import controversy, load_protest
 from data_generator.data_parser import amsterdam
 from summarization.tokenizer import *
 from models.classic.lm_classifier import LMClassifer
+from models.classic.stopword import load_stopwords
 
+
+
+from multiprocessing import Pool
+from collections import Counter
 from krovetzstemmer import Stemmer
 
 
 def get_dbpedia_contrv_lm():
+    print("Building LM from DBPedia's controversy ranked docs")
+
     stemmer = Stemmer()
     cont_docs = controversy.load_pseudo_controversy_docs("dbpedia")[:7500]
     print("Using {} docs".format(len(cont_docs)))
@@ -19,13 +26,13 @@ def get_dbpedia_contrv_lm():
     cont_docs_text = list([x[2] for x in cont_docs])
     print("Building LM classifier ")
 
-    classifier = LMClassifer(tokenizer, stemmer)
+    classifier = LMClassifer(tokenizer, stemmer, fulltext=False)
     classifier.build(cont_docs_text, bg_tf, bg_ctf, )
     return classifier
 
 
 
-def get_wiki_doc_lm():
+def get_wiki_doc_lm(fulltext=False):
     print("Building LM from wikipedia controversy list")
     train_data = amsterdam.get_train_data(separate=True)
     pos_entries, neg_entries = train_data
@@ -42,7 +49,66 @@ def get_wiki_doc_lm():
     all_docs = pos_docs + neg_docs
 
     tokenizer = lambda x: tokenize(x, set(), False)
-    classifier = LMClassifer(tokenizer, stemmer)
+    classifier = LMClassifer(tokenizer, stemmer, fulltext=False)
     classifier.build2(all_docs, y)
     return classifier
 
+def count_word(documents):
+    counter = Counter()
+    for doc in documents:
+        for i, token in enumerate(doc):
+            if token == "PADDING":
+                break
+            counter[token] += 1
+    return counter
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
+
+def get_guardian16_lm():
+    print("Building LM from guardian16 signal")
+    stemmer = None
+    stopwords = load_stopwords()
+    pos_docs, neg_docs = controversy.load_guardian16_signal()
+    y = list(1 for _ in pos_docs) + list(0 for _ in neg_docs)
+
+    def transform(counter):
+        if stemmer is None:
+            new_tf = counter
+        else:
+            new_tf = Counter()
+            for key in counter:
+                source = key
+                target = stemmer(key)
+                new_tf[target] += counter[source]
+
+        counter = new_tf
+        new_tf = Counter()
+        for key in counter:
+            if len(key) <= 3 or key in stopwords:
+                pass
+            else:
+                new_tf[key] = counter[key]
+        return new_tf
+
+    def count_word_parallel(documents):
+        split = 30
+        p = Pool(split)
+        args = chunks(documents, split)
+        counters = p.map(count_word, args)
+        g_counter = Counter()
+        for counter in counters:
+            for key in counter.keys():
+                g_counter[key] += counter[key]
+        return g_counter
+
+    c_counter = transform(count_word_parallel(pos_docs))
+    nc_counter = transform(count_word_parallel(neg_docs))
+
+    tokenizer = lambda x: tokenize(x, set(), False)
+    classifier = LMClassifer(tokenizer, None, fulltext=True)
+    classifier.build3(c_counter, nc_counter)
+    return classifier

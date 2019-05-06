@@ -125,13 +125,13 @@ def protest_bert():
     e.train_protest(e_config, data_loader, load_id)
 
 
-def lm_amsterdam():
+def eval_all_contrv():
     e = ControversyExperiment()
-    e.eval_amsterdam()
+    e.eval_all_contrv()
 
 
 
 if __name__ == '__main__':
-    action = "lm_amsterdam"
+    action = "eval_all_contrv"
     locals()[action]()
 

@@ -107,22 +107,30 @@ class ControversyExperiment:
         print("PR AUC :", compute_pr_auc(y_scores, y_list))
 
 
-    def eval_amsterdam(self):
+    def eval_all_contrv(self):
 
         ams_X, ams_Y = amsterdam.get_dev_data(False)
         clue_X, clue_Y = controversy.load_clueweb_testset()
-        model_wiki_doc = get_wiki_doc_lm()
+        guardian_X, guardian_Y = controversy.load_guardian()
+
+        model_guardian = get_guardian16_lm()
+     #   model_wiki_doc = get_wiki_doc_lm()
         model_dbpedia = get_dbpedia_contrv_lm()
 
-        models = [("Amsterdam",model_wiki_doc), ("MH16", model_dbpedia)]
-        test_sets = [("Ams18", [ams_X, ams_Y]), ("Clueweb",[clue_X, clue_Y])]
+
+        models = [#("Amsterdam",model_wiki_doc),
+                  ("MH16", model_dbpedia),
+                  ("Guardian", model_guardian)]
+        test_sets = [("Ams18", [ams_X, ams_Y]),
+                     ("Clueweb",[clue_X, clue_Y]),
+                     ("Guardian", [guardian_X, guardian_Y])]
 
         for set_name, test_set in test_sets:
             dev_X, dev_Y = test_set
             print(set_name)
             for name, model in models:
                 scores = model.score(dev_X)
-                auc = compute_auc(scores, dev_Y)
+                auc = compute_pr_auc(scores, dev_Y)
                 print("{}\t{}".format(name, auc))
 
 

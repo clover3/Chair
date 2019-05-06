@@ -6,7 +6,7 @@ from collections import Counter
 from models.classic.stopword import load_stopwords
 
 class LMClassifer:
-    def __init__(self, tokenizer=wordpunct_tokenize, stemmer=None):
+    def __init__(self, tokenizer=wordpunct_tokenize, stemmer=None, fulltext=False):
         self.tokenizer = tokenizer
         self.opt_alpha = None
 
@@ -16,9 +16,9 @@ class LMClassifer:
         self.BG = None
         self.smoothing = 0.1
         self.stemmer = stemmer
-        self.fulltext = False
-        print("LM using ", "full text" if self.fulltext else "top 10 keyword")
+        self.fulltext = fulltext
         self.supervised = False
+        print("LM using ", "full text" if self.fulltext else "top 10 keyword")
 
     def build(self, c_docs, bg_tf, bg_ctf):
         stopwords = load_stopwords()
@@ -64,6 +64,7 @@ class LMClassifer:
 
         self.C = transform(c_tf)
         self.C_ctf = sum(self.C.values())
+
 
 
     def tokenize(self, str):
@@ -122,6 +123,19 @@ class LMClassifer:
                 max_acc = acc
 
         print("Train acc : {}".format(max_acc))
+
+
+    def build3(self, C, NC):
+        stopwords = load_stopwords()
+        self.supervised = True
+
+        self.NC = NC
+        self.C = C
+        self.stopword = stopwords
+
+        self.NC_ctf = sum(self.NC.values())
+        self.C_ctf = sum(self.C.values())
+
 
     def tune_alpha(self, x, y):
         vectors = []
