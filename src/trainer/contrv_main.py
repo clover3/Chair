@@ -14,6 +14,7 @@ from data_generator.controversy import agree
 from trainer.experiment import Experiment
 from trainer.ExperimentConfig import ExperimentConfig
 from trainer.controversy_experiments import ControversyExperiment
+import evals.controversy
 
 
 def train_mscore_regression():
@@ -131,8 +132,9 @@ def wikicont_bert():
     e_config = ExperimentConfig()
     e_config.name = "WikiContrv"
     e_config.num_epoch = 1
-    e_config.save_interval = 1 * 60  # 1 minutes
+    e_config.save_interval = 60 * 60  # 1 minutes
     e_config.load_names = ['bert']
+    e_config.valid_freq = 100
     vocab_size = 30522
     vocab_filename = "bert_voca.txt"
 
@@ -143,9 +145,7 @@ def wikicont_bert():
 
 
 def eval_all_contrv():
-    e = ControversyExperiment()
-    e.eval_all_contrv()
-
+    return evals.controversy.eval_all_contrv()
 
 def get_tf10():
     e = ControversyExperiment()

@@ -6304,15 +6304,17 @@ class Experiment:
         def valid_fn():
             loss_list = []
             logit_list = []
+            acc_list = []
             for batch in dev_batches:
-                loss_val, logits, summary = self.sess.run([task.loss, task.logits, self.merged],
+                loss_val, logits, summary, acc= self.sess.run([task.loss, task.logits, self.merged, task.acc],
                                                   feed_dict=batch2feed_dict(batch)
                                                   )
                 loss_list.append(loss_val)
                 logit_list.append(logits)
+                acc_list.append(acc)
 
                 self.test_writer.add_summary(summary, self.g_step)
-            self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
+            self.log.info("Validation : loss={0:.04f} acc={1:.04f}".format(average(loss_list), average(acc_list)))
 
             logit_list = np.concatenate(logit_list)
             scores = logit_list[:,1]
@@ -6320,15 +6322,14 @@ class Experiment:
         def save_fn():
             self.save_model(exp_config.name, 1)
 
-        valid_freq = 10
         # train_op
         print("Train epoch")
         num_epochs = exp_config.num_epoch
         for i_epoch in range(num_epochs):
             loss, _ = epoch_runner(train_batches, train_fn,
-                                   valid_fn, valid_freq,
+                                   valid_fn, exp_config.valid_freq,
                                    save_fn, exp_config.save_interval)
-
+        save_fn()
 
     def eval_ukp(self, exp_config, data_loader, model_path):
         print("eval_ukp")

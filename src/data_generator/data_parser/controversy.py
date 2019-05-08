@@ -61,7 +61,6 @@ def load_clue303_label():
 def load_clueweb_testset():
     labels = load_clue303_label()
     docs = load_clue303_docs()
-    docs = docs[:int(len(docs)*0.2)]
 
     dev_X = []
     dev_Y = []

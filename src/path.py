@@ -15,6 +15,18 @@ model_path = os.path.join(output_path, 'model')
 
 prediction_dir = os.path.join(output_path, "prediction")
 
+def get_model_full_path(exp_name, run_id = None):
+    run_dir = os.path.join(model_path, 'runs')
+    save_dir = os.path.join(run_dir, exp_name)
+    if run_id is None:
+        for (dirpath, dirnames, filenames) in os.walk(save_dir):
+            for filename in filenames:
+                if ".meta" in filename:
+                    print(filename)
+                    model_id = filename[:-5]
+    else:
+        model_id = "model-{}".format(run_id)
+    return os.path.join(save_dir, model_id)
 
 def open_pred_output(name):
     path = os.path.join(prediction_dir, name)

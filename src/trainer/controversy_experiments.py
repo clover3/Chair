@@ -4,7 +4,7 @@ from summarization.text_rank import TextRank
 from models.classic.lm_classifier import LMClassifer
 from models.classic.lm_ex import LMClassifierEx
 from models.controversy import *
-
+from models.bert_controversy import BertPredictor
 from evaluation import compute_auc, compute_pr_auc, compute_acc, AP
 from krovetzstemmer import Stemmer
 from nltk.tokenize import wordpunct_tokenize
@@ -132,36 +132,6 @@ class ControversyExperiment:
 
         print("AUC :", compute_auc(y_scores, y_list))
         print("PR AUC :", compute_pr_auc(y_scores, y_list))
-
-
-    def eval_all_contrv(self):
-
-        ams_X, ams_Y = amsterdam.get_dev_data(False)
-        clue_X, clue_Y = controversy.load_clueweb_testset()
-        guardian_X, guardian_Y = controversy.load_guardian()
-
-        model_guardian = get_guardian16_lm()
-        model_guardian2 = get_guardian_selective_lm()
-     #   model_wiki_doc = get_wiki_doc_lm()
-        model_dbpedia = get_dbpedia_contrv_lm()
-
-
-        models = [#("Amsterdam",model_wiki_doc),
-                  ("MH16", model_dbpedia),
-                  ("Guardian", model_guardian),
-                ("Guardian2", model_guardian2)]
-        test_sets = [("Ams18", [ams_X, ams_Y]),
-                     ("Clueweb",[clue_X, clue_Y]),
-                     ("Guardian", [guardian_X, guardian_Y])]
-
-        for set_name, test_set in test_sets:
-            dev_X, dev_Y = test_set
-            print(set_name)
-            for name, model in models:
-                scores = model.score(dev_X)
-                auc = compute_pr_auc(scores, dev_Y)
-                print("{}\t{}".format(name, auc))
-
 
 
     def lm_protest_baseline(self):
