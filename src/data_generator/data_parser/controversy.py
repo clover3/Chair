@@ -61,6 +61,7 @@ def load_clue303_label():
 def load_clueweb_testset():
     labels = load_clue303_label()
     docs = load_clue303_docs()
+    docs = docs[:int(len(docs)*0.2)]
 
     dev_X = []
     dev_Y = []
@@ -149,6 +150,10 @@ def load_guardian():
 
 def load_guardian16_signal():
     path = os.path.join(scope_dir, "LM_train_docs.pickle")
+    return pickle.load(open(path, "rb"))
+
+def load_guardian_selective_signal():
+    path = os.path.join(data_path, "guardian",  "LM_docs.pickle")
     return pickle.load(open(path, "rb"))
 
 

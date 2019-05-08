@@ -47,23 +47,55 @@ def train_bert():
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     load_id = ("NLI_Only_B", 'model-0')
     #load_id = ("causal", 'model.ckpt-1000')
-    exp_purpose = "keyword expansion, no 'good' (2 epoch)"
+    exp_purpose = "nli - way(2 epoch)"
+    encode_opt = "only_topic_word"
 
+    print(load_id)
     f1_list = []
     for topic in ukp.all_topics:
         e = Experiment(hp)
         print(exp_purpose)
-        e_config.name = "arg_ma_ex_{}".format(topic)
-        data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt")
-        f1_last = e.train_ukp(e_config, data_loader, load_id)
+        e_config.name = "arg_causal_{}_{}".format(topic, encode_opt)
+        data_loader = BertDataLoader(topic, False, hp.seq_max, "bert_voca.txt", option=encode_opt)
+        save_path = e.train_ukp(e_config, data_loader, load_id)
         print(topic)
-        print(f1_last)
+        f1_last = e.eval_ukp(e_config, data_loader, save_path)
+        f1_list.append((topic, f1_last))
+    print(exp_purpose)
+    print(encode_opt)
+    print(f1_list)
+    for key, score in f1_list:
+        print("{0}\t{1:.03f}".format(key,score))
+
+
+def train_weighted():
+    hp = hyperparams.HPBert()
+
+    e_config = ExperimentConfig()
+    e_config.num_epoch = 2
+    e_config.save_interval = 100 * 60  # 30 minutes
+    e_config.voca_size = 30522
+    e_config.load_names = ['bert']
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    load_id = ("NLI_Only_B", 'model-0')
+    #load_id = ("causal", 'model.ckpt-1000')
+    exp_purpose = "Weighted 0.0 (2 epoch)"
+    print(load_id)
+    f1_list = []
+    for topic in ukp.all_topics:
+        e = Experiment(hp)
+        print(exp_purpose)
+        e_config.name = "arg_weight_{}".format(topic)
+        data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt", option="weighted")
+        data_loader.weight = 0.0
+        save_path = e.train_ukp(e_config, data_loader, load_id)
+        print(topic)
+        f1_last = e.eval_ukp(e_config, data_loader, save_path)
         f1_list.append((topic, f1_last))
     print(exp_purpose)
     print(f1_list)
     for key, score in f1_list:
         print("{0}\t{1:.03f}".format(key,score))
-
 
 
 def train_next_pred():
@@ -154,6 +186,16 @@ def failure_analysis():
         e.failure_ukp(e_config, topic)
 
 
+def query_expansion():
+    for topic in ukp.all_topics:
+        hp = hyperparams.HPBert()
+        e = Experiment(hp)
+        e_config = ExperimentConfig()
+        e_config.voca_size = 30522
+        e_config.load_names = ['bert']
+        e_config.name = "arg_b_{}".format(topic)
+        e.pred_ukp_aux(e_config, topic)
+
 if __name__ == '__main__':
-    action = "train_next_pred"
+    action = "train_bert"
     locals()[action]()

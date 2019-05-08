@@ -48,7 +48,7 @@ class DataLoader:
 
 
 class BertDataLoader(DataLoader):
-    def __init__(self, target_topic, is_3way, max_sequence, vocab_filename):
+    def __init__(self, target_topic, is_3way, max_sequence, vocab_filename, option=""):
         DataLoader.__init__(self, target_topic, is_3way)
 
         self.max_seq = max_sequence
@@ -57,21 +57,47 @@ class BertDataLoader(DataLoader):
         self.lower_case = True
         self.sep_char = "#"
         self.encoder = FullTokenizerWarpper(voca_path)
+        self.option = option
+        self.weight = 0.0
+
+    @staticmethod
+    def expand_topic(t):
+        return {"abortion": "abortion, woman, choice",
+                "cloning": "cloning , research ",
+                "death_penalty": "death penalty , punishment , execution , justice ",
+                "gun_control": "gun control , rifles , firearms ",
+                "marijuana_legalization": "marijuana legalization , cannabis , drug ",
+                "minimum_wage": "minimum wage , labor  , worker ",
+                "nuclear_energy": "nuclear energy , power , plant ",
+                "school_uniforms": "school uniforms"}[t]
+
+    @staticmethod
+    def expand_topic2(t):
+        return {"abortion": ["woman", "choice"],
+                "cloning": ["research"],
+                "death_penalty": ["punishment", "execution", "justice"],
+                "gun_control": [ "rifles", "firearms"],
+                "marijuana_legalization": ["cannabis", "drug"],
+                "minimum_wage": [ "labor", "worker"],
+                "nuclear_energy": ["power", "plant"],
+                "school_uniforms": []}[t]
 
     def encode(self, x, y, topic):
-        def expand_topic(t):
-            return {"abortion":"abortion, woman, choice",
-             "cloning": "cloning , research ",
-             "death_penalty": "death penalty , punishment , execution , justice ",
-             "gun_control":"gun control , rifles , firearms ",
-             "marijuana_legalization": "marijuana legalization , cannabis , drug ",
-            "minimum_wage": "minimum wage , labor  , worker ",
-            "nuclear_energy": "nuclear energy , power , plant ",
-            "school_uniforms": "school uniforms"}[t]
-
-        topic_str = topic + " is good."
-        topic_str = expand_topic(topic)
-        entry = self.encode_pair(topic_str, x)
+        if self.option == "is_good":
+            topic_str = topic + " is good."
+            entry = self.encode_pair(topic_str, x)
+        elif self.option == "only_topic_word":
+            topic_str = topic
+            #topic_str = expand_topic(topic)
+            entry = self.encode_pair(topic_str, x)
+        elif self.option == "expand":
+            topic_str = self.expand_topic(topic)
+            entry = self.encode_pair(topic_str, x)
+        elif self.option == "weighted":
+            aux_topics = self.expand_topic2(topic)
+            entry = self.encode_pair_weighted(topic, aux_topics, x)
+        else:
+            raise NotImplementedError
         return entry["input_ids"], entry["input_mask"], entry["segment_ids"], y
 
     def get_train_data(self):
@@ -91,6 +117,15 @@ class BertDataLoader(DataLoader):
                 x = entry['sentence']
                 y = self.annotation2label(entry['annotation'])
                 dev_data.append(self.encode(x,y, self.test_topic))
+        return dev_data
+
+    def get_dev_data_expand(self, keyword):
+        dev_data = []
+        for entry in self.all_data[self.test_topic]:
+            if entry['set'] == "val":
+                x = entry['sentence']
+                y = self.annotation2label(entry['annotation'])
+                dev_data.append(self.encode(x,y, keyword))
         return dev_data
 
     def encode_pair(self, text_a, text_b):
@@ -142,6 +177,88 @@ class BertDataLoader(DataLoader):
         # The mask has 1 for real tokens and 0 for padding tokens. Only real
         # tokens are attended to.
         input_mask = [1] * len(input_ids)
+
+        # Zero-pad up to the sequence length.
+        while len(input_ids) < self.max_seq:
+            input_ids.append(0)
+            input_mask.append(0)
+            segment_ids.append(0)
+
+        assert len(input_ids) == self.max_seq
+        assert len(input_mask) == self.max_seq
+        assert len(segment_ids) == self.max_seq
+
+        return {
+            "input_ids": input_ids,
+            "input_mask":input_mask,
+            "segment_ids": segment_ids
+        }
+
+
+    def encode_pair_weighted(self, topic, aux_topics, text_b):
+        tokens_topic = self.encoder.encode(topic)
+        tokens_aux_topics = list([self.encoder.encode(t) for t in aux_topics])
+
+        tokens_a = tokens_topic + flatten(tokens_aux_topics)
+
+        tokens_b = self.encoder.encode(text_b)
+
+        # Modifies `tokens_a` and `tokens_b` in place so that the total
+        # length is less than the specified length.
+        # Account for [CLS], [SEP], [SEP] with "- 3"
+        _truncate_seq_pair(tokens_a, tokens_b, self.max_seq - 3)
+
+        # The convention in BERT is:
+        # (a) For sequence pairs:
+        #  tokens:   [CLS] is this jack ##son ##ville ? [SEP] no it is not . [SEP]
+        #  type_ids: 0     0  0    0    0     0       0 0     1  1  1  1   1 1
+        # (b) For single sequences:
+        #  tokens:   [CLS] the dog is hairy . [SEP]
+        #  type_ids: 0     0   0   0  0     0 0
+        #
+        # Where "type_ids" are used to indicate whether this is the first
+        # sequence or the second sequence. The embedding vectors for `type=0` and
+        # `type=1` were learned during pre-training and are added to the wordpiece
+        # embedding vector (and position vector). This is not *strictly* necessary
+        # since the [SEP] token unambiguously separates the sequences, but it makes
+        # it easier for the model to learn the concept of sequences.
+        #
+        # For classification tasks, the first vector (corresponding to [CLS]) is
+        # used as as the "sentence vector". Note that this only makes sense because
+        # the entire model is fine-tuned.
+        tokens = []
+        segment_ids = []
+        input_mask = []
+
+        tokens.append(CLS_ID)
+        input_mask.append(1)
+        segment_ids.append(0)
+
+        for idx, token in enumerate(tokens_a):
+            tokens.append(token)
+            segment_ids.append(0)
+            if idx < len(tokens_topic):
+                input_mask.append(1)
+            else:
+                input_mask.append(self.weight)
+
+        tokens.append(SEP_ID)
+        segment_ids.append(0)
+        input_mask.append(1)
+
+        if tokens_b:
+            for token in tokens_b:
+                tokens.append(token)
+                segment_ids.append(1)
+                input_mask.append(1)
+            tokens.append(SEP_ID)
+            segment_ids.append(1)
+            input_mask.append(1)
+
+        input_ids = tokens
+
+        # The mask has 1 for real tokens and 0 for padding tokens. Only real
+        # tokens are attended to.
 
         # Zero-pad up to the sequence length.
         while len(input_ids) < self.max_seq:

@@ -14,7 +14,7 @@ import os
 import path
 
 from collections import Counter
-
+import pickle
 
 class ControversyExperiment:
     def __init__(self):
@@ -42,6 +42,33 @@ class ControversyExperiment:
             print(key)
             for key, value in scores.most_common(10):
                 print(key, value)
+
+
+    def get_tf_10(self):
+        docs = controversy.load_clue303_docs()
+        stopwords = load_stopwords()
+        tokenizer = lambda x: tokenize(x, stopwords, False)
+
+        dev_size= int(len(docs) * 0.2)
+
+        result = []
+        for name, doc in docs:
+            tokens = tokenizer(doc)
+            counter = Counter()
+            for t in tokens:
+                if t not in stopwords and len(t) > 2:
+                    counter[t] += 1
+
+            terms = left(list(counter.most_common(10)))
+            print(name)
+            print(terms)
+            result.append((name, terms))
+
+        pickle.dump(result, open("tf10_all.pickle", "wb"))
+
+
+
+
 
 
     def lm_baseline(self):
@@ -114,13 +141,15 @@ class ControversyExperiment:
         guardian_X, guardian_Y = controversy.load_guardian()
 
         model_guardian = get_guardian16_lm()
+        model_guardian2 = get_guardian_selective_lm()
      #   model_wiki_doc = get_wiki_doc_lm()
         model_dbpedia = get_dbpedia_contrv_lm()
 
 
         models = [#("Amsterdam",model_wiki_doc),
                   ("MH16", model_dbpedia),
-                  ("Guardian", model_guardian)]
+                  ("Guardian", model_guardian),
+                ("Guardian2", model_guardian2)]
         test_sets = [("Ams18", [ams_X, ams_Y]),
                      ("Clueweb",[clue_X, clue_Y]),
                      ("Guardian", [guardian_X, guardian_Y])]

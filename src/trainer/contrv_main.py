@@ -9,7 +9,8 @@ from data_generator.shared_setting import NLI
 from trainer.tf_module import *
 import tensorflow as tf
 from data_generator.adhoc import ws
-from data_generator.controversy import mscore, title, protest
+from data_generator.controversy import mscore, title, protest, Ams18
+from data_generator.controversy import agree
 from trainer.experiment import Experiment
 from trainer.ExperimentConfig import ExperimentConfig
 from trainer.controversy_experiments import ControversyExperiment
@@ -124,12 +125,52 @@ def protest_bert():
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     e.train_protest(e_config, data_loader, load_id)
 
+def wikicont_bert():
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    e_config = ExperimentConfig()
+    e_config.name = "WikiContrv"
+    e_config.num_epoch = 1
+    e_config.save_interval = 1 * 60  # 1 minutes
+    e_config.load_names = ['bert']
+    vocab_size = 30522
+    vocab_filename = "bert_voca.txt"
+
+    data_loader = Ams18.DataLoader(hp.seq_max, vocab_filename, vocab_size)
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    e.train_wiki_contrv(e_config, data_loader, load_id)
+
+
 
 def eval_all_contrv():
     e = ControversyExperiment()
     e.eval_all_contrv()
 
 
+def get_tf10():
+    e = ControversyExperiment()
+    e.get_tf_10()
+
+
+
+def train_agree():
+    hp = hyperparams.HPBert()
+
+    e_config = ExperimentConfig()
+    e_config.num_epoch = 2
+    e_config.save_interval = 100 * 60  # 30 minutes
+    e_config.voca_size = 30522
+    e_config.load_names = ['bert']
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    exp_purpose = "(dis)agree train"
+
+    e = Experiment(hp)
+    print(exp_purpose)
+    e_config.name = "AgreeTrain"
+    vocab_filename = "bert_voca.txt"
+    data_loader = agree.DataLoader(hp.seq_max, vocab_filename)
+    save_path = e.train_agree(e_config, data_loader, load_id)
+    print(exp_purpose)
 
 if __name__ == '__main__':
     action = "eval_all_contrv"

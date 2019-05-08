@@ -48,6 +48,7 @@ from models.transformer.transformer_paired import transformer_paired
 from models.transformer.transformer_adhoc import transformer_adhoc, transformer_adhoc2, transformer_adhoc_ex
 from models.transformer.transformer_lm import transformer_ql
 from models.transformer.transformer_multitask import transformer_mt
+from models.transformer.transformer_weight import transformer_weight
 from models.transformer.ScoreCombiner import *
 from models.transformer.cie import token_regression, span_selection
 from models.transformer.transformer_binary import transformer_binary
@@ -1290,6 +1291,7 @@ class Experiment:
             self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=max_to_keep)
         ret = self.saver.save(self.sess, path, global_step=self.global_step)
         self.log.info("Model saved at {} - {}".format(path, ret))
+        return ret
 
 
     def load_model_encoder(self, name, id):
@@ -6245,16 +6247,255 @@ class Experiment:
             tokens = data_loader.encoder.decode_list(input_ids[1:idx_sep1])
             result.append((tokens, explains[idx][1:idx_sep1], pred[idx], y_list[idx]))
 
-
         visualize.visualize_single(result, "protest")
 
 
+
+
+    def train_wiki_contrv(self, exp_config, data_loader, preload_id):
+        print("train_wiki_cont")
+        task = transformer_binary(self.hparam, data_loader.voca_size, True)
+        with tf.variable_scope("optimizer"):
+            train_cls = self.get_train_op(task.loss)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        self.load_model_white2(preload_id, exp_config.load_names)
+
+        def batch2feed_dict(batch):
+            x0,x1,x2, y  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        def forward_run(inputs):
+            batches = get_batches_ex(inputs, self.hparam.batch_size, 3)
+            logit_list = []
+            for batch in batches:
+                x0, x1, x2 = batch
+                logits,  = self.sess.run([task.sout, ],
+                                               feed_dict={
+                                                task.x_list[0]: x0,
+                                                task.x_list[1]: x1,
+                                                task.x_list[2]: x2,
+                                               })
+                logit_list.append(logits)
+            return np.concatenate(logit_list)
+
+        def train_fn(batch, step_i):
+            loss_val, summary, _ = self.sess.run([task.loss, self.merged, train_cls,
+                                             ],
+                                            feed_dict=batch2feed_dict(batch)
+                                            )
+            self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
+            self.train_writer.add_summary(summary, self.g_step)
+            self.g_step += 1
+            return loss_val, 0
+
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+        train_batches = get_batches_ex(data_loader.get_train_data(), self.hparam.batch_size, 4)
+
+        def valid_fn():
+            loss_list = []
+            logit_list = []
+            for batch in dev_batches:
+                loss_val, logits, summary = self.sess.run([task.loss, task.logits, self.merged],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+                logit_list.append(logits)
+
+                self.test_writer.add_summary(summary, self.g_step)
+            self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
+
+            logit_list = np.concatenate(logit_list)
+            scores = logit_list[:,1]
+
+        def save_fn():
+            self.save_model(exp_config.name, 1)
+
+        valid_freq = 10
+        # train_op
+        print("Train epoch")
+        num_epochs = exp_config.num_epoch
+        for i_epoch in range(num_epochs):
+            loss, _ = epoch_runner(train_batches, train_fn,
+                                   valid_fn, valid_freq,
+                                   save_fn, exp_config.save_interval)
+
+
+    def eval_ukp(self, exp_config, data_loader, model_path):
+        print("eval_ukp")
+        tf.reset_default_graph()
+        task = transformer_nli(self.hparam, exp_config.voca_size, 0, False)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+
+        loader = tf.train.Saver()
+        loader.restore(self.sess, model_path)
+
+        def batch2feed_dict(batch):
+            x0,x1,x2, y  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+
+        idx_for = data_loader.labels.index("Argument_for")
+        idx_against = data_loader.labels.index("Argument_against")
+
+        def valid_fn():
+            loss_list = []
+            logit_list = []
+            gold_y = []
+
+            for batch in dev_batches:
+                x0, x1, x2, y = batch
+                loss_val, logits, summary = self.sess.run([task.loss, task.logits, self.merged],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+                logit_list.append(logits)
+                gold_y.append(y)
+                self.test_writer.add_summary(summary, self.g_step)
+            self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
+
+            logit_list = np.concatenate(logit_list)
+            gold_y = np.concatenate(gold_y)
+            pred_y = np.argmax(logit_list, axis=1)
+
+            all_result = eval_3label(pred_y, gold_y)
+            for_result = all_result[idx_for]
+            against_result = all_result[idx_against]
+            f1 = sum([result['f1'] for result in all_result]) / 3
+            print("F1", f1)
+            print("P_arg+", for_result['precision'])
+            print("R_arg+", for_result['recall'])
+            print("P_arg-", against_result['precision'])
+            print("R_arg-", against_result['recall'])
+            return all_result
+
+        all_result = valid_fn()
+        f1 = sum([result['f1'] for result in all_result]) / 3
+        return f1
 
 
     def train_ukp(self, exp_config, data_loader, preload_id):
         print("train_ukp")
         tf.reset_default_graph()
         task = transformer_nli(self.hparam, exp_config.voca_size, 0, True)
+        with tf.variable_scope("optimizer"):
+            train_cls = self.get_train_op(task.loss)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        self.load_model_white2(preload_id, exp_config.load_names, False)
+
+        def batch2feed_dict(batch):
+            x0,x1,x2, y  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        def forward_run(inputs):
+            batches = get_batches_ex(inputs, self.hparam.batch_size, 3)
+            logit_list = []
+            for batch in batches:
+                x0, x1, x2 = batch
+                logits,  = self.sess.run([task.sout, ],
+                                               feed_dict={
+                                                task.x_list[0]: x0,
+                                                task.x_list[1]: x1,
+                                                task.x_list[2]: x2,
+                                               })
+                logit_list.append(logits)
+            return np.concatenate(logit_list)
+
+        def train_fn(batch, step_i):
+            loss_val, summary, _ = self.sess.run([task.loss, self.merged, train_cls,
+                                             ],
+                                            feed_dict=batch2feed_dict(batch)
+                                            )
+            self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
+            self.train_writer.add_summary(summary, self.g_step)
+            self.g_step += 1
+            return loss_val, 0
+
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+        train_batches = get_batches_ex(data_loader.get_train_data(), self.hparam.batch_size, 4)
+
+        idx_for = data_loader.labels.index("Argument_for")
+        idx_against = data_loader.labels.index("Argument_against")
+
+
+        def valid_fn():
+            loss_list = []
+            logit_list = []
+            gold_y = []
+
+            for batch in dev_batches:
+                x0, x1, x2, y = batch
+                loss_val, logits, summary = self.sess.run([task.loss, task.logits, self.merged],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+                logit_list.append(logits)
+                gold_y.append(y)
+                self.test_writer.add_summary(summary, self.g_step)
+
+
+            logit_list = np.concatenate(logit_list)
+            gold_y = np.concatenate(gold_y)
+            pred_y = np.argmax(logit_list, axis=1)
+
+            all_result = eval_3label(pred_y, gold_y)
+            for_result = all_result[idx_for]
+            against_result = all_result[idx_against]
+            f1 = sum([result['f1'] for result in all_result]) / 3
+            self.log.info("Validation : loss={0:.04f} F1={1:.03f}".format(average(loss_list), f1))
+            return all_result
+
+        def save_fn():
+            return self.save_model(exp_config.name, 1)
+
+        valid_freq = 10
+        # train_op
+        print("Train epoch")
+        num_epochs = exp_config.num_epoch
+        for i_epoch in range(num_epochs):
+            loss, _ = epoch_runner(train_batches, train_fn,
+                                   valid_fn, valid_freq,
+                                   save_fn, exp_config.save_interval)
+
+        path = save_fn()
+        all_result = valid_fn()
+        return path
+
+
+
+    def train_ukp_weight(self, exp_config, data_loader, preload_id):
+        print("train_ukp_weight")
+        tf.reset_default_graph()
+        task = transformer_weight(self.hparam, exp_config.voca_size, True)
         with tf.variable_scope("optimizer"):
             train_cls = self.get_train_op(task.loss)
 
@@ -6351,9 +6592,6 @@ class Experiment:
         all_result = valid_fn()
         f1 = sum([result['f1'] for result in all_result]) / 3
         return f1
-
-
-
 
     def train_ukp_concat(self, exp_config, data_loader, preload_id1, preload_id2):
         print("train_ukp_concat")
@@ -6455,8 +6693,6 @@ class Experiment:
         all_result = valid_fn()
         f1 = sum([result['f1'] for result in all_result]) / 3
         return f1
-
-
 
     def train_ukp_paired(self, exp_config, data_loader, preload_id):
         tprint("train_ukp_paired")
@@ -6645,6 +6881,178 @@ class Experiment:
 
 
 
+    def train_agree(self, exp_config, data_loader, preload_id):
+        print("train_agree")
+        tf.reset_default_graph()
+        task = transformer_weight(self.hparam, exp_config.voca_size, True)
+        with tf.variable_scope("optimizer"):
+            train_cls = self.get_train_op(task.loss)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        self.load_model_white2(preload_id, exp_config.load_names)
+
+        def batch2feed_dict(batch):
+            x0,x1,x2, y  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        def forward_run(inputs):
+            batches = get_batches_ex(inputs, self.hparam.batch_size, 3)
+            logit_list = []
+            for batch in batches:
+                x0, x1, x2 = batch
+                logits,  = self.sess.run([task.sout, ],
+                                               feed_dict={
+                                                task.x_list[0]: x0,
+                                                task.x_list[1]: x1,
+                                                task.x_list[2]: x2,
+                                               })
+                logit_list.append(logits)
+            return np.concatenate(logit_list)
+
+        def train_fn(batch, step_i):
+            loss_val, summary, _ = self.sess.run([task.loss, self.merged, train_cls,
+                                             ],
+                                            feed_dict=batch2feed_dict(batch)
+                                            )
+            self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
+            self.train_writer.add_summary(summary, self.g_step)
+            self.g_step += 1
+            return loss_val, 0
+
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+        train_batches = get_batches_ex(data_loader.get_train_data(), self.hparam.batch_size, 4)
+
+        def valid_fn():
+            loss_list = []
+            acc_list = []
+            for batch in dev_batches:
+                x0, x1, x2, y = batch
+                loss_val, logits, acc, summary = self.sess.run([task.loss, task.logits, task.acc, self.merged],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+                self.test_writer.add_summary(summary, self.g_step)
+                acc_list.append(acc)
+            self.log.info("Validation : loss={0:.04f}".format(average(loss_list)))
+            self.log.info("Validation : acc={0:.04f}".format(average(acc_list)))
+
+
+        def save_fn():
+            return self.save_model(exp_config.name, 1)
+
+        valid_freq = 10
+        # train_op
+        print("Train epoch")
+        num_epochs = exp_config.num_epoch
+        for i_epoch in range(num_epochs):
+            loss, _ = epoch_runner(train_batches, train_fn,
+                                   valid_fn, valid_freq,
+                                   save_fn, exp_config.save_interval)
+
+        return save_fn()
+
+    def pred_ukp_aux(self, exp_config, topic):
+        tf.reset_default_graph()
+        task = transformer_nli(self.hparam, exp_config.voca_size, 0, True)
+        data_loader = ukp.BertDataLoader(topic, True, self.hparam.seq_max, "bert_voca.txt")
+
+        def load_available():
+            run_dir = os.path.join(self.model_dir, 'runs')
+            save_dir = os.path.join(run_dir, exp_config.name)
+            model_id = None
+            for (dirpath, dirnames, filenames) in os.walk(save_dir):
+                for filename in filenames:
+                    if ".meta" in filename:
+                        print(filename)
+                        model_id = filename[:-5]
+
+            print(model_id)
+            assert model_id is not None
+            self.load_model_white2((exp_config.name, model_id), ['bert', "cls_dense"], False)
+
+        def batch2feed_dict(batch):
+            x0,x1,x2, y  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        load_available()
+
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+
+        aux_keywords= data_loader.expand_topic(topic).split(",")[1:]
+
+        def aux_batch(word):
+            d = data_loader.get_dev_data_expand(word)
+            return get_batches_ex(d, self.hparam.batch_size, 4)
+
+        batches_aux = list([aux_batch(w) for w in aux_keywords])
+
+        idx_for = data_loader.labels.index("Argument_for")
+        idx_against = data_loader.labels.index("Argument_against")
+
+        def forward(batches):
+            logit_list = []
+            gold_y = []
+
+            for batch in batches:
+                x0, x1, x2, y = batch
+                loss_val, logits = self.sess.run([task.loss, task.logits],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                logit_list.append(logits)
+                gold_y.append(y)
+
+            logit_list = np.concatenate(logit_list)
+            gold_y = np.concatenate(gold_y)
+            return logit_list, gold_y
+
+        def print_result(logit_list, gold_y):
+            pred_y = np.argmax(logit_list, axis=1)
+            all_result = eval_3label(pred_y, gold_y)
+            for_result = all_result[idx_for]
+            against_result = all_result[idx_against]
+            f1 = sum([result['f1'] for result in all_result]) / 3
+            print("F1", f1)
+            print("P_arg+", for_result['precision'])
+            print("R_arg+", for_result['recall'])
+            print("P_arg-", against_result['precision'])
+            print("R_arg-", against_result['recall'])
+            return all_result
+
+        logit_raw, gold_y = forward(dev_batches)
+
+        print("Raw run : ")
+        print_result(logit_raw, gold_y)
+
+        for word, batches in zip(aux_keywords, batches_aux):
+            logit_aux1, gold_y = forward(batches)
+            for weight in [0.1, 0.2, 0.4, 0.7]:
+                logit_r = logit_raw + logit_aux1 * weight
+                print("Keyword =  {} , weight={}".format(word, weight))
+                print_result(logit_r, gold_y)
+
+
+
+
+
 
     def train_next_sent(self, exp_config, data_loader1, data_loader2, load_name):
         print("train_next_sent")
@@ -6703,7 +7111,7 @@ class Experiment:
                 logit_list.append(logits)
             return np.concatenate(logit_list)
 
-        train_1_freq = 5
+        train_1_freq = 1
         def train_fn(batch, step_i):
             if step_i % train_1_freq == 0:
                 task1_step = int(step_i / train_1_freq)
@@ -6733,7 +7141,7 @@ class Experiment:
         def get_train_data():
             return get_batches_ex(data_loader2.get_train_data(), self.hparam.batch_size, 4)
         print("Encoding train2")
-        train_batches2 = self.pickle_cacher(exp_config.name + "train", get_train_data, False)
+        train_batches2 = self.pickle_cacher(exp_config.name + "train", get_train_data, True)
         print("Total of {} steps".format(len(train_batches2)))
         dev_batches1 = get_batches_ex(data_loader1.get_dev_data(), self.hparam.batch_size, 4)
         train_batches1 = get_batches_ex(data_loader1.get_train_data(), self.hparam.batch_size, 4)

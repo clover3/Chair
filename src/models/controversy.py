@@ -68,11 +68,9 @@ def chunks(l, n):
         yield l[i:i + n]
 
 
-def get_guardian16_lm():
-    print("Building LM from guardian16 signal")
+def from_pos_neg(pos_docs, neg_docs):
     stemmer = None
     stopwords = load_stopwords()
-    pos_docs, neg_docs = controversy.load_guardian16_signal()
     y = list(1 for _ in pos_docs) + list(0 for _ in neg_docs)
 
     def transform(counter):
@@ -109,6 +107,17 @@ def get_guardian16_lm():
     nc_counter = transform(count_word_parallel(neg_docs))
 
     tokenizer = lambda x: tokenize(x, set(), False)
-    classifier = LMClassifer(tokenizer, None, fulltext=True)
+    classifier = LMClassifer(tokenizer, None, fulltext=False)
     classifier.build3(c_counter, nc_counter)
     return classifier
+
+
+def get_guardian16_lm():
+    print("Building LM from guardian16 signal")
+    pos_docs, neg_docs = controversy.load_guardian16_signal()
+    return from_pos_neg(pos_docs, neg_docs)
+
+def get_guardian_selective_lm():
+    print("Building LM from seletive signal")
+    pos_docs, neg_docs = controversy.load_guardian_selective_signal()
+    return from_pos_neg(pos_docs, neg_docs)
