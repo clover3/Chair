@@ -99,7 +99,6 @@ class transformer_nli:
             self.conf_logits = cl
             self.labels = tf.cast(tf.greater(self.rf_mask, 0), tf.float32)
             self.rl_loss = tf.reduce_mean(tf_module.correlation_coefficient_loss(cl, -self.rf_mask))
-            print(self.rl_loss.shape)
         elif method == 6:
             cl = tf.layers.dense(self.model.get_sequence_output(), 1, name="aux_conflict")
             #cl = tf.layers.dense(cl1, 1, name="aux_conflict2")

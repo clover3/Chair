@@ -1,4 +1,9 @@
 from collections import Counter
+from data_generator.text_encoder import SEP_ID
+from path import output_path
+import os
+
+visualize_dir = os.path.join(output_path, "visualize")
 
 def make_explain_sentence(result, out_name):
     # For entailment, filter out tokens that are same across sentences.
@@ -93,8 +98,8 @@ def print_color_html_2(word, raw_score):
     #    html = "<td>&nbsp;{}&nbsp;</td>".format(word)
     return html
 
-def visualize(result, out_name):
-    f = open("../{}.html".format(out_name), "w")
+def visualize_nli(result, out_name):
+    f = open_file(out_name)
 
     f.write("<html>")
     f.write("<body>")
@@ -143,9 +148,62 @@ def visualize(result, out_name):
     f.write("</body>")
     f.write("</html>")
 
+def open_file(out_name):
+    file_path = os.path.join(visualize_dir, "{}.html".format(out_name))
+    return open(file_path, "w")
+
+
+
+def visualize_sent_pair(result, out_name):
+    f = open_file(out_name)
+
+    f.write("<html>")
+    f.write("<body>")
+    f.write("<div width=\"400\">")
+    for entry in result:
+        f.write("<div>\n")
+        ex1, ex2, tokens1, tokens2, pred, y = entry
+
+        f.write("Pred : {} \n".format(pred))
+        f.write("Gold : {}<br>\n".format(y))
+        f.write("<tr>")
+        for display_name, tokens, scores in [("Sent1", tokens1, ex1), ("Sent2", tokens2, ex2)]:
+            f.write("<td><b>{}<b></td>\n".format(display_name))
+            f.write("<table style=\"border:1px solid\">")
+
+            max_score = max(scores)
+            min_score = min(scores)
+            cut = sorted(scores)[int(len(scores)*0.2)]
+            if max_score == min_score:
+                max_score = min_score + 3
+
+            def normalize(score):
+                return int((score - min_score) * 255 / (max_score - min_score))
+
+            for i, token in enumerate(tokens):
+                print("{}({}) ".format(token, scores[i]), end="")
+
+                r = normalize(scores[i])
+                if r > 160:
+                    r = r - 50
+                else:
+                    r = 0
+                #f.write(print_color_html_2(token, scores[i]))
+                f.write(print_color_html(token, r))
+            print()
+            f.write("</tr>")
+            f.write("</tr></table>")
+
+        f.write("</tr>")
+
+        f.write("</div><hr>")
+
+    f.write("</div>")
+    f.write("</body>")
+    f.write("</html>")
 
 def visualize_single(result, out_name):
-    f = open("../{}.html".format(out_name), "w")
+    f = open_file(out_name)
 
     f.write("<html>")
     f.write("<body>")
@@ -272,3 +330,34 @@ def word_stat(result, out_name):
         for key, item in top_cnt[display_name].most_common(10):
             print("{}\t{}\t{}".format(key, item, item/total))
 
+
+def split_with_input_ids(np_arr, input_ids):
+
+    for i in range(len(input_ids)):
+        if input_ids[i] == SEP_ID:
+            idx_sep1 = i
+            break
+
+    p = np_arr[1:idx_sep1]
+    for i in range(idx_sep1 + 1, len(input_ids)):
+        if input_ids[i] == SEP_ID:
+            idx_sep2 = i
+    h = np_arr[idx_sep1 + 1:idx_sep2]
+    return p, h
+
+
+def visualize_pair_run(name, sess, tensor_sout, tensor_ex_logits, batches, feed_dict, encoder):
+    result = []
+    for batch in batches:
+        x0, x1, x2, y = batch
+        logits, conf_logit = sess.run([tensor_sout, tensor_ex_logits],
+                                           feed_dict=feed_dict(batch))
+        predictions = logits.argmax(axis=1)
+        for idx in range(len(x0)):
+            input_ids = x0[idx]
+            ex1, ex2= split_with_input_ids(conf_logit[idx], input_ids)
+            enc1, enc2 = split_with_input_ids(input_ids, input_ids)
+            tokens1 = encoder.decode_list(enc1)
+            tokens2 = encoder.decode_list(enc2)
+            result.append((ex1, ex2, tokens1, tokens2, predictions[idx], y[idx]))
+    visualize_sent_pair(result, name)

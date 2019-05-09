@@ -56,7 +56,7 @@ def train_bert():
         e = Experiment(hp)
         print(exp_purpose)
         e_config.name = "arg_causal_{}_{}".format(topic, encode_opt)
-        data_loader = BertDataLoader(topic, False, hp.seq_max, "bert_voca.txt", option=encode_opt)
+        data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt", option=encode_opt)
         save_path = e.train_ukp(e_config, data_loader, load_id)
         print(topic)
         f1_last = e.eval_ukp(e_config, data_loader, save_path)
@@ -66,6 +66,37 @@ def train_bert():
     print(f1_list)
     for key, score in f1_list:
         print("{0}\t{1:.03f}".format(key,score))
+
+
+
+def train_ukp_ex():
+    hp = hyperparams.HPBert()
+
+    e_config = ExperimentConfig()
+    e_config.num_epoch = 2
+    e_config.save_interval = 5 * 60  # 30 minutes
+    e_config.voca_size = 30522
+    e_config.load_names = ['bert', 'dense_cls']
+    exp_purpose = "ex"
+    encode_opt = "is_good"
+    is_3way = True
+    f1_list = []
+    explain_tag = 'polarity'
+   # explain_tag = 'relevance'
+
+    for topic in ukp.all_topics:
+        e = Experiment(hp)
+        print(exp_purpose)
+        e_config.name = "arg_exp_{}_{}".format(topic, explain_tag)
+        load_run_name = "arg_exp_{}_{}".format(topic, explain_tag)
+        data_loader = BertDataLoader(topic, is_3way, hp.seq_max, "bert_voca.txt", option=encode_opt)
+        save_path = e.train_ukp_ex(e_config, data_loader, load_run_name, explain_tag)
+
+    print(exp_purpose)
+    print(encode_opt)
+    print(f1_list)
+    for key, score in f1_list:
+        print("{0}\t{1:.03f}".format(key, score))
 
 
 def train_weighted():
@@ -105,7 +136,7 @@ def train_next_pred():
     e_config.num_epoch = 2
     e_config.save_interval = 100 * 60  # 30 minutes
     e_config.voca_size = 30522
-    e_config.load_names = ['bert', 'dense_cls']
+    e_config.load_names = ['bert']
     #load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     #load_id = ("NLI_Only_B", 'model-0')
     #load_id = ("causal", 'model.ckpt-1000')
@@ -155,7 +186,7 @@ def train_paired():
     e_config.num_epoch = 4
     e_config.save_interval = 1 * 60  # 30 minutes
     e_config.voca_size = 30522
-    e_config.load_names = ['bert']
+    e_config.load_names = ['bert', 'cls_dense']
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     load_id = ("NLI_Only_B", 'model-0')
 
@@ -197,5 +228,5 @@ def query_expansion():
         e.pred_ukp_aux(e_config, topic)
 
 if __name__ == '__main__':
-    action = "train_bert"
+    action = "train_ukp_ex"
     locals()[action]()

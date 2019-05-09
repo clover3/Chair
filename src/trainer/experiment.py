@@ -1,5 +1,5 @@
 from log import log
-import path
+from path import get_model_full_path
 import pickle
 from concurrent.futures import ProcessPoolExecutor
 
@@ -59,6 +59,8 @@ from attribution.baselines import *
 from attribution.eval import eval_fidelity
 from evaluation import *
 from explain import visualize
+from explain.train_ex import ExplainTrainer
+from trainer.np_modules import *
 # Experiment is the most outside module.
 # This module can reference any module in the system.
 
@@ -1343,7 +1345,13 @@ class Experiment:
         run_dir = os.path.join(self.model_dir, 'runs')
         save_dir = os.path.join(run_dir, name)
         path = os.path.join(save_dir, "{}".format(id))
+        if verbose:
+            print("Restoring: {} {}".format(name, id))
 
+        self.load_model_white_fullpath(path, include_namespace, verbose)
+
+
+    def load_model_white_fullpath(self, path, include_namespace, verbose=True):
         def condition(v):
             if v.name.split('/')[0] in include_namespace:
                 return True
@@ -1352,7 +1360,6 @@ class Experiment:
         variables = tf.contrib.slim.get_variables_to_restore()
         variables_to_restore = [v for v in variables if condition(v)]
         if verbose:
-            print("Restoring: {} {}".format(name, id))
             for v in variables_to_restore:
                 print(v)
 
@@ -2867,8 +2874,6 @@ class Experiment:
         target_class_set = ENLIDef.get_target_class_set(explain_tag)
         print("target class : ", target_class_set)
 
-        def over_zero(np_arr):
-            return np.less(0, np_arr).astype(np.float32)
 
         logit2tag = over_zero
 
@@ -3570,7 +3575,7 @@ class Experiment:
                 result.append((conf_p, conf_h, p_tokens, h_tokens, predictions[idx], y[idx]))
 
         #save_to_pickle(result, exp_config.name)
-        visualize.visualize(result, exp_config.name)
+        visualize.visualize_nli(result, exp_config.name)
         #visualize.word_stat(result, exp_config.name)
         #visualize.make_explain_sentence(result, exp_config.name)
 
@@ -3683,7 +3688,7 @@ class Experiment:
                     result.append((conf_p, conf_h, p_tokens, h_tokens, predictions[idx], y[idx]))
 
         save_to_pickle(result, exp_config.name)
-        visualize.visualize(result, exp_config.name)
+        visualize.visualize_nli(result, exp_config.name)
         #visualize.make_explain_sentence(result, exp_config.name)
 
 
@@ -6491,7 +6496,151 @@ class Experiment:
         all_result = valid_fn()
         return path
 
+    def train_ukp_ex(self, exp_config, data_loader, load_run_name, explain_tag):
+        print("train_ukp_ex")
+        tf.reset_default_graph()
+        task = transformer_nli(self.hparam, exp_config.voca_size, 5, True)
+        with tf.variable_scope("optimizer"):
+            train_cls = self.get_train_op(task.loss)
+            train_rl = self.get_train_op(task.rl_loss, name="rl")
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
 
+        load_path = get_model_full_path(load_run_name)
+        self.load_model_white_fullpath(load_path, exp_config.load_names, False)
+
+        def batch2feed_dict(batch):
+            x0,x1,x2, y  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        def action_score(before_prob, after_prob, action):
+            num_tag = np.count_nonzero(action)
+            penalty = (num_tag - 3) * 0.1 if num_tag > 3 else 0
+            if explain_tag == 'polarity':
+                score = (before_prob[2] - before_prob[1]) - (after_prob[2] - after_prob[1])
+            elif explain_tag == 'relevance':
+                # Increase of neutral
+                score = (before_prob[2] + before_prob[1]) - (after_prob[2] + after_prob[1])
+                # ( 1 - before_prob[1] ) - (1 - after_prob[1]) = after_prob[1] - before_prob[1] = increase of neutral
+            elif explain_tag == 'mismatch':
+                score = before_prob[1] - after_prob[1]
+            else:
+                assert False
+            score = score - penalty
+            return score
+
+
+        def forward_run(inputs):
+            batches = get_batches_ex(inputs, self.hparam.batch_size, 3)
+            logit_list = []
+            for batch in batches:
+                x0, x1, x2 = batch
+                logits,  = self.sess.run([task.sout, ],
+                                               feed_dict={
+                                                task.x_list[0]: x0,
+                                                task.x_list[1]: x1,
+                                                task.x_list[2]: x2,
+                                               })
+                logit_list.append(logits)
+            return np.concatenate(logit_list)
+
+        def train_classification(batch, step_i):
+            loss_val, summary, _ = self.sess.run([task.loss, self.merged, train_cls,
+                                             ],
+                                            feed_dict=batch2feed_dict(batch)
+                                            )
+            self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
+            self.train_writer.add_summary(summary, self.g_step)
+            self.g_step += 1
+            return loss_val, 0
+
+
+
+        explain_trainer = ExplainTrainer(
+            forward_runs=forward_run,
+            action_score=action_score,
+            sess=self.sess,
+            rl_loss=task.rl_loss,
+            sout=task.sout,
+            ex_logits=task.conf_logits,
+            train_rl=train_rl,
+            input_rf_mask =task.rf_mask,
+            batch2feed_dict=batch2feed_dict,
+            target_class_set=[2],
+            hparam=self.hparam,
+            log2=self.log2)
+
+        def train_fn(batch, step_i):
+            loss_val, acc = train_classification(batch, step_i)
+            summary = tf.Summary()
+            explain_trainer.train_batch(batch, summary)
+            self.train_writer.add_summary(summary, self.g_step)
+            self.train_writer.flush()
+
+            return loss_val, acc
+
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+        train_batches = get_batches_ex(data_loader.get_train_data(), self.hparam.batch_size, 4)
+
+        idx_for = data_loader.labels.index("Argument_for")
+        idx_against = data_loader.labels.index("Argument_against")
+
+
+        def valid_fn():
+            loss_list = []
+            logit_list = []
+            gold_y = []
+
+            for batch in dev_batches:
+                x0, x1, x2, y = batch
+                loss_val, logits, summary = self.sess.run([task.loss, task.logits, self.merged],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+                logit_list.append(logits)
+                gold_y.append(y)
+                self.test_writer.add_summary(summary, self.g_step)
+
+
+            logit_list = np.concatenate(logit_list)
+            gold_y = np.concatenate(gold_y)
+            pred_y = np.argmax(logit_list, axis=1)
+
+            all_result = eval_3label(pred_y, gold_y)
+            f1 = sum([result['f1'] for result in all_result]) / 3
+            self.log.info("Validation : loss={0:.04f} F1={1:.03f}".format(average(loss_list), f1))
+            return all_result
+
+        def do_visualize():
+            name = exp_config.name
+            visualize.visualize_pair_run(name, self.sess, task.sout, task.conf_logits,
+                                         dev_batches[:20], batch2feed_dict, data_loader.encoder)
+        def save_fn():
+            do_visualize()
+            return self.save_model(exp_config.name, 1)
+
+        valid_freq = 10
+        # train_op
+        print("Train epoch")
+        do_visualize()
+        num_epochs = exp_config.num_epoch
+        for i_epoch in range(num_epochs):
+            loss, _ = epoch_runner(train_batches, train_fn,
+                                   valid_fn, valid_freq,
+                                   save_fn, exp_config.save_interval)
+
+        path = save_fn()
+        all_result = valid_fn()
+
+        return path
 
     def train_ukp_weight(self, exp_config, data_loader, preload_id):
         print("train_ukp_weight")

@@ -133,7 +133,6 @@ def pair_shuffle(l):
         result.append(b)
     return result
 
-
 class MovingWindow:
     def __init__(self, window_size):
         self.window_size = window_size
@@ -142,6 +141,10 @@ class MovingWindow:
     def append(self, average, n_item):
         all_span = self.history + [average] * n_item
         self.history = all_span[-self.window_size:]
+
+    def append_list(self, value_n_item_list):
+        for avg_val, n_item in value_n_item_list:
+            self.append(avg_val, n_item)
 
     def get_average(self):
         if not self.history:

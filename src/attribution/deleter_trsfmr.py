@@ -260,6 +260,10 @@ def add_seq_hypo2prem(x0, x1, x2 ):
 
 
 def seq_delete(num_del, info, idx_trans_fn, x0, x1, x2):
+    return seq_replace_inner(num_del, x0, x1, x2)
+
+
+def seq_delete_inner(num_del, x0, x1, x2):
     length = len(x0)
     last_valid = 0
     for i in range(length):

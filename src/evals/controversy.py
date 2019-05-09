@@ -11,10 +11,10 @@ def eval_all_contrv():
 
 
     models = []
-    models.append(("Amsterdam", get_wiki_doc_lm()))
-    models.append(("BertAms", BertPredictor()))
-    models.append(("MH16", get_dbpedia_contrv_lm()))
-    models.append(("Guardian", get_guardian16_lm()))
+    models.append(("lm/wiki", get_wiki_doc_lm()))
+    models.append(("Bert/Wiki", BertPredictor()))
+    models.append(("lm/dbpedia", get_dbpedia_contrv_lm()))
+    models.append(("lm/Guardian", get_guardian16_lm()))
     # models.append(("Guardian2", get_guardian_selective_lm()))
 
     test_sets = [("Ams18", [ams_X, ams_Y]),

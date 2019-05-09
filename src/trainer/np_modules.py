@@ -62,3 +62,7 @@ def list_batch_grouping(data, batch_size):
 
 def numpy_print(arr):
     return "".join(["{0:.3f} ".format(v) for v in arr])
+
+
+def over_zero(np_arr):
+    return np.less(0, np_arr).astype(np.float32)

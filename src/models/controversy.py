@@ -107,7 +107,7 @@ def from_pos_neg(pos_docs, neg_docs):
     nc_counter = transform(count_word_parallel(neg_docs))
 
     tokenizer = lambda x: tokenize(x, set(), False)
-    classifier = LMClassifer(tokenizer, None, fulltext=False)
+    classifier = LMClassifer(tokenizer, None, fulltext=True)
     classifier.build3(c_counter, nc_counter)
     return classifier
 

@@ -6,6 +6,7 @@ from data_generator.text_encoder import SubwordTextEncoder, CLS_ID, SEP_ID
 from models.classic.stopword import load_stopwords
 from collections import Counter
 from misc_lib import *
+from cache import *
 
 all_topics = ["abortion", "cloning", "death_penalty", "gun_control",
                        "marijuana_legalization", "minimum_wage", "nuclear_energy", "school_uniforms"]
@@ -102,12 +103,19 @@ class BertDataLoader(DataLoader):
 
     def get_train_data(self):
         train_data = []
+        data_name = "ukp_train_{}_{}".format(self.test_topic, self.option)
+        cached = load_cache(data_name)
+        if cached is not None:
+            return cached
+
         for topic in self.train_topics:
             for entry in self.all_data[topic]:
                 if entry['set'] == "train" :
                     x = entry['sentence']
                     y = self.annotation2label(entry['annotation'])
                     train_data.append(self.encode(x,y, topic))
+
+        save_to_pickle(train_data, data_name)
         return train_data
 
     def get_dev_data(self):
