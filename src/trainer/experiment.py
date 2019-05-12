@@ -7,6 +7,7 @@ from adhoc.bm25 import get_bm25
 
 from trainer.promise import *
 from trainer.queue_feader import QueueFeader
+import cache
 
 from models.transformer.hyperparams import HPMerger
 from task.MLM import TransformerLM
@@ -36,12 +37,14 @@ from data_generator.data_parser import controversy
 from data_generator.data_parser.robust import *
 from data_generator.data_parser import controversy, load_protest
 from data_generator.argmining import ukp
+from data_generator.cnn import SimpleLoader
 
 import data_generator.adhoc.score_loader as score_loader
 import data_generator.NLI.enlidef as ENLIDef
 from data_generator.ubuntu import ubuntu
 
 from models.baselines import svm
+from models.cnn import CNN
 from models.transformer.tranformer_nli import transformer_nli, transformer_nli_embedding_in
 from models.transformer.transformer_controversy import transformer_controversy
 from models.transformer.transformer_paired import transformer_paired
@@ -53,6 +56,8 @@ from models.transformer.ScoreCombiner import *
 from models.transformer.cie import token_regression, span_selection
 from models.transformer.transformer_binary import transformer_binary
 from models.transformer.transformer_concat import transformer_concat
+from models.controversy import get_wiki_doc
+from models import word2vec
 
 from attribution.eval import eval_explain, eval_pairing, predict_translate
 from attribution.baselines import *
@@ -6335,6 +6340,103 @@ class Experiment:
                                    valid_fn, exp_config.valid_freq,
                                    save_fn, exp_config.save_interval)
         save_fn()
+
+    def train_cnn_wiki_contrv(self, exp_config):
+        X, y, voca = get_wiki_doc()
+        hp = self.hparam
+
+        embedding_size= hp.embedding_size
+
+        init_emb = cache.load_cache("init_emb_word2vec")
+        word2idx = cache.load_cache(exp_config.input_name+".voca")
+        if init_emb is None:
+            w2v = word2vec.load_w2v()
+            init_emb, word2idx = word2vec.build_index(voca, w2v, embedding_size)
+            cache.save_to_pickle(init_emb, "init_emb_word2vec")
+            cache.save_to_pickle(word2idx, exp_config.input_name + ".voca")
+
+
+
+        dropout_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
+        cnn = CNN("controv", hp.seq_max, 2, [2,3,4], 128, init_emb, embedding_size, dropout_prob)
+        input_text = tf.placeholder(tf.int32,
+                                       shape=[None, hp.seq_max],
+                                       name="comment_input")
+        input_y = tf.placeholder(tf.int32, shape=[None, ],name="input_y")  # Controversy Label
+
+        def batch2feed_dict(batch):
+            x, y  = batch
+            feed_dict = {
+                input_text:x,
+                input_y:y,
+                dropout_prob:0.5,
+            }
+            return feed_dict
+        sout = cnn.network(input_text)
+        logits = cnn.logit
+        #losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=sout, labels=input_y)
+        losses = tf.nn.sigmoid_cross_entropy_with_logits(logits=sout, labels=tf.one_hot(input_y,2))
+        loss = tf.reduce_mean(losses)
+        train_cls = self.get_train_op(loss)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+
+        data_loader = SimpleLoader(word2idx, X, y, hp.seq_max)
+
+
+        train_batches = get_batches_ex(data_loader.get_train_data(), hp.batch_size, 2)
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), hp.batch_size, 2)
+
+        def valid_fn():
+            loss_list = []
+            logit_list = []
+            gold_y = []
+
+            for batch in dev_batches:
+                x, y = batch
+                loss_val, logits = self.sess.run([loss, sout],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+                logit_list.append(logits)
+                gold_y.append(y)
+
+            logit_list = np.concatenate(logit_list)
+            gold_y = np.concatenate(gold_y)
+            pred_y = np.argmax(logit_list, axis=1)
+            acc = np.sum(np.equal(pred_y, gold_y)) / len(pred_y)
+            self.log.info("Dev : Loss = {} Acc = {}".format(average(loss_list), acc))
+
+        def save_fn():
+            return self.save_model(exp_config.name, 1)
+
+        def train_fn(batch, step_i):
+            loss_val, _ = self.sess.run([loss, train_cls,
+                                             ],
+                                            feed_dict=batch2feed_dict(batch)
+                                            )
+            self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
+            self.g_step += 1
+            return loss_val, 0
+
+        valid_freq = 10
+        # train_op
+        print("Train epoch")
+        num_epochs = exp_config.num_epoch
+        for i_epoch in range(num_epochs):
+            _, _ = epoch_runner(train_batches, train_fn,
+                                   valid_fn, valid_freq,
+                                   save_fn, exp_config.save_interval)
+
+        steps = int(len(train_batches) * 0.2)
+        loss, _ = step_runner(train_batches, train_fn,
+                               valid_fn, valid_freq,
+                               save_fn, self.save_interval,
+                              steps=steps)
+
+
+        save_fn()
+
 
     def eval_ukp(self, exp_config, data_loader, model_path):
         print("eval_ukp")

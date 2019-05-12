@@ -14,7 +14,7 @@ class LMClassifer:
         self.C = None
         self.BG_ctf = None
         self.BG = None
-        self.smoothing = 0.1
+        self.smoothing = 0.2
         self.stemmer = stemmer
         self.fulltext = fulltext
         self.supervised = False

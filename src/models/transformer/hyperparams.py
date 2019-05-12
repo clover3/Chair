@@ -549,3 +549,23 @@ class HPCIE:
     type_vocab_size = 2
     alpha = 0.5
     query_seq_len = 20
+
+
+
+
+class HPCNN:
+    '''Hyperparameters'''
+    # data
+    # training
+    batch_size = 64  # alias = N
+    lr = 1e-3 # learning rate. In paper, learning rate is adjusted to the global step.
+    logdir = 'logdir'  # log directory
+
+    # model
+    #seq_max = 140  # Maximum number of words in a sentence. alias = T.
+    seq_max = 1024 # Maximum number of words in a sentence. alias = T.
+    # Feel free to increase this if you are ambitious.
+    reg_lambda = 0.1
+    dropout_rate = 0.5
+    embedding_size= 300
+

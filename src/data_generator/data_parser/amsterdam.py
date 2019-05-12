@@ -19,10 +19,19 @@ collection_types = ['web', 'total', 'wiki']
 name_format = "{}_{}_{}_final.json"
 collection_type = collection_types[1]
 
+def get_list_2009():
+    f = open(os.path.join(scope_dir, "wiki.cont.list"), "r")
+    return set([l.lower().strip() for l in f.readlines()])
 
-def load_json(path):
+
+f_filter_2009 = False
+
+def load_json(path, is_pos):
     obj = json.load(open(path, "r"))
     data = []
+    valid_titles = get_list_2009()
+    check_list = f_filter_2009 and is_pos
+    num_skip = 0
     for doc_id in obj:
         title, content, label = obj[doc_id]
         e = {
@@ -31,15 +40,27 @@ def load_json(path):
             "content": content,
             "label":label,
         }
-        data.append(e)
+
+        if check_list:
+            id = title[:-2].strip()
+            if id in valid_titles:
+                data.append(e)
+            else:
+                num_skip += 1
+        else:
+            data.append(e)
+
+    if num_skip:
+        print("{} of {} excluded".format(num_skip, len(obj)))
     return data
 
 def load_data_split(split):
+    print(collection_type)
     data = []
     for label in ["pos", "neg"]:
         name = name_format.format(collection_type, split, label)
         path = os.path.join(corpus_dir, split, label, name)
-        data.extend(load_json(path))
+        data.extend(load_json(path, label == "pos"))
     return data
 
 def load_data_split_separate(split):
@@ -47,9 +68,8 @@ def load_data_split_separate(split):
     for label in ["pos", "neg"]:
         name = name_format.format(collection_type, split, label)
         path = os.path.join(corpus_dir, split, label, name)
-        data.append(load_json(path))
+        data.append(load_json(path, label == "pos"))
     return data
-
 
 
 def get_train_data(separate = False):
@@ -57,6 +77,7 @@ def get_train_data(separate = False):
         return load_data_split_separate("train")
     else:
         return load_data_split("train")
+
 
 def get_dev_data(all_data = True):
     if all_data:

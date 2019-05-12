@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 from task.transformer_est import Transformer, Classification
@@ -130,7 +130,7 @@ def wikicont_bert():
     hp = hyperparams.HPBert()
     e = Experiment(hp)
     e_config = ExperimentConfig()
-    e_config.name = "WikiContrv"
+    e_config.name = "WikiContrv2009_only_wiki"
     e_config.num_epoch = 1
     e_config.save_interval = 60 * 60  # 1 minutes
     e_config.load_names = ['bert']
@@ -139,13 +139,26 @@ def wikicont_bert():
     vocab_filename = "bert_voca.txt"
 
     data_loader = Ams18.DataLoader(hp.seq_max, vocab_filename, vocab_size)
+    data_loader.source_collection.collection_type = 'wiki'
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     e.train_wiki_contrv(e_config, data_loader, load_id)
+
+
+def wikicont_cnn():
+    e = Experiment(hyperparams.HPCNN())
+    e_config = ExperimentConfig()
+    e_config.num_epoch = 0
+    e_config.input_name = "WikiContrvCNN"
+    e_config.name = "WikiContrvCNN_sigmoid"
+    e.train_cnn_wiki_contrv(e_config)
 
 
 
 def eval_all_contrv():
     return evals.controversy.eval_all_contrv()
+
+def dataset_stat():
+    return evals.controversy.dataset_stat()
 
 def get_tf10():
     e = ControversyExperiment()
@@ -173,6 +186,6 @@ def train_agree():
     print(exp_purpose)
 
 if __name__ == '__main__':
-    action = "eval_all_contrv"
+    action = "wikicont_cnn"
     locals()[action]()
 

@@ -227,3 +227,47 @@ def compute_pr_auc(y_scores, y_true):
 def compute_acc(y_scores, y_true):
     assert len(y_scores) == len(y_true)
     return metrics.accuracy_score(y_true, y_scores)
+
+
+def binary_by_prior(y_scores, y_true):
+    num_true = sum(y_true)
+    sorted_y = sorted(list(y_scores), reverse=True)
+    cut_off = sorted_y[num_true]
+
+    y_pred = []
+    for elem in y_scores:
+        if elem > cut_off:
+            y_pred.append(1)
+        else:
+            y_pred.append(0)
+
+    return y_pred
+
+
+def compute_opt_acc(y_scores, y_true):
+    y_pred = binary_by_prior(y_scores, y_true)
+    tpf = np.equal(y_pred, y_true)
+    return sum(tpf) / len(y_true)
+
+
+def compute_opt_prec(y_scores, y_true):
+    y_pred = binary_by_prior(y_scores, y_true)
+    assert len(y_pred) == len(y_true)
+    tp = np.logical_and(np.equal(y_pred, 1), np.equal(y_true, 1))
+    return sum(tp) / sum(y_pred)
+
+
+def compute_opt_recall(y_scores, y_true):
+    y_pred = binary_by_prior(y_scores, y_true)
+    tp = np.logical_and(np.equal(y_pred, 1), np.equal(y_true, 1))
+    return sum(tp) / sum(y_true)
+
+
+def compute_opt_f1(y_scores, y_true):
+    p = compute_opt_prec(y_scores, y_true)
+    r = compute_opt_recall(y_scores, y_true)
+    return 2*p*r / (p+r)
+
+
+
+

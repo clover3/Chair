@@ -9,7 +9,7 @@ from trainer.np_modules import get_batches_ex
 import path
 
 class BertPredictor:
-    def __init__(self):
+    def __init__(self, name= "WikiContrv"):
         self.vocab_size = 30522
         self.vocab_filename = "bert_voca.txt"
         self.hp = HPBert()
@@ -20,7 +20,7 @@ class BertPredictor:
         self.model = transformer_binary(self.hp, self.vocab_size, True)
 
         loader = tf.train.Saver()
-        loader.restore(self.sess, path.get_model_full_path("WikiContrv"))
+        loader.restore(self.sess, path.get_model_full_path(name))
 
 
     def score(self, docs):

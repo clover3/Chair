@@ -9,7 +9,8 @@ from models.classic.stopword import load_stopwords
 from multiprocessing import Pool
 from collections import Counter
 from krovetzstemmer import Stemmer
-
+import math
+from misc_lib import *
 
 def get_dbpedia_contrv_lm():
     print("Building LM from DBPedia's controversy ranked docs")
@@ -49,9 +50,35 @@ def get_wiki_doc_lm(fulltext=False):
     all_docs = pos_docs + neg_docs
 
     tokenizer = lambda x: tokenize(x, set(), False)
-    classifier = LMClassifer(tokenizer, stemmer, fulltext=False)
+    classifier = LMClassifer(tokenizer, stemmer, fulltext=True)
     classifier.build2(all_docs, y)
     return classifier
+
+
+def get_wiki_doc():
+    train_data = amsterdam.get_train_data(separate=True)
+    pos_entries, neg_entries = train_data
+    stemmer = Stemmer()
+
+    def doc_rep(entry):
+        return entry["title"] + "\t" + entry["content"]
+
+    pos_docs = list(map(doc_rep, pos_entries))
+    neg_docs = list(map(doc_rep, neg_entries))
+
+    y = list(1 for _ in pos_docs) + list(0 for _ in neg_docs)
+    all_docs = pos_docs + neg_docs
+
+    tokenizer = lambda x: tokenize(x, set(), False)
+
+    X = []
+    voca = set()
+    for doc in all_docs:
+        tokens = tokenizer(doc)
+        voca.update(tokens)
+        X.append(tokens)
+    return X, y, voca
+
 
 def count_word(documents):
     counter = Counter()
@@ -121,3 +148,48 @@ def get_guardian_selective_lm():
     print("Building LM from seletive signal")
     pos_docs, neg_docs = controversy.load_guardian_selective_signal()
     return from_pos_neg(pos_docs, neg_docs)
+
+
+def get_yw_may():
+    from dispute.guardian import load_local_pickle
+
+
+    stopwords = load_stopwords()
+    tokenizer = lambda x: tokenize(x, stopwords, False)
+
+    class YWMay:
+        def __init__(self):
+            self.stopwords = stopwords
+            self.topic_info = load_local_pickle("topic_score")
+
+
+        def get_tf10(self, tokens):
+            counter = Counter()
+            for t in tokens:
+                if t not in self.stopwords and len(t) > 2:
+                    counter[t] += 1
+
+            return counter.most_common(10)
+
+        def score(self, docs):
+            def term_odd(token):
+                if token not in self.topic_info:
+                    return 0
+                else:
+                    p = self.topic_info[token]
+                    if p > 0.9999 or p < 0.0001:
+                        return 0
+                    else:
+                        return math.log(p) - math.log(1-p)
+
+            def predict(doc):
+                tokens = tokenizer(doc)
+                sum_odd = 0
+
+                top10 = left(list(self.get_tf10(tokens)))
+                odd_list = lmap(term_odd, tokens)
+                result = sum(odd_list)
+                return result
+            return lmap(predict, docs)
+
+    return YWMay()

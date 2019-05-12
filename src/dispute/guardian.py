@@ -71,31 +71,78 @@ def discussion_stats():
 def get_reactions():
     return pickle.load(open(os.path.join(data_path, "guardian", "r_1.pickle"), "rb"))
 
-def dispute_scores():
-    topics = get_topics()
-    reactions = get_reactions()
+def examine_topics():
+    reactions = dict(load_local_pickle("disagreements"))
 
-    topic_dicsussion_dict = {}
-    entries = []
-    for topic in topics:
+    topic = ""
+    while topic != "exit":
+        topic = input()
         articles = get_topic_articles(topic)
         rank = 0
-        sum_score = 0
+        count_disagree = 0
+        count_comments = 0
         no_reaction =0
         for id, short_url, text in articles:
             has_reaction = short_url in reactions
             if has_reaction:
                 res = reactions[short_url]
-                sum_score += res
+                num_comments = len(res)
+                num_disagree = np.sum(np.equal(np.argmax(res, axis=1), 2))
+
+                count_comments += num_comments
+                count_disagree += num_disagree
+                print(text[:300])
+                print(num_disagree, num_comments)
             else:
                 res = "No reaction"
                 no_reaction += 1
             rank += 1
+
         yes_reaction = len(articles) - no_reaction
-        rel_score = sum_score / yes_reaction if yes_reaction > 0 else -1
-        entries.append((topic, sum_score, no_reaction, rel_score))
+        rel_score = count_disagree / count_comments if count_comments > 0 else -1
+        print(topic)
+        print("count disagree: ", count_disagree)
+        print("no_reaction", no_reaction)
+        print("rel_score", rel_score)
+
+
+
+def dispute_scores():
+    topics = get_topics()
+    reactions = dict(load_local_pickle("disagreements"))
+
+
+    topic_dicsussion_dict = {}
+    topic_score = {}
+    entries = []
+    for topic in topics:
+        articles = get_topic_articles(topic)
+        rank = 0
+        count_disagree = 0
+        count_comments = 0
+        no_reaction =0
+        for id, short_url, text in articles:
+            has_reaction = short_url in reactions
+            if has_reaction:
+                res = reactions[short_url]
+                num_comments = len(res)
+                num_disagree = np.sum(np.equal(np.argmax(res, axis=1), 2))
+
+                count_comments += num_comments
+                count_disagree += num_disagree
+            else:
+                res = "No reaction"
+                no_reaction += 1
+            rank += 1
+
+        yes_reaction = len(articles) - no_reaction
+        rel_score = count_disagree / count_comments if count_comments > 0 else -1
+        entries.append((topic, count_disagree, no_reaction, rel_score))
 
         topic_dicsussion_dict[topic] = list([a[1] for a in articles])
+        topic_score[topic] = rel_score
+
+    save_local_pickle(topic_score, "topic_score")
     save_local_pickle(topic_dicsussion_dict, "topic_dicussions")
 
 
@@ -116,8 +163,8 @@ def dispute_scores():
 
     print("Rank by rel_score")
     entries.sort(key=lambda x: x[3], reverse=True)
-    for e in entries[:20]:
-        print(e[0])
+    for e in entries[:200]:
+        print(e[0], e[1], e[3])
 
     print("rank of scientology : ", get_rank("scientology"))
     print("rank of abortion : ", get_rank("abortion"))
@@ -225,4 +272,4 @@ def estimate_unigram_dispute_potency():
 
 
 if __name__ == "__main__":
-    dispute_scores()
+    examine_topics()

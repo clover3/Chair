@@ -14,6 +14,7 @@ class DataLoader:
         self.train_data = None
         self.dev_data = None
         self.test_data = None
+        self.source_collection = amsterdam
 
         voca_path = os.path.join(data_path, vocab_filename)
         assert os.path.exists(voca_path)

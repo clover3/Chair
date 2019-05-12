@@ -9,6 +9,9 @@ def ask_list_with_body(query, page):
     page_str = str(page)
     url = "http://content.guardianapis.com/search?q={}&show-fields=all&page-size=200&page={}"\
         .format(query,page_str)
+
+    url = "http://content.guardianapis.com/search?to-date=2009-12-30&q={}&show-fields=all&page-size=200&page={}" \
+        .format(query, page_str)
     apikey = "c13d9515-b19e-412b-b505-994677cc2cf3"
 
     headers = {
@@ -22,7 +25,7 @@ def ask_list_with_body(query, page):
         print(res.content)
         return None
 
-save_dir = os.path.join(data_path, "guardian", "topic")
+save_dir = os.path.join(data_path, "guardian", "topic_2009")
 
 def save_query_result(topic, page, content):
     topic_dir = os.path.join(save_dir, topic)
@@ -81,7 +84,7 @@ scope_dir = os.path.join(data_path, "guardian")
 
 def save_comment(short_id, content):
     file_name = short_id.replace("/", "_") + ".json"
-    f = open(os.path.join(scope_dir, "comments", file_name), "wb")
+    f = open(os.path.join(scope_dir, "comments_2009", file_name), "wb")
     f.write(content)
     f.close()
 
@@ -106,9 +109,10 @@ def load_short_ids(topic):
 
 def crawl_comments():
     topic_list = get_topic_list()
-    logging_path = os.path.join(scope_dir, "comment_log.pickle")
+    logging_path = os.path.join(scope_dir, "comment_log_2009.pickle")
 
-    acquire_list = pickle.load(open(logging_path, "rb"))
+    #acquire_list = pickle.load(open(logging_path, "rb"))
+    acquire_list = set()
     print("Already crawled : ", len(acquire_list))
     def update_acquired():
         pickle.dump(acquire_list, open(logging_path, "wb"))
