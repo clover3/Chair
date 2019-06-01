@@ -217,3 +217,7 @@ def parallel_run(input_list, list_fn, split_n):
     for result_list in result_list_list:
         result.extend(result_list)
     return result
+
+def dict_reverse(d):
+    inv_map = {v: k for k, v in d.items()}
+    return inv_map

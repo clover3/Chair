@@ -8,6 +8,7 @@ from evaluation import *
 import unicodedata
 from data_generator.NLI.enlidef import *
 import copy
+from data_generator.data_parser.esnli import load_split
 
 num_classes = 3
 
@@ -27,8 +28,7 @@ class DataLoader:
         self.max_seq = max_sequence
         voca_path = os.path.join(data_path, vocab_filename)
         assert os.path.exists(voca_path)
-        print(voca_path)
-
+        self.name = "nli"
         if not using_alt_tokenizer:
             self.encoder = SubwordTextEncoder(voca_path)
             self.sep_char = "_"
@@ -373,6 +373,46 @@ class DataLoader:
         }
 
 
+class SNLIDataLoader(DataLoader):
+    def __init__(self, max_sequence, vocab_filename, using_alt_tokenizer= False):
+        super(SNLIDataLoader, self).__init__(max_sequence, vocab_filename, using_alt_tokenizer)
+        self.name = "snli"
+
+    def get_train_data(self):
+        if self.train_data is None:
+            self.train_data = list(self.example_generator("train"))
+        return self.train_data
+
+    def get_dev_data(self):
+        if self.dev_data is None:
+            self.dev_data = list(self.example_generator("dev"))
+        return self.dev_data
+
+
+    def example_generator(self, split):
+        label_list = self.class_labels()
+        r = load_split(split)
+        for e in r:
+            l = label_list.index(e['gold_label'])
+            entry = self.encode(e['Sentence1'], e['Sentence2'])
+
+            yield entry["input_ids"], entry["input_mask"], entry["segment_ids"], l
+
+    def load_plain_text(self, name):
+        data = load_split(name)
+
+        def get_plain(entry):
+            return entry['Sentence1'], entry['Sentence2']
+
+        def entry2inst(raw_entry):
+            entry = self.encode(raw_entry['Sentence1'], raw_entry['Sentence2'])
+            return entry["input_ids"], entry["input_mask"], entry["segment_ids"]
+
+        encoded_data = list([entry2inst(entry) for entry in data])
+        plain_entry = list([get_plain(e) for e in data])
+        return encoded_data, plain_entry
+
+
 def _run_strip_accents(text):
     """Strips accents from a piece of text."""
     text = unicodedata.normalize("NFD", text)
@@ -656,6 +696,20 @@ def load_nli_explain_3(name_idx, name_text):
                     print(h_tokens[idx], end=" ")
             print("")
         yield prem, hypo, p_indice, h_indice
+
+
+def read_gold_label(file_name):
+    file_path = os.path.join(corpus_dir, file_name)
+
+    reader2 = csv.reader(open(file_path, "r"), delimiter=",")
+    indice_list = []
+    for row in reader2:
+        id = int(row[0])
+        p_indice, h_indice = row[1], row[2]
+        p_indice = list([int(t) for t in p_indice.strip().split()])
+        h_indice = list([int(t) for t in h_indice.strip().split()])
+        indice_list.append((p_indice, h_indice))
+    return indice_list
 
 
 

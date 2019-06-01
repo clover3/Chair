@@ -1,7 +1,5 @@
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
-
+import sys
 from task.transformer_est import Transformer, Classification
 from models.transformer import bert
 from models.transformer import hyperparams
@@ -55,6 +53,115 @@ def train_nil_on_bert():
 
 
 
+def train_snli_on_bert():
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+    e_config = ExperimentConfig()
+    e_config.name = "SNLI_Only_{}".format("1")
+    e_config.num_epoch = 1
+    e_config.save_interval = 3 * 60 * 60  # 30 minutes
+
+
+    data_loader = nli.SNLIDataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    #load_id = None
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    e.train_nli_ex_0(nli_setting, e_config, data_loader, load_id, f_train_ex=False)
+
+def test_snli():
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+
+    e_config = ExperimentConfig()
+    e_config.name = "SNLIEx_Test"
+    e_config.load_names = ['bert', 'cls_dense']  # , 'aux_conflict']
+    data_loader = nli.SNLIDataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    todo = []
+    load_id = ("SNLI_Only_A", 'model-0')
+    todo.append(load_id)
+    todo.append(("SNLI_Only_1", 'model-0'))
+
+
+    for load_id in todo:
+        tf.reset_default_graph()
+        e.test_acc(nli_setting, e_config, data_loader, load_id)
+
+
+def train_snli_ex():
+    hp = hyperparams.HPBert()
+    hp.compare_deletion_num = 20
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+    e_config = ExperimentConfig()
+    e_config.name = "SNLIEx_B"
+    e_config.ex_val = False
+    e_config.num_epoch = 1
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert', 'cls_dense'] #, 'aux_conflict']
+
+    #explain_tag = 'match'  # 'dontcare'  'match' 'mismatch'
+
+    #explain_tag = 'mismatch'
+    #explain_tag = 'conflict'
+    data_loader = nli.SNLIDataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    #load_id = ("NLI_run_nli_warm", "model-97332")
+    #load_id = ("NLIEx_A", "model-16910")
+    #load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    #load_id = ("NLIEx_D", "model-1964")
+    #load_id = ("NLIEx_D", "model-1317")
+    load_id = ("SNLI_Only_A", 'model-0')
+    e.train_nli_any_way(nli_setting, e_config, data_loader, load_id)
+
+
+def train_mnli_any_way():
+    hp = hyperparams.HPBert()
+    hp.compare_deletion_num = 20
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+    e_config = ExperimentConfig()
+    e_config.name = "NLIEx_AnyA"
+    e_config.ex_val = False
+    e_config.num_epoch = 1
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert', 'cls_dense']  # , 'aux_conflict']
+
+    # explain_tag = 'match'  # 'dontcare'  'match' 'mismatch'
+
+    # explain_tag = 'mismatch'
+    # explain_tag = 'conflict'
+    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    load_id = ("NLI_run_A", 'model-0')
+    e.train_nli_any_way(nli_setting, e_config, data_loader, load_id)
+
+
+def pred_snli_ex():
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+    e_config = ExperimentConfig()
+    e_config.name = "SNLIEx_B"
+    e_config.load_names = ['bert', 'cls_dense', 'aux_conflict']
+
+    data_loader = nli.SNLIDataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+
+    load_id = ("SNLIEx_B", 'model-10275')
+    e.predict_rf(nli_setting, e_config, data_loader, load_id, "test")
+
+
+
+
+
 def train_nli_with_reinforce():
     hp = hyperparams.HPBert()
     e = Experiment(hp)
@@ -101,7 +208,10 @@ def train_pairing():
 
 
 def train_nli_smart_rf():
-    hp = hyperparams.HPBert()
+
+
+
+    hp = hyperparams.HPSENLI()
     hp.compare_deletion_num = 20
     e = Experiment(hp)
     nli_setting = NLI()
@@ -109,8 +219,10 @@ def train_nli_smart_rf():
     nli_setting.vocab_filename = "bert_voca.txt"
 
     e_config = ExperimentConfig()
-    e_config.name = "NLIEx_{}".format("Y_match")
+
+    e_config.name = "NLIEx_{}".format("match")
     e_config.num_epoch = 1
+    e_config.ex_val = True
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert', 'cls_dense'] #, 'aux_conflict']
 
@@ -128,6 +240,44 @@ def train_nli_smart_rf():
     load_id = ("NLI_run_A", 'model-0')
 
     e.train_nli_smart(nli_setting, e_config, data_loader, load_id, explain_tag, 5)
+
+
+
+
+
+def tuning_train_nli_rf():
+    for g_del in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+        tf.reset_default_graph()
+        hp = hyperparams.HPSENLI()
+        hp.g_val = g_del
+        hp.compare_deletion_num = 20
+        e = Experiment(hp)
+        nli_setting = NLI()
+        nli_setting.vocab_size = 30522
+        nli_setting.vocab_filename = "bert_voca.txt"
+
+        e_config = ExperimentConfig()
+
+        e_config.name = "NLIEx_{}".format("match_del_{}".format(g_del))
+        e_config.num_epoch = 1
+        e_config.ex_val = True
+        e_config.save_interval = 30 * 60  # 30 minutes
+        e_config.load_names = ['bert', 'cls_dense'] #, 'aux_conflict']
+
+        #explain_tag = 'match'  # 'dontcare'  'match' 'mismatch'
+        explain_tag = 'conflict'
+        #explain_tag = 'mismatch'
+        #explain_tag = 'conflict'
+
+        data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+        #load_id = ("NLI_run_nli_warm", "model-97332")
+        #load_id = ("NLIEx_A", "model-16910")
+        #load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+        #load_id = ("NLIEx_D", "model-1964")
+        #load_id = ("NLIEx_D", "model-1317")
+        load_id = ("NLI_run_A", 'model-0')
+
+        e.train_nli_smart(nli_setting, e_config, data_loader, load_id, explain_tag, 5)
 
 
 
@@ -154,7 +304,7 @@ def train_nli_with_premade():
     e.train_nli_ex_with_premade_data(nli_setting, e_config, data_loader, load_id, explain_tag)
 
 
-def test_dev_acc():
+def do_test_dev_acc():
     hp = hyperparams.HPBert()
     e = Experiment(hp)
     nli_setting = NLI()
@@ -266,6 +416,7 @@ def analyze_nli_pair():
 
 def baseline_explain():
     hp = hyperparams.HPBert()
+    hp.batch_size *= 32
     e = Experiment(hp)
     nli_setting = NLI()
     nli_setting.vocab_size = 30522
@@ -277,36 +428,63 @@ def baseline_explain():
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert', 'cls_dense']
 
-    #explain_tag = 'conflict'  # 'dontcare'  'match' 'mismatch'
-    explain_tag = 'match'
+    explain_tag = 'conflict'  # 'dontcare'  'match' 'mismatch'
+    #explain_tag = 'match'
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     load_id = ("NLI_run_A", 'model-0')
     e.nli_explain_baselines(nli_setting, e_config, data_loader, load_id, explain_tag)
 
 
+
 def predict_rf():
     hp = hyperparams.HPBert()
+    hp.batch_size = 256
     e = Experiment(hp)
     nli_setting = NLI()
     nli_setting.vocab_size = 30522
     nli_setting.vocab_filename = "bert_voca.txt"
-    #data_id = 'conflict'
-    data_id = 'test_mismatch'
-
+    target_label = 'match'
+    #data_id = 'test_mismatch'
+    data_id = "{}_1000".format(target_label)
     e_config = ExperimentConfig()
-    #e_config.name = "O_conflict"
-    e_config.name = "W_mismatch"
+
+    del_g = 0.7
+    e_config.name = "X_match_del_{}".format(del_g)
     e_config.load_names = ['bert', 'cls_dense', 'aux_conflict']
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     #load_id = ("NLI_bare_A", 'model-195608')
     #load_id = ("NLIEx_O", 'model-10278')
     load_id = ("NLIEx_W_mismatch", "model-12030")
+    load_id = ("NLIEx_Y_conflict", "model-12039")
+    load_id = ("NLIEx_X_match", "model-12238")
+    load_id = ("NLIEx_match_del_{}".format(del_g), "model-4390")
+    e.predict_rf(nli_setting, e_config, data_loader, load_id, data_id)
+
+
+
+def pred_mnli_anyway():
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+    e_config = ExperimentConfig()
+    e_config.name = "NLIEx_AnyA"
+    e_config.load_names = ['bert', 'cls_dense', 'aux_conflict']
+
+    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    target_label = 'mismatch'
+    data_id = "{}_1000".format(target_label)
+    load_id = ("NLIEx_AnyA", 'model-2785')
     e.predict_rf(nli_setting, e_config, data_loader, load_id, data_id)
 
 def attribution_predict():
     hp = hyperparams.HPBert()
+
+    target_label = 'mismatch'
     e = Experiment(hp)
+    hp.batch_size = 512
     nli_setting = NLI()
     nli_setting.vocab_size = 30522
     nli_setting.vocab_filename = "bert_voca.txt"
@@ -315,8 +493,8 @@ def attribution_predict():
     e_config.name = "NLI_run_{}".format("nli_eval")
     e_config.load_names = ['bert', 'cls_dense']
 
-    target_label =  "match"
-    data_id = "test_{}".format(target_label)
+    #data_id = "test_{}".format(target_label)
+    data_id = "{}_1000".format(target_label)
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     load_id = ("NLI_Only_C", 'model-0')
     e.nli_attribution_predict(nli_setting, e_config, data_loader, load_id, target_label, data_id)
@@ -324,6 +502,7 @@ def attribution_predict():
 
 def baseline_predict():
     hp = hyperparams.HPBert()
+    hp.batch_size = 512
     e = Experiment(hp)
     nli_setting = NLI()
     nli_setting.vocab_size = 30522
@@ -336,8 +515,54 @@ def baseline_predict():
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     load_id = ("NLI_Only_C", 'model-0')
     target_label =  "mismatch"
-    data_id = "test_{}".format(target_label)
-    e.nli_baselin_predict(nli_setting, e_config, data_loader, load_id, target_label, data_id)
+    data_id = "{}_1000".format(target_label)
+    start = int(sys.argv[1])
+    print(start)
+    sub_range = (start, start + 100)
+    #sub_range = None
+    e.nli_baseline_predict(nli_setting, e_config, data_loader,
+                          load_id, target_label, data_id, sub_range)
+
+
+
+def predict_lime_snli():
+    hp = hyperparams.HPBert()
+    hp.batch_size = 1024 + 512 + 256
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+
+    e_config = ExperimentConfig()
+    e_config.name = "SNLI_LIME_{}".format("eval")
+    e_config.load_names = ['bert', 'cls_dense']
+
+    start = int(sys.argv[1])
+    print("Begin", start)
+    sub_range = (start, start + 100)
+
+    data_loader = nli.SNLIDataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    load_id = ("SNLI_Only_A", 'model-0')
+    e.predict_lime_snli(nli_setting, e_config, data_loader, load_id, "test", sub_range)
+
+
+
+def predict_lime_snli_continue():
+    hp = hyperparams.HPBert()
+    hp.batch_size = 512 + 256
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+
+    e_config = ExperimentConfig()
+    e_config.name = "SNLI_LIME_{}".format("eval")
+    e_config.load_names = ['bert', 'cls_dense']
+
+    data_loader = nli.SNLIDataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    load_id = ("SNLI_Only_A", 'model-0')
+    e.predict_lime_snli_continue(nli_setting, e_config, data_loader, load_id, "test")
+
 
 
 def attribution_explain():
@@ -453,5 +678,5 @@ def test_ubuntu():
 
 
 if __name__ == '__main__':
-    action = "interactive_visual"
+    action = "predict_rf"
     locals()[action]()

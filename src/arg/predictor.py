@@ -7,11 +7,14 @@ import path
 from data_generator.argmining.ukp import BertDataLoader
 
 class Predictor:
-    def __init__(self, topic):
+    def __init__(self, topic, cheat = False, cheat_topic=None):
         self.voca_size = 30522
         self.topic = topic
         load_names = ['bert', "cls_dense"]
-        run_name = "arg_key_neccesary_{}".format(topic)
+        if not cheat:
+            run_name = "arg_key_neccesary_{}".format(topic)
+        else:
+            run_name = "arg_key_neccesary_{}".format(cheat_topic)
         self.hp = hyperparams.HPBert()
         self.model_dir = path.model_path
         self.data_loader = BertDataLoader(topic, True, self.hp.seq_max, "bert_voca.txt")

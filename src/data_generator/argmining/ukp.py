@@ -63,7 +63,7 @@ class BertDataLoader(DataLoader):
 
     @staticmethod
     def expand_topic(t):
-        return {"abortion": "abortion, woman, choice",
+        return {"abortion": "abortion, killing",
                 "cloning": "cloning , research ",
                 "death_penalty": "death penalty , punishment , execution , justice ",
                 "gun_control": "gun control , rifles , firearms ",
@@ -91,6 +91,10 @@ class BertDataLoader(DataLoader):
             topic_str = topic
             #topic_str = expand_topic(topic)
             entry = self.encode_pair(topic_str, x)
+        elif self.option == "only_topic_word_reverse":
+            topic_str = topic
+            #topic_str = expand_topic(topic)
+            entry = self.encode_pair(x, topic_str)
         elif self.option == "expand":
             topic_str = self.expand_topic(topic)
             entry = self.encode_pair(topic_str, x)
@@ -117,6 +121,18 @@ class BertDataLoader(DataLoader):
 
         save_to_pickle(train_data, data_name)
         return train_data
+
+
+    def get_hidden_train_data(self):
+        h_data = []
+        for entry in self.all_data[self.test_topic]:
+            if entry['set'] == "train":
+                x = entry['sentence']
+                y = self.annotation2label(entry['annotation'])
+                h_data.append(self.encode(x,y, self.test_topic))
+        return h_data
+
+
 
     def get_dev_data(self):
         dev_data = []
@@ -435,6 +451,62 @@ class PairedDataLoader(DataLoader):
             "cls1_idx": cls1_idx,
             "cls2_idx": cls2_idx,
         }
+
+class FeedbackData(BertDataLoader):
+
+    def get_train_data(self):
+        print("getting feedback data")
+        train_data = []
+        data_name = "ukp_feedback_{}_{}".format(self.test_topic, self.option)
+        cached = load_cache(data_name)
+        if cached is not None:
+            return cached
+
+        num_classes = 3 if self.is_3way else 2
+
+        raw_data = load_from_pickle("{}_pseudo".format(self.test_topic))
+
+        min_num = min([len(raw_data[key]) for key in raw_data])
+        max_num = min_num * 3
+        print("Min class: ", min_num)
+        count = Counter()
+        for label in raw_data:
+            for sent in raw_data[label]:
+                x = sent
+                y = label
+                if count[label] < max_num and label < num_classes:
+                    train_data.append(self.encode(x,y, self.test_topic))
+                    count[label] += 1
+
+        print("Total insts : ", len(train_data))
+        save_to_pickle(train_data, data_name)
+        return train_data
+
+
+class NLIAsStance(BertDataLoader):
+
+    def encode(self, x, y, topic):
+        statement = {"abortion": "Fetus is a living human.",
+         "cloning": "cloning , research ",
+         "death_penalty": "death penalty does not prohibit crimes",
+         "gun_control": "gun control , rifles , firearms ",
+         "marijuana_legalization": "marijuana legalization , cannabis , drug ",
+         "minimum_wage": "minimum wage , labor  , worker ",
+         "nuclear_energy": "nuclear energy , power , plant ",
+         "school_uniforms": "school uniforms"}
+        topic_str = statement[topic]
+        print(topic_str)
+        entry = self.encode_pair(x, topic_str)
+        return entry["input_ids"], entry["input_mask"], entry["segment_ids"], y
+
+    def get_dev_data(self):
+        dev_data = []
+        for entry in self.all_data[self.test_topic]:
+            if entry['set'] == "val":
+                x = entry['sentence']
+                y = self.annotation2label(entry['annotation'])
+                dev_data.append(self.encode(x,y, self.test_topic))
+        return dev_data
 
 
 

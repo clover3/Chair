@@ -4,7 +4,7 @@ from trainer.tf_module import *
 from collections import Counter
 from .deepexplain.tensorflow import DeepExplain
 from .baselines import get_real_len
-
+from .deepexplain.tensorflow import methods
 
 def explain_by_gradient(data, method_name, label_type, sess, de, feed_end_input, emb_outputs, emb_input, softmax_output):
     batch_size = 16
@@ -35,6 +35,7 @@ def explain_by_gradient(data, method_name, label_type, sess, de, feed_end_input,
         stop_val = xi
 
         emb2logit_attribution =[]
+        print(methods.total_runs)
         for i in range(3):
             fl = de.explain_prepared(T_attrib_list[i], method_name, softmax_output[:, i], stop, x_input, xi, stop_val)
     #        fl = de.explain(method_name, softmax_output[:, i], stop, x_input, xi, stop_val)
@@ -49,7 +50,7 @@ def explain_by_gradient(data, method_name, label_type, sess, de, feed_end_input,
     # list [ x.shape = [-1, 3, max_seq, emb_dim] ]
 
     emb2logit = np.concatenate(emb2logit_list, axis=0)
-
+    print("Average runs:", methods.total_runs/len(emb2logit))
     assert len(emb2logit.shape) == 4
     assert emb2logit.shape[0] == len(data)
     emb2logit_ce = emb2logit[:, 2] - emb2logit[:, 0]

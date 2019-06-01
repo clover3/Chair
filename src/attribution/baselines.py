@@ -85,7 +85,7 @@ def explain_by_seq_deletion(data, target_tag, forward_run):
     inputs_info = []
     base_indice = []
 
-
+    num_runs = 0
     for entry in data:
         x0, x1, x2 = entry
         base_case = entry
@@ -131,6 +131,7 @@ def explain_by_seq_deletion(data, target_tag, forward_run):
             inputs.append(new_case)
             inputs_info.append(info)
 
+    print("Run per inst : ",len(inputs) / len(data))
     logits_list = forward_run(inputs)
     if target_tag == 'conflict':
         logit_attrib_list = logits_list[:, 2] - logits_list[:, 0]

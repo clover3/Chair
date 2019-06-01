@@ -4,9 +4,11 @@ from trainer.experiment import Experiment
 from trainer.ExperimentConfig import ExperimentConfig
 
 from data_generator.argmining import ukp
-from data_generator.argmining.ukp import BertDataLoader, PairedDataLoader
+from data_generator.argmining.ukp import BertDataLoader, PairedDataLoader, FeedbackData, NLIAsStance
 from data_generator.argmining import NextSentPred
-
+from trainer import loader
+from arg.ukp_train_test import ukp_train_test
+from google import gsutil
 
 def uni_lm():
     e = ArgExperiment()
@@ -46,16 +48,18 @@ def train_bert():
     e_config.load_names = ['bert']
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     load_id = ("NLI_Only_B", 'model-0')
+    #load_id = ("BERT_rel_small", 'model.ckpt-17000')
     #load_id = ("causal", 'model.ckpt-1000')
-    exp_purpose = "nli - way(2 epoch)"
-    encode_opt = "only_topic_word"
+    #exp_purpose = "nli - way(2 epoch)"
+    exp_purpose = "NLI_reverse"
+    encode_opt = "only_topic_word_reverse"
 
     print(load_id)
     f1_list = []
     for topic in ukp.all_topics:
         e = Experiment(hp)
         print(exp_purpose)
-        e_config.name = "arg_causal_{}_{}".format(topic, encode_opt)
+        e_config.name = "arg_nli_{}_{}".format(topic, encode_opt)
         data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt", option=encode_opt)
         save_path = e.train_ukp(e_config, data_loader, load_id)
         print(topic)
@@ -68,6 +72,35 @@ def train_bert():
         print("{0}\t{1:.03f}".format(key,score))
 
 
+def test_model():
+    hp = hyperparams.HPBert()
+
+    e_config = ExperimentConfig()
+    e_config.num_epoch = 2
+    e_config.save_interval = 100 * 60  # 30 minutes
+    e_config.voca_size = 30522
+    e_config.load_names = ['bert']
+    exp_purpose = "NLI_cheat"
+    encode_opt = "is_good"
+
+    f1_list = []
+    for topic in ukp.all_topics:
+        e = Experiment(hp)
+        print(exp_purpose)
+        e_config.name = "arg_nli_{}_{}".format(topic, encode_opt)
+
+        cheat_topic = "cloning" if topic != "cloning" else "death_penalty"
+        load_model_name = "arg_nli_{}_{}".format(cheat_topic, encode_opt)
+        data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt", option=encode_opt)
+        print(topic)
+        save_path = loader.find_available(load_model_name)
+        f1_last = e.eval_ukp(e_config, data_loader, save_path)
+        f1_list.append((topic, f1_last))
+    print(exp_purpose)
+    print(encode_opt)
+    print(f1_list)
+    for key, score in f1_list:
+        print("{0}\t{1:.03f}".format(key, score))
 
 def train_ukp_ex():
     hp = hyperparams.HPBert()
@@ -82,13 +115,13 @@ def train_ukp_ex():
     is_3way = True
     f1_list = []
     explain_tag = 'polarity'
-   # explain_tag = 'relevance'
+    explain_tag = 'relevance'
 
-    for topic in ukp.all_topics:
+    for topic in ukp.all_topics[2:]:
         e = Experiment(hp)
         print(exp_purpose)
         e_config.name = "arg_exp_{}_{}".format(topic, explain_tag)
-        load_run_name = "arg_exp_{}_{}".format(topic, explain_tag)
+        load_run_name = "arg_nli_{}_is_good".format(topic)
         data_loader = BertDataLoader(topic, is_3way, hp.seq_max, "bert_voca.txt", option=encode_opt)
         save_path = e.train_ukp_ex(e_config, data_loader, load_run_name, explain_tag)
 
@@ -212,9 +245,75 @@ def failure_analysis():
         e = Experiment(hp)
         e_config = ExperimentConfig()
         e_config.voca_size = 30522
-        e_config.load_names = ['bert']
-        e_config.name = "arg_b_{}".format(topic)
+        e_config.load_names = ['bert', 'cls_dense']
+        e_config.name = "arg_nli_{}_is_good".format(topic)
         e.failure_ukp(e_config, topic)
+
+
+
+
+def train_psf():
+    for topic in ukp.all_topics[:1]:
+        hp = hyperparams.HPBert()
+        hp.lr = 1e-5
+        e = Experiment(hp)
+        e_config = ExperimentConfig()
+        e_config.voca_size = 30522
+        e_config.name = "arg_psf_{}".format(topic)
+        e_config.preload_name = "arg_b_{}".format(topic)
+        e_config.num_epochs = 2
+        e_config.load_names = ['bert']
+        e_config.preload_id = ("NLI_Only_B", 'model-0')
+        feedback_data = FeedbackData(topic, True, hp.seq_max, "bert_voca.txt", "only_topic_word")
+        e.pseudo_stance_ukp(e_config, topic, feedback_data)
+
+def train_psf_vector():
+    for topic in ukp.all_topics[:1]:
+        hp = hyperparams.HPUKPVector()
+        hp.lr = 1e-5
+        hp.use_reorder = True
+        e = Experiment(hp)
+        e_config = ExperimentConfig()
+        e_config.voca_size = 30522
+        e_config.name = "arg_psf_{}".format(topic)
+        e_config.preload_name = "arg_b_{}".format(topic)
+        e_config.num_epochs = 200
+        e_config.load_names = ['bert', 'cls_dense']
+        e_config.preload_id = ("NLI_Only_B", 'model-0')
+        feedback_data = FeedbackData(topic, True, hp.seq_max, "bert_voca.txt", "only_topic_word")
+        e.pseudo_stance_ukp_vector(e_config, topic, feedback_data)
+
+
+
+def train_topic_vector():
+    for topic in ukp.all_topics[:1]:
+        hp = hyperparams.HPUKPVector()
+        hp.lr = 1e-5
+        e = Experiment(hp)
+        e_config = ExperimentConfig()
+        e_config.voca_size = 30522
+        e_config.name = "arg_topic_vector_{}".format(topic)
+        e_config.preload_name = "arg_nli_{}_only_topic_word_reverse".format(topic)
+        e_config.num_epochs = 200
+        e_config.load_names = ['bert', 'cls_dense']
+        feedback_data = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt", "only_topic_word")
+        e.train_topic_vector(e_config, topic, feedback_data)
+
+
+def test_nli_as_stance():
+    for topic in ukp.all_topics[:1]:
+        hp = hyperparams.HPUKPVector()
+        e = Experiment(hp)
+        e_config = ExperimentConfig()
+        e_config.voca_size = 30522
+        e_config.name = "arg_psf_{}".format(topic)
+        e_config.preload_name = "arg_b_{}".format(topic)
+        e_config.num_epochs = 200
+        e_config.load_names = ['bert', 'cls_dense']
+        e_config.preload_id = ("NLI_Only_B", 'model-0')
+        data_loader = NLIAsStance(topic, True, hp.seq_max, "bert_voca.txt", option="only_topic_word")
+        e.nli_as_stance(e_config, topic, data_loader)
+
 
 
 def query_expansion():
@@ -227,6 +326,15 @@ def query_expansion():
         e_config.name = "arg_b_{}".format(topic)
         e.pred_ukp_aux(e_config, topic)
 
+
+def fetch_bert_and_train():
+    model_step = 100000
+    dir_path = "gs://clovertpu/training/model_abortionB"
+    save_name = "Abortion_B"
+    load_id = gsutil.download_model(dir_path, model_step, save_name)
+    ukp_train_test(load_id, "bert_retrain")
+
+
 if __name__ == '__main__':
-    action = "train_ukp_ex"
+    action = "fetch_bert_and_train"
     locals()[action]()

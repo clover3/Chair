@@ -171,7 +171,8 @@ def PR_AUC_ind(explains, golds):
         all_pred_set = set([e for _, e in pred])
         for ge in gold:
             if ge not in all_pred_set:
-                print("WARNING {} is not in {}".format(ge, all_pred_set))
+                nonlocal idx
+                print("WARNING {} is not in {} - at line {}".format(ge, all_pred_set, idx))
 
         for score, e in pred:
             y_pred_list.append(score + tie_break)
@@ -189,9 +190,11 @@ def PR_AUC_ind(explains, golds):
 
     score_list_h = []
     score_list_p = []
+    idx = 0
     for pred, gold in zip(explains, golds):
         pred_p, pred_h = pred
         gold_p, gold_h = gold
+        idx += 1
         if gold_p:
             s1 = per_inst_AUC(pred_p, gold_p)
             score_list_p.append(s1)

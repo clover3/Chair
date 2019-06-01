@@ -94,10 +94,12 @@ def predict_translate(conf_score, data_loader, enc_payload, plain_payload):
 
 def eval_explain_1(conf_score, data_loader, tag):
     enc_explain_dev, explain_dev = data_loader.get_dev_explain_1(tag)
+    num_inst = min(len(explain_dev), len(conf_score))
     max_k = 999
     pred_list = []
     gold_list = []
-    for idx, entry in enumerate(explain_dev):
+    for idx in range(num_inst):
+        entry = explain_dev[idx]
         conf_p, conf_h = data_loader.split_p_h(conf_score[idx], enc_explain_dev[idx])
         prem, hypo, p_indice, h_indice = entry
         input_ids = enc_explain_dev[idx][0]

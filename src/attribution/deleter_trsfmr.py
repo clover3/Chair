@@ -1,7 +1,9 @@
-
+from functools import partial
 import random
 from data_generator.NLI.parse_tree import *
 from data_generator.NLI import nli
+
+G_del_factor = 0.7
 
 def token_delete(binary_tag, x0, x1, x2):
     assert len(x0) == len(x1)
@@ -260,7 +262,42 @@ def add_seq_hypo2prem(x0, x1, x2 ):
 
 
 def seq_delete(num_del, info, idx_trans_fn, x0, x1, x2):
-    return seq_replace_inner(num_del, x0, x1, x2)
+    return seq_delete_inner(num_del, x0, x1, x2)
+
+
+
+
+def get_seq_deleter(g_val):
+    def innner_deleter(g, num_del, x0, x1, x2):
+        length = len(x0)
+        last_valid = 0
+        for i in range(length):
+            if x2[i] > 0 :
+                last_valid = i
+        num_del = min(num_del, last_valid)
+
+        def sample_len():
+            l = 1
+            v = random.random()
+            while v < g and l < length:
+                l = l * 2
+                v = random.random()
+            return min(l, length)
+
+        indice = []
+        for i in range(num_del):
+            del_len = sample_len()
+            start_idx = pick1(range(last_valid+1))
+            end_idx = min(start_idx+del_len, last_valid+1)
+            for idx in range(start_idx, end_idx):
+                indice.append(idx)
+
+        mask = [0] * len(x0)
+        for idx in indice:
+            mask[idx] = 1
+
+        return token_delete(mask, x0, x1, x2), mask
+    return partial(innner_deleter, g_val)
 
 
 def seq_delete_inner(num_del, x0, x1, x2):
@@ -274,7 +311,7 @@ def seq_delete_inner(num_del, x0, x1, x2):
     def sample_len():
         l = 1
         v = random.random()
-        while v < 0.5 and l < length:
+        while v < G_del_factor and l < length:
             l = l * 2
             v = random.random()
         return min(l, length)
