@@ -11,13 +11,39 @@ from cache import *
 all_topics = ["abortion", "cloning", "death_penalty", "gun_control",
                        "marijuana_legalization", "minimum_wage", "nuclear_energy", "school_uniforms"]
 
+class LazyDict(dict):
+    def __init__(self, init_fn):
+        super(LazyDict, self).__init__()
+        self.init_fn = init_fn
+        self.f_init = False
+
+    def keys(self):
+        self.do_init()
+        return dict.keys(self)
+
+    def __getitem__(self, item):
+        self.do_init()
+        return dict.__getitem__(self, item)
+
+    def do_init(self):
+        if not self.f_init:
+            mapf, arg = self.init_fn
+            for t in arg:
+                self[t] = mapf(t)
+            self.f_init = True
+
+
 class DataLoader:
     def __init__(self, target_topic, is_3way=True):
         self.test_topic = target_topic
         self.train_topics = list(set(all_topics) - {target_topic})
-        self.all_data = {topic : ukp.load(topic) for topic in all_topics}
+        self.all_data = LazyDict((ukp.load, all_topics))
         self.labels = ["NoArgument", "Argument_for", "Argument_against"]
         self.is_3way = is_3way
+
+    def load_data(self):
+        if self.all_data is None:
+            self.all_data = {topic: ukp.load(topic) for topic in all_topics}
 
     def annotation2label(self, annot):
         if self.is_3way:
@@ -106,6 +132,7 @@ class BertDataLoader(DataLoader):
         return entry["input_ids"], entry["input_mask"], entry["segment_ids"], y
 
     def get_train_data(self):
+        self.load_data()
         train_data = []
         data_name = "ukp_train_{}_{}".format(self.test_topic, self.option)
         cached = load_cache(data_name)
@@ -124,6 +151,7 @@ class BertDataLoader(DataLoader):
 
 
     def get_hidden_train_data(self):
+        self.load_data()
         h_data = []
         for entry in self.all_data[self.test_topic]:
             if entry['set'] == "train":
@@ -144,6 +172,7 @@ class BertDataLoader(DataLoader):
         return dev_data
 
     def get_dev_data_expand(self, keyword):
+
         dev_data = []
         for entry in self.all_data[self.test_topic]:
             if entry['set'] == "val":

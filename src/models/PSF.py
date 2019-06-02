@@ -1,6 +1,6 @@
 import os
 #os.environ["CUDA_VISIBLE_DEVICES"] = "2"
-
+import sys
 import path
 from arg.predictor import Predictor
 from collections import Counter, defaultdict
@@ -178,6 +178,21 @@ def context_viewer(target_topic):
                 print("-------------")
 
 
+def predict_stance(target_topic, blind_topic):
+    docs =  get_relevant_docs(target_topic)
+    predictor = Predictor(blind_topic)
+
+    def get_topic_stance(sents, target_topic):
+        return predictor.predict(target_topic, sents)
+
+    line_split = sent_tokenize
+    sents_list = lmap(line_split, docs)
+
+    #topic_stances_list = load_from_pickle("stance_{}_rel.pickle".format(target_topic))
+    topic_stances_list = flat_apply_stack(lambda x: get_topic_stance(x, target_topic), sents_list, False)
+    save_to_pickle(topic_stances_list, "DocStanc_targ_{}_blind_{}".format(target_topic, blind_topic))
+
+
 def stance_pattern(target_topic, cheat_topic):
     docs = get_relevant_docs(target_topic)[:100]
     predictor = Predictor(target_topic, True, cheat_topic)
@@ -281,10 +296,14 @@ def pseudo_label(target_topic):
 
 if __name__ == "__main__":
     all_topics = ["abortion", "cloning", "death_penalty", "gun_control",
-                  "marijuana_legalization", "minimum_wage", "nuclear_energy"]
-    for topic in all_topics:
-        print("-------------------")
-        print(topic)
-        tf.reset_default_graph()
-        cheat_topic = "cloning" if topic != "cloning" else "death_penalty"
-        stance_pattern(topic, cheat_topic)
+                  "marijuana_legalization", "minimum_wage", "nuclear_energy", "school_uniforms"]
+    #for target_topic in all_topics:
+    #    for blind_topic in all_topics:
+
+    target_topic = all_topics[int(sys.argv[1])]
+    blind_topic = all_topics[int(sys.argv[2])]
+    print("-------------------")
+    print("Target={}".format(target_topic))
+    print("Classifier={} blind".format(blind_topic))
+    tf.reset_default_graph()
+    predict_stance(target_topic, blind_topic)

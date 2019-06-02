@@ -52,6 +52,7 @@ from models.transformer.transformer_adhoc import transformer_adhoc, transformer_
 from models.transformer.transformer_lm import transformer_ql
 from models.transformer.transformer_multitask import transformer_mt
 from models.transformer.transformer_weight import transformer_weight
+from models.transformer.transformer_arg_dist import transformer_distribution
 from models.transformer.ScoreCombiner import *
 from models.transformer.cie import token_regression, span_selection
 from models.transformer.transformer_binary import transformer_binary
@@ -8712,8 +8713,80 @@ class Experiment:
                 print_result(logit_r, gold_y)
 
 
+    def doc_stance(self, exp_config, data_loader):
+        print("Train doc_stance")
+        tf.reset_default_graph()
+        task = transformer_distribution(self.hparam, exp_config.voca_size, True)
+        with tf.variable_scope("optimizer"):
+            train_cls = self.get_train_op(task.loss)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        train_batches = get_batches_ex(data_loader.get_train_data(), self.hparam.batch_size, 4)
+        print("Num train batches :",len(train_batches))
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+        self.load_model_white2(exp_config.preload_id, exp_config.load_names, True)
+
+        def batch2feed_dict(batch):
+            x0, x1, x2, y = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        def train_fn(batch, step_i):
+            x0, x1, x2, y = batch
+            #x0 = np.zeros_like(x0)
+            #batch = x0, x1, x2, y
+            _, pred, loss= self.sess.run([train_cls, task.pred, task.loss
+                                             ],
+                                            feed_dict=batch2feed_dict(batch)
+                                            )
+            self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss))
+
+            for i in range(len(x0)):
+                data_id = self.hparam.batch_size * step_i + i
+                doc = data_loader.train_docs[data_id]
+                sent = doc[0]
+                sent = sent[:100]
+                p_str = " ".join(["{0:.2f}".format(pred[i,j]) for j in range(3)])
+                g_str = " " .join(["{0:.2f}".format(y[i,j]) for j in range(3)])
+                self.log2.debug("{}\t{}\t{}\t{}".format(data_id, p_str, g_str, sent))
+            self.g_step += 1
+            return loss, 0
+
+        def valid_fn():
+            loss_list = []
+            logit_list = []
+            gold_y = []
+
+            for batch in dev_batches:
+                x0, x1, x2, y = batch
+                pred, loss = self.sess.run([task.pred, task.loss
+                                               ],
+                                              feed_dict=batch2feed_dict(batch)
+                                              )
+                loss_list.append(loss)
+
+            self.log.debug("Validation loss={0:.04f}".format(average(loss_list)))
 
 
+
+        def save_fn():
+            return self.save_model(exp_config.name, 1)
+
+        valid_freq = 50
+        print("Start training...")
+        for i_epoch in range(exp_config.num_epochs):
+            loss, _ = epoch_runner(train_batches, train_fn,
+                                   valid_fn, valid_freq,
+                                   save_fn, exp_config.save_interval, False)
+        save_fn()
 
 
     def train_next_sent(self, exp_config, data_loader1, data_loader2, load_name):

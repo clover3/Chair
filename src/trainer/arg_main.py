@@ -5,7 +5,7 @@ from trainer.ExperimentConfig import ExperimentConfig
 
 from data_generator.argmining import ukp
 from data_generator.argmining.ukp import BertDataLoader, PairedDataLoader, FeedbackData, NLIAsStance
-from data_generator.argmining import NextSentPred
+from data_generator.argmining import NextSentPred, DocStance
 from trainer import loader
 from arg.ukp_train_test import ukp_train_test
 from google import gsutil
@@ -48,18 +48,19 @@ def train_bert():
     e_config.load_names = ['bert']
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     load_id = ("NLI_Only_B", 'model-0')
+    load_id = ("doc_stance_abortion", "model-248")
     #load_id = ("BERT_rel_small", 'model.ckpt-17000')
     #load_id = ("causal", 'model.ckpt-1000')
     #exp_purpose = "nli - way(2 epoch)"
-    exp_purpose = "NLI_reverse"
-    encode_opt = "only_topic_word_reverse"
+    exp_purpose = "doc_stance_pre"
+    encode_opt = "is_good"
 
     print(load_id)
     f1_list = []
     for topic in ukp.all_topics:
         e = Experiment(hp)
         print(exp_purpose)
-        e_config.name = "arg_nli_{}_{}".format(topic, encode_opt)
+        e_config.name = "arg_dsp_{}_{}".format(topic, encode_opt)
         data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt", option=encode_opt)
         save_path = e.train_ukp(e_config, data_loader, load_id)
         print(topic)
@@ -70,6 +71,32 @@ def train_bert():
     print(f1_list)
     for key, score in f1_list:
         print("{0}\t{1:.03f}".format(key,score))
+
+
+
+
+def train_doc_stance():
+    hp = hyperparams.HPBert()
+
+    e_config = ExperimentConfig()
+    e_config.num_epochs = 10
+    e_config.save_interval = 100 * 60  # 30 minutes
+    e_config.voca_size = 30522
+    e_config.load_names = ['bert']
+    e_config.preload_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+
+    exp_purpose = "doc_stance"
+    input_type = "begin"
+
+    all_topics = ukp.all_topics[:-1]
+    for topic in all_topics:
+        e = Experiment(hp)
+        print(exp_purpose)
+        e_config.name = "doc_stance_mix_{}".format(topic)
+        data_loader = DocStance.DataLoader(topic, all_topics, hp.seq_max, input_type)
+        save_path = e.doc_stance(e_config, data_loader)
+
+
 
 
 def test_model():
@@ -336,5 +363,5 @@ def fetch_bert_and_train():
 
 
 if __name__ == '__main__':
-    action = "fetch_bert_and_train"
+    action = "train_doc_stance"
     locals()[action]()

@@ -1,23 +1,17 @@
-
-import tensorflow as tf
+from data_generator.common import get_encoder
 from misc_lib import *
 from models.PSF import get_relevant_docs
 from nltk import sent_tokenize
 from path import data_path
 import pickle
-from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
-from data_generator.text_encoder import SubwordTextEncoder, SEP_ID
+from data_generator.tokenizer_b import _truncate_seq_pair
+from data_generator.text_encoder import SEP_ID
 
 
 def get_pseudo_label_path(topic):
     dir_path = os.path.join(data_path, "arg", "pseudo_label")
     label_path = os.path.join(dir_path, topic + ".pickle")
     return label_path
-
-
-def get_encoder():
-    voca_path = os.path.join(data_path, "bert_voca.txt")
-    return FullTokenizerWarpper(voca_path)
 
 
 class DataLoader:

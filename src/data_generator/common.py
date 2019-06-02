@@ -2,9 +2,9 @@
 import os
 import pickle
 import re
-from os.path import dirname
 import tensorflow as tf
 from data_generator import text_encoder
+from data_generator.tokenizer_b import FullTokenizerWarpper
 from path import project_root, data_path
 
 from data_generator import tokenizer
@@ -29,3 +29,7 @@ def _get_or_generate_vocab(tmp_dir, vocab_filename, vocab_size):
     gs.store_to_file(vocab_filepath)
     return gs
 
+
+def get_encoder():
+    voca_path = os.path.join(data_path, "bert_voca.txt")
+    return FullTokenizerWarpper(voca_path)
