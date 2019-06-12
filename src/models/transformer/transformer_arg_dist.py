@@ -43,7 +43,10 @@ class transformer_distribution:
 
         alpha = dense_softmax(feature, "dense_alpha")  # Probability of being Argument P(Arg)
         beta = dense_softmax(feature, "dense_beta")    # P(Arg+|Arg)
-        gamma = dense_softmax(feature, "dense_gamma")  # P(Noise)
+        gamma = dense_softmax(feature, "dense_gamma")  # P(not Noise)
+        self.alpha = alpha[:, 0]
+        self.beta = beta[:, 0]
+        self.gamma = gamma[:, 0]
 
         p1_prior = 0.2
         p2_prior = 0.2

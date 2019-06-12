@@ -7584,6 +7584,49 @@ class Experiment:
         all_result = valid_fn()
         return path
 
+    def run_ukp_ex(self, exp_config, data_loader, load_run_name):
+        print("run_ukp_ex")
+        tf.reset_default_graph()
+        task = transformer_nli(self.hparam, exp_config.voca_size, 5, True)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        load_path = get_model_full_path(load_run_name)
+        self.load_model_white_fullpath(load_path, exp_config.load_names, False)
+
+        def batch2feed_dict(batch):
+            x0,x1,x2, y  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        get_fn = partial(data_loader.get_next_predict_batch, self.hparam.batch_size)
+        input_queue = QueueFeader(100, get_fn, False)
+
+        try:
+            while True:
+                batch = input_queue.get()
+                x0, x1, x2, _ = batch
+                logits, conf_logit, c_soft = self.sess.run([task.logits, task.conf_logits, task.conf_softmax],
+                                                      feed_dict=batch2feed_dict(batch))
+                predictions = logits.argmax(axis=1)
+                for i in range(len(logits)):
+                    st, ed = data_loader.get_second_seg(x0[i])
+                    if ed is None:
+                        data_loader.append_dummy()
+                    else:
+                        e = x0[i][st:ed], conf_logit[i][st:ed]
+                        data_loader.append_write(e)
+
+        except StopIteration as e:
+            data_loader.finish_write()
+            return
+
+
     def train_ukp_ex(self, exp_config, data_loader, load_run_name, explain_tag):
         print("train_ukp_ex")
         tf.reset_default_graph()
@@ -8727,7 +8770,7 @@ class Experiment:
         train_batches = get_batches_ex(data_loader.get_train_data(), self.hparam.batch_size, 4)
         print("Num train batches :",len(train_batches))
         dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
-        self.load_model_white2(exp_config.preload_id, exp_config.load_names, True)
+        self.load_model_white2(exp_config.preload_id, exp_config.load_names, False)
 
         def batch2feed_dict(batch):
             x0, x1, x2, y = batch
@@ -8743,7 +8786,9 @@ class Experiment:
             x0, x1, x2, y = batch
             #x0 = np.zeros_like(x0)
             #batch = x0, x1, x2, y
-            _, pred, loss= self.sess.run([train_cls, task.pred, task.loss
+            _, pred, loss, \
+                alpha, beta, gamma = self.sess.run([train_cls, task.pred, task.loss,
+                                          task.alpha, task.beta, task.gamma,
                                              ],
                                             feed_dict=batch2feed_dict(batch)
                                             )
@@ -8751,20 +8796,19 @@ class Experiment:
 
             for i in range(len(x0)):
                 data_id = self.hparam.batch_size * step_i + i
-                doc = data_loader.train_docs[data_id]
-                sent = doc[0]
-                sent = sent[:100]
+                sents, label, topic = data_loader.train_docs[data_id]
+                sent = " ".join(sents)
+                sent = sent[:100].replace("\n", "\\n")
                 p_str = " ".join(["{0:.2f}".format(pred[i,j]) for j in range(3)])
                 g_str = " " .join(["{0:.2f}".format(y[i,j]) for j in range(3)])
-                self.log2.debug("{}\t{}\t{}\t{}".format(data_id, p_str, g_str, sent))
+                abc = [alpha[i], beta[i], gamma[i]]
+                abc_str = " " .join(["{0:.2f}".format(v) for v in abc])
+                self.log2.debug("ABC [{}]\t[{}]\t[{}]\t{}".format(abc_str, p_str, g_str, sent))
             self.g_step += 1
             return loss, 0
 
         def valid_fn():
             loss_list = []
-            logit_list = []
-            gold_y = []
-
             for batch in dev_batches:
                 x0, x1, x2, y = batch
                 pred, loss = self.sess.run([task.pred, task.loss
@@ -8773,7 +8817,9 @@ class Experiment:
                                               )
                 loss_list.append(loss)
 
-            self.log.debug("Validation loss={0:.04f}".format(average(loss_list)))
+            val_loss = average(loss_list)
+            self.log.debug("Validation loss={0:.04f}".format(val_loss))
+            return val_loss
 
 
 
@@ -8787,6 +8833,9 @@ class Experiment:
                                    valid_fn, valid_freq,
                                    save_fn, exp_config.save_interval, False)
         save_fn()
+
+        val_loss = valid_fn()
+        return val_loss
 
 
     def train_next_sent(self, exp_config, data_loader1, data_loader2, load_name):

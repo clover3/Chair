@@ -316,7 +316,7 @@ def load_trec(path, dialect = 0):
     # if you can provide a file-like object it's as simple as
 
 
-def load_robust(docs_dir):
+def load_robust(docs_dir, only_one_seg = False):
     collections = dict()
     for (dirpath, dirnames, filenames) in os.walk(docs_dir):
         for name in filenames:
@@ -325,6 +325,8 @@ def load_robust(docs_dir):
             d = load_trec(filepath, 2)
             print(len(d))
             collections.update(d)
+            if only_one_seg:
+                break
     return collections
 
 from config.input_path import robust_path

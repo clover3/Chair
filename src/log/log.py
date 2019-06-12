@@ -29,7 +29,7 @@ def aux_logger():
     log = logging.getLogger('Aux')
     ch = logging.FileHandler(os.path.join(output_path, "aux.log"))
     log.setLevel(logging.DEBUG)
-    format_str = '%(levelname)s\t%(name)s \t%(asctime)s %(message)s'
+    format_str = '%(message)s'
     formatter = logging.Formatter(format_str,
                                   datefmt='%m-%d %H:%M:%S',
                                   )

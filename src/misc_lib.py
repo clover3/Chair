@@ -221,3 +221,12 @@ def parallel_run(input_list, list_fn, split_n):
 def dict_reverse(d):
     inv_map = {v: k for k, v in d.items()}
     return inv_map
+
+
+def get_dir_files(dir_path):
+    path_list = []
+    for (dirpath, dirnames, filenames) in os.walk(dir_path):
+        for filename in filenames:
+            path_list.append(os.path.join(dir_path, filename))
+
+    return path_list

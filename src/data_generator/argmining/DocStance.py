@@ -3,7 +3,7 @@ import tensorflow as tf
 from misc_lib import *
 from models.PSF import get_relevant_docs
 from nltk import sent_tokenize
-from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
+from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair, _truncate_second
 from data_generator.text_encoder import SubwordTextEncoder, SEP_ID, CLS_ID
 from data_generator.argmining.ukp import  all_topics
 from data_generator.common import get_encoder
@@ -89,7 +89,7 @@ class DataLoader:
         for i, entry in enumerate(docs):
             doc, label, topic = entry
             if self.input_type == "topic":
-                sent = doc[0]
+                sent = "\n ".join(doc)
                 topic_str = topic + " is good."
                 x1, x2, x3 = self.encode_pair(encoder, topic_str, sent)
             else:
@@ -113,7 +113,7 @@ class DataLoader:
         # Modifies `tokens_a` and `tokens_b` in place so that the total
         # length is less than the specified length.
         # Account for [CLS], [SEP], [SEP] with "- 3"
-        _truncate_seq_pair(tokens_a, tokens_b, max_seq - 3)
+        _truncate_second(tokens_a, tokens_b, max_seq - 3)
 
         # The convention in BERT is:
         # (a) For sequence pairs:

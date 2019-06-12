@@ -108,7 +108,7 @@ class transformer_nli:
             self.conf_logits = cl
             #rl_loss_list = tf.reduce_sum(self.conf_logits * self.rf_mask , axis=1)
             self.rl_loss = tf.reduce_mean(tf_module.correlation_coefficient_loss(cl, -self.rf_mask))
-
+        self.conf_softmax = tf.nn.softmax(self.conf_logits, axis=-1)
 #            self.rl_loss = tf.reduce_mean(rl_loss_list)
             #with tf.device("/device:GPU:1"):
             #    pl = tf.layers.dense(self.model.get_sequence_output(), hp.hidden_units, name="aux_pairing1")

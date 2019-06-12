@@ -10,7 +10,6 @@ from task.metrics import eval_3label, eval_2label
 from models.classic.stopword import load_stopwords
 from summarization import tokenizer
 from summarization.text_rank import TextRank
-from cie import claim_gen
 from misc_lib import flatten, average, tprint
 from cie.arg import kl
 

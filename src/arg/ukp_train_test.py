@@ -3,7 +3,7 @@ from trainer.experiment import Experiment
 from trainer.ExperimentConfig import ExperimentConfig
 from data_generator.argmining import ukp
 from data_generator.argmining.ukp import BertDataLoader, PairedDataLoader, FeedbackData, NLIAsStance
-
+from misc_lib import *
 
 def ukp_train_test(load_id, exp_name):
     hp = hyperparams.HPBert()
@@ -30,3 +30,32 @@ def ukp_train_test(load_id, exp_name):
     print(f1_list)
     for key, score in f1_list:
         print("{0}\t{1:.03f}".format(key,score))
+
+
+
+def ukp_train_test_repeat(load_id, exp_name, topic, n_repeat):
+    hp = hyperparams.HPBert()
+    e_config = ExperimentConfig()
+    e_config.num_epoch = 2
+    e_config.save_interval = 100 * 60  # 30 minutes
+    e_config.voca_size = 30522
+    e_config.load_names = ['bert']
+    encode_opt = "is_good"
+
+    print(load_id)
+    scores = []
+    for i in range(n_repeat):
+        e = Experiment(hp)
+        print(exp_name)
+        e_config.name = "arg_{}_{}_{}".format(exp_name, topic, encode_opt)
+        data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt", option=encode_opt)
+        save_path = e.train_ukp(e_config, data_loader, load_id)
+        f1_last = e.eval_ukp(e_config, data_loader, save_path)
+        scores.append(f1_last)
+    print(exp_name)
+    print(encode_opt)
+    for e in scores:
+        print(e, end="\t")
+    print()
+    print("Avg\n{0:.03f}".format(average(scores)))
+

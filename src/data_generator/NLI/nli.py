@@ -5,6 +5,7 @@ import csv
 from path import data_path
 from cache import *
 from evaluation import *
+from collections import Counter
 import unicodedata
 from data_generator.NLI.enlidef import *
 import copy
@@ -814,4 +815,25 @@ def reformat_mnli_explain_0():
         text_list.append((entry['p'], entry['h']))
         indice_list.append((entry['p_explain', 'h_explain']))
 
+
+def tf_stat(data):
+    def tokenize(sent):
+        if sent[-1] == '.':
+            sent = sent[:-1]
+        tokens = sent.split()
+        return list([t.lower() for t in tokens])
+
+    tf_count = Counter()
+    for s1, s2, l in data:
+        for s in [s1, s2]:
+            tokens = tokenize(s)
+            tf_count.update(tokens)
+
+    save_to_pickle(tf_count, "mnli_tf")
+
+
+if __name__ == "__main__":
+    dev_file = os.path.join(corpus_dir, "dev_matched.tsv")
+    mnli_data = load_nli(dev_file)
+    tf_stat(mnli_data)
 

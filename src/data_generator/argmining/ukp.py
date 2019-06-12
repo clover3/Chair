@@ -4,6 +4,7 @@ from data_generator.data_parser import ukp
 from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
 from data_generator.text_encoder import SubwordTextEncoder, CLS_ID, SEP_ID
 from models.classic.stopword import load_stopwords
+from trainer.tf_module import get_batches_ex
 from collections import Counter
 from misc_lib import *
 from cache import *
@@ -164,11 +165,17 @@ class BertDataLoader(DataLoader):
 
     def get_dev_data(self):
         dev_data = []
+        data_name = "ukp_dev_{}_{}".format(self.test_topic, self.option)
+        cached = load_cache(data_name)
+        if cached is not None:
+            return cached
+
         for entry in self.all_data[self.test_topic]:
             if entry['set'] == "val":
                 x = entry['sentence']
                 y = self.annotation2label(entry['annotation'])
                 dev_data.append(self.encode(x,y, self.test_topic))
+        save_to_pickle(dev_data, data_name)
         return dev_data
 
     def get_dev_data_expand(self, keyword):
@@ -328,6 +335,34 @@ class BertDataLoader(DataLoader):
             "input_mask":input_mask,
             "segment_ids": segment_ids
         }
+
+
+class SingleTopicLoader(BertDataLoader):
+    def get_train_data(self):
+        self.load_data()
+        train_data = []
+        data_name = "ukp_single_train_{}_{}".format(self.test_topic, self.option)
+        cached = load_cache(data_name)
+        if cached is not None:
+            return cached
+
+        for entry in self.all_data[self.test_topic]:
+            if entry['set'] == "train" :
+                x = entry['sentence']
+                y = self.annotation2label(entry['annotation'])
+                train_data.append(self.encode(x,y, self.test_topic))
+
+        save_to_pickle(train_data, data_name)
+        return train_data
+
+    def get_dev_data(self):
+        dev_data = []
+        for entry in self.all_data[self.test_topic]:
+            if entry['set'] == "val":
+                x = entry['sentence']
+                y = self.annotation2label(entry['annotation'])
+                dev_data.append(self.encode(x,y, self.test_topic))
+        return dev_data
 
 
 class PairedDataLoader(DataLoader):
@@ -536,6 +571,82 @@ class NLIAsStance(BertDataLoader):
                 y = self.annotation2label(entry['annotation'])
                 dev_data.append(self.encode(x,y, self.test_topic))
         return dev_data
+
+
+class StreamExplainer(BertDataLoader):
+    def __init__(self, target_topic, filepath, is_3way, max_sequence, vocab_filename, option):
+        super(StreamExplainer, self).__init__(target_topic, is_3way, max_sequence, vocab_filename, option)
+        self.file_path = filepath
+        self.line_itr = None
+        self.write_idx = 0
+        self.read_idx = 0
+        self.empty_lines = []
+        self.cur_document = []
+        self.all_documents = []
+        self.lines = open(self.file_path, "r").readlines()
+        self.write_last_empty = -1
+
+    def append_write(self, entry):
+        assert len(entry) == 2
+        while not self.lines[self.write_idx].strip():
+            if self.write_last_empty == self.write_idx-1 and self.cur_document:
+                self.all_documents.append(self.cur_document)
+                self.cur_document = []
+
+            self.write_last_empty = self.write_idx
+            self.write_idx += 1
+
+        self.cur_document.append(entry)
+        self.write_idx += 1
+
+    def append_dummy(self):
+        self.write_idx += 1
+
+    def finish_write(self):
+        print("File lines : {} , Written index : {}".format(len(self.lines), self.write_idx))
+
+        self.all_documents.append(self.cur_document)
+        print("#Docs : ", len(self.all_documents))
+
+        file_name = self.file_path.split("/")[-1]
+        file_name = "b_{}_".format(self.test_topic) + file_name + ".scored"
+        save_to_pickle(self.all_documents, file_name)
+
+
+    def get_data(self):
+        y = 0
+        line = self.lines[self.read_idx]
+        while not line.strip():
+            self.empty_lines.append(self.read_idx)
+            self.read_idx += 1
+            line = self.lines[self.read_idx]
+        self.read_idx += 1
+
+        return self.encode(line, y, self.test_topic)
+
+    def get_next_predict_batch(self, batch_size):
+        data = []
+        try:
+            for i in range(batch_size):
+                data.append(self.get_data())
+        except IndexError as e:
+            if not data:
+                raise StopIteration()
+
+        batches = get_batches_ex(data, batch_size, 4)
+        return batches[0]
+
+    @staticmethod
+    def get_second_seg(input_ids):
+        for i in range(len(input_ids)):
+            if input_ids[i] == SEP_ID:
+                idx_sep1 = i
+                break
+        idx_sep2 = None
+        for i in range(idx_sep1 + 1, len(input_ids)):
+            if input_ids[i] == SEP_ID:
+                idx_sep2 = i
+        return idx_sep1+1, idx_sep2
 
 
 
