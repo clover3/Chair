@@ -45,12 +45,20 @@ class DataLoader:
 
     def get_train_data(self):
         if self.train_data is None:
+            self.train_data = load_cache("nli_train_cache")
+
+        if self.train_data is None:
             self.train_data = list(self.example_generator(self.train_file))
+        save_to_pickle(self.train_data, "nli_train_cache")
         return self.train_data
 
     def get_dev_data(self):
         if self.dev_data is None:
+            self.dev_data = load_cache("nli_dev_cache")
+
+        if self.dev_data is None:
             self.dev_data = list(self.example_generator(self.dev_file))
+        save_to_pickle(self.dev_data, "nli_dev_cache")
         return self.dev_data
 
     def get_train_infos(self):

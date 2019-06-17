@@ -149,10 +149,10 @@ def train_ukp_ex():
     encode_opt = "is_good"
     is_3way = True
     f1_list = []
-    #explain_tag = 'polarity'
-    explain_tag = 'relevance'
+    explain_tag = 'polarity'
+    #explain_tag = 'relevance'
 
-    for topic in ukp.all_topics[1:2]:
+    for topic in ukp.all_topics[5:]:
         e = Experiment(hp)
         print(exp_purpose)
         e_config.name = "arg_exp_{}_{}".format(topic, explain_tag)
@@ -432,15 +432,55 @@ def psf_train_test():
 
 
 def train_test_repeat():
-    step = 100000
-    #load_id = ("Abortion_B_1e4_{}".format(step), 'model.ckpt-{}'.format(step))
-    load_id = ("Abortion_B", 'model.ckpt-{}'.format(step))
-    ukp_train_test_repeat(load_id, "model_B_5e5_{}".format(step), ukp.all_topics[0], 10)
+    step = 20000
+    topic =  ukp.all_topics[2]
+    load_id = ("{}_{}".format(topic, step), 'model.ckpt-{}'.format(step))
+    #load_id = ("Abortion_B", 'model.ckpt-{}'.format(step))
+    ukp_train_test_repeat(load_id, "{}_{}".format(topic, step), topic, 10)
+
+
+
+def hp_tune():
+    topic = ukp.all_topics[0]
+    hp = hyperparams.HPBert()
+    e_config = ExperimentConfig()
+    e_config.num_epoch = 10
+    e_config.save_interval = 100 * 60  # 30 minutes
+    e_config.voca_size = 30522
+    e_config.load_names = ['bert']
+    encode_opt = "is_good"
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    load_id = ("NLI_Only_B", 'model-0')
+    print(load_id)
+    scores = {}
+
+    for lr in [5e-7, 1e-6]:
+        hp.lr = lr
+        e = Experiment(hp)
+        exp_name = "{}".format(lr)
+        print(exp_name)
+        e_config.name = "arg_{}_{}_{}".format(exp_name, topic, encode_opt)
+        data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt", option=encode_opt)
+        save_path = e.train_ukp(e_config, data_loader, load_id)
+        f1_last = e.eval_ukp(e_config, data_loader, save_path)
+        scores[lr] = f1_last
+    print(exp_name)
+    print(encode_opt)
+    for e, v  in scores.items():
+        print(e, v)
+
+def train_arg_nli_shared():
+    step = 40000
+    load_id = ("Abortion_B_1e4_{}".format(step), 'model.ckpt-{}'.format(step))
+    train_ukp_with_nli(load_id, "AN_B_40000_2")
+
+def test_arg_nli_shared():
+    eval_ukp_with_nli("argnli_model_B_40000")
 
 
 if __name__ == '__main__':
     begin = time.time()
-    action = "train_test_repeat"
+    action = "train_ukp_ex"
     locals()[action]()
 
     elapsed = time.time() - begin

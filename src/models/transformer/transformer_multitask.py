@@ -22,7 +22,9 @@ class transformer_mt:
         self.y1 = tf.placeholder(tf.int64, [None], name="y1")
         self.y2 = tf.placeholder(tf.int64, [None], name="y2")
         self.y = [self.y1, self.y2]
-        self.summary = {}
+        summary1 = {}
+        summary2 = {}
+        self.summary_list = [summary1, summary2]
 
         use_one_hot_embeddings = use_tpu
         self.model = bert.BertModel(
@@ -40,8 +42,8 @@ class transformer_mt:
         self.pred = pred
         self.loss = loss
         self.acc = task.acc
-        self.summary['loss1'] = tf.summary.scalar('loss', self.loss)
-        self.summary['acc1'] = tf.summary.scalar('acc', self.acc)
+        summary1['loss1'] = tf.summary.scalar('loss', self.loss)
+        summary1['acc1'] = tf.summary.scalar('acc', self.acc)
 
         with tf.variable_scope("cls2"):
             task2 = Classification(num_class_list[1])
@@ -51,5 +53,9 @@ class transformer_mt:
             self.pred2 = pred
             self.loss2 = loss
             self.acc2 = task2.acc
-            self.summary['loss2'] = tf.summary.scalar('loss2', self.loss2)
-            self.summary['acc2'] = tf.summary.scalar('acc2', self.acc2)
+            summary2['loss2'] = tf.summary.scalar('loss2', self.loss2)
+            summary2['acc2'] = tf.summary.scalar('acc2', self.acc2)
+
+        self.logit_list = [self.logits, self.logits2]
+        self.loss_list = [self.loss, self.loss2]
+        self.pred_list = [self.pred, self.pred2]

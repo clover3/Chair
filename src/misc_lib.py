@@ -230,3 +230,12 @@ def get_dir_files(dir_path):
             path_list.append(os.path.join(dir_path, filename))
 
     return path_list
+
+
+def sample_prob(prob):
+    v = random.random()
+    for n, p in prob:
+        v -= p
+        if v < 0:
+            return n
+    return 1

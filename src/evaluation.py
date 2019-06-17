@@ -271,6 +271,6 @@ def compute_opt_f1(y_scores, y_true):
     r = compute_opt_recall(y_scores, y_true)
     return 2*p*r / (p+r)
 
-
-
-
+def get_acc(y_pred, y_true):
+    tpf = np.equal(y_pred, y_true)
+    return sum(tpf) / len(y_true)
