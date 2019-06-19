@@ -9,7 +9,7 @@ from collections import Counter
 import unicodedata
 num_classes = 2
 
-corpus_dir = os.path.join(data_path, "nli")
+corpus_dir = os.path.join(data_path, "RTE")
 
 
 
@@ -23,6 +23,8 @@ class DataLoader:
         self.train_file = os.path.join(corpus_dir, "train.tsv")
         self.dev_file = os.path.join(corpus_dir, "dev.tsv")
         self.max_seq = max_sequence
+        self.voca_size = 30522
+
         voca_path = os.path.join(data_path, vocab_filename)
         assert os.path.exists(voca_path)
         self.name = "rte"

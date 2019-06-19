@@ -480,7 +480,7 @@ def test_arg_nli_shared():
 
 if __name__ == '__main__':
     begin = time.time()
-    action = "train_ukp_ex"
+    action = "run_ukp_ex"
     locals()[action]()
 
     elapsed = time.time() - begin

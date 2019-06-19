@@ -7246,6 +7246,136 @@ class Experiment:
         visualize.visualize_single(result, "protest")
 
 
+    def train_rte(self, exp_config, data_loader, preload_id):
+        print("train_rte")
+        task = transformer_binary(self.hparam, data_loader.voca_size, True)
+        with tf.variable_scope("optimizer"):
+            train_cls = self.get_train_op(task.loss)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        self.load_model_white2(preload_id, exp_config.load_names)
+
+        def batch2feed_dict(batch):
+            x0,x1,x2, y  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        def forward_run(inputs):
+            batches = get_batches_ex(inputs, self.hparam.batch_size, 3)
+            logit_list = []
+            for batch in batches:
+                x0, x1, x2 = batch
+                logits,  = self.sess.run([task.sout, ],
+                                               feed_dict={
+                                                task.x_list[0]: x0,
+                                                task.x_list[1]: x1,
+                                                task.x_list[2]: x2,
+                                               })
+                logit_list.append(logits)
+            return np.concatenate(logit_list)
+
+        def train_fn(batch, step_i):
+            loss_val, summary, _ = self.sess.run([task.loss, self.merged, train_cls,
+                                             ],
+                                            feed_dict=batch2feed_dict(batch)
+                                            )
+            self.log.debug("Step {0} train loss={1:.04f}".format(step_i, loss_val))
+            self.train_writer.add_summary(summary, self.g_step)
+            self.g_step += 1
+            return loss_val, 0
+
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+        train_batches = get_batches_ex(data_loader.get_train_data(), self.hparam.batch_size, 4)
+
+        def valid_fn():
+            loss_list = []
+
+            gold_y = []
+            pred_y = []
+            for batch in dev_batches[:100]:
+                x0,x1,x2,y = batch
+                logits, loss_val, summary = self.sess.run([task.logits, task.loss, self.merged],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+                gold_y.append(y)
+                pred_y.append(np.argmax(logits, axis=1))
+
+                self.test_writer.add_summary(summary, self.g_step)
+
+            gold_y = np.concatenate(gold_y)
+            pred_y = np.concatenate(pred_y)
+            acc = np.sum(np.equal(pred_y, gold_y)) / len(pred_y)
+
+            self.log.info("Validation : loss={0:.04f} acc={1:.04f}".format(average(loss_list), acc))
+
+
+        def save_fn():
+            self.save_model(exp_config.name, 1)
+
+        valid_freq = 10
+        # train_op
+        print("Train epoch")
+        num_epochs = exp_config.num_epoch
+        for i_epoch in range(num_epochs):
+            loss, _ = epoch_runner(train_batches, train_fn,
+                                   valid_fn, valid_freq,
+                                   save_fn, exp_config.save_interval)
+        save_fn()
+
+    def rte_visualize(self, exp_config, data_loader, preload_id):
+        print("rte_visualize")
+        task = transformer_binary(self.hparam, data_loader.voca_size, True)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.load_model_white2(preload_id, exp_config.load_names)
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+
+        def batch2feed_dict(batch):
+            x0,x1,x2, y  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        target = task.logits[:,1] - task.logits[:,0]
+        g = tf.gradients(target, task.model.embedding_output)
+        gold_y = []
+        pred_y = []
+
+        result = []
+        for batch in dev_batches[:1]:
+            x0, x1, x2, y = batch
+            logits, loss_val, g_out = self.sess.run([task.logits, task.loss, g],
+                                                      feed_dict=batch2feed_dict(batch)
+                                                      )
+            predictions = np.argmax(logits, axis=1)
+            gold_y.append(y)
+            pred_y.append(predictions)
+            g_out = g_out[0]
+            g_token = np.sum(np.abs(g_out), axis=2)
+            print(g_token.shape)
+            for idx in range(len(y)):
+                input_ids = x0[idx]
+                ex1, ex2 = visualize.split_with_input_ids(g_token[idx], input_ids)
+                enc1, enc2 = visualize.split_with_input_ids(input_ids, input_ids)
+                tokens1 = data_loader.encoder.decode_list(enc1)
+                tokens2 = data_loader.encoder.decode_list(enc2)
+                result.append((ex1, ex2, tokens1, tokens2, predictions[idx], y[idx]))
+        visualize.visualize_sent_pair(result, "rte")
+
+
 
 
     def train_wiki_contrv(self, exp_config, data_loader, preload_id):
