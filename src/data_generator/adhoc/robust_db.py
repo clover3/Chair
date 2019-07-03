@@ -1,8 +1,6 @@
 import data_generator.data_parser.trec as trec
-import random
 from nltk.tokenize import sent_tokenize
-from misc_lib import TimeEstimator
-from data_generator.adhoc.mysql_sentence import add_sents
+from tlm.mysql_sentence import add_sents
 
 def add_rob_sents():
     print("loading...")

@@ -3,14 +3,11 @@ import mysql.connector
 mydb = mysql.connector.connect(
   host="localhost",
   user="root",
-  passwd="1234"
+  passwd="1234",
 )
-
-
 
 cursor = mydb.cursor()
 cursor.execute("use robust;")
-
 
 g_id = 0
 def add_sents(doc_id, sents):
@@ -22,6 +19,13 @@ def add_sents(doc_id, sents):
     vals.append((doc_id, sent, loc, g_id))
   cursor.executemany(sql, vals)
   mydb.commit()
+
+
+def get_sent(idx):
+  sql = "SELECT * from RobustSents where s_id=" + str(idx)
+  cursor.execute(sql)
+  row = cursor.fetchone()
+  return row
 
 
 
