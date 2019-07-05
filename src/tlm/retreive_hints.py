@@ -1,10 +1,10 @@
 
 
-"""
-# Features
-Group 1 : BM25
+def retrieve_candidate(sentence):
+    # TODO tokenize, stemming
+    #
 
-Group 2 : Entity Exact Match
+    NotImplemented
 
-Group 3 :
-"""
+
+

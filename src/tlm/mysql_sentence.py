@@ -29,5 +29,13 @@ def get_sent(idx):
 
 
 
+def get_sent_gid(g_id):
+  sql = "SELECT * from RobustSents where g_id=" + str(g_id)
+  cursor.execute(sql)
+  row = cursor.fetchone()
+  return row
+
+
+
 
 
