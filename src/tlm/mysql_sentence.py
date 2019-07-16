@@ -36,6 +36,11 @@ def get_sent_gid(g_id):
   return row
 
 
+def get_doc_sent(doc_id):
+  sql = "SELECT * from RobustSents where DocId=%s"
+  cursor.execute(sql, (doc_id,))
+  rows = cursor.fetchall()
+  return rows
 
 
 

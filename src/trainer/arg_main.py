@@ -49,11 +49,12 @@ def train_bert():
     e_config.load_names = ['bert']
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     load_id = ("NLI_Only_B", 'model-0')
+    load_id = ("ukp_rel", "model.ckpt-20000")
     #load_id = ("doc_stance_abortion", "model-248")
     #load_id = ("BERT_rel_small", 'model.ckpt-17000')
     #load_id = ("causal", 'model.ckpt-1000')
     #exp_purpose = "nli - way(2 epoch)"
-    exp_purpose = "single_topic"
+    exp_purpose = "ukp_rel"
     encode_opt = "is_good"
 
     print(load_id)
@@ -61,9 +62,9 @@ def train_bert():
     for topic in ukp.all_topics:
         e = Experiment(hp)
         print(exp_purpose)
-        e_config.name = "arg_single_topic_{}_{}".format(topic, encode_opt)
-        #data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt", option=encode_opt)
-        data_loader = SingleTopicLoader(topic, True, hp.seq_max, "bert_voca.txt", option=encode_opt)
+        e_config.name = "arg_ukp_rel_{}_{}".format(topic, encode_opt)
+        data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt", option=encode_opt)
+        #data_loader = SingleTopicLoader(topic, True, hp.seq_max, "bert_voca.txt", option=encode_opt)
         save_path = e.train_ukp(e_config, data_loader, load_id)
         print(topic)
         f1_last = e.eval_ukp(e_config, data_loader, save_path)
@@ -388,15 +389,15 @@ def query_expansion():
 
 
 def fetch_bert():
-    model_step = 80000
-    dir_path = "gs://clovertpu/training/model_B_1e4"
-    save_name = "Abortion_B_1e4_80000"
+    model_step = 20000
+    dir_path = "gs://clovertpu/training/ukp_rel_1e4"
+    save_name = "ukp_rel_small_1e4"
     load_id = gsutil.download_model(dir_path, model_step, save_name)
     return load_id
 
 def fetch_bert_and_train():
     load_id = fetch_bert()
-    ukp_train_test(load_id, "model_C_1e4_55000")
+    ukp_train_test(load_id, "ukp_rel_small_1e4")
 
 
 def psf_train_test():
@@ -433,7 +434,7 @@ def psf_train_test():
 
 def train_test_repeat():
     step = 20000
-    topic =  ukp.all_topics[2]
+    topic = ukp.all_topics[7]
     load_id = ("{}_{}".format(topic, step), 'model.ckpt-{}'.format(step))
     #load_id = ("Abortion_B", 'model.ckpt-{}'.format(step))
     ukp_train_test_repeat(load_id, "{}_{}".format(topic, step), topic, 10)
@@ -480,7 +481,7 @@ def test_arg_nli_shared():
 
 if __name__ == '__main__':
     begin = time.time()
-    action = "run_ukp_ex"
+    action = "fetch_bert_and_train"
     locals()[action]()
 
     elapsed = time.time() - begin

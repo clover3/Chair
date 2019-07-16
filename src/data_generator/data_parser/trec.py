@@ -287,6 +287,14 @@ def load_trec_data_proc():
 
     return collection, idf, inv_index, tf_index, queries
 
+
+def save_robust_info():
+    colleciton = load_robust("/mnt/scratch/youngwookim/data/robust04", True)
+    idf = Idf(colleciton.values())
+    save_to_pickle(idf, "robust_idf_mini")
+
+
+
 def load_trec(path, dialect = 0):
     # use default ``xml.sax.expatreader``
     all_entry = []
@@ -331,6 +339,10 @@ def load_robust(docs_dir, only_one_seg = False):
 
 from config.input_path import robust_path
 
+def load_robust_ingham():
+    return load_robust("/mnt/scratch/youngwookim/data/robust04")
+
+
 if __name__ == '__main__':
-    load_robust("/mnt/scratch/youngwookim/data/robust04")
+    save_robust_info()
 

@@ -10,8 +10,8 @@ def ask_list_with_body(query, page):
     url = "http://content.guardianapis.com/search?q={}&show-fields=all&page-size=200&page={}"\
         .format(query,page_str)
 
-    url = "http://content.guardianapis.com/search?to-date=2009-12-30&q={}&show-fields=all&page-size=200&page={}" \
-        .format(query, page_str)
+    #url = "http://content.guardianapis.com/search?to-date=2009-12-30&q={}&show-fields=all&page-size=200&page={}" \
+    #    .format(query, page_str)
     apikey = "c13d9515-b19e-412b-b505-994677cc2cf3"
 
     headers = {
@@ -25,9 +25,10 @@ def ask_list_with_body(query, page):
         print(res.content)
         return None
 
-save_dir = os.path.join(data_path, "guardian", "topic_2009")
+save_dir = os.path.join(data_path, "guardian", "controversy")
 
 def save_query_result(topic, page, content):
+    #topic = topic.replace(" ", "_")
     topic_dir = os.path.join(save_dir, topic)
     if not os.path.exists(topic_dir):
         os.mkdir(topic_dir)
@@ -47,7 +48,8 @@ def get_topic_list(small=False):
     return all_terms
 
 def crawl_by_list():
-    topic_list = get_topic_list()
+    #topic_list = get_topic_list()
+    topic_list = ["2020 census citizenship"]
     for topic in topic_list:
         print(topic)
         content = ask_list_with_body(topic, 1)
@@ -55,9 +57,9 @@ def crawl_by_list():
         num_pages = j['response']['pages']
         save_query_result(topic, 1, content)
 
-        #for page_no in range(2,num_pages+1):
-        #    ask_list_with_body(topic, page_no)
-        #    save_query_result(topic, page_no, content)
+        for page_no in range(2,num_pages+1):
+            ask_list_with_body(topic, page_no)
+            save_query_result(topic, page_no, content)
 
         time.sleep(0.1)
 
@@ -134,5 +136,5 @@ def crawl_comments():
 
 
 if __name__ == "__main__":
-    #crawl_by_list()
-    crawl_comments()
+    crawl_by_list()
+    #crawl_comments()

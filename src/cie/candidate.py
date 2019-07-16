@@ -1,8 +1,9 @@
 import nltk
 import os
 from nltk import word_tokenize
-import spacy
 import en_core_web_sm
+
+from misc_lib import list_print
 from path import data_path
 nlp = en_core_web_sm.load()
 
@@ -14,7 +15,19 @@ def get_verbs(sent):
             verbs.append(w)
     return verbs
 
-def get_nouns(sent):
+
+def get_verb_nouns(sent):
+    tags = nltk.pos_tag(word_tokenize(sent))
+    verbs = []
+    nouns = []
+    for w, pos in tags:
+        if "VB" in pos:
+            verbs.append(w)
+        if "NN" in pos:
+            nouns.append(w)
+    return verbs, nouns
+
+def get_entities(sent):
     ne_list = []
     data = nlp(sent)
     for X in data.ents:
@@ -29,19 +42,10 @@ def generate(all_sents):
 
     for sent in all_sents[:500]:
         verbs_all.update(get_verbs(sent))
-        nouns_all.update(get_nouns(sent))
+        nouns_all.update(get_entities(sent))
 
     return list(verbs_all), list(nouns_all)
 
-def list_print(l, width):
-    cnt = 0
-    for item in l:
-        print(item, end=" / ")
-        cnt += 1
-        if cnt == width:
-            print()
-            cnt = 0
-    print()
 
 if __name__ == "__main__":
     test_path = os.path.join(data_path, "cont_rel", "doc.txt")

@@ -287,6 +287,64 @@ def paired_p_test(scorer, predictions1, predictions2, gold_list, only_prem, only
     return p
 
 
+def bootstrap_paired_t(score_list1, score_list2, trial):
+    from scipy import stats
+
+    total = len(score_list1)
+
+    sample_size = int(0.1 * total)
+
+    l1 = []
+    l2 = []
+    for j in range(trial):
+        sample1 = []
+        sample2 = []
+        for i in range(sample_size):
+            idx = random.randint(0, total-1)
+            sample1.append(score_list1[idx])
+            sample2.append(score_list2[idx])
+
+        l1.append(average(sample1))
+        l2.append(average(sample2))
+    return stats.ttest_rel(l1, l2)
+
+
+def McNemar(score_list1, score_list2):
+    import scipy
+    def mcnemar_p(b, c):
+        """Computes McNemar's test.
+        Args:
+          b: the number of "wins" for the first condition.
+          c: the number of "wins" for the second condition.
+        Returns:
+          A p-value for McNemar's test.
+        """
+        n = b + c
+        x = min(b, c)
+        dist = scipy.stats.binom(n, .5)
+        return 2. * dist.cdf(x)
+
+    l = len(score_list1)
+    a = 0
+    b = 0
+    c = 0
+    d = 0
+    for i in range(l):
+        p1 = score_list1[i]
+        p2 = score_list2[i]
+
+        if p1 and p2:
+            a += 1
+        elif p1 and not p2:
+            b += 1
+        elif not p1 and p2:
+            c += 1
+        elif not p1 and not p2:
+            d += 1
+        else:
+            assert False
+    return None, mcnemar_p(b, c)
+
 def paired_p_test2(scorer1, scorer2, predictions1, predictions2, gold_list, only_prem, only_hypo):
     from scipy import stats
 
@@ -306,7 +364,10 @@ def paired_p_test2(scorer1, scorer2, predictions1, predictions2, gold_list, only
         score_list_1 = p_score_list1 + h_score_list1
         score_list_2 = p_score_list2 + h_score_list2
 
-    _, p = stats.ttest_rel(score_list_1, score_list_2)
+    print("pp2", average(score_list_1))
+    print("pp2", average(score_list_2))
+    _, p = McNemar(score_list_1, score_list_2)
+    #_, p = stats.ttest_rel(score_list_1, score_list_2)
     return p
 
 
@@ -397,9 +458,9 @@ def paired_p_test_runner_new():
 
 def paired_p_test_runner_acc():
     best_runner = {
-            'conflict':['deletion_seq', 'Y_conflict'],
-            'match':['X_match', 'deletion_seq'],
-            'mismatch':['W_mismatch','deletion_seq'],
+            'conflict':['Y_conflict', 'deletion_seq'],
+            'match':['X_match', 'LIME'],
+            'mismatch':['W_mismatch','LIME'],
         }
 
 
@@ -776,11 +837,11 @@ if __name__ == '__main__':
     #mismatch_p()
     #merge_lime()
     #paired_p_test_runner_new()
-    #paired_p_test_runner_acc()
+    paired_p_test_runner_acc()
     #run_cut_off()
     #paired_p_test_runner()
     #run_test_eval2("mismatch")
-    run_test_eval2("match")
+    #run_test_eval2("match")
     #run_test_eval2("conflict")
 
     #eval_snli()

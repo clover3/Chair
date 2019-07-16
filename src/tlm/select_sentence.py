@@ -2,9 +2,11 @@ import random
 
 from tlm.mysql_sentence import get_sent
 from nltk import word_tokenize
+from cache import load_from_pickle
+from data_generator.data_parser.trec import Idf
 
-idf_cut = 1000
-idf = NotImplemented
+idf_cut = 8
+idf = load_from_pickle("robust_idf_mini")
 
 def get_random_sent():
     def good(r):
@@ -24,7 +26,3 @@ def get_random_sent():
         idx = random.randint(1, n_sentence)
         r = get_sent(idx)
     return r
-
-
-r = get_random_sent()
-print(r)

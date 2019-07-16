@@ -239,3 +239,14 @@ def sample_prob(prob):
         if v < 0:
             return n
     return 1
+
+
+def list_print(l, width):
+    cnt = 0
+    for item in l:
+        print(item, end=" / ")
+        cnt += 1
+        if cnt == width:
+            print()
+            cnt = 0
+    print()

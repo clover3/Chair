@@ -58,4 +58,4 @@ if __name__ == '__main__':
         server.start()
     else:
         client = TextReaderClient()
-        print(client.retrieve("2"))
+        print(client.retrieve("FBIS3-23791"))

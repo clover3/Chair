@@ -226,6 +226,19 @@ def load_article(path):
         articles.append((id, short_id, body_text))
     return articles
 
+def load_article_w_title(path):
+    f = open(path, encoding='utf-8')
+    j = json.load(f)
+    articles = []
+    for j_article in j['response']['results']:
+        id = j_article['id']
+        title = j_article['webTitle']
+        body_text = j_article['fields']['bodyText']
+        short_url = j_article['fields']['shortUrl']
+        short_id = short_url[-len("/p/ap83f"):]
+        articles.append((id, title, short_id, body_text))
+    return articles
+
 
 def get_topics():
     topics = []
