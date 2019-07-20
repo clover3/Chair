@@ -14,3 +14,4 @@ def doc2query_simple(cleaned_doc):
 def doc2query_textrank(cleaned_doc):
     return NotImplemented
 
+

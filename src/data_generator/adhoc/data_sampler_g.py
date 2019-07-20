@@ -2,25 +2,18 @@ import os
 from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 import xmlrpc.client
+
+from adhoc.galago import load_galago_judgement
 from data_generator.data_parser.trec import load_trec
 import random
 import csv
 from path import data_path
 from data_generator.tokenizer_b import EncoderUnit
-from concurrent.futures import ProcessPoolExecutor, wait, ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from misc_lib import pick1
 import pickle
 import sys
 
-def load_galago_judgement(path):
-# Sample Format : 475287 Q0 LA053190-0016_1274 1 15.07645119 galago
-    q_group = dict()
-    for line in open(path, "r"):
-        q_id, _, doc_id, rank, score, _ = line.split()
-        if q_id not in q_group:
-            q_group[q_id] = list()
-        q_group[q_id].append((doc_id, rank, score))
-    return q_group
 
 def load_doc_list(path):
     doc_ids = set()

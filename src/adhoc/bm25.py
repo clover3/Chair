@@ -24,6 +24,19 @@ def BM25_2(f, df, N, dl, avdl):
     second = log((N-df+0.5)/(df + 0.5))
     return first * second
 
+def BM25_3(f, qf, df, N, dl, avdl):
+    K = compute_K(dl, avdl)
+    first = log((N-df+0.5)/(df + 0.5))
+    second = ((k1 + 1) * f) / (K + f)
+    third = ((k2+1) * qf) / (k2 + qf)
+    return first * second * third
+
+
+def BM25_3_q_weight(qf, df, N):
+    first = log((N-df+0.5)/(df + 0.5))
+    third = ((k2+1) * qf) / (k2 + qf)
+    return first * third
+
 
 def BM25_reverse(score, df, N, dl, avdl):
     K = k1 * (1- b+b*dl / avdl)

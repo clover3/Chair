@@ -6,6 +6,27 @@ import os
 import pickle
 from models.classic.stopword import load_stopwords
 from misc_lib import TimeEstimator
+from collections import Counter
+
+class CacheStemmer:
+    def __init__(self):
+        self.stemmer = Stemmer()
+        self.stem_dict = dict()
+
+    def stem(self, token):
+        if token in self.stem_dict:
+            return self.stem_dict[token]
+        else:
+            r = self.stemmer.stem(token)
+            self.stem_dict[token] = r
+            return r
+
+def stemmed_counter(tokens, stemmer):
+    c = Counter()
+    for t in tokens:
+        c[stemmer.stem(t)] += 1
+
+    return c
 
 
 def build_krovetz_index():
@@ -72,6 +93,64 @@ def save_doc_len():
     pickle.dump(doc_len, open(save_path, "wb"))
 
 
+
+def save_qdf():
+    ii_path = os.path.join(path.data_path, "adhoc", "robust_inv_index.pickle")
+    inv_index = pickle.load(open(ii_path, "rb"))
+    qdf_d = Counter()
+    for term in inv_index:
+        qdf = len(inv_index[term])
+        qdf_d[term] = qdf
+
+    save_path = os.path.join(path.data_path, "adhoc", "robust_qdf.pickle")
+    pickle.dump(qdf_d, open(save_path, "wb"))
+
+def save_qdf_ex():
+    ii_path = os.path.join(path.data_path, "adhoc", "robust_inv_index.pickle")
+    inv_index = pickle.load(open(ii_path, "rb"))
+    save_path = os.path.join(path.data_path, "adhoc", "robust_meta.pickle")
+    meta = pickle.load(open(save_path, "rb"))
+    stopwords = load_stopwords()
+    stemmer = CacheStemmer()
+
+    simple_posting = {}
+
+    qdf_d = Counter()
+    for term in inv_index:
+        simple_posting[term] = set()
+        for doc_id, _ in inv_index[term]:
+            simple_posting[term].add(doc_id)
+
+    for doc in meta:
+        date, headline = meta[doc]
+        tokens = nltk.tokenize.wordpunct_tokenize(headline)
+        terms = set()
+        for idx, t in enumerate(tokens):
+            if t in stopwords:
+                continue
+
+            t_s = stemmer.stem(t)
+
+            terms.add(t_s)
+
+        for t in terms:
+            simple_posting[t].add(doc)
+
+    for term in inv_index:
+        qdf = len(simple_posting[term])
+        qdf_d[term] = qdf
+
+    save_path = os.path.join(path.data_path, "adhoc", "robust_qdf_ex.pickle")
+    pickle.dump(qdf_d, open(save_path, "wb"))
+
+
+def save_title():
+    collection = trec.load_robust_meta(trec.robust_path)
+    save_path = os.path.join(path.data_path, "adhoc", "robust_meta.pickle")
+    pickle.dump(collection, open(save_path, "wb"))
+
+
+
 if __name__ == "__main__":
-    save_doc_len()
+    save_qdf_ex()
     #build_krovetz_index()

@@ -190,6 +190,89 @@ class TrecParser3:
 
 
 
+class TrecParser4:
+    def __init__(self, end_doc):
+        self.lastEntry = None
+        self.text_arr = []
+        self.end_doc = end_doc
+        self.state = 2
+        self.n_meta = 0
+        self.line = 0
+        self.end_tag = ""
+
+
+
+    def feed(self, text):
+        STATE_ROOT = 2
+        STATE_DOC = 0
+        STATE_CONTENT = 1
+
+        def is_start_known_tag(text):
+            text = text.strip()
+            if text and text[0] == "<":
+                if text.startswith("<DOCNO>"):
+                    return "<DOCNO>"
+                if text.startswith("<TEXT>"):
+                    return "<TEXT>"
+                if text.startswith("<HEADLINE>"):
+                    return "<HEADLINE>"
+                if text.startswith("<DATE>"):
+                    return "<DATE>"
+                if text.startswith("</DOC>"):
+                    return "</DOC>"
+            return False
+
+        self.line += 1
+        if self.state == STATE_ROOT:
+            tag = text.strip()
+            if tag == "<DOC>":
+                self.state = STATE_DOC
+                self.lastEntry = {}
+                self.lastEntry["TEXT"] = ""
+            elif len(tag) == 0:
+                None
+
+        elif self.state == STATE_DOC:
+            tag = is_start_known_tag(text)
+            if tag:
+                text = text.strip()[len(tag):]
+                if tag == "<DOCNO>":
+                    ed = len(text) - len("</DOCNO>")
+                    assert text[ed:] == "</DOCNO>"
+                    self.lastEntry["DOCNO"] = text[:ed].strip()
+                elif tag in ["<TEXT>", "<HEADLINE>", "<DATE>"]:
+                    self.state = STATE_CONTENT
+                    self.end_tag = tag[:1] + "/" + tag[1:]
+                elif tag == "</DOC>":
+                    self.state = STATE_ROOT
+                    self.lastEntry["TEXT"] = "".join(self.text_arr)
+                    self.end_doc(self.lastEntry)
+                    self.n_meta = 0
+                    self.text_arr = []
+                else:
+                    self.n_meta += 1
+
+        if self.state == STATE_CONTENT:
+            end_tag = self.end_tag
+            if text.strip().endswith(end_tag):
+                text = text.strip()[:-len(end_tag)]
+                #self.lastEntry["TEXT"] += text
+                self.text_arr.append(text)
+
+                if end_tag == "</HEADLINE>":
+                    self.lastEntry["HEADLINE"] = "".join(self.text_arr)
+                    self.text_arr = []
+                elif end_tag == "</DATE>":
+                    self.lastEntry["DATE"] = "".join(self.text_arr)
+                    self.text_arr = []
+
+                self.state = STATE_DOC
+            else:
+                self.text_arr.append(text)
+                #self.lastEntry["TEXT"] += text
+
+
+
 def load_mobile_queries():
     query_path = os.path.join(corpus_dir, "test_query")
 
@@ -323,6 +406,28 @@ def load_trec(path, dialect = 0):
 
     # if you can provide a file-like object it's as simple as
 
+def load_trec_meta(path):
+    all_entry = []
+    def callback(entry):
+        all_entry.append(entry)
+
+
+    parser = TrecParser4(callback)
+    with open(path, encoding='utf-8', errors='ignore') as f:
+        for buffer in f:
+            try:
+                parser.feed(buffer)
+            except StopIteration:
+                break
+
+    index_corpus = {}
+    for entry in all_entry:
+        date = entry["DATE"] if "DATE" in entry else ""
+        headline = entry["HEADLINE"] if "HEADLINE" in entry else ""
+        index_corpus[entry["DOCNO"]] = (date, headline)
+
+    return index_corpus
+
 
 def load_robust(docs_dir, only_one_seg = False):
     collections = dict()
@@ -337,12 +442,26 @@ def load_robust(docs_dir, only_one_seg = False):
                 break
     return collections
 
+
 from config.input_path import robust_path
+
+def load_robust_meta(docs_dir, only_one_seg=False):
+    collections = dict()
+    for (dirpath, dirnames, filenames) in os.walk(docs_dir):
+        for name in filenames:
+            filepath = os.path.join(dirpath, name)
+            tprint(filepath)
+            d = load_trec_meta(filepath)
+            print(len(d))
+            collections.update(d)
+            if only_one_seg:
+                break
+    return collections
+
+
 
 def load_robust_ingham():
     return load_robust("/mnt/scratch/youngwookim/data/robust04")
 
-
 if __name__ == '__main__':
-    save_robust_info()
-
+    c = load_robust_meta("/mnt/scratch/youngwookim/data/robust04")

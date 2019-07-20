@@ -5,7 +5,7 @@ from cache import *
 def generate_mask(inst, max_num_tokens, masked_lm_prob, short_seq_prob, rng):
     max_predictions_per_seq = 20
 
-    target_tokens, sent_list, prev_tokens, next_tokens = inst
+    target_tokens, sent_list, prev_tokens, next_tokens, doc_id = inst
 
     if rng.random() < short_seq_prob:
         target_seq_length = rng.randint(2, max_num_tokens)
@@ -21,7 +21,7 @@ def generate_mask(inst, max_num_tokens, masked_lm_prob, short_seq_prob, rng):
     rng.shuffle(cand_indice)
     mask_indice = cand_indice[:num_to_predict]
 
-    mask_inst = target_tokens, sent_list, prev_tokens, next_tokens, mask_indice
+    mask_inst = target_tokens, sent_list, prev_tokens, next_tokens, mask_indice, doc_id
     return mask_inst
 
 

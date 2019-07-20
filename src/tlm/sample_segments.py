@@ -103,7 +103,9 @@ def main():
         r = get_random_sent()
         s_id, doc_id, loc, g_id, sent= r
         doc_rows = get_doc_sent(doc_id)
-        inst = extend(doc_rows, sent, loc, tokenizer, max_seq)
+        target_tokens, sent_list, prev_tokens, next_tokens = extend(doc_rows, sent, loc, tokenizer, max_seq)
+
+        inst = target_tokens, sent_list, prev_tokens, next_tokens, doc_id
 
         sp.add(inst)
         ticker.tick()
