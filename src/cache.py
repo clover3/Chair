@@ -33,6 +33,8 @@ class StreamPickler:
         self.save_prefix = os.path.join(data_path, "stream_pickled", name)
 
     def flush(self):
+        if len(self.current_chunk) == 0:
+            return
         save_name = self.save_prefix + str(self.idx)
         pickle.dump(self.current_chunk, open(save_name, "wb"))
         self.current_chunk = []
@@ -45,8 +47,8 @@ class StreamPickler:
 
 
 class StreamPickleReader:
-    def __init__(self, name):
-        self.pickle_idx = 0
+    def __init__(self, name, pickle_idx = 0):
+        self.pickle_idx = pickle_idx
         self.current_chunk = []
         self.chunk_idx = 0
         self.save_prefix = os.path.join(data_path, "stream_pickled", name)

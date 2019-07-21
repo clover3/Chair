@@ -122,6 +122,21 @@ class PassageRanker:
             new_doc += [t] * content_repeat
         return new_doc
 
+    def pick_diverse(self, candidate, top_k):
+        doc_set = set()
+        r = []
+        for j in range(len(candidate)):
+            score, window_subtokens, window_tokens, doc_id, loc = candidate[j]
+            if doc_id not in doc_set:
+                r.append(candidate[j])
+                doc_set.add(doc_id)
+                if len(r) == top_k:
+                    break
+        return r
+
+
+
+
     def rank(self, doc_id, query_res, target_tokens, sent_list, mask_indice, top_k):
         title = self.get_title_tokens(doc_id)
         visible_tokens = get_visible(sent_list, target_tokens, mask_indice, self.tokenizer)
@@ -130,15 +145,13 @@ class PassageRanker:
         q_tf = self.reform_query(source_doc_rep)
 
         candidate = []
-        max_rank = 0
-        max_diff = 0
         top_score = query_res[0][2]
         # Rank Each Window by BM25F
         stop_cut = 100
         for doc_id, rank, doc_score in query_res[:stop_cut]:
-            doc_text = self.text_reader.retrieve(doc_id)
-
-            content_tokens = self.tokenizer.basic_tokenizer.tokenize(doc_text)
+            #doc_text = self.text_reader.retrieve(doc_id)
+            #content_tokens = self.tokenizer.basic_tokenizer.tokenize(doc_text)
+            content_tokens = self.token_reader.retrieve(doc_id)
             doc_title = self.get_title_tokens(doc_id)
 
             fn = self.tokenizer.wordpiece_tokenizer.tokenize
@@ -171,40 +184,37 @@ class PassageRanker:
             skip = int(0.5 * self.window_size)
 
 
-            new_candidate = []
             while loc < len(content_tokens):
                 loc_ed, loc_sub_ed = move(loc, loc_sub, skip)
-                window_tokens = content_tokens[loc:loc_ed]
-                window_subtokens = flatten(sub_tokens[loc:loc_ed])
+                #window_tokens = content_tokens[loc:loc_ed]
+                #window_subtokens = flatten(sub_tokens[loc:loc_ed])
 
-                seg_rep = self.weight_doc(doc_title, window_tokens)
-                score = self.BM25(q_tf, seg_rep)
-                new_candidate.append((score, window_subtokens, window_tokens, doc_id, loc))
+                #seg_rep = self.weight_doc(doc_title, window_tokens)
+                #score = self.BM25(q_tf, seg_rep)
+
+                score = 0
+                window_tokens = []
+                window_subtokens = [[]]
+                candidate.append((score, window_subtokens, window_tokens, doc_id, loc))
 
                 loc = loc_ed
                 loc_sub = loc_sub_ed
 
-            if len(candidate) > top_k:
-                threshold = candidate[top_k][0]
-                new_candidate.sort(key=lambda x:x[0], reverse=True)
-                if new_candidate[0][0] > threshold:
-                    max_rank = max(max_rank, rank)
-                    max_diff = max(top_score - doc_score, max_diff)
-
-            candidate += new_candidate
-            candidate.sort(key=lambda x:x[0], reverse=True)
-        print("Max rank : ", max_rank)
-        print("Max diff : ", max_diff)
+        print(len(candidate))
+        candidate.sort(key=lambda x:x[0], reverse=True)
         for j in range(top_k):
             score, window_subtokens, window_tokens, doc_id, loc = candidate[j]
 
-        return candidate[:top_k]
+        return self.pick_diverse(candidate, top_k)
+
 
 def main():
-    sp_prob_q = StreamPickleReader("robust_problem_q_")
+    start_idx = 0
+    sp_prob_q = StreamPickleReader("robust_problem_q_", start_idx)
     pr = PassageRanker(256 - 3 )
     g_idx = 0
     dr = DocRelLoader()
+    sp = StreamPickler("CandiSet_{}_".format(start_idx), 1000)
     ticker = TimeEstimator(1000*1000)
     while sp_prob_q.has_next():
         inst, qid = sp_prob_q.get_item()
@@ -223,8 +233,31 @@ def main():
             tprint(qid)
             passages = pr.rank(doc_id, query_res[1:], target_tokens, sent_list, mask_indice, 3)
 
+            passage_d = []
+            for p in passages:
+                score, window_subtokens, window_tokens, doc_id, loc = p
+                passage_d.append({
+                    "score":score,
+                    "window_subtokens":window_subtokens,
+                    "window_tokens":window_tokens,
+                    "doc_id":doc_id,
+                    "loc":loc
+                })
+
+            entry = {
+                "target_tokens" : target_tokens,
+                "sent_list" : sent_list,
+                "prev_tokens" : prev_tokens,
+                "next_tokens" : next_tokens,
+                "mask_indice" : mask_indice,
+                "doc_id" : doc_id,
+                "passages" : passage_d
+            }
+            sp.add(entry)
+
         g_idx += 1
         ticker.tick()
+    sp.flush()
 
 if __name__ == "__main__":
     main()

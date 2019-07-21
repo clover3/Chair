@@ -43,4 +43,4 @@ def get_token_reader():
 
 
 if __name__ == "__main__":
-    gen_robust_token()
+    start_token_server()
