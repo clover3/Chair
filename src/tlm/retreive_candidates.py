@@ -5,7 +5,7 @@ from collections import Counter
 from data_generator import tokenizer_b as tokenization
 from models.classic.stopword import load_stopwords
 import path
-from tlm.index import CacheStemmer
+from tlm.stem import CacheStemmer
 from tlm.retrieve_doc import RobustCollection
 
 def translate_mask2token_level(sent_list, target_tokens, mask_indice, tokenizer):

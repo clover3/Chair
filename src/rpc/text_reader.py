@@ -1,7 +1,7 @@
 from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 import xmlrpc.client
-
+import socketserver
 
 PORT_DOCREADER = 8125
 
@@ -15,8 +15,11 @@ class TextReaderServer:
         class RequestHandler(SimpleXMLRPCRequestHandler):
             rpc_paths = ('/RPC2',)
 
+        class RPCThreading(socketserver.ThreadingMixIn, SimpleXMLRPCServer):
+            pass
+
         print("Preparing server")
-        server = SimpleXMLRPCServer(("ingham.cs.umass.edu", port),
+        server = RPCThreading(("0.0.0.0", port),
                                     requestHandler=RequestHandler,
                                     allow_none=True,
                                     )
@@ -38,7 +41,7 @@ class TextReaderServer:
 
 class TextReaderClient:
     def __init__(self, port = PORT_DOCREADER):
-        self.server = xmlrpc.client.ServerProxy('http://ingham.cs.umass.edu:{}'.format(port))
+        self.server = xmlrpc.client.ServerProxy('http://localhost:{}'.format(port))
 
     def retrieve(self, doc_id):
         return self.server.retrieve(doc_id)

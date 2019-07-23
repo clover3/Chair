@@ -52,6 +52,7 @@ class StreamPickleReader:
         self.current_chunk = []
         self.chunk_idx = 0
         self.save_prefix = os.path.join(data_path, "stream_pickled", name)
+        self.acc_item = 0
 
     def get_item(self):
         if self.chunk_idx >= len(self.current_chunk):
@@ -59,7 +60,14 @@ class StreamPickleReader:
 
         item = self.current_chunk[self.chunk_idx]
         self.chunk_idx += 1
+        self.acc_item += 1
         return item
+
+    def limited_has_next(self, limit):
+        if self.acc_item < limit:
+            return self.has_next()
+        else:
+            return False
 
     def get_new_chunk(self):
         save_name = self.next_chunk_path()
