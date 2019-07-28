@@ -28,6 +28,9 @@ def gen_robust_token():
     pickle.dump(nc, open(token_path, "wb"))
 
 
+
+
+
 def load_robust_token():
     token_path = os.path.join(path.data_path, "adhoc", "robust_tokens.pickle")
     return pickle.load(open(token_path, "rb"))

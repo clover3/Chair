@@ -30,7 +30,8 @@ def translate_mask2token_level(sent_list, target_tokens, mask_indice, tokenizer)
     while sent_idx < len(basic_tokens) and mask_indice_idx < len(mask_indice):
         st = sub_tokens_tree[sent_idx][token_idx][local_subword_idx]
 
-        assert target_tokens[global_subword_idx] == st
+        if tokenizer.basic_tokenizer.do_lower_case:
+            assert target_tokens[global_subword_idx] == st
 
         if global_subword_idx == mask_indice[mask_indice_idx]:
             word_mask_indice.append((sent_idx, token_idx))

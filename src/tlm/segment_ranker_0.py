@@ -58,7 +58,7 @@ class PassageRanker:
         self.window_size = window_size
         self.text_reader = TextReaderClient()
         #self.token_reader = get_token_reader()
-        self.doc_posting = per_doc_posting_server.load_dict()
+        self.doc_posting = None
         self.stopword = load_stopwords()
 
         vocab_file = os.path.join(path.data_path, "bert_voca.txt")
@@ -161,6 +161,8 @@ class PassageRanker:
 
 
     def rank(self, doc_id, query_res, target_tokens, sent_list, mask_indice, top_k):
+        if self.doc_posting is None:
+            self.doc_posting = per_doc_posting_server.load_dict()
         title = self.get_title_tokens(doc_id)
         visible_tokens = get_visible(sent_list, target_tokens, mask_indice, self.tokenizer)
 
@@ -214,6 +216,8 @@ def do_seg_rank(pr, dr, job_id):
     sp = StreamPickler("CandiSet_{}_".format(job_id), 1000)
     ticker = TimeEstimator(task_size)
     top_k = 3
+
+    # Iterate for 1000 instances
     while sp_prob_q.limited_has_next(task_size):
         inst, qid = sp_prob_q.get_item()
         target_tokens, sent_list, prev_tokens, next_tokens, mask_indice, doc_id = inst
@@ -263,6 +267,7 @@ def main():
     dr = DocRelLoader()
 
     job_id = mtm.pool_job()
+    job_id = 0
     print("Job id : ", job_id)
     while job_id is not None:
         do_seg_rank(pr, dr, job_id)

@@ -16,6 +16,9 @@ def save_to_pickle(obj, name):
     pickle.dump(obj, open(path, "wb"))
 
 
+def load_pickle_from(path):
+    return pickle.load(open(path, "rb"))
+
 def load_cache(name):
     pickle_name = "{}.pickle".format(name)
     path = os.path.join(cache_path, pickle_name)

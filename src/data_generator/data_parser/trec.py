@@ -1,8 +1,11 @@
 import xml.sax
+from dateutil import parser
+
 import time
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from path import *
+import re
 import math
 import os
 from cache import *
@@ -271,6 +274,88 @@ class TrecParser4:
                 self.text_arr.append(text)
                 #self.lastEntry["TEXT"] += text
 
+class TrecParser5:
+    def __init__(self, end_doc):
+        self.lastEntry = None
+        self.text_arr = []
+        self.end_doc = end_doc
+        self.state = 2
+        self.n_meta = 0
+        self.line = 0
+        self.end_tag = ""
+
+
+
+    def feed(self, text):
+        STATE_ROOT = 2
+        STATE_DOC = 0
+        STATE_CONTENT = 1
+
+        def is_start_known_tag(text):
+            text = text.strip()
+            if text and text[0] == "<":
+                if text.startswith("<DOCNO>"):
+                    return "<DOCNO>"
+                if text.startswith("<TEXT>"):
+                    return "<TEXT>"
+                if text.startswith("<HEADLINE>"):
+                    return "<HEADLINE>"
+                if text.startswith("<DATE1>"):
+                    return "<DATE1>"
+                if text.startswith("</DOC>"):
+                    return "</DOC>"
+            return False
+
+        self.line += 1
+        if self.state == STATE_ROOT:
+            tag = text.strip()
+            if tag == "<DOC>":
+                self.state = STATE_DOC
+                self.lastEntry = {}
+                self.lastEntry["TEXT"] = ""
+            elif len(tag) == 0:
+                None
+
+        elif self.state == STATE_DOC:
+            tag = is_start_known_tag(text)
+            if tag:
+                text = text.strip()[len(tag):]
+                if tag == "<DOCNO>":
+                    ed = len(text) - len("</DOCNO>")
+                    assert text[ed:] == "</DOCNO>"
+                    self.lastEntry["DOCNO"] = text[:ed].strip()
+                elif tag in ["<TEXT>", "<HEADLINE>", "<DATE1>"]:
+                    self.state = STATE_CONTENT
+                    self.end_tag = tag[:1] + "/" + tag[1:]
+                elif tag == "</DOC>":
+                    self.state = STATE_ROOT
+                    self.lastEntry["TEXT"] = "".join(self.text_arr)
+                    self.end_doc(self.lastEntry)
+                    self.n_meta = 0
+                    self.text_arr = []
+                else:
+                    self.n_meta += 1
+
+        if self.state == STATE_CONTENT:
+            end_tag = self.end_tag
+            if text.strip().endswith(end_tag):
+                text = text.strip()[:-len(end_tag)]
+                #self.lastEntry["TEXT"] += text
+                self.text_arr.append(text)
+
+                if end_tag == "</HEADLINE>":
+                    self.lastEntry["HEADLINE"] = "".join(self.text_arr)
+                    self.text_arr = []
+                elif end_tag == "</DATE1>":
+                    self.lastEntry["DATE1"] = "".join(self.text_arr)
+                    self.text_arr = []
+
+                self.state = STATE_DOC
+            else:
+                self.text_arr.append(text)
+                #self.lastEntry["TEXT"] += text
+
+
 
 
 def load_mobile_queries():
@@ -377,6 +462,29 @@ def save_robust_info():
     save_to_pickle(idf, "robust_idf_mini")
 
 
+def parse_robust_date(docs_dir):
+    collections = dict()
+    for (dirpath, dirnames, filenames) in os.walk(docs_dir):
+        for name in filenames:
+            n_suc = 0
+            filepath = os.path.join(dirpath, name)
+            tprint(filepath)
+            if 'ft' in name or "latimes" in name:
+                d = load_trec_meta(filepath)
+            elif "fbis" in name:
+                d = load_trec_date_fbis(filepath)
+            else:
+                d = load_trec_meta(filepath)
+
+            for key in d:
+                if d[key][0]:
+                    n_suc += 1
+            print(n_suc, len(d))
+            collections.update(d)
+
+    save_to_pickle(collections, "robust_date")
+    return collections
+
 
 def load_trec(path, dialect = 0):
     # use default ``xml.sax.expatreader``
@@ -429,6 +537,44 @@ def load_trec_meta(path):
     return index_corpus
 
 
+def load_trec_date_fbis(path):
+    all_entry = []
+    def callback(entry):
+        all_entry.append(entry)
+
+
+    parser = TrecParser5(callback)
+    with open(path, encoding='utf-8', errors='ignore') as f:
+        for buffer in f:
+            try:
+                parser.feed(buffer)
+            except StopIteration:
+                break
+
+    index_corpus = {}
+    for entry in all_entry:
+        date = entry["DATE1"] if "DATE1" in entry else ""
+        headline = entry["HEADLINE"] if "HEADLINE" in entry else ""
+        index_corpus[entry["DOCNO"]] = (date, headline)
+
+    return index_corpus
+
+
+def parse_date_from_content(path):
+    d = load_trec(path, 2)
+    d2 = {}
+
+    for key in d:
+        content = d[key]
+        m = re.search(r'<DATE>((.|\n)+?)</DATE>', content)
+        if m:
+            print(m.group(1))
+        else:
+            print("NOTFOUND")
+        d2[key] = (m,)
+    return d
+
+
 def load_robust(docs_dir, only_one_seg = False):
     collections = dict()
     for (dirpath, dirnames, filenames) in os.walk(docs_dir):
@@ -458,10 +604,58 @@ def load_robust_meta(docs_dir, only_one_seg=False):
                 break
     return collections
 
+def clean_robust():
+    c = load_robust("/mnt/scratch/youngwookim/data/robust04", False)
+    batRegex = re.compile(r'(<[a-z]*>)')
+
+    for doc_id in c:
+        content = c[doc_id]
+
+        lines = content.split("\n")
+        new_content = []
+        for l in lines:
+            if "<!--" in l:
+                assert "-->" in l
+                assert l.find("<!--") == 0
+            else:
+                try:
+                    new_l = batRegex.sub(l, "")
+                except Exception:
+                    new_l = l
+
+                new_content.append(new_l)
+
+        c[doc_id] = "\n".join(new_content)
+
+    save_to_pickle(c, "robust_clean")
+
+def robust_date_parse():
+    d = load_from_pickle("robust_date_raw")
+
+    d2 = {}
+    n_try = 0
+    n_suc = 0
+    for key in d:
+        s = d[key][0]
+        if not s:
+            continue
+
+        n_try += 1
+        try:
+            dt = parser.parse(s, fuzzy=True)
+            d2[key] = dt
+            n_suc += 1
+        except ValueError as e:
+            print(key)
+            print(s)
+    print(n_try, n_suc)
+    save_to_pickle(d2, "robust_date")
 
 
 def load_robust_ingham():
     return load_robust("/mnt/scratch/youngwookim/data/robust04")
 
 if __name__ == '__main__':
-    c = load_robust_meta("/mnt/scratch/youngwookim/data/robust04")
+    #c = load_robust_meta("/mnt/scratch/youngwookim/data/robust04")
+    #parse_robust_date("/mnt/scratch/youngwookim/data/robust04")
+    robust_date_parse()

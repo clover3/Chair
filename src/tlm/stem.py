@@ -15,6 +15,9 @@ class CacheStemmer:
             self.stem_dict[token] = r
             return r
 
+    def stem_list(self, tokens):
+        return list([self.stem(t) for t in tokens])
+
 
 def stemmed_counter(tokens, stemmer):
     c = Counter()

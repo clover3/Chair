@@ -7248,6 +7248,7 @@ class Experiment:
 
     def train_rte(self, exp_config, data_loader, preload_id):
         print("train_rte")
+        tf.reset_default_graph()
         task = transformer_binary(self.hparam, data_loader.voca_size, True)
         with tf.variable_scope("optimizer"):
             train_cls = self.get_train_op(task.loss)
@@ -7256,7 +7257,7 @@ class Experiment:
         self.sess.run(tf.global_variables_initializer())
         self.merged = tf.summary.merge_all()
         self.setup_summary_writer(exp_config.name)
-        self.load_model_white2(preload_id, exp_config.load_names)
+        self.load_model_white2(preload_id, exp_config.load_names, False)
 
         def batch2feed_dict(batch):
             x0,x1,x2, y  = batch
@@ -7319,9 +7320,9 @@ class Experiment:
 
 
         def save_fn():
-            self.save_model(exp_config.name, 1)
+            return self.save_model(exp_config.name, 1)
 
-        valid_freq = 10
+        valid_freq = 1000
         # train_op
         print("Train epoch")
         num_epochs = exp_config.num_epoch
@@ -7329,7 +7330,55 @@ class Experiment:
             loss, _ = epoch_runner(train_batches, train_fn,
                                    valid_fn, valid_freq,
                                    save_fn, exp_config.save_interval)
-        save_fn()
+        return save_fn()
+
+
+
+    def eval_rte(self, exp_config, data_loader, model_path):
+        print("eval_rte")
+        tf.reset_default_graph()
+        task = transformer_binary(self.hparam, data_loader.voca_size, False)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+
+        loader = tf.train.Saver()
+        loader.restore(self.sess, model_path)
+
+        def batch2feed_dict(batch):
+            x0,x1,x2, y  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
+        def valid_fn():
+            loss_list = []
+
+            gold_y = []
+            pred_y = []
+            for batch in dev_batches[:100]:
+                x0,x1,x2,y = batch
+                logits, loss_val = self.sess.run([task.logits, task.loss],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+                gold_y.append(y)
+                pred_y.append(np.argmax(logits, axis=1))
+
+            gold_y = np.concatenate(gold_y)
+            pred_y = np.concatenate(pred_y)
+            acc = np.sum(np.equal(pred_y, gold_y)) / len(pred_y)
+
+            self.log.info("Validation : loss={0:.04f} acc={1:.04f}".format(average(loss_list), acc))
+            return acc
+
+        return valid_fn()
 
     def rte_visualize(self, exp_config, data_loader, preload_id):
         print("rte_visualize")
