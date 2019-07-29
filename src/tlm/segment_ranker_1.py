@@ -14,43 +14,6 @@ from models.classic.stopword import load_stopwords
 from sydney_manager import MarkedTaskManager
 from tlm import per_doc_posting_server
 
-class DocRelLoader:
-    def __init__(self):
-        self.cur_chunk_id = -1
-        self.cur_chunk = None
-        self.fail_record = Counter()
-
-    def load_chunk(self, chunk_id):
-        dir_path = os.path.join(path.data_path, "tlm_res")
-        name = str(chunk_id) + ".txt"
-        chunk_path = os.path.join(dir_path, name)
-
-        if not os.path.exists(chunk_path):
-            print("Not exists : ")
-            print(chunk_path)
-
-        self.cur_chunk = load_galago_judgement(chunk_path)
-        self.cur_chunk_id = chunk_id
-
-
-    def get_rel_doc_list(self, g_idx, q_id):
-        chunk_id = int(g_idx / 10000)
-        if self.cur_chunk_id != chunk_id:
-            self.load_chunk(chunk_id)
-
-        qid_str = str(q_id)
-
-        if qid_str in self.cur_chunk:
-            r = self.cur_chunk[qid_str]
-            r.sort(key=lambda x:x[1])
-            return r
-
-        else:
-            self.fail_record[chunk_id] += 1
-            if self.fail_record[chunk_id] > 25:
-                print("Too many fail on {}".format(chunk_id))
-            return None
-
 
 class PassageRanker:
     def __init__(self, window_size):
@@ -78,18 +41,6 @@ class PassageRanker:
         self.total_doc_n =  len(self.doc_len_dict)
         self.avdl = sum(self.doc_len_dict.values()) / len(self.doc_len_dict)
         tprint("Init PassageRanker")
-
-
-    def high_idf_q_terms(self, q_tf, n_limit=10):
-        total_doc = self.total_doc_n
-
-        high_qt = Counter()
-        for term, qf in q_tf.items():
-            qdf = self.qdf[term]
-            w = BM25_3_q_weight(qf, qdf, total_doc)
-            high_qt[term] = w
-
-        return set(left(high_qt.most_common(n_limit)))
 
     def get_seg_len_dict(self, doc_id):
         interval_list = self.seg_info[doc_id]
@@ -168,8 +119,6 @@ class PassageRanker:
         return r
 
 
-
-
     def rank(self, doc_id, query_res, target_tokens, sent_list, mask_indice, top_k):
         if self.doc_posting is None:
             self.doc_posting = per_doc_posting_server.load_dict()
@@ -216,72 +165,3 @@ class PassageRanker:
         if n_not_found > 0.9 * len(query_res):
             print("WARNING : {} of {} not found".format(n_not_found, len(query_res)))
         return r
-
-
-def do_seg_rank(pr, dr, job_id):
-    task_size = 1000
-    start_idx = job_id
-    g_idx = job_id * task_size
-    sp_prob_q = StreamPickleReader("robust_problem_q_", start_idx)
-    sp = StreamPickler("CandiSet_{}_".format(job_id), 1000)
-    ticker = TimeEstimator(task_size)
-    top_k = 3
-
-    # Iterate for 1000 instances
-    while sp_prob_q.limited_has_next(task_size):
-        inst, qid = sp_prob_q.get_item()
-        target_tokens, sent_list, prev_tokens, next_tokens, mask_indice, doc_id = inst
-        query_res = dr.get_rel_doc_list(g_idx, qid)
-
-        if query_res is not None:
-            t_doc_id, rank, score = query_res[0]
-
-            assert rank == 1
-            if t_doc_id == doc_id:
-                valid_res = query_res[1:]
-            else:
-                valid_res = query_res
-                for i in range(len(query_res)):
-                    e_doc_id, e_rank, _= query_res[i]
-                    if e_doc_id == t_doc_id:
-                        valid_res = query_res[:i] + query_res[i+1:]
-                        break
-
-            tprint(qid)
-            passages = pr.rank(doc_id, valid_res, target_tokens, sent_list, mask_indice, top_k)
-
-            if len(passages) < top_k :
-                print("Skip qid : ", qid)
-                continue
-
-            entry = {
-                "target_tokens" : target_tokens,
-                "sent_list" : sent_list,
-                "prev_tokens" : prev_tokens,
-                "next_tokens" : next_tokens,
-                "mask_indice" : mask_indice,
-                "doc_id" : doc_id,
-                "passages" : passages
-            }
-            sp.add(entry)
-
-        g_idx += 1
-        ticker.tick()
-    sp.flush()
-
-def main():
-    print("Segment_ranker_0")
-    mark_path = os.path.join(path.data_path, "adhoc", "seg_rank0_mark")
-    mtm = MarkedTaskManager(1000*1000, mark_path, 1000)
-    pr = PassageRanker(256 - 3)
-    dr = DocRelLoader()
-
-    job_id = mtm.pool_job()
-    print("Job id : ", job_id)
-    while job_id is not None:
-        do_seg_rank(pr, dr, job_id)
-        job_id = mtm.pool_job()
-
-
-if __name__ == "__main__":
-    main()

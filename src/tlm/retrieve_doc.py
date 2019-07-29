@@ -5,7 +5,6 @@ import pickle, os, path
 from rpc.text_reader import TextReaderClient
 from misc_lib import left
 
-# def BM25_2(f, df, N, dl, avdl):
 
 
 class RobustCollection:

@@ -182,7 +182,6 @@ def worker(tf_maker, job_id):
 
 
     maker = tf_maker.generate_ir_tfrecord
-    maker = tf_maker.get_subtoken_problem_local
 
     for j, e in enumerate(cs):
         candi_id = "{}_{}".format(job_id, j)

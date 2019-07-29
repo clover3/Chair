@@ -31,7 +31,6 @@ class LazyLoader:
         
 class FeatureExtractor(PassageRanker):
     def __init__(self, window_size):
-        print("Initializing PassageRanker")
         super().__init__(window_size)
 
         self.date_dict = load_from_pickle("robust_date")
@@ -186,13 +185,15 @@ def run():
     fe = FeatureExtractor(window_size=256 - 3)
 
     loss_d = dict(zip(tf_id_list, loss_list))
-    
+    print(len(tf_id_list))
     
     feature_list_list = []
     history = set()
 
     feature_str_list = []
+    ticker = TimeEstimator(len(tf_id_list), "TAsk", 100)
     for tf_id in tf_id_list:
+        ticker.tick()
         job_id, idx, candi_idx = tf_id.split("_")
         job_id = int(job_id)
         idx = int(idx)
