@@ -4,6 +4,8 @@ import pickle
 
 
 dump_root = '/mnt/scratch/youngwookim/data'
+if not os.path.exists(dump_root):
+    dump_root = '/mnt/nfs/work3/youngwookim/data'
 
 def dump_dict(d, name):
     dir_path = os.path.join(dump_root, "name_dump", name)

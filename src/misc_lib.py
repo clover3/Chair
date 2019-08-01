@@ -40,6 +40,30 @@ class TimeEstimator:
             print("{}0% completed".format(self.progress_tenth))
             self.progress_tenth += 1
 
+class CodeTiming:
+    def __init__(self):
+        self.acc = {}
+        self.prev_tick = {}
+
+
+    def tick_begin(self, name):
+        self.prev_tick[name] = time.time()
+
+    def tick_end(self, name):
+        elp = time.time() - self.prev_tick[name]
+        if name not in self.acc:
+            self.acc[name] = 0
+
+        self.acc[name] += elp
+
+
+    def print(self):
+        for key in self.acc:
+            print(key, self.acc[key])
+
+
+
+
 def exist_or_mkdir(dir_path):
     if not os.path.exists(dir_path):
         os.mkdir(dir_path)

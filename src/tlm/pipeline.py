@@ -1,10 +1,12 @@
 
 # My library
 import path
-from misc_lib import TimeEstimator, left, tprint
+from misc_lib import TimeEstimator, left, tprint, CodeTiming
 from data_generator import tokenizer_b as tokenization
 from data_generator.data_parser.trec import Idf
 from models.classic.stopword import load_stopwords
+
+
 from adhoc.galago import load_galago_judgement
 
 
@@ -14,7 +16,7 @@ from tlm.sample_segments import get_doc_sent,extend
 from tlm.segment2problem import generate_mask
 from tlm.retreive_candidates import HintRetriever, translate_mask2token_level, remove
 from tlm.galago_query_maker import clean_query
-from tlm.stem import CacheStemmer
+from tlm.stem import CacheStemmer, stemmed_counter
 from tlm.feature2 import FeatureExtractor
 from tlm.feature_extractor import libsvm_str
 from tlm.two_seg_pretraining import write_instance_to_example_files, write_predict_instance
@@ -52,6 +54,7 @@ class Pipeline:
         self.stopword = load_stopwords()
         self.pr = FeatureExtractor(self.seg_max_seq-3)
         self.tf_record_maker = None
+        self.code_tick = CodeTiming()
         tprint("Pipeline Init Done")
 
     def run_A(self, job_id):
@@ -80,12 +83,21 @@ class Pipeline:
         ticker = TimeEstimator(self.inst_per_job)
         for i in range(self.inst_per_job):
             problem, qid = output_A[i]
-            doc_candi = candi_docs[str(qid)]
-            seg_candi, features = self.process_B(problem, doc_candi)
-            fstr = "\n".join([libsvm_str(qid, 0, f) for f in features])
-            feature_str_list.append(fstr)
-            seg_candi_list.append(seg_candi)
+            qid_str = str(qid)
+            if qid_str in candi_docs:
+                doc_candi = candi_docs[qid_str]
+                seg_candi, features = self.process_B(problem, doc_candi)
+                fstr = "\n".join([libsvm_str(qid, 0, f) for f in features])
+                feature_str_list.append(fstr)
+                seg_candi_list.append(seg_candi)
+            else:
+                feature_str_list.append([])
+                seg_candi_list.append([])
             ticker.tick()
+
+            if i % 100 == 3:
+                self.code_tick.print()
+
 
         self.save("seg_candi_list", job_id, seg_candi_list)
         self.save_ltr(job_id, feature_str_list)
@@ -115,6 +127,37 @@ class Pipeline:
         self.write_tf_record(job_id, data)
 
 
+    def inspect_seg(self, job_id):
+        output_A = self.load_output_A(job_id)
+        seg_candi_list = self.load("seg_candi_list",job_id)
+        q_path = self.get_path("query", "g_query_{}.json".format(job_id))
+        queries = json.load(open(q_path, "r"))["queries"]
+        ltr_result = self.load_ltr(job_id)
+
+        for i in range(self.inst_per_job):
+            problem, qid = output_A[i]
+            print(qid)
+            scl = seg_candi_list[i]
+            query = queries[i]["text"][len("#combine("):-1]
+            print(query)
+            q_terms = query.split()
+            q_tf = stemmed_counter(q_terms, self.stemmer)
+            print(list(q_tf.keys()))
+            for doc_id, loc in scl[:30]:
+                doc_tokens = self.pr.token_dump.get(doc_id)
+                l = self.pr.get_seg_len_dict(doc_id)[loc]
+                passage = doc_tokens[loc:loc+l]
+                d_tf = stemmed_counter(passage, self.stemmer)
+
+
+                arr = []
+
+                for qt in q_tf:
+                    arr.append(d_tf[qt])
+                print(arr)
+
+
+
     def process_A(self):
         segment = self.sample_segment()
         problem = self.segment2problem(segment)
@@ -122,9 +165,13 @@ class Pipeline:
         return problem, query
 
     def process_B(self, problem, doc_candi):
+        self.code_tick.tick_begin("get_seg_candidate")
         seg_candi = self.get_seg_candidate(doc_candi, problem)
+        self.code_tick.tick_end("get_seg_candidate")
         target_tokens, sent_list, prev_tokens, next_tokens, mask_indice, doc_id = problem
+        self.code_tick.tick_begin("get_feature_list")
         feature = self.pr.get_feature_list(doc_id, sent_list, target_tokens, mask_indice, seg_candi)
+        self.code_tick.tick_end("get_feature_list")
         return seg_candi, feature
 
     def process_C(self, problem, seg_candi, scores):
@@ -295,16 +342,21 @@ def b_runner():
         print("Job id : ", job_id)
 
 
+def b_benchmark():
+    pipeline = Pipeline()
+    pipeline.run_B(0)
 
 
 def main():
     task = sys.argv[1]
     if task == "A":
         a_runner()
-
+    if task == "B":
+        b_runner()
 
 
 
 if __name__ == "__main__":
-    main()
+    #main()
 
+    b_benchmark()

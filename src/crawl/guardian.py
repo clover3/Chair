@@ -2,6 +2,8 @@ import os
 import requests
 import json
 import time
+
+from crawl.guardian_api import get_comment, load_short_ids_from_path
 from path import data_path
 import pickle
 
@@ -63,24 +65,6 @@ def crawl_by_list():
 
         time.sleep(0.1)
 
-def get_comment(short_id):
-    url_prefix = "http://discussion.guardianapis.com/discussion-api/discussion/"
-
-    url = url_prefix + short_id
-    print(url, end=" ")
-    res = requests.get(url)
-    if res.status_code == 200 :
-        print("success ")
-        return res.content
-    elif res.status_code == 404:
-        if json.loads(res.content)["errorCode"] == "DISCUSSION_NOT_FOUND":
-            print("DISCUSSION_NOT_FOUND")
-            return None
-        else:
-            print(res.content)
-    else:
-        print(res.content)
-        return None
 
 scope_dir = os.path.join(data_path, "guardian")
 
@@ -90,28 +74,15 @@ def save_comment(short_id, content):
     f.write(content)
     f.close()
 
+
 def load_short_ids(topic):
     topic_dir = os.path.join(save_dir, topic)
     file_name = "{}.json".format(1)
     path = os.path.join(topic_dir, file_name)
-    j = json.load(open(path, "rb"))
-    r = j['response']['results']
-    id_list = []
-    for item in r:
-        id = item['id']
-        shortUrl = item['fields']['shortUrl']
-        id_list.append((id, shortUrl))
+    return load_short_ids_from_path(path)
 
-    short_ids = []
-    for id, shortUrl in id_list:
-        short_ids.append(shortUrl[14:].strip())
+def crawl_comments(topic_list, logging_path):
 
-    return short_ids
-
-
-def crawl_comments():
-    topic_list = get_topic_list()
-    logging_path = os.path.join(scope_dir, "comment_log_2009.pickle")
 
     #acquire_list = pickle.load(open(logging_path, "rb"))
     acquire_list = set()
@@ -137,9 +108,14 @@ def crawl_comments():
 
 def get_opinion_article(query, page_no):
     page_str = str(page_no)
-    url = "https://content.guardianapis.com/search?section=commentisfree&from-date=2019-01-01&to-date=2019-06-30&page-size=200&q={}&page={}"\
-        .format(query,page_str)
-
+    url = "https://content.guardianapis.com/search?section=commentisfree" \
+          "&from-date=2019-01-01&to-date=2019-06-30" \
+          "&page-size=200" \
+          "&page={}" \
+          "&show-fields=bodyText%2CshortUrl" \
+          "&q={}"\
+        .format(page_str, query)
+    print(url)
     apikey = "c13d9515-b19e-412b-b505-994677cc2cf3"
 
     headers = {
@@ -174,10 +150,10 @@ def crawl_opinion_articles(topic):
     save_query_result(topic, 1, content)
 
     for page_no in range(2, num_pages + 1):
-        get_opinion_article(topic, page_no)
+        content = get_opinion_article(topic, page_no)
         save_query_result(topic, page_no, content)
 
     time.sleep(0.1)
 
 if __name__ == "__main__":
-    crawl_opinion_articles("UK")
+   crawl_opinion_articles("UK")

@@ -57,7 +57,7 @@ class FeatureExtractor(PassageRanker):
             doc_tokens = self.token_dump.get(doc_id)
             #tprint("get_feature_list 6")
             #doc_tokens_cap = self.cap_tokenizer.basic_tokenizer.tokenize(raw_doc)
-            doc_tokens_cap = self.token_dump.get(doc_id)
+            doc_tokens_cap = self.token_dump_cap.get(doc_id)
 
             assert len(doc_tokens_cap) == len(doc_tokens)
             l = self.get_seg_len_dict(doc_id)[loc]
@@ -74,7 +74,7 @@ class FeatureExtractor(PassageRanker):
                 6: self.unique_n_gram(query_tokens, seg_tokens, 2),
                 7: self.unique_n_gram(query_tokens, seg_tokens, 3),
                 8: self.unique_n_gram(query_tokens, seg_tokens, 4),
-                9: self.unique_cap_n_gram(query_tokens_cap, seg_tokens_cap, 1),
+                9:  self.unique_cap_n_gram(query_tokens_cap, seg_tokens_cap, 1),
                 10: self.unique_cap_n_gram(query_tokens_cap, seg_tokens_cap, 2),
                 11: self.unique_cap_n_gram(query_tokens_cap, seg_tokens_cap, 3),
                 12: self.unique_cap_n_gram(query_tokens_cap, seg_tokens_cap, 4),
