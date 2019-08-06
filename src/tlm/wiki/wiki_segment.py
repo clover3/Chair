@@ -1,4 +1,4 @@
-from tlm.split_wikipedia import WikiSpliter
+from tlm.wiki.split_wikipedia import WikiSpliter
 from tlm.fast_tokenizer import FTokenizer
 from misc_lib import TimeEstimator
 import sys
