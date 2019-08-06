@@ -136,8 +136,6 @@ class WikiSpliter:
                     return True
         return False
 
-
-
     def flush(self, title, content):
         self.out_f.write(title + "\n")
         for line in content:
@@ -145,7 +143,6 @@ class WikiSpliter:
         self.out_f.write("EOD!\n")
 
     def parse(self, lines):
-
         content = []
         cur_title = None
         step = 126766466
@@ -167,7 +164,6 @@ class WikiSpliter:
             else:
                 content.append(line)
             ticker.tick()
-
 
 
 

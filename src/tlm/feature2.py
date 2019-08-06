@@ -7,6 +7,14 @@ from tlm.segment_ranker_1 import PassageRanker, get_visible
 from rpc.disk_dump import DumpAccess
 
 
+def drop_small(tokens):
+    r = []
+    for t in tokens:
+        if t[0].isupper():
+            r.append(t)
+    return r
+
+
 class FeatureExtractor(PassageRanker):
     def __init__(self, window_size):
         super().__init__(window_size)
@@ -97,6 +105,23 @@ class FeatureExtractor(PassageRanker):
         hint_n_gram = NotImplemented
         hint_cap_n_gram = NotImplemented
 
+        def get_info(doc_id, loc):
+            doc_tokens = self.token_dump.get(doc_id)
+            doc_tokens_cap = self.token_dump_cap.get(doc_id)
+            l = self.get_seg_len_dict(doc_id)[loc]
+            seg_tokens_cap = doc_tokens_cap[loc:loc + l]
+            seg_tokens = doc_tokens[loc:loc + l]
+            day_hint = self.get_day(doc_id)
+
+            s1 = self.stemmer.stem_list(seg_tokens)
+            s_cap = drop_small(self.stemmer.stem_list(seg_tokens_cap))
+
+            hint_n_gram = {}
+            for n in range(1,5):
+                hint_n_gram[n] = self.get_n_gram_set(s1, n)
+                hint_cap_n_gram[n] = self.get_n_gram_set(s_cap, n)
+
+            return hint_n_gram, hint_cap_n_gram
 
     def get_day(self, doc_id):
         if doc_id in self.date_dict:
@@ -133,12 +158,6 @@ class FeatureExtractor(PassageRanker):
         return s
 
     def unique_cap_n_gram(self, q_tokens, doc_tokens, n_gram):
-        def drop_small(tokens):
-            r = []
-            for t in tokens:
-                if t[0].isupper():
-                    r.append(t)
-            return r
 
         return self.unique_n_gram(
             drop_small(q_tokens),
