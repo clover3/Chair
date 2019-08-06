@@ -20,11 +20,10 @@ def load_commented_articles():
 
 
 def save():
-
     a_list = load_commented_articles()
     import json
 
-    p  = os.path.join(data_path, "guardian.json")
+    p = os.path.join(data_path, "guardian.json")
     json.dump(a_list, open(p, "w"))
 
 
