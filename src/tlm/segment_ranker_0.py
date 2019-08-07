@@ -15,15 +15,15 @@ from sydney_manager import MarkedTaskManager
 from tlm import per_doc_posting_server
 
 class DocRelLoader:
-    def __init__(self):
+    def __init__(self, dir_path):
         self.cur_chunk_id = -1
         self.cur_chunk = None
         self.fail_record = Counter()
+        self.dir_path = dir_path
 
     def load_chunk(self, chunk_id):
-        dir_path = os.path.join(path.data_path, "tlm_res")
         name = str(chunk_id) + ".txt"
-        chunk_path = os.path.join(dir_path, name)
+        chunk_path = os.path.join(self.dir_path, name)
 
         if not os.path.exists(chunk_path):
             print("Not exists : ")
@@ -274,7 +274,8 @@ def main():
     mark_path = os.path.join(path.data_path, "adhoc", "seg_rank0_mark")
     mtm = MarkedTaskManager(1000*1000, mark_path, 1000)
     pr = PassageRanker(256 - 3)
-    dr = DocRelLoader()
+    dir_path = os.path.join(path.data_path, "tlm_res")
+    dr = DocRelLoader(dir_path)
 
     job_id = mtm.pool_job()
     print("Job id : ", job_id)

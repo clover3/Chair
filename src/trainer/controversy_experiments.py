@@ -1,3 +1,4 @@
+import adhoc.galago
 from data_generator.data_parser import controversy, load_protest
 from summarization.tokenizer import *
 from summarization.text_rank import TextRank
@@ -153,7 +154,7 @@ class ControversyExperiment:
         c2.build2(x_list, y_list)
         n_docs = 3000
         cont_docs = controversy.load_dir_docs(dir_path)[:n_docs]
-        bg_ctf, bg_tf = controversy.load_tf_inner(tf_path)
+        bg_ctf, bg_tf = adhoc.galago.load_tf(tf_path)
         print("Using {} docs".format(len(cont_docs)))
         assert cont_docs[0][0] == 1
 
@@ -252,7 +253,7 @@ class ControversyExperiment:
 
         crime_docs = controversy.load_dir_docs(dir_crime)[:1000]
         crime_docs = list([x[2] for x in crime_docs])
-        bg_ctf, bg_tf = controversy.load_tf_inner(tf_path)
+        bg_ctf, bg_tf = adhoc.galago.load_tf(tf_path)
         print("Using {} docs".format(len(protest_docs)))
 
         classifier = LMClassifierEx(tokenizer, stemmer)

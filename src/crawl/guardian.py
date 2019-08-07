@@ -112,7 +112,7 @@ def get_opinion_article(query, page_no):
           "&from-date=2019-01-01&to-date=2019-06-30" \
           "&page-size=200" \
           "&page={}" \
-          "&show-fields=bodyText%2CshortUrl" \
+          "&show-fields=bodyText%2CshortUrl%2Cbody" \
           "&q={}"\
         .format(page_str, query)
     print(url)
