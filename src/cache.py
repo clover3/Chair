@@ -87,3 +87,37 @@ class StreamPickleReader:
             return True
 
         return os.path.exists(self.next_chunk_path())
+
+
+import pickle
+
+
+class DumpPickle:
+    def __init__(self, out_path):
+        self.out_f = open(out_path, "wb")
+        self.dict_out_path = out_path + ".dict"
+        self.loc_dict = {}
+
+    def dump(self, name, obj):
+        fp_loc = self.out_f.tell()
+        pickle.dump(obj, self.out_f)
+        fp_ed = self.out_f.tell()
+        self.loc_dict[name] = (fp_loc, fp_ed)
+
+    def close(self):
+        self.out_f.close()
+        pickle.dump(self.loc_dict, open(self.dict_out_path, "wb"))
+
+
+class DumpPickleLoader:
+    def __init__(self, out_path):
+        self.out_f = open(out_path, "rb")
+        dict_out_path = out_path + ".dict"
+        self.loc_dict = pickle.load(open(dict_out_path, "rb"))
+
+    def load(self, name):
+        st, ed = self.loc_dict[name]
+        self.out_f.seek(st)
+        data = self.out_f.read(ed - st)
+        return pickle.loads(data)
+

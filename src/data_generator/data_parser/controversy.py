@@ -1,13 +1,6 @@
-import xml.sax
-import time
-import xml.etree.ElementTree as ET
-from collections import Counter, defaultdict
-from path import *
+from adhoc import galago
 from misc_lib import *
-import math
-import os
 from cache import *
-import glob
 import re
 
 scope_dir = os.path.join(data_path, "controversy")
@@ -113,25 +106,8 @@ def load_dir_docs(dir_path):
 
 def load_tf(name):
     file_path = os.path.join(scope_dir, "pseudo_docs", name)
-    return load_tf_inner(file_path)
+    return galago.load_tf(file_path)
 
-
-def load_tf_inner(file_path):
-    f = open(file_path, "r", encoding="utf-8")
-    lines = f.readlines()
-    tf_dict = Counter()
-    ctf = int(lines[0])
-    for line in lines[1:]:
-        tokens = line.split()
-        if len(tokens) != 3:
-            continue
-
-        word, tf, df = line.split()
-        tf = int(tf)
-        df = int(df)
-        tf_dict[word] = tf
-
-    return ctf, tf_dict
 
 def load_guardian():
     dir_path = os.path.join(scope_dir, "guardian")
