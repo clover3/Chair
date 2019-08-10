@@ -8,7 +8,7 @@ def hello():
     print(r)
 
 
-def insert_test():
+def insert_article():
     articles = load_commented_articles()
     es = Elasticsearch("localhost")
 
@@ -16,6 +16,7 @@ def insert_test():
         id, title, short_id, infos = article
         r = es.index(index="guardian",body=infos)
 
+
 #hello()
-insert_test()
+insert_article()
 
