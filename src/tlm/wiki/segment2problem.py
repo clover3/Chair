@@ -2,14 +2,14 @@ import random
 from cache import *
 from path import data_path
 from data_generator import tokenizer_wo_tf as tokenization
-from sydney_manager import MarkedTaskManager
+from sydney_manager import ReadyMarkTaskManager
 from misc_lib import flatten
 from tlm.retreive_candidates import get_visible
 from tlm.stem import CacheStemmer
 from tlm.galago_query_maker import clean_query
 from collections import Counter
 from adhoc.bm25 import BM25_3, BM25_3_q_weight
-from misc_lib import left
+from misc_lib import left, TimeEstimator
 from models.classic.stopword import load_stopwords
 from adhoc.galago import load_df, write_query_json
 
@@ -96,32 +96,38 @@ class ProblemMaker:
 
         return set(left(high_qt.most_common(n_limit)))
 
+in_path_format = os.path.join(data_path, "stream_pickled", "wiki_segments3_{}")
+
 def work(job_id, pm):
     rng = random.Random(0)
     max_num_tokens = 256
     masked_lm_prob = 0.15
     short_seq_prob = 0.1
+    problem_per_job = 100*1000
 
-    in_path = os.path.join(data_path, "stream_pickled", "wiki_segments_{}".format(job_id))
+    in_path = in_path_format.format(job_id)
     out_path = os.path.join(working_path, "problems", "{}".format(job_id))
     query_out_path = os.path.join(working_path, "query", "{}".format(job_id))
     in_data = pickle.load(open(in_path, "rb"))
     out_data = []
     queries = []
 
+    ticker = TimeEstimator(len(in_data))
+
     for idx, inst in enumerate(in_data):
         mask_inst = pm.generate_mask(inst, max_num_tokens, masked_lm_prob, short_seq_prob, rng)
         query = pm.generate_query(mask_inst)
-        qid = job_id * 1000 + idx
+        qid = job_id * problem_per_job + idx
         queries.append((qid, query))
         out_data.append(mask_inst)
+        ticker.tick()
 
     write_query_json(queries, query_out_path)
     pickle.dump(out_data, open(out_path, 'wb'))
 
 def main():
-    mark_path = os.path.join(working_path, "seg2problem_mark")
-    mtm = MarkedTaskManager(1000, mark_path, 1)
+    mark_path = os.path.join(working_path, "wiki_p2_mark")
+    mtm = ReadyMarkTaskManager(1000, in_path_format, mark_path)
 
     pm = ProblemMaker()
     job_id = mtm.pool_job()

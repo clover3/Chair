@@ -23,7 +23,6 @@ class TextSampler:
     def load_next_doc(self):
         self.file_idx = (self.file_idx + 1) % len(self.path_list)
         self.cur_f = open(self.path_list[self.file_idx], "r")
-        print("Opening " , self.path_list[self.file_idx])
 
     def sample(self):
         try:
@@ -79,11 +78,11 @@ class TextSampler:
 
     def jump(self):
         step = randint(1, 12)
-        if step == 1:
+        if step == 1 and self.next_seg is not None:
             self.prev_seg = self.cur_seg
             self.cur_seg = self.next_seg
             self.next_seg = self.read_next_seg(False)
-        elif step == 2:
+        elif step == 2 and self.next_seg is not None:
             self.prev_seg = self.next_seg
             self.cur_seg = self.read_next_seg(True)
             self.next_seg = self.read_next_seg(False)
@@ -92,16 +91,17 @@ class TextSampler:
             self.prev_seg = self.read_next_seg(True)
             self.cur_seg = self.read_next_seg(True)
             self.next_seg = self.read_next_seg(False)
+            assert self.cur_seg is not None
 
 
 
 def main():
-    num_inst = 1000 * 1000
+    num_inst = 1000 * 1000 * 100
     path_format = "/mnt/nfs/work3/youngwookim/data/tlm/enwiki_seg_galago/train.{}.trectext"
     text_path = list([path_format.format(i) for i in range(10)])
 
     ts = TextSampler(text_path)
-    sp = StreamPickler("wiki_segments_", 1000)
+    sp = StreamPickler("wiki_segments3_", 1000*100)
     ticker = TimeEstimator(num_inst)
     for i in range(num_inst):
         inst = ts.sample()

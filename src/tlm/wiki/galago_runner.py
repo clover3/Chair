@@ -1,4 +1,5 @@
 import os
+import json
 from sydney_manager import MarkedTaskManager, ReadyMarkTaskManager
 
 iteration_dir = "/mnt/scratch/youngwookim/data/tlm_simple"
@@ -12,14 +13,29 @@ def get_path(sub_dir_name, file_name):
         os.mkdir(dir_path)
     return out_path
 
+
+def delete_bad_query(path):
+    j = json.load(open(path))
+    new_q = []
+    for e in j["queries"]:
+        if e["text"] == "#combine()":
+            pass
+        else:
+            new_q.append(e)
+
+    new_j = {"queries":new_q}
+
+    json.dump(new_j, open(path, "w"), indent=True)
+
+
 def run_galago(job_idx):
     cmd = "galago threaded-batch-search --index=/mnt/nfs/work3/youngwookim/data/tlm/index/wiki_heads" \
           " --showNoResults --requested=30 {} > {}"
     input_path = get_path("query", "{}".format(job_idx))
     output_path = get_path("q_res", "{}.txt".format(job_idx))
+    delete_bad_query(input_path)
     cmd = cmd.format(input_path, output_path)
-    wrap_cmd = "timeout 3m "
-    cmd = wrap_cmd + cmd
+    cmd = cmd
     print(cmd)
     os.system(cmd)
 
@@ -37,6 +53,10 @@ def galago_runner():
         run_galago(job_id)
         job_id = mtm.pool_job()
         print("Job id : ", job_id)
+
+def etst():
+    p = "/mnt/nfs/work3/youngwookim/data/tlm_simple/query/3"
+    delete_bad_query(p)
 
 def main():
     galago_runner()

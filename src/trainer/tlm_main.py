@@ -12,10 +12,11 @@ def train_rte():
     hp = hyperparams.HPBert()
     e = Experiment(hp)
     vocab_filename = "bert_voca.txt"
-    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    #load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    load_id = ("tlm_simple","model.ckpt-15000")
 
     e_config = ExperimentConfig()
-    e_config.name = "RTE_{}".format("A")
+    e_config.name = "RTE_{}".format("tlm_simple_15000")
     e_config.num_epoch = 10
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert']
@@ -62,7 +63,9 @@ def train_test_repeat(load_id, exp_name, n_repeat):
     for e in scores:
         print(e, end="\t")
     print()
-    print("Avg\n{0:.03f}".format(average(scores)))
+    r = average(scores)
+    print("Avg\n{0:.03f}".format(r))
+    return r
 
 
 def fetch_bert(model_step):
@@ -77,6 +80,18 @@ def download_and_run():
         load_id = fetch_bert(model_step)
         train_test_repeat(load_id, "tlm1_{}".format(model_step), 10)
 
+def tlm_test():
+    summary = {}
+    for model_step in [10000, 20000, 30000]:
+        load_id = ("tlm_simple_cold", "model.ckpt-{}".format(model_step))
+        r = train_test_repeat(load_id, "tlm_simple_cold_{}".format(model_step), 5)
+        summary[load_id] = r
+
+    for key in summary:
+        print(key, summary[key])
+
+
+
 def baseline_run():
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     train_test_repeat(load_id, "bert_base", 10)
@@ -84,7 +99,7 @@ def baseline_run():
 
 if __name__ == '__main__':
     begin = time.time()
-    action = "download_and_run"
+    action = "tlm_test"
     locals()[action]()
 
     elapsed = time.time() - begin
