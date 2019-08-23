@@ -7,6 +7,10 @@ from trainer import loader
 import sys
 from data_generator.rte import rte
 from google import gsutil
+from data_generator.shared_setting import NLI
+from trainer.tf_module import *
+from data_generator.NLI import nli
+
 
 def train_rte():
     hp = hyperparams.HPBert()
@@ -38,6 +42,66 @@ def gradient_rte_visulize():
 
     data_loader = rte.DataLoader(hp.seq_max, vocab_filename, True)
     e.rte_visualize(e_config, data_loader, load_id)
+
+
+
+def train_nil_on_bert():
+    print('train_nil_on_bert')
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+    e_config = ExperimentConfig()
+    e_config.name = "NLI_10k_bert_cold"
+    e_config.num_epoch = 2
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert']  # , 'aux_conflict']
+
+    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    dir_name = "bert_cold"
+    model_step =10 * 1000
+    load_id = (dir_name, "model.ckpt-{}".format(model_step))
+    print(load_id)
+    saved = e.train_nli_ex_0(nli_setting, e_config, data_loader, load_id, False)
+    e.test_acc2(nli_setting, e_config, data_loader, saved)
+
+
+def test_nli():
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+    e_config = ExperimentConfig()
+    e_config.name = "NLI_400k_tlm_simple_wo_hint"
+    e_config.num_epoch = 2
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert', 'cls_dense']  # , 'aux_conflict']
+    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    #saved = "/mnt/scratch/youngwookim/Chair/output/model/runs/NLI_Cold/model-0"
+    saved = "/mnt/scratch/youngwookim/Chair/output/model/runs/NLI_400k_tlm_wo_hint/model-0"
+    saved = '/mnt/scratch/youngwookim/Chair/output/model/runs/NLI_400k_tlm_simple_hint/model-0'
+    print(saved)
+    e.test_acc2(nli_setting, e_config, data_loader, saved)
+
+
+def train_nil_cold():
+    print('train_nil_cold')
+    hp = hyperparams.HPBert()
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+    e_config = ExperimentConfig()
+    e_config.name = "NLI_Cold"
+    e_config.num_epoch = 2
+    e_config.save_interval = 30 * 60  # 30 minutes
+
+    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    saved = e.train_nli_ex_0(nli_setting, e_config, data_loader, None, False)
+    e.test_acc2(nli_setting, e_config, data_loader, saved)
+
 
 
 def train_test_repeat(load_id, exp_name, n_repeat):
@@ -80,17 +144,34 @@ def download_and_run():
         load_id = fetch_bert(model_step)
         train_test_repeat(load_id, "tlm1_{}".format(model_step), 10)
 
-def tlm_test():
+def tlm_test(dir_name):
     summary = {}
-    for model_step in [10000, 20000, 30000]:
-        load_id = ("tlm_simple_cold", "model.ckpt-{}".format(model_step))
-        r = train_test_repeat(load_id, "tlm_simple_cold_{}".format(model_step), 5)
+    k = 1000
+    for model_step in [20*k]:
+        load_id = (dir_name, "model.ckpt-{}".format(model_step))
+        r = train_test_repeat(load_id, "{}_{}".format(dir_name, model_step), 5)
+        print(load_id, r)
         summary[load_id] = r
 
     for key in summary:
         print(key, summary[key])
 
 
+def tlm_simple_cold_wo_hint():
+    tlm_test("tlm_simple_wo_hint")
+
+def tlm_simple_cold():
+    tlm_test("tlm_simple_cold")
+
+def tlm_simple_cold_256():
+    tlm_test("tlm_simple_cold_256")
+
+
+def tlm_simple_tune():
+    tlm_test("tlm_simple_tune")
+
+def tlm_bert_cold():
+    tlm_test("bert_cold")
 
 def baseline_run():
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
@@ -99,7 +180,7 @@ def baseline_run():
 
 if __name__ == '__main__':
     begin = time.time()
-    action = "tlm_test"
+    action = "tlm_simple_cold_256"
     locals()[action]()
 
     elapsed = time.time() - begin

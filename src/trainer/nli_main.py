@@ -208,9 +208,6 @@ def train_pairing():
 
 
 def train_nli_smart_rf():
-
-
-
     hp = hyperparams.HPSENLI()
     hp.compare_deletion_num = 20
     e = Experiment(hp)
@@ -443,13 +440,14 @@ def predict_rf():
     nli_setting = NLI()
     nli_setting.vocab_size = 30522
     nli_setting.vocab_filename = "bert_voca.txt"
-    target_label = 'match'
-    #data_id = 'test_mismatch'
-    data_id = "{}_1000".format(target_label)
+    target_label = 'conflict'
+    data_id = 'test_conflict'
+    #data_id = "{}_1000".format(target_label)
     e_config = ExperimentConfig()
 
-    del_g = 0.7
-    e_config.name = "X_match_del_{}".format(del_g)
+    #del_g = 0.7
+    #e_config.name = "X_match_del_{}".format(del_g)
+    e_config.name = "CE_{}".format(target_label)
     e_config.load_names = ['bert', 'cls_dense', 'aux_conflict']
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
@@ -458,8 +456,9 @@ def predict_rf():
     load_id = ("NLIEx_W_mismatch", "model-12030")
     load_id = ("NLIEx_Y_conflict", "model-12039")
     load_id = ("NLIEx_X_match", "model-12238")
-    load_id = ("NLIEx_match_del_{}".format(del_g), "model-4390")
-    e.predict_rf(nli_setting, e_config, data_loader, load_id, data_id)
+    #load_id = ("NLIEx_match_del_{}".format(del_g), "model-4390")
+    load_id = ("NLIEx_CE_{}".format(target_label), "model-12199")
+    e.predict_rf(nli_setting, e_config, data_loader, load_id, data_id, 2)
 
 
 

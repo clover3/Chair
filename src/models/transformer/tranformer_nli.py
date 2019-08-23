@@ -4,6 +4,10 @@ import tensorflow as tf
 from data_generator.NLI import nli
 from trainer import tf_module
 
+
+METHOD_CROSSENT = 2
+METHOD_HINGE = 7
+
 class transformer_nli:
     def __init__(self, hp, voca_size, method, is_training=True):
         config = bert.BertConfig(vocab_size=voca_size,
@@ -22,9 +26,9 @@ class transformer_nli:
         input_mask = tf.placeholder(tf.int64, [None, seq_length])
         segment_ids = tf.placeholder(tf.int64, [None, seq_length])
         label_ids = tf.placeholder(tf.int64, [None])
-        if method in [0,1,3,4,5,6]:
+        if method in [0,1,3,4,5,6, METHOD_HINGE]:
             self.rf_mask = tf.placeholder(tf.float32, [None, seq_length])
-        elif method in [2]:
+        elif method in [METHOD_CROSSENT]:
             self.rf_mask = tf.placeholder(tf.int32, [None, seq_length])
 
         self.x_list = [input_ids, input_mask, segment_ids]
@@ -67,7 +71,7 @@ class transformer_nli:
             #self.pkc = self.conf_logits * self.rf_mask
             rl_loss_list = tf.reduce_sum(self.conf_logits * self.rf_mask , axis=1)
             self.rl_loss = tf.reduce_mean(rl_loss_list)
-        elif method == 2:
+        elif method == METHOD_CROSSENT:
             cl = tf.layers.dense(self.model.get_sequence_output(), 2, name="aux_conflict")
             probs = tf.nn.softmax(cl)
             losses = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(self.rf_mask, 2), logits=cl)
@@ -108,6 +112,14 @@ class transformer_nli:
             self.conf_logits = cl
             #rl_loss_list = tf.reduce_sum(self.conf_logits * self.rf_mask , axis=1)
             self.rl_loss = tf.reduce_mean(tf_module.correlation_coefficient_loss(cl, -self.rf_mask))
+        elif method == METHOD_HINGE:
+            cl = tf.layers.dense(self.model.get_sequence_output(), 1, name="aux_conflict")
+            cl = tf.reshape(cl, [-1, seq_length])
+            self.conf_logits = cl
+            labels = tf.greater(self.rf_mask, 0)
+            hinge_losses = tf.losses.hinge_loss(labels, self.conf_logits)
+            self.rl_loss = tf.reduce_sum(hinge_losses)
+
         self.conf_softmax = tf.nn.softmax(self.conf_logits, axis=-1)
 #            self.rl_loss = tf.reduce_mean(rl_loss_list)
             #with tf.device("/device:GPU:1"):

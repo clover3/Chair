@@ -50,11 +50,11 @@ def visualize():
         target_topic = topic
         topic_data = all_data[topic]
 
-        f_html = open(os.path.join(path.output_path, "visualize", "stance_{}_gold.html".format(topic)), "w")
+        f_html = open(os.path.join(path.output_path, "visualize", "stance_{}_gold_doc.html".format(topic)), "w")
         f_html.write("<html><head>\n")
 
-        tooptip_style = open(os.path.join(path.data_path, "html", "tooltip")).read()
-        f_html.write(tooptip_style)
+        #tooptip_style = open(os.path.join(path.data_path, "html", "tooltip")).read()
+        #f_html.write(tooptip_style)
         f_html.write("</head>\n")
         f_html.write("<h4>{}<h4>\n".format(target_topic))
 
@@ -74,6 +74,7 @@ def visualize():
 
             p1 = count[1] / len(topic_stances)
             p2 = count[2] / len(topic_stances)
+            f_html.write("<br>")
             f_html.write("<div>")
             f_html.write(url)
             f_html.write("</div>")
@@ -84,6 +85,8 @@ def visualize():
                 tag = "<span class=\"tooltip\">{}\
                 <span class=\"tooltiptext\">{}</span>\
                 </span>".format(stance, sents[i])
+
+                tag = "<div><span>{}</span>&nbsp;<span>{}</span></div>".format(stance, sents[i])
 
                 f_html.write(tag + "\n")
             f_html.write("</div>")
@@ -103,4 +106,4 @@ def print_url_list():
 
 
 if __name__ == "__main__":
-    print_url_list()
+    visualize()

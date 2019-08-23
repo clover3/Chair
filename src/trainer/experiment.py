@@ -1440,6 +1440,7 @@ class Experiment:
 
     def pickle_cacher(self, pickle_name, get_fn, use_pickle):
         pickle_path = os.path.join(path.cache_path, pickle_name)
+        print(pickle_path)
         if not use_pickle:
             obj = get_fn()
             pickle.dump(obj, open(pickle_path, "wb"))
@@ -1532,6 +1533,7 @@ class Experiment:
                                valid_fn, valid_freq,
                                save_fn, self.save_interval,
                               steps=steps)
+        return save_fn()
 
 
     def nli_attribution_baselines(self, nli_setting, exp_config, data_loader, preload_id):
@@ -2131,9 +2133,10 @@ class Experiment:
 
                 self.test_writer.add_summary(summary, self.g_step)
             self.log.info("Validation : loss={0:.04f} acc={1:.04f}".format(average(loss_list), average(acc_list)))
+            return average(acc_list)
 
         def save_fn():
-            self.save_model(exp_config.name, 2)
+            return self.save_model(exp_config.name, 2)
 
         train_batches, dev_batches = self.load_nli_data(data_loader)
 
@@ -2150,7 +2153,48 @@ class Experiment:
                                valid_fn, valid_freq,
                                save_fn, self.save_interval,
                               steps=steps)
-        save_fn()
+
+        acc =valid_fn()
+        print("Last val acc : ", acc)
+        return save_fn()
+
+
+    # Refactored version of explain train
+    def test_acc2(self, nli_setting, exp_config, data_loader, save_path):
+        method = 6
+        task = transformer_nli(self.hparam, nli_setting.vocab_size, method, False)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        self.load_model_white_fullpath(save_path, exp_config.load_names)
+
+        def batch2feed_dict(batch):
+            x0, x1, x2, y  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+        train_batches, dev_batches = self.load_nli_data(data_loader)
+        def valid_fn():
+            loss_list = []
+            acc_list = []
+            for batch in dev_batches:
+                loss_val, summary, acc = self.sess.run([task.loss, self.merged, task.acc],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+                acc_list.append(acc)
+
+                self.test_writer.add_summary(summary, self.g_step)
+            print("Validation : loss={0:.04f} acc={1:.04f}".format(average(loss_list), average(acc_list)))
+        print(save_path)
+        valid_fn()
 
 
     # Refactored version of explain train
@@ -2381,8 +2425,7 @@ class Experiment:
 
 
     # Refactored version of explain train
-    def predict_rf(self, nli_setting, exp_config, data_loader, preload_id, data_id):
-        method = 1
+    def predict_rf(self, nli_setting, exp_config, data_loader, preload_id, data_id, method=1):
         task = transformer_nli(self.hparam, nli_setting.vocab_size, method, False)
 
         self.sess = self.init_sess()
@@ -2896,7 +2939,10 @@ class Experiment:
         self.sess.run(tf.global_variables_initializer())
         self.merged = tf.summary.merge_all()
         self.setup_summary_writer(exp_config.name)
-        self.load_model_white2(preload_id, exp_config.load_names)
+        self.load_model_white2(preload_id, exp_config.load_names, False)
+        if hasattr(exp_config, "save_eval"):
+            eval_log = open(os.path.join(output_path, "report_log", exp_config.save_name), "w")
+
 
         def batch2feed_dict(batch):
             x0, x1, x2, y = batch
@@ -2929,9 +2975,14 @@ class Experiment:
             print("Elapsed Time : {}".format(end- begin))
 
             scores = eval_explain(conf_logit, data_loader, explain_tag)
+
+
             for metric in scores.keys():
                 print("{}\t{}".format(metric, scores[metric]))
 
+            if hasattr(exp_config, "save_eval"):
+                eval_log.write("Eval\t{}\t{}\t{}\n".format(self.g_step, scores["P@1"], scores["MAP"]))
+                eval_log.flush()
             p_at_1, MAP_score = scores["P@1"], scores["MAP"]
             summary = tf.Summary()
             summary.value.add(tag='P@1', simple_value=p_at_1)
@@ -3073,7 +3124,6 @@ class Experiment:
         loss_window = MovingWindow(self.hparam.batch_size)
         def train_explain(batch, batch_info, step_i):
             summary = tf.Summary()
-
             def sample_size():
                 prob = [(1,0.8), (2,0.2)]
                 v = random.random()
@@ -3143,7 +3193,16 @@ class Experiment:
                 reward_payload = (x0, x1, x2, y, loss_mask)
                 return reward_payload
 
+            def reinforce_ce(good_action, input_x):
+                pos_reward_indice = np.int_(good_action)
+                loss_mask = pos_reward_indice
+                x0,x1,x2,y = input_x
+                reward_payload = (x0, x1, x2, y, loss_mask)
+                return reward_payload
+
             reinforce = reinforce_one
+            if method == 2:
+                reinforce = reinforce_ce
 
             def action_score(before_prob, after_prob, action):
                 num_tag = np.count_nonzero(action)
@@ -3234,6 +3293,9 @@ class Experiment:
             _ = commit_reward(reinforce_payload)
 
             window_rl_loss = loss_window.get_average()
+            if hasattr(exp_config, "save_eval"):
+                eval_log.write("Train_loss\t{}\t{}\n".format(self.g_step, window_rl_loss))
+
             summary.value.add(tag='RL_Loss', simple_value=window_rl_loss)
             self.train_writer.add_summary(summary, self.g_step)
             self.train_writer.flush()

@@ -90,6 +90,22 @@ def eval_acc(pred_list, gold_list, only_prem, only_hypo = False):
         return scores
 
 
+def get_suc_list(score_list, cut):
+    l = []
+    total = len(score_list)
+
+    for score, label in score_list:
+        p = score >= cut
+
+        if label == p:
+            l.append(1)
+        else:
+            l.append(0)
+
+    return l
+
+
+
 
 def eval_pr(pred_list, gold_list, cut_off, only_prem, only_hypo = False):
     if len(pred_list) != len(gold_list):
@@ -124,9 +140,16 @@ def eval_pr(pred_list, gold_list, cut_off, only_prem, only_hypo = False):
     else:
         pp, pr, pf1 = get_pr(p_info, cut_p)
         hp, hr, hf1 = get_pr(h_info, cut_h)
-        acc_p = get_acc(p_info, cut_p)
-        acc_h = get_acc(h_info, cut_h)
-        acc = (acc_p + acc_h) / 2
+        #acc_p = get_acc(p_info, cut_p)
+        #acc_h = get_acc(h_info, cut_h)
+
+        correct_p = get_suc_list(p_info, cut_p)
+        correct_h = get_suc_list(h_info, cut_h)
+        all_c= correct_p + correct_h
+        acc_p = sum(correct_p)/ len(correct_p)
+        acc_h = sum(correct_h) / len(correct_h)
+        acc = sum(all_c) / len(all_c)
+        acc = (acc_p + acc_h)/2
         scores = {
             "Prem P": pp,
             "Prem R": pr,
@@ -374,9 +397,9 @@ def paired_p_test2(scorer1, scorer2, predictions1, predictions2, gold_list, only
 
 def paired_p_test_runner():
     best_runner = {
-            'match':['Y_match', 'deletion'],
-            'mismatch':['V_mismatch','saliency'],
-            'conflict':['Y_conflict', 'deletion'],
+            'match':['CE_match','Y_match'],
+            'mismatch':['CE_mismatch','V_mismatch'],
+            'conflict':['Y_conflict', 'CE_conflict'],
         }
 
     for target_label in ["mismatch", "match", "conflict"]:
@@ -415,9 +438,9 @@ def paired_p_test_runner():
 
 def paired_p_test_runner_new():
     best_runner = {
-            'conflict':['Y_conflict', 'saliency'],
-            'match':['X_match', 'LIME'],
-            'mismatch':['W_mismatch','deletion_seq'],
+            'match':['CE_match','X_match'],
+            'mismatch':['CE_mismatch','W_mismatch'],
+            'conflict':['Y_conflict', 'CE_conflict'],
         }
 
     for target_label in ["conflict", "match", "mismatch"]:
@@ -458,9 +481,9 @@ def paired_p_test_runner_new():
 
 def paired_p_test_runner_acc():
     best_runner = {
-            'conflict':['Y_conflict', 'deletion_seq'],
-            'match':['X_match', 'LIME'],
-            'mismatch':['W_mismatch','LIME'],
+            'conflict':['Y_conflict', 'LIME'],
+            'match':['CE_match','X_match'],
+            'mismatch':['CE_mismatch', 'W_mismatch'],
         }
 
 
@@ -607,7 +630,7 @@ def run_cut_off_small():
 
 
 def run_cut_off():
-    target_label =  "mismatch"
+    target_label =  "conflict"
 
     dev_data_id = {
         'match':'match',
@@ -622,10 +645,15 @@ def run_cut_off():
         'mismatch':'W_mismatch',
         'conflict':'Y_conflict',
     }[target_label]
+    ce_run = {
+        'match':'CE_match',
+        'mismatch':'CE_mismatch',
+        'conflict':'CE_conflict',
+    }[target_label]
 
     data_id = "{}_1000".format(target_label)
 
-    all_method = ["random", "idf", "saliency",  "grad*input", "intgrad", "LIME", "deletion", "deletion_seq", model_name]
+    all_method = ["random", "idf", "saliency",  "grad*input", "intgrad", "LIME", "deletion", "deletion_seq", model_name, ce_run]
 
     run_names = []
     for method_name in all_method:
@@ -740,8 +768,11 @@ def run_test_eval():
         'conflict':'Y_conflict',
     }[target_label]
 
+
+
     run_names = []
-    for method_name in ["random", "idf", "saliency",  "grad*input", "intgrad", "deletion", "deletion_seq", model_name, 'W_mismatch']:
+    for method_name in ["random", "idf", "saliency",  "grad*input", "intgrad",
+                        "deletion", "deletion_seq", model_name, 'W_mismatch',]:
         run_name = "pred_" + method_name + "_" + data_id
         run_names.append(run_name)
 
@@ -786,9 +817,14 @@ def run_test_eval2(target_label):
         'mismatch': 'W_mismatch',
         'conflict': 'Y_conflict',
     }[target_label]
+    ce_run = {
+        'match':'CE_match',
+        'mismatch':'CE_mismatch',
+        'conflict':'CE_conflict',
+    }[target_label]
 
-    all_methods = ["random", "idf", "saliency",  "grad*input", "intgrad", "LIME", "deletion", "deletion_seq", model_name]
-    all_methods= ["X_match_del_0.4","X_match_del_0.6","X_match_del_0.7"]
+    all_methods = ["random", "idf", "saliency",  "grad*input", "intgrad", "LIME", "deletion", "deletion_seq", model_name, ce_run]
+    #all_methods= ["X_match_del_0.4","X_match_del_0.6","X_match_del_0.7"]
     run_names = []
     for method_name in all_methods:
         run_name = "pred_" + method_name + "_" + pred_id
@@ -838,7 +874,7 @@ if __name__ == '__main__':
     #merge_lime()
     #paired_p_test_runner_new()
     paired_p_test_runner_acc()
-    #run_cut_off()
+    run_cut_off()
     #paired_p_test_runner()
     #run_test_eval2("mismatch")
     #run_test_eval2("match")
