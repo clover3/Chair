@@ -2922,7 +2922,7 @@ class Experiment:
 
     def train_nli_smart(self, nli_setting, exp_config, data_loader, preload_id, explain_tag, method):
         print("train_nli_smart")
-        PAIRING_NLI = 6
+        PAIRING_NLI = 8
 
         if exp_config.ex_val:
             enc_explain_dev, explain_dev = data_loader.get_dev_explain(explain_tag)
@@ -3201,7 +3201,7 @@ class Experiment:
                 return reward_payload
 
             reinforce = reinforce_one
-            if method == 2:
+            if method == 2 or method == 7:
                 reinforce = reinforce_ce
 
             def action_score(before_prob, after_prob, action):

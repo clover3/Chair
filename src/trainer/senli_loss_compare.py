@@ -23,20 +23,18 @@ def train_nli_smart_rf():
 
     e_config = ExperimentConfig()
 
-    explain_tag = 'mismatch'
-    loss_type = 2
+    #explain_tag = 'mismatch'
+    explain_tag = 'match'
+    #explain_tag = 'mismatch'
 
-    e_config.name = "NLIEx_CE_{}".format(explain_tag)
+    loss_type = 2
+    e_config.name = "NLIEx_Hinge_{}".format(explain_tag)
     e_config.num_epoch = 1
     e_config.ex_val = True
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert', 'cls_dense'] #, 'aux_conflict']
     e_config.save_eval = True
     e_config.save_name = "LossFn_{}_{}".format(loss_type, explain_tag)
-
-    #explain_tag = 'match'  # 'dontcare'  'match' 'mismatch'
-    #explain_tag = 'match'
-    #explain_tag = 'mismatch'
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     load_id = ("NLI_run_A", 'model-0')

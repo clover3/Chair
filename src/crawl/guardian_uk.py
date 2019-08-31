@@ -27,4 +27,15 @@ def save():
     json.dump(a_list, open(p, "w"))
 
 
-save()
+def save_url_list():
+    a_list = load_commented_articles()
+    save_path = os.path.join(data_path, "guardian", "opinion", "urls.txt")
+    f = open(save_path, 'w')
+
+    for a in a_list:
+        id, title, short_id, infos = a
+        print(title.strip(), infos['webUrl'])
+        f.write("{}\t{}\n".format(title.strip(), infos['webUrl']))
+
+
+save_url_list()

@@ -26,9 +26,9 @@ class transformer_nli:
         input_mask = tf.placeholder(tf.int64, [None, seq_length])
         segment_ids = tf.placeholder(tf.int64, [None, seq_length])
         label_ids = tf.placeholder(tf.int64, [None])
-        if method in [0,1,3,4,5,6, METHOD_HINGE]:
+        if method in [0,1,3,4,5,6]:
             self.rf_mask = tf.placeholder(tf.float32, [None, seq_length])
-        elif method in [METHOD_CROSSENT]:
+        elif method in [METHOD_CROSSENT, METHOD_HINGE]:
             self.rf_mask = tf.placeholder(tf.int32, [None, seq_length])
 
         self.x_list = [input_ids, input_mask, segment_ids]

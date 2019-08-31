@@ -629,9 +629,7 @@ def run_cut_off_small():
 
 
 
-def run_cut_off():
-    target_label =  "conflict"
-
+def run_cut_off(target_label):
     dev_data_id = {
         'match':'match',
         'mismatch':'mismatch',
@@ -653,7 +651,9 @@ def run_cut_off():
 
     data_id = "{}_1000".format(target_label)
 
-    all_method = ["random", "idf", "saliency",  "grad*input", "intgrad", "LIME", "deletion", "deletion_seq", model_name, ce_run]
+    all_method = ["random", "idf", "saliency",  "grad*input", "intgrad", "LIME", "deletion", "deletion_seq", model_name, ce_run, "NLIEx_AnyA"]
+    all_method = ["X_match_del_0.1", "X_match_del_0.2", "X_match_del_0.3", "X_match_del_0.4", "X_match_del_0.5",
+                   "X_match_del_0.6", "X_match_del_0.7", "X_match_del_0.8", "X_match_del_0.9"]
 
     run_names = []
     for method_name in all_method:
@@ -756,7 +756,7 @@ def merge_lime():
 
 
 
-def run_test_eval():
+def run_eval_acl():
     target_label =  "mismatch"
     data_id = "test_{}".format(target_label)
     label_name = "test_{}_idx".format(target_label)
@@ -772,7 +772,7 @@ def run_test_eval():
 
     run_names = []
     for method_name in ["random", "idf", "saliency",  "grad*input", "intgrad",
-                        "deletion", "deletion_seq", model_name, 'W_mismatch',]:
+                        "deletion", "deletion_seq", model_name, 'W_mismatch', "AnyA"]:
         run_name = "pred_" + method_name + "_" + data_id
         run_names.append(run_name)
 
@@ -809,7 +809,7 @@ def load_prediction_head(run_name):
     else:
         assert False
 
-def run_test_eval2(target_label):
+def run_test_eval_emnlp(target_label):
     gold_list = read_gold_label("gold_{}_100_700.csv".format(target_label))
     pred_id = "{}_1000".format(target_label)
     model_name = {
@@ -823,8 +823,9 @@ def run_test_eval2(target_label):
         'conflict':'CE_conflict',
     }[target_label]
 
-    all_methods = ["random", "idf", "saliency",  "grad*input", "intgrad", "LIME", "deletion", "deletion_seq", model_name, ce_run]
-    #all_methods= ["X_match_del_0.4","X_match_del_0.6","X_match_del_0.7"]
+    all_methods = ["random", "idf", "saliency",  "grad*input", "intgrad", "LIME", "deletion", "deletion_seq", "NLIEx_AnyA", model_name, ce_run]
+    all_methods= ["X_match_del_0.1", "X_match_del_0.2","X_match_del_0.3","X_match_del_0.4", "X_match_del_0.5",
+                  "X_match_del_0.6","X_match_del_0.7", "X_match_del_0.8", "X_match_del_0.9"]
     run_names = []
     for method_name in all_methods:
         run_name = "pred_" + method_name + "_" + pred_id
@@ -869,17 +870,18 @@ def debuglime():
 
 if __name__ == '__main__':
     #run_eval()
-    #run_test_eval()
+    #run_eval_acl()
     #mismatch_p()
     #merge_lime()
     #paired_p_test_runner_new()
-    paired_p_test_runner_acc()
-    run_cut_off()
+    #paired_p_test_runner_acc()
+    #run_cut_off("conflict")
+    run_cut_off("match")
+    #run_cut_off("mismatch")
     #paired_p_test_runner()
-    #run_test_eval2("mismatch")
-    #run_test_eval2("match")
-    #run_test_eval2("conflict")
+    #run_test_eval_emnlp("mismatch")
+    run_test_eval_emnlp("match")
+    #run_test_eval_emnlp("conflict")
 
     #eval_snli()
-    #run_test_eval2()
     #debuglime()
