@@ -19,7 +19,8 @@ def load_guardian_uk_comments():
     return load_all_comments(comments_dir)
 
 def insert_uk_comments():
-    es = Elasticsearch("localhost")
+    server_name = "gosford.cs.umass.edu"
+    es = Elasticsearch(server_name)
     data = load_guardian_uk_comments()
 
     for comment in data:

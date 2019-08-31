@@ -10,11 +10,13 @@ def hello():
 
 def insert_article():
     articles = load_commented_articles()
-    es = Elasticsearch("localhost")
+    print("{} articles".format(len(articles)))
+    server_name = "gosford.cs.umass.edu"
+    es = Elasticsearch(server_name)
 
     for article in articles:
         id, title, short_id, infos = article
-        r = es.index(index="guardian",body=infos)
+        r = es.index(index="guardian", body=infos)
 
 
 #hello()

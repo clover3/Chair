@@ -51,17 +51,17 @@ def load_stance_annot(path):
             r2 = NOT_FOUND
 
         evi1 = entry[col_e1]
-        doc_id_1, seg_id_1 = evi1.split(",")
+        support_evidence = evi1.split(",")
 
         evi2 = entry[col_e2]
-        doc_id_2, seg_id_2 = evi2.split(",")
+        dispute_evidence = evi2.split(",")
 
         d_entry = {}
-        d_entry['statements'] = statement
+        d_entry['statement'] = statement
         d_entry['support']  = r1
-        d_entry['support_evidence'] = doc_id_1, seg_id_1
+        d_entry['support_evidence'] = support_evidence
         d_entry['dispute'] = r2
-        d_entry['dispute_evidence'] = doc_id_2, seg_id_2
+        d_entry['dispute_evidence'] = dispute_evidence
         parsed_data.append(d_entry)
     return parsed_data
 
