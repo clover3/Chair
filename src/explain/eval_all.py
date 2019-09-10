@@ -442,6 +442,11 @@ def paired_p_test_runner_new():
             'mismatch':['CE_mismatch','W_mismatch'],
             'conflict':['Y_conflict', 'CE_conflict'],
         }
+    best_runner = {
+            'match':['NLIEx_AnyA', 'CE_match'],
+            'mismatch':['CE_mismatch','NLIEx_AnyA'],
+            'conflict':['Y_conflict', 'NLIEx_AnyA'],
+        }
 
     for target_label in ["conflict", "match", "mismatch"]:
         data_id = "{}_1000".format(target_label)
@@ -484,6 +489,11 @@ def paired_p_test_runner_acc():
             'conflict':['Y_conflict', 'LIME'],
             'match':['CE_match','X_match'],
             'mismatch':['CE_mismatch', 'W_mismatch'],
+        }
+    best_runner = {
+            'match':['NLIEx_AnyA', 'CE_match'],
+            'mismatch':['CE_mismatch','NLIEx_AnyA'],
+            'conflict':['Y_conflict', 'NLIEx_AnyA'],
         }
 
 
@@ -874,13 +884,13 @@ if __name__ == '__main__':
     #mismatch_p()
     #merge_lime()
     #paired_p_test_runner_new()
-    #paired_p_test_runner_acc()
+    paired_p_test_runner_acc()
     #run_cut_off("conflict")
-    run_cut_off("match")
+    #run_cut_off("match")
     #run_cut_off("mismatch")
     #paired_p_test_runner()
     #run_test_eval_emnlp("mismatch")
-    run_test_eval_emnlp("match")
+    #run_test_eval_emnlp("match")
     #run_test_eval_emnlp("conflict")
 
     #eval_snli()
