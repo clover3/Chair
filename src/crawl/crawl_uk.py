@@ -3,7 +3,7 @@ from path import data_path
 import pickle
 from crawl.guardian_api import *
 
-save_dir = os.path.join(data_path, "guardian", "opinion")
+save_dir = os.path.join(data_path, "guardian", "any")
 
 
 
@@ -25,7 +25,9 @@ def load_short_ids_from_article_dir(dir_path):
 def crawl_comments(topic_list, comments_dir, logging_path):
     if os.path.exists(logging_path):
         acquire_list = pickle.load(open(logging_path, "rb"))
-    print("Already crawled : ", len(acquire_list))
+        print("Already crawled : ", len(acquire_list))
+    else:
+        acquire_list = set()
     def update_acquired():
         pickle.dump(acquire_list, open(logging_path, "wb"))
 

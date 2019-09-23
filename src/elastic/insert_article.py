@@ -1,5 +1,5 @@
 from elasticsearch import Elasticsearch
-from crawl.guardian_uk import load_commented_articles
+from crawl.guardian_uk import load_commented_articles_opinion
 
 
 def hello():
@@ -9,7 +9,7 @@ def hello():
 
 
 def insert_article():
-    articles = load_commented_articles()
+    articles = load_commented_articles_opinion()
     print("{} articles".format(len(articles)))
     server_name = "gosford.cs.umass.edu"
     es = Elasticsearch(server_name)

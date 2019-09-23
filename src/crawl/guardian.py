@@ -129,6 +129,28 @@ def get_opinion_article(query, page_no):
         print(res.content)
         return None
 
+def get_any_article(query, page_no):
+    page_str = str(page_no)
+    url = "https://content.guardianapis.com/search?" \
+          "&from-date=2019-01-01&to-date=2019-06-30" \
+          "&page-size=200" \
+          "&page={}" \
+          "&show-fields=bodyText%2CshortUrl%2Cbody" \
+          "&q={}"\
+        .format(page_str, query)
+    print(url)
+    apikey = "c13d9515-b19e-412b-b505-994677cc2cf3"
+
+    headers = {
+        "api-key": apikey,
+        "format": "json",
+    }
+    res = requests.get(url, headers)
+    if res.status_code == 200:
+        return res.content
+    else :
+        print(res.content)
+        return None
 
 
 def crawl_opinion_articles(topic):
@@ -155,5 +177,33 @@ def crawl_opinion_articles(topic):
 
     time.sleep(0.1)
 
+
+
+
+def crawl_articles(topic):
+    save_dir = os.path.join(data_path, "guardian", "any")
+
+    def save_query_result(topic, page, content):
+        # topic = topic.replace(" ", "_")
+        topic_dir = os.path.join(save_dir, topic)
+        if not os.path.exists(topic_dir):
+            os.mkdir(topic_dir)
+        file_name = "{}.json".format(page)
+
+        path = os.path.join(topic_dir, file_name)
+        open(path, "wb").write(content)
+
+    content = get_any_article(topic, 1)
+    j = json.loads(content)
+    num_pages = j['response']['pages']
+    save_query_result(topic, 1, content)
+
+    for page_no in range(2, num_pages + 1):
+        content = get_any_article(topic, page_no)
+        save_query_result(topic, page_no, content)
+
+    time.sleep(0.1)
+
+
 if __name__ == "__main__":
-   crawl_opinion_articles("UK")
+    crawl_articles("UK")

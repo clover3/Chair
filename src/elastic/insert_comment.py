@@ -6,7 +6,6 @@ from elasticsearch import Elasticsearch
 
 def load_all_comments(dir_path):
     for comment_path in get_dir_files(dir_path):
-        print(comment_path)
         yield parse_comment.parse_comments(comment_path)
 
 
@@ -28,5 +27,3 @@ def insert_uk_comments():
         r = es.index(index="guardian_comment",body=comment)
 
 
-
-insert_uk_comments()

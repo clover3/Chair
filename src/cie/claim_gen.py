@@ -187,14 +187,14 @@ def dep2statement(key, dependency_edges):
 
     for e in context_edges:
         print(e)
-    #head_ex, tail_ex = expand_context(head, tail, tag, context_edges)
+    head_ex, tail_ex = expand_context(head, tail, tag, context_edges)
 
     if tag == "dobj":
         statement = "One should(n't) {} {}".format(head, tail)
-        #statement = "One should(n't) {} {}".format(head_ex, tail_ex)
+        statement = "One should(n't) {} {}".format(head_ex, tail_ex)
     elif tag == "nsubj":
         statement = "{} should(n't) {}".format(tail, head)
-        #statement = "{} should(n't) {}".format(tail_ex, head_ex)
+        statement = "{} should(n't) {}".format(tail_ex, head_ex)
     elif tag == "nsubjpass":
         statement = "{} should(n't) be {}".format(tail, head)
     else:
@@ -237,7 +237,7 @@ def generate(all_sents, bow_score):
         if w in bow_score:
             return bow_score[w]
         else:
-            return 1
+            return 0
 
     relation_score = Counter()
     for key in relation_counter.keys():
