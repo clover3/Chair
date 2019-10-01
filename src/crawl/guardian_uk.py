@@ -7,6 +7,10 @@ def load_commented_articles_opinion():
     save_dir = os.path.join(data_path, "guardian", "opinion")
     return load_commented_articles(save_dir)
 
+def load_commented_articles_any():
+    save_dir = os.path.join(data_path, "guardian", "any")
+    return load_commented_articles(save_dir)
+
 
 def load_commented_articles(save_dir):
     topic = "UK"
@@ -24,6 +28,11 @@ def load_commented_articles(save_dir):
             commented_articles.append(article)
     return commented_articles
 
+
+def get_list_url_claim3():
+    file_path = os.path.join(data_path, "guardian", "any", "claim3_url.txt")
+    lines = list([l.strip() for l in open(file_path).readlines()])
+    return lines
 
 
 def save():
@@ -51,5 +60,5 @@ def save_url_list():
     print(c)
 
 if __name__ == "__main__":
-    save_url_list()
+    get_list_url_claim3()
 

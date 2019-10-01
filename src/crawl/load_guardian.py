@@ -14,6 +14,21 @@ def parse_paragraph(body):
 
     return paras
 
+
+def load_article_only_short_url(path):
+    f = open(path, encoding='utf-8')
+    j = json.load(f)
+    articles = []
+    for j_article in j['response']['results']:
+        id = j_article['id']
+        short_url = j_article['fields']['shortUrl']
+
+        short_id = short_url[-len("/p/ap83f"):]
+        articles.append((id, short_id))
+    return articles
+
+
+
 def load_article_w_title(path):
     f = open(path, encoding='utf-8')
     j = json.load(f)

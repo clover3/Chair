@@ -91,6 +91,9 @@ def analyze_parameter():
     def dist_sum(m1, m2):
         return np.sum(np.abs(m1 - m2))
 
+    def dist_max(m1, m2):
+        return np.max(np.abs(m1 - m2))
+
     def dist_avg(m1, m2):
         return np.average(np.abs(m1 - m2))
 
@@ -102,7 +105,8 @@ def analyze_parameter():
 
         sum_d = dist_sum(v1, v2)
         avg_d = dist_avg(v1, v2)
-        print("{}\t{}\t{}\t{}".format(key, v1.shape, sum_d, avg_d))
+        max_d = dist_max(v1, v2)
+        print("{}\t{}\t{}\t{}\t{}".format(key, v1.shape, sum_d, avg_d, max_d))
 
         tokens = key.split("/")
         if tokens[2].startswith("layer_"):

@@ -1,5 +1,5 @@
 from elasticsearch import Elasticsearch
-from crawl.guardian_uk import load_commented_articles_opinion
+from crawl.guardian_uk import load_commented_articles_opinion, load_commented_articles_any, get_list_url_claim3
 
 
 def hello():
@@ -19,6 +19,25 @@ def insert_article():
         r = es.index(index="guardian", body=infos)
 
 
-#hello()
-insert_article()
+
+def insert_white_list_articles():
+    urls = get_list_url_claim3()
+    print(urls)
+    articles = load_commented_articles_any()
+
+    selected = []
+    for a in articles:
+        id, title, short_id, infos = a
+        if infos['webUrl'] in urls:
+            selected.append(a)
+
+    print("TOtal of {} articles " .format(len(selected)))
+    server_name = "gosford.cs.umass.edu"
+    es = Elasticsearch(server_name)
+    for article in articles:
+        id, title, short_id, infos = article
+        r = es.index(index="guardian", body=infos)
+
+
+insert_white_list_articles()
 

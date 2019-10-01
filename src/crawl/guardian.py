@@ -1,7 +1,10 @@
 import os
 import requests
 import json
+from datetime import datetime, timedelta
+import calendar
 import time
+
 
 from crawl.guardian_api import get_comment, load_short_ids_from_path
 from path import data_path
@@ -153,6 +156,30 @@ def get_any_article(query, page_no):
         return None
 
 
+def get_article_list(time_from, time_to, page_no):
+    page_str = str(page_no)
+    url = "https://content.guardianapis.com/search?" \
+          "&from-date={}&to-date={}" \
+          "&page-size=200" \
+          "&show-fields=shortUrl" \
+          "&page={}" \
+        .format(time_from, time_to, page_str)
+    print(url)
+    apikey = "c13d9515-b19e-412b-b505-994677cc2cf3"
+
+    headers = {
+        "api-key": apikey,
+        "format": "json",
+    }
+    res = requests.get(url, headers)
+    if res.status_code == 200:
+        return res.content
+    else :
+        print(res.content)
+        return None
+
+
+
 def crawl_opinion_articles(topic):
     save_dir = os.path.join(data_path, "guardian", "opinion")
 
@@ -205,5 +232,40 @@ def crawl_articles(topic):
     time.sleep(0.1)
 
 
+def save_by_time(year, month, page, content):
+    dir_name = "{}-{}".format(year, month)
+    dir_path = os.path.join(scope_dir, "by_time", dir_name)
+    if not os.path.exists(dir_path):
+        os.mkdir(dir_path)
+    file_name = "{}.json".format(page)
+    path = os.path.join(dir_path, file_name)
+    open(path, "wb").write(content)
+
+
+def crawl_by_time(year, month):
+    begin = datetime(year, month, 1)
+    d1, dl = calendar.monthrange(year, month)
+    end = datetime(year, month, dl)
+    time_from = begin.strftime("%Y-%m-%d")
+    time_to = end.strftime("%Y-%m-%d")
+    content = get_article_list(time_from, time_to, 1)
+    j = json.loads(content)
+    num_pages = j['response']['pages']
+    save_by_time(year, month, 1, content)
+    for page_no in range(2, num_pages + 1):
+        content = get_article_list(time_from, time_to, page_no)
+        save_by_time(year, month, page_no, content)
+
+
+
+
+def craw_all_articles():
+    for year in range(2019, 2010, -1):
+        for month in range(1,13):
+            print(year, month)
+            crawl_by_time(year, month)
+
+
+
 if __name__ == "__main__":
-    crawl_articles("UK")
+    craw_all_articles()
