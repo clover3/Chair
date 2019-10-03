@@ -42,7 +42,7 @@ def guardian_generate(query):
     entities_all = Counter()
     print("POS tagging...")
     shuffle(sents)
-    size_small =int(len(sents)*0.1)
+    size_small = int(len(sents)*0.1)
     ticker = TimeEstimator(size_small)
     sub_sents = sents[:size_small]
     for sent in sub_sents:

@@ -6,7 +6,6 @@ from elasticsearch import Elasticsearch
 
 def load_all_comments(dir_path):
     for comment_path in get_dir_files(dir_path):
-        print(comment_path)
         yield parse_comment.parse_comments(comment_path)
 
 
@@ -19,7 +18,8 @@ def load_guardian_uk_comments():
     return load_all_comments(comments_dir)
 
 def insert_uk_comments():
-    es = Elasticsearch("localhost")
+    server_name = "gosford.cs.umass.edu"
+    es = Elasticsearch(server_name)
     data = load_guardian_uk_comments()
 
     for comment in data:
@@ -44,9 +44,3 @@ def insert_comment_piece():
 
         print()
 
-
-
-
-
-
-insert_comment_piece()

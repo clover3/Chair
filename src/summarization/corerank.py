@@ -2,8 +2,11 @@ import copy
 import heapq
 import itertools
 import operator
+import math
 
 import igraph
+from collections import Counter, defaultdict
+from summarization.tokenizer import tokenize
 
 
 def terms_to_graph(lists_of_terms, window_size, overspanning):
@@ -193,8 +196,22 @@ def get_core_rank_scores(lists_of_terms, window_size=3, overspanning=False, weig
     # core_rank_scores = sum_numbers_neighbors(g, sorted_cores_g)
 
 
-def corerank(sents):
-    print("Running Corerank")
+
+def build_idf(docs):
+    df = Counter()
+    for tokens in docs:
+        for token in set(tokens):
+            df[token] += 1
+
+    default_value = math.log(len(docs) + 1)
+    def def_fac():
+        return default_value
+    idf = defaultdict(def_fac)
+    for token in df.keys():
+        idf[token] = math.log(len(docs) / df[token])
+    return idf
+
+def corerank(sents, stopwords):
     terms_list = [tokenize(s, stopwords) for s in sents]
     idf = build_idf(terms_list)
     # get controversy key phrase about article

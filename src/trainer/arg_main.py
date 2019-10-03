@@ -476,12 +476,12 @@ def train_arg_nli_shared():
     train_ukp_with_nli(load_id, "AN_B_40000_2")
 
 def test_arg_nli_shared():
-    eval_ukp_with_nli("argnli_model_B_40000")
+    eval_ukp_with_nli("AN_B_40000_2")
 
 
 if __name__ == '__main__':
     begin = time.time()
-    action = "fetch_bert_and_train"
+    action = "test_arg_nli_shared"
     locals()[action]()
 
     elapsed = time.time() - begin

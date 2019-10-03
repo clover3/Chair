@@ -217,16 +217,16 @@ def train_nli_smart_rf():
 
     e_config = ExperimentConfig()
 
-    e_config.name = "NLIEx_{}".format("match")
+    e_config.name = "NLIEx_{}".format("hinge_conflict")
     e_config.num_epoch = 1
     e_config.ex_val = True
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert', 'cls_dense'] #, 'aux_conflict']
 
     #explain_tag = 'match'  # 'dontcare'  'match' 'mismatch'
-    explain_tag = 'match'
+    #explain_tag = 'match'
     #explain_tag = 'mismatch'
-    #explain_tag = 'conflict'
+    explain_tag = 'conflict'
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     #load_id = ("NLI_run_nli_warm", "model-97332")
@@ -236,14 +236,15 @@ def train_nli_smart_rf():
     #load_id = ("NLIEx_D", "model-1317")
     load_id = ("NLI_run_A", 'model-0')
 
-    e.train_nli_smart(nli_setting, e_config, data_loader, load_id, explain_tag, 5)
+    e.train_nli_smart(nli_setting, e_config, data_loader, load_id, explain_tag, 7)
 
 
 
 
 
 def tuning_train_nli_rf():
-    for g_del in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+    l = [0.9]
+    for g_del in l:
         tf.reset_default_graph()
         hp = hyperparams.HPSENLI()
         hp.g_val = g_del
@@ -261,8 +262,8 @@ def tuning_train_nli_rf():
         e_config.save_interval = 30 * 60  # 30 minutes
         e_config.load_names = ['bert', 'cls_dense'] #, 'aux_conflict']
 
-        #explain_tag = 'match'  # 'dontcare'  'match' 'mismatch'
-        explain_tag = 'conflict'
+        explain_tag = 'match'  # 'dontcare'  'match' 'mismatch'
+        #explain_tag = 'conflict'
         #explain_tag = 'mismatch'
         #explain_tag = 'conflict'
 
@@ -440,14 +441,14 @@ def predict_rf():
     nli_setting = NLI()
     nli_setting.vocab_size = 30522
     nli_setting.vocab_filename = "bert_voca.txt"
-    target_label = 'conflict'
-    data_id = 'test_conflict'
-    #data_id = "{}_1000".format(target_label)
+    target_label = 'mismatch'
+    #data_id = 'test_conflict'
+    data_id = "{}_1000".format(target_label)
     e_config = ExperimentConfig()
 
     #del_g = 0.7
     #e_config.name = "X_match_del_{}".format(del_g)
-    e_config.name = "CE_{}".format(target_label)
+    e_config.name = "NLIEx_AnyA_{}".format(target_label)
     e_config.load_names = ['bert', 'cls_dense', 'aux_conflict']
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
@@ -458,8 +459,31 @@ def predict_rf():
     load_id = ("NLIEx_X_match", "model-12238")
     #load_id = ("NLIEx_match_del_{}".format(del_g), "model-4390")
     load_id = ("NLIEx_CE_{}".format(target_label), "model-12199")
-    e.predict_rf(nli_setting, e_config, data_loader, load_id, data_id, 2)
+    load_id = ("NLIEx_AnyA", "model-7255")
+    e.predict_rf(nli_setting, e_config, data_loader, load_id, data_id, 5)
 
+
+def predict_rf_tune():
+    hp = hyperparams.HPBert()
+    hp.batch_size = 256
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+    target_label = 'match'
+    #data_id = 'test_conflict'
+    data_id = "{}_1000".format(target_label)
+    e_config = ExperimentConfig()
+    l = [(0.1, 12039), (0.2, 12245), (0.3, 12063), (0.4, 12250), (0.6, 12262), (0.7, 12253)]
+    l = [(0.5, 12175), (0.8, 12269), (0.9, 12259)]
+    for del_g, step in l :
+        e_config.name = "X_match_del_{}".format(del_g)
+        e_config.load_names = ['bert', 'cls_dense', 'aux_conflict']
+
+        data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+        load_id = ("NLIEx_match_del_{}".format(del_g), "model-{}".format(step))
+        e.clear_run()
+        e.predict_rf(nli_setting, e_config, data_loader, load_id, data_id, 5)
 
 
 def pred_mnli_anyway():
@@ -677,5 +701,5 @@ def test_ubuntu():
 
 
 if __name__ == '__main__':
-    action = "predict_rf"
+    action = "predict_rf_tune"
     locals()[action]()

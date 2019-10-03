@@ -255,6 +255,14 @@ def get_dir_files(dir_path):
 
     return path_list
 
+def get_dir_dir(dir_path):
+    path_list = []
+    for (dirpath, dirnames, filenames) in os.walk(dir_path):
+        for dirname in dirnames:
+            path_list.append(os.path.join(dir_path, dirname))
+
+    return path_list
+
 
 def sample_prob(prob):
     v = random.random()

@@ -117,7 +117,7 @@ def eval_ukp_with_nli(exp_name):
     encode_opt = "is_good"
     num_class_list = [3, 3]
     f1_list = []
-    save_path = "/mnt/scratch/youngwookim/Chair/output/model/runs/argmix_argnli_model_B_40000_abortion_is_good/model-18096"
+    save_path = "/mnt/scratch/youngwookim/Chair/output/model/runs/argmix_AN_B_40000_abortion_is_good/model-21306"
     for topic in ukp.all_topics[:1]:
         e = Experiment(hp)
         print(exp_name)

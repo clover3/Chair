@@ -30,5 +30,6 @@ def parse_comments(file_path):
                     tail.append((res_id, res_body, comment_target))
             info['comments'].append((head, tail))
     except KeyError as e:
+        print(e)
         print(file_path)
     return info
