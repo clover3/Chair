@@ -10,6 +10,7 @@ from google import gsutil
 from data_generator.shared_setting import NLI
 from trainer.tf_module import *
 from data_generator.NLI import nli
+from data_generator.adhoc import ws
 
 
 def train_rte():
@@ -157,6 +158,24 @@ def tlm_test(dir_name):
         print(key, summary[key])
 
 
+def bert_lm_test():
+    hp = hyperparams.HPQL()
+
+    e = Experiment(hp)
+
+    e_config = ExperimentConfig()
+    e_config.name = "Contrv_{}".format("B")
+    e_config.num_epoch = 4
+    e_config.save_interval = 30 * 60  # 30 minuteslm_protest
+    e_config.load_names = ['bert', 'cls']
+    vocab_size = 30522
+    vocab_filename = "bert_voca.txt"
+
+    data_loader = ws.DataLoader(hp.seq_max, vocab_filename, vocab_size)
+    load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
+    e.bert_lm_test(e_config, data_loader, load_id)
+
+
 def tlm_simple_cold_wo_hint():
     tlm_test("tlm_simple_wo_hint")
 
@@ -180,7 +199,7 @@ def baseline_run():
 
 if __name__ == '__main__':
     begin = time.time()
-    action = "tlm_simple_cold_256"
+    action = "bert_lm_test"
     locals()[action]()
 
     elapsed = time.time() - begin

@@ -6790,6 +6790,129 @@ class Experiment:
         print("acc\t", acc)
 
 
+
+    def bert_lm_test(self, exp_config, data_loader, preload_id):
+        task = transformer_ql(self.hparam, data_loader.voca_size)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+        print("Loading Model...")
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            if exp_config.load_names:
+                self.load_model_white(name, id, exp_config.load_names)
+            else:
+                self.load_model_bert(name, id)
+
+        encoder_unit = data_loader.encoder_unit
+        batch_size = self.hparam.batch_size
+        query_seq_len = self.hparam.query_seq_len
+        mask_id = encoder_unit.encoder.ft.convert_tokens_to_ids(["[MASK]"])[0]
+        dummy_mask_id = encoder_unit.encoder.ft.convert_tokens_to_ids(["mask"])[0]
+
+        print(mask_id)
+        print(dummy_mask_id)
+
+        def mask_encode(text):
+            tokens_a = encoder_unit.encoder.encode(text)
+            new_tokens = []
+            for t in tokens_a:
+                if t == dummy_mask_id:
+                    new_tokens.append(mask_id)
+                else:
+                    new_tokens.append(t)
+
+            tokens_a = new_tokens
+            print(tokens_a)
+            max_a_len = encoder_unit.max_seq - 2
+            sub_tokens_a = tokens_a[:max_a_len]
+            return encoder_unit.encode_inner(sub_tokens_a, [])
+
+        def get_score(texts):
+            def eval(runs):
+                tprint("Packing batches (batch_size={})".format(batch_size))
+                batches = get_batches_ex(runs, batch_size, 4)
+
+                tprint("Runing neural network prediction (#batch={})".format(len(batches)))
+                y_list = []
+                x_list = []
+                ticker = TimeEstimator(len(batches), sample_size=20)
+                for batch in batches:
+                    x0, x1, x2, y = batch
+                    probs, = self.sess.run([task.log_probs, ],
+                                           feed_dict={
+                                               task.x_list[0]: x0,
+                                               task.x_list[1]: x1,
+                                               task.x_list[2]: x2,
+                                               task.y: y,
+                                           })
+                    y_list.append(probs)
+                    x_list.append(x0)
+                    ticker.tick()
+                xs = np.concatenate(x_list)
+                ys = np.concatenate(y_list)
+                return xs, ys
+
+
+            runs = []
+            for text in texts:
+                encoded = mask_encode(text)
+                run = (encoded['input_ids'],
+                       encoded['input_mask'],
+                       encoded['segment_ids'],
+                       0)
+                runs.append(run)
+
+
+            xs, ys = eval(runs)
+            tprint("Completed GPU computations")
+            return xs, ys
+
+        templage = "The capital of {} is mask,"
+        country_list = [
+            "China",
+            "Japan",
+            "Germany",
+            "India",
+            "United Kingdom",
+            "France",
+            "Italy",
+            "Brazil",
+            "Canada",
+            "Korea, South",
+            "Russia",
+            "Spain",
+            "Australia",
+            "Mexico",
+            "Indonesia",
+        ]
+        texts = []
+        for country in country_list:
+            texts.append(templage.format(country))
+
+        def get_voca(idx):
+            return encoder_unit.encoder.ft.convert_ids_to_tokens([idx])[0]
+
+        xs, ys = get_score(texts)
+        for i, text in enumerate(texts):
+            print(text)
+            for j in range(len(xs[i])):
+                if xs[i][j] == mask_id:
+                    voca_scores = ys[i][j][0]
+                    ranked = np.argsort(voca_scores)
+                    ranked = np.flip(ranked)
+                    print(" candidate : ")
+                    for k in range(20):
+                        w_idx = ranked[k]
+                        print(get_voca(w_idx), end=" / ")
+                    print("")
+
+
+
+
+
     def controv_lm(self, exp_config, data_loader, preload_id):
         task = transformer_ql(self.hparam, data_loader.voca_size)
         self.sess = self.init_sess()

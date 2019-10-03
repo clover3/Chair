@@ -81,9 +81,10 @@ class transformer_ql:
 
             emb_ex = expand_transpose(self.model.get_embedding_table())
 
-            logits = tf.matmul(token_enc, emb_ex)
+            logits = tf.tensordot(token_enc, emb_ex, [[2],[1]])
             logits = tf.nn.bias_add(logits, output_bias)
             log_probs = tf.nn.log_softmax(logits, axis=-1)
+            self.log_probs = log_probs
 
             query_vector = get_query_encode(self.query)
             query_likelihood_i = tf.matmul(token_enc, query_vector, transpose_b=True) # [None, seq_len, H] * [None, H, Q_len] -> [None, sqe_len, Q_len]
