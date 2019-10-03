@@ -27,3 +27,20 @@ def insert_uk_comments():
         r = es.index(index="guardian_comment",body=comment)
 
 
+def insert_comment_piece():
+    es = Elasticsearch("localhost")
+    data = load_guardian_uk_comments()
+
+    for comment in data:
+        r = comment['comments']
+        short_id = comment['short_id']
+        for e in r:
+            head, tail = e
+            p = {'id':head[0], 'text':head[1], 'dicsussion_id':short_id}
+            r = es.index(index="guardian_comment_piece", body = p)
+            for t in tail:
+                p = {'id':t[0], 'text':t[1], 'discussion_id':short_id}
+                r = es.index(index="guardian_comment_piece", body=p)
+
+        print()
+
