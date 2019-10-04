@@ -105,6 +105,8 @@ class IBertConfig(object):
     return json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n"
 
 
+
+
 class IBertModel(object):
   """BERT model ("Bidirectional Embedding Representations from a Transformer").
 
@@ -1051,3 +1053,10 @@ def assert_rank(tensor, expected_rank, name=None):
         "For the tensor `%s` in scope `%s`, the actual rank "
         "`%d` (shape = %s) is not equal to the expected rank `%s`" %
         (name, scope_name, actual_rank, str(tensor.shape), str(expected_rank)))
+
+def construct_vocamask(mask, l):
+  sequence_shape = get_shape_list(mask, expected_rank=3)
+  batch_size = sequence_shape[0]
+  indice = tf.range(batch_size)
+  sp_indice =tf.concat([indice, mask], axis=1)
+  return tf.SparseTensor(sp_indice, 1, [l, l])

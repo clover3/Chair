@@ -33,18 +33,18 @@ class VocaMasker:
     def input_ids2voca_mask(self, input_ids):
         last_begin = 0
         l = self.max_seq
-        voca_mask = np.zeros([l,l], dtype=int)
+        voca_mask_indice = []
 
         def mark_mask(begin, to):
             for i in range(begin, to+1):
                 for j in range(begin, to + 1):
-                    voca_mask[i,j] = 1
+                    voca_mask_indice.append((i,j))
 
         for i, token_id in enumerate(input_ids):
             if not self.is_postfix(token_id):
                 last_begin = i
             mark_mask(last_begin, i)
-        return np.reshape(voca_mask, [-1])
+        return np.reshape(voca_mask_indice, [-1])
 
 
 def convert_write(output_file, examples):

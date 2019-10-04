@@ -50,7 +50,6 @@ def main():
 def simple():
     out_path = os.path.join(working_path, "tf")
     worker = Worker(out_path)
-
     worker.work(int(sys.argv[1]))
 
 
