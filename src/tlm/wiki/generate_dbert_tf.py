@@ -9,132 +9,143 @@ from tlm.retreive_candidates import get_visible
 from tlm.stem import CacheStemmer
 from tlm.galago_query_maker import clean_query
 from collections import Counter
+import collections
 from adhoc.bm25 import BM25_3, BM25_3_q_weight
 from misc_lib import left, TimeEstimator
 from models.classic.stopword import load_stopwords
 from adhoc.galago import load_df, write_query_json
+import tensorflow as tf
 from tlm.wiki import bert_training_data as btd
+from tlm.wiki.bert_training_data import *
 import time
 
 working_path ="/mnt/nfs/work3/youngwookim/data/dbert_tf"
 
-def add_d_info(instances):
-  def reconstruct(tokens):
-    groups = [] 
-    for idx, t in tokens:
-      if t.startswith("##"):
-        groups[-1].append((idx, t))
-      else:
-        groups.append((idx, t))
-    new_group = [] 
-    for e in groups:
-       subtoken_list = []
-       indice = []
-       for idx, t in e:
-         subtoken_list.append(t)
-         indice.append(idx)
-       new_group.append(subtoken_list, indice))
-    return new_group
-    
-  for inst in instances:
-    m = reconstruct(inst.tokens)
-    
-    candidates = []
-    for e in m:
-      subwords, indice = e
-      skip = False
-      for idx in indice:
-        if idx in inst.masked_lm_positions:
-          skip = True 
-      if not skip:
-        word = join(subwords)
-        score = get_score(word)
-        candidates.append((word, indice, score))
-        
-      
+def add_d_info(instances, dictionary):
+    def reconstruct(tokens):
+        groups = [] 
+        for idx, t in tokens:
+            if t.startswith("##"):
+                groups[-1].append((idx, t))
+            else:
+                groups.append([(idx, t)])
+        new_group = [] 
+        for e in groups:
+             subtoken_list = []
+             indice = []
+             for idx, t in e:
+                 subtoken_list.append(t)
+                 indice.append(idx)
+             new_group.append((subtoken_list, indice))
+        return new_group
+    def join(subwords):
+        out_s = subwords[0]
+        for s in subwords[1:]:
+            assert "##" == s[:2]
+            out_s += s[2:]
+        return out_s
 
-    
-    for idx, t in enumerate(inst.tokens):
-      if idx in inst.masked_lm_positions:
-        continue
-      
+    def get_score(word):
+        if word not in dictionary:
+            return 0
+        num_def = dictionary.get_n_def(word)
+        idf = dictionary.idf(word)
+        return idf / num_def
+
+    for inst in instances:
+        m = reconstruct(inst.tokens)
+
+        candidates = []
+        for e in m:
+            subwords, indice = e
+            skip = False
+            for idx in indice:
+                if idx in inst.masked_lm_positions:
+                    skip = True
+            if not skip:
+                word = join(subwords)
+                score = get_score(word)
+                candidates.append((word, indice, score))
+
+        candidates.sort(key=lambda x:x[2], reverse=True)
+
 def write_instance_to_example_files(instances, tokenizer, max_seq_length,
                                     max_predictions_per_seq, output_files):
-  """Create TF example files from `TrainingInstance`s."""
-  writers = []
-  for output_file in output_files:
-    writers.append(tf.python_io.TFRecordWriter(output_file))
+    """Create TF example files from `TrainingInstance`s."""
+    writers = []
+    for output_file in output_files:
+        writers.append(tf.python_io.TFRecordWriter(output_file))
 
-  writer_index = 0
+    writer_index = 0
 
-  total_written = 0
-  for (inst_index, instance) in enumerate(instances):
-    input_ids = tokenizer.convert_tokens_to_ids(instance.tokens)
-    input_mask = [1] * len(input_ids)
-    segment_ids = list(instance.segment_ids)
+    total_written = 0
+    for (inst_index, instance) in enumerate(instances):
+        input_ids = tokenizer.convert_tokens_to_ids(instance.tokens)
+        input_mask = [1] * len(input_ids)
+        segment_ids = list(instance.segment_ids)
 
-    d_input_ids = tokenizer.convert_tokens_to_ids(instance.d_tokens)
-    d_input_mask = [1] * len(d_input_ids)
-    d_loc_ids = [instance.d_loc] * len(d_input_ids)
-    assert len(input_ids) <= max_seq_length
+        d_input_ids = tokenizer.convert_tokens_to_ids(instance.d_tokens)
+        d_input_mask = [1] * len(d_input_ids)
+        d_loc_ids = [instance.d_loc] * len(d_input_ids)
+        assert len(input_ids) <= max_seq_length
 
-    while len(input_ids) < max_seq_length:
-      input_ids.append(0)
-      input_mask.append(0)
-      segment_ids.append(0)
+        while len(input_ids) < max_seq_length:
+            input_ids.append(0)
+            input_mask.append(0)
+            segment_ids.append(0)
 
-    assert len(input_ids) == max_seq_length
-    assert len(input_mask) == max_seq_length
-    assert len(segment_ids) == max_seq_length
+        assert len(input_ids) == max_seq_length
+        assert len(input_mask) == max_seq_length
+        assert len(segment_ids) == max_seq_length
 
-    masked_lm_positions = list(instance.masked_lm_positions)
-    masked_lm_ids = tokenizer.convert_tokens_to_ids(instance.masked_lm_labels)
-    masked_lm_weights = [1.0] * len(masked_lm_ids)
+        masked_lm_positions = list(instance.masked_lm_positions)
+        masked_lm_ids = tokenizer.convert_tokens_to_ids(instance.masked_lm_labels)
+        masked_lm_weights = [1.0] * len(masked_lm_ids)
 
-    while len(masked_lm_positions) < max_predictions_per_seq:
-      masked_lm_positions.append(0)
-      masked_lm_ids.append(0)
-      masked_lm_weights.append(0.0)
+        while len(masked_lm_positions) < max_predictions_per_seq:
+            masked_lm_positions.append(0)
+            masked_lm_ids.append(0)
+            masked_lm_weights.append(0.0)
 
-    next_sentence_label = 1 if instance.is_random_next else 0
-    features = collections.OrderedDict()
-    features["input_ids"] = create_int_feature(input_ids)
-    features["input_mask"] = create_int_feature(input_mask)
-    features["segment_ids"] = create_int_feature(segment_ids)
-    features["d_input_ids"] = create_int_feature(d_input_ids)
-    features["d_input_mask"] = create_int_feature(d_input_mask)
-    features["d_loc_ids"] = create_int_feature(d_loc_ids)
-    features["masked_lm_positions"] = create_int_feature(masked_lm_positions)
-    features["masked_lm_ids"] = create_int_feature(masked_lm_ids)
-    features["masked_lm_weights"] = create_float_feature(masked_lm_weights)
-    features["next_sentence_labels"] = create_int_feature([next_sentence_label])
+        next_sentence_label = 1 if instance.is_random_next else 0
+        features = collections.OrderedDict()
+        features["input_ids"] = create_int_feature(input_ids)
+        features["input_mask"] = create_int_feature(input_mask)
+        features["segment_ids"] = create_int_feature(segment_ids)
+        features["d_input_ids"] = create_int_feature(d_input_ids)
+        features["d_input_mask"] = create_int_feature(d_input_mask)
+        features["d_loc_ids"] = create_int_feature(d_loc_ids)
+        features["masked_lm_positions"] = create_int_feature(masked_lm_positions)
+        features["masked_lm_ids"] = create_int_feature(masked_lm_ids)
+        features["masked_lm_weights"] = create_float_feature(masked_lm_weights)
+        features["next_sentence_labels"] = create_int_feature([next_sentence_label])
 
-    tf_example = tf.train.Example(features=tf.train.Features(feature=features))
+        tf_example = tf.train.Example(features=tf.train.Features(feature=features))
 
-    writers[writer_index].write(tf_example.SerializeToString())
-    writer_index = (writer_index + 1) % len(writers)
+        writers[writer_index].write(tf_example.SerializeToString())
+        writer_index = (writer_index + 1) % len(writers)
 
-    total_written += 1
+        total_written += 1
 
-    if inst_index < 20:
-      tf.logging.info("*** Example ***")
-      tf.logging.info("tokens: %s" % " ".join(
-          [tokenizer_b.printable_text(x) for x in instance.tokens]))
+        if inst_index < 20:
+            tf.logging.info("*** Example ***")
+            tf.logging.info("tokens: %s" % " ".join(
+                    [tokenizer_b.printable_text(x) for x in instance.tokens]))
 
-      for feature_name in features.keys():
-        feature = features[feature_name]
-        values = []
-        if feature.int64_list.value:
-          values = feature.int64_list.value
-        elif feature.float_list.value:
-          values = feature.float_list.value
-        tf.logging.info(
-            "%s: %s" % (feature_name, " ".join([str(x) for x in values])))
+            for feature_name in features.keys():
+                feature = features[feature_name]
+                values = []
+                if feature.int64_list.value:
+                    values = feature.int64_list.value
+                elif feature.float_list.value:
+                    values = feature.float_list.value
+                tf.logging.info(
+                        "%s: %s" % (feature_name, " ".join([str(x) for x in values])))
 
-  for writer in writers:
-    writer.close()
+    for writer in writers:
+        writer.close()
 
-  tf.logging.info("Wrote %d total instances", total_written)
+    tf.logging.info("Wrote %d total instances", total_written)
 
 def parse_wiki(file_path):
     f = open(file_path, "r")
