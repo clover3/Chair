@@ -58,6 +58,7 @@ def convert_write(output_file, examples):
             new_feature[key] = feature[key]
 
         mask = vm.input_ids2voca_mask(feature['input_ids'].int64_list.value)
+        print(len(mask))
         new_feature["voca_mask"] = create_int_feature(mask)
         tf_example = tf.train.Example(features=tf.train.Features(feature=new_feature))
         writers.write(tf_example.SerializeToString())

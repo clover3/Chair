@@ -356,7 +356,7 @@ def input_fn_builder(input_files,
         "segment_ids":
             tf.FixedLenFeature([max_seq_length], tf.int64),
         "voca_mask":
-            tf.FixedLenFeature([max_seq_length*max_seq_length], tf.int64),
+            tf.FixedLenFeature([max_seq_length], tf.int64),
         "masked_lm_positions":
             tf.FixedLenFeature([max_predictions_per_seq], tf.int64),
         "masked_lm_ids":
