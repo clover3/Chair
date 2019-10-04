@@ -120,9 +120,49 @@ def combine(path):
         print(s)
         print(result[s])
 
+def summary(path):
+    data = load_stance_verify_annot(path)
+
+    group = {}
+    sig2data = {}
+    for e in data:
+        sig = e['statement'] + e['link']
+        sig2data[sig] = e['statement'], e['link']
+        if sig not in group:
+            group[sig] = []
+
+        group[sig].append((e['support'], e['dispute']))
+
+    NOT_FOUND = 0
+    YES = 1
+    NOT_SURE = 2
+
+    for sig in group:
+        statement, link = sig2data[sig]
+        print("------------")
+        print("Statement: ", statement)
+        print("Text : ", link)
+        cnt = 1
+        for s, d in group[sig]:
+            s_word = {
+                NOT_FOUND: "NotSupport",
+                YES: "Support",
+                NOT_SURE:"NotSure",
+            }[s]
+
+            d_word = {
+                NOT_FOUND: "NotDispute",
+                YES: "Dispute",
+                NOT_SURE: "NotSure",
+            }[d]
+            print("CrowdWorker#{}: ".format(cnt), s_word, d_word)
+            cnt += 1
+
+
+
 if __name__ == "__main__":
     path = "C:\work\Data\CKB annotation\\verify stance -1\\Batch_3784489_batch_results.csv"
-    combine(path)
+    summary(path)
 
 
 
