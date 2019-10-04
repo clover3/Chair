@@ -33,7 +33,7 @@ class VocaMasker:
     def input_ids2voca_mask(self, input_ids):
         last_begin = 0
         l = self.max_seq
-        voca_mask = np.zeros([l,l])
+        voca_mask = np.zeros([l,l], dtype=int)
 
         def mark_mask(begin, to):
             for i in range(begin, to+1):
@@ -57,13 +57,10 @@ def convert_write(output_file, examples):
         for key in feature.keys():
             new_feature[key] = feature[key]
 
-        mask = vm.input_ids2voca_mask(feature['input_ids'])
+        mask = vm.input_ids2voca_mask(feature['input_ids'].int64_list.value)
         new_feature["voca_mask"] = create_int_feature(mask)
         tf_example = tf.train.Example(features=tf.train.Features(feature=new_feature))
         writers.write(tf_example.SerializeToString())
-        cnt += 1
-        if cnt > 1000:
-            break
 
 def dev():
     path = "/mnt/nfs/work3/youngwookim/data/bert_tf/tf/done/0"
