@@ -30,21 +30,23 @@ class VocaMasker:
     def is_postfix(self, idx):
         return idx in self.postfix_indice
 
-    def input_ids2voca_mask(self, input_ids):
+    def input_ids_to_attn_range(self, input_ids):
         last_begin = 0
         l = self.max_seq
-        voca_mask_indice = []
-
-        def mark_mask(begin, to):
-            for i in range(begin, to+1):
-                for j in range(begin, to + 1):
-                    voca_mask_indice.append((i,j))
-
+        intervals = []
         for i, token_id in enumerate(input_ids):
             if not self.is_postfix(token_id):
+                intervals.append((last_begin, i))
                 last_begin = i
-            mark_mask(last_begin, i)
-        return np.reshape(voca_mask_indice, [-1])
+
+        intervals.append((last_begin, self.max_seq))
+
+        attention_range = []
+        for st, ed in intervals:
+            for i in range(st, ed):
+                attention_range.append(ed)
+        assert len(attention_range) == self.max_seq
+        return attention_range
 
 
 def convert_write(output_file, examples):
@@ -57,11 +59,13 @@ def convert_write(output_file, examples):
         for key in feature.keys():
             new_feature[key] = feature[key]
 
-        mask = vm.input_ids2voca_mask(feature['input_ids'].int64_list.value)
-        print(len(mask))
-        new_feature["voca_mask"] = create_int_feature(mask)
+        attn_range = vm.input_ids_to_attn_range(feature['input_ids'].int64_list.value)
+        new_feature["voca_mask"] = create_int_feature(attn_range)
         tf_example = tf.train.Example(features=tf.train.Features(feature=new_feature))
         writers.write(tf_example.SerializeToString())
+        if cnt > 1000:
+            break
+        cnt += 1
 
 def dev():
     path = "/mnt/nfs/work3/youngwookim/data/bert_tf/tf/done/0"

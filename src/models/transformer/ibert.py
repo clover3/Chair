@@ -167,7 +167,9 @@ class IBertModel(object):
     input_shape = get_shape_list(input_ids, expected_rank=2)
     batch_size = input_shape[0]
     seq_length = input_shape[1]
-
+    print(voca_mask)
+    voca_mask = get_mask_batch(voca_mask, seq_length)
+    print(voca_mask)
     if input_mask is None:
       input_mask = tf.ones(shape=[batch_size, seq_length], dtype=tf.int32)
 
@@ -308,7 +310,6 @@ def get_activation(activation_string):
 
   if not activation_string:
     return None
-  transformer_model
   act = activation_string.lower()
   if act == "linear":
     return None
@@ -1053,10 +1054,27 @@ def assert_rank(tensor, expected_rank, name=None):
         "For the tensor `%s` in scope `%s`, the actual rank "
         "`%d` (shape = %s) is not equal to the expected rank `%s`" %
         (name, scope_name, actual_rank, str(tensor.shape), str(expected_rank)))
+  
+def get_mask_batch(b, max_seq):
+  print("get_mask_batch shaep : ", b.shape)
+  def get_mask(seed_mask):
+    def f(x):
+      a0 = tf.zeros([x[0]], dtype=tf.int32)
+      a1 = tf.ones([x[1] - x[0]], dtype=tf.int32)
+      a2 = tf.zeros([max_seq - x[1]], dtype=tf.int32)
+      return tf.concat([a0, a1, a2], axis=0)
 
-def construct_vocamask(mask, l):
-  sequence_shape = get_shape_list(mask, expected_rank=3)
-  batch_size = sequence_shape[0]
+    v = tf.stack([tf.range(max_seq), seed_mask], axis=1)
+    mask = tf.map_fn(f, v, infer_shape=False)
+    return mask
+
+  return tf.map_fn(get_mask, b, infer_shape=False)
+
+
+def construct_vocamask(linear_mask, batch_size, seq_length):
+  linear_mask = tf.sparse_to_dense(linear_mask)
+  mask = tf.sparse.reshape(linear_mask, [-1, 2])
   indice = tf.range(batch_size)
   sp_indice =tf.concat([indice, mask], axis=1)
+  l = seq_length
   return tf.SparseTensor(sp_indice, 1, [l, l])
