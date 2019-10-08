@@ -27,16 +27,17 @@ import six
 import tensorflow as tf
 
 
-class IBertConfig(object):
+class IBert1Config(object):
   """Configuration for `BertModel`."""
 
   def __init__(self,
                vocab_size,
                hidden_size=768,
                num_hidden_layers=12,
-               num_voca_layers=3,
                num_attention_heads=12,
                intermediate_size=3072,
+               wi_size=128,
+               wi_layers=[2,4,6],
                hidden_act="gelu",
                hidden_dropout_prob=0.1,
                attention_probs_dropout_prob=0.1,
@@ -69,10 +70,11 @@ class IBertConfig(object):
     """
     self.vocab_size = vocab_size
     self.hidden_size = hidden_size
-    self.num_voca_layers = num_voca_layers
     self.num_hidden_layers = num_hidden_layers
     self.num_attention_heads = num_attention_heads
     self.hidden_act = hidden_act
+    self.wi_size = wi_size
+    self.wi_layers = wi_layers
     self.intermediate_size = intermediate_size
     self.hidden_dropout_prob = hidden_dropout_prob
     self.attention_probs_dropout_prob = attention_probs_dropout_prob
@@ -83,7 +85,7 @@ class IBertConfig(object):
   @classmethod
   def from_dict(cls, json_object):
     """Constructs a `BertConfig` from a Python dictionary of parameters."""
-    config = IBertConfig(vocab_size=None)
+    config = IBert1Config(vocab_size=None)
     for (key, value) in six.iteritems(json_object):
       config.__dict__[key] = value
     return config
@@ -105,9 +107,7 @@ class IBertConfig(object):
     return json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n"
 
 
-
-
-class IBertModel(object):
+class IBert1Model(object):
   """BERT model ("Bidirectional Embedding Representations from a Transformer").
 
   Example usage:
@@ -137,7 +137,6 @@ class IBertModel(object):
                input_ids,
                input_mask=None,
                token_type_ids=None,
-               voca_mask=None,
                use_one_hot_embeddings=True,
                scope=None):
     """Constructor for BertModel.
@@ -167,9 +166,7 @@ class IBertModel(object):
     input_shape = get_shape_list(input_ids, expected_rank=2)
     batch_size = input_shape[0]
     seq_length = input_shape[1]
-    print(voca_mask)
-    voca_mask = get_mask_batch(voca_mask, seq_length)
-    print(voca_mask)
+
     if input_mask is None:
       input_mask = tf.ones(shape=[batch_size, seq_length], dtype=tf.int32)
 
@@ -186,6 +183,19 @@ class IBertModel(object):
             initializer_range=config.initializer_range,
             word_embedding_name="word_embeddings",
             use_one_hot_embeddings=use_one_hot_embeddings)
+
+        self.wi_dict = {}
+        for emb_layer in config.wi_layers:
+          # 5 is for key, query, value, fc1, fc2
+          total_emb_size = config.wi_size * 5
+          wi_output, wi_table = embedding_lookup(
+            input_ids=input_ids,
+            vocab_size=config.vocab_size,
+            embedding_size=total_emb_size,
+            initializer_range=config.initializer_range,
+            word_embedding_name="wi_emb_layer_{}".format(emb_layer),
+            use_one_hot_embeddings=use_one_hot_embeddings)
+          self.wi_dict[emb_layer] = (wi_output, wi_table)
 
         # Add positional embeddings and token type embeddings, then layer
         # normalize and perform dropout.
@@ -212,11 +222,11 @@ class IBertModel(object):
         # `sequence_output` shape = [batch_size, seq_length, hidden_size].
         self.all_encoder_layers = transformer_model(
             input_tensor=self.embedding_output,
+            wi_dict = self.wi_dict,
+            wi_size = config.wi_size,
             attention_mask=attention_mask,
-            voca_mask=voca_mask,
             hidden_size=config.hidden_size,
             num_hidden_layers=config.num_hidden_layers,
-            num_voca_layers=config.num_voca_layers,
             num_attention_heads=config.num_attention_heads,
             intermediate_size=config.intermediate_size,
             intermediate_act_fn=get_activation(config.hidden_act),
@@ -271,6 +281,7 @@ class IBertModel(object):
     return self.embedding_table
 
 
+
 def gelu(input_tensor):
   """Gaussian Error Linear Unit.
 
@@ -310,6 +321,7 @@ def get_activation(activation_string):
 
   if not activation_string:
     return None
+  transformer_model
   act = activation_string.lower()
   if act == "linear":
     return None
@@ -571,6 +583,8 @@ def attention_layer(from_tensor,
                     num_attention_heads=1,
                     size_per_head=512,
                     query_act=None,
+                    wi_size=0,
+                    wi_embedding=None,
                     key_act=None,
                     value_act=None,
                     attention_probs_dropout_prob=0.0,
@@ -672,29 +686,33 @@ def attention_layer(from_tensor,
   from_tensor_2d = reshape_to_matrix(from_tensor)
   to_tensor_2d = reshape_to_matrix(to_tensor)
 
+  nonlexical_param_size = num_attention_heads * size_per_head - 3 * wi_size
+
   # `query_layer` = [B*F, N*H]
-  query_layer = tf.layers.dense(
+  query_layer_non_lexical = tf.layers.dense(
       from_tensor_2d,
-      num_attention_heads * size_per_head,
+      nonlexical_param_size,
       activation=query_act,
       name="query",
       kernel_initializer=create_initializer(initializer_range))
 
   # `key_layer` = [B*T, N*H]
-  key_layer = tf.layers.dense(
+  key_layer_non_lexical = tf.layers.dense(
       to_tensor_2d,
-      num_attention_heads * size_per_head,
+      nonlexical_param_size,
       activation=key_act,
       name="key",
       kernel_initializer=create_initializer(initializer_range))
 
   # `value_layer` = [B*T, N*H]
-  value_layer = tf.layers.dense(
+  value_layer_non_lexical = tf.layers.dense(
       to_tensor_2d,
-      num_attention_heads * size_per_head,
+      nonlexical_param_size,
       activation=value_act,
       name="value",
       kernel_initializer=create_initializer(initializer_range))
+
+
 
   # `query_layer` = [B, N, F, H]
   query_layer = transpose_for_scores(query_layer, batch_size,
@@ -763,11 +781,11 @@ def attention_layer(from_tensor,
 
 def transformer_model(input_tensor,
                       attention_mask=None,
-                      voca_mask=None,
+                      wi_dict={},
                       hidden_size=768,
                       num_hidden_layers=12,
-                      num_voca_layers=3,
                       num_attention_heads=12,
+                      wi_size=0,
                       intermediate_size=3072,
                       intermediate_act_fn=gelu,
                       hidden_dropout_prob=0.1,
@@ -834,75 +852,23 @@ def transformer_model(input_tensor,
   # help the optimizer.
   prev_output = reshape_to_matrix(input_tensor)
 
-  for layer_idx in range(num_voca_layers):
-    with tf.variable_scope("vlayer_%d" % layer_idx):
-      layer_input = prev_output
-
-      with tf.variable_scope("attention"):
-        attention_heads = []
-        with tf.variable_scope("self"):
-          attention_head = attention_layer(
-              from_tensor=layer_input,
-              to_tensor=layer_input,
-              attention_mask=voca_mask,
-              num_attention_heads=num_attention_heads,
-              size_per_head=attention_head_size,
-              attention_probs_dropout_prob=attention_probs_dropout_prob,
-              initializer_range=initializer_range,
-              do_return_2d_tensor=True,
-              batch_size=batch_size,
-              from_seq_length=seq_length,
-              to_seq_length=seq_length)
-          attention_heads.append(attention_head)
-
-        attention_output = None
-        if len(attention_heads) == 1:
-          attention_output = attention_heads[0]
-        else:
-          # In the case where we have other sequences, we just concatenate
-          # them to the self-attention head before the projection.
-          attention_output = tf.concat(attention_heads, axis=-1)
-
-        # Run a linear projection of `hidden_size` then add a residual
-        # with `layer_input`.
-        with tf.variable_scope("output"):
-          attention_output = tf.layers.dense(
-              attention_output,
-              hidden_size,
-              kernel_initializer=create_initializer(initializer_range))
-          attention_output = dropout(attention_output, hidden_dropout_prob)
-          attention_output = layer_norm(attention_output + layer_input)
-
-      # The activation is only applied to the "intermediate" hidden layer.
-      with tf.variable_scope("intermediate"):
-        intermediate_output = tf.layers.dense(
-            attention_output,
-            intermediate_size,
-            activation=intermediate_act_fn,
-            kernel_initializer=create_initializer(initializer_range))
-
-      # Down-project back to `hidden_size` then add the residual.
-      with tf.variable_scope("output"):
-        layer_output = tf.layers.dense(
-            intermediate_output,
-            hidden_size,
-            kernel_initializer=create_initializer(initializer_range))
-        layer_output = dropout(layer_output, hidden_dropout_prob)
-        layer_output = layer_norm(layer_output + attention_output)
-        prev_output = layer_output
-
-
   all_layer_outputs = []
   for layer_idx in range(num_hidden_layers):
     with tf.variable_scope("layer_%d" % layer_idx):
       layer_input = prev_output
 
+      local_wi_size = 0
+      if layer_idx in wi_dict:
+        local_wi_size = wi_size
+        wi_embedding, wi_table = wi_dict[layer_idx]
       with tf.variable_scope("attention"):
         attention_heads = []
         with tf.variable_scope("self"):
           attention_head = attention_layer(
               from_tensor=layer_input,
               to_tensor=layer_input,
+              wi_size=local_wi_size,
+              wi_embedding=wi_embedding,
               attention_mask=attention_mask,
               num_attention_heads=num_attention_heads,
               size_per_head=attention_head_size,
@@ -1054,29 +1020,3 @@ def assert_rank(tensor, expected_rank, name=None):
         "For the tensor `%s` in scope `%s`, the actual rank "
         "`%d` (shape = %s) is not equal to the expected rank `%s`" %
         (name, scope_name, actual_rank, str(tensor.shape), str(expected_rank)))
-  
-def get_mask_batch(b, max_seq):
-  print("get_mask_batch shaep : ", b.shape)
-  def get_mask(seed_mask):
-    def f(x):
-      indice = tf.range(max_seq)
-      begin = tf.fill([max_seq], x[0])
-      end = tf.fill([max_seq], x[1])
-      one_array = tf.logical_and(tf.greater_equal(indice, begin), tf.less(indice, end))
-      a = tf.cast(one_array, dtype=tf.int32)
-      return a
-
-    v = tf.stack([tf.range(max_seq), seed_mask], axis=1)
-    mask = tf.map_fn(f, v, infer_shape=False)
-    return mask
-
-  return tf.map_fn(get_mask, b, infer_shape=False)
-
-
-def construct_vocamask(linear_mask, batch_size, seq_length):
-  linear_mask = tf.sparse_to_dense(linear_mask)
-  mask = tf.sparse.reshape(linear_mask, [-1, 2])
-  indice = tf.range(batch_size)
-  sp_indice =tf.concat([indice, mask], axis=1)
-  l = seq_length
-  return tf.SparseTensor(sp_indice, 1, [l, l])

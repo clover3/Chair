@@ -21,7 +21,7 @@ def main():
     out_path = os.path.join(working_path, "tf")
     if not os.path.exists(out_path):
         os.mkdir(out_path)
-    mtm = MarkedTaskManager(1, mark_path, 1)
+    mtm = MarkedTaskManager(100, mark_path, 1)
     worker = Worker(out_path)
     job_id = mtm.pool_job()
     print("Job id : ", job_id)

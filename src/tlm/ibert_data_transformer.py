@@ -63,9 +63,6 @@ def convert_write(output_file, examples):
         new_feature["voca_mask"] = create_int_feature(attn_range)
         tf_example = tf.train.Example(features=tf.train.Features(feature=new_feature))
         writers.write(tf_example.SerializeToString())
-        if cnt > 1000:
-            break
-        cnt += 1
 
 def dev():
     path = "/mnt/nfs/work3/youngwookim/data/bert_tf/tf/done/0"
