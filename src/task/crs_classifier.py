@@ -45,21 +45,19 @@ class crs_transformer:
 
         loss = 0
         self.acc = []
-        for logits, y, mask_sum in [(s_logits, self.y[:, 0], s_sum),
-                                    (d_logits, self.y[:, 1], d_sum)]:
+        for logits, y, mask_sum in [(s_logits, self.y[0], s_sum),
+                                    (d_logits, self.y[1], d_sum)]:
             labels = tf.cast(tf.greater(y, 0.5), tf.int32)
             labels = tf.one_hot(labels, 2)
             preds = tf.to_int32(tf.argmax(logits, axis=-1))
-            acc = tf_module.accuracy(logits, self.y[2])
+            acc = tf_module.accuracy(logits, y)
 
             self.acc.append(acc)
-            tf.summary.scalar("acc", self.acc)
-
             loss_arr = tf.nn.softmax_cross_entropy_with_logits_v2(
                 logits=logits,
                 labels=labels)
 
-            loss_arr = loss_arr * mask_sum
+            loss_arr = loss_arr * tf.cast(mask_sum, tf.float32)
             loss += tf.reduce_sum(loss_arr)
 
         self.loss = loss

@@ -27,7 +27,7 @@ class DataGenerator:
             key =e['statement']
             if key not in group_by_statement:
                 group_by_statement[key] = []
-            group_by_statement[key] = e
+            group_by_statement[key].append(e)
 
         n_group = len(group_by_statement)
         train_len = int(n_group * 0.8)
@@ -156,13 +156,30 @@ class DataGenerator:
 
         return result_data
 
+def data_stat():
+    dg = DataGenerator()
+    y0_list =[]
+    y1_list =[]
+    yc_list = []
+    for e in dg.train_split:
+        if e['s_sum'] > 0:
+            y0 = e['s_percent'] > 0.5
+            y0_list.append(y0)
+        if e['d_sum'] > 0:
+            y1 = e['d_percent'] > 0.5
+            y1_list.append(y1)
+
+    print("Support : ", sum(y0_list), len(y0_list))
+    print("Disptue : ", sum(y1_list), len(y1_list))
+
+
 def dev():
     dg = DataGenerator()
     dg.get_train_data()
 
 
 if __name__ == "__main__":
-    dev()
+    data_stat()
 
 
 

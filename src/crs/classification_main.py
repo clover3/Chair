@@ -14,8 +14,8 @@ import sys
 
 
 def crs_baseline():
-    hp = hyperparams.HPAdhoc()
-    hp.batch_size = 16 * 3
+    hp = hyperparams.HPCRS()
+    hp.batch_size = 16 
     e = Experiment(hp)
 
     e_config = ExperimentConfig()
@@ -23,7 +23,7 @@ def crs_baseline():
     e_config.num_epoch = 4
     e_config.save_interval = 10 * 60  # 60 minutes
     e_config.load_names = ['bert'] #, 'reg_dense']
-    vocab_size = 30522
+    e_config.voca_size = 30522
 
     data_loader = DataGenerator()
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')

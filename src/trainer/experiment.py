@@ -9546,30 +9546,22 @@ class Experiment:
     def train_crs_classify(self, e_config, data_loader, preload_id):
         print("Experiment.train_crs_classify()")
         valid_freq = 10
-        f_finetune = (preload_id is not None)
-        if f_finetune:
-            # feature_loc = int(self.hparam.seq_max / 2)
-            feature_loc = self.hparam.sent_max
-            feature_loc = 0
-            print("feature_loc", feature_loc)
-        else:
-            feature_loc = 0
         task = CrsModel(self.hparam, e_config.voca_size, True)
-        train_op = self.get_train_op(task.loss)
+        with tf.variable_scope("optimizer"):
+            train_op = self.get_train_op(task.loss)
 
+        print("loading model")
         self.sess = self.init_sess()
         self.sess.run(tf.global_variables_initializer())
         self.merged = tf.summary.merge_all()
         self.setup_summary_writer(e_config.name)
+        self.load_model_white2(preload_id, e_config.load_names)
 
-        if preload_id is not None:
-            name = preload_id[0]
-            id = preload_id[1]
-            self.load_model_encoder(name, id)
         random.seed(0)
+        print("generating data")
 
         train_batches = get_batches_ex(data_loader.get_train_data(), self.hparam.batch_size, 7)
-        dev_batches = get_batches_ex(data_loader.get_test_data(), self.hparam.batch_size, 7)
+        dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 7)
 
         def batch2feed_dict(batch):
             x0,x1,x2, y0,y1, y0_sum, y1_sum  = batch
@@ -9590,9 +9582,9 @@ class Experiment:
                                              ],
                                             feed_dict=batch2feed_dict(batch)
                                             )
-            self.log.debug("Step {0} train loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
+            self.log.debug("Step {0} train loss={1:.04f} s_acc={2:.03f} d_acc={3:.03f}".format(step_i, loss_val, acc[0], acc[1]))
             self.train_writer.add_summary(summary, self.g_step)
-            return loss_val, acc
+            return loss_val, acc[0]
 
 
         valid_history = []
