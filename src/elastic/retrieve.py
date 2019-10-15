@@ -39,7 +39,7 @@ def get_paragraph(doc_id, para_id):
         }
     }
 
-    r =es.search(index="guardian", body=q)
+    r = es.search(index="guardian", body=q)
     r = r['hits']['hits'][0]
     data = r['_source']
     assert doc_id == data['short_id']

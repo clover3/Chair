@@ -1,7 +1,6 @@
 import csv
 
 
-
 def load_stance_annot(path):
     f = open(path, "r", encoding="utf-8")
     data = []
@@ -66,7 +65,6 @@ def load_stance_annot(path):
     return parsed_data
 
 
-
 def load_stance_verify_annot(path):
     f = open(path, "r", encoding="utf-8")
     data = []
@@ -122,7 +120,7 @@ def load_stance_verify_annot(path):
             d_entry = {}
             d_entry['statement'] = statement
             d_entry['link'] = link
-            d_entry['support']  = r1
+            d_entry['support'] = r1
             d_entry['dispute'] = r2
             parsed_data.append(d_entry)
     return parsed_data

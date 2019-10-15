@@ -59,6 +59,7 @@ from models.transformer.transformer_binary import transformer_binary
 from models.transformer.transformer_concat import transformer_concat
 from models.controversy import get_wiki_doc
 from models import word2vec
+from task.crs_classifier import crs_transformer as CrsModel
 
 from attribution.eval import eval_explain, eval_pairing, predict_translate
 from attribution.baselines import *
@@ -9542,3 +9543,87 @@ class Experiment:
                                    valid_fn, valid_freq,
                                    save_fn, exp_config.save_interval)
 
+    def train_crs_classify(self, e_config, data_loader, preload_id):
+        print("Experiment.train_crs_classify()")
+        valid_freq = 10
+        f_finetune = (preload_id is not None)
+        if f_finetune:
+            # feature_loc = int(self.hparam.seq_max / 2)
+            feature_loc = self.hparam.sent_max
+            feature_loc = 0
+            print("feature_loc", feature_loc)
+        else:
+            feature_loc = 0
+        task = CrsModel(self.hparam, e_config.voca_size, True)
+        train_op = self.get_train_op(task.loss)
+
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(e_config.name)
+
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            self.load_model_encoder(name, id)
+        random.seed(0)
+
+        train_batches = get_batches_ex(data_loader.get_train_data(), self.hparam.batch_size, 7)
+        dev_batches = get_batches_ex(data_loader.get_test_data(), self.hparam.batch_size, 7)
+
+        def batch2feed_dict(batch):
+            x0,x1,x2, y0,y1, y0_sum, y1_sum  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y[0]: y0,
+                task.y[1]: y1,
+                task.y_sum[0]: y0_sum,
+                task.y_sum[1]: y1_sum,
+            }
+            return feed_dict
+
+
+        def train_fn(batch, step_i):
+            loss_val, summary, acc,  _ = self.sess.run([task.loss, self.merged, task.acc, train_op,
+                                             ],
+                                            feed_dict=batch2feed_dict(batch)
+                                            )
+            self.log.debug("Step {0} train loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
+            self.train_writer.add_summary(summary, self.g_step)
+            return loss_val, acc
+
+
+        valid_history = []
+
+        def valid_fn():
+            loss_list = []
+            acc_list = []
+            gold_list = []
+            for batch in dev_batches:
+                loss_val, summary, acc, = self.sess.run([task.loss, self.merged, task.acc,
+                                                           ],
+                                                          feed_dict=batch2feed_dict(batch)
+                                                          )
+
+                loss_list.append(loss_val)
+                acc_list.append(acc)
+
+            avg_loss = average(loss_list)
+            s_acc_list, d_acc_list = zip(*acc_list)
+            s_avg_acc = average(s_acc_list)
+            d_avg_acc = average(d_acc_list)
+            self.log.info("[Dev] S_Acc={0:.02f} D_Acc={1:.02f} loss={2:.04f}".format(s_avg_acc, d_avg_acc, avg_loss))
+            return
+
+        num_epoch = self.hparam.num_epochs
+        print("Start Training")
+        for i in range(num_epoch):
+            loss, _ = epoch_runner(train_batches, train_fn,
+                                   valid_fn, valid_freq,
+                                   self.temp_saver, self.save_interval)
+            self.log.info("[Train] Epoch {} Done. Loss={}".format(i, loss))
+
+        valid_fn()
+        self.save_model("crs")
