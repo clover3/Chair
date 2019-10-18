@@ -2,18 +2,15 @@ from models.transformer import bert
 from models.transformer import hyperparams
 from data_generator.shared_setting import NLI
 from trainer.tf_module import *
-import tensorflow as tf
 from data_generator.crs.claim_text_classifier import DataGenerator
 from trainer.experiment import Experiment
 from trainer.ExperimentConfig import ExperimentConfig
-from data_generator.adhoc import score_loader
 import path
-from data_generator.adhoc.data_sampler import *
 import sys
 
 
 
-def crs_baseline():
+def crs_stance_baseline():
     hp = hyperparams.HPCRS()
     hp.batch_size = 16 
     e = Experiment(hp)

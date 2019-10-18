@@ -45,18 +45,20 @@ def agreement_inner(data):
     order1 = 0
     order2 = 1
 
-    s_count = Counter()
-    d_count = Counter()
+    s_count1 = Counter()
+    s_count2 = Counter()
+    d_count1 = Counter()
+    d_count2 = Counter()
     s_agree = 0
     d_agree = 0
-    for statement in group:
+    for sig in group:
         #print(statement)
-        support1, dispute1 = group[statement][order1]
-        support2, dispute2 = group[statement][order2]
-        s_count[support1] += 1
-        s_count[support2] += 1
-        d_count[dispute1] += 1
-        d_count[dispute2] += 1
+        support1, dispute1 = group[sig][order1]
+        support2, dispute2 = group[sig][order2]
+        s_count1[support1] += 1
+        s_count2[support2] += 1
+        d_count1[dispute1] += 1
+        d_count2[dispute2] += 1
 
         if support1 == support2:
             s_agree += 1
@@ -68,18 +70,22 @@ def agreement_inner(data):
         return x*x
 
     total = len(group) * 2
-    s_pe = s_agree / total
-    d_pe = d_agree / total
+    s_po = s_agree / total
+    d_po = d_agree / total
 
 
-    s_p0 = sq(s_count[0] / total) + sq(s_count[1] / total) + sq(s_count[2] / total)
-    d_p0 = sq(d_count[0] / total) + sq(d_count[1] / total) + sq(d_count[2] / total)
+    s_pe = 0
+    d_pe = 0
+    for i in range(3):
+        s_pe += (s_count1[i] / total ) * (s_count2[i] / total)
+        d_pe += (d_count1[i] / total) * (d_count2[i] / total)
 
-    print("Support p_0 : ", s_p0)
-    print("Dispute p_0 : ", d_p0)
 
-    s_kappa = (s_p0 - s_pe) / (1 - s_pe)
-    d_kappa = (d_p0 - d_pe) / (1 - d_pe)
+    print("Support p_0 : ", s_po)
+    print("Dispute p_0 : ", d_po)
+
+    s_kappa = (s_po - s_pe) / (1 - s_pe)
+    d_kappa = (d_po - d_pe) / (1 - d_pe)
 
     print("Support kappa : ", s_kappa)
     print("Dispute kappa : ", d_kappa)
@@ -185,108 +191,10 @@ def summary(path):
             print("CrowdWorker#{}: ".format(cnt), s_word, d_word)
             cnt += 1
 
-def merge(path):
-    data = load_stance_verify_annot(path)
-    data = load_stance_verify_annot(path)
-
-    group = {}
-    sig2data = {}
-    for e in data:
-        sig = e['statement'] + e['link']
-        sig2data[sig] = e['statement'], e['link']
-        if sig not in group:
-            group[sig] = []
-
-        group[sig].append((e['support'], e['dispute']))
-
-    NOT_FOUND = 0
-    YES = 1
-    NOT_SURE = 2
-
-    statement_group = {}
-
-    for sig in group:
-        statement, link = sig2data[sig]
-
-        s_yes_cnt = 0
-        s_no_cnt = 0
-        d_yes_cnt = 0
-        d_no_cnt = 0
-        for s, d in group[sig]:
-            if s == YES:
-                s_yes_cnt += 1
-            elif s == NOT_FOUND:
-                s_no_cnt += 1
-
-            if d == YES:
-                d_yes_cnt += 1
-            elif d == NOT_FOUND:
-                d_no_cnt += 1
-
-        s_conclusion = 0
-        assert s_yes_cnt + s_no_cnt <= 3
-        assert d_yes_cnt + d_no_cnt <= 3
-        if s_yes_cnt > 1.5 :
-            s_conclusion = YES
-        elif s_no_cnt > 1.5:
-            s_conclusion = NOT_FOUND
-        else:
-            s_conclusion = NOT_SURE
-
-        d_conclusion = NOT_SURE
-        if d_yes_cnt > 1.5:
-            d_conclusion = YES
-        elif d_no_cnt > 1.5:
-            d_conclusion = NOT_FOUND
-        else:
-            d_conclusion = NOT_SURE
-
-        if statement not in statement_group:
-            statement_group[statement] = []
-
-        statement_group[statement].append((link, s_conclusion, d_conclusion))
-
-    CONTROVERSIAL = 1
-    NOT_CONTROVERSIAL = 0
-    NOT_SURE = 2
-
-    stat = Counter()
-    for statement, evidences in statement_group.items():
-        n_support = 0
-        n_dispute = 0
-
-        n_no_support =0
-        n_no_dispute =0
-
-        for e in evidences:
-            link, support, dispute = e
-            if support == YES:
-                n_support += 1
-            if dispute == YES:
-                n_dispute += 1
-
-            if support == NOT_FOUND:
-                n_no_support += 1
-            if dispute == NOT_FOUND:
-                n_no_dispute += 1
-
-        conclusion = "Not Sure"
-        if n_support > 0 and n_dispute > 0:
-            conclusion = "Controversial"
-        elif n_no_dispute == len(evidences) or n_no_support == len(evidences):
-            conclusion = "Not controversial"
-
-        stat[conclusion] += 1
-
-        print(statement, conclusion)
-
-    for k,v in stat.items():
-        print(k, v)
-
 
 if __name__ == "__main__":
     path = "C:\work\Data\CKB annotation\\verify stance -1\\Batch_3784489_batch_results.csv"
-    merge(path)
+    agreement(path)
 
 
 
