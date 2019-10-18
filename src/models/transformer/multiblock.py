@@ -31,20 +31,20 @@ class BertConfig(object):
     """Configuration for `BertModel`."""
 
     def __init__(self,
-                             vocab_size,
-                             hidden_size=768,
-                             num_hidden_layers=12,
-                             num_attention_heads=12,
-                             mr_layer=1,
-                             mr_num_route=10,
-                             mr_key_layer=0,
-                             intermediate_size=3072,
-                             hidden_act="gelu",
-                             hidden_dropout_prob=0.1,
-                             attention_probs_dropout_prob=0.1,
-                             max_position_embeddings=512,
-                             type_vocab_size=16,
-                             initializer_range=0.02):
+                 vocab_size,
+                 hidden_size=768,
+                 num_hidden_layers=12,
+                 num_attention_heads=12,
+                 mr_layer=1,
+                 mr_num_route=10,
+                 mr_key_layer=0,
+                 intermediate_size=3072,
+                 hidden_act="gelu",
+                 hidden_dropout_prob=0.1,
+                 attention_probs_dropout_prob=0.1,
+                 max_position_embeddings=512,
+                 type_vocab_size=16,
+                 initializer_range=0.02):
         """Constructs BertConfig.
 
         Args:
@@ -310,7 +310,6 @@ def get_activation(activation_string):
 
     if not activation_string:
         return None
-    transformer_model
     act = activation_string.lower()
     if act == "linear":
         return None
@@ -905,9 +904,11 @@ def transformer_model(input_tensor,
                         key_output = dropout(key_output, hidden_dropout_prob)
                         key_output = layer_norm(key_output + attention_output)
 
-                        key_sum = tf.reduce_sum(key_output, axis=1)
-                        key = tf.nn.softmax(key_sum)
+                        key_sum = tf.reduce_sum(key_output, axis=1)  # [batch_size, mr_num_route]
+                        key = tf.random.categorical(key_sum, 1) # [batch_size, 1]
+                        key = tf.reshape(key, [-1])
         else: # Case MR layer
+            multi_route_outputs = []
             for route_no in range(mr_num_route):
                 with tf.variable_scope("layer_%d_%d" % (layer_idx, route_no)):
                     layer_input = prev_output
@@ -963,8 +964,11 @@ def transformer_model(input_tensor,
                             kernel_initializer=create_initializer(initializer_range))
                         layer_output = dropout(layer_output, hidden_dropout_prob)
                         layer_output = layer_norm(layer_output + attention_output)
-                        prev_output = layer_output
-                        all_layer_outputs.append(layer_output)
+                        multi_route_outputs.append(layer_output)
+
+            all_route_output = tf.stack(multi_route_outputs, axis=1)
+            selected_output = tf.batch_gather(all_route_output, key)
+            prev_output = selected_output
 
     if do_return_all_layers:
         final_outputs = []
