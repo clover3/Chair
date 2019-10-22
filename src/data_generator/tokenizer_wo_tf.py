@@ -84,7 +84,7 @@ def load_vocab(vocab_file):
   """Loads a vocabulary file into a dictionary."""
   vocab = collections.OrderedDict()
   index = 0
-  with open(vocab_file, "r") as reader:
+  with open(vocab_file, "r", encoding="utf-8") as reader:
     while True:
       token = convert_to_unicode(reader.readline())
       if not token:
@@ -151,6 +151,26 @@ def _truncate_second(tokens_a, tokens_b, max_length):
       break
     tokens_b.pop()
 
+
+def pretty_tokens(tokens):
+    s = ""
+    after_mask = False
+    for t in tokens:
+        if t == "[PAD]":
+            break
+        if t.startswith("##") and not after_mask:
+            #t = t[2:]
+            pass
+        else:
+            s += " "
+
+
+        if t == "[MASK]":
+            after_mask = True
+        else:
+            after_mask = False
+        s += t
+    return s
 
 class FullTokenizerWarpper(object):
     def __init__(self, vocab_file, do_lower_case=True):

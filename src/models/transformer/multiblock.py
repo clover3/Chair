@@ -209,12 +209,17 @@ class BertModel(object):
 
                 # Run the stacked transformer.
                 # `sequence_output` shape = [batch_size, seq_length, hidden_size].
-                self.all_encoder_layers = transformer_model(
+                self.all_encoder_layers, key = transformer_model(
                         input_tensor=self.embedding_output,
                         attention_mask=attention_mask,
+                        input_mask=input_mask,
                         hidden_size=config.hidden_size,
                         num_hidden_layers=config.num_hidden_layers,
                         num_attention_heads=config.num_attention_heads,
+                        is_training=is_training,
+                        mr_layer=config.mr_layer,
+                        mr_num_route=config.mr_num_route,
+                        mr_key_layer=config.mr_key_layer,
                         intermediate_size=config.intermediate_size,
                         intermediate_act_fn=get_activation(config.hidden_act),
                         hidden_dropout_prob=config.hidden_dropout_prob,
@@ -222,6 +227,7 @@ class BertModel(object):
                         initializer_range=config.initializer_range,
                         do_return_all_layers=True)
 
+            self.key = key
             self.sequence_output = self.all_encoder_layers[-1]
             # The "pooler" converts the encoded sequence tensor of shape
             # [batch_size, seq_length, hidden_size] to a tensor of shape
@@ -763,6 +769,7 @@ def attention_layer(from_tensor,
 
 def transformer_model(input_tensor,
                     attention_mask=None,
+                    input_mask=None,
                     hidden_size=768,
                     num_hidden_layers=12,
                     num_attention_heads=12,
@@ -774,6 +781,7 @@ def transformer_model(input_tensor,
                     hidden_dropout_prob=0.1,
                     attention_probs_dropout_prob=0.1,
                     initializer_range=0.02,
+                    is_training=True,
                     do_return_all_layers=False):
     """Multi-headed, multi-layer Transformer from "Attention is All You Need".
 
@@ -902,11 +910,17 @@ def transformer_model(input_tensor,
                             mr_num_route,
                             kernel_initializer=create_initializer(initializer_range))
                         key_output = dropout(key_output, hidden_dropout_prob)
-                        key_output = layer_norm(key_output + attention_output)
+                        key_output = tf.reshape(key_output, [batch_size, seq_length, -1])
 
+                        num_tokens = tf.expand_dims(tf.cast(tf.reduce_sum(input_mask, axis=1), tf.float32), 1)
                         key_sum = tf.reduce_sum(key_output, axis=1)  # [batch_size, mr_num_route]
-                        key = tf.random.categorical(key_sum, 1) # [batch_size, 1]
-                        key = tf.reshape(key, [-1])
+                        key_avg = tf.math.divide(key_sum, num_tokens)
+                        if is_training:
+                            key = tf.random.categorical(key_avg , 1) # [batch_size, 1]
+                            key = tf.reshape(key, [-1])
+                        else:
+                            key = tf.math.argmax(key_avg, axis=1)
+
         else: # Case MR layer
             multi_route_outputs = []
             for route_no in range(mr_num_route):
@@ -964,10 +978,13 @@ def transformer_model(input_tensor,
                             kernel_initializer=create_initializer(initializer_range))
                         layer_output = dropout(layer_output, hidden_dropout_prob)
                         layer_output = layer_norm(layer_output + attention_output)
+                        layer_output = tf.reshape(layer_output, [batch_size, seq_length, -1])
                         multi_route_outputs.append(layer_output)
 
             all_route_output = tf.stack(multi_route_outputs, axis=1)
-            selected_output = tf.batch_gather(all_route_output, key)
+            ikey = tf.stack([tf.range(batch_size, dtype=tf.int64), key], axis=1)
+            selected_output = tf.gather_nd(all_route_output, ikey)
+            selected_output = tf.reshape(selected_output, [batch_size*seq_length, -1])
             prev_output = selected_output
 
     if do_return_all_layers:
@@ -975,10 +992,10 @@ def transformer_model(input_tensor,
         for layer_output in all_layer_outputs:
             final_output = reshape_from_matrix(layer_output, input_shape)
             final_outputs.append(final_output)
-        return final_outputs
+        return final_outputs, key
     else:
         final_output = reshape_from_matrix(prev_output, input_shape)
-        return final_output
+        return final_output, key
 
 
 def get_shape_list(tensor, expected_rank=None, name=None):

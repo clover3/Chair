@@ -22,6 +22,7 @@ import os
 import models.transformer.multiblock as modeling
 import models.transformer.optimization as optimization
 import tensorflow as tf
+import pickle
 
 flags = tf.flags
 
@@ -67,6 +68,10 @@ flags.DEFINE_bool("do_train", False, "Whether to run training.")
 
 flags.DEFINE_bool("do_eval", False, "Whether to run eval on the dev set.")
 
+flags.DEFINE_bool("do_predict", False, "Whether to run predicition .")
+
+flags.DEFINE_bool("do_fetch_param", False, "Whether to fetch parameter")
+
 flags.DEFINE_integer("train_batch_size", 32, "Total batch size for training.")
 
 flags.DEFINE_integer("eval_batch_size", 8, "Total batch size for eval.")
@@ -87,6 +92,8 @@ flags.DEFINE_integer("iterations_per_loop", 1000,
                      "How many steps to make in each estimator call.")
 
 flags.DEFINE_integer("max_eval_steps", 100, "Maximum number of eval steps.")
+
+flags.DEFINE_integer("max_pred_steps", 100, "Maximum number of prediction steps.")
 
 flags.DEFINE_bool("use_tpu", False, "Whether to use TPU or GPU/CPU.")
 
@@ -113,6 +120,17 @@ tf.flags.DEFINE_string("master", None, "[Optional] TensorFlow master URL.")
 flags.DEFINE_integer(
     "num_tpu_cores", 8,
     "Only used if `use_tpu` is True. Total number of TPU cores to use.")
+
+
+def get_all_param_dict():
+  variables = tf.contrib.slim.get_variables_to_restore()
+  d = {}
+  for v in variables:
+      d[v.name] = tf.convert_to_tensor(v)
+      break
+
+  #d = {v.name: tf.convert_to_tensor(v) for v in variables}
+  return d
 
 
 def model_fn_builder(bert_config, init_checkpoint, learning_rate,
@@ -240,7 +258,25 @@ def model_fn_builder(bert_config, init_checkpoint, learning_rate,
           eval_metrics=eval_metrics,
           scaffold_fn=scaffold_fn)
     else:
-      raise ValueError("Only TRAIN and EVAL modes are supported: %s" % (mode))
+      if FLAGS.do_fetch_param:
+        predictions = get_all_param_dict()
+        output_spec = tf.contrib.tpu.TPUEstimatorSpec(
+          mode=mode,
+          loss=total_loss,
+          predictions=predictions,
+          scaffold_fn=scaffold_fn)
+
+      else:
+        predictions = {
+          "keys":model.key,
+          "input_ids":input_ids,
+        }
+        output_spec = tf.contrib.tpu.TPUEstimatorSpec(
+          mode=mode,
+          loss=total_loss,
+          predictions=predictions,
+          scaffold_fn=scaffold_fn)
+
 
     return output_spec
 
@@ -397,6 +433,58 @@ def input_fn_builder(input_files,
 
   return input_fn
 
+def predict_input_fn_builder(input_files,
+                     max_seq_length,
+                     max_predictions_per_seq,
+                     num_cpu_threads=4):
+  """Creates an `input_fn` closure to be passed to TPUEstimator."""
+
+  def input_fn(params):
+    """The actual input function."""
+    batch_size = params["batch_size"]
+
+    name_to_features = {
+        "input_ids":
+            tf.FixedLenFeature([max_seq_length], tf.int64),
+        "input_mask":
+            tf.FixedLenFeature([max_seq_length], tf.int64),
+        "segment_ids":
+            tf.FixedLenFeature([max_seq_length], tf.int64),
+        "masked_lm_positions":
+            tf.FixedLenFeature([max_predictions_per_seq], tf.int64),
+        "masked_lm_ids":
+            tf.FixedLenFeature([max_predictions_per_seq], tf.int64),
+        "masked_lm_weights":
+            tf.FixedLenFeature([max_predictions_per_seq], tf.float32),
+        "next_sentence_labels":
+            tf.FixedLenFeature([1], tf.int64),
+    }
+
+    # For training, we want a lot of parallel reading and shuffling.
+    # For eval, we want no shuffling and parallel reading doesn't matter.
+    d = tf.data.TFRecordDataset(input_files)
+      # Since we evaluate for a fixed number of steps we don't want to encounter
+      # out-of-range exceptions.
+      #d = d.repeat()
+    print('batch_size', FLAGS.eval_batch_size)
+    print('data_size', FLAGS.eval_batch_size * FLAGS.max_pred_steps)
+    if FLAGS.do_fetch_param:
+      d = d.take(1)
+    else:
+      d = d.take(batch_size * FLAGS.max_pred_steps)
+    # We must `drop_remainder` on training because the TPU requires fixed
+    # size dimensions. For eval, we assume we are evaluating on the CPU or GPU
+    # and we *don't* want to drop the remainder, otherwise we wont cover
+    # every sample.
+    d = d.apply(
+        tf.contrib.data.map_and_batch(
+            lambda record: _decode_record(record, name_to_features),
+            batch_size=batch_size,
+            num_parallel_batches=num_cpu_threads,
+            drop_remainder=True))
+    return d
+
+  return input_fn
 
 def _decode_record(record, name_to_features):
   """Decodes a record to a TensorFlow example."""
@@ -415,9 +503,6 @@ def _decode_record(record, name_to_features):
 
 def main(_):
   tf.logging.set_verbosity(tf.logging.INFO)
-
-  if not FLAGS.do_train and not FLAGS.do_eval:
-    raise ValueError("At least one of `do_train` or `do_eval` must be True.")
 
   bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
 
@@ -461,12 +546,16 @@ def main(_):
 
   # If TPU is not available, this will fall back to normal Estimator on CPU
   # or GPU.
+
+
   estimator = tf.contrib.tpu.TPUEstimator(
       use_tpu=FLAGS.use_tpu,
       model_fn=model_fn,
       config=run_config,
       train_batch_size=FLAGS.train_batch_size,
-      eval_batch_size=FLAGS.eval_batch_size)
+      eval_batch_size=FLAGS.eval_batch_size,
+      predict_batch_size=FLAGS.eval_batch_size,
+  )
 
   if FLAGS.do_train:
     tf.logging.info("***** Running training *****")
@@ -497,6 +586,20 @@ def main(_):
       for key in sorted(result.keys()):
         tf.logging.info("  %s = %s", key, str(result[key]))
         writer.write("%s = %s\n" % (key, str(result[key])))
+  if FLAGS.do_predict:
+    tf.logging.info("***** Running prediction *****")
+    tf.logging.info("  Batch size = %d", FLAGS.eval_batch_size)
+    predict_input = predict_input_fn_builder(
+        input_files=input_files,
+        max_seq_length=FLAGS.max_seq_length,
+        max_predictions_per_seq=FLAGS.max_predictions_per_seq,
+        )
+
+    result = estimator.predict(
+        input_fn=predict_input,
+        yield_single_examples=False)
+
+    pickle.dump(list(result), open("result.pickle", "wb"))
 
 
 if __name__ == "__main__":
