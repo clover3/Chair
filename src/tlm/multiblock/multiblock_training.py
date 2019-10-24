@@ -19,7 +19,10 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import models.transformer.multiblock as modeling
+
+import models.transformer.bert_common
+import models.transformer.multiblock as multiblock_modeling
+import models.transformer.patch as patch_modeling
 import models.transformer.optimization as optimization
 import tensorflow as tf
 import pickle
@@ -64,13 +67,15 @@ flags.DEFINE_integer(
     "Maximum number of masked LM predictions per sequence. "
     "Must match data generation.")
 
+flags.DEFINE_string(
+    "modeling", "multiblock", "Which model to use"
+)
+
 flags.DEFINE_bool("do_train", False, "Whether to run training.")
 
 flags.DEFINE_bool("do_eval", False, "Whether to run eval on the dev set.")
 
 flags.DEFINE_bool("do_predict", False, "Whether to run predicition .")
-
-flags.DEFINE_bool("do_fetch_param", False, "Whether to fetch parameter")
 
 flags.DEFINE_integer("train_batch_size", 32, "Total batch size for training.")
 
@@ -133,6 +138,12 @@ def get_all_param_dict():
   return d
 
 
+modeling = {
+    'multiblock': multiblock_modeling,
+    'patch': patch_modeling,
+}[FLAGS.modeling]
+
+
 def model_fn_builder(bert_config, init_checkpoint, learning_rate,
                      num_train_steps, num_warmup_steps, use_tpu,
                      use_one_hot_embeddings):
@@ -181,7 +192,7 @@ def model_fn_builder(bert_config, init_checkpoint, learning_rate,
     scaffold_fn = None
     if init_checkpoint:
       (assignment_map, initialized_variable_names
-      ) = modeling.get_assignment_map_from_checkpoint(tvars, init_checkpoint)
+      ) = models.transformer.bert_common.get_assignment_map_from_checkpoint(tvars, init_checkpoint)
       if use_tpu:
 
         def tpu_scaffold():
@@ -258,20 +269,11 @@ def model_fn_builder(bert_config, init_checkpoint, learning_rate,
           eval_metrics=eval_metrics,
           scaffold_fn=scaffold_fn)
     else:
-      if FLAGS.do_fetch_param:
-        predictions = get_all_param_dict()
-        output_spec = tf.contrib.tpu.TPUEstimatorSpec(
-          mode=mode,
-          loss=total_loss,
-          predictions=predictions,
-          scaffold_fn=scaffold_fn)
-
-      else:
-        predictions = {
+      predictions = {
           "keys":model.key,
           "input_ids":input_ids,
-        }
-        output_spec = tf.contrib.tpu.TPUEstimatorSpec(
+      }
+      output_spec = tf.contrib.tpu.TPUEstimatorSpec(
           mode=mode,
           loss=total_loss,
           predictions=predictions,
@@ -295,10 +297,10 @@ def get_masked_lm_output(bert_config, input_tensor, output_weights, positions,
       input_tensor = tf.layers.dense(
           input_tensor,
           units=bert_config.hidden_size,
-          activation=modeling.get_activation(bert_config.hidden_act),
-          kernel_initializer=modeling.create_initializer(
+          activation=models.transformer.bert_common.get_activation(bert_config.hidden_act),
+          kernel_initializer=models.transformer.bert_common.create_initializer(
               bert_config.initializer_range))
-      input_tensor = modeling.layer_norm(input_tensor)
+      input_tensor = models.transformer.bert_common.layer_norm(input_tensor)
 
     # The output weights are the same as the input embeddings, but there is
     # an output-only bias for each token.
@@ -337,7 +339,7 @@ def get_next_sentence_output(bert_config, input_tensor, labels):
     output_weights = tf.get_variable(
         "output_weights",
         shape=[2, bert_config.hidden_size],
-        initializer=modeling.create_initializer(bert_config.initializer_range))
+        initializer=models.transformer.bert_common.create_initializer(bert_config.initializer_range))
     output_bias = tf.get_variable(
         "output_bias", shape=[2], initializer=tf.zeros_initializer())
 
@@ -353,7 +355,7 @@ def get_next_sentence_output(bert_config, input_tensor, labels):
 
 def gather_indexes(sequence_tensor, positions):
   """Gathers the vectors at the specific positions over a minibatch."""
-  sequence_shape = modeling.get_shape_list(sequence_tensor, expected_rank=3)
+  sequence_shape = models.transformer.bert_common.get_shape_list(sequence_tensor, expected_rank=3)
   batch_size = sequence_shape[0]
   seq_length = sequence_shape[1]
   width = sequence_shape[2]
@@ -466,12 +468,7 @@ def predict_input_fn_builder(input_files,
       # Since we evaluate for a fixed number of steps we don't want to encounter
       # out-of-range exceptions.
       #d = d.repeat()
-    print('batch_size', FLAGS.eval_batch_size)
-    print('data_size', FLAGS.eval_batch_size * FLAGS.max_pred_steps)
-    if FLAGS.do_fetch_param:
-      d = d.take(1)
-    else:
-      d = d.take(batch_size * FLAGS.max_pred_steps)
+    d = d.take(batch_size * FLAGS.max_pred_steps)
     # We must `drop_remainder` on training because the TPU requires fixed
     # size dimensions. For eval, we assume we are evaluating on the CPU or GPU
     # and we *don't* want to drop the remainder, otherwise we wont cover
@@ -517,13 +514,13 @@ def main(_):
     tf.logging.info("  %s" % input_file)
     if idx > 10 :
       break
+  tf.logging.info("Total of %d files" % len(input_file))
 
   tpu_cluster_resolver = None
   if FLAGS.use_tpu and FLAGS.tpu_name:
     tpu_cluster_resolver = tf.contrib.cluster_resolver.TPUClusterResolver(
         FLAGS.tpu_name, zone=FLAGS.tpu_zone, project=FLAGS.gcp_project)
-  config = tf.ConfigProto(allow_soft_placement=False,
-                          log_device_placement=True)
+  config = tf.ConfigProto(allow_soft_placement=False,)
   is_per_host = tf.contrib.tpu.InputPipelineConfig.PER_HOST_V2
   run_config = tf.contrib.tpu.RunConfig(
       cluster=tpu_cluster_resolver,
