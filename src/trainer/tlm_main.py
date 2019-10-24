@@ -173,7 +173,7 @@ def bert_lm_test():
 
     data_loader = ws.DataLoader(hp.seq_max, vocab_filename, vocab_size)
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
-    e.bert_lm_test(e_config, data_loader, load_id)
+    e.bert_lm_pos_neg(e_config, data_loader, load_id)
 
 
 def tlm_simple_cold_wo_hint():
