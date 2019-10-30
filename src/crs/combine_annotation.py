@@ -161,7 +161,7 @@ def merge(path):
 
 if __name__ == "__main__":
     path = "C:\work\Code\Chair\data\crs\\verify\\-1.csv"
-    combined_agreement(path)
+    merge(path)
 
 
 
