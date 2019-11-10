@@ -4,6 +4,16 @@ import re
 import six
 import tensorflow as tf
 
+def dense(hidden_units, initializer, activation=None):
+    if activation is not None:
+        return tf.keras.layers.Dense(hidden_units,
+                                     kernel_initializer=initializer,
+                                     activation=activation)
+    else:
+        return tf.keras.layers.Dense(hidden_units,
+                                     kernel_initializer=initializer,
+                                     )
+
 
 def gelu(input_tensor):
     """Gaussian Error Linear Unit.

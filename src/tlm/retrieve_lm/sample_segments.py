@@ -1,10 +1,7 @@
-import random
 from misc_lib import TimeEstimator
-from data_generator.data_parser.trec import Idf
 from tlm.mysql_sentence import *
-from tlm.select_sentence import get_random_sent
-from nltk import word_tokenize
-from cache import load_from_pickle, StreamPickler
+from tlm.retrieve_lm.select_sentence import get_random_sent
+from cache import StreamPickler
 from data_generator import tokenizer_b as tokenization
 import path
 import os

@@ -1,5 +1,5 @@
 import random
-from tlm.tf_instance_writer import MaskedLmInstance, TrainingInstance
+from tlm.retrieve_lm.tf_instance_writer import MaskedLmInstance, TrainingInstance
 
 class TFInstanceMaker:
     def __init__(self, vocab_words):

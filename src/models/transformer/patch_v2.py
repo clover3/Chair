@@ -235,9 +235,9 @@ class BertModel(object):
                         num_hidden_layers=config.num_hidden_layers,
                         num_attention_heads=config.num_attention_heads,
                         is_training=is_training,
-                        mr_layer=config.mr_layer,
+                        #mr_layer=config.mr_layer,
                         mr_num_route=config.mr_num_route,
-                        mr_key_layer=config.mr_key_layer,
+                        #mr_key_layer=config.mr_key_layer,
                         intermediate_size=config.intermediate_size,
                         intermediate_act_fn=get_activation(config.hidden_act),
                         hidden_dropout_prob=config.hidden_dropout_prob,
@@ -727,9 +727,7 @@ def transformer_model(input_tensor,
                     hidden_size=768,
                     num_hidden_layers=12,
                     num_attention_heads=12,
-                    mr_layer=1,
                     mr_num_route=10,
-                    mr_key_layer=0,
                     intermediate_size=3072,
                     intermediate_act_fn=gelu,
                     hidden_dropout_prob=0.1,
@@ -788,11 +786,11 @@ def transformer_model(input_tensor,
     initializer = create_initializer(initializer_range)
 
     ext_tensor = tf.compat.v1.get_variable("ext_tensor",
-                                 shape=[mr_num_route, EXT_SIZE ,hidden_size],
+                                 shape=[num_hidden_layers, mr_num_route, EXT_SIZE ,hidden_size],
                                  initializer=initializer,
                                  )
     ext_tensor_inter = tf.compat.v1.get_variable("ext_tensor_inter",
-                                       shape=[mr_num_route, intermediate_size],
+                                       shape=[num_hidden_layers, mr_num_route, intermediate_size],
                                        initializer=initializer,
                                            )
     # The Transformer performs sum residuals on all layers so the input needs
@@ -815,7 +813,7 @@ def transformer_model(input_tensor,
 
     all_layer_outputs = []
     for layer_idx in range(num_hidden_layers):
-        if layer_idx is not mr_layer:
+        if not is_mr_layer(layer_idx):
             with tf.compat.v1.variable_scope("layer_%d" % layer_idx):
                 layer_input = prev_output
 
@@ -864,24 +862,23 @@ def transformer_model(input_tensor,
                     prev_output = layer_output
                     all_layer_outputs.append(layer_output)
 
-                if layer_idx == mr_key_layer:
-                    with tf.compat.v1.variable_scope("mr_key"):
-                        key_output = tf.keras.layers.Dense(
-                            mr_num_route,
-                            kernel_initializer=create_initializer(initializer_range))(intermediate_output)
-                        key_output = dropout(key_output, hidden_dropout_prob)
+                with tf.compat.v1.variable_scope("mr_key"):
+                    key_output = tf.keras.layers.Dense(
+                        mr_num_route,
+                        kernel_initializer=create_initializer(initializer_range))(intermediate_output)
+                    key_output = dropout(key_output, hidden_dropout_prob)
 
-                        if is_training:
-                            key = tf.random.categorical(key_output, 1) # [batch_size, 1]
-                            key = tf.reshape(key, [-1])
-                        else:
-                            key = tf.math.argmax(input=key_output, axis=1)
+                    if is_training:
+                        key = tf.random.categorical(key_output, 1) # [batch_size, 1]
+                        key = tf.reshape(key, [-1])
+                    else:
+                        key = tf.math.argmax(input=key_output, axis=1)
 
         else: # Case MR layer
             with tf.compat.v1.variable_scope("layer_%d" % layer_idx):
                 layer_input = prev_output
-                ext_slice = tf.gather(ext_tensor, key)
-                ext_interm_slice = tf.gather(ext_tensor_inter, key)
+                ext_slice = tf.gather(ext_tensor[layer_idx], key)
+                ext_interm_slice = tf.gather(ext_tensor_inter[layer_idx], key)
                 print("ext_slice (batch*seq, ", ext_slice.shape)
                 with tf.compat.v1.variable_scope("attention"):
                     attention_heads = []

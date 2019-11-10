@@ -1,5 +1,4 @@
-from data_generator.data_parser.trec import *
-from tlm.select_sentence import get_random_sent
+from tlm.retrieve_lm.select_sentence import get_random_sent
 from rpc.text_reader import TextReaderClient
 
 def demo():

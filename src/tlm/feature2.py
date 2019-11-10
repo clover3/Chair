@@ -2,8 +2,8 @@ from cache import *
 import path
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import *
-from tlm.stem import CacheStemmer, stemmed_counter
-from tlm.segment_ranker_1 import PassageRanker, get_visible
+from tlm.stem import stemmed_counter
+from tlm.retrieve_lm.segment_ranker_1 import PassageRanker, get_visible
 from rpc.disk_dump import DumpAccess
 
 

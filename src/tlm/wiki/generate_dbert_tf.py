@@ -1,20 +1,8 @@
-import random
 from cache import *
 from path import data_path
 from data_generator import tokenizer_wo_tf as tokenization
 import sys
 from sydney_manager import MarkedTaskManager
-from misc_lib import flatten
-from tlm.retreive_candidates import get_visible
-from tlm.stem import CacheStemmer
-from tlm.galago_query_maker import clean_query
-from collections import Counter
-import collections
-from adhoc.bm25 import BM25_3, BM25_3_q_weight
-from misc_lib import left, TimeEstimator
-from models.classic.stopword import load_stopwords
-from adhoc.galago import load_df, write_query_json
-import tensorflow as tf
 from tlm.wiki import bert_training_data as btd
 from tlm.wiki.bert_training_data import *
 import time

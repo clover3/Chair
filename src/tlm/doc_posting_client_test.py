@@ -1,5 +1,5 @@
 
-from tlm.per_doc_posting_server import get_reader
+from tlm.retrieve_lm.per_doc_posting_server import get_reader
 
 
 

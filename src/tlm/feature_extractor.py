@@ -2,15 +2,10 @@ import collections
 
 from cache import *
 import path
-from tlm.retreive_candidates import remove
-from tlm.token_server import get_token_reader
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import *
-from tlm.stem import CacheStemmer, stemmed_counter
-from models.classic.stopword import load_stopwords
-from sydney_manager import MarkedTaskManager
-from tlm import per_doc_posting_server
-from tlm.segment_ranker_0 import PassageRanker, get_visible
+from tlm.stem import stemmed_counter
+from tlm.retrieve_lm.segment_ranker_0 import PassageRanker, get_visible
 from rpc.disk_dump import DumpAccess
 
 class LazyLoader:

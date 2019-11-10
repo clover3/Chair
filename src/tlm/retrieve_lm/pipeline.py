@@ -3,25 +3,23 @@
 import path
 from misc_lib import TimeEstimator, left, tprint, CodeTiming
 from data_generator import tokenizer_b as tokenization
-from data_generator.data_parser.trec import Idf
 from models.classic.stopword import load_stopwords
 
 
 from adhoc.galago import load_galago_judgement
 
-
-from tlm import per_doc_posting_server
-from tlm.select_sentence import get_random_sent
-from tlm.sample_segments import get_doc_sent,extend
-from tlm.segment2problem import generate_mask
-from tlm.retreive_candidates import HintRetriever, translate_mask2token_level, remove
-from tlm.galago_query_maker import clean_query
+from tlm.retrieve_lm import per_doc_posting_server
+from tlm.retrieve_lm.select_sentence import get_random_sent
+from tlm.retrieve_lm.sample_segments import get_doc_sent,extend
+from tlm.retrieve_lm.segment2problem import generate_mask
+from tlm.retrieve_lm.retreive_candidates import translate_mask2token_level, remove
+from tlm.retrieve_lm.galago_query_maker import clean_query
 from tlm.stem import CacheStemmer, stemmed_counter
 from tlm.feature2 import FeatureExtractor
 from tlm.feature_extractor import libsvm_str
-from tlm.two_seg_pretraining import write_instance_to_example_files, write_predict_instance
-from tlm.tf_record_writer import filter_instances
-from tlm.tf_instance_writer import TFRecordMaker
+from tlm.two_seg_pretraining import write_predict_instance
+from tlm.retrieve_lm.tf_record_writer import filter_instances
+from tlm.retrieve_lm.tf_instance_writer import TFRecordMaker
 from sydney_manager import MarkedTaskManager, ReadyMarkTaskManager
 
 

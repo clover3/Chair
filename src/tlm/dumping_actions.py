@@ -1,5 +1,5 @@
 from rpc.disk_dump import dump_dict
-from tlm.robust_tokens import load_robust_token
+from tlm.retrieve_lm.robust_tokens import load_robust_token
 from data_generator.data_parser import trec
 import os, path
 from data_generator import tokenizer_wo_tf as tokenization

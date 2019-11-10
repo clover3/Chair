@@ -5,14 +5,13 @@ from cache import *
 import path
 from collections import Counter
 from data_generator import tokenizer_wo_tf as tokenization
-from tlm.retreive_candidates import get_visible
-from rpc.text_reader import TextReaderClient, dummy_doc
-from tlm.token_server import get_token_reader
+from tlm.retrieve_lm.retreive_candidates import get_visible
 from misc_lib import *
 from tlm.stem import CacheStemmer, stemmed_counter
 from models.classic.stopword import load_stopwords
 from sydney_manager import MarkedTaskManager
-from tlm import per_doc_posting_server
+from tlm.retrieve_lm import per_doc_posting_server
+
 
 class DocRelLoader:
     def __init__(self, dir_path):
