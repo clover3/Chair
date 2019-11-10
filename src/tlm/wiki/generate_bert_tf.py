@@ -61,10 +61,6 @@ class Worker:
             all_docs.extend(pickle.load(f))
         return all_docs
 
-
-
-
-
     def load_documents(self):
         i = self.rng.randint(0,9)
         file_path = "/mnt/nfs/work3/youngwookim/data/enwiki4bert/enwiki_train.txt.line.{}".format(i)
