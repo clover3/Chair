@@ -1,5 +1,5 @@
 from tlm.model.base import BertModel
-from models.transformer.bert_common_v2 import get_shape_list
+from models.transformer.bert_common_v2 import get_shape_list, gather_index2d, get_shape_list2
 import tensorflow as tf
 from data_generator import special_tokens
 
@@ -8,22 +8,6 @@ def pad_as_shape(value, shape_like, dims):
         value = tf.expand_dims(value, 0)
     value = tf.ones_like(shape_like) * value
     return value
-
-def get_shape_list2(tensor):
-    shape = tensor.shape.as_list()
-
-    non_static_indexes = []
-    for (index, dim) in enumerate(shape):
-        if dim is None:
-            non_static_indexes.append(index)
-
-    if not non_static_indexes:
-        return shape
-
-    dyn_shape = tf.shape(input=tensor)
-    for index in non_static_indexes:
-        shape[index] = dyn_shape[index]
-    return shape
 
 def scatter_with_batch(input_ids, indice, mask_token):
     batch_size = get_shape_list2(input_ids)[0]
@@ -63,7 +47,8 @@ def do_masking(input_ids, input_masks, n_sample, mask_token):
         name=None
     )
     masked_lm_positions = indice # [batch, n_samples]
-    masked_lm_ids = tf.gather(input_ids, masked_lm_positions, axis=-1, batch_dims=0)
-    masked_lm_weights = tf.ones_like(masked_lm_positions)
+    #masked_lm_ids = tf.gather(input_ids, masked_lm_positions, axis=1, batch_dims=0)
+    masked_lm_ids = gather_index2d(input_ids, masked_lm_positions)
+    masked_lm_weights = tf.ones_like(masked_lm_positions, dtype=tf.float32)
     masked_input_ids = scatter_with_batch(input_ids, indice, mask_token)
     return masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights

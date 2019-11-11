@@ -144,7 +144,7 @@ class BertModel(object):
               attention_mask = create_attention_mask_from_input_mask(
                   input_ids, input_mask)
 
-              self.all_encoder_layers, key = transformer_model(
+              self.all_encoder_layers = transformer_model(
                   input_tensor=self.embedding_output,
                   attention_mask=attention_mask,
                   input_mask=input_mask,
@@ -152,9 +152,6 @@ class BertModel(object):
                   num_hidden_layers=config.num_hidden_layers,
                   num_attention_heads=config.num_attention_heads,
                   is_training=is_training,
-                  # mr_layer=config.mr_layer,
-                  mr_num_route=config.mr_num_route,
-                  # mr_key_layer=config.mr_key_layer,
                   intermediate_size=config.intermediate_size,
                   intermediate_act_fn=get_activation(config.hidden_act),
                   hidden_dropout_prob=config.hidden_dropout_prob,
@@ -162,7 +159,6 @@ class BertModel(object):
                   initializer_range=config.initializer_range,
                   do_return_all_layers=True)
 
-          self.key = key
           self.sequence_output = self.all_encoder_layers[-1]
           with tf.compat.v1.variable_scope("pooler"):
               first_token_tensor = tf.squeeze(self.sequence_output[:, 0:1, :], axis=1)
@@ -172,13 +168,42 @@ class BertModel(object):
                   first_token_tensor)
 
 
+  def get_pooled_output(self):
+    return self.pooled_output
+
+  def get_sequence_output(self):
+    """Gets final hidden layer of encoder.
+
+    Returns:
+      float Tensor of shape [batch_size, seq_length, hidden_size] corresponding
+      to the final hidden of the transformer encoder.
+    """
+    return self.sequence_output
+
+  def get_all_encoder_layers(self):
+    return self.all_encoder_layers
+
+  def get_embedding_output(self):
+    """Gets output of the embedding lookup (i.e., input to the transformer).
+
+    Returns:
+      float Tensor of shape [batch_size, seq_length, hidden_size] corresponding
+      to the output of the embedding layer, after summing the word
+      embeddings with the positional embeddings and the token type embeddings,
+      then performing layer normalization. This is the input to the transformer.
+    """
+    return self.embedding_output
+
+  def get_embedding_table(self):
+    return self.embedding_table
+
+
 def transformer_model(input_tensor,
                     attention_mask=None,
                     input_mask=None,
                     hidden_size=768,
                     num_hidden_layers=12,
                     num_attention_heads=12,
-                    mr_num_route=10,
                     intermediate_size=3072,
                     intermediate_act_fn=gelu,
                     hidden_dropout_prob=0.1,
@@ -211,62 +236,55 @@ def transformer_model(input_tensor,
     # help the optimizer.
     prev_output = reshape_to_matrix(input_tensor)
 
-    def is_mr_layer(layer_idx):
-        if layer_idx > 1:
-            return True
-        else:
-            return False
-
     all_layer_outputs = []
     for layer_idx in range(num_hidden_layers):
-        if not is_mr_layer(layer_idx):
-            with tf.compat.v1.variable_scope("layer_%d" % layer_idx):
-                layer_input = prev_output
+        with tf.compat.v1.variable_scope("layer_%d" % layer_idx):
+            layer_input = prev_output
 
-                with tf.compat.v1.variable_scope("attention"):
-                    attention_heads = []
-                    with tf.compat.v1.variable_scope("self"):
-                        attention_head = attention_layer(
-                                from_tensor=layer_input,
-                                to_tensor=layer_input,
-                                attention_mask=attention_mask,
-                                num_attention_heads=num_attention_heads,
-                                size_per_head=attention_head_size,
-                                attention_probs_dropout_prob=attention_probs_dropout_prob,
-                                initializer_range=initializer_range,
-                                do_return_2d_tensor=True,
-                                batch_size=batch_size,
-                                from_seq_length=seq_length,
-                                to_seq_length=seq_length)
-                        attention_heads.append(attention_head)
+            with tf.compat.v1.variable_scope("attention"):
+                attention_heads = []
+                with tf.compat.v1.variable_scope("self"):
+                    attention_head = attention_layer(
+                            from_tensor=layer_input,
+                            to_tensor=layer_input,
+                            attention_mask=attention_mask,
+                            num_attention_heads=num_attention_heads,
+                            size_per_head=attention_head_size,
+                            attention_probs_dropout_prob=attention_probs_dropout_prob,
+                            initializer_range=initializer_range,
+                            do_return_2d_tensor=True,
+                            batch_size=batch_size,
+                            from_seq_length=seq_length,
+                            to_seq_length=seq_length)
+                    attention_heads.append(attention_head)
 
-                    attention_output = None
-                    if len(attention_heads) == 1:
-                        attention_output = attention_heads[0]
-                    else:
-                        # In the case where we have other sequences, we just concatenate
-                        # them to the self-attention head before the projection.
-                        attention_output = tf.concat(attention_heads, axis=-1)
+                attention_output = None
+                if len(attention_heads) == 1:
+                    attention_output = attention_heads[0]
+                else:
+                    # In the case where we have other sequences, we just concatenate
+                    # them to the self-attention head before the projection.
+                    attention_output = tf.concat(attention_heads, axis=-1)
 
-                    # Run a linear projection of `hidden_size` then add a residual
-                    # with `layer_input`.
-                    with tf.compat.v1.variable_scope("output"):
-                        attention_output = dense(hidden_size, initializer)(attention_output)
-                        attention_output = dropout(attention_output, hidden_dropout_prob)
-                        attention_output = layer_norm(attention_output + layer_input)
-
-                # The activation is only applied to the "intermediate" hidden layer.
-                with tf.compat.v1.variable_scope("intermediate"):
-                    intermediate_output = dense(intermediate_size, initializer,
-                                                activation=intermediate_act_fn)(attention_output)
-
-                # Down-project back to `hidden_size` then add the residual.
+                # Run a linear projection of `hidden_size` then add a residual
+                # with `layer_input`.
                 with tf.compat.v1.variable_scope("output"):
-                    layer_output = dense(hidden_size, initializer)(intermediate_output)
-                    layer_output = dropout(layer_output, hidden_dropout_prob)
-                    layer_output = layer_norm(layer_output + attention_output)
-                    prev_output = layer_output
-                    all_layer_outputs.append(layer_output)
+                    attention_output = dense(hidden_size, initializer)(attention_output)
+                    attention_output = dropout(attention_output, hidden_dropout_prob)
+                    attention_output = layer_norm(attention_output + layer_input)
+
+            # The activation is only applied to the "intermediate" hidden layer.
+            with tf.compat.v1.variable_scope("intermediate"):
+                intermediate_output = dense(intermediate_size, initializer,
+                                            activation=intermediate_act_fn)(attention_output)
+
+            # Down-project back to `hidden_size` then add the residual.
+            with tf.compat.v1.variable_scope("output"):
+                layer_output = dense(hidden_size, initializer)(intermediate_output)
+                layer_output = dropout(layer_output, hidden_dropout_prob)
+                layer_output = layer_norm(layer_output + attention_output)
+                prev_output = layer_output
+                all_layer_outputs.append(layer_output)
 
     if do_return_all_layers:
         final_outputs = []

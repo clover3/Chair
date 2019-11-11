@@ -4,11 +4,12 @@ import random
 from path import data_path
 import tensorflow as tf
 import collections
+import time
 
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import flatten
 from tlm.wiki import bert_training_data as btd
-from tlm.tf_logging import logging
+from tlm.tf_logging import tf_logging
 
 def truncate_seq(tokens_a, max_num_tokens, rng):
     """Truncates a pair of sequences to a maximum sequence length."""
@@ -38,7 +39,7 @@ class LMTrainGen:
         self.max_seq_length = 512
         self.max_predictions_per_seq = 20
         self.dupe_factor = 1
-        self.rng = random.Random(1)
+        self.rng = random.Random(time.time())
 
     def load_subset_documents(self, start, end):
         all_docs = []
@@ -62,12 +63,14 @@ class LMTrainGen:
             all_docs.extend(pickle.load(f))
         return all_docs
 
-    def pool_tokens(self, document, target_seq_length):
+    def pool_tokens(self, document, target_seq_length, skip = False):
         results = []
         current_chunk = []
         current_length = 0
         max_num_tokens = self.max_seq_length - 2
         i = 0
+        if skip:
+            i = i + self.rng.randint(0,3)
         while i < len(document):
             segment = document[i]
             current_chunk.append(segment)
@@ -78,6 +81,8 @@ class LMTrainGen:
                 results.append(tokens_a)
                 current_chunk = []
                 current_length = 0
+                if skip:
+                    i = i + self.rng.randint(0, 3)
             i += 1
         return results
 
@@ -203,8 +208,8 @@ class UnmaskedGen(LMTrainGen):
             total_written += 1
 
             if inst_index < 20:
-                logging.info("*** Example ***")
-                logging.info("tokens: %s" % " ".join(
+                tf_logging.info("*** Example ***")
+                tf_logging.info("tokens: %s" % " ".join(
                     [tokenization.printable_text(x) for x in instance.tokens]))
 
                 for feature_name in features.keys():
@@ -214,10 +219,10 @@ class UnmaskedGen(LMTrainGen):
                         values = feature.int64_list.value
                     elif feature.float_list.value:
                         values = feature.float_list.value
-                    logging.info(
+                    tf_logging.info(
                         "%s: %s" % (feature_name, " ".join([str(x) for x in values])))
 
         for writer in writers:
             writer.close()
 
-        logging.info("Wrote %d total instances", total_written)
+        tf_logging.info("Wrote %d total instances", total_written)

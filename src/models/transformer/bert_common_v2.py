@@ -404,6 +404,22 @@ def assert_rank(tensor, expected_rank, name=None):
 
 
 
+
+def gather_index2d(sequence_tensor, positions):
+    sequence_shape = get_shape_list2(sequence_tensor)
+    batch_size = sequence_shape[0]
+    seq_length = sequence_shape[1]
+
+    flat_offsets = tf.reshape(
+      tf.range(0, batch_size, dtype=tf.int32) * seq_length, [-1, 1])
+    flat_positions = tf.reshape(positions + flat_offsets, [-1])
+    flat_sequence_tensor = tf.reshape(sequence_tensor,
+                                    [batch_size * seq_length])
+    output_tensor = tf.gather(flat_sequence_tensor, flat_positions)
+    return tf.reshape(output_tensor, [batch_size,-1])
+
+
+
 def gather_indexes(sequence_tensor, positions):
     sequence_shape = get_shape_list(sequence_tensor, expected_rank=3)
     batch_size = sequence_shape[0]
@@ -418,3 +434,19 @@ def gather_indexes(sequence_tensor, positions):
     output_tensor = tf.gather(flat_sequence_tensor, flat_positions)
     return output_tensor
 
+
+def get_shape_list2(tensor):
+    shape = tensor.shape.as_list()
+
+    non_static_indexes = []
+    for (index, dim) in enumerate(shape):
+        if dim is None:
+            non_static_indexes.append(index)
+
+    if not non_static_indexes:
+        return shape
+
+    dyn_shape = tf.shape(input=tensor)
+    for index in non_static_indexes:
+        shape[index] = dyn_shape[index]
+    return shape

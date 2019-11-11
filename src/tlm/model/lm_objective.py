@@ -53,13 +53,13 @@ def get_next_sentence_output(bert_config, input_tensor, labels):
 
     # Simple binary classification. Note that 0 is "next sentence" and 1 is
     # "random sentence". This weight matrix is not used after pre-training.
-    with tf.variable_scope("cls/seq_relationship"):
-        output_weights = tf.get_variable(
+    with tf.compat.v1.variable_scope("cls/seq_relationship"):
+        output_weights = tf.compat.v1.get_variable(
             "output_weights",
             shape=[2, bert_config.hidden_size],
             initializer=bert_common.create_initializer(bert_config.initializer_range))
-        output_bias = tf.get_variable(
-            "output_bias", shape=[2], initializer=tf.zeros_initializer())
+        output_bias = tf.compat.v1.get_variable(
+            "output_bias", shape=[2], initializer=tf.compat.v1.keras.initializers.Zeros())
 
         logits = tf.matmul(input_tensor, output_weights, transpose_b=True)
         logits = tf.nn.bias_add(logits, output_bias)

@@ -18,7 +18,11 @@ class Worker:
 
 
     def work(self, job_id):
-        docs = self.unmaskedgen.load_doc_seg(job_id)
+        doc_id = job_id
+        if doc_id > 1000:
+            doc_id = doc_id % 1000
+
+        docs = self.unmaskedgen.load_doc_seg(doc_id)
         output_file = os.path.join(self.out_dir, "{}".format(job_id))
         all_insts = []
         for doc in docs:
@@ -29,11 +33,11 @@ class Worker:
 
 
 def main():
-    mark_path = os.path.join(working_path, "wiki_unmasked_mark")
-    out_path = os.path.join(working_path, "tf_unmasked")
+    mark_path = os.path.join(working_path, "wiki_unmasked_repeat_mark")
+    out_path = os.path.join(working_path, "tf_unmasked_repeat")
     if not os.path.exists(out_path):
         os.mkdir(out_path)
-    mtm = MarkedTaskManager(100, mark_path, 1)
+    mtm = MarkedTaskManager(4000, mark_path, 1)
     worker = Worker(out_path)
 
     job_id = mtm.pool_job()

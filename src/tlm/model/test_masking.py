@@ -15,13 +15,13 @@ def test_routine():
     mask_token = 3
     masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights \
         = do_masking(input_ids, segment_ids, n_sample, mask_token)
-
+    print(input_ids)
     print("mask_input_ids: ", masked_input_ids.shape)
-    print("masked_lm_positions: ", masked_lm_positions.shape)
-    print("masked_lm_ids: ", masked_lm_ids.shape)
-
     print(masked_input_ids)
+    print("masked_lm_positions: ", masked_lm_positions.shape)
     print(masked_lm_positions)
+    print("masked_lm_ids: ", masked_lm_ids.shape)
+    print(masked_lm_ids)
 
 
 
