@@ -1,5 +1,5 @@
 from misc_lib import TimeEstimator
-from tlm.mysql_sentence import *
+from tlm.retrieve_lm.mysql_sentence import *
 from tlm.retrieve_lm.select_sentence import get_random_sent
 from cache import StreamPickler
 from data_generator import tokenizer_b as tokenization

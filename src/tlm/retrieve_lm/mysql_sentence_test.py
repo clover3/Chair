@@ -1,4 +1,4 @@
-from tlm.mysql_sentence import get_sent, get_doc_sent
+from tlm.retrieve_lm.mysql_sentence import get_doc_sent
 
 
 

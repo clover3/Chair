@@ -1,0 +1,6 @@
+
+
+CLS_ID = 101
+SEP_ID = 102
+MASK_ID = 103
+PAD_ID = 0

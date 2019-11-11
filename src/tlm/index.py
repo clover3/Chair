@@ -5,11 +5,11 @@ import path
 import os
 import pickle
 from models.classic.stopword import load_stopwords
-from tlm.stem import CacheStemmer
+from tlm.retrieve_lm.stem import CacheStemmer
 from misc_lib import TimeEstimator
 from collections import Counter, defaultdict
 from data_generator import tokenizer_b as tokenization
-from tlm.token_server import get_token_reader
+from tlm.retrieve_lm.token_server import get_token_reader
 
 
 def build_krovetz_index():

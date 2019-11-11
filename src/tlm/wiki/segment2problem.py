@@ -5,7 +5,7 @@ from data_generator import tokenizer_wo_tf as tokenization
 from sydney_manager import ReadyMarkTaskManager
 from misc_lib import flatten
 from tlm.retrieve_lm.retreive_candidates import get_visible
-from tlm.stem import CacheStemmer
+from tlm.retrieve_lm.stem import CacheStemmer
 from tlm.retrieve_lm.galago_query_maker import clean_query
 from collections import Counter
 from adhoc.bm25 import BM25_3_q_weight

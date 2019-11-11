@@ -7,7 +7,7 @@ from collections import Counter
 from data_generator import tokenizer_wo_tf as tokenization
 from tlm.retrieve_lm.retreive_candidates import get_visible
 from misc_lib import *
-from tlm.stem import CacheStemmer, stemmed_counter
+from tlm.retrieve_lm.stem import CacheStemmer, stemmed_counter
 from models.classic.stopword import load_stopwords
 from sydney_manager import MarkedTaskManager
 from tlm.retrieve_lm import per_doc_posting_server

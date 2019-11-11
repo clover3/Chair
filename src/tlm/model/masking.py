@@ -1,6 +1,7 @@
 from tlm.model.base import BertModel
 from models.transformer.bert_common_v2 import get_shape_list
 import tensorflow as tf
+from data_generator import special_tokens
 
 def pad_as_shape(value, shape_like, dims):
     for _ in range(dims):
@@ -38,7 +39,7 @@ def scatter_with_batch(input_ids, indice, mask_token):
     return tf.reshape(flat_output, [batch_size, seq_length])
 
 
-def sample(input_ids, input_masks, n_sample, mask_token):
+def do_masking(input_ids, input_masks, n_sample, mask_token):
 
     rand = tf.random.uniform(
         input_ids.shape,
@@ -48,7 +49,12 @@ def sample(input_ids, input_masks, n_sample, mask_token):
         seed=None,
         name=None
     )
+
+    special_mask = tf.logical_or(tf.equal(input_ids, special_tokens.SEP_ID),
+                                 tf.equal(input_ids, special_tokens.CLS_ID))
+
     rand = rand * tf.cast(input_masks, tf.float32)
+    rand = rand * tf.cast(tf.logical_not(special_mask), tf.float32)
 
     _, indice = tf.math.top_k(
         rand,

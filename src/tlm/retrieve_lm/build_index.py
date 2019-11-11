@@ -1,4 +1,4 @@
-from tlm.mysql_sentence import get_sent_gid, mydb
+from tlm.retrieve_lm.mysql_sentence import get_sent_gid, mydb
 import nltk
 from misc_lib import TimeEstimator
 

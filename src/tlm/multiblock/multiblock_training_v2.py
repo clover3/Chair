@@ -28,6 +28,7 @@ import models.transformer.bert_common_v2 as bert_common
 #import models.transformer.multiblock as multiblock_modeling
 import models.transformer.patch_v2 as modeling
 import models.transformer.optimization_v2 as optimization
+from trainer.get_param_num import get_param_num
 import pickle
 
 logging = py_logging.getLogger('tensorflow')
@@ -208,7 +209,7 @@ def model_fn_builder(bert_config, init_checkpoint, learning_rate,
         init_string = ", *INIT_FROM_CKPT*"
       logging.info("  name = %s, shape = %s%s", var.name, var.shape,
                       init_string)
-    print_param_nums()
+    logging.info("Total parameters : %d" % get_param_num())
 
     def name_d(name):
         name = name.split(":")[0]
@@ -488,17 +489,6 @@ def predict_input_fn_builder(input_files,
     return d
 
   return input_fn
-
-def print_param_nums():
-  total_parameters = 0
-  for variable in tf.compat.v1.trainable_variables():
-    # shape is an array of tf.Dimension
-    shape = variable.get_shape()
-    variable_parameters = 1
-    for dim in shape:
-        variable_parameters *= dim
-    total_parameters += variable_parameters
-  logging.info("Total parameters : %d" % total_parameters)
 
 
 def _decode_record(record, name_to_features):

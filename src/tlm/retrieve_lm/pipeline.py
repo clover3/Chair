@@ -14,7 +14,7 @@ from tlm.retrieve_lm.sample_segments import get_doc_sent,extend
 from tlm.retrieve_lm.segment2problem import generate_mask
 from tlm.retrieve_lm.retreive_candidates import translate_mask2token_level, remove
 from tlm.retrieve_lm.galago_query_maker import clean_query
-from tlm.stem import CacheStemmer, stemmed_counter
+from tlm.retrieve_lm.stem import CacheStemmer, stemmed_counter
 from tlm.feature2 import FeatureExtractor
 from tlm.feature_extractor import libsvm_str
 from tlm.two_seg_pretraining import write_predict_instance

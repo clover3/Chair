@@ -1,6 +1,6 @@
 import data_generator.data_parser.trec as trec
 from nltk.tokenize import sent_tokenize
-from tlm.mysql_sentence import add_sents
+from tlm.retrieve_lm.mysql_sentence import add_sents
 
 def add_rob_sents():
     print("loading...")
