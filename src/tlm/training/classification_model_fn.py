@@ -39,7 +39,6 @@ def model_fn_classification(bert_config, train_config, logging, model_class):
         logits=logits,
         labels=labels)
     loss = tf.reduce_mean(input_tensor=loss_arr)
-    acc = tf_module.accuracy(logits, label_ids)
 
     tvars = tf.compat.v1.trainable_variables()
 
@@ -77,10 +76,13 @@ def model_fn_classification(bert_config, train_config, logging, model_class):
           train_op=train_op,
           scaffold_fn=scaffold_fn)
     elif mode == tf.estimator.ModeKeys.EVAL:
-      metric = {"accuracy": acc,
-        "loss": loss}
-      eval_metrics = (metric, [
-          loss, acc
+      def metric_fn(loss_arr, logits, label_ids):
+          acc = tf_module.accuracy(logits, label_ids)
+          loss = tf.reduce_mean(loss_arr)
+          return {"accuracy": acc, "loss": loss}
+
+      eval_metrics = (metric_fn, [
+          loss_arr, logits, label_ids
       ])
       output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
           mode=mode,
