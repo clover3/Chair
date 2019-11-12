@@ -1452,6 +1452,7 @@ class Experiment:
     def load_nli_data(self, data_loader):
         # load data
         print("Loading Data")
+
         pickle_name = "{}_{}".format(data_loader.name, self.hparam.batch_size)
 
         def get_data():
@@ -1459,7 +1460,7 @@ class Experiment:
             dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
             return train_batches, dev_batches
 
-        return self.pickle_cacher(pickle_name, get_data, use_pickle=True)
+        return self.pickle_cacher(pickle_name, get_data, use_pickle=False)
 
     def load_nli_data_with_info(self, data_loader):
         print("Loading Data")
