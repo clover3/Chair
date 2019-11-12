@@ -1381,6 +1381,42 @@ class Experiment:
         id = preload_id[1]
         self.load_model_white(name, id, include_namespace, verbose)
 
+    def preload_id_to_path(self, preload_id):
+        name = preload_id[0]
+        id = preload_id[1]
+        run_dir = os.path.join(self.model_dir, 'runs')
+        save_dir = os.path.join(run_dir, name)
+        path = os.path.join(save_dir, "{}".format(id))
+        return path
+
+
+    def load_model_v2_map(self, preload_id, include_namespace, verbose=True):
+        path = self.preload_id_to_path(preload_id)
+
+        def condition(v):
+            if v.name.split('/')[0] in include_namespace:
+                return True
+            return False
+
+        variables = tf.contrib.slim.get_variables_to_restore()
+        load_mapping = dict()
+        for v in variables:
+            if condition(v):
+                name_tokens = v.name.split('/')
+                save_name = '/'.join(name_tokens[1:]).split(":")[0]
+                if "layer_normalization" in save_name:
+                    save_name = save_name.replace("layer_normalization", "LayerNorm")
+                load_mapping[save_name] = v
+
+        variables_to_restore = [v for v in variables if condition(v)]
+        if verbose:
+            for v in variables_to_restore:
+                print(v)
+
+        self.loader = tf.train.Saver(variables_to_restore, max_to_keep=1)
+        self.loader.restore(self.sess, path)
+
+
     def load_concat_model(self, load_id_list, include_namespace, target_namespaces):
         def get_path(preload_id):
             name = preload_id[0]
@@ -3690,7 +3726,11 @@ class Experiment:
         self.sess.run(tf.global_variables_initializer())
         self.merged = tf.summary.merge_all()
         self.setup_summary_writer(exp_config.name)
-        self.load_model_white2(preload_id, exp_config.load_names)
+
+        if exp_config.v2_load:
+            self.load_model_v2_map(preload_id, exp_config.load_names)
+        else:
+            self.load_model_white2(preload_id, exp_config.load_names)
 
         train_batches, dev_batches = self.load_nli_data(data_loader)
 

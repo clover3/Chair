@@ -39,6 +39,7 @@ def train_mnli_any_way():
     e_config.num_epoch = 1
     e_config.save_interval = 30 * 60  # 30 minutes
     e_config.load_names = ['bert', 'cls_dense']  # , 'aux_conflict']
+    e_config.v2_load = True
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     load_id = ("nli512", 'model.ckpt-65000')
     e.train_nli_any_way(nli_setting, e_config, data_loader, load_id)
