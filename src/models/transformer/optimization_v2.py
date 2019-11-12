@@ -97,17 +97,19 @@ def create_optimizer_different(loss, name_d, factor, init_lr, num_train_steps, n
   train_op = tf.group(train_op, [global_step.assign(new_global_step)])
   return train_op
 
-def create_optimizer_from_config(loss, train_config):
+def create_optimizer_from_config(loss, train_config, tvars=None):
   train_op = create_optimizer(
     loss,
     train_config.learning_rate,
     train_config.num_train_steps,
     train_config.num_warmup_steps,
-    train_config.use_tpu)
+    train_config.use_tpu,
+    tvars
+  )
   return train_op
 
 
-def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu):
+def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu, tvars=None):
   """Creates an optimizer training op."""
   global_step = tf.compat.v1.train.get_or_create_global_step()
 
@@ -152,7 +154,8 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu):
   if use_tpu:
     optimizer = tf.compat.v1.tpu.CrossShardOptimizer(optimizer)
 
-  tvars = tf.compat.v1.trainable_variables()
+  if tvars is None:
+    tvars = tf.compat.v1.trainable_variables()
 
   grads = tf.gradients(ys=loss, xs=tvars)
 

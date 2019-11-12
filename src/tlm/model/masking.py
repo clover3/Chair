@@ -23,8 +23,16 @@ def scatter_with_batch(input_ids, indice, mask_token):
     return tf.reshape(flat_output, [batch_size, seq_length])
 
 
-def do_masking(input_ids, input_masks, n_sample, mask_token):
+def remove_special_mask(input_ids, input_masks, t):
+    special_mask = tf.logical_or(tf.equal(input_ids, special_tokens.SEP_ID),
+                                 tf.equal(input_ids, special_tokens.CLS_ID))
 
+    t = t * tf.cast(input_masks, tf.float32)
+    t = t * tf.cast(tf.logical_not(special_mask), tf.float32)
+    return t
+
+
+def random_masking(input_ids, input_masks, n_sample, mask_token):
     rand = tf.random.uniform(
         input_ids.shape,
         minval=0,
@@ -34,12 +42,7 @@ def do_masking(input_ids, input_masks, n_sample, mask_token):
         name=None
     )
 
-    special_mask = tf.logical_or(tf.equal(input_ids, special_tokens.SEP_ID),
-                                 tf.equal(input_ids, special_tokens.CLS_ID))
-
-    rand = rand * tf.cast(input_masks, tf.float32)
-    rand = rand * tf.cast(tf.logical_not(special_mask), tf.float32)
-
+    rand = remove_special_mask(input_ids, input_masks, rand)
     _, indice = tf.math.top_k(
         rand,
         k=n_sample,
@@ -52,3 +55,41 @@ def do_masking(input_ids, input_masks, n_sample, mask_token):
     masked_lm_weights = tf.ones_like(masked_lm_positions, dtype=tf.float32)
     masked_input_ids = scatter_with_batch(input_ids, indice, mask_token)
     return masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights
+
+
+def biased_masking(input_ids, input_masks, priority_score, alpha, n_sample, mask_token):
+    prob = tf.nn.softmax(priority_score, axis=1)
+    sequence_shape = get_shape_list2(prob)
+    batch_size = sequence_shape[0]
+    seq_length = sequence_shape[1]
+
+    rand = tf.random.uniform(
+        prob.shape,
+        minval=0,
+        maxval=1,
+        dtype=tf.dtypes.float32,
+        seed=None,
+        name=None
+    )
+
+    p1 = tf.ones_like(prob, dtype=tf.float32) / seq_length * alpha
+    p2 = prob * (1-alpha)
+    final_p = p1 + p2
+
+    rand = rand * final_p
+    rand = remove_special_mask(input_ids, input_masks, rand)
+
+    _, indice = tf.math.top_k(
+        rand,
+        k=n_sample,
+        sorted=False,
+        name=None
+    )
+
+    masked_lm_positions = indice # [batch, n_samples]
+    masked_lm_ids = gather_index2d(input_ids, masked_lm_positions)
+    masked_lm_weights = tf.ones_like(masked_lm_positions, dtype=tf.float32)
+    masked_input_ids = scatter_with_batch(input_ids, indice, mask_token)
+    return masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights
+
+

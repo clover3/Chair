@@ -21,6 +21,10 @@ flags.DEFINE_string(
     "init_checkpoint", None,
     "Initial checkpoint (usually from a pre-trained BERT model).")
 
+flags.DEFINE_string(
+    "target_task_checkpoint", None,
+    "Checkpoint for target task.")
+
 flags.DEFINE_integer(
     "max_seq_length", 128,
     "The maximum total input sequence length after WordPiece tokenization. "
@@ -97,3 +101,5 @@ flags.DEFINE_integer(
     "num_tpu_cores", 8,
     "Only used if `use_tpu` is True. Total number of TPU cores to use.")
 
+
+flags.DEFINE_bool("target_lm", False, "Whether to run target_lm as training.")

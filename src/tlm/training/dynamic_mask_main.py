@@ -4,8 +4,9 @@ import tensorflow as tf
 from tlm.training.train_flags import *
 import tlm.model.base as modeling
 from tlm.training.input_fn import input_fn_builder_unmasked as input_fn_builder
-from tlm.training.model_fn import model_fn_builder
+from tlm.training.model_fn import model_fn_random_masking, model_fn_target_masking
 from tlm.model.base import BertModel
+
 import os
 
 class TrainConfig:
@@ -39,10 +40,10 @@ class TrainConfig:
         )
 
 def main(_):
-    tf_logging.setLevel(logging.INFO)
+    lm_pretrain()
 
-    for l in logging.root.manager.loggerDict:
-        logging.getLogger(l).addHandler(logging.FileHandler(l+".log"))
+def lm_pretrain():
+    tf_logging.setLevel(logging.DEBUG)
 
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
 
@@ -77,10 +78,17 @@ def main(_):
           num_shards=FLAGS.num_tpu_cores,
           per_host_input_for_training=is_per_host))
 
+    model_fn_builder = model_fn_random_masking
+    train_config = TrainConfig.from_flags(FLAGS)
+
+    if FLAGS.target_lm:
+      model_fn_builder = model_fn_target_masking
+      train_config.target_task_checkpoint = FLAGS.target_task_checkpoint
+
     model_fn = model_fn_builder(
         bert_config=bert_config,
-        train_config=TrainConfig.from_flags(FLAGS),
-        logging=logging,
+        train_config=train_config,
+        logging=tf_logging,
         model_class=BertModel,
     )
 

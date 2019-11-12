@@ -36,5 +36,18 @@ class MyFormatter(logging.Formatter):
         result = self.prefix(record) + result
         return result
 
+
+class TFFilter(logging.Filter):
+    excludes = ["Outfeed finished for iteration", "TPUPollingThread found TPU"]
+    def filter(self, record):
+        for e in self.excludes:
+            if e in record.msg:
+                return False
+        return True
+
+
 h = ab_logging.get_absl_handler()
 h.setFormatter(MyFormatter())
+
+logging.getLogger('oauth2client.transport').setLevel(logging.WARNING)
+tf_logging.addFilter(TFFilter())
