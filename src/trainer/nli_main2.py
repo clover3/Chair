@@ -28,6 +28,7 @@ def train_nil():
 
 def train_mnli_any_way():
     hp = HP()
+    hp.batch_size = 8
     hp.compare_deletion_num = 20
     e = Experiment(hp)
     nli_setting = NLI()

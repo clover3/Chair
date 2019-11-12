@@ -1394,26 +1394,39 @@ class Experiment:
         path = self.preload_id_to_path(preload_id)
 
         def condition(v):
-            if v.name.split('/')[0] in include_namespace:
+            return condition_n(v.name)
+
+        def condition_n(name):
+            if name.split('/')[0] in include_namespace:
                 return True
             return False
 
-        variables = tf.contrib.slim.get_variables_to_restore()
+        tvars = tf.contrib.slim.get_variables_to_restore()
+        name_to_variable = collections.OrderedDict()
+        for var in tvars:
+            name = var.name
+            m = re.match("^(.*):\\d+$", name)
+            if m is not None:
+                name = m.group(1)
+            name_to_variable[name] = var
+
+        init_vars = tf.train.list_variables(path)
+
         load_mapping = dict()
-        for v in variables:
-            if condition(v):
-                name_tokens = v.name.split('/')
-                save_name = '/'.join(name_tokens[1:]).split(":")[0]
-                if "layer_normalization" in save_name:
-                    save_name = save_name.replace("layer_normalization", "LayerNorm")
-                load_mapping[save_name] = v
+        for v in init_vars:
+            if condition_n(v[0]):
+                name_tokens = v[0].split('/')
+                var_name = '/'.join(name_tokens).split(":")[0]
+                print(var_name)
+                targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", var_name)
+                targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
+                if targ_name in name_to_variable:
+                    if verbose:
+                        print(targ_name)
+                    load_mapping[var_name] = name_to_variable[targ_name]
 
-        variables_to_restore = [v for v in variables if condition(v)]
-        if verbose:
-            for v in variables_to_restore:
-                print(v)
 
-        self.loader = tf.train.Saver(variables_to_restore, max_to_keep=1)
+        self.loader = tf.train.Saver(load_mapping, max_to_keep=1)
         self.loader.restore(self.sess, path)
 
 
@@ -1496,7 +1509,7 @@ class Experiment:
             dev_batches = get_batches_ex(data_loader.get_dev_data(), self.hparam.batch_size, 4)
             return train_batches, dev_batches
 
-        return self.pickle_cacher(pickle_name, get_data, use_pickle=False)
+        return self.pickle_cacher(pickle_name, get_data, use_pickle=True)
 
     def load_nli_data_with_info(self, data_loader):
         print("Loading Data")
