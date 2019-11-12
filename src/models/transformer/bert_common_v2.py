@@ -87,11 +87,23 @@ def get_assignment_map_from_checkpoint(tvars, init_checkpoint):
         (name, var) = (x[0], x[1])
         if name not in name_to_variable:
             continue
-        assignment_map[name] = name
+        assignment_map[name] = name_to_variable[name]
         initialized_variable_names[name] = 1
         initialized_variable_names[name + ":0"] = 1
 
     return (assignment_map, initialized_variable_names)
+
+
+def compress_assignment_map(assignment_map):
+    new_assignment_map = {}
+
+    def drop_last(name):
+        return "/".join(name.split("/")[:-1])
+
+    for key, value in assignment_map.items():
+        new_assignment_map[drop_last(key)] = drop_last(value)
+    return new_assignment_map
+
 
 
 def dropout(input_tensor, dropout_prob):

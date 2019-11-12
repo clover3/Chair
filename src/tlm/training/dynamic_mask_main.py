@@ -43,7 +43,7 @@ def main(_):
     lm_pretrain()
 
 def lm_pretrain():
-    tf_logging.setLevel(logging.DEBUG)
+    tf_logging.setLevel(logging.INFO)
 
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
 
