@@ -4,6 +4,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 from datetime import datetime
 import time
+from models.transformer.hp_finetue import HP
 
 import tensorflow as tf
 from tensorflow.python import debug as tf_debug
@@ -165,6 +166,111 @@ class EstimatorRunner:
             tf.logging.info("  %s" % input_file)
 
         train_files = input_files[1:]
+        eval_files = input_files[:1]
+        tf.enable_eager_execution()
+
+        tf.logging.info("***** Running training *****")
+        tf.logging.info("  Batch size = %d", hp.batch_size)
+        train_input_fn = input_fn_builder(
+            input_files=train_files,
+            max_seq_length=hp.seq_max,
+            is_training=True)
+
+        # `sloppy` mode means that the interleaving is not exact. This adds
+        # even more randomness to the training pipeline.
+        class _LoggerHook(tf.train.SessionRunHook):
+            def __init__(self, log_frequency):
+                self.log_frequency = log_frequency
+
+            def begin(self):
+                self._step = -1
+                self._start_time = time.time()
+
+            def before_run(self, run_context):
+                self._step += 1
+                return tf.train.SessionRunArgs(task.loss)  # Asks for loss value.
+
+            def after_run(self, run_context, run_values):
+                if self._step % self.log_frequency == 0:
+                    current_time = time.time()
+                    duration = current_time - self._start_time
+                    self._start_time = current_time
+
+                    loss_value = run_values.results
+                    examples_per_sec = self.log_frequency * 16 / duration
+                    sec_per_batch = float(duration / self.log_frequency)
+
+                    format_str = ('%s: step %d, loss = %.2f (%.1f examples/sec; %.3f '
+                                  'sec/batch)')
+                    print(format_str % (datetime.now(), self._step, loss_value,
+                                        examples_per_sec, sec_per_batch))
+
+        hook = _LoggerHook(100)
+        estimator.train(input_fn=train_input_fn,
+                        hooks= [hook],
+                        max_steps = FLAGS.train_steps
+                        )
+
+        eval_input_fn = input_fn_builder(
+            input_files=eval_files,
+            max_seq_length=hp.seq_max,
+            is_training=False)
+
+        result = estimator.evaluate(
+            input_fn=eval_input_fn,
+            steps=20,
+            )
+
+        tf.logging.info("***** Eval results *****")
+        for key in sorted(result.keys()):
+            tf.logging.info("  %s = %s", key, str(result[key]))
+
+    def train_classification(self, data_loader):
+        hp = HP()
+        tpu_cluster_resolver = None
+
+        if FLAGS.use_tpu:
+            model_dir = FLAGS.model_dir
+            hp.batch_size = FLAGS.batch_size
+            data_dir = FLAGS.data_dir
+            input_pattern = os.path.join(data_dir, "Thus.train_*")
+            tpu_cluster_resolver = tf.contrib.cluster_resolver.TPUClusterResolver(
+                FLAGS.tpu)
+            init_checkpoint = FLAGS.init_checkpoint
+        else:
+            model_dir = get_model_dir("causal")
+            input_pattern = os.path.join(path.data_path, "causal", "Thus.train_*")
+            init_checkpoint = os.path.join(path.model_path, "runs", FLAGS.init_checkpoint)
+
+
+        vocab_size = 30522
+
+        task = Classification(3)
+        model = transformer_est.TransformerEst(hp, vocab_size, task, FLAGS.use_tpu, init_checkpoint)
+
+        is_per_host = tf.contrib.tpu.InputPipelineConfig.PER_HOST_V2
+        run_config = tf.contrib.tpu.RunConfig(
+            cluster=tpu_cluster_resolver,
+            master=None,
+            model_dir=model_dir,
+            save_checkpoints_steps=1000,
+            tpu_config=tf.contrib.tpu.TPUConfig(
+                iterations_per_loop=1000,
+                num_shards=8,
+                per_host_input_for_training=is_per_host))
+
+        estimator = tf.contrib.tpu.TPUEstimator(
+            use_tpu=FLAGS.use_tpu,
+            model_fn=model.model_fn,
+            config=run_config,
+            train_batch_size=hp.batch_size,
+            eval_batch_size=hp.batch_size)
+
+        input_files = tf.gfile.Glob(input_pattern)
+        for input_file in input_files:
+            tf.logging.info("  %s" % input_file)
+
+        train_files = data_loader.get_train
         eval_files = input_files[:1]
         tf.enable_eager_execution()
 

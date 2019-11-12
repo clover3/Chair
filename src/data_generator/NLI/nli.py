@@ -271,7 +271,7 @@ class DataLoader:
 
     def example_generator(self, filename):
         label_list = self.class_labels()
-        for idx, line in enumerate(tf.gfile.Open(filename, "rb")):
+        for idx, line in enumerate(tf.compat.v1.gfile.Open(filename, "rb")):
             if idx == 0: continue  # skip header
             line = line.strip().decode("utf-8")
             split_line = line.split("\t")

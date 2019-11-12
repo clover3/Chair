@@ -6,29 +6,7 @@ from data_generator.NLI import nli
 from data_generator.ubuntu import ubuntu
 from trainer.experiment import Experiment
 from trainer.ExperimentConfig import ExperimentConfig
-
-class HP:
-    '''Hyperparameters'''
-    # data
-    # training
-    batch_size = 16  # alias = N
-    lr = 1e-5  # learning rate. In paper, learning rate is adjusted to the global step.
-    logdir = 'logdir'  # log directory
-
-    # model
-    #seq_max = 140  # Maximum number of words in a sentence. alias = T.
-    seq_max = 512 # Maximum number of words in a sentence. alias = T.
-    #lm_seq_len = 512
-    # Feel free to increase this if you are ambitious.
-    hidden_units = 768  # alias = C
-    num_blocks = 12  # number of encoder/decoder blocks
-    num_epochs = 20
-    num_heads = 12
-    dropout_rate = 0.1
-    sinusoid = False  # If True, use sinusoid. If false, positional embedding.
-    intermediate_size = 3072
-    type_vocab_size = 2
-
+from models.transformer.hp_finetue import HP
 
 
 def train_nil():
@@ -48,6 +26,24 @@ def train_nil():
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')
     e.train_nli_ex_0(nli_setting, e_config, data_loader, load_id, False)
 
+def train_mnli_any_way():
+    hp = HP()
+    hp.compare_deletion_num = 20
+    e = Experiment(hp)
+    nli_setting = NLI()
+    nli_setting.vocab_size = 30522
+    nli_setting.vocab_filename = "bert_voca.txt"
+    e_config = ExperimentConfig()
+    e_config.name = "NLIEx_Any_512"
+    e_config.ex_val = False
+    e_config.num_epoch = 1
+    e_config.save_interval = 30 * 60  # 30 minutes
+    e_config.load_names = ['bert', 'cls_dense']  # , 'aux_conflict']
+    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    load_id = ("nli512", 'model.ckpt-65000')
+    e.train_nli_any_way(nli_setting, e_config, data_loader, load_id)
+
+
 if __name__ == '__main__':
-    action = "train_nil"
+    action = "train_mnli_any_way"
     locals()[action]()

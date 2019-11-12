@@ -103,3 +103,5 @@ flags.DEFINE_integer(
 
 
 flags.DEFINE_bool("target_lm", False, "Whether to run target_lm as training.")
+
+flags.DEFINE_integer("num_classes", 3, "Number of classes (in case of classification task.")
