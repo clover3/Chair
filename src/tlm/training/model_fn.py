@@ -3,13 +3,14 @@ from models.transformer import bert_common_v2 as bert_common
 from models.transformer import optimization_v2 as optimization
 from trainer.get_param_num import get_param_num
 from tlm.model.lm_objective import get_masked_lm_output, get_next_sentence_output
-from data_generator.special_tokens import MASK_ID
+from data_generator.special_tokens import MASK_ID, PAD_ID
 from tlm.model.masking import random_masking, biased_masking
 import tlm.training.target_mask_hp as target_mask_hp
 from tlm.model.nli_ex_v2 import transformer_nli
 from models.transformer import hyperparams
 import collections
 import re
+from tlm.tf_logging import tf_logging
 
 def metric_fn(masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
               masked_lm_weights, next_sentence_example_loss,
@@ -168,11 +169,21 @@ def get_nli_ex_model_segmented(input_ids, input_mask, segment_ids):
     sequence_shape = bert_common.get_shape_list2(input_ids)
     batch_size = sequence_shape[0]
 
+    step = 200
+    pad_len = 200 - 1 - (512 - (step * 2 - 1))
     def spread(t):
-        return tf.concat([t[:,:200], t[:,200:400], t[:,400:]], 0)
+        cls_token = t[:,:1]
+        pad = tf.ones([batch_size, pad_len], tf.dtypes.int32) * PAD_ID
+        a = t[:, :step]
+        b = tf.concat([cls_token, t[:,step:step*2-1]], axis=1)
+        c = tf.concat([cls_token, t[:,step*2-1:], pad], axis=1)
+        return tf.concat([a,b,c], axis=0)
 
     def collect(t):
-        return tf.concat([t[:batch_size] , t[batch_size:batch_size *2], t[batch_size *2:]], 1)
+        a = t[:batch_size]
+        b = t[batch_size:batch_size *2, 1:]
+        c = t[batch_size*2:, 1:-pad_len]
+        return tf.concat([a,b,c], axis=1)
 
     model = transformer_nli(hp, spread(input_ids), spread(input_mask), spread(segment_ids), voca_size, method, False)
     output = model.conf_logits
@@ -186,9 +197,11 @@ def get_tlm_assignment_map(tvars, lm_checkpoint, target_task_checkpoint):
     """Compute the union of the current variables and checkpoint variables."""
     assignment_map = {}
     initialized_variable_names = {}
+    real_name_map = {}
 
-    name_to_variable = collections.OrderedDict()
     target_task_name_to_var = collections.OrderedDict()
+    lm_assignment_candidate = {}
+    tt_assignment_candidate = {}
     for var in tvars:
         name = var.name
         m = re.match("^(.*):\\d+$", name)
@@ -200,22 +213,40 @@ def get_tlm_assignment_map(tvars, lm_checkpoint, target_task_checkpoint):
         if tlm_prefix == top_scope:
             inner_name = "/".join(tokens[1:])
             target_task_name_to_var[inner_name] = var
-        name_to_variable[name] = var
+            targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", inner_name)
+            targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
+            tt_assignment_candidate[targ_name] = var
+            tf_logging.info("Init from target_task_checkpoint : %s" % name)
+        else:
+            targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
+            targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
+            lm_assignment_candidate[targ_name] = var
+            tf_logging.info("Init from lm_checkpoint : %s" % name)
+
+        real_name_map[targ_name] = name
+
+    assignment_map_tt = collections.OrderedDict()
+    if target_task_checkpoint:
+        for x in tf.train.list_variables(target_task_checkpoint):
+            (name, var) = (x[0], x[1])
+            if name not in tt_assignment_candidate:
+                continue
+            assignment_map_tt[name] = tt_assignment_candidate[name]
+
+            real_name = real_name_map[name]
+            initialized_variable_names[real_name] = 1
 
 
-    assignment_map = collections.OrderedDict()
     if lm_checkpoint:
         for x in tf.train.list_variables(lm_checkpoint):
             (name, var) = (x[0], x[1])
-            if name not in name_to_variable:
+            if name not in lm_assignment_candidate:
                 continue
-            assignment_map[name] = name
-            print(name)
+            assignment_map[name] = lm_assignment_candidate[name]
             initialized_variable_names[name] = 1
             initialized_variable_names[name + ":0"] = 1
 
-    assignment_map['/'] = tlm_prefix+"/"
-    return (assignment_map, initialized_variable_names)
+    return (assignment_map, assignment_map_tt, initialized_variable_names)
 
 
 
@@ -234,7 +265,7 @@ def model_fn_target_masking(bert_config, train_config, logging, model_class):
     segment_ids = features["segment_ids"]
     next_sentence_labels = features["next_sentence_labels"]
 
-    priority_model = get_nli_ex_model
+    priority_model = get_nli_ex_model_segmented
     with tf.compat.v1.variable_scope(tlm_prefix):
       priority_score = tf.stop_gradient(priority_model(input_ids,
                                      input_mask,
@@ -269,17 +300,17 @@ def model_fn_target_masking(bert_config, train_config, logging, model_class):
 
     total_loss = masked_lm_loss + next_sentence_loss
 
-    all_vars = tf.compat.v1.trainable_variables()
+    all_vars = tf.compat.v1.all_variables()
 
     initialized_variable_names = {}
     scaffold_fn = None
-    (assignment_map, initialized_variable_names
+    (assignment_map, assignment_map_tt, initialized_variable_names
       ) = get_tlm_assignment_map(all_vars, train_config.init_checkpoint, train_config.target_task_checkpoint)
 
     def load_fn():
       if train_config.init_checkpoint:
         tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
-      tf.compat.v1.train.init_from_checkpoint(train_config.target_task_checkpoint, assignment_map)
+      tf.compat.v1.train.init_from_checkpoint(train_config.target_task_checkpoint, assignment_map_tt)
 
     if train_config.use_tpu:
       def tpu_scaffold():
