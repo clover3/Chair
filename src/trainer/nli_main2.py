@@ -61,10 +61,10 @@ def visualize_senli_on_plain_text():
     e_config.load_names = ['bert' ,'cls_dense', 'aux_conflict']
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
-    load_id = ("NLIEx_Any_A", "model-7255")
+    load_id = ("NLIEx_AnyA", "model-7255")
 
-    p = "C:\work\Code\Chair\data\\tf\\0"
-    data = extract_stream(p)
+    p = "/mnt/scratch/youngwookim/Chair/data/tf/1"
+    data = list(extract_stream(p))
     e.nli_visualization_lm(nli_setting, e_config, data_loader, load_id, data)
 
 

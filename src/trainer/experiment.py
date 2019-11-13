@@ -4816,7 +4816,7 @@ class Experiment:
         result = []
         batches = get_batches_ex(data, self.hparam.batch_size, 3)
         for batch in batches:
-            x0, x1, x2, y = batch
+            x0, x1, x2, = batch
             logits, conf_logit = self.sess.run([task.sout, task.conf_logits],
                                                feed_dict={
                                                    task.x_list[0]: x0,
@@ -4830,14 +4830,14 @@ class Experiment:
 
             for idx in range(len(x0)):
                 input_ids = x0[idx]
-                conf_p, conf_h = data_loader.split_p_h_with_input_ids(conf_logit[idx], input_ids)
+                conf_p, conf_h = conf_logit[idx][1:100], conf_logit[idx][100:]
                 #prem, hypo, p_indice, h_indice = entry
 
-                p_enc, h_enc = data_loader.split_p_h_with_input_ids(input_ids, input_ids)
+                p_enc, h_enc = input_ids[1:100], input_ids[100:]
                 p_tokens = data_loader.encoder.decode_list(p_enc)
                 h_tokens = data_loader.encoder.decode_list(h_enc)
 
-                result.append((conf_p, conf_h, p_tokens, h_tokens, predictions[idx], y[idx]))
+                result.append((conf_p, conf_h, p_tokens, h_tokens, predictions[idx], 0))
 
         save_to_pickle(result, exp_config.name)
         visualize.visualize_nli(result, exp_config.name)
