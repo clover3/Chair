@@ -7,12 +7,12 @@ from data_generator.create_feature import create_int_feature
 from misc_lib import exist_or_mkdir
 
 def gen_tf_recored():
-    data_loader = DataLoader(512, "bert_voca.txt", True)
+    data_loader = DataLoader(200, "bert_voca.txt", True)
     todo = [("train", data_loader.train_file), ("dev", data_loader.dev_file)]
 
     for name, file in todo[::-1]:
-        exist_or_mkdir(os.path.join(output_path, "nli_tfrecord"))
-        output_file = os.path.join(output_path, "nli_tfrecord", name)
+        exist_or_mkdir(os.path.join(output_path, "nli_tfrecord_200"))
+        output_file = os.path.join(output_path, "nli_tfrecord_200", name)
         writer = tf.io.TFRecordWriter(output_file)
         total_written = 0
         for e in data_loader.example_generator(file):

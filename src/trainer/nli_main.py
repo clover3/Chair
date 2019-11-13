@@ -408,7 +408,7 @@ def analyze_nli_pair():
 
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     load_id = ("NLIEx_T", "model-12097")
-    e.nli_visualization_pairing(nli_setting, e_config, data_loader, load_id)
+    e.nli_visualization_pairing(nli_setting, e_config, data_loader, load_id, data)
 
 
 

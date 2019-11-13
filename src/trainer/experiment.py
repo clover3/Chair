@@ -4800,6 +4800,50 @@ class Experiment:
         #visualize.make_explain_sentence(result, exp_config.name)
 
 
+    def nli_visualization_lm(self, nli_setting, exp_config, data_loader, preload_id, data):
+        print("nli_visualization_lm")
+        task = transformer_nli(self.hparam, nli_setting.vocab_size, 6, False)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            if exp_config.load_names :
+                self.load_model_white(name, id, exp_config.load_names)
+            else:
+                assert False
+
+        result = []
+        batches = get_batches_ex(data, self.hparam.batch_size, 3)
+        for batch in batches:
+            x0, x1, x2, y = batch
+            logits, conf_logit = self.sess.run([task.sout, task.conf_logits],
+                                               feed_dict={
+                                                   task.x_list[0]: x0,
+                                                   task.x_list[1]: x1,
+                                                   task.x_list[2]: x2,
+                                               })
+            predictions = logits.argmax(axis=1)
+
+            print(self.hparam.batch_size)
+            print(len(x0))
+
+            for idx in range(len(x0)):
+                input_ids = x0[idx]
+                conf_p, conf_h = data_loader.split_p_h_with_input_ids(conf_logit[idx], input_ids)
+                #prem, hypo, p_indice, h_indice = entry
+
+                p_enc, h_enc = data_loader.split_p_h_with_input_ids(input_ids, input_ids)
+                p_tokens = data_loader.encoder.decode_list(p_enc)
+                h_tokens = data_loader.encoder.decode_list(h_enc)
+
+                result.append((conf_p, conf_h, p_tokens, h_tokens, predictions[idx], y[idx]))
+
+        save_to_pickle(result, exp_config.name)
+        visualize.visualize_nli(result, exp_config.name)
+        visualize.make_explain_sentence(result, exp_config.name)
+
+
 
     def eval_fidelity(self, nli_setting, exp_config, data_loader, preload_id, explain_tag):
         method = 5
