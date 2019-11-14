@@ -181,11 +181,3 @@ def cossim(v1, v2):
     return tf.losses.cosine_distance(v1_n, v2_n, axis=1)
 
 
-
-def init_session():
-    config = tf.ConfigProto(allow_soft_placement=True,
-                            log_device_placement=False)
-    config.gpu_options.allow_growth = True
-
-    return tf.Session(config=config)
-

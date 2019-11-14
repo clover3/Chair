@@ -74,6 +74,7 @@ class DataLoader:
 
 
     def load_train_data(self):
+
         path = os.path.join(corpus_dir, "train.csv")
         plain_data = list(self.example_generator(path, self.topic))
         random.shuffle(plain_data)
