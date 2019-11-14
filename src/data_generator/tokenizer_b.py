@@ -26,7 +26,7 @@ from data_generator.text_encoder import CLS_ID, SEP_ID, EOS_ID
 import re
 from packaging import version
 
-if version.parse(tf.__version__) < version.parse("1.9.9"):
+if version.parse(tf.__version__) < version.parse("1.99.9"):
     tf_gfile = tf.gfile.GFile
 else:
     tf_gfile = tf.compat.v1.gfile.GFile

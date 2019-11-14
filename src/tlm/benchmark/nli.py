@@ -145,7 +145,7 @@ def run_nli(run_name, preload_id):
     data_loader = nli.DataLoader(hp.seq_max, "bert_voca.txt", True)
     data = get_batches_from_data_loader(data_loader, hp.batch_size)
     run_name = "{}_{}_NLI".format(run_name, init_model)
-    saved_model = train_nli(hp, nli_setting, run_name, 0, data, preload_id)
+    saved_model = train_nli(hp, nli_setting, run_name, 3, data, preload_id)
     tf.reset_default_graph()
     avg_acc = test_nli(hp, nli_setting, run_name, data, saved_model)
     print("avg_acc: ", avg_acc)
