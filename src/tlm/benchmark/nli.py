@@ -13,9 +13,13 @@ from data_generator.shared_setting import NLI
 from google_wrap.gs_wrap import download_model_last_auto
 import sys
 from path import output_path
+from path import model_path
+
+def get_model_path(run_name, step_name):
+    return os.path.join(model_path, 'runs', run_name, step_name)
 
 
-def train_nli(hparam, nli_setting, run_name, num_epochs, data, preload_id):
+def train_nli(hparam, nli_setting, run_name, num_epochs, data, model_path):
     print("Train nil :", run_name)
     task = transformer_nli(hparam, nli_setting.vocab_size, 2)
     with tf.variable_scope("optimizer"):
@@ -28,10 +32,8 @@ def train_nli(hparam, nli_setting, run_name, num_epochs, data, preload_id):
     sess = init_session()
     sess.run(tf.global_variables_initializer())
 
-    if preload_id is not None:
-        dir_name = preload_id[0]
-        file_name = preload_id[1]
-        load_bert_v2(sess, dir_name, file_name)
+    if model_path is not None:
+        load_bert_v2(sess, model_path)
 
     def batch2feed_dict(batch):
         x0, x1, x2, y  = batch
@@ -133,10 +135,8 @@ def get_batches_from_data_loader(data_loader, batch_size):
     return train_batches, dev_batches
 
 
-def run_nli(run_name, preload_id):
+def run_nli_w_path(run_name, step_name, model_path):
     #run_name
-    _, init_model = preload_id
-
     hp = HPBert()
     nli_setting = NLI()
     nli_setting.vocab_size = 30522
@@ -144,18 +144,23 @@ def run_nli(run_name, preload_id):
 
     data_loader = nli.DataLoader(hp.seq_max, "bert_voca.txt", True)
     data = get_batches_from_data_loader(data_loader, hp.batch_size)
-    run_name = "{}_{}_NLI".format(run_name, init_model)
-    saved_model = train_nli(hp, nli_setting, run_name, 3, data, preload_id)
+    run_name = "{}_{}_NLI".format(run_name, step_name)
+    saved_model = train_nli(hp, nli_setting, run_name, 3, data, model_path)
     tf.reset_default_graph()
     avg_acc = test_nli(hp, nli_setting, run_name, data, saved_model)
     print("avg_acc: ", avg_acc)
 
-    save_report("nli", run_name, init_model, avg_acc)
+    save_report("nli", run_name, step_name, avg_acc)
+
+
+def run_nli(run_name, step_name):
+    model_path = get_model_path(run_name, step_name)
+    return run_nli_w_path(run_name, step_name, model_path)
 
 
 def download_and_run_nli(run_name):
-    preload_id = download_model_last_auto(run_name)
-    run_nli(run_name, preload_id)
+    run_name, step_name= download_model_last_auto(run_name)
+    run_nli(run_name, step_name)
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ import re
 tf_logger = logging.getLogger('tensorflow')
 
 
+
 def save_model(sess, name, global_step):
     run_dir = os.path.join(model_path, 'runs')
     save_dir = os.path.join(run_dir, name)
@@ -23,11 +24,7 @@ def save_model(sess, name, global_step):
     return ret
 
 
-def load_bert_v2(sess, dir_name, file_name):
-    run_dir = os.path.join(model_path, 'runs')
-    save_dir = os.path.join(run_dir, dir_name)
-    path = os.path.join(save_dir, file_name)
-
+def load_bert_v2(sess, model_path):
     tvars = tf.contrib.slim.get_variables_to_restore()
     name_to_variable = {}
     for var in tvars:
@@ -37,7 +34,7 @@ def load_bert_v2(sess, dir_name, file_name):
             name = m.group(1)
         name_to_variable[name] = var
 
-    init_vars = tf.train.list_variables(path)
+    init_vars = tf.train.list_variables(model_path)
 
     load_mapping = dict()
     for v in init_vars:
@@ -49,6 +46,6 @@ def load_bert_v2(sess, dir_name, file_name):
             tf_logger.debug("{} -> {}".format(checkpoint_name, tvar_name))
             load_mapping[checkpoint_name] = name_to_variable[tvar_name]
 
-    print("Restoring: {} {}".format(dir_name, file_name))
+    print("Restoring: {}".format(model_path))
     loader = tf.train.Saver(load_mapping, max_to_keep=1)
-    loader.restore(sess, path)
+    loader.restore(sess, model_path)
