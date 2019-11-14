@@ -27,7 +27,6 @@ def download_model_last(gs_model_dir, local_dir):
 
     gs_model_prefix = gs_model_dir + "/model"
     for blob in client.list_blobs("clovertpu", prefix=gs_model_prefix, ):
-        print(blob.name)
         if latest is None or latest.updated < blob.updated:
             latest = blob
 

@@ -26,11 +26,7 @@ from data_generator.text_encoder import CLS_ID, SEP_ID, EOS_ID
 import re
 from packaging import version
 
-if version.parse(tf.__version__) < version.parse("1.99.9"):
-    tf_gfile = tf.gfile.GFile
-else:
-    tf_gfile = tf.compat.v1.gfile.GFile
-
+from data_generator.tf_gfile_support import tf_gfile
 def validate_case_matches_checkpoint(do_lower_case, init_checkpoint):
   """Checks whether the casing config is consistent with the checkpoint name."""
 

@@ -10,6 +10,7 @@ import unicodedata
 from data_generator.NLI.enlidef import *
 import copy
 from data_generator.data_parser.esnli import load_split
+from data_generator.tf_gfile_support import tf_gfile
 
 num_classes = 3
 
@@ -271,7 +272,7 @@ class DataLoader:
 
     def example_generator(self, filename):
         label_list = self.class_labels()
-        for idx, line in enumerate(tf.compat.v1.gfile.Open(filename, "rb")):
+        for idx, line in enumerate(tf_gfile(filename, "rb")):
             if idx == 0: continue  # skip header
             line = line.strip().decode("utf-8")
             split_line = line.split("\t")
@@ -284,7 +285,7 @@ class DataLoader:
 
     def info_generator(self, filename):
         label_list = self.class_labels()
-        for idx, line in enumerate(tf.gfile.Open(filename, "rb")):
+        for idx, line in enumerate(tf_gfile(filename, "rb")):
             if idx == 0: continue  # skip header
             line = line.strip().decode("utf-8")
             split_line = line.split("\t")
@@ -740,7 +741,7 @@ def load_plain_text(file_name):
 def load_nli(path):
     label_list = ["entailment", "neutral", "contradiction", ]
 
-    for idx, line in enumerate(tf.gfile.Open(path, "rb")):
+    for idx, line in enumerate(tf_gfile(path, "rb")):
         if idx == 0: continue  # skip header
         line = line.strip().decode("utf-8")
         split_line = line.split("\t")
