@@ -5,7 +5,6 @@ import os
 from misc_lib import exist_or_mkdir
 from os.path import join as pjoin
 from path import model_path
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"]= "C:\work\Code\webtool\CloverTPU-3fa50b250c68.json"
 
 def credential_check():
     if not os.environ["GOOGLE_APPLICATION_CREDENTIALS"]:
