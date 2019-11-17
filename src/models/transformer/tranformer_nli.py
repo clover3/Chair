@@ -182,12 +182,8 @@ class transformer_nli_grad:
 
         all_layer_grads = []
         all_layers = self.model.all_layer_outputs
-        print(all_layers)
-        print(all_layers[0])
         for i in range(len(all_layers)):
-            print(all_layers[i])
             grad = tf.gradients(self.logits, all_layers[i])
-            print(grad)
             all_layer_grads.append(grad)
 
         grad_emb = tf.gradients(self.logits, self.model.embedding_output)
