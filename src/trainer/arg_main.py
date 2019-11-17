@@ -9,10 +9,11 @@ from data_generator.argmining import NextSentPred, DocStance
 from trainer import loader
 from arg.ukp_train_test import *
 from google_wrap import gsutil
-from tlm.fetch_grad import fetch_grad
+from tlm.param_analysis import fetch_grad, fetch_hidden_vector
 import sys
-from path import get_model_full_path, output_path
+from path import get_model_full_path, output_path, get_bert_full_path
 import pickle
+import tensorflow as tf
 
 def uni_lm():
     e = ArgExperiment()
@@ -497,9 +498,28 @@ def do_fetch_grad():
     pickle.dump(r, open(os.path.join(output_path, "grad.pickle"), "wb"))
     pickle.dump(logits, open(os.path.join(output_path, "logits.pickle"), "wb"))
 
+def do_fetch_value():
+    hp = hyperparams.HPBert()
+    voca_size = 30522
+    encode_opt = "is_good"
+    topic = "abortion"
+    tt_run_name = "arg_nli_{}_is_good".format(topic)
+    run_name = "arg_{}_{}_{}".format("fetch_value", topic, encode_opt)
+    data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt", option=encode_opt)
+
+    model_path = get_model_full_path(tt_run_name)
+    r = fetch_hidden_vector(hp, voca_size, run_name, data_loader, model_path)
+    pickle.dump(r, open(os.path.join(output_path, "hv_tt.pickle"), "wb"))
+
+    tf.reset_default_graph()
+    model_path = get_bert_full_path()
+    r = fetch_hidden_vector(hp, voca_size, run_name, data_loader, model_path)
+    pickle.dump(r, open(os.path.join(output_path, "hv_lm.pickle"), "wb"))
+
+
 if __name__ == '__main__':
     begin = time.time()
-    action = "do_fetch_grad"
+    action = "do_fetch_value"
     locals()[action]()
 
     elapsed = time.time() - begin
