@@ -493,9 +493,9 @@ def do_fetch_grad():
     run_name = "arg_{}_{}_{}".format("fetch_grad", topic, encode_opt)
     data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt", option=encode_opt)
     model_path = get_model_full_path(load_run_name)
-    r = fetch_grad(hp, voca_size, run_name, data_loader, model_path)
+    r, logits = fetch_grad(hp, voca_size, run_name, data_loader, model_path)
     pickle.dump(r, open(os.path.join(output_path, "grad.pickle"), "wb"))
-
+    pickle.dump(logits, open(os.path.join(output_path, "logits.pickle"), "wb"))
 
 if __name__ == '__main__':
     begin = time.time()

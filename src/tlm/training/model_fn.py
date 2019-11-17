@@ -88,7 +88,7 @@ def model_fn_random_masking(bert_config, train_config, logging, model_class):
      next_sentence_log_probs) = get_next_sentence_output(
          bert_config, model.get_pooled_output(), next_sentence_labels)
 
-    total_loss = masked_lm_loss + next_sentence_loss
+    total_loss = masked_lm_loss
 
     tvars = tf.compat.v1.trainable_variables()
 
@@ -96,7 +96,7 @@ def model_fn_random_masking(bert_config, train_config, logging, model_class):
     scaffold_fn = None
     if train_config.init_checkpoint:
       (assignment_map, initialized_variable_names
-      ) = bert_common.get_assignment_map_from_checkpoint(tvars, train_config.init_checkpoint)
+      ) = get_bert_assignment_map(tvars, train_config.init_checkpoint)
       if train_config.use_tpu:
 
         def tpu_scaffold():
@@ -192,6 +192,41 @@ def get_nli_ex_model_segmented(input_ids, input_mask, segment_ids):
 
 
 tlm_prefix = "target_task"
+
+def get_bert_assignment_map(tvars, lm_checkpoint):
+    lm_assignment_candidate = {}
+    real_name_map = {}
+    for var in tvars:
+        name = var.name
+        m = re.match("^(.*):\\d+$", name)
+        if m is not None:
+            name = m.group(1)
+
+        tokens = name.split("/")
+        top_scope = tokens[0]
+        targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
+        targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
+        lm_assignment_candidate[targ_name] = var
+        tf_logging.info("Init from lm_checkpoint : %s" % name)
+        real_name_map[targ_name] = name
+
+    assignment_map = {}
+    initialized_variable_names = {}
+    if lm_checkpoint:
+        for x in tf.train.list_variables(lm_checkpoint):
+            (name, var) = (x[0], x[1])
+            if name not in lm_assignment_candidate:
+                continue
+            assignment_map[name] = lm_assignment_candidate[name]
+
+            tvar_name = real_name_map[name]
+
+            initialized_variable_names[tvar_name] = 1
+            initialized_variable_names[tvar_name + ":0"] = 1
+
+    return (assignment_map, initialized_variable_names)
+
+
 
 def get_tlm_assignment_map(tvars, lm_checkpoint, target_task_checkpoint):
     """Compute the union of the current variables and checkpoint variables."""

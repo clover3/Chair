@@ -40,7 +40,8 @@ def fetch_grad(hparam, vocab_size, run_name, data_loader, model_path):
         return feed_dict
 
     def pred_fn():
-        outputs = []
+        grads = []
+        logit_list = []
         target = []
         for i in range(len(task.all_layer_grads)):
             print(task.all_layer_grads[i])
@@ -48,12 +49,13 @@ def fetch_grad(hparam, vocab_size, run_name, data_loader, model_path):
 
         target.append(task.grad_emb)
         for batch in dev_batches[:100]:
-            r = sess.run(target,
-                                       feed_dict=batch2feed_dict(batch)
-                                       )
-            outputs.append(r)
+            r, logits = sess.run([target, task.logits],
+                                   feed_dict=batch2feed_dict(batch)
+                                   )
+            grads.append(r)
+            logit_list.append(logits)
 
-        return outputs
+        return grads, logit_list
 
     return pred_fn()
 
