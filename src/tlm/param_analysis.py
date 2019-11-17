@@ -12,8 +12,6 @@ def fetch_hidden_vector(hparam, vocab_size, run_name, data_loader, model_path):
     sess = init_session()
     sess.run(tf.global_variables_initializer())
 
-    loader = tf.train.Saver(tf.global_variables(), max_to_keep=1)
-    loader.restore(sess, model_path)
     load_model_w_scope(sess, model_path, ["bert"])
     dev_batches = get_batches_ex(data_loader.get_dev_data(), hparam.batch_size, 4)
 
