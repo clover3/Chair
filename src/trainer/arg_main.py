@@ -8,7 +8,7 @@ from data_generator.argmining.ukp import BertDataLoader, PairedDataLoader, Feedb
 from data_generator.argmining import NextSentPred, DocStance
 from trainer import loader
 from arg.ukp_train_test import *
-from google import gsutil
+from google_wrap import gsutil
 from tlm.fetch_grad import fetch_grad
 import sys
 from path import get_model_full_path, output_path
@@ -484,7 +484,7 @@ def test_arg_nli_shared():
     eval_ukp_with_nli("AN_B_40000_2")
 
 
-def fetch_grad():
+def do_fetch_grad():
     hp = hyperparams.HPBert()
     voca_size = 30522
     encode_opt = "is_good"
@@ -499,7 +499,7 @@ def fetch_grad():
 
 if __name__ == '__main__':
     begin = time.time()
-    action = "fetch_grad"
+    action = "do_fetch_grad"
     locals()[action]()
 
     elapsed = time.time() - begin

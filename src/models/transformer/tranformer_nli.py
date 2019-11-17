@@ -1,5 +1,6 @@
 from task.transformer_est import Transformer, Classification
 from models.transformer import bert
+from models.transformer import bert_get_hidden
 import tensorflow as tf
 from data_generator.NLI import nli
 from trainer import tf_module
@@ -164,7 +165,7 @@ class transformer_nli_grad:
         self.y = label_ids
 
         use_one_hot_embeddings = use_tpu
-        self.model = bert.BertModel(
+        self.model = bert_get_hidden.BertModel(
             config=config,
             is_training=is_training,
             input_ids=input_ids,
@@ -180,8 +181,13 @@ class transformer_nli_grad:
         self.loss = loss
 
         all_layer_grads = []
-        for layer in self.model.get_all_encoder_layers():
-            grad = tf.gradients(self.logits, layer)
+        all_layers = self.model.all_layer_outputs
+        print(all_layers)
+        print(all_layers[0])
+        for i in range(len(all_layers)):
+            print(all_layers[i])
+            grad = tf.gradients(self.logits, all_layers[i])
+            print(grad)
             all_layer_grads.append(grad)
 
         grad_emb = tf.gradients(self.logits, self.model.embedding_output)
