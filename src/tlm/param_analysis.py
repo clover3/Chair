@@ -28,10 +28,11 @@ def fetch_hidden_vector(hparam, vocab_size, run_name, data_loader, model_path):
     def pred_fn():
         outputs = []
         for batch in dev_batches[:100]:
+            x0, x1, x2, y = batch
             all_layers, emb_outputs = sess.run([task.all_layers, task.embedding_output],
                                    feed_dict=batch2feed_dict(batch)
                                    )
-            outputs.append((all_layers, emb_outputs))
+            outputs.append((all_layers, emb_outputs, x0))
 
         return outputs
 
