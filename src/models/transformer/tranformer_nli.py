@@ -137,6 +137,57 @@ class transformer_nli:
 
 
 
+class transformer_nli_grad:
+    def __init__(self, hp, voca_size, method, is_training=True):
+        config = bert.BertConfig(vocab_size=voca_size,
+                                 hidden_size=hp.hidden_units,
+                                 num_hidden_layers=hp.num_blocks,
+                                 num_attention_heads=hp.num_heads,
+                                 intermediate_size=hp.intermediate_size,
+                                 type_vocab_size=hp.type_vocab_size,
+                                 )
+
+        seq_length = hp.seq_max
+        use_tpu = False
+        task = Classification(nli.num_classes)
+
+        input_ids = tf.placeholder(tf.int64, [None, seq_length])
+        input_mask = tf.placeholder(tf.int64, [None, seq_length])
+        segment_ids = tf.placeholder(tf.int64, [None, seq_length])
+        label_ids = tf.placeholder(tf.int64, [None])
+        if method in [0,1,3,4,5,6]:
+            self.rf_mask = tf.placeholder(tf.float32, [None, seq_length])
+        elif method in [METHOD_CROSSENT, METHOD_HINGE]:
+            self.rf_mask = tf.placeholder(tf.int32, [None, seq_length])
+
+        self.x_list = [input_ids, input_mask, segment_ids]
+        self.y = label_ids
+
+        use_one_hot_embeddings = use_tpu
+        self.model = bert.BertModel(
+            config=config,
+            is_training=is_training,
+            input_ids=input_ids,
+            input_mask=input_mask,
+            token_type_ids=segment_ids,
+            use_one_hot_embeddings=use_one_hot_embeddings)
+
+        pred, loss = task.predict(self.model.get_sequence_output(), label_ids, True)
+
+        self.logits = task.logits
+        self.sout = tf.nn.softmax(self.logits)
+        self.pred = pred
+        self.loss = loss
+
+        all_layer_grads = []
+        for layer in self.model.get_all_encoder_layers():
+            grad = tf.gradients(self.logits, layer)
+            all_layer_grads.append(grad)
+
+        grad_emb = tf.gradients(self.logits, self.model.embedding_output)
+        self.all_layer_grads = all_layer_grads
+        self.grad_emb = grad_emb
+
 class transformer_nli_embedding_in:
     def __init__(self, hp, voca_size, is_training):
         config = bert.BertConfig(vocab_size=voca_size,
@@ -340,6 +391,7 @@ class transformer_nli_vector:
         num_tagged = tf.nn.relu(self.conf_logits+1)
         self.verbose_loss = tf.reduce_mean(tf.reduce_sum(num_tagged, axis=1))
         self.rl_loss = tf.reduce_mean(rl_loss_list)
+
 
 
 

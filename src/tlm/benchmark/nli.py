@@ -14,6 +14,7 @@ from google_wrap.gs_wrap import download_model_last_auto
 import sys
 from path import output_path
 from path import model_path
+from datetime import datetime
 
 def get_model_path(run_name, step_name):
     return os.path.join(model_path, 'runs', run_name, step_name)
@@ -83,7 +84,7 @@ def train_nli(hparam, nli_setting, run_name, num_epochs, data, model_path):
 
 def test_nli(hparam, nli_setting, run_name, data, model_path):
     print("test nil :", run_name)
-    task = transformer_nli(hparam, nli_setting.vocab_size, 2)
+    task = transformer_nli(hparam, nli_setting.vocab_size, 2, False)
 
     train_batches, dev_batches = data
 
@@ -123,7 +124,8 @@ def save_report(task, run_name, init_model, avg_acc):
     file_name = "{}_{}".format(run_name, init_model)
     p = os.path.join(output_path, "report", file_name)
     f = open(p, "w")
-    f.write("{}\n".format(time.time()))
+    time_str = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+    f.write("{}\n".format(time_str))
     f.write("{}\t{}\n".format(task, avg_acc))
 
 

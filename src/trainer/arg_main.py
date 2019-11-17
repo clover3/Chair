@@ -9,7 +9,10 @@ from data_generator.argmining import NextSentPred, DocStance
 from trainer import loader
 from arg.ukp_train_test import *
 from google import gsutil
+from tlm.fetch_grad import fetch_grad
 import sys
+from path import get_model_full_path, output_path
+import pickle
 
 def uni_lm():
     e = ArgExperiment()
@@ -470,18 +473,33 @@ def hp_tune():
     for e, v  in scores.items():
         print(e, v)
 
+
 def train_arg_nli_shared():
     step = 40000
     load_id = ("Abortion_B_1e4_{}".format(step), 'model.ckpt-{}'.format(step))
     train_ukp_with_nli(load_id, "AN_B_40000_2")
 
+
 def test_arg_nli_shared():
     eval_ukp_with_nli("AN_B_40000_2")
 
 
+def fetch_grad():
+    hp = hyperparams.HPBert()
+    voca_size = 30522
+    encode_opt = "is_good"
+    topic = "abortion"
+    load_run_name = "arg_nli_{}_is_good".format(topic)
+    run_name = "arg_{}_{}_{}".format("fetch_grad", topic, encode_opt)
+    data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt", option=encode_opt)
+    model_path = get_model_full_path(load_run_name)
+    r = fetch_grad(hp, voca_size, run_name, data_loader, model_path)
+    pickle.dump(r, open(os.path.join(output_path, "grad.pickle"), "wb"))
+
+
 if __name__ == '__main__':
     begin = time.time()
-    action = "test_arg_nli_shared"
+    action = "fetch_grad"
     locals()[action]()
 
     elapsed = time.time() - begin

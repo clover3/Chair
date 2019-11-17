@@ -15,6 +15,7 @@ model_path = os.path.join(output_path, 'model')
 
 prediction_dir = os.path.join(output_path, "prediction")
 
+
 def get_model_full_path(exp_name, run_id = None):
     run_dir = os.path.join(model_path, 'runs')
     save_dir = os.path.join(run_dir, exp_name)
@@ -31,6 +32,7 @@ def get_model_full_path(exp_name, run_id = None):
     if model_id is None:
         raise FileNotFoundError("Model does not exist on :", save_dir)
     return os.path.join(save_dir, model_id)
+
 
 def open_pred_output(name):
     path = os.path.join(prediction_dir, name)

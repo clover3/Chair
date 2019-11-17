@@ -1,4 +1,5 @@
 import os
+from misc_lib import pick1
 import pickle
 import random
 from path import data_path
@@ -25,6 +26,21 @@ def truncate_seq(tokens_a, max_num_tokens, rng):
         else:
             tokens_a.pop()
     return tokens_a
+
+
+def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
+    while True:
+        total_length = len(tokens_a) + len(tokens_b)
+        if total_length <= max_num_tokens:
+            break
+
+        trunc_tokens = tokens_a if len(tokens_a) > len(tokens_b) else tokens_b
+        assert len(trunc_tokens) >= 1
+
+        if rng.random() < 0.5:
+            del trunc_tokens[0]
+        else:
+            trunc_tokens.pop()
 
 
 class LMTrainGen:
@@ -126,6 +142,29 @@ class LMTrainGen:
 
         return instances
 
+
+    def log_print_inst(self, instance, features):
+        tf_logging.info("*** Example ***")
+        tf_logging.info("tokens: %s" % " ".join(
+            [tokenization.printable_text(x) for x in instance.tokens]))
+
+        for feature_name in features.keys():
+            feature = features[feature_name]
+            values = []
+            if feature.int64_list.value:
+                values = feature.int64_list.value
+            elif feature.float_list.value:
+                values = feature.float_list.value
+            tf_logging.info(
+                "%s: %s" % (feature_name, " ".join([str(x) for x in values])))
+
+    def pad0(self, seq, max_len):
+        assert len(seq) <= max_len
+        while len(seq) < max_len:
+            seq.append(0)
+        return seq
+
+
 class SegmentInstance(object):
     def __init__(self, tokens, segment_ids):
         self.tokens = tokens
@@ -142,7 +181,6 @@ class SegmentInstance(object):
 
     def __repr__(self):
         return self.__str__()
-
 
 
 class UnmaskedGen(LMTrainGen):
@@ -208,21 +246,92 @@ class UnmaskedGen(LMTrainGen):
             total_written += 1
 
             if inst_index < 20:
-                tf_logging.info("*** Example ***")
-                tf_logging.info("tokens: %s" % " ".join(
-                    [tokenization.printable_text(x) for x in instance.tokens]))
-
-                for feature_name in features.keys():
-                    feature = features[feature_name]
-                    values = []
-                    if feature.int64_list.value:
-                        values = feature.int64_list.value
-                    elif feature.float_list.value:
-                        values = feature.float_list.value
-                    tf_logging.info(
-                        "%s: %s" % (feature_name, " ".join([str(x) for x in values])))
+                self.log_print_inst(instance, features)
 
         for writer in writers:
             writer.close()
 
         tf_logging.info("Wrote %d total instances", total_written)
+
+class UnmaskedPairGen(UnmaskedGen):
+    def __init__(self):
+        super(UnmaskedPairGen, self).__init__()
+
+    def create_instances_from_document(self, document):
+        raise Exception()
+
+    def pool_chunks(self, document, target_seq_length, skip = False):
+        results = []
+        current_chunk = []
+        current_length = 0
+        i = 0
+        if skip:
+            i = i + self.rng.randint(0,3)
+        while i < len(document):
+            segment = document[i]
+            current_chunk.append(segment)
+            current_length += len(segment)
+            if i == len(document) - 1 or current_length >= target_seq_length:
+                results.append(current_chunk)
+                current_chunk = []
+                current_length = 0
+                if skip:
+                    i = i + self.rng.randint(0, 3)
+            i += 1
+        return results
+
+    def format_tokens_pair_n_segid(self, tokens_a, tokens_b):
+        tokens = []
+        segment_ids = []
+        tokens.append("[CLS]")
+        segment_ids.append(0)
+        for token in tokens_a:
+            tokens.append(token)
+            segment_ids.append(0)
+
+        tokens.append("[SEP]")
+        segment_ids.append(0)
+
+        for token in tokens_b:
+            tokens.append(token)
+            segment_ids.append(1)
+
+        tokens.append("[SEP]")
+        segment_ids.append(1)
+
+        return tokens, segment_ids
+
+    def create_instances_from_documents(self, documents):
+        max_num_tokens = self.max_seq_length - 3
+        target_seq_length = max_num_tokens
+
+        target_inst_num = 0
+        docs_as_chunks = []
+        for doc in documents:
+            chunks = self.pool_chunks(doc, target_seq_length)
+            docs_as_chunks.append(chunks)
+            target_inst_num += len(chunks)
+
+        instances = []
+        for _ in range(target_inst_num):
+            chunk_1 = pick1(pick1(docs_as_chunks))
+
+            m = self.rng.randint(1,len(chunk_1))
+            tokens_a = flatten(chunk_1[:m])
+            b_length = target_seq_length - len(tokens_a)
+            if self.rng.random() < 0.5 :
+                chunk_2 = pick1(pick1(docs_as_chunks))
+                tokens_b = flatten(chunk_2)[:b_length]
+            else:
+                tokens_b = flatten(chunk_1[m:])[:b_length]
+            truncate_seq_pair(tokens_a, tokens_b, target_seq_length, self.rng)
+
+            self.format_tokens_pair_n_segid(tokens_a, tokens_b)
+
+            tokens, segment_ids = self.format_tokens_pair_n_segid(tokens_a, tokens_b)
+            instance = SegmentInstance(
+                tokens=tokens,
+                segment_ids=segment_ids)
+            instances.append(instance)
+
+        return instances
