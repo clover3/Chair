@@ -6,7 +6,10 @@ import os
 def load_and_analyze():
     p = os.path.join(output_path, "grad.pickle")
     r = pickle.load(open(p, "rb"))
-    analyze(r)
+
+    p = os.path.join(output_path, "logits.pickle")
+    logit = pickle.load(open(p, "rb"))
+    analyze(r, logit)
 
 
 
@@ -36,7 +39,9 @@ def reshape_gradienet(r, seq_len, hidden_dim):
     return reshaped_grad
 
 
-def analyze(r):
+def analyze(r, logit):
+    logits = np.concatenate(logit, axis=0)
+    print(logits.shape)
     batch_size = 16
     seq_len = 200
     hidden_dim = 768
@@ -44,6 +49,8 @@ def analyze(r):
     print(reshaped_grad.shape)
 
     for inst_i in range(len(reshaped_grad)):
+        label = np.argmax(logits[inst_i])
+        print("Label : {}\t({})\t".format(label, logits[inst_i]))
         for layer_i in range(13):
             layer_no = 12 - layer_i
             if layer_no >= 1:
@@ -52,7 +59,7 @@ def analyze(r):
                 print("Embedding:", end=" ")
             for seq_i in range(seq_len):
                 v = reshaped_grad[inst_i, layer_i, seq_i]
-                print("{}/{}/{}".format(count_larger_than(v, 1e-1), count_larger_than(v, 1e-2),  count_non_zeroes(v)), end=" ")
+                print("{}/{}".format(count_larger_than(v, 1e-1), count_larger_than(v, 1e-2)), end=" ")
             print("\n")
         print("-----------------")
 if __name__ == '__main__':

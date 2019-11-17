@@ -49,3 +49,20 @@ def load_bert_v2(sess, model_path):
     print("Restoring: {}".format(model_path))
     loader = tf.train.Saver(load_mapping, max_to_keep=1)
     loader.restore(sess, model_path)
+
+
+def load_model_w_scope(sess, path, include_namespace, verbose=True):
+    def condition(v):
+        if v.name.split('/')[0] in include_namespace:
+            return True
+        return False
+
+    variables = tf.contrib.slim.get_variables_to_restore()
+    variables_to_restore = [v for v in variables if condition(v)]
+    if verbose:
+        for v in variables_to_restore:
+            print(v)
+
+    loader = tf.train.Saver(variables_to_restore, max_to_keep=1)
+    loader.restore(sess, path)
+

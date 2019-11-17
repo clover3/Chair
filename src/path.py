@@ -34,6 +34,11 @@ def get_model_full_path(exp_name, run_id = None):
     return os.path.join(save_dir, model_id)
 
 
+def get_bert_full_path():
+    return os.path.join(model_path, 'runs', "uncased_L-12_H-768_A-12", "bert_model.ckpt")
+
+
+
 def open_pred_output(name):
     path = os.path.join(prediction_dir, name)
     fout = open(path, "w")
