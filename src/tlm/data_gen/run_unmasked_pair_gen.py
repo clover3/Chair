@@ -14,7 +14,7 @@ working_path ="/mnt/nfs/work3/youngwookim/data/bert_tf"
 class Worker:
     def __init__(self, out_path):
         self.out_dir = out_path
-        self.unmaskedgen = UnmaskedPairGen()
+        self.gen = UnmaskedPairGen()
 
 
     def work(self, job_id):
@@ -22,11 +22,11 @@ class Worker:
         if doc_id > 1000:
             doc_id = doc_id % 1000
 
-        docs = self.unmaskedgen.load_doc_seg(doc_id)
+        docs = self.gen.load_doc_seg(doc_id)
         output_file = os.path.join(self.out_dir, "{}".format(job_id))
-        insts = self.unmaskedgen.create_instances_from_documents(docs)
+        insts = self.gen.create_instances_from_documents(docs)
         random.shuffle(insts)
-        self.unmaskedgen.write_instance_to_example_files(insts, [output_file])
+        self.gen.write_instance_to_example_files(insts, [output_file])
 
 
 def main():

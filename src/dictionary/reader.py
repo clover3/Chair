@@ -29,6 +29,11 @@ def is_numbering(line):
 class DictionaryReader:
     def __init__(self, entries):
         self.entries = entries
+        # entry = {
+        #         'word': word,
+        #         'content': content_list,
+        #         'head': head_list,
+        #         }
 
     @classmethod
     def open(cls, path):
@@ -43,11 +48,32 @@ class DictionaryReader:
 
         f = open(path, "r", encoding="utf-8")
 
+
+        WORD_TYPE_SINGLE = 0
+        WORD_TYPE_PHRASAL = 1
+        WORD_TYPE_MULTI_SURFACE = 2
+        def parse_word_line(word_line):
+            if len(word_line.split()) == 1:
+                return word_line, WORD_TYPE_SINGLE
+
+            if ";" in word_line:
+                words = word_line.split(";")
+                words = list([w.strip() for w in words])
+                return words, WORD_TYPE_MULTI_SURFACE
+            else:
+                return word_line, WORD_TYPE_PHRASAL
+
+
+
         def is_new_word_entry(line):
-            f_one_word = len(line.split()) == 1
-            f_all_capital = line.isupper()
-            if f_one_word and f_all_capital:
-                return True
+            if not line.isupper():
+                return False
+            if "  "  in line:
+                return False
+            if line[0].isnumeric():
+                return False
+
+            return True
 
 
 
@@ -59,7 +85,7 @@ class DictionaryReader:
         for line in f:
             line = line.strip()
             if state == STATE_BEGIN:
-                word = line
+                word_line = line
                 head_list = []
                 content_list = []
                 state = STATE_HEAD
@@ -77,24 +103,33 @@ class DictionaryReader:
             elif state == STATE_CONTENT_BEGIN:
                 if is_new_word_entry(line):
                     # Pop
-                    assert word is not None
+                    assert word_line is not None
                     if head_list == []:
-                        print("WARNING : no head found : {}".format(word))
+                        print("WARNING : no head found : {}".format(word_line))
                         cnt_no_head += 1
                     if content_list == [] :
-                        print("WARNING : no content found : {} . line_no = {}".format(word, line_no))
+                        print("WARNING : no content found : {} . line_no = {}".format(word_line, line_no))
                         cnt_no_content += 1
                         if line_no not in [505961, 596938, 967251]:
                             raise Exception("")
 
-                    entry = {
-                        'word': word,
-                        'content': content_list,
-                        'head': head_list,
-                    }
-                    data.append(entry)
+                    words, w_type = parse_word_line(word_line)
+                    if w_type == WORD_TYPE_MULTI_SURFACE:
+                        pass
+                    else:
+                        words = [words]
 
-                    word = line
+                    for w in words:
+                        entry = {
+                            'word': w,
+                            'content': content_list,
+                            'head': head_list,
+                            'type':w_type
+                        }
+                        data.append(entry)
+
+
+                    word_line = line
                     head_list = []
                     content_list = []
                     state = STATE_HEAD
@@ -241,12 +276,12 @@ class DictionaryParser:
             }
 
         def parse_content(content_lines):
-            STYLE_SINGLE_DEF = 0
+            #STYLE_SINGLE_DEF = 0
             STYLE_NUMBER_DEF = 1
             STYLE_ALPHA_DEF = 2
             STYLE_UKNOWN = -1
 
-            style = STYLE_UKNOWN
+            observed_style = STYLE_UKNOWN
 
             idx = 0
 
@@ -259,52 +294,56 @@ class DictionaryParser:
             def is_def_head(line):
                 return line.startswith("Defn:")
 
-            entries = []
-            while idx < len(content_lines):
-                line = content_lines[idx]
-                if style == STYLE_UKNOWN:
-                    if is_num_head(line):
-                        style = STYLE_NUMBER_DEF
-                    elif is_alpha_head(line):
-                        style = STYLE_ALPHA_DEF
-                    elif is_def_head(line):
-                        style = STYLE_SINGLE_DEF
-                    else:
-                        assert False
-                    cur_entry = [line]
-                elif style == STYLE_SINGLE_DEF:
-                    if is_num_head(line):
-                        assert False
-                    elif is_alpha_head(line):
-                        assert False
-                    elif is_def_head(line):
-                        assert False
-                    else:
-                        cur_entry.append(line)
-                elif style == STYLE_NUMBER_DEF:
-                    if is_num_head(line):
-                        entries.append(cur_entry)
-                        cur_entry = [line]
-                    elif is_alpha_head(line):
-                        assert False
-                    elif is_def_head(line):
-                        assert False
-                    else:
-                        cur_entry.append(line)
+            def is_new_heading(line, observed_style, prev_line):
+                if is_num_head(line):
+                    return True, STYLE_NUMBER_DEF
+                elif observed_style != STYLE_NUMBER_DEF and is_alpha_head(line):
+                    return True, STYLE_ALPHA_DEF
+                elif observed_style == STYLE_UKNOWN and is_def_head(line):
+                    return True, STYLE_UKNOWN
+                else:
+                    return False, STYLE_UKNOWN
 
-                elif style == STYLE_ALPHA_DEF:
-                    if is_num_head(line):
-                        assert False
-                    elif is_alpha_head(line):
-                        entries.append(cur_entry)
-                        cur_entry = [line]
-                    elif is_def_head(line):
-                        assert False
-                    else:
-                        cur_entry.append(line)
-                idx += 1
-            if cur_entry:
+            entries = []
+            try:
+                cur_entry = []
+                while idx < len(content_lines):
+                    line = content_lines[idx]
+                    prev_line = content_lines[idx-1] if idx > 0 else None
+                    f_new_head, style = is_new_heading(line, observed_style, prev_line)
+
+                    if f_new_head:
+                        observed_style = style
+                        if observed_style in [STYLE_ALPHA_DEF, STYLE_NUMBER_DEF] \
+                            and len(("".join(cur_entry)).strip()) > 1:
+                            entries.append(cur_entry)
+                            cur_entry = []
+                    cur_entry.append(line)
+
+                    idx += 1
+            except Exception as e:
+                print("Word", word)
+                print("Current Line:")
+                print(line)
+                for line in content_lines:
+                    print(line)
+                raise e
+
+            if cur_entry and "".join(cur_entry).strip():
                 entries.append(cur_entry)
+
+            wrong = False
+            for e in entries:
+                if len("".join(e)) < 10:
+                    wrong = True
+
+            if wrong:
+                print(word)
+                for e in entries:
+                    print(e)
+
+
+
 
             return entries
 
@@ -338,7 +377,6 @@ class DictionaryParser:
 
 def simple_parser(d1):
     d = {}
-
     for e in d1.entries:
         w = e['word']
         text = " ".join(e['content'])
@@ -350,7 +388,7 @@ def simple_parser(d1):
     return d
 
 
-if __name__ == "__main__":
+def simple_parser_demo():
     path = "c:\\work\\Data\\webster\\webster_headerless.txt"
     d1 = DictionaryReader.open(path)
     #d2 = DictionaryParser(d1)
@@ -359,5 +397,31 @@ if __name__ == "__main__":
     for w in d:
         l_list.append(len(d[w]))
 
+    line_cnt =0
+    for w in d:
+        print(w, end="\t")
+        line_cnt += 1
+        if line_cnt == 20:
+            line_cnt = 0
+            print()
+
     print("avg", np.average(l_list))
     print("std", np.std(l_list))
+
+def parser_dev():
+    path = "c:\\work\\Data\\webster\\webster_headerless.txt"
+    d1 = DictionaryReader.open(path)
+    d2 = DictionaryParser(d1)
+
+def dictionary_reader_demo():
+    path = "c:\\work\\Data\\webster\\webster_headerless.txt"
+    d1 = DictionaryReader.open(path)
+    for e in d1.entries:
+        w = e['word']
+        print(w)
+        print(e['content'])
+
+
+
+if __name__ == "__main__":
+    dictionary_reader_demo()

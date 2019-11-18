@@ -1,7 +1,9 @@
 import pickle
 import numpy as np
-from path import output_path
+from path import output_path, data_path
 import os
+from data_generator import tokenizer_wo_tf
+
 
 def load_and_analyze_gradient():
     p = os.path.join(output_path, "grad.pickle")
@@ -13,6 +15,9 @@ def load_and_analyze_gradient():
 
 
 def load_and_analyze_hv():
+    tokenizer = tokenizer_wo_tf.FullTokenizer(os.path.join(data_path, "bert_voca.txt"))
+
+
     p = os.path.join(output_path, "hv_tt.pickle")
     hv_tt = pickle.load(open(p, "rb"))
 
@@ -22,7 +27,7 @@ def load_and_analyze_hv():
     p = os.path.join(output_path, "grad.pickle")
     tt_grad = pickle.load(open(p, "rb"))
 
-    analyze_hv(hv_tt, hv_lm, tt_grad)
+    analyze_hv(hv_tt, hv_lm, tt_grad, tokenizer)
 
 
 
@@ -80,12 +85,15 @@ def analyze_gradient(r, logit):
 
 def reshape(hv):
     l = []
-    for layers, emb in hv:
+    x_list = []
+    for layers, emb, x0 in hv:
         combined = np.stack([emb]+layers)
         l.append(combined)
+        x_list.append(x0)
     r = np.concatenate(l, axis=1)
     r = np.transpose(r, [1,0,2,3])
-    return r
+    x_list = np.concatenate(x_list, axis=0)
+    return r, x_list
 
 
 
@@ -137,28 +145,33 @@ def diff_and_grad(v1, v2, g):
 
 
 
-def analyze_hv(hv_tt, hv_lm, tt_grad):
+def analyze_hv(hv_tt, hv_lm, tt_grad, tokenizer):
     batch_size = 16
     seq_len = 200
     hidden_dim = 768
     reshaped_grad = reshape_gradienet(tt_grad, seq_len, hidden_dim, False)
 
-    hv_tt = reshape(hv_tt)
-    hv_lm = reshape(hv_lm)
+    hv_tt, x_list = reshape(hv_tt)
+    hv_lm, x_list = reshape(hv_lm)
 
     assert len(hv_lm) == len(hv_tt)
     for inst_i in range(len(hv_lm)):
+        print("\t", end="")
+        for seq_i in range(seq_len):
+            token = tokenizer.convert_ids_to_tokens([x_list[inst_i, seq_i]])[0]
+            print("{}".format(token), end="\t")
+        print()
         for layer_i in range(13):
             layer_no = layer_i
             if layer_no >= 1:
-                print("Layer {} :".format(layer_no), end=" ")
+                print("Layer {} :".format(layer_no), end="\t")
             else:
-                print("Embedding:", end=" ")
+                print("Embedding:", end="\t")
             for seq_i in range(seq_len):
                 n_diff_1, n_diff_2 = diff_and_grad(hv_lm[inst_i, layer_i, seq_i],
                                                  hv_tt[inst_i, layer_i, seq_i],
                                                  reshaped_grad[inst_i, layer_i, seq_i])
-                print("{}({})".format(n_diff_1, n_diff_2), end=" ")
+                print("{}({})".format(n_diff_1, n_diff_2), end="\t")
             print("\n")
         print("-----------------")
 
