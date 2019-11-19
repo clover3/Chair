@@ -27,6 +27,7 @@ def remove_special_mask(input_ids, input_masks, t):
     special_mask = tf.logical_or(tf.equal(input_ids, special_tokens.SEP_ID),
                                  tf.equal(input_ids, special_tokens.CLS_ID))
 
+    special_mask = tf.logical_or(special_mask, tf.equal(input_ids, special_tokens.UNUSED_4))
     t = t * tf.cast(input_masks, tf.float32)
     t = t * tf.cast(tf.logical_not(special_mask), tf.float32)
     return t

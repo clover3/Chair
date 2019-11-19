@@ -1,11 +1,13 @@
 from tlm.tf_logging import tf_logging, logging
 import tensorflow as tf
-
+import pickle
 from tlm.training.train_flags import *
 import tlm.model.base as modeling
-from tlm.training.input_fn import input_fn_builder_unmasked as input_fn_builder
+from tlm.training.input_fn import input_fn_builder_unmasked, input_fn_builder_dict
 from tlm.training.model_fn import model_fn_random_masking, model_fn_target_masking
+from tlm.training.dict_model_fn import model_fn_dict_reader
 from tlm.model.base import BertModel
+from tlm.model.dict_reader import DictReaderModel
 
 import os
 
@@ -83,16 +85,24 @@ def lm_pretrain():
 
     model_fn_builder = model_fn_random_masking
     train_config = TrainConfig.from_flags(FLAGS)
-
+    model_class = BertModel
+    input_fn_builder = input_fn_builder_unmasked
     if FLAGS.target_lm:
       model_fn_builder = model_fn_target_masking
       train_config.target_task_checkpoint = FLAGS.target_task_checkpoint
+
+    if FLAGS.dict_lm:
+      tf_logging.info("Runing Dict LM")
+      model_fn_builder = model_fn_dict_reader
+      model_class = DictReaderModel
+      input_fn_builder = input_fn_builder_dict
+
 
     model_fn = model_fn_builder(
         bert_config=bert_config,
         train_config=train_config,
         logging=tf_logging,
-        model_class=BertModel,
+        model_class=model_class,
     )
 
     # If TPU is not available, this will fall back to normal Estimator on CPU
@@ -111,8 +121,7 @@ def lm_pretrain():
         tf_logging.info("  Batch size = %d", FLAGS.train_batch_size)
         train_input_fn = input_fn_builder(
             input_files=input_files,
-            max_seq_length=FLAGS.max_seq_length,
-            max_predictions_per_seq=FLAGS.max_predictions_per_seq,
+            flags=FLAGS,
             is_training=True)
         estimator.train(input_fn=train_input_fn, max_steps=FLAGS.num_train_steps)
 
@@ -122,8 +131,7 @@ def lm_pretrain():
 
         eval_input_fn = input_fn_builder(
             input_files=input_files,
-            max_seq_length=FLAGS.max_seq_length,
-            max_predictions_per_seq=FLAGS.max_predictions_per_seq,
+            flags=FLAGS,
             is_training=False)
 
         result = estimator.evaluate(
@@ -135,6 +143,17 @@ def lm_pretrain():
           for key in sorted(result.keys()):
             tf_logging.info("  %s = %s", key, str(result[key]))
             writer.write("%s = %s\n" % (key, str(result[key])))
+
+    if FLAGS.do_predict:
+        tf_logging.info("***** Running prediction *****")
+        tf_logging.info("  Batch size = %d", FLAGS.eval_batch_size)
+        predict_input_fn = input_fn_builder(
+            input_files=input_files,
+            flags=FLAGS,
+            is_training=False,
+        )
+        result = estimator.predict(input_fn=predict_input_fn, yield_single_examples=False)
+        pickle.dump(list(result), open("result.pickle", "wb"))
 
 
 if __name__ == "__main__":

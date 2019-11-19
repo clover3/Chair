@@ -151,6 +151,8 @@ def model_fn_random_masking(bert_config, train_config, logging, model_class):
   return model_fn
 
 
+
+
 def get_nli_ex_model(input_ids, input_mask, segment_ids):
   method = 5
   hp = hyperparams.HPBert()
@@ -225,7 +227,6 @@ def get_bert_assignment_map(tvars, lm_checkpoint):
             initialized_variable_names[tvar_name + ":0"] = 1
 
     return (assignment_map, initialized_variable_names)
-
 
 
 def get_tlm_assignment_map(tvars, lm_checkpoint, target_task_checkpoint):
@@ -399,3 +400,6 @@ def model_fn_target_masking(bert_config, train_config, logging, model_class):
     return output_spec
 
   return model_fn
+
+
+

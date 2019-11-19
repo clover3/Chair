@@ -37,6 +37,15 @@ flags.DEFINE_integer(
     "Sequences longer than this will be truncated, and sequences shorter "
     "than this will be padded. Must match data generation.")
 
+
+flags.DEFINE_integer(
+    "max_def_length", 256,
+    "max length for dictionary entry")
+
+flags.DEFINE_integer(
+    "max_loc_length", 10,
+    "max length for locations of words")
+
 flags.DEFINE_integer(
     "max_predictions_per_seq", 20,
     "Maximum number of masked LM predictions per sequence. "
@@ -103,6 +112,8 @@ flags.DEFINE_integer(
 
 
 flags.DEFINE_bool("target_lm", False, "Whether to run target_lm as training.")
+
+flags.DEFINE_bool("dict_lm", False, "Whether to run dict_lm as training.")
 
 flags.DEFINE_bool("log_debug", False, ".")
 
