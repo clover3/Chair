@@ -61,6 +61,13 @@ flags.DEFINE_bool("do_eval", False, "Whether to run eval on the dev set.")
 
 flags.DEFINE_bool("do_predict", False, "Whether to run predicition .")
 
+flags.DEFINE_string(
+    "prediction_op", "", "what to predict"
+)
+
+flags.DEFINE_string(
+    "out_file", "result.pickle", "name for the output file"
+)
 flags.DEFINE_integer("train_batch_size", 32, "Total batch size for training.")
 
 flags.DEFINE_integer("eval_batch_size", 8, "Total batch size for eval.")
@@ -85,6 +92,8 @@ flags.DEFINE_integer("max_eval_steps", 100, "Maximum number of eval steps.")
 flags.DEFINE_integer("max_pred_steps", 100, "Maximum number of prediction steps.")
 
 flags.DEFINE_bool("use_tpu", False, "Whether to use TPU or GPU/CPU.")
+
+flags.DEFINE_bool("use_target_pos_emb", False, "Whether to use use_target_pos_emb.")
 
 flags.DEFINE_string(
     "tpu_name", None,
@@ -118,4 +127,6 @@ flags.DEFINE_bool("dict_lm", False, "Whether to run dict_lm as training.")
 flags.DEFINE_bool("log_debug", False, ".")
 
 flags.DEFINE_integer("num_classes", 3, "Number of classes (in case of classification task.")
+
+flags.DEFINE_integer("gradient_accumulation", 1, "How many batch to accumulate for gradient update.")
 

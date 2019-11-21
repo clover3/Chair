@@ -109,6 +109,35 @@ def create_optimizer_from_config(loss, train_config, tvars=None):
   return train_op
 
 
+def get_learning_rate(global_step, init_lr, num_train_steps, num_warmup_steps):
+    learning_rate = tf.constant(value=init_lr, shape=[], dtype=tf.float32)
+
+    # Implements linear decay of the learning rate.
+    learning_rate = tf.compat.v1.train.polynomial_decay(
+        learning_rate,
+        global_step,
+        num_train_steps,
+        end_learning_rate=0.0,
+        power=1.0,
+        cycle=False)
+
+    # Implements linear warmup. I.e., if global_step < num_warmup_steps, the
+    # learning rate will be `global_step/num_warmup_steps * init_lr`.
+    if num_warmup_steps:
+        global_steps_int = tf.cast(global_step, tf.int32)
+        warmup_steps_int = tf.constant(num_warmup_steps, dtype=tf.int32)
+
+        global_steps_float = tf.cast(global_steps_int, tf.float32)
+        warmup_steps_float = tf.cast(warmup_steps_int, tf.float32)
+
+        warmup_percent_done = global_steps_float / warmup_steps_float
+        warmup_learning_rate = init_lr * warmup_percent_done
+
+        is_warmup = tf.cast(global_steps_int < warmup_steps_int, tf.float32)
+        learning_rate = (
+                (1.0 - is_warmup) * learning_rate + is_warmup * warmup_learning_rate)
+    return learning_rate
+
 def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu, tvars=None):
   """Creates an optimizer training op."""
   global_step = tf.compat.v1.train.get_or_create_global_step()

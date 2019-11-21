@@ -19,7 +19,9 @@ class TrainConfig:
                  num_warmup_steps,
                  use_tpu,
                  use_one_hot_embeddings,
-                 max_predictions_per_seq
+                 max_predictions_per_seq,
+                 gradient_accumulation=1,
+                 use_target_pos_emb=False,
                  ):
         self.init_checkpoint = init_checkpoint
         self.learning_rate = learning_rate
@@ -28,6 +30,8 @@ class TrainConfig:
         self.use_tpu = use_tpu
         self.use_one_hot_embeddings = use_one_hot_embeddings
         self.max_predictions_per_seq = max_predictions_per_seq
+        self.gradient_accumulation = gradient_accumulation
+        self.use_target_pos_emb = use_target_pos_emb
 
     @classmethod
     def from_flags(cls, flags):
@@ -38,7 +42,9 @@ class TrainConfig:
             flags.num_warmup_steps,
             flags.use_tpu,
             flags.use_tpu,
-            flags.max_predictions_per_seq
+            flags.max_predictions_per_seq,
+            flags.gradient_accumulation,
+            flags.use_target_pos_emb
         )
 
 def main(_):
@@ -48,7 +54,6 @@ def lm_pretrain():
     tf_logging.setLevel(logging.INFO)
     if FLAGS.log_debug:
         tf_logging.setLevel(logging.DEBUG)
-
 
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
 
@@ -83,27 +88,48 @@ def lm_pretrain():
           num_shards=FLAGS.num_tpu_cores,
           per_host_input_for_training=is_per_host))
 
-    model_fn_builder = model_fn_random_masking
-    train_config = TrainConfig.from_flags(FLAGS)
-    model_class = BertModel
-    input_fn_builder = input_fn_builder_unmasked
+
+    TASK_LM = 0
+    TASK_TLM = 1
+    TASK_DICT_LM = 2
+
+    task = TASK_LM
     if FLAGS.target_lm:
-      model_fn_builder = model_fn_target_masking
-      train_config.target_task_checkpoint = FLAGS.target_task_checkpoint
+        task = TASK_TLM
+    elif FLAGS.dict_lm:
+        task = TASK_DICT_LM
 
-    if FLAGS.dict_lm:
-      tf_logging.info("Runing Dict LM")
-      model_fn_builder = model_fn_dict_reader
-      model_class = DictReaderModel
-      input_fn_builder = input_fn_builder_dict
+    train_config = TrainConfig.from_flags(FLAGS)
+    if task == TASK_LM:
+        tf_logging.info("Running LM")
+        input_fn_builder = input_fn_builder_unmasked
 
-
-    model_fn = model_fn_builder(
-        bert_config=bert_config,
-        train_config=train_config,
-        logging=tf_logging,
-        model_class=model_class,
-    )
+        model_fn = model_fn_random_masking(
+            bert_config=bert_config,
+            train_config=train_config,
+            logging=tf_logging,
+            model_class=BertModel,
+        )
+    elif task == TASK_TLM:
+        tf_logging.info("Running TLM")
+        train_config.target_task_checkpoint = FLAGS.target_task_checkpoint
+        input_fn_builder = input_fn_builder_unmasked
+        model_fn = model_fn_target_masking(
+            bert_config=bert_config,
+            train_config=train_config,
+            logging=tf_logging,
+            model_class=BertModel,
+        )
+    elif task == TASK_DICT_LM:
+        tf_logging.info("Running Dict LM")
+        input_fn_builder = input_fn_builder_dict
+        model_fn = model_fn_dict_reader(
+            bert_config=bert_config,
+            train_config=train_config,
+            logging=tf_logging,
+            model_class=DictReaderModel,
+            prediction_op=FLAGS.prediction_op
+        )
 
     # If TPU is not available, this will fall back to normal Estimator on CPU
     # or GPU.
@@ -153,7 +179,7 @@ def lm_pretrain():
             is_training=False,
         )
         result = estimator.predict(input_fn=predict_input_fn, yield_single_examples=False)
-        pickle.dump(list(result), open("result.pickle", "wb"))
+        pickle.dump(list(result), open(FLAGS.out_file, "wb"))
 
 
 if __name__ == "__main__":

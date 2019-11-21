@@ -33,13 +33,13 @@ def remove_special_mask(input_ids, input_masks, t):
     return t
 
 
-def random_masking(input_ids, input_masks, n_sample, mask_token):
+def random_masking(input_ids, input_masks, n_sample, mask_token, seed=None):
     rand = tf.random.uniform(
         input_ids.shape,
         minval=0,
         maxval=1,
         dtype=tf.dtypes.float32,
-        seed=None,
+        seed=seed,
         name=None
     )
 

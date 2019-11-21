@@ -129,7 +129,6 @@ def diff_and_grad(v1, v2, g):
     n_diff_1 = 0
     n_diff_2 = 0
 
-
     assert len(v1) == len(v2)
     for i in range(l):
         d = np.abs(v1[i]-v2[i])
@@ -140,9 +139,7 @@ def diff_and_grad(v1, v2, g):
             if d < 1e-2:
                 n_diff_2 += 1
 
-
     return n_diff_1, n_diff_2
-
 
 
 def analyze_hv(hv_tt, hv_lm, tt_grad, tokenizer):

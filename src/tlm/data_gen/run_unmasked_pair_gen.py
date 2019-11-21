@@ -28,7 +28,6 @@ class Worker:
         random.shuffle(insts)
         self.gen.write_instance_to_example_files(insts, [output_file])
 
-
 def main():
     mark_path = os.path.join(working_path, "wiki_unmasked_pair_repeat_mark")
     out_path = os.path.join(working_path, "tf_unmasked_pair_repeat")
@@ -44,10 +43,12 @@ def main():
         job_id = mtm.pool_job()
         print("Job id : ", job_id)
 
+
 def simple():
     out_path = os.path.join(working_path, "tf_unmasked")
     worker = Worker(out_path)
     worker.work(int(sys.argv[1]))
+
 
 if __name__ == "__main__":
     main()

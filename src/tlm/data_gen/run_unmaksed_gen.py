@@ -19,7 +19,7 @@ class Worker:
 
     def work(self, job_id):
         doc_id = job_id
-        if doc_id > 1000:
+        if doc_id >= 1000:
             doc_id = doc_id % 1000
 
         docs = self.unmaskedgen.load_doc_seg(doc_id)
