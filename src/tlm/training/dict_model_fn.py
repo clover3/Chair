@@ -288,10 +288,12 @@ def input_fn_builder_dict(input_files, flags, is_training, num_cpu_threads=4):
                           "next_sentence_label"]
 
         if flags.fixed_mask:
-                active_feature.append("masked_lm_positions")
-                active_feature.append("masked_lm_ids")
+            active_feature.append("masked_lm_positions")
+            active_feature.append("masked_lm_ids")
         if flags.train_op == "lookup":
-                active_feature.append("lookup_idx")
+            active_feature.append("masked_lm_positions")
+            active_feature.append("masked_lm_ids")
+            active_feature.append("lookup_idx")
 
         name_to_features = {k:all_features[k] for k in active_feature}
 

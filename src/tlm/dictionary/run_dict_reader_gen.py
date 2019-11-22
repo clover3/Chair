@@ -1,14 +1,9 @@
 from dictionary.reader import DictionaryReader
-from tlm.data_gen.dict_reader import dictionary_encoder
+from tlm.dictionary.data_gen import dictionary_encoder
 from data_generator.common import get_tokenizer
-import pickle
-from cache import save_to_pickle
-import random
 from cache import *
-import sys
 from sydney_manager import MarkedTaskManager
-from misc_lib import TimeEstimator
-from tlm.data_gen.dict_reader import DictTrainGen, Dictionary
+from tlm.dictionary.data_gen import DictTrainGen, Dictionary
 from tlm.data_gen import run_unmasked_pair_gen
 from tlm.tf_logging import tf_logging
 import logging

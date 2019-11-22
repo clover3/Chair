@@ -2,14 +2,13 @@ import random
 from cache import *
 import sys
 from sydney_manager import MarkedTaskManager
-from misc_lib import TimeEstimator,exist_or_mkdir
-from tlm.data_gen.dict_reader import DictLookupPredcitGen
-import time
+from misc_lib import exist_or_mkdir
+from tlm.dictionary.data_gen import DictLookupPredictGen
 from tlm.tf_logging import tf_logging
 import logging
 
 working_path ="/mnt/nfs/work3/youngwookim/data/bert_tf"
-from tlm.data_gen.dict_reader import DictTrainGen, Dictionary
+from tlm.dictionary.data_gen import Dictionary
 
 
 class Worker:
@@ -18,7 +17,7 @@ class Worker:
         self.key_out_dir = key_out_path
         self.n_out_path = n_out_path
         d = Dictionary(load_from_pickle("webster"))
-        self.gen = DictLookupPredcitGen(d, samples_n=10)
+        self.gen = DictLookupPredictGen(d, samples_n=10)
 
 
     def work(self, job_id):

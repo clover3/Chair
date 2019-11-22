@@ -2,11 +2,12 @@ import pickle
 import numpy as np
 from path import output_path, data_path
 import os
-from misc_lib import right
+from misc_lib import right, pick1
 from scipy.stats import ttest_ind
 import tensorflow as tf
 from data_generator import tokenizer_wo_tf
 from visualize.html_visual import get_color, Cell, HtmlVisualizer
+import random
 
 def load_record(fn):
     for record in tf.python_io.tf_record_iterator(fn):
@@ -15,8 +16,52 @@ def load_record(fn):
         feature = example.features.feature
         yield feature
 
+def take(v):
+    return v.int64_list.value
 
-def load():
+
+def generate_training_data(data_id):
+    num_samples_list = open(os.path.join(output_path, "lookup_n", data_id), "r").readlines()
+    p = os.path.join(output_path, "example_loss.pickle")
+    loss_outputs = pickle.load(open(p, "rb"))
+    loss_outputs = loss_outputs[0]["masked_lm_example_loss"]
+    feature_itr = load_record(os.path.join(output_path, "lookup_example", data_id))
+
+    instance_idx = 0
+
+    n = len(num_samples_list)
+    for i in range(n):
+        f_feed_dictionary = random.random() < 0.5
+        n_sample = int(num_samples_list[i])
+        rows = []
+        assert n_sample > 0
+        first_inst = feature_itr.__next__()
+
+        no_dict_loss = loss_outputs[instance_idx]
+        instance_idx += 1
+        all_samples = []
+        good_locations = []
+        for j in range(1, n_sample):
+            feature = feature_itr.__next__()
+            d_location_ids = take(feature["d_location_ids"])
+            loss = loss_outputs[instance_idx]
+            if loss < no_dict_loss:
+                good_locations.extend([idx for idx in d_location_ids if idx > 0])
+            all_samples.append(feature)
+            instance_idx += 1
+
+        base_feature = None
+        if f_feed_dictionary:
+            base_feature = pick1(all_samples)
+        else:
+            base_feature = first_inst
+
+        base_feature
+
+
+
+
+def load_and_visualize():
     tokenizer = tokenizer_wo_tf.FullTokenizer(os.path.join(data_path, "bert_voca.txt"))
 
     data_id = "2"
@@ -27,9 +72,6 @@ def load():
     data = data[0]["masked_lm_example_loss"]
 
     feature_itr = load_record(os.path.join(output_path, "lookup_example", data_id))
-
-    def take(v):
-        return v.int64_list.value
 
     n = len(n_list)
     feature_idx = 0
@@ -90,5 +132,5 @@ def load():
 
 
 if __name__ == '__main__':
-    load()
+    load_and_visualize()
 

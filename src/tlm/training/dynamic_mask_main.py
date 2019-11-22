@@ -7,7 +7,7 @@ from tlm.training.input_fn import input_fn_builder_unmasked
 from tlm.training.model_fn import model_fn_random_masking, model_fn_target_masking
 from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
 from tlm.model.base import BertModel
-from tlm.model.dict_reader import DictReaderModel
+from tlm.dictionary.model_fn import DictReaderModel
 
 import os
 
