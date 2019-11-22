@@ -62,6 +62,10 @@ flags.DEFINE_bool("do_eval", False, "Whether to run eval on the dev set.")
 flags.DEFINE_bool("do_predict", False, "Whether to run predicition .")
 
 flags.DEFINE_string(
+    "train_op", "LM", "what to predict"
+)
+
+flags.DEFINE_string(
     "prediction_op", "", "what to predict"
 )
 
@@ -125,6 +129,10 @@ flags.DEFINE_bool("target_lm", False, "Whether to run target_lm as training.")
 flags.DEFINE_bool("dict_lm", False, "Whether to run dict_lm as training.")
 
 flags.DEFINE_bool("log_debug", False, ".")
+
+flags.DEFINE_bool("fixed_mask", False, "Whether to fixed_mask.")
+
+flags.DEFINE_bool("is_bert_checkpoint", True, "init_checkpoint is from BERT")
 
 flags.DEFINE_integer("num_classes", 3, "Number of classes (in case of classification task.")
 

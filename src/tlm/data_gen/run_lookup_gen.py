@@ -1,20 +1,22 @@
 import random
 from cache import *
-from path import data_path
-from data_generator import tokenizer_wo_tf as tokenization
 import sys
 from sydney_manager import MarkedTaskManager
 from misc_lib import TimeEstimator,exist_or_mkdir
 from tlm.data_gen.dict_reader import DictLookupPredcitGen
 import time
+from tlm.tf_logging import tf_logging
+import logging
+
 working_path ="/mnt/nfs/work3/youngwookim/data/bert_tf"
 from tlm.data_gen.dict_reader import DictTrainGen, Dictionary
 
 
 class Worker:
-    def __init__(self, example_out_path, key_out_path):
+    def __init__(self, example_out_path, key_out_path, n_out_path):
         self.example_out_dir = example_out_path
         self.key_out_dir = key_out_path
+        self.n_out_path = n_out_path
         d = Dictionary(load_from_pickle("webster"))
         self.gen = DictLookupPredcitGen(d, samples_n=10)
 
@@ -29,18 +31,31 @@ class Worker:
         key_file = os.path.join(self.key_out_dir, "{}".format(job_id))
         insts = self.gen.create_instances_from_documents(docs)
         random.shuffle(insts)
-        self.gen.write_instances(insts, example_file, key_file)
+        n_list = self.gen.write_instances(insts, example_file, key_file)
+
+        n_out_path = os.path.join(self.n_out_path, "{}".format(job_id))
+        f = open(n_out_path, "w")
+        for n in n_list:
+            f.write("{}\n".format(n))
+        f.close()
+
+def init_worker():
+    out_path1 = os.path.join(working_path, "lookup_example")
+    out_path2 = os.path.join(working_path, "lookup_key")
+    out_path3 = os.path.join(working_path, "lookup_n")
+    exist_or_mkdir(out_path1)
+    exist_or_mkdir(out_path2)
+    exist_or_mkdir(out_path3)
+
+    worker = Worker(out_path1, out_path2, out_path3)
+    return worker
+
 
 def main():
     mark_path = os.path.join(working_path, "lookup_mark")
-    out_path1 = os.path.join(working_path, "lookup_example")
-    out_path2 = os.path.join(working_path, "lookup_key")
-    exist_or_mkdir(out_path1)
-    exist_or_mkdir(out_path2)
-
     mtm = MarkedTaskManager(4000, mark_path, 1)
-    worker = Worker(out_path1, out_path2)
 
+    worker = init_worker()
     job_id = mtm.pool_job()
     print("Job id : ", job_id)
     while job_id is not None:
@@ -50,9 +65,8 @@ def main():
 
 
 def simple():
-    out_path1 = os.path.join(working_path, "lookup_example")
-    out_path2 = os.path.join(working_path, "lookup_key")
-    worker = Worker(out_path1, out_path2)
+    tf_logging.setLevel(logging.INFO)
+    worker = init_worker()
     worker.work(int(sys.argv[1]))
 
 

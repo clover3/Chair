@@ -4,7 +4,7 @@ from tlm.wiki import bert_training_data as btd
 import tensorflow as tf
 from tlm.tf_logging import tf_logging
 import collections
-from misc_lib import pick1, TimeEstimator
+from misc_lib import pick1, TimeEstimator, average
 from models.classic.stopword import load_stopwords
 import random
 
@@ -167,11 +167,12 @@ class DictTrainGen(UnmaskedPairGen):
         return words
 
     def hide_word(self, tokens, target_word):
-        locations = self.get_locations(tokens, target_word)
+        new_tokens = list(tokens)
+        locations = self.get_locations(new_tokens, target_word)
         for idx in locations:
-            tokens[idx] = self.d_mask_token
+            new_tokens[idx] = self.d_mask_token
         assert locations
-        return tokens, locations
+        return new_tokens, locations
 
     def get_locations(self, tokens, target_word):
         t_idx = 0
@@ -426,6 +427,18 @@ class DictLookupPredcitGen(DictTrainGen):
 
 
             examples = []
+
+            sub_inst = DictPredictionEntry(
+                tokens,
+                inst.segment_ids,
+                None,
+                [],
+                [],
+                masked_lm_positions,
+                masked_lm_labels
+            )
+            examples.append(sub_inst)
+
             for selected_word in words:
                 assert selected_word is not None
                 hidden_tokens, locations = self.hide_word(tokens, selected_word)
@@ -449,7 +462,8 @@ class DictLookupPredcitGen(DictTrainGen):
 
                 w_str = ""
                 for inst in examples:
-                    w_str += " " + inst.dict_word.word
+                    if inst.dict_word is not None:
+                        w_str += " " + inst.dict_word.word
 
                 tf_logging.info("words : {}".format(w_str))
                 tf_logging.info("-------------------")
@@ -466,7 +480,9 @@ class DictLookupPredcitGen(DictTrainGen):
         total_written = 0
         key_writer = tf.python_io.TFRecordWriter(key_output_file)
 
+        n_example_list = []
         for (inst_index, (key_inst, examples)) in enumerate(instances):
+            n_example_list.append(len(examples))
             for instance in examples:
                 input_ids = self.tokenizer.convert_tokens_to_ids(instance.tokens)
                 input_mask = [1] * len(input_ids)
@@ -507,6 +523,15 @@ class DictLookupPredcitGen(DictTrainGen):
                 else:
                     selected_word = []
 
+                masked_lm_positions = list(instance.masked_lm_positions)
+                masked_lm_ids = self.tokenizer.convert_tokens_to_ids(instance.masked_lm_labels)
+                masked_lm_weights = [1.0] * len(masked_lm_ids)
+
+                while len(masked_lm_positions) < self.max_predictions_per_seq:
+                    masked_lm_positions.append(0)
+                    masked_lm_ids.append(0)
+                    masked_lm_weights.append(0.0)
+
                 d_input_ids = self.pad0(d_input_ids, self.max_def_length)
                 d_input_mask = self.pad0(d_input_mask, self.max_def_length)
                 d_location_ids = self.pad0(instance.word_loc_list[:self.max_d_loc], self.max_d_loc)
@@ -518,6 +543,8 @@ class DictLookupPredcitGen(DictTrainGen):
                 features["input_ids"] = btd.create_int_feature(input_ids)
                 features["input_mask"] = btd.create_int_feature(input_mask)
                 features["segment_ids"] = btd.create_int_feature(segment_ids)
+                features["masked_lm_positions"] = btd.create_int_feature(masked_lm_positions)
+                features["masked_lm_ids"] = btd.create_int_feature(masked_lm_ids)
                 features["d_input_ids"] = btd.create_int_feature(d_input_ids)
                 features["d_input_mask"] = btd.create_int_feature(d_input_mask)
                 features["d_segment_ids"] = btd.create_int_feature(d_segment_ids)
@@ -536,7 +563,10 @@ class DictLookupPredcitGen(DictTrainGen):
         writer.close()
         key_writer.close()
 
+
+        tf_logging.info("Average example per inst : {}".format(average(n_example_list)))
         tf_logging.info("Wrote %d total instances", total_written)
         tf_logging.info("cnt_def_overlen: %d", cnt_def_overlen)
         tf_logging.info("multi_sb: %d", multi_sb)
         tf_logging.info("None cnt: %d", cnt_none)
+        return n_example_list

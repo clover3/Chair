@@ -152,14 +152,15 @@ def _truncate_second(tokens_a, tokens_b, max_length):
     tokens_b.pop()
 
 
-def pretty_tokens(tokens):
+def pretty_tokens(tokens, drop_sharp=False):
     s = ""
     after_mask = False
     for t in tokens:
         if t == "[PAD]":
             break
         if t.startswith("##") and not after_mask:
-            #t = t[2:]
+            if drop_sharp:
+                t = t[2:]
             pass
         else:
             s += " "

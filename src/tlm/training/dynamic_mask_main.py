@@ -3,9 +3,9 @@ import tensorflow as tf
 import pickle
 from tlm.training.train_flags import *
 import tlm.model.base as modeling
-from tlm.training.input_fn import input_fn_builder_unmasked, input_fn_builder_dict
+from tlm.training.input_fn import input_fn_builder_unmasked
 from tlm.training.model_fn import model_fn_random_masking, model_fn_target_masking
-from tlm.training.dict_model_fn import model_fn_dict_reader
+from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
 from tlm.model.base import BertModel
 from tlm.model.dict_reader import DictReaderModel
 
@@ -21,7 +21,6 @@ class TrainConfig:
                  use_one_hot_embeddings,
                  max_predictions_per_seq,
                  gradient_accumulation=1,
-                 use_target_pos_emb=False,
                  ):
         self.init_checkpoint = init_checkpoint
         self.learning_rate = learning_rate
@@ -31,7 +30,6 @@ class TrainConfig:
         self.use_one_hot_embeddings = use_one_hot_embeddings
         self.max_predictions_per_seq = max_predictions_per_seq
         self.gradient_accumulation = gradient_accumulation
-        self.use_target_pos_emb = use_target_pos_emb
 
     @classmethod
     def from_flags(cls, flags):
@@ -44,7 +42,6 @@ class TrainConfig:
             flags.use_tpu,
             flags.max_predictions_per_seq,
             flags.gradient_accumulation,
-            flags.use_target_pos_emb
         )
 
 def main(_):
@@ -88,7 +85,6 @@ def lm_pretrain():
           num_shards=FLAGS.num_tpu_cores,
           per_host_input_for_training=is_per_host))
 
-
     TASK_LM = 0
     TASK_TLM = 1
     TASK_DICT_LM = 2
@@ -128,7 +124,7 @@ def lm_pretrain():
             train_config=train_config,
             logging=tf_logging,
             model_class=DictReaderModel,
-            prediction_op=FLAGS.prediction_op
+            dict_run_config=DictRunConfig.from_flags(FLAGS),
         )
 
     # If TPU is not available, this will fall back to normal Estimator on CPU

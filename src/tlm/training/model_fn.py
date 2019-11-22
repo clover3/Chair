@@ -272,7 +272,6 @@ def get_tlm_assignment_map(tvars, lm_checkpoint, target_task_checkpoint):
             real_name = real_name_map[name]
             initialized_variable_names[real_name] = 1
 
-
     if lm_checkpoint:
         for x in tf.train.list_variables(lm_checkpoint):
             (name, var) = (x[0], x[1])
@@ -282,9 +281,33 @@ def get_tlm_assignment_map(tvars, lm_checkpoint, target_task_checkpoint):
             initialized_variable_names[name] = 1
             initialized_variable_names[name + ":0"] = 1
 
-    return (assignment_map, assignment_map_tt, initialized_variable_names)
+    return assignment_map, assignment_map_tt, initialized_variable_names
 
 
+def get_assignment_map_as_is(tvars, checkpoint):
+    current_vars = {}
+    for var in tvars:
+        name = var.name
+        m = re.match("^(.*):\\d+$", name)
+        if m is not None:
+            name = m.group(1)
+
+        current_vars[name] = var
+        tf_logging.info("Init from lm_checkpoint : %s" % name)
+
+    assignment_map = {}
+    initialized_variable_names = {}
+    if checkpoint:
+        for x in tf.train.list_variables(checkpoint):
+            (name, var) = (x[0], x[1])
+            if name not in current_vars:
+                continue
+            assignment_map[name] = current_vars[name]
+
+            initialized_variable_names[name] = 1
+            initialized_variable_names[name + ":0"] = 1
+
+    return assignment_map, initialized_variable_names
 
 
 def model_fn_target_masking(bert_config, train_config, logging, model_class):
