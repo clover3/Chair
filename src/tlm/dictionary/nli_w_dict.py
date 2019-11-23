@@ -91,14 +91,18 @@ def init_dict_model_with_bert(sess, init_checkpoint):
     loader.restore(sess, init_checkpoint)
 
 
-def train_nli_w_dict(hparam, run_name, num_epochs, data_loader, init_path, dictionary, is_training):
+def train_nli_w_dict(run_name, num_epochs, data_loader, init_path, dictionary, is_training):
     print("Train nil :", run_name)
 
-    model = DictReaderWrapper(3, hparam.seq_max, is_training)
+    seq_max = 200
+    lr = 1e-5
+    batch_size = FLAGS.train_batch_size
+    
+    model = DictReaderWrapper(3, seq_max, is_training)
 
     with tf.compat.v1.variable_scope("optimizer"):
-        train_cls, global_step = train_module.get_train_op(model.cls_loss, hparam.lr)
-        train_lookup, global_step = train_module.get_train_op(model.lookup_loss, hparam.lr)
+        train_cls, global_step = train_module.get_train_op(model.cls_loss, lr)
+        train_lookup, global_step = train_module.get_train_op(model.lookup_loss, lr)
 
     sess = train_module.init_session()
     sess.run(tf.compat.v1.global_variables_initializer())
@@ -124,10 +128,10 @@ def train_nli_w_dict(hparam, run_name, num_epochs, data_loader, init_path, dicti
     dev_batches = []
     n_dev_batch = 100
     for _ in range(n_dev_batch):
-        dev_batches.append(dev_data_feeder.get_random_batch(hparam.batch_size))
+        dev_batches.append(dev_data_feeder.get_random_batch(batch_size))
 
     def train_classification(step_i):
-        batch = train_data_feeder.get_random_batch(hparam.batch_size)
+        batch = train_data_feeder.get_random_batch(batch_size)
         loss_val, acc,  _ = sess.run([model.cls_loss, model.acc, train_cls],
                                                    feed_dict=model.batch2feed_dict(batch)
                                                    )
@@ -150,7 +154,7 @@ def train_nli_w_dict(hparam, run_name, num_epochs, data_loader, init_path, dicti
         return save_model(sess, run_name, global_step)
 
     n_data = len(train_data)
-    step_per_epoch = int((n_data+hparam.batch_size-1)/hparam.batch_size)
+    step_per_epoch = int((n_data+batch_size-1)/batch_size)
     print("{} data point -> {} batches / epoch".format(n_data, step_per_epoch))
     train_steps = step_per_epoch * num_epochs
     print("Max train step : {}".format(train_steps))
@@ -175,10 +179,10 @@ def train_nli_w_dict(hparam, run_name, num_epochs, data_loader, init_path, dicti
 def dev_fn():
     tf.compat.v1.disable_eager_execution()
     tf_logging.setLevel(logging.INFO)
-    hp = hyperparams.HPBert()
-    data_loader = nli.DataLoader(hp.seq_max, "bert_voca.txt", True)
+    seq_max = 200
+    data_loader = nli.DataLoader(seq_max, "bert_voca.txt", True)
     d = load_from_pickle("webster")
-    saved_model = train_nli_w_dict(hp, "nli_first", 2, data_loader,
+    saved_model = train_nli_w_dict("nli_first", 2, data_loader,
                                    get_bert_full_path(), d, True)
 
 def main(_):
