@@ -7,12 +7,13 @@ from log import log as log_module
 import logging
 
 from models.transformer import hyperparams
-from path import output_path, data_path, get_bert_full_path
+from path import output_path, data_path, get_bert_full_path, get_latest_model_path
 import trainer.tf_train_module_v2 as train_module
+from tlm.training.model_fn import get_bert_assignment_map
 
 from misc_lib import *
 from data_generator.NLI import nli
-from trainer.model_saver import save_model, load_bert_v2
+from trainer.model_saver import save_model, load_bert_v2, load_model
 from tlm.dictionary.model_fn import DictReaderModel
 from tlm.model.base import BertConfig
 from tlm.training.train_flags import *
@@ -90,36 +91,54 @@ def init_dict_model_with_bert(sess, init_checkpoint):
     loader = tf.compat.v1.train.Saver(map2)
     loader.restore(sess, init_checkpoint)
 
+def init_dict_model_with_nli_and_bert(sess, nli_checkpoint, bert_checkpoint):
+    tvars = tf.compat.v1.trainable_variables()
+    bert_to_nli, init_vars = get_bert_assignment_map(tvars, nli_checkpoint)
+    loader = tf.compat.v1.train.Saver(bert_to_nli)
+    loader.restore(sess, nli_checkpoint)
 
-def train_nli_w_dict(run_name, num_epochs, data_loader, init_path, dictionary, is_training):
+    _, bert_to_dict, init_vars = get_bert_assignment_map_for_dict(tvars, bert_checkpoint)
+    loader = tf.compat.v1.train.Saver(bert_to_dict)
+    loader.restore(sess, bert_checkpoint)
+
+
+def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionary, is_training):
     print("Train nil :", run_name)
 
     seq_max = 200
     lr = 1e-5
     batch_size = FLAGS.train_batch_size
-    
+
+    tf_logging.debug("Building graph")
     model = DictReaderWrapper(3, seq_max, is_training)
 
     with tf.compat.v1.variable_scope("optimizer"):
         train_cls, global_step = train_module.get_train_op(model.cls_loss, lr)
-        train_lookup, global_step = train_module.get_train_op(model.lookup_loss, lr)
+        train_lookup, global_step = train_module.get_train_op(model.lookup_loss, lr, global_step)
 
     sess = train_module.init_session()
     sess.run(tf.compat.v1.global_variables_initializer())
 
-    if init_path is not None:
-        init_dict_model_with_bert(sess, init_path)
+    last_saved = get_latest_model_path(run_name)
+    if last_saved:
+        tf_logging.info("Loading previous model from {}".format(last_saved))
+        load_model(sess, last_saved)
+    elif model_init_fn is not None:
+        model_init_fn(sess)
 
     log = log_module.train_logger()
 
     print("Loading training data")
     train_data = data_loader.get_train_data()
-    print("Parsing terms in training data")
+
+    tf_logging.debug("Loading train_data_feeder")
     train_data_feeder = load_cache("train_data_feeder")
     if train_data_feeder is None:
+        print("Parsing terms in training data")
         train_data_feeder = DictAugment(train_data, dictionary)
     save_to_pickle(train_data_feeder, "train_data_feeder")
 
+    tf_logging.debug("Initializing dev batch")
     dev_data_feeder = load_cache("dev_data_feeder")
     if dev_data_feeder is None:
         dev_data_feeder = DictAugment(data_loader.get_dev_data(), dictionary)
@@ -139,6 +158,7 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, init_path, dictionary, i
         return loss_val, acc
 
     def valid_fn():
+        return 0
         loss_list = []
         acc_list = []
         for batch in dev_batches:
@@ -159,7 +179,9 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, init_path, dictionary, i
     train_steps = step_per_epoch * num_epochs
     print("Max train step : {}".format(train_steps))
     valid_freq = 100
-    save_interval = 100000
+    save_interval = 60 * 20
+    save_interval = 1
+    save_fn()
     last_save = time.time()
     for step_i in range(train_steps):
         if dev_fn is not None:
@@ -176,14 +198,34 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, init_path, dictionary, i
     return save_fn()
 
 
+def init_from_bert(sess):
+    tf_logging.info("Initializing model with bert ")
+    init_dict_model_with_bert(sess, get_bert_full_path())
+
+
+def nli_initializer(nli_checkpoint_path):
+    def init_from_nli(sess):
+        tf_logging.info("Initializing model with nli(main) and bert(dict reader)")
+        init_dict_model_with_nli_and_bert(sess, nli_checkpoint_path, get_bert_full_path())
+    return init_from_nli
+
+
 def dev_fn():
     tf.compat.v1.disable_eager_execution()
     tf_logging.setLevel(logging.INFO)
+    if FLAGS.log_debug:
+        tf_logging.setLevel(logging.DEBUG)
     seq_max = 200
     data_loader = nli.DataLoader(seq_max, "bert_voca.txt", True)
+    tf_logging.debug("Loading dictionary from pickle")
     d = load_from_pickle("webster")
+    if FLAGS.is_bert_checkpoint:
+        init_fn = init_from_bert
+    else:
+        init_fn = nli_initializer(FLAGS.init_checkpoint)
+
     saved_model = train_nli_w_dict("nli_first", 2, data_loader,
-                                   get_bert_full_path(), d, True)
+                                   init_fn, d, True)
 
 def main(_):
     dev_fn()

@@ -18,10 +18,15 @@ def save_model(sess, name, global_step):
     exist_or_mkdir(save_dir)
 
     path = os.path.join(save_dir, "model")
-    saver = tf.train.Saver(tf.global_variables(), max_to_keep=1)
+    saver = tf.compat.v1.train.Saver(tf.compat.v1.global_variables(), max_to_keep=1)
     ret = saver.save(sess, path, global_step=global_step)
     tf_logger.info("Model saved at {} - {}".format(path, ret))
     return ret
+
+def load_model(sess, model_path):
+    loader = tf.compat.v1.train.Saver(tf.compat.v1.global_variables(), max_to_keep=1)
+    loader.restore(sess, model_path)
+
 
 
 def load_bert_v2(sess, model_path):

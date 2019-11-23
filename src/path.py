@@ -34,6 +34,26 @@ def get_model_full_path(exp_name, run_id = None):
     return os.path.join(save_dir, model_id)
 
 
+def get_latest_model_path(exp_name):
+    run_dir = os.path.join(model_path, 'runs')
+    save_dir = os.path.join(run_dir, exp_name)
+    max_id = ""
+    max_step = 0
+    for (dirpath, dirnames, filenames) in os.walk(save_dir):
+        for filename in filenames:
+            if ".meta" in filename:
+                model_id = filename[:-5]
+                step = int(model_id.split("-")[1])
+                if step > max_step:
+                    max_step =max_step
+                    max_id = model_id
+
+    if not max_id:
+        return ""
+    else:
+        return os.path.join(save_dir, max_id)
+
+
 def get_bert_full_path():
     return os.path.join(model_path, 'runs', "uncased_L-12_H-768_A-12", "bert_model.ckpt")
 
