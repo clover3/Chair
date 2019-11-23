@@ -99,11 +99,10 @@ def get_gradients(model, masked_lm_log_probs, n_pred, voca_size):
     return tf.stack(g_list)
 
 
-def sequence_index_prediction(bert_config, gold_idx, input_tensor):
+def sequence_index_prediction(bert_config, lookup_idx, input_tensor):
     logits = bert_common.dense(2, bert_common.create_initializer(bert_config.initializer_range))(input_tensor)
     log_probs = tf.nn.softmax(logits, axis=2)
-    one_hot = tf.one_hot(gold_idx, bert_config.max_position_embeddings)
-    losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, one_hot)
+    losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=lookup_idx)
     per_example_loss = tf.reduce_sum(losses, axis=1)
     loss = tf.reduce_mean(per_example_loss)
 
@@ -165,12 +164,16 @@ def model_fn_dict_reader(bert_config, train_config, logging, model_class, dict_r
          next_sentence_log_probs) = get_next_sentence_output(
                  bert_config, model.get_pooled_output(), next_sentence_labels)
 
+        total_loss = masked_lm_loss
+
         if dict_run_config.train_op == "lookup":
             lookup_idx = features["lookup_idx"]
             lookup_loss, lookup_example_loss, lookup_score = \
                 sequence_index_prediction(bert_config, lookup_idx, model.get_sequence_output())
 
-        total_loss = masked_lm_loss
+            total_loss += lookup_loss
+
+
 
         tvars = tf.compat.v1.trainable_variables()
 
@@ -280,12 +283,12 @@ def input_fn_builder_dict(input_files, flags, is_training, num_cpu_threads=4):
             "next_sentence_labels": FixedLenFeature([1], tf.int64),
             "masked_lm_positions": FixedLenFeature([max_predictions_per_seq], tf.int64),
             "masked_lm_ids": FixedLenFeature([max_predictions_per_seq], tf.int64),
-            "lookup_idx": FixedLenFeature([1], tf.int64),
+            "lookup_idx": FixedLenFeature([max_seq_length], tf.int64),
         }
 
         active_feature = ["input_ids", "input_mask", "segment_ids",
                           "d_input_ids", "d_input_mask", "d_location_ids",
-                          "next_sentence_label"]
+                          "next_sentence_labels"]
 
         if flags.fixed_mask:
             active_feature.append("masked_lm_positions")
@@ -301,8 +304,9 @@ def input_fn_builder_dict(input_files, flags, is_training, num_cpu_threads=4):
         # For eval, we want no shuffling and parallel reading doesn't matter.
         if is_training:
             d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
-            d = d.repeat()
-            d = d.shuffle(buffer_size=1000* 1000)
+            if flags.repeat_data:
+                d = d.repeat()
+            d = d.shuffle(buffer_size=1000 * 1000)
 
             # `cycle_length` is the number of parallel files that get read.
             cycle_length = min(num_cpu_threads, len(input_files))

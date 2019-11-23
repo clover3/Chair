@@ -7,7 +7,9 @@ from scipy.stats import ttest_ind
 import tensorflow as tf
 from data_generator import tokenizer_wo_tf
 from visualize.html_visual import get_color, Cell, HtmlVisualizer
+import collections
 import random
+from tlm.wiki import bert_training_data as btd
 
 def load_record(fn):
     for record in tf.python_io.tf_record_iterator(fn):
@@ -22,20 +24,30 @@ def take(v):
 
 def generate_training_data(data_id):
     num_samples_list = open(os.path.join(output_path, "lookup_n", data_id), "r").readlines()
-    p = os.path.join(output_path, "example_loss.pickle")
-    loss_outputs = pickle.load(open(p, "rb"))
-    loss_outputs = loss_outputs[0]["masked_lm_example_loss"]
+    p = os.path.join(output_path, "example_loss{}.pickle".format(data_id))
+    loss_outputs_list = pickle.load(open(p, "rb"))
+    loss_outputs = []
+    for e in loss_outputs_list:
+        loss_outputs.extend( e["masked_lm_example_loss"])
+    print("Total of {} loss outputs".format(len(loss_outputs)))
     feature_itr = load_record(os.path.join(output_path, "lookup_example", data_id))
 
     instance_idx = 0
+    writer = tf.python_io.TFRecordWriter(os.path.join(output_path, "lookup_train", data_id))
 
     n = len(num_samples_list)
     for i in range(n):
         f_feed_dictionary = random.random() < 0.5
         n_sample = int(num_samples_list[i])
-        rows = []
         assert n_sample > 0
         first_inst = feature_itr.__next__()
+        max_seq_len = len(take(first_inst["input_ids"]))
+
+        if instance_idx + n_sample >= len(loss_outputs):
+            break
+
+        if n_sample == 1:
+            continue
 
         no_dict_loss = loss_outputs[instance_idx]
         instance_idx += 1
@@ -45,26 +57,37 @@ def generate_training_data(data_id):
             feature = feature_itr.__next__()
             d_location_ids = take(feature["d_location_ids"])
             loss = loss_outputs[instance_idx]
-            if loss < no_dict_loss:
+            if loss < no_dict_loss * 0.9:
                 good_locations.extend([idx for idx in d_location_ids if idx > 0])
             all_samples.append(feature)
             instance_idx += 1
 
-        base_feature = None
+        lookup_idx = list([0 for _ in range(max_seq_len)])
+        for loc in good_locations:
+            lookup_idx[loc] = 1
+
         if f_feed_dictionary:
             base_feature = pick1(all_samples)
         else:
             base_feature = first_inst
 
-        base_feature
+        new_features = collections.OrderedDict()
+        for key in base_feature:
+            new_features[key] = btd.create_int_feature(take(base_feature[key]))
 
+        new_features["lookup_idx"] = btd.create_int_feature(lookup_idx)
+
+        example = tf.train.Example(features=tf.train.Features(feature=new_features))
+        writer.write(example.SerializeToString())
+
+    writer.close()
 
 
 
 def load_and_visualize():
     tokenizer = tokenizer_wo_tf.FullTokenizer(os.path.join(data_path, "bert_voca.txt"))
 
-    data_id = "2"
+    data_id = "1"
 
     n_list = open(os.path.join(output_path, "lookup_n", data_id), "r").readlines()
     p = os.path.join(output_path, "example_loss.pickle")
@@ -132,5 +155,5 @@ def load_and_visualize():
 
 
 if __name__ == '__main__':
-    load_and_visualize()
+    generate_training_data("2")
 

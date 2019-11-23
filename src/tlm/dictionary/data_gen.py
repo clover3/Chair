@@ -1,13 +1,16 @@
 from tlm.data_gen.base import LMTrainGen, UnmaskedPairGen
 from data_generator import tokenizer_wo_tf as tokenization
-from tlm.wiki import bert_training_data as btd
 import tensorflow as tf
 from tlm.tf_logging import tf_logging
 import collections
 from misc_lib import pick1, TimeEstimator, average
 from models.classic.stopword import load_stopwords
+import tlm.data_gen.bert_data_gen as btd
 import random
+import os
 from collections import Counter
+from path import data_path
+from trainer.tf_module import get_batches_ex
 
 class Word:
     def __init__(self, subword_tokens):
@@ -41,15 +44,6 @@ class SegmentInstanceWithDictEntry(object):
 
 TOKEN_LINE_SEP = "[unused5]"
 TOKEN_DEF_SEP = "[unused6]"
-
-class TrainingInstance(object):
-    def __init__(self, tokens, segment_ids, masked_lm_positions, masked_lm_labels,
-               is_random_next):
-        self.tokens = tokens
-        self.segment_ids = segment_ids
-        self.is_random_next = is_random_next
-        self.masked_lm_positions = masked_lm_positions
-        self.masked_lm_labels = masked_lm_labels
 
 
 class DictPredictionEntry(object):
@@ -121,6 +115,143 @@ def is_continuation(subword):
     return len(subword) > 2 and subword[:2] == "##"
 
 
+def get_word_tokens(tokens):
+    words = []
+    cur_word = []
+    for subword in tokens:
+        if is_continuation(subword):
+            cur_word.append(subword)
+        else:
+            if cur_word:
+                words.append(Word(cur_word))
+            cur_word = [subword]
+    return words
+
+
+def filter_unique_words(words):
+    words_set = set()
+    output_list = []
+    for word in words:
+        if word.word not in words_set:
+            words_set.add(word.word)
+            output_list.append(word)
+    return output_list
+
+
+def get_locations(tokens, target_word):
+    t_idx = 0
+    locations = []
+    sw_len = len(target_word.subword_rep)
+    try:
+        for st_idx, t in enumerate(tokens):
+            match = True
+            for t_idx in range(sw_len):
+                if not tokens[st_idx+t_idx] == target_word.subword_rep[t_idx]:
+                    match = False
+                    break
+
+            if match:
+                if not is_continuation(tokens[st_idx + sw_len]):
+                    for j in range(st_idx, st_idx+sw_len):
+                        locations.append(j)
+
+    except IndexError as e:
+        print(target_word.subword_rep)
+        print(tokens)
+        raise e
+
+    return locations
+
+
+def pad0(seq, max_len):
+    assert len(seq) <= max_len
+    while len(seq) < max_len:
+        seq.append(0)
+    return seq
+
+
+class DictAugment:
+    def __init__(self, data, dictionary):
+        self.max_def_length = 256
+        self.max_d_loc = 16
+        self.stopword = load_stopwords()
+
+        self.data_info = {}
+        vocab_file = os.path.join(data_path, "bert_voca.txt")
+        self.tokenizer = tokenization.FullTokenizer(
+            vocab_file=vocab_file, do_lower_case=True)
+        self.dict = self.encode_dict_as_feature(dictionary)
+        self.data = data
+
+        ticker = TimeEstimator(len(data), "nli indexing", 100)
+        for data_idx, e in enumerate(data):
+            input_ids, input_mask, segment_ids, y = e
+            tokens = self.tokenizer.convert_ids_to_tokens(input_ids)
+            self.data_info[data_idx] = self.index(tokens)
+            ticker.tick()
+
+        self.n_data = len(data)
+
+    def encode_dict_as_feature(self, dictionary):
+        new_dict = {}
+        for word, dict_def in dictionary.items():
+            d_input_ids = self.tokenizer.convert_tokens_to_ids(dict_def)
+            d_input_ids = d_input_ids[:self.max_def_length]
+            d_input_mask = [1] * len(d_input_ids)
+            d_input_ids = pad0(d_input_ids, self.max_def_length)
+            d_input_mask = pad0(d_input_mask, self.max_def_length)
+            new_dict[word] = d_input_ids, d_input_mask
+        return new_dict
+
+    def index(self, tokens):
+        words = get_word_tokens(tokens)
+        unique_words = filter_unique_words(words)
+        valid_words = []
+        for word in unique_words:
+            if word.word in self.stopword:
+                pass
+            elif word.word not in self.dict:
+                pass
+            else:
+                word.location = get_locations(tokens, word)
+                word.location = word.location[:self.max_d_loc]
+                word.enc_location = pad0(word.location, self.max_d_loc)
+                valid_words.append(word)
+
+        return valid_words
+
+    def get_best_def(self, data_idx, ranked_locations):
+        location_to_word = {}
+        for word in self.data_info[data_idx]:
+            for loc in word.location:
+                location_to_word[loc] = word
+
+        for loc in ranked_locations:
+            if loc in location_to_word:
+                return location_to_word[loc]
+
+        return None
+
+    def get_random_batch(self, batch_size):
+        data = []
+        for _ in range(batch_size):
+            data_idx = random.randint(0, self.n_data - 1)
+            input_ids, input_mask, segment_ids, y = self.data[data_idx]
+            appeared_words = self.data_info[data_idx]
+            if appeared_words:
+                word = pick1(appeared_words)
+                d_input_ids, d_input_mask = self.dict[word.word]
+                d_location_ids = word.location
+            else:
+                d_input_ids = [0] * self.max_def_length
+                d_input_mask = [0] * self.max_def_length
+                d_location_ids = [0] * self.max_d_loc
+
+            e = input_ids, input_mask, segment_ids, d_input_ids, d_input_mask, d_location_ids, y
+            data.append(e)
+        return get_batches_ex(data, batch_size, 7)[0]
+
+
 class DictTrainGen(UnmaskedPairGen):
     def __init__(self, dictionary):
         super(DictTrainGen, self).__init__()
@@ -154,50 +285,13 @@ class DictTrainGen(UnmaskedPairGen):
         else:
             return None
 
-    @staticmethod
-    def get_word_tokens(tokens):
-        words = []
-        cur_word = []
-        for subword in tokens:
-            if is_continuation(subword):
-                cur_word.append(subword)
-            else:
-                if cur_word:
-                    words.append(Word(cur_word))
-                cur_word = [subword]
-        return words
-
     def hide_word(self, tokens, target_word):
         new_tokens = list(tokens)
-        locations = self.get_locations(new_tokens, target_word)
+        locations = get_locations(new_tokens, target_word)
         for idx in locations:
             new_tokens[idx] = self.d_mask_token
         assert locations
         return new_tokens, locations
-
-    def get_locations(self, tokens, target_word):
-        t_idx = 0
-        locations = []
-        sw_len = len(target_word.subword_rep)
-        try:
-            for st_idx, t in enumerate(tokens):
-                match = True
-                for t_idx in range(sw_len):
-                    if not tokens[st_idx+t_idx] == target_word.subword_rep[t_idx]:
-                        match = False
-                        break
-
-                if match:
-                    if not is_continuation(tokens[st_idx + sw_len]):
-                        for j in range(st_idx, st_idx+sw_len):
-                            locations.append(j)
-
-        except IndexError as e:
-            print(target_word.subword_rep)
-            print(tokens)
-            raise e
-
-        return locations
 
 
     def create_instances_from_documents(self, documents):
@@ -207,7 +301,7 @@ class DictTrainGen(UnmaskedPairGen):
         cnt = 0
         for inst in instances:
             if not self.no_dict_assist:
-                words = self.get_word_tokens(inst.tokens)
+                words = get_word_tokens(inst.tokens)
                 selected_word = self.draw_word(words)
             else:
                 selected_word = None
@@ -215,7 +309,7 @@ class DictTrainGen(UnmaskedPairGen):
                 if self.f_hide_word :
                     tokens, locations = self.hide_word(inst.tokens, selected_word)
                 else:
-                    locations = self.get_locations(inst.tokens, selected_word)
+                    locations = get_locations(inst.tokens, selected_word)
                     tokens = inst.tokens
                 new_inst = SegmentInstanceWithDictEntry(
                     tokens,
@@ -355,15 +449,6 @@ class DictLookupPredictGen(DictTrainGen):
 
         self.event_counter = Counter()
 
-    @staticmethod
-    def filter_unique_words(words):
-        words_set = set()
-        output_list = []
-        for word in words:
-            if word.word not in words_set:
-                words_set.add(word.word)
-                output_list.append(word)
-        return output_list
 
     def make_tf_example(self, instance):
         max_seq_length = self.max_seq_length
@@ -418,9 +503,9 @@ class DictLookupPredictGen(DictTrainGen):
              masked_lm_labels) = btd.create_masked_lm_predictions(inst.tokens,
                                                       self.masked_lm_prob,
                                                       self.max_predictions_per_seq, vocab_words, self.rng)
-            key_inst = TrainingInstance(inst.tokens, inst.segment_ids, masked_lm_positions, masked_lm_labels, False)
-            words = self.get_word_tokens(tokens)
-            words = self.filter_unique_words(words)
+            key_inst = btd.TrainingInstance(inst.tokens, inst.segment_ids, masked_lm_positions, masked_lm_labels, False)
+            words = get_word_tokens(tokens)
+            words = filter_unique_words(words)
             words = list([w for w in words if valid_candidate(w)])
             random.shuffle(words)
             words = words[:self.samples_n]

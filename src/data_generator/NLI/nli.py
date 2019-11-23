@@ -383,6 +383,8 @@ class DataLoader:
         }
 
 
+
+
 class SNLIDataLoader(DataLoader):
     def __init__(self, max_sequence, vocab_filename, using_alt_tokenizer= False):
         super(SNLIDataLoader, self).__init__(max_sequence, vocab_filename, using_alt_tokenizer)

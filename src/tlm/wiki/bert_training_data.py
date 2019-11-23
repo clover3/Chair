@@ -24,7 +24,7 @@ import random
 from data_generator import tokenizer_b
 import tensorflow as tf
 
-flags = tf.flags
+from flags_support import flags
 
 FLAGS = flags.FLAGS
 

@@ -132,6 +132,8 @@ flags.DEFINE_bool("log_debug", False, ".")
 
 flags.DEFINE_bool("fixed_mask", False, "Whether to fixed_mask.")
 
+flags.DEFINE_bool("repeat_data", True, "Whether to repeat data.")
+
 flags.DEFINE_bool("is_bert_checkpoint", True, "init_checkpoint is from BERT")
 
 flags.DEFINE_integer("num_classes", 3, "Number of classes (in case of classification task.")

@@ -1,12 +1,12 @@
 import tensorflow as tf
 
+
 def init_session():
     config = tf.ConfigProto(allow_soft_placement=True,
                             log_device_placement=False)
     config.gpu_options.allow_growth = True
 
     return tf.Session(config=config)
-
 
 
 def get_train_op(loss, lr, name='Adam'):

@@ -279,8 +279,7 @@ def embedding_postprocessor(input_tensor,
             for _ in range(num_dims - 2):
                 position_broadcast_shape.append(1)
             position_broadcast_shape.extend([seq_length, width])
-            position_embeddings = tf.reshape(position_embeddings,
-                                                                             position_broadcast_shape)
+            position_embeddings = tf.reshape(position_embeddings, position_broadcast_shape)
             output += position_embeddings
 
     output = layer_norm_and_dropout(output, dropout_prob)

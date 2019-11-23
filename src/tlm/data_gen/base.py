@@ -6,10 +6,10 @@ from path import data_path
 import tensorflow as tf
 import collections
 import time
+import tlm.data_gen.bert_data_gen as btd
 
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import flatten
-from tlm.wiki import bert_training_data as btd
 from tlm.tf_logging import tf_logging
 
 def truncate_seq(tokens_a, max_num_tokens, rng):
@@ -27,7 +27,6 @@ def truncate_seq(tokens_a, max_num_tokens, rng):
             tokens_a.pop()
     return tokens_a
 
-
 def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
     while True:
         total_length = len(tokens_a) + len(tokens_b)
@@ -41,6 +40,33 @@ def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
             del trunc_tokens[0]
         else:
             trunc_tokens.pop()
+
+class TrainingInstance(object):
+    """A single training instance (sentence pair)."""
+
+    def __init__(self, tokens, segment_ids, masked_lm_positions, masked_lm_labels,
+                             is_random_next):
+        self.tokens = tokens
+        self.segment_ids = segment_ids
+        self.is_random_next = is_random_next
+        self.masked_lm_positions = masked_lm_positions
+        self.masked_lm_labels = masked_lm_labels
+
+    def __str__(self):
+        s = ""
+        s += "tokens: %s\n" % (" ".join(
+                [tokenization.printable_text(x) for x in self.tokens]))
+        s += "segment_ids: %s\n" % (" ".join([str(x) for x in self.segment_ids]))
+        s += "is_random_next: %s\n" % self.is_random_next
+        s += "masked_lm_positions: %s\n" % (" ".join(
+                [str(x) for x in self.masked_lm_positions]))
+        s += "masked_lm_labels: %s\n" % (" ".join(
+                [tokenization.printable_text(x) for x in self.masked_lm_labels]))
+        s += "\n"
+        return s
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class LMTrainGen:
@@ -132,7 +158,7 @@ class LMTrainGen:
              masked_lm_labels) = btd.create_masked_lm_predictions(tokens,
                                                                   self.masked_lm_prob,
                                                                   self.max_predictions_per_seq, vocab_words, self.rng)
-            instance = btd.TrainingInstance(
+            instance = TrainingInstance(
                 tokens=tokens,
                 segment_ids=segment_ids,
                 is_random_next=False,
