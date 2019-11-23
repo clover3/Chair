@@ -128,7 +128,7 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionar
 
     log = log_module.train_logger()
 
-    print("Loading training data")
+    tf_logging.debug("Loading training data")
     train_data = data_loader.get_train_data()
 
     tf_logging.debug("Loading train_data_feeder")
@@ -154,10 +154,10 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionar
         loss_val, acc,  _ = sess.run([model.cls_loss, model.acc, train_cls],
                                                    feed_dict=model.batch2feed_dict(batch)
                                                    )
-        log.debug("Step {0} train loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
+        log.info("Step {0} train loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
         return loss_val, acc
 
-    def valid_fn():
+    def valid_fn(step_i):
         loss_list = []
         acc_list = []
         for batch in dev_batches:
@@ -166,7 +166,7 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionar
                                                    )
             loss_list.append(loss_val)
             acc_list.append(acc)
-
+        log.info("Step {0} Dev loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
         return average(acc_list)
 
     def save_fn():
@@ -174,9 +174,9 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionar
 
     n_data = len(train_data)
     step_per_epoch = int((n_data+batch_size-1)/batch_size)
-    print("{} data point -> {} batches / epoch".format(n_data, step_per_epoch))
+    tf_logging.debug("{} data point -> {} batches / epoch".format(n_data, step_per_epoch))
     train_steps = step_per_epoch * num_epochs
-    print("Max train step : {}".format(train_steps))
+    tf_logging.debug("Max train step : {}".format(train_steps))
     valid_freq = 100
     save_interval = 60 * 20
     save_fn()
@@ -184,7 +184,7 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionar
     for step_i in range(train_steps):
         if dev_fn is not None:
             if step_i % valid_freq == 0:
-                valid_fn()
+                valid_fn(step_i)
 
         if save_fn is not None:
             if time.time() - last_save > save_interval:
