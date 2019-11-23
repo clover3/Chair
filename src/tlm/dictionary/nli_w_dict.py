@@ -158,7 +158,6 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionar
         return loss_val, acc
 
     def valid_fn():
-        return 0
         loss_list = []
         acc_list = []
         for batch in dev_batches:
@@ -180,7 +179,6 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionar
     print("Max train step : {}".format(train_steps))
     valid_freq = 100
     save_interval = 60 * 20
-    save_interval = 1
     save_fn()
     last_save = time.time()
     for step_i in range(train_steps):
