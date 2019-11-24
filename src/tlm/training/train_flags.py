@@ -140,3 +140,4 @@ flags.DEFINE_integer("num_classes", 3, "Number of classes (in case of classifica
 
 flags.DEFINE_integer("gradient_accumulation", 1, "How many batch to accumulate for gradient update.")
 
+flags.DEFINE_string("checkpoint_type", "", "Checkpoint type")

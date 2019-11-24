@@ -9,7 +9,7 @@ import logging
 from models.transformer import hyperparams
 from path import output_path, data_path, get_bert_full_path, get_latest_model_path
 import trainer.tf_train_module_v2 as train_module
-from tlm.training.model_fn import get_bert_assignment_map
+from tlm.training.model_fn import get_bert_assignment_map, get_assignment_map_as_is
 
 from misc_lib import *
 from data_generator.NLI import nli
@@ -23,6 +23,24 @@ from tlm.training.dict_model_fn import get_bert_assignment_map_for_dict
 
 from data_generator import tokenizer_wo_tf as tokenization
 from cache import load_from_pickle, save_to_pickle, load_cache
+
+
+def setup_summary_writer(exp_name, sess):
+    summary_path = os.path.join(output_path, "summary")
+    exist_or_mkdir(summary_path)
+    summary_run_path = os.path.join(summary_path, exp_name)
+    exist_or_mkdir(summary_run_path)
+
+    train_log_path = os.path.join(summary_run_path, "train")
+    test_log_path = os.path.join(summary_run_path, "test")
+    delete_if_exist(train_log_path)
+    delete_if_exist(test_log_path)
+    train_writer = tf.compat.v1.summary.FileWriter(train_log_path,
+                                              sess.graph)
+    test_writer = tf.compat.v1.summary.FileWriter(test_log_path,
+                                             sess.graph)
+    return train_writer, test_writer
+
 
 class DictReaderWrapper:
     def __init__(self, num_classes, seq_length, is_training):
@@ -119,6 +137,7 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionar
     sess = train_module.init_session()
     sess.run(tf.compat.v1.global_variables_initializer())
 
+    train_writer, test_writer = setup_summary_writer(run_name, sess)
     last_saved = get_latest_model_path(run_name)
     if last_saved:
         tf_logging.info("Loading previous model from {}".format(last_saved))
@@ -149,15 +168,24 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionar
     for _ in range(n_dev_batch):
         dev_batches.append(dev_data_feeder.get_random_batch(batch_size))
 
+    def get_summary_obj(loss, acc):
+        summary = tf.compat.v1.Summary()
+        summary.value.add(tag='loss', simple_value=loss)
+        summary.value.add(tag='accuracy', simple_value=acc)
+        return summary
+
     def train_classification(step_i):
         batch = train_data_feeder.get_random_batch(batch_size)
-        loss_val, acc,  _ = sess.run([model.cls_loss, model.acc, train_cls],
+        loss_val, acc, _ = sess.run([model.cls_loss, model.acc, train_cls],
                                                    feed_dict=model.batch2feed_dict(batch)
                                                    )
         log.info("Step {0} train loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
+        train_writer.add_summary(get_summary_obj(loss_val, acc), step_i)
+
         return loss_val, acc
 
     def valid_fn(step_i):
+        return
         loss_list = []
         acc_list = []
         for batch in dev_batches:
@@ -166,7 +194,11 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionar
                                                    )
             loss_list.append(loss_val)
             acc_list.append(acc)
+
+        loss_val = average(loss_list)
+        acc = average(acc_list)
         log.info("Step {0} Dev loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
+        test_writer.add_summary(get_summary_obj(loss_val, acc), step_i)
         return average(acc_list)
 
     def save_fn():
@@ -179,9 +211,11 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionar
     tf_logging.debug("Max train step : {}".format(train_steps))
     valid_freq = 100
     save_interval = 60 * 20
-    save_fn()
     last_save = time.time()
-    for step_i in range(train_steps):
+
+    init_step, = sess.run([global_step])
+    print("Initial step : ", init_step)
+    for step_i in range(init_step, train_steps):
         if dev_fn is not None:
             if step_i % valid_freq == 0:
                 valid_fn(step_i)
@@ -208,6 +242,33 @@ def nli_initializer(nli_checkpoint_path):
     return init_from_nli
 
 
+def dict_reader_initializer(dict_reader_checkpoint):
+    def sanity_check(init_vars):
+        key = 'cross_1_to_2'
+        matched = False
+        for vname in init_vars:
+            if key in vname:
+                matched = True
+
+        return matched
+
+    def init_from_dict_reader(sess):
+        tf_logging.info("Initializing model with nli(main) and bert(dict reader)")
+        tvars = tf.compat.v1.trainable_variables()
+        map, init_vars = get_assignment_map_as_is(tvars, dict_reader_checkpoint)
+
+        if not sanity_check(init_vars):
+            for v in tvars:
+                if v.name not in init_vars:
+                    tf_logging.warn("Not initialized : ".format(v.name))
+            raise KeyError
+
+        loader = tf.compat.v1.train.Saver(map)
+        loader.restore(sess, dict_reader_checkpoint)
+
+    return init_from_dict_reader
+
+
 def dev_fn():
     tf.compat.v1.disable_eager_execution()
     tf_logging.setLevel(logging.INFO)
@@ -219,15 +280,19 @@ def dev_fn():
     d = load_from_pickle("webster")
     if FLAGS.is_bert_checkpoint:
         init_fn = init_from_bert
-    else:
+    elif FLAGS.checkpoint_type == "nli":
         init_fn = nli_initializer(FLAGS.init_checkpoint)
+    elif FLAGS.checkpoint_type == "dict_reader":
+        init_fn = dict_reader_initializer(FLAGS.init_checkpoint)
+    else:
+        tf_logging.warn("Checkpoint type is not specified")
+        raise KeyError
 
-    saved_model = train_nli_w_dict("nli_first", 2, data_loader,
+    saved_model = train_nli_w_dict(FLAGS.output_dir, 2, data_loader,
                                    init_fn, d, True)
 
 def main(_):
     dev_fn()
-
 
 if __name__ == '__main__':
     app.run(main)
