@@ -99,6 +99,23 @@ def get_gradients(model, masked_lm_log_probs, n_pred, voca_size):
     return tf.stack(g_list)
 
 
+def get_scoring_loss(groups, group_mask, masked_lm_example_loss, per_example_logits):
+    n_per_group = bert_common.get_shape_list2(groups)[1]
+    indice = tf.reshape(groups, [-1])
+    loss_per_group = tf.reshape(tf.gather(masked_lm_example_loss, indice), groups.shape)
+    adder = (1.0 - tf.cast(group_mask, tf.float32)) * 10000.0
+    loss_per_group = loss_per_group + adder
+
+    score_shape = bert_common.get_shape_list2(groups) + [2]
+    score_per_group = tf.reshape(tf.gather(per_example_logits, indice), score_shape) #[n_group, n_per_group, 2]
+    best_runs = tf.stop_gradient(tf.argmin(loss_per_group, axis=1)) #[n_group]
+    binary_usefulness = tf.one_hot(best_runs, n_per_group) # [n_group, n_per_group]
+
+    losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=score_per_group, label=binary_usefulness)
+    losses = losses * group_mask
+    loss = tf.reduce_mean(losses)
+    return loss, losses
+
 def sequence_index_prediction(bert_config, lookup_idx, input_tensor):
     logits = bert_common.dense(2, bert_common.create_initializer(bert_config.initializer_range))(input_tensor)
     log_probs = tf.nn.softmax(logits, axis=2)
@@ -107,6 +124,12 @@ def sequence_index_prediction(bert_config, lookup_idx, input_tensor):
     loss = tf.reduce_mean(per_example_loss)
 
     return loss, per_example_loss, log_probs
+
+
+def binary_prediction(bert_config, input_tensor):
+    logits = bert_common.dense(2, bert_common.create_initializer(bert_config.initializer_range))(input_tensor)
+    log_probs = tf.nn.softmax(logits, axis=2)
+    return logits, log_probs
 
 
 def model_fn_dict_reader(bert_config, train_config, logging, model_class, dict_run_config):
@@ -140,6 +163,11 @@ def model_fn_dict_reader(bert_config, train_config, logging, model_class, dict_r
             masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights \
                 = random_masking(input_ids, input_mask, train_config.max_predictions_per_seq, MASK_ID, seed)
 
+        if train_config.use_d_segment_ids:
+            d_segment_ids = features["d_segment_ids"]
+        else:
+            d_segment_ids = None
+
         is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
         model = model_class(
@@ -154,6 +182,7 @@ def model_fn_dict_reader(bert_config, train_config, logging, model_class, dict_r
                 use_target_pos_emb=dict_run_config.use_target_pos_emb,
                 token_type_ids=segment_ids,
                 use_one_hot_embeddings=train_config.use_one_hot_embeddings,
+                d_segment_ids=d_segment_ids
         )
 
         (masked_lm_loss,
@@ -163,6 +192,13 @@ def model_fn_dict_reader(bert_config, train_config, logging, model_class, dict_r
         (next_sentence_loss, next_sentence_example_loss,
          next_sentence_log_probs) = get_next_sentence_output(
                  bert_config, model.get_pooled_output(), next_sentence_labels)
+
+        if dict_run_config.train_op == "entry_pred":
+            groups = features["d_segment_ids"]
+            group_mask = features["d_segment_ids"]
+            lm_target = features["lm_targets"]
+            entry_logits, entry_probs = binary_prediction(bert_config, model.dict_pooled_output())
+            loss, losses = get_scoring_loss(groups, group_mask, masked_lm_example_loss, entry_logits)
 
         total_loss = masked_lm_loss
 
@@ -240,7 +276,7 @@ def model_fn_dict_reader(bert_config, train_config, logging, model_class, dict_r
                                          train_config.max_predictions_per_seq, bert_config.vocab_size)
                 predictions = {
                         "masked_input_ids": masked_input_ids,
-                        "input_ids": input_ids,
+                        #"input_ids": input_ids,
                         "d_input_ids": d_input_ids,
                         "masked_lm_positions": masked_lm_positions,
                         "gradients": gradient,
@@ -279,6 +315,7 @@ def input_fn_builder_dict(input_files, flags, is_training, num_cpu_threads=4):
             "segment_ids":  FixedLenFeature([max_seq_length], tf.int64),
             "d_input_ids":  FixedLenFeature([max_def_length], tf.int64),
             "d_input_mask": FixedLenFeature([max_def_length], tf.int64),
+            "d_segment_ids": FixedLenFeature([max_def_length], tf.int64),
             "d_location_ids": FixedLenFeature([max_loc_length], tf.int64),
             "next_sentence_labels": FixedLenFeature([1], tf.int64),
             "masked_lm_positions": FixedLenFeature([max_predictions_per_seq], tf.int64),
@@ -297,6 +334,9 @@ def input_fn_builder_dict(input_files, flags, is_training, num_cpu_threads=4):
             active_feature.append("masked_lm_positions")
             active_feature.append("masked_lm_ids")
             active_feature.append("lookup_idx")
+
+        if flags.use_d_segment_ids:
+            active_feature.append("d_segment_ids")
 
         name_to_features = {k:all_features[k] for k in active_feature}
 

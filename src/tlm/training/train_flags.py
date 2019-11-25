@@ -132,6 +132,8 @@ flags.DEFINE_bool("log_debug", False, ".")
 
 flags.DEFINE_bool("fixed_mask", False, "Whether to fixed_mask.")
 
+flags.DEFINE_bool("use_d_segment_ids", False, "Whether to use d_segment_ids.")
+
 flags.DEFINE_bool("repeat_data", True, "Whether to repeat data.")
 
 flags.DEFINE_bool("is_bert_checkpoint", True, "init_checkpoint is from BERT")
@@ -141,3 +143,5 @@ flags.DEFINE_integer("num_classes", 3, "Number of classes (in case of classifica
 flags.DEFINE_integer("gradient_accumulation", 1, "How many batch to accumulate for gradient update.")
 
 flags.DEFINE_string("checkpoint_type", "", "Checkpoint type")
+
+flags.DEFINE_string("task_completion_mark", "", "make this file if the task is completed. Do not start the job if this file exists")

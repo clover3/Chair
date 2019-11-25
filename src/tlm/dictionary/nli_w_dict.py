@@ -14,7 +14,7 @@ from tlm.training.model_fn import get_bert_assignment_map, get_assignment_map_as
 from misc_lib import *
 from data_generator.NLI import nli
 from trainer.model_saver import save_model, load_bert_v2, load_model
-from tlm.dictionary.model_fn import DictReaderModel
+from tlm.dictionary.dict_reader_transformer import DictReaderModel
 from tlm.model.base import BertConfig
 from tlm.training.train_flags import *
 from tlm.dictionary.data_gen import DictAugment
@@ -271,6 +271,11 @@ def dict_reader_initializer(dict_reader_checkpoint):
 
 def dev_fn():
     tf.compat.v1.disable_eager_execution()
+
+    if FLAGS.task_completion_mark:
+        if os.path.exists(FLAGS.task_completion_mark):
+            tf_logging.warn("Task already completed")
+
     tf_logging.setLevel(logging.INFO)
     if FLAGS.log_debug:
         tf_logging.setLevel(logging.DEBUG)
@@ -290,6 +295,11 @@ def dev_fn():
 
     saved_model = train_nli_w_dict(FLAGS.output_dir, 2, data_loader,
                                    init_fn, d, True)
+
+    if FLAGS.task_completion_mark:
+        f = open(FLAGS.task_completion_mark, "w")
+        f.write("Done")
+        f.close()
 
 def main(_):
     dev_fn()

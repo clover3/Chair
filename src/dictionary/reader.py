@@ -35,6 +35,7 @@ class DictionaryReader:
         #         'head': head_list,
         #         }
 
+
     @classmethod
     def open(cls, path):
         STATE_BEGIN = 0
@@ -75,7 +76,13 @@ class DictionaryReader:
 
             return True
 
+        def no_head_exception(line):
+            if len(line.strip()) == 1:
+                return True
+            if len(line.strip()) == 2 and line.strip()[1] == ".":
+                return True
 
+            return False
 
         line_no = 0
         cnt_no_head = 0
@@ -105,7 +112,8 @@ class DictionaryReader:
                     # Pop
                     assert word_line is not None
                     if head_list == []:
-                        print("WARNING : no head found : {}".format(word_line))
+                        if not no_head_exception(word_line):
+                            print("WARNING : no head found : {}".format(word_line))
                         cnt_no_head += 1
                     if content_list == [] :
                         print("WARNING : no content found : {} . line_no = {}".format(word_line, line_no))
@@ -155,7 +163,7 @@ class DictionaryReader:
         print("# of entry w/o head {}".format(cnt_no_head))
         return DictionaryReader(data)
 
-list_pos = ['n.', 'n. pl.', 'n. sing.', 'n. sing. & pl.',
+all_pos_list = ['n.', 'n. pl.', 'n. sing.', 'n. sing. & pl.',
             'v.', 'v. t.', 'v. i.','v. t. & i.',
             'a.', 'adv.',
             'prep.', 'conj.', 'pron.', 'interj.',
@@ -164,7 +172,7 @@ list_pos = ['n.', 'n. pl.', 'n. sing.', 'n. sing. & pl.',
             'p. p.', 'imp.']
 
 def contain_any_pos(str):
-    for pos in list_pos:
+    for pos in all_pos_list:
         if pos in str:
             return True
     return False
@@ -172,7 +180,7 @@ def contain_any_pos(str):
 
 def detect_pos(str):
     matched = []
-    for pos in list_pos:
+    for pos in all_pos_list:
         idx = str.find(pos)
         if idx > 0:
             if str[idx-1] in [" ", "&"]:
@@ -355,7 +363,6 @@ def parse_content_by_chunk(content_lines):
 
         if is_tail:
             new_chunks[-1].lines += chunk.lines
-
         else:
             new_chunks.append(chunk)
 
@@ -376,7 +383,7 @@ def parse_content_by_chunk(content_lines):
                     print("next:", chunk.lines)
 
 
-    return list([chunk.lines for chunk in chunks])
+    return list([chunk.lines for chunk in new_chunks])
 
 
 
@@ -386,6 +393,51 @@ def count_words(content_list):
         yield sum([len(l.split()) for l in lines])
 
 class DictionaryParser:
+    # self.word2entry contains the output as two level hierarchy.
+    # Each word can have multiple entries and each entry has different word sense
+    # Typically, different entries are homonymy or of different POS
+    class WordEntry:
+        class SubEntry:
+            def __init__(self, entry):
+                head, content = entry
+                self.head = head
+                self.content = content
+
+            def get_pos_list(self):
+                if "pos" in self.head:
+                    return self.head["pos"]
+                else:
+                    return []
+
+            def get_pos_as_str(self):
+                if "pos" in self.head:
+                    pos = self.head["pos"]
+                else:
+                    pos = []
+
+                if len(pos) == 1:
+                    return pos[0]
+
+                unique = []
+                for i, key in enumerate(pos):
+                    sub_pos = False
+                    for j in range(len(pos)):
+                        if key in pos[j] and len(key) < len(pos[j]):
+                            sub_pos = True
+                    if not sub_pos:
+                        unique.append(key)
+
+                return " ".join(unique)
+
+            def enum_definitions(self):
+                for e in self.content:
+                    yield " ".join(e)
+
+        def __init__(self, word, entries):
+            self.word = word
+            self.sub_entries = list([self.SubEntry(sub_entry) for sub_entry in entries])
+
+
     def __init__(self, dictionary_reader:DictionaryReader):
         def parse_head(word, head_lines):
 
@@ -529,7 +581,7 @@ class DictionaryParser:
         missing_count = Counter()
         pos_count = Counter()
 
-        self.word2entry = {}
+        self.word2raw_entry = {}
         length_counter = Counter()
         for entry in dictionary_reader.entries:
             word = entry['word']
@@ -540,10 +592,10 @@ class DictionaryParser:
                 length_counter[l] += 1
 
             head = parse_head(word, entry['head'])
-            if word not in self.word2entry:
-                self.word2entry[word] =[]
-            self.word2entry[word].append((head, content))
-            if entry['head'] == []:
+            if word not in self.word2raw_entry:
+                self.word2raw_entry[word] =[]
+            self.word2raw_entry[word].append((head, content))
+            if not entry['head']:
                 missing_count['head'] += 1
             else:
                 if not head['pronunciation']:
@@ -560,13 +612,7 @@ class DictionaryParser:
         for item, cnt in pos_count.most_common():
             print(item, cnt)
 
-        print("length distribution:")
-        total = sum(length_counter.values())
-        acc = 0
-        for i in range(80):
-            acc += length_counter[i]
-            print("Under {}0 : ".format(i), acc/total)
-
+        self.word2entry = {k: self.WordEntry(k,v) for k,v in self.word2raw_entry.items()}
 
 
 def simple_parser(d1):
@@ -606,6 +652,17 @@ def parser_dev():
     path = "c:\\work\\Data\\webster\\webster_headerless.txt"
     d1 = DictionaryReader.open(path)
     d2 = DictionaryParser(d1)
+
+    for word, word_entry in d2.word2entry.items():
+        print("---------")
+        print("word:", word)
+        for entry_idx, sub_entry in enumerate(word_entry.sub_entries):
+            print("Entry {}".format(entry_idx + 1))
+            print("head:", sub_entry.head)
+            print("Pos:", sub_entry.get_pos_as_str())
+            for sense_idx, definition in enumerate(sub_entry.enum_definitions()):
+                print("content {}: {}".format(sense_idx+1, definition))
+
 
 def dictionary_reader_demo():
     path = "c:\\work\\Data\\webster\\webster_headerless.txt"

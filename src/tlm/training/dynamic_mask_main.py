@@ -7,7 +7,7 @@ from tlm.training.input_fn import input_fn_builder_unmasked
 from tlm.training.model_fn import model_fn_random_masking, model_fn_target_masking
 from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
 from tlm.model.base import BertModel
-from tlm.dictionary.model_fn import DictReaderModel
+from tlm.dictionary.dict_reader_transformer import DictReaderModel
 
 import os
 
@@ -20,6 +20,7 @@ class TrainConfig:
                  use_tpu,
                  use_one_hot_embeddings,
                  max_predictions_per_seq,
+                 use_d_segment_ids,
                  gradient_accumulation=1,
                  ):
         self.init_checkpoint = init_checkpoint
@@ -29,6 +30,7 @@ class TrainConfig:
         self.use_tpu = use_tpu
         self.use_one_hot_embeddings = use_one_hot_embeddings
         self.max_predictions_per_seq = max_predictions_per_seq
+        self.use_d_segment_ids = use_d_segment_ids
         self.gradient_accumulation = gradient_accumulation
 
     @classmethod
@@ -41,6 +43,7 @@ class TrainConfig:
             flags.use_tpu,
             flags.use_tpu,
             flags.max_predictions_per_seq,
+            flags.use_d_segment_ids,
             flags.gradient_accumulation,
         )
 

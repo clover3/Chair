@@ -27,7 +27,8 @@ class DictReaderModel(object):
                  token_type_ids,
                  use_one_hot_embeddings=True,
                  use_target_pos_emb=False,
-                 scope=None):
+                 scope=None,
+                 d_segment_ids = None):
         config = copy.deepcopy(config)
         if not is_training:
             config.hidden_dropout_prob = 0.0
@@ -42,6 +43,9 @@ class DictReaderModel(object):
 
         if token_type_ids is None:
             token_type_ids = tf.zeros(shape=[batch_size, seq_length], dtype=tf.int32)
+
+        if d_segment_ids is None:
+            d_segment_ids = d_input_mask
 
         with tf.compat.v1.variable_scope(scope, default_name="bert"):
             with tf.compat.v1.variable_scope("embeddings"):
@@ -96,7 +100,7 @@ class DictReaderModel(object):
                         self.d_embedding_output = dict_embedding_processor(
                             input_tensor=self.d_embedding_output,
                             use_token_type=True,
-                            token_type_ids=d_input_mask,
+                            token_type_ids=d_segment_ids,
                             token_type_vocab_size=config.type_vocab_size,
                             token_type_embedding_name="token_type_embeddings",
                             use_position_embeddings=True,
@@ -110,7 +114,7 @@ class DictReaderModel(object):
                         )
 
             with tf.compat.v1.variable_scope("encoder"):
-                self.all_encoder_layers = two_stack_transformer(
+                self.all_encoder_layers, self.dict_layers = two_stack_transformer(
                     input_tensor_1=self.embedding_output,
                     input_mask_1=input_mask,
                     input_tensor_2=self.d_embedding_output,
@@ -126,10 +130,21 @@ class DictReaderModel(object):
                                                                activation=tf.keras.activations.tanh,
                                                                kernel_initializer=create_initializer(config.initializer_range))(
                         first_token_tensor)
+                with tf.compat.v1.variable_scope("dict"):
+                    with tf.compat.v1.variable_scope("pooler"):
+                        first_token_tensor = tf.squeeze(self.dict_layers[:, 0:1, :], axis=1)
+                        self.dict_pooled_output = tf.keras.layers.Dense(config.hidden_size,
+                                                                   activation=tf.keras.activations.tanh,
+                                                                   kernel_initializer=create_initializer(config.initializer_range))(
+                            first_token_tensor)
 
 
     def get_pooled_output(self):
         return self.pooled_output
+
+    def get_dict_pooled_output(self):
+        return self.dict_pooled_output
+
 
     def get_sequence_output(self):
         return self.sequence_output
@@ -461,7 +476,7 @@ def two_stack_transformer(input_tensor_1,
                     layer_output_2 = dense(hidden_size, initializer)(intermediate_output_2)
                     layer_output_2 = dropout(layer_output_2, config.hidden_dropout_prob)
                     layer_output_2 = layer_norm(layer_output_2 + attention_output_2)
-                    prev_output = layer_output_2
+                    prev_output_2 = layer_output_2
                     dict_layer_outputs.append(layer_output_2)
 
     if do_return_all_layers:
@@ -469,7 +484,14 @@ def two_stack_transformer(input_tensor_1,
         for layer_output in all_layer_outputs:
             final_output = reshape_from_matrix(layer_output, input_shape_1)
             final_outputs.append(final_output)
-        return final_outputs
+
+        dict_layers = []
+        for layer in dict_layer_outputs:
+            l = reshape_from_matrix(layer, input_shape_2)
+            dict_layers.append(l)
+
+        return final_outputs, dict_layers
     else:
-        final_output = reshape_from_matrix(prev_output, input_shape_1)
-        return final_output
+        final_output = reshape_from_matrix(prev_output_1, input_shape_1)
+        dict_layer = reshape_from_matrix(prev_output_2, input_shape_1)
+        return final_output, dict_layer

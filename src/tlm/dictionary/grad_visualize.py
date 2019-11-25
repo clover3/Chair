@@ -8,7 +8,7 @@ from visualize.html_visual import get_color, Cell, HtmlVisualizer
 
 
 def load_and_analyze_gradient():
-    p = os.path.join(output_path, "dict_grad2.pickle")
+    p = os.path.join(output_path, "dict_grad1.pickle")
     data = pickle.load(open(p, "rb"))
     data = data[0]
     tokenizer = tokenizer_wo_tf.FullTokenizer(os.path.join(data_path, "bert_voca.txt"))
@@ -31,12 +31,11 @@ def reshape_gradienet(gradients, n_inst, def_len, hidden_dim):
 
 def analyze_gradient(data, tokenizer):
     gradients = data['gradients']
-    input_ids = data['input_ids']
     d_input_ids = data['d_input_ids']
     mask_input_ids = data['masked_input_ids']
     masked_lm_positions = data["masked_lm_positions"]
 
-    n_inst, seq_len = input_ids.shape
+    n_inst, seq_len = mask_input_ids.shape
     n_inst2, def_len = d_input_ids.shape
 
     assert n_inst == n_inst2
@@ -55,10 +54,10 @@ def analyze_gradient(data, tokenizer):
 
     for inst_idx in range(n_inst):
         tokens = tokenizer.convert_ids_to_tokens(mask_input_ids[inst_idx])
-        ans_tokens = tokenizer.convert_ids_to_tokens(input_ids[inst_idx])
+        #ans_tokens = tokenizer.convert_ids_to_tokens(input_ids[inst_idx])
         for i in range(len(tokens)):
             if tokens[i] == "[MASK]":
-                tokens[i] = "[MASK_{}: {}]".format(i, ans_tokens[i])
+                tokens[i] = "[MASK_{}]".format(i)
             if tokens[i] == "[SEP]":
                 tokens[i] = "[SEP]<br>"
         def_tokens = tokenizer.convert_ids_to_tokens(d_input_ids[inst_idx])

@@ -3,7 +3,7 @@ from data_generator import tokenizer_wo_tf as tokenization
 import tensorflow as tf
 from tlm.tf_logging import tf_logging
 import collections
-from misc_lib import pick1, TimeEstimator, average
+from misc_lib import pick1, TimeEstimator, average, lmap
 from models.classic.stopword import load_stopwords
 import tlm.data_gen.bert_data_gen as btd
 import random
@@ -657,3 +657,160 @@ class DictLookupPredictGen(DictTrainGen):
         return n_example_list
 
 
+
+class DictEntryPredictGen(DictTrainGen):
+    def __init__(self, parsed_dictionary, max_def_entry):
+        super(DictEntryPredictGen, self).__init__(parsed_dictionary)
+        self.parsed_dictionary = parsed_dictionary
+        self.max_def_length = 256
+        self.max_d_loc = 16
+        self.stopword = load_stopwords()
+        self.d_mask_token = "[unused4]"
+        self.max_word_len = 8
+        self.max_def_entry = max_def_entry
+
+        self.event_counter = Counter()
+
+
+    def create_instances_from_documents(self, documents):
+        instances = super(DictEntryPredictGen, self).create_instances_from_documents(documents)
+        vocab_words = list(self.tokenizer.vocab.keys())
+
+        def valid_candidate(w):
+            return w.word not in self.stopword and w.word in self.dict
+
+
+        new_inst_list = []
+        cnt = 0
+        for inst in instances:
+            # We nedd both entries for entry prediction and LM prediction
+            (tokens, masked_lm_positions,
+             masked_lm_labels) = btd.create_masked_lm_predictions(inst.tokens,
+                                                      self.masked_lm_prob,
+                                                      self.max_predictions_per_seq, vocab_words, self.rng)
+            key_inst = btd.TrainingInstance(inst.tokens, inst.segment_ids, masked_lm_positions, masked_lm_labels, False)
+            words = get_word_tokens(tokens)
+            words = self.draw_word(words)
+            words = list([w for w in words if valid_candidate(w)])
+
+            def get_num_defs(word):
+                return len(self.parsed_dictionary[word.word]['entry'])
+
+            multi_def_words = list([w for w in words if get_num_defs(w) > 1])
+            if not multi_def_words:
+                continue
+
+            selected_word = pick1(multi_def_words)
+            hidden_tokens, locations = self.hide_word(tokens, selected_word)
+
+            examples = []
+            for word_def in self.parsed_dictionary[selected_word.word]['entry']:
+                sub_inst = SegmentInstanceWithDictEntry(
+                    hidden_tokens,
+                    inst.segment_ids,
+                    selected_word,
+                    word_def,
+                    locations
+                )
+
+                examples.append(sub_inst)
+
+            new_inst_list.append((key_inst, examples))
+
+            if cnt < 20:
+                tf_logging.info("Example Instance:")
+                tf_logging.info("Tokens : {}".format(inst.tokens))
+                tf_logging.info("Text : {}".format(tokenization.pretty_tokens(inst.tokens)))
+
+                for inst in examples:
+                    if inst.dict_def is not None:
+                        def_str = tokenization.pretty_tokens((inst.dict_def))
+                        tf_logging.info("Definitions: {}".format(def_str))
+                tf_logging.info("-------------------")
+                cnt += 1
+        return new_inst_list
+
+    def write_instances(self, new_inst_list, outfile):
+        writer = tf.python_io.TFRecordWriter(outfile)
+        cnt_def_overlen = 0
+        multi_sb = 0
+        cnt_none = 0
+        example_numbers = []
+
+        total_written = 0
+        for (inst_index, new_inst) in enumerate(new_inst_list):
+            key_inst, examples = new_inst
+            example_numbers.append(len(examples)+1)
+            for instance in [key_inst] + examples:
+                input_ids = self.tokenizer.convert_tokens_to_ids(instance.tokens)
+                input_mask = [1] * len(input_ids)
+                segment_ids = list(instance.segment_ids)
+
+                max_seq_length = self.max_seq_length
+                assert len(input_ids) <= self.max_seq_length
+                while len(input_ids) < self.max_seq_length:
+                    input_ids.append(0)
+                    input_mask.append(0)
+                    segment_ids.append(0)
+
+                assert len(input_ids) == max_seq_length
+                assert len(input_mask) == max_seq_length
+                assert len(segment_ids) == max_seq_length
+
+                d_input_ids = self.tokenizer.convert_tokens_to_ids(instance.dict_def)
+                if len(d_input_ids) > self.max_def_length:
+                    cnt_def_overlen += 1
+
+                if instance.dict_word is None:
+                    cnt_none += 1
+                else:
+                    if len(instance.dict_word.subword_rep) > 1 :
+                        multi_sb += 1
+
+                d_input_ids = d_input_ids[:self.max_def_length]
+                d_input_mask = [1] * len(d_input_ids)
+
+                if instance.word_loc_list:
+                    target_segment = segment_ids[instance.word_loc_list[0]]
+                    d_segment_ids = [target_segment] * len(d_input_ids)
+                else:
+                    d_segment_ids = []
+
+                if instance.dict_word is not None:
+                    selected_word = self.tokenizer.convert_tokens_to_ids(instance.dict_word.subword_rep)
+                else:
+                    selected_word = []
+
+                d_input_ids = self.pad0(d_input_ids, self.max_def_length)
+                d_input_mask = self.pad0(d_input_mask, self.max_def_length)
+                d_location_ids = self.pad0(instance.word_loc_list[:self.max_d_loc], self.max_d_loc)
+                d_segment_ids = self.pad0(d_segment_ids, self.max_def_length)
+                selected_word = self.pad0(selected_word, self.max_word_len)
+
+                next_sentence_label = 1 if instance.is_random_next else 0
+
+                features = collections.OrderedDict()
+                features["input_ids"] = btd.create_int_feature(input_ids)
+                features["input_mask"] = btd.create_int_feature(input_mask)
+                features["segment_ids"] = btd.create_int_feature(segment_ids)
+                features["d_input_ids"] = btd.create_int_feature(d_input_ids)
+                features["d_input_mask"] = btd.create_int_feature(d_input_mask)
+                features["d_segment_ids"] = btd.create_int_feature(d_segment_ids)
+                features["d_location_ids"] = btd.create_int_feature(d_location_ids)
+                features["selected_word"] = btd.create_int_feature(selected_word)
+                features["next_sentence_labels"] = btd.create_int_feature([next_sentence_label])
+
+                tf_example = tf.train.Example(features=tf.train.Features(feature=features))
+
+                writer.write(tf_example.SerializeToString())
+
+                total_written += 1
+
+                if inst_index < 20:
+                    self.log_print_inst(instance, features)
+
+        writer.close()
+
+        tf_logging.info("Wrote %d total instances", total_written)
+        tf_logging.info("cnt_def_overlen: %d", cnt_def_overlen)
+        return example_numbers
