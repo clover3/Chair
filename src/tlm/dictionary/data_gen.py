@@ -252,6 +252,15 @@ class DictAugment:
         return get_batches_ex(data, batch_size, 7)[0]
 
 
+def hide_word(tokens, target_word, d_mask_token):
+    new_tokens = list(tokens)
+    locations = get_locations(new_tokens, target_word)
+    for idx in locations:
+        new_tokens[idx] = d_mask_token
+    assert locations
+    return new_tokens, locations
+
+
 class DictTrainGen(UnmaskedPairGen):
     def __init__(self, dictionary):
         super(DictTrainGen, self).__init__()
@@ -285,13 +294,6 @@ class DictTrainGen(UnmaskedPairGen):
         else:
             return None
 
-    def hide_word(self, tokens, target_word):
-        new_tokens = list(tokens)
-        locations = get_locations(new_tokens, target_word)
-        for idx in locations:
-            new_tokens[idx] = self.d_mask_token
-        assert locations
-        return new_tokens, locations
 
 
     def create_instances_from_documents(self, documents):
@@ -307,7 +309,7 @@ class DictTrainGen(UnmaskedPairGen):
                 selected_word = None
             if selected_word is not None:
                 if self.f_hide_word :
-                    tokens, locations = self.hide_word(inst.tokens, selected_word)
+                    tokens, locations = hide_word(inst.tokens, selected_word, self.d_mask_token)
                 else:
                     locations = get_locations(inst.tokens, selected_word)
                     tokens = inst.tokens
@@ -526,7 +528,7 @@ class DictLookupPredictGen(DictTrainGen):
 
             for selected_word in words:
                 assert selected_word is not None
-                hidden_tokens, locations = self.hide_word(tokens, selected_word)
+                hidden_tokens, locations = hide_word(tokens, selected_word, self.d_mask_token)
                 sub_inst = DictPredictionEntry(
                     hidden_tokens,
                     inst.segment_ids,
@@ -658,9 +660,9 @@ class DictLookupPredictGen(DictTrainGen):
 
 
 
-class DictEntryPredictGen(DictTrainGen):
+class DictEntryPredictGen(UnmaskedPairGen):
     def __init__(self, parsed_dictionary, max_def_entry):
-        super(DictEntryPredictGen, self).__init__(parsed_dictionary)
+        super(DictEntryPredictGen, self).__init__()
         self.parsed_dictionary = parsed_dictionary
         self.max_def_length = 256
         self.max_d_loc = 16
@@ -677,7 +679,7 @@ class DictEntryPredictGen(DictTrainGen):
         vocab_words = list(self.tokenizer.vocab.keys())
 
         def valid_candidate(w):
-            return w.word not in self.stopword and w.word in self.dict
+            return w.word not in self.stopword and w.word in self.parsed_dictionary
 
 
         new_inst_list = []
@@ -688,31 +690,36 @@ class DictEntryPredictGen(DictTrainGen):
              masked_lm_labels) = btd.create_masked_lm_predictions(inst.tokens,
                                                       self.masked_lm_prob,
                                                       self.max_predictions_per_seq, vocab_words, self.rng)
-            key_inst = btd.TrainingInstance(inst.tokens, inst.segment_ids, masked_lm_positions, masked_lm_labels, False)
-            words = get_word_tokens(tokens)
-            words = self.draw_word(words)
-            words = list([w for w in words if valid_candidate(w)])
+            key_inst = SegmentInstanceWithDictEntry(
+                    tokens,
+                    inst.segment_ids,
+                    None,
+                    [],
+                    []
+                )
 
+            words = get_word_tokens(tokens)
+            words = list([w for w in words if valid_candidate(w)])
             def get_num_defs(word):
-                return len(self.parsed_dictionary[word.word]['entry'])
+                return len(self.parsed_dictionary[word.word])
 
             multi_def_words = list([w for w in words if get_num_defs(w) > 1])
             if not multi_def_words:
+                tf_logging.debug("Continue because no multi sense word founds")
                 continue
 
             selected_word = pick1(multi_def_words)
-            hidden_tokens, locations = self.hide_word(tokens, selected_word)
+            hidden_tokens, locations = hide_word(tokens, selected_word, self.d_mask_token)
 
             examples = []
-            for word_def in self.parsed_dictionary[selected_word.word]['entry']:
+            for word_def in self.parsed_dictionary[selected_word.word]:
                 sub_inst = SegmentInstanceWithDictEntry(
                     hidden_tokens,
                     inst.segment_ids,
                     selected_word,
-                    word_def,
+                    ["[CLS]"] + word_def,
                     locations
                 )
-
                 examples.append(sub_inst)
 
             new_inst_list.append((key_inst, examples))

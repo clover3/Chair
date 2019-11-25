@@ -68,7 +68,6 @@ def encode_parsed_dictionary():
                 def_str = definition
                 pos_str = sub_entry.get_pos_as_str()
 
-
                 out_str = pos_str + " " + def_str
                 pos_tokens = encode_pos(sub_entry.get_pos_list())
                 def_tokens = tokenizer.tokenize(def_str)
@@ -82,15 +81,15 @@ def encode_parsed_dictionary():
 
     save_to_pickle(result_dict, "webster_parsed")
 
-class Worker:
-    def __init__(self, example_out_path, key_out_path, n_out_path):
-        self.example_out_dir = example_out_path
-        self.key_out_dir = key_out_path
-        self.n_out_path = n_out_path
-        # TODO load parsed dictioanry
-        # TODO Encoder parsed dictionary
 
-        d = NotImplemented
+class Worker:
+    def __init__(self, example_out_path, n_out_path):
+        self.example_out_dir = example_out_path
+        self.n_out_path = n_out_path
+
+        d = load_from_pickle("webster_parsed")
+
+        d = {k.lower():v for k,v in d.items()}
         max_def_entry = 10
         self.gen = DictEntryPredictGen(d, max_def_entry)
 
@@ -113,19 +112,17 @@ class Worker:
 
 
 def init_worker():
-    out_path1 = os.path.join(working_path, "lookup_example")
-    out_path2 = os.path.join(working_path, "lookup_key")
-    out_path3 = os.path.join(working_path, "lookup_n")
+    out_path1 = os.path.join(working_path, "entry_prediction_tf")
+    out_path2 = os.path.join(working_path, "entry_prediction_n")
     exist_or_mkdir(out_path1)
     exist_or_mkdir(out_path2)
-    exist_or_mkdir(out_path3)
 
-    worker = Worker(out_path1, out_path2, out_path3)
+    worker = Worker(out_path1, out_path2)
     return worker
 
 
 def main():
-    mark_path = os.path.join(working_path, "lookup_mark")
+    mark_path = os.path.join(working_path, "entry_prediction_mark")
     mtm = MarkedTaskManager(4000, mark_path, 1)
 
     worker = init_worker()
@@ -144,5 +141,5 @@ def simple():
 
 
 if __name__ == "__main__":
-    encode_parsed_dictionary()
+    main()
 
