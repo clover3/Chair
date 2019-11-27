@@ -7,13 +7,13 @@ from log import log as log_module
 import logging
 
 from models.transformer import hyperparams
-from path import output_path, data_path, get_bert_full_path, get_latest_model_path
+from path import output_path, data_path, get_bert_full_path, get_latest_model_path_from_dir_path
 import trainer.tf_train_module_v2 as train_module
 from tlm.training.model_fn import get_bert_assignment_map, get_assignment_map_as_is
 
 from misc_lib import *
 from data_generator.NLI import nli
-from trainer.model_saver import save_model, load_bert_v2, load_model
+from trainer.model_saver import save_model_to_dir_path, load_bert_v2, load_model, get_canonical_model_path
 from tlm.dictionary.dict_reader_transformer import DictReaderModel
 from tlm.model.base import BertConfig
 from tlm.training.train_flags import *
@@ -33,8 +33,6 @@ def setup_summary_writer(exp_name, sess):
 
     train_log_path = os.path.join(summary_run_path, "train")
     test_log_path = os.path.join(summary_run_path, "test")
-    delete_if_exist(train_log_path)
-    delete_if_exist(test_log_path)
     train_writer = tf.compat.v1.summary.FileWriter(train_log_path,
                                               sess.graph)
     test_writer = tf.compat.v1.summary.FileWriter(test_log_path,
@@ -120,7 +118,33 @@ def init_dict_model_with_nli_and_bert(sess, nli_checkpoint, bert_checkpoint):
     loader.restore(sess, bert_checkpoint)
 
 
-def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionary, is_training):
+
+
+
+def debug_names(is_training):
+    tf.compat.v1.disable_eager_execution()
+
+    seq_max = 200
+    lr = 1e-5
+    batch_size = FLAGS.train_batch_size
+
+    tf_logging.debug("Building graph")
+    model = DictReaderWrapper(3, seq_max, is_training)
+
+    with tf.compat.v1.variable_scope("optimizer"):
+        train_cls, global_step = train_module.get_train_op(model.cls_loss, lr)
+        train_lookup, global_step = train_module.get_train_op(model.lookup_loss, lr, global_step)
+
+    sess = train_module.init_session()
+    sess.run(tf.compat.v1.global_variables_initializer())
+    tvars = tf.compat.v1.trainable_variables()
+
+    for var in tvars:
+        name = var.name
+        print(name)
+
+
+def train_nli_w_dict(run_name, model_path, num_epochs, data_loader, model_init_fn, dictionary, is_training):
     print("Train nil :", run_name)
 
     seq_max = 200
@@ -138,7 +162,8 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionar
     sess.run(tf.compat.v1.global_variables_initializer())
 
     train_writer, test_writer = setup_summary_writer(run_name, sess)
-    last_saved = get_latest_model_path(run_name)
+
+    last_saved = get_latest_model_path_from_dir_path(model_path)
     if last_saved:
         tf_logging.info("Loading previous model from {}".format(last_saved))
         load_model(sess, last_saved)
@@ -202,7 +227,7 @@ def train_nli_w_dict(run_name, num_epochs, data_loader, model_init_fn, dictionar
         return average(acc_list)
 
     def save_fn():
-        return save_model(sess, run_name, global_step)
+        return save_model_to_dir_path(sess, model_path, global_step)
 
     n_data = len(train_data)
     step_per_epoch = int((n_data+batch_size-1)/batch_size)
@@ -269,6 +294,9 @@ def dict_reader_initializer(dict_reader_checkpoint):
     return init_from_dict_reader
 
 
+
+
+
 def dev_fn():
     tf.compat.v1.disable_eager_execution()
 
@@ -293,7 +321,16 @@ def dev_fn():
         tf_logging.warn("Checkpoint type is not specified")
         raise KeyError
 
-    saved_model = train_nli_w_dict(FLAGS.output_dir, 2, data_loader,
+
+    if FLAGS.output_dir[0] == "/":
+        run_name = FLAGS.output_dir.split("/")[-1]
+        model_path = FLAGS.output_dir
+    else:
+        assert "/" not in FLAGS.output_dir
+        run_name = FLAGS.output_dir
+        model_path = get_canonical_model_path(run_name)
+
+    saved_model = train_nli_w_dict(run_name, model_path, 2, data_loader,
                                    init_fn, d, True)
 
     if FLAGS.task_completion_mark:

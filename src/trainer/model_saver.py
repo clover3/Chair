@@ -8,6 +8,16 @@ import re
 tf_logger = logging.getLogger('tensorflow')
 
 
+def get_canonical_model_path(name):
+    run_dir = os.path.join(model_path, 'runs')
+    save_dir = os.path.join(run_dir, name)
+
+    exist_or_mkdir(model_path)
+    exist_or_mkdir(run_dir)
+    exist_or_mkdir(save_dir)
+    return save_dir
+
+
 
 def save_model(sess, name, global_step):
     run_dir = os.path.join(model_path, 'runs')
@@ -16,12 +26,16 @@ def save_model(sess, name, global_step):
     exist_or_mkdir(model_path)
     exist_or_mkdir(run_dir)
     exist_or_mkdir(save_dir)
+    return save_model_to_dir_path(sess, save_dir, global_step)
 
+
+def save_model_to_dir_path(sess, save_dir, global_step):
     path = os.path.join(save_dir, "model")
     saver = tf.compat.v1.train.Saver(tf.compat.v1.global_variables(), max_to_keep=1)
     ret = saver.save(sess, path, global_step=global_step)
     tf_logger.info("Model saved at {} - {}".format(path, ret))
     return ret
+
 
 def load_model(sess, model_path):
     loader = tf.compat.v1.train.Saver(tf.compat.v1.global_variables(), max_to_keep=1)

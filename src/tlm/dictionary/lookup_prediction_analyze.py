@@ -1,22 +1,15 @@
 import pickle
-import numpy as np
 from path import output_path, data_path
 import os
-from misc_lib import right, pick1
-from scipy.stats import ttest_ind
+from misc_lib import pick1
 import tensorflow as tf
 from data_generator import tokenizer_wo_tf
-from visualize.html_visual import get_color, Cell, HtmlVisualizer
+from tf_util.enum_features import load_record
+from visualize.html_visual import Cell, HtmlVisualizer
 import collections
 import random
 from tlm.wiki import bert_training_data as btd
 
-def load_record(fn):
-    for record in tf.python_io.tf_record_iterator(fn):
-        example = tf.train.Example()
-        example.ParseFromString(record)
-        feature = example.features.feature
-        yield feature
 
 def take(v):
     return v.int64_list.value

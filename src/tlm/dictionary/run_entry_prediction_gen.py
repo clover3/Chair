@@ -123,7 +123,7 @@ def init_worker():
 
 def main():
     mark_path = os.path.join(working_path, "entry_prediction_mark")
-    mtm = MarkedTaskManager(4000, mark_path, 1)
+    mtm = MarkedTaskManager(1000, mark_path, 1)
 
     worker = init_worker()
     job_id = mtm.pool_job()
@@ -132,7 +132,7 @@ def main():
         worker.work(job_id)
         job_id = mtm.pool_job()
         print("Job id : ", job_id)
-
+    ##
 
 def simple():
     tf_logging.setLevel(logging.INFO)

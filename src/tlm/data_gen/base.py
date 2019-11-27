@@ -7,10 +7,27 @@ import tensorflow as tf
 import collections
 import time
 import tlm.data_gen.bert_data_gen as btd
+from functools import partial
 
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import flatten
 from tlm.tf_logging import tf_logging
+
+
+class IfCaseCounter:
+    def __init__(self, name_and_conditions):
+        self.counter = collections.Counter()
+        self.name_and_conditions = name_and_conditions
+
+    def update(self, instance):
+        for name, condition in self.name_and_conditions:
+            if condition(instance):
+                self.counter[name] += 1
+
+    def count_report(self):
+        for key in self.counter:
+            yield "{} : {}".format(key, self.counter[key])
+
 
 def truncate_seq(tokens_a, max_num_tokens, rng):
     """Truncates a pair of sequences to a maximum sequence length."""
@@ -27,6 +44,7 @@ def truncate_seq(tokens_a, max_num_tokens, rng):
             tokens_a.pop()
     return tokens_a
 
+
 def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
     while True:
         total_length = len(tokens_a) + len(tokens_b)
@@ -40,6 +58,7 @@ def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
             del trunc_tokens[0]
         else:
             trunc_tokens.pop()
+
 
 class TrainingInstance(object):
     """A single training instance (sentence pair)."""
@@ -209,6 +228,59 @@ class SegmentInstance(object):
         return self.__str__()
 
 
+def get_basic_input_feature(tokenizer, max_seq_length, input_tokens, segment_ids):
+    input_ids = tokenizer.convert_tokens_to_ids(input_tokens)
+    input_mask = [1] * len(input_ids)
+    segment_ids = list(segment_ids)
+
+    max_seq_length = max_seq_length
+    assert len(input_ids) <= max_seq_length
+    while len(input_ids) < max_seq_length:
+        input_ids.append(0)
+        input_mask.append(0)
+        segment_ids.append(0)
+
+    assert len(input_ids) == max_seq_length
+    assert len(input_mask) == max_seq_length
+    assert len(segment_ids) == max_seq_length
+    features = collections.OrderedDict()
+    features["input_ids"] = btd.create_int_feature(input_ids)
+    features["input_mask"] = btd.create_int_feature(input_mask)
+    features["segment_ids"] = btd.create_int_feature(segment_ids)
+    return features
+
+
+def get_masked_lm_features(tokenizer, max_predictions_per_seq, masked_lm_positions, masked_lm_labels):
+    masked_lm_positions = list(masked_lm_positions)
+    masked_lm_ids = tokenizer.convert_tokens_to_ids(masked_lm_labels)
+    masked_lm_weights = [1.0] * len(masked_lm_ids)
+
+    while len(masked_lm_positions) < max_predictions_per_seq:
+        masked_lm_positions.append(0)
+        masked_lm_ids.append(0)
+        masked_lm_weights.append(0.0)
+
+    features = collections.OrderedDict()
+    features["masked_lm_positions"] = btd.create_int_feature(masked_lm_positions)
+    features["masked_lm_ids"] = btd.create_int_feature(masked_lm_ids)
+    features["masked_lm_weights"] = btd.create_float_feature(masked_lm_weights)
+    return features
+
+class MLMFeaturizer:
+    def __init__(self, tokenizer, max_seq_length, max_predictions_per_seq):
+        self.get_basic_input_features = partial(get_basic_input_feature, tokenizer, max_seq_length)
+        self.get_masked_lm_features = partial(get_masked_lm_features, tokenizer, max_predictions_per_seq)
+
+    def instance_to_features(self, instance):
+        basic_features = self.get_basic_input_features(instance.tokens, instance.segment_ids)
+        lm_mask_features = self.get_masked_lm_features(instance.masked_lm_positions, instance.masked_lm_labels)
+
+        next_sentence_label = 1 if instance.is_random_next else 0
+        features = basic_features + lm_mask_features
+        features["next_sentence_labels"] = btd.create_int_feature([next_sentence_label])
+        return features
+
+
 class UnmaskedGen(LMTrainGen):
     def __init__(self):
         super(UnmaskedGen, self).__init__()
@@ -278,6 +350,7 @@ class UnmaskedGen(LMTrainGen):
             writer.close()
 
         tf_logging.info("Wrote %d total instances", total_written)
+
 
 class UnmaskedPairGen(UnmaskedGen):
     def __init__(self):
@@ -361,3 +434,10 @@ class UnmaskedPairGen(UnmaskedGen):
             instances.append(instance)
 
         return instances
+
+
+def pad0(seq, max_len):
+    assert len(seq) <= max_len
+    while len(seq) < max_len:
+        seq.append(0)
+    return seq

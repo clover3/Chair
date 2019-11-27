@@ -134,6 +134,8 @@ flags.DEFINE_bool("fixed_mask", False, "Whether to fixed_mask.")
 
 flags.DEFINE_bool("use_d_segment_ids", False, "Whether to use d_segment_ids.")
 
+flags.DEFINE_bool("pool_dict_output", False, "pool_dict_output.")
+
 flags.DEFINE_bool("repeat_data", True, "Whether to repeat data.")
 
 flags.DEFINE_bool("is_bert_checkpoint", True, "init_checkpoint is from BERT")

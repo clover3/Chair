@@ -37,6 +37,10 @@ def get_model_full_path(exp_name, run_id = None):
 def get_latest_model_path(exp_name):
     run_dir = os.path.join(model_path, 'runs')
     save_dir = os.path.join(run_dir, exp_name)
+    return get_latest_model_path_from_dir_path(save_dir)
+
+
+def get_latest_model_path_from_dir_path(save_dir):
     max_id = ""
     max_step = 0
     for (dirpath, dirnames, filenames) in os.walk(save_dir):
@@ -45,7 +49,7 @@ def get_latest_model_path(exp_name):
                 model_id = filename[:-5]
                 step = int(model_id.split("-")[1])
                 if step > max_step:
-                    max_step =max_step
+                    max_step = max_step
                     max_id = model_id
 
     if not max_id:

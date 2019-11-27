@@ -28,7 +28,8 @@ class DictReaderModel(object):
                  use_one_hot_embeddings=True,
                  use_target_pos_emb=False,
                  scope=None,
-                 d_segment_ids = None):
+                 d_segment_ids=None ,
+                 pool_dict_output=False):
         config = copy.deepcopy(config)
         if not is_training:
             config.hidden_dropout_prob = 0.0
@@ -130,21 +131,22 @@ class DictReaderModel(object):
                                                                activation=tf.keras.activations.tanh,
                                                                kernel_initializer=create_initializer(config.initializer_range))(
                         first_token_tensor)
-                with tf.compat.v1.variable_scope("dict"):
-                    with tf.compat.v1.variable_scope("pooler"):
-                        first_token_tensor = tf.squeeze(self.dict_layers[:, 0:1, :], axis=1)
-                        self.dict_pooled_output = tf.keras.layers.Dense(config.hidden_size,
-                                                                   activation=tf.keras.activations.tanh,
-                                                                   kernel_initializer=create_initializer(config.initializer_range))(
-                            first_token_tensor)
 
+                self.dict_sequence_output = self.dict_layers[-1]
+                if pool_dict_output:
+                    with tf.compat.v1.variable_scope("dict"):
+                        with tf.compat.v1.variable_scope("pooler"):
+                            first_token_tensor = tf.squeeze(self.dict_sequence_output[:, 0:1, :], axis=1)
+                            self.dict_pooled_output = tf.keras.layers.Dense(config.hidden_size,
+                                                                       activation=tf.keras.activations.tanh,
+                                                                       kernel_initializer=create_initializer(config.initializer_range))(
+                                first_token_tensor)
 
     def get_pooled_output(self):
         return self.pooled_output
 
     def get_dict_pooled_output(self):
         return self.dict_pooled_output
-
 
     def get_sequence_output(self):
         return self.sequence_output
