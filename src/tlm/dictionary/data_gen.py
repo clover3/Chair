@@ -15,6 +15,7 @@ import os
 from collections import Counter
 from path import data_path
 from trainer.tf_module import get_batches_ex
+from abc import ABC, abstractmethod
 
 
 def dictionary_encoder(entries, tokenizer):
@@ -45,7 +46,18 @@ def dictionary_encoder(entries, tokenizer):
         ticker.tick()
     return result_dict
 
-class Dictionary:
+
+class DictionaryInterface(ABC):
+    @abstractmethod
+    def lookup(self, word):
+        pass
+
+    @abstractmethod
+    def __contains__(self, item):
+        pass
+
+
+class Dictionary(DictionaryInterface):
     def __init__(self, word_to_dict_tokens):
         self.d = word_to_dict_tokens
 
@@ -56,6 +68,17 @@ class Dictionary:
 
     def __contains__(self, word):
         return word in self.d
+
+
+class RandomEntryDictionary(DictionaryInterface):
+    def __init__(self, parsed_dictionary):
+        self.parsed_dictionary = parsed_dictionary
+
+    def lookup(self, word):
+        return pick1(self.parsed_dictionary[word])
+
+    def __contains__(self, word):
+        return word in self.parsed_dictionary
 
 
 def is_continuation(subword):

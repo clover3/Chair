@@ -16,7 +16,6 @@ class Worker:
         self.out_dir = out_path
         self.gen = UnmaskedPairGen()
 
-
     def work(self, job_id):
         doc_id = job_id
         if doc_id > 1000:
