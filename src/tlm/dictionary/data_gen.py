@@ -237,6 +237,7 @@ class DictTrainGen(UnmaskedPairGen):
         self.drop_none_dict = False
         self.no_dict_assist = False
         self.drop_short_word = True
+
         self.feature_formatter = DictLMFeaturizerUnmasked(
             self.tokenizer, self.max_seq_length, self.max_def_length, self.max_d_loc, self.max_word_len
         )
@@ -261,6 +262,15 @@ class DictTrainGen(UnmaskedPairGen):
             return None
 
     def create_instances_from_documents(self, documents):
+        if self.f_hide_word:
+            tf_logging.info("DictTrainGen: Hide selected word")
+        if self.drop_none_dict:
+            tf_logging.info("DictTrainGen: Drop entry with no dictionary")
+        if self.no_dict_assist:
+            tf_logging.info("DictTrainGen: Do not add dictionary information")
+        if self.drop_short_word:
+            tf_logging.info("DictTrainGen: Do not add short word")
+
         instances = super(DictTrainGen, self).create_instances_from_documents(documents)
 
         new_inst_list = []
@@ -328,6 +338,9 @@ class DictTrainGen(UnmaskedPairGen):
         tf_logging.info("Wrote %d total instances", total_written)
         for msg in case_counter.count_report():
             tf_logging.info(msg)
+
+    def write_instances(self, instances, output_file):
+        self.write_instance_to_example_files(instances, [output_file])
 
 
 class DictLookupPredictGen(DictTrainGen):

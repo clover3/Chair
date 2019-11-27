@@ -9,7 +9,8 @@ from tlm.dictionary.data_gen import Dictionary
 from dictionary.reader import DictionaryReader, DictionaryParser, all_pos_list
 import logging
 from data_generator.common import get_tokenizer
-from misc_lib import TimeEstimator
+from misc_lib import TimeEstimator, lmap
+
 
 working_path ="/mnt/nfs/work3/youngwookim/data/bert_tf"
 
@@ -82,6 +83,20 @@ def encode_parsed_dictionary():
     save_to_pickle(result_dict, "webster_parsed")
 
 
+def add_cls_to_parsed():
+    d = load_from_pickle("webster_parsed")
+
+    def add_cls(def_tokens):
+        return ["[CLS]"] + def_tokens
+
+    new_d = {}
+    for word, def_list in d.items():
+        new_def_list = lmap(add_cls, def_list)
+        new_d[word.lower()] = new_def_list
+
+    save_to_pickle(new_d, "webster_parsed_w_cls")
+
+
 class Worker:
     def __init__(self, example_out_path, n_out_path):
         self.example_out_dir = example_out_path
@@ -141,5 +156,5 @@ def simple():
 
 
 if __name__ == "__main__":
-    main()
+    add_cls_to_parsed()
 

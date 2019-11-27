@@ -20,7 +20,7 @@ class IfCaseCounter:
         self.name_and_conditions = name_and_conditions
 
     def update(self, instance):
-        for name, condition in self.name_and_conditions:
+        for name, condition in self.name_and_conditions.items():
             if condition(instance):
                 self.counter[name] += 1
 

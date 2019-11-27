@@ -6,7 +6,8 @@ from misc_lib import exist_or_mkdir
 import sys
 from abc import ABC, abstractmethod
 
-# Runner -> Worker
+# JobRunner is responsible for recording which job is done and assigning jobs
+# Worker is responsible for actually doing job
 
 
 class WorkerInterface(ABC):
@@ -33,7 +34,7 @@ class JobRunner:
             self.run_one_job()
 
     def auto_runner(self):
-        mtm = MarkedTaskManager(self.working_path, self.mark_path, 1)
+        mtm = MarkedTaskManager(self.max_job, self.mark_path, 1)
         worker = self.worker_factory(self.out_path)
         job_id = mtm.pool_job()
         print("Job id : ", job_id)

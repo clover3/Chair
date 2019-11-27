@@ -31,7 +31,7 @@ class SegmentInstanceWithDictEntry(object):
         s += "Text : {}\n".format(tokenization.pretty_tokens(self.tokens))
         s += "segment_ids: %s\n" % (" ".join([str(x) for x in self.segment_ids]))
         if self.dict_word is not None:
-            s += "dict_word: %s\n" % (" ".join([str(x) for x in self.dict_word.word]))
+            s += "dict_word: %s\n" % self.dict_word.word
         else:
             s += "No word selected\n"
         s += "dict_def : {}\n".format(self.dict_def)
@@ -103,6 +103,11 @@ class DictPredictionEntry(object):
         return self.__str__()
 
 
+class OrderedDictBuilder(collections.OrderedDict):
+    def extend(self, other_dict):
+        for key, value in other_dict.items():
+            self.update({key: value})
+
 class DictLMFeaturizer:
     def __init__(self, tokenizer, max_seq_length, max_predictions_per_seq, max_def_length, max_d_loc, max_word_len):
         self.get_basic_input_features = partial(get_basic_input_feature, tokenizer, max_seq_length)
@@ -113,10 +118,14 @@ class DictLMFeaturizer:
     def instance_to_features(self, instance):
         basic_features = self.get_basic_input_features(instance.tokens, instance.segment_ids)
         lm_mask_features = self.get_masked_lm_features(instance.masked_lm_positions, instance.masked_lm_labels)
-        dict_features = self.get_dict_input_features(instance.segment_ids, instance.dict_def)
+        dict_features = self.get_dict_input_features(instance.segment_ids, instance.dict_def,
+                                                     instance.word_loc_list, instance.dict_word)
 
         next_sentence_label = 1 if instance.is_random_next else 0
-        features = basic_features + lm_mask_features + dict_features
+        features = OrderedDictBuilder()
+        features.extend(basic_features)
+        features.extend(lm_mask_features)
+        features.extend(dict_features)
         features["next_sentence_labels"] = btd.create_int_feature([next_sentence_label])
         return features
 
@@ -129,9 +138,12 @@ class DictLMFeaturizerUnmasked:
 
     def instance_to_features(self, instance):
         basic_features = self.get_basic_input_features(instance.tokens, instance.segment_ids)
-        dict_features = self.get_dict_input_features(instance.segment_ids, instance.dict_def)
+        dict_features = self.get_dict_input_features(instance.segment_ids, instance.dict_def,
+                                                     instance.word_loc_list, instance.dict_word)
 
         next_sentence_label = 1 if instance.is_random_next else 0
-        features = basic_features + dict_features
+        features = OrderedDictBuilder()
+        features.extend(basic_features)
+        features.extend(dict_features)
         features["next_sentence_labels"] = btd.create_int_feature([next_sentence_label])
         return features

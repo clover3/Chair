@@ -13,7 +13,7 @@ class DictWorker(job_runner.WorkerInterface):
 
     def work(self, job_id):
         doc_id = job_id
-        if doc_id > 1000:
+        if doc_id >= 1000:
             doc_id = doc_id % 1000
 
         docs = self.gen.load_doc_seg(doc_id)
@@ -25,6 +25,7 @@ class DictWorker(job_runner.WorkerInterface):
 
 class PDictJobRunner(JobRunner):
     def __init__(self, max_job, job_name, data_generator):
+        print("Running job named {}".format(job_name))
         if os.name == "nt":
             working_path = output_path
         else:
