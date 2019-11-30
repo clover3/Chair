@@ -123,7 +123,7 @@ def binary_prediction(bert_config, input_tensor):
     return logits, log_probs
 
 
-def model_fn_dict_reader(bert_config, train_config, logging, model_class, dict_run_config):
+def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model_class, dict_run_config):
     """Returns `model_fn` closure for TPUEstimator."""
 
     def model_fn(features, labels, mode, params):    # pylint: disable=unused-argument
@@ -163,7 +163,7 @@ def model_fn_dict_reader(bert_config, train_config, logging, model_class, dict_r
 
         model = model_class(
                 config=bert_config,
-                d_config=bert_config,
+                d_config=dbert_config,
                 is_training=is_training,
                 input_ids=masked_input_ids,
                 input_mask=input_mask,
@@ -301,6 +301,7 @@ def input_fn_builder_dict(input_files, flags, is_training, num_cpu_threads=4):
         max_predictions_per_seq = flags.max_predictions_per_seq
         max_def_length = flags.max_def_length
         max_loc_length = flags.max_loc_length
+        max_word_length = flags.max_word_length
         FixedLenFeature = tf.io.FixedLenFeature
         all_features = {
             "input_ids":    FixedLenFeature([max_seq_length], tf.int64),
@@ -314,6 +315,7 @@ def input_fn_builder_dict(input_files, flags, is_training, num_cpu_threads=4):
             "masked_lm_positions": FixedLenFeature([max_predictions_per_seq], tf.int64),
             "masked_lm_ids": FixedLenFeature([max_predictions_per_seq], tf.int64),
             "lookup_idx": FixedLenFeature([1], tf.int64),
+            "selected_word": FixedLenFeature([max_word_length], tf.int64),
         }
 
         active_feature = ["input_ids", "input_mask", "segment_ids",
@@ -332,9 +334,11 @@ def input_fn_builder_dict(input_files, flags, is_training, num_cpu_threads=4):
             active_feature.append("masked_lm_ids")
             active_feature.append("lookup_idx")
 
-
         if flags.use_d_segment_ids:
             active_feature.append("d_segment_ids")
+
+        if max_word_length > 0:
+            active_feature.append("selected_word")
 
         name_to_features = {k:all_features[k] for k in active_feature}
 

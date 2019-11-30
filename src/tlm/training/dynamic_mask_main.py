@@ -22,6 +22,8 @@ class TrainConfig:
                  max_predictions_per_seq,
                  use_d_segment_ids,
                  gradient_accumulation=1,
+                 checkpoint_type="",
+                 second_init_checkpoint=""
                  ):
         self.init_checkpoint = init_checkpoint
         self.learning_rate = learning_rate
@@ -32,6 +34,8 @@ class TrainConfig:
         self.max_predictions_per_seq = max_predictions_per_seq
         self.use_d_segment_ids = use_d_segment_ids
         self.gradient_accumulation = gradient_accumulation
+        self.checkpoint_type = checkpoint_type
+        self.second_init_checkpoint = second_init_checkpoint
 
     @classmethod
     def from_flags(cls, flags):
@@ -45,6 +49,8 @@ class TrainConfig:
             flags.max_predictions_per_seq,
             flags.use_d_segment_ids,
             flags.gradient_accumulation,
+            flags.checkpoint_type,
+            flags.target_task_checkpoint,
         )
 
 def main(_):
@@ -68,6 +74,11 @@ def lm_pretrain():
         tf_logging.info("  %s" % input_file)
         if idx > 10 :
           break
+    if FLAGS.do_predict:
+        seed = 0
+    else:
+        seed = None
+
     tf_logging.info("Total of %d files" % len(input_files))
 
     tpu_cluster_resolver = None
@@ -83,6 +94,7 @@ def lm_pretrain():
       save_checkpoints_steps=FLAGS.save_checkpoints_steps,
       keep_checkpoint_every_n_hours =FLAGS.keep_checkpoint_every_n_hours,
       session_config=config,
+      tf_random_seed=seed,
       tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(
           iterations_per_loop=FLAGS.iterations_per_loop,
           num_shards=FLAGS.num_tpu_cores,
@@ -111,7 +123,6 @@ def lm_pretrain():
         )
     elif task == TASK_TLM:
         tf_logging.info("Running TLM")
-        train_config.target_task_checkpoint = FLAGS.target_task_checkpoint
         input_fn_builder = input_fn_builder_unmasked
         model_fn = model_fn_target_masking(
             bert_config=bert_config,
@@ -121,9 +132,11 @@ def lm_pretrain():
         )
     elif task == TASK_DICT_LM:
         tf_logging.info("Running Dict LM")
+        dbert_config = modeling.BertConfig.from_json_file(FLAGS.dbert_config_file)
         input_fn_builder = input_fn_builder_dict
         model_fn = model_fn_dict_reader(
             bert_config=bert_config,
+            dbert_config=dbert_config ,
             train_config=train_config,
             logging=tf_logging,
             model_class=DictReaderModel,

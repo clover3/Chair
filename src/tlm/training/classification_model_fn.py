@@ -19,7 +19,6 @@ def model_fn_classification(bert_config, train_config, logging, model_class):
     label_ids = features["label_ids"]
     label_ids = tf.reshape(label_ids, [-1])
 
-
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
     model = model_class(
@@ -32,26 +31,14 @@ def model_fn_classification(bert_config, train_config, logging, model_class):
     )
 
     enc = model.get_sequence_output()
-    #logits = tf.compat.v1.layers.dense(enc[:, 0, :], train_config.num_classes, name="cls_dense")
-    logits = tf.keras.layers.Dense(train_config.num_classes, name="cls_dense")(enc[:,0,:])
+    logits = tf.keras.layers.Dense(train_config.num_classes, name="cls_dense")(enc[:, 0, :])
 
     print('label_ids', label_ids.shape)
-    labels = tf.one_hot(label_ids, train_config.num_classes)
 
-    loss_arr = tf.nn.softmax_cross_entropy_with_logits(
+    loss_arr = tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits=logits,
-        labels=labels)
+        labels=label_ids)
     loss = tf.reduce_mean(input_tensor=loss_arr)
-
-    pred = tf.math.argmax(logits, axis=1)
-
-    train_accuracy = tf.compat.v1.metrics.accuracy(label_ids, pred)
-
-    print("pred:", pred.shape)
-    print("label_ids:", label_ids.shape)
-    tf.summary.scalar('accuracy', train_accuracy[1])
-    tf.summary.scalar('dummy', tf.constant(1))
-
     tvars = tf.compat.v1.trainable_variables()
 
     initialized_variable_names = {}
@@ -81,28 +68,17 @@ def model_fn_classification(bert_config, train_config, logging, model_class):
 
     output_spec = None
     if mode == tf.estimator.ModeKeys.TRAIN:
-      def metric_fn(labels, logits):
-            predictions = tf.argmax(logits, 1)
-            return {
-                'accuracy': tf.compat.v1.metrics.accuracy(
-                    labels=labels, predictions=predictions),
-            }
-
       train_op = optimization.create_optimizer_from_config(loss, train_config)
       output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
           mode=mode,
           loss=loss,
           train_op=train_op,
           scaffold_fn=scaffold_fn,
-          eval_metrics=(metric_fn, {
-            'labels': label_ids,
-            'logits': logits,
-        }),
       )
     elif mode == tf.estimator.ModeKeys.EVAL:
       def metric_fn(loss_arr, logits, label_ids):
           loss = tf.reduce_mean(loss_arr)
-          return {"accuracy": train_accuracy.result(), "loss": loss}
+          return {"loss": loss}
 
       eval_metrics = (metric_fn, [
           loss_arr, logits, label_ids

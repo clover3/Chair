@@ -9,6 +9,12 @@ flags.DEFINE_string(
     "This specifies the model architecture.")
 
 flags.DEFINE_string(
+    "dbert_config_file", None,
+    "The config json file corresponding to the second part of the transformer model. "
+    "This specifies the model architecture.")
+
+
+flags.DEFINE_string(
     "input_file", None,
     "Input TF example files (can be a glob or comma separated).")
 
@@ -42,9 +48,15 @@ flags.DEFINE_integer(
     "max_def_length", 256,
     "max length for dictionary entry")
 
+
 flags.DEFINE_integer(
     "max_loc_length", 10,
     "max length for locations of words")
+
+flags.DEFINE_integer(
+    "max_word_length", 0,
+    "max length lookup words")
+
 
 flags.DEFINE_integer(
     "max_predictions_per_seq", 20,

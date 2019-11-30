@@ -9,10 +9,9 @@ if __name__ == "__main__":
         def __init__(self):
             d = load_from_pickle("webster_parsed_w_cls")
             dictionary = data_gen.RandomEntryDictionary(d)
-            super(EntryWiseGen, self).__init__(dictionary)
+            super(EntryWiseGen, self).__init__(dictionary, 128)
             self.drop_short_word = False
-            self.max_def_length = 128
 
-    runner = wiki_dict_job_runner.PDictJobRunner(1000, "dict_entrywise", EntryWiseGen)
+    runner = wiki_dict_job_runner.PDictJobRunner(4000, "dict_entrywise_128", EntryWiseGen)
     runner.start()
 

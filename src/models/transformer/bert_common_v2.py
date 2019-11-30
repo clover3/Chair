@@ -1,8 +1,10 @@
 import collections
+import math
 import re
 
 import six
 import tensorflow as tf
+
 
 def dense(hidden_units, initializer, activation=None):
     if activation is not None:
@@ -461,3 +463,184 @@ def get_shape_list2(tensor):
     for index in non_static_indexes:
         shape[index] = dyn_shape[index]
     return shape
+
+
+def self_attention(layer_input,
+                   attention_mask,
+                   config,
+                   batch_size,
+                   seq_length,
+                   hidden_size,
+                   initializer):
+
+    attention_head_size = int(hidden_size / config.num_attention_heads)
+    with tf.compat.v1.variable_scope("attention"):
+        attention_heads = []
+        with tf.compat.v1.variable_scope("self"):
+            attention_head = attention_layer(
+                from_tensor=layer_input,
+                to_tensor=layer_input,
+                attention_mask=attention_mask,
+                num_attention_heads=config.num_attention_heads,
+                size_per_head=attention_head_size,
+                attention_probs_dropout_prob=config.attention_probs_dropout_prob,
+                initializer_range=config.initializer_range,
+                do_return_2d_tensor=True,
+                batch_size=batch_size,
+                from_seq_length=seq_length,
+                to_seq_length=seq_length)
+            attention_heads.append(attention_head)
+
+        attention_output = None
+        if len(attention_heads) == 1:
+            attention_output = attention_heads[0]
+        else:
+            # In the case where we have other sequences, we just concatenate
+            # them to the self-attention head before the projection.
+            attention_output = tf.concat(attention_heads, axis=-1)
+
+        # Run a linear projection of `hidden_size` then add a residual
+        # with `layer_input`.
+        with tf.compat.v1.variable_scope("output"):
+            attention_output = dense(hidden_size, initializer)(attention_output)
+            attention_output = dropout(attention_output, config.hidden_dropout_prob)
+            attention_output = layer_norm(attention_output + layer_input)
+    return attention_output
+
+
+def attention_layer(from_tensor,
+                    to_tensor,
+                    attention_mask=None,
+                    num_attention_heads=1,
+                    size_per_head=512,
+                    query_act=None,
+                    key_act=None,
+                    value_act=None,
+                    attention_probs_dropout_prob=0.0,
+                    initializer_range=0.02,
+                    do_return_2d_tensor=False,
+                    batch_size=None,
+                    from_seq_length=None,
+                    to_seq_length=None):
+
+
+    def transpose_for_scores(input_tensor, batch_size, num_attention_heads,
+                                                     seq_length, width):
+        output_tensor = tf.reshape(
+                input_tensor, [batch_size, seq_length, num_attention_heads, width])
+
+        output_tensor = tf.transpose(a=output_tensor, perm=[0, 2, 1, 3])
+        return output_tensor
+
+    from_shape = get_shape_list(from_tensor, expected_rank=[2, 3])
+    to_shape = get_shape_list(to_tensor, expected_rank=[2, 3])
+
+    if len(from_shape) != len(to_shape):
+        raise ValueError(
+                "The rank of `from_tensor` must match the rank of `to_tensor`.")
+
+    if len(from_shape) == 3:
+        batch_size = from_shape[0]
+        from_seq_length = from_shape[1]
+        to_seq_length = to_shape[1]
+    elif len(from_shape) == 2:
+        if (batch_size is None or from_seq_length is None or to_seq_length is None):
+            raise ValueError(
+                    "When passing in rank 2 tensors to attention_layer, the values "
+                    "for `batch_size`, `from_seq_length`, and `to_seq_length` "
+                    "must all be specified.")
+
+    # Scalar dimensions referenced here:
+    #     B = batch size (number of sequences)
+    #     F = `from_tensor` sequence length
+    #     T = `to_tensor` sequence length
+    #     N = `num_attention_heads`
+    #     H = `size_per_head`
+
+    from_tensor_2d = reshape_to_matrix(from_tensor)
+    to_tensor_2d = reshape_to_matrix(to_tensor)
+
+    # `query_layer` = [B*F, N*H]
+    query_layer = tf.keras.layers.Dense(
+            num_attention_heads * size_per_head,
+            activation=query_act,
+            name="query",
+            kernel_initializer=create_initializer(initializer_range))(from_tensor_2d)
+
+    # `key_layer` = [B*T, N*H]
+    key_layer = tf.keras.layers.Dense(
+            num_attention_heads * size_per_head,
+            activation=key_act,
+            name="key",
+            kernel_initializer=create_initializer(initializer_range))(to_tensor_2d)
+
+    # `value_layer` = [B*T, N*H]
+    value_layer = tf.keras.layers.Dense(
+            num_attention_heads * size_per_head,
+            activation=value_act,
+            name="value",
+            kernel_initializer=create_initializer(initializer_range))(to_tensor_2d)
+
+    # `query_layer` = [B, N, F, H]
+    query_layer = transpose_for_scores(query_layer, batch_size,
+                                                                         num_attention_heads, from_seq_length,
+                                                                         size_per_head)
+
+    # `key_layer` = [B, N, T, H]
+    key_layer = transpose_for_scores(key_layer, batch_size, num_attention_heads,
+                                                                     to_seq_length, size_per_head)
+
+    # Take the dot product between "query" and "key" to get the raw
+    # attention scores.
+    # `attention_scores` = [B, N, F, T]
+    attention_scores = tf.matmul(query_layer, key_layer, transpose_b=True)
+    attention_scores = tf.multiply(attention_scores,
+                                                                 1.0 / math.sqrt(float(size_per_head)))
+
+    if attention_mask is not None:
+        # `attention_mask` = [B, 1, F, T]
+        attention_mask = tf.expand_dims(attention_mask, axis=[1])
+
+        # Since attention_mask is 1.0 for positions we want to attend and 0.0 for
+        # masked positions, this operation will create a tensor which is 0.0 for
+        # positions we want to attend and -10000.0 for masked positions.
+        adder = (1.0 - tf.cast(attention_mask, tf.float32)) * -10000.0
+
+        # Since we are adding it to the raw scores before the softmax, this is
+        # effectively the same as removing these entirely.
+        attention_scores += adder
+
+    # Normalize the attention scores to probabilities.
+    # `attention_probs` = [B, N, F, T]
+    attention_probs = tf.nn.softmax(attention_scores)
+
+    # This is actually dropping out entire tokens to attend to, which might
+    # seem a bit unusual, but is taken from the original Transformer paper.
+    attention_probs = dropout(attention_probs, attention_probs_dropout_prob)
+
+    # `value_layer` = [B, T, N, H]
+    value_layer = tf.reshape(
+            value_layer,
+            [batch_size, to_seq_length, num_attention_heads, size_per_head])
+
+    # `value_layer` = [B, N, T, H]
+    value_layer = tf.transpose(a=value_layer, perm=[0, 2, 1, 3])
+
+    # `context_layer` = [B, N, F, H]
+    context_layer = tf.matmul(attention_probs, value_layer)
+
+    # `context_layer` = [B, F, N, H]
+    context_layer = tf.transpose(a=context_layer, perm=[0, 2, 1, 3])
+
+    if do_return_2d_tensor:
+        # `context_layer` = [B*F, N*V]
+        context_layer = tf.reshape(
+                context_layer,
+                [batch_size * from_seq_length, num_attention_heads * size_per_head])
+    else:
+        # `context_layer` = [B, F, N*V]
+        context_layer = tf.reshape(
+                context_layer,
+                [batch_size, from_seq_length, num_attention_heads * size_per_head])
+
+    return context_layer

@@ -63,10 +63,17 @@ def model_fn_random_masking(bert_config, train_config, logging, model_class):
     segment_ids = features["segment_ids"]
     next_sentence_labels = features["next_sentence_labels"]
 
+    if mode == tf.estimator.ModeKeys.PREDICT:
+        tf.random.set_seed(0)
+        seed = 0
+        print("Seed as zero")
+    else:
+        seed = None
+
     masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights = random_masking(input_ids,
                                                                                          input_mask,
                                                                                          train_config.max_predictions_per_seq,
-                                                                                         MASK_ID)
+                                                                                         MASK_ID, seed)
 
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
@@ -95,17 +102,34 @@ def model_fn_random_masking(bert_config, train_config, logging, model_class):
     initialized_variable_names = {}
     scaffold_fn = None
     if train_config.init_checkpoint:
-      (assignment_map, initialized_variable_names
-      ) = get_bert_assignment_map(tvars, train_config.init_checkpoint)
-      if train_config.use_tpu:
+      if train_config.checkpoint_type == "":
+        assignment_map, initialized_variable_names = get_bert_assignment_map(tvars, train_config.init_checkpoint)
+        if train_config.use_tpu:
+          def tpu_scaffold():
+            tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
+            return tf.compat.v1.train.Scaffold()
 
-        def tpu_scaffold():
+          scaffold_fn = tpu_scaffold
+        else:
           tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
-          return tf.compat.v1.train.Scaffold()
+      elif train_config.checkpoint_type == "nli_and_bert":
+        assignment_map, initialized_variable_names = get_bert_assignment_map(tvars, train_config.init_checkpoint)
+        assignment_map2, initialized_variable_names2 = get_cls_assignment(tvars, train_config.second_init_checkpoint)
+        for vname in initialized_variable_names2:
+          logging.info("Loading from 2nd checkpoint : %s" % vname)
+        for k,v in initialized_variable_names2.items():
+          initialized_variable_names[k] = v
+        def init_fn():
+          tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
+          tf.compat.v1.train.init_from_checkpoint(train_config.second_init_checkpoint, assignment_map2)
+        if train_config.use_tpu:
+          def tpu_scaffold():
+            init_fn()
+            return tf.compat.v1.train.Scaffold()
 
-        scaffold_fn = tpu_scaffold
-      else:
-        tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
+          scaffold_fn = tpu_scaffold
+        else:
+          init_fn()
 
     logging.info("**** Trainable Variables ****")
     for var in tvars:
@@ -138,6 +162,9 @@ def model_fn_random_masking(bert_config, train_config, logging, model_class):
     else:
       predictions = {
           "input_ids":input_ids,
+          "masked_input_ids":masked_input_ids,
+          "masked_lm_example_loss":masked_lm_example_loss,
+          "masked_lm_positions":masked_lm_positions,
       }
       output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
           mode=mode,
@@ -227,6 +254,42 @@ def get_bert_assignment_map(tvars, lm_checkpoint):
             initialized_variable_names[tvar_name + ":0"] = 1
 
     return (assignment_map, initialized_variable_names)
+
+
+def get_cls_assignment(tvars, lm_checkpoint):
+    lm_assignment_candidate = {}
+    real_name_map = {}
+    for var in tvars:
+        name = var.name
+        m = re.match("^(.*):\\d+$", name)
+        if m is not None:
+            name = m.group(1)
+
+        tokens = name.split("/")
+        top_scope = tokens[0]
+        targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
+        targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
+        lm_assignment_candidate[targ_name] = var
+        real_name_map[targ_name] = name
+
+    assignment_map = {}
+    initialized_variable_names = {}
+    if lm_checkpoint:
+        for x in tf.train.list_variables(lm_checkpoint):
+            (name, var) = (x[0], x[1])
+            if name not in lm_assignment_candidate:
+                continue
+            if not name.startswith("cls"):
+                continue
+            assignment_map[name] = lm_assignment_candidate[name]
+
+            tvar_name = real_name_map[name]
+
+            initialized_variable_names[tvar_name] = 1
+            initialized_variable_names[tvar_name + ":0"] = 1
+
+    return (assignment_map, initialized_variable_names)
+
 
 
 def get_tlm_assignment_map(tvars, lm_checkpoint, target_task_checkpoint):
@@ -364,12 +427,12 @@ def model_fn_target_masking(bert_config, train_config, logging, model_class):
     initialized_variable_names = {}
     scaffold_fn = None
     (assignment_map, assignment_map_tt, initialized_variable_names
-      ) = get_tlm_assignment_map(all_vars, train_config.init_checkpoint, train_config.target_task_checkpoint)
+      ) = get_tlm_assignment_map(all_vars, train_config.init_checkpoint, train_config.second_init_checkpoint)
 
     def load_fn():
       if train_config.init_checkpoint:
         tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
-      tf.compat.v1.train.init_from_checkpoint(train_config.target_task_checkpoint, assignment_map_tt)
+      tf.compat.v1.train.init_from_checkpoint(train_config.second_init_checkpoint, assignment_map_tt)
 
     if train_config.use_tpu:
       def tpu_scaffold():

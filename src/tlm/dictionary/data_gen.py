@@ -225,15 +225,15 @@ def hide_word(tokens, target_word, d_mask_token):
 
 
 class DictTrainGen(UnmaskedPairGen):
-    def __init__(self, dictionary):
+    def __init__(self, dictionary, max_def_length=256, max_d_loc=16, max_word_len=8):
         super(DictTrainGen, self).__init__()
         self.dict = dictionary
-        self.max_def_length = 256
-        self.max_d_loc = 16
+        self.max_def_length = max_def_length
+        self.max_d_loc = max_d_loc
         self.stopword = load_stopwords()
         self.d_mask_token = "[unused4]"
         self.f_hide_word = True
-        self.max_word_len = 8
+        self.max_word_len = max_word_len
         self.drop_none_dict = False
         self.no_dict_assist = False
         self.drop_short_word = True

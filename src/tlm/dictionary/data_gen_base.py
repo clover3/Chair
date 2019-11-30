@@ -108,6 +108,7 @@ class OrderedDictBuilder(collections.OrderedDict):
         for key, value in other_dict.items():
             self.update({key: value})
 
+
 class DictLMFeaturizer:
     def __init__(self, tokenizer, max_seq_length, max_predictions_per_seq, max_def_length, max_d_loc, max_word_len):
         self.get_basic_input_features = partial(get_basic_input_feature, tokenizer, max_seq_length)
