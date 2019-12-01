@@ -1,15 +1,19 @@
-from tlm.tf_logging import tf_logging, logging
-import tensorflow as tf
+import os
 import pickle
-from tlm.training.train_flags import *
+
+import tensorflow as tf
+
+import tlm.dictionary.ssdr_model_fn as ssdr_model_fn
 import tlm.model.base as modeling
+from tlm.dictionary.dict_reader_transformer import DictReaderModel
+from tlm.dictionary.sense_selecting_dictionary_reader import SSDR
+from tlm.model.base import BertModel
+from tlm.tf_logging import tf_logging, logging
+from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
 from tlm.training.input_fn import input_fn_builder_unmasked
 from tlm.training.model_fn import model_fn_random_masking, model_fn_target_masking
-from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
-from tlm.model.base import BertModel
-from tlm.dictionary.dict_reader_transformer import DictReaderModel
+from tlm.training.train_flags import *
 
-import os
 
 class TrainConfig:
     def __init__(self,
@@ -103,12 +107,15 @@ def lm_pretrain():
     TASK_LM = 0
     TASK_TLM = 1
     TASK_DICT_LM = 2
+    TASK_DICT_LM_VBATCH = 3
 
     task = TASK_LM
     if FLAGS.target_lm:
         task = TASK_TLM
     elif FLAGS.dict_lm:
         task = TASK_DICT_LM
+    elif FLAGS.dict_lm_vbatch:
+        task = TASK_DICT_LM_VBATCH
 
     train_config = TrainConfig.from_flags(FLAGS)
     if task == TASK_LM:
@@ -142,7 +149,18 @@ def lm_pretrain():
             model_class=DictReaderModel,
             dict_run_config=DictRunConfig.from_flags(FLAGS),
         )
-
+    elif task == TASK_DICT_LM_VBATCH:
+        tf_logging.info("Running Dict LM with virtual batch_size")
+        dbert_config = modeling.BertConfig.from_json_file(FLAGS.dbert_config_file)
+        input_fn_builder = ssdr_model_fn.input_fn_builder
+        model_fn = ssdr_model_fn.model_fn_dict_reader(
+            bert_config=bert_config,
+            dbert_config=dbert_config ,
+            train_config=train_config,
+            logging=tf_logging,
+            model_class=SSDR,
+            dict_run_config=DictRunConfig.from_flags(FLAGS),
+        )
     # If TPU is not available, this will fall back to normal Estimator on CPU
     # or GPU.
     estimator = tf.compat.v1.estimator.tpu.TPUEstimator(

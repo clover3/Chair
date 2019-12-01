@@ -1,133 +1,13 @@
-import re
-
 import tensorflow as tf
 
+import tlm.training.dict_model_fn as dict_model_fn
 from data_generator.special_tokens import MASK_ID
-from models.transformer import bert_common_v2 as bert_common
 from models.transformer import optimization_v2 as optimization
 from tlm.model.lm_objective import get_masked_lm_output, get_next_sentence_output
 from tlm.model.masking import random_masking
 from tlm.training.grad_accumulation import get_accumulated_optimizer_from_config
-from tlm.training.input_fn import _decode_record
 from tlm.training.model_fn import metric_fn, get_assignment_map_as_is
 from trainer.get_param_num import get_param_num
-
-
-class DictRunConfig:
-    def __init__(self,
-                 use_target_pos_emb=False,
-                 is_bert_checkpoint=True,
-                 train_op="LM",
-                 prediction_op="",
-                 pool_dict_output=False,
-                 fixed_mask=False,
-                 inner_batch_size= None,
-                 def_per_batch=None,
-                 ):
-        self.use_target_pos_emb = use_target_pos_emb
-        self.is_bert_checkpoint = is_bert_checkpoint
-        self.train_op = train_op
-        self.prediction_op = prediction_op
-        self.pool_dict_output = pool_dict_output
-        self.fixed_mask = fixed_mask
-        self.inner_batch_size = inner_batch_size
-        self.def_per_batch = def_per_batch
-    @classmethod
-    def from_flags(cls, flags):
-        return DictRunConfig(
-            flags.use_target_pos_emb,
-            flags.is_bert_checkpoint,
-            flags.train_op,
-            flags.prediction_op,
-            flags.pool_dict_output,
-            flags.fixed_mask,
-            flags.inner_batch_size,
-            flags.def_per_batch
-        )
-
-
-def get_bert_assignment_map_for_dict(tvars, lm_checkpoint):
-    candidate_1 = {}
-    candidate_2 = {}
-    real_name_map_1 = {}
-    real_name_map_2 = {}
-
-    remap_scope = "dict"
-
-    for var in tvars:
-        name = var.name
-        m = re.match("^(.*):\\d+$", name)
-        if m is not None:
-            name = m.group(1)
-
-        name_in_checkpoint = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
-        name_in_checkpoint = re.sub("dense[_]?\d*", "dense", name_in_checkpoint)
-
-        f_dict_var = False
-        tokens = name_in_checkpoint.split("/")
-        for idx, t in enumerate(tokens):
-            if t == remap_scope or t.startswith(remap_scope+"_"):
-                name_in_checkpoint = "/".join(tokens[:idx] + tokens[idx+1:])
-                f_dict_var = True
-        if not f_dict_var:
-            candidate_1[name_in_checkpoint] = var
-            real_name_map_1[name_in_checkpoint] = name
-        else:
-            candidate_2[name_in_checkpoint] = var
-            real_name_map_2[name_in_checkpoint] = name
-
-    assignment_map_1 = {}
-    assignment_map_2 = {}
-    initialized_variable_names = {}
-    if lm_checkpoint:
-        for x in tf.train.list_variables(lm_checkpoint):
-            (name, var) = (x[0], x[1])
-            if name not in candidate_1:
-                (name, var) = (x[0], x[1])
-                continue
-            assignment_map_1[name] = candidate_1[name]
-            tvar_name = real_name_map_1[name]
-            initialized_variable_names[tvar_name] = 1
-            initialized_variable_names[tvar_name + ":0"] = 1
-
-        for x in tf.train.list_variables(lm_checkpoint):
-            (name, var) = (x[0], x[1])
-            if name not in candidate_2:
-                continue
-            assignment_map_2[name] = candidate_2[name]
-            tvar_name = real_name_map_2[name]
-            initialized_variable_names[tvar_name] = 1
-            initialized_variable_names[tvar_name + ":0"] = 1
-
-    return assignment_map_1, assignment_map_2, initialized_variable_names
-
-
-def get_gradients(model, masked_lm_log_probs, n_pred, voca_size):
-    masked_lm_log_probs = tf.reshape(masked_lm_log_probs, [-1, n_pred, voca_size])
-
-    g_list = []
-    for i in range(n_pred):
-        g = tf.gradients(masked_lm_log_probs[:,i,:], model.d_embedding_output)
-        g_list.append(g)
-    return tf.stack(g_list)
-
-
-
-
-def sequence_index_prediction(bert_config, lookup_idx, input_tensor):
-    logits = bert_common.dense(2, bert_common.create_initializer(bert_config.initializer_range))(input_tensor)
-    log_probs = tf.nn.softmax(logits, axis=2)
-    losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=lookup_idx)
-    per_example_loss = tf.reduce_sum(losses, axis=1)
-    loss = tf.reduce_mean(per_example_loss)
-
-    return loss, per_example_loss, log_probs
-
-
-def binary_prediction(bert_config, input_tensor):
-    logits = bert_common.dense(2, bert_common.create_initializer(bert_config.initializer_range))(input_tensor)
-    log_probs = tf.nn.softmax(logits, axis=2)
-    return logits, log_probs
 
 
 def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model_class, dict_run_config):
@@ -139,13 +19,20 @@ def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model
         for name in sorted(features.keys()):
             logging.info("    name = %s, shape = %s" % (name, features[name].shape))
 
-        input_ids = features["input_ids"]
-        input_mask = features["input_mask"]
-        segment_ids = features["segment_ids"]
-        d_input_ids = features["d_input_ids"]
-        d_input_mask = features["d_input_mask"]
-        d_location_ids = features["d_location_ids"]
-        next_sentence_labels = features["next_sentence_labels"]
+        def reform_a_input(raw_input):
+            return tf.reshape(raw_input, [dict_run_config.inner_batch_size, -1])
+
+        def reform_b_input(raw_input):
+            return tf.reshape(raw_input, [dict_run_config.def_per_batch, -1])
+
+        input_ids = reform_a_input(features["input_ids"])
+        input_mask = reform_a_input(features["input_mask"])
+        segment_ids = reform_a_input(features["segment_ids"])
+        d_input_ids = reform_b_input(features["d_input_ids"])
+        d_input_mask = reform_b_input(features["d_input_mask"])
+        d_location_ids = reform_b_input(features["d_location_ids"])
+        next_sentence_labels = reform_a_input(features["next_sentence_labels"])
+        ab_mapping = features["ab_mapping"]
 
         if dict_run_config.prediction_op == "loss":
             seed = 0
@@ -154,15 +41,15 @@ def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model
 
         if dict_run_config.prediction_op == "loss_fixed_mask" or dict_run_config.fixed_mask:
             masked_input_ids = input_ids
-            masked_lm_positions = features["masked_lm_positions"]
-            masked_lm_ids = features["masked_lm_ids"]
+            masked_lm_positions = reform_a_input(features["masked_lm_positions"])
+            masked_lm_ids = reform_a_input(features["masked_lm_ids"])
             masked_lm_weights = tf.ones_like(masked_lm_positions, dtype=tf.float32)
         else:
             masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights \
                 = random_masking(input_ids, input_mask, train_config.max_predictions_per_seq, MASK_ID, seed)
 
         if train_config.use_d_segment_ids:
-            d_segment_ids = features["d_segment_ids"]
+            d_segment_ids = reform_b_input(features["d_segment_ids"])
         else:
             d_segment_ids = None
 
@@ -174,15 +61,16 @@ def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model
                 is_training=is_training,
                 input_ids=masked_input_ids,
                 input_mask=input_mask,
+                token_type_ids=segment_ids,
                 d_input_ids=d_input_ids,
                 d_input_mask=d_input_mask,
-                d_location_ids=d_location_ids,
-                use_target_pos_emb=dict_run_config.use_target_pos_emb,
-                token_type_ids=segment_ids,
-                use_one_hot_embeddings=train_config.use_one_hot_embeddings,
                 d_segment_ids=d_segment_ids,
-                pool_dict_output=dict_run_config.pool_dict_output,
+                d_location_ids=d_location_ids,
+                ab_mapping=ab_mapping,
+                use_target_pos_emb=dict_run_config.use_target_pos_emb,
+                use_one_hot_embeddings=train_config.use_one_hot_embeddings,
         )
+
 
         (masked_lm_loss,
          masked_lm_example_loss, masked_lm_log_probs) = get_masked_lm_output(
@@ -193,31 +81,13 @@ def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model
                  bert_config, model.get_pooled_output(), next_sentence_labels)
 
         total_loss = masked_lm_loss
-
-        if dict_run_config.train_op == "entry_prediction":
-            score_label = features["useful_entry"] # [batch, 1]
-            score_label = tf.reshape(score_label, [-1])
-            entry_logits = bert_common.dense(2, bert_common.create_initializer(bert_config.initializer_range))\
-                (model.get_dict_pooled_output())
-            print("entry_logits: ", entry_logits.shape)
-            losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=entry_logits, labels=score_label)
-            loss = tf.reduce_mean(losses)
-            total_loss = loss
-
-        if dict_run_config.train_op == "lookup":
-            lookup_idx = features["lookup_idx"]
-            lookup_loss, lookup_example_loss, lookup_score = \
-                sequence_index_prediction(bert_config, lookup_idx, model.get_sequence_output())
-
-            total_loss += lookup_loss
-
         tvars = tf.compat.v1.trainable_variables()
 
         init_vars = {}
         scaffold_fn = None
         if train_config.init_checkpoint:
             if dict_run_config.is_bert_checkpoint:
-                map1, map2, init_vars = get_bert_assignment_map_for_dict(tvars, train_config.init_checkpoint)
+                map1, map2, init_vars = dict_model_fn.get_bert_assignment_map_for_dict(tvars, train_config.init_checkpoint)
 
                 def load_fn():
                     tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, map1)
@@ -272,7 +142,7 @@ def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model
         else:
             if dict_run_config.prediction_op == "gradient":
                 logging.info("Fetching gradient")
-                gradient = get_gradients(model, masked_lm_log_probs,
+                gradient = dict_model_fn.get_gradients(model, masked_lm_log_probs,
                                          train_config.max_predictions_per_seq, bert_config.vocab_size)
                 predictions = {
                         "masked_input_ids": masked_input_ids,
@@ -300,15 +170,18 @@ def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model
     return model_fn
 
 
-def input_fn_builder_dict(input_files, flags, is_training, num_cpu_threads=4):
+def input_fn_builder(input_files, flags, is_training, num_cpu_threads=4):
     def input_fn(params):
         """The actual input function."""
         batch_size = params["batch_size"]
-        max_seq_length = flags.max_seq_length
-        max_predictions_per_seq = flags.max_predictions_per_seq
-        max_def_length = flags.max_def_length
-        max_loc_length = flags.max_loc_length
-        max_word_length = flags.max_word_length
+        inner_batch_size = flags.inner_batch_size
+        def_per_batch = flags.def_per_batch
+
+        max_seq_length = flags.max_seq_length * inner_batch_size
+        max_predictions_per_seq = flags.max_predictions_per_seq * inner_batch_size
+        max_def_length = flags.max_def_length * def_per_batch
+        max_loc_length = flags.max_loc_length * def_per_batch
+        max_word_length = flags.max_word_length * def_per_batch
         FixedLenFeature = tf.io.FixedLenFeature
         all_features = {
             "input_ids":    FixedLenFeature([max_seq_length], tf.int64),
@@ -323,11 +196,12 @@ def input_fn_builder_dict(input_files, flags, is_training, num_cpu_threads=4):
             "masked_lm_ids": FixedLenFeature([max_predictions_per_seq], tf.int64),
             "lookup_idx": FixedLenFeature([1], tf.int64),
             "selected_word": FixedLenFeature([max_word_length], tf.int64),
+            "ab_mapping": FixedLenFeature([def_per_batch], tf.int64)
         }
 
         active_feature = ["input_ids", "input_mask", "segment_ids",
                           "d_input_ids", "d_input_mask", "d_location_ids",
-                          "next_sentence_labels"]
+                          "next_sentence_labels", "ab_mapping"]
 
         if flags.fixed_mask:
             active_feature.append("masked_lm_positions")
@@ -351,45 +225,6 @@ def input_fn_builder_dict(input_files, flags, is_training, num_cpu_threads=4):
 
         # For training, we want a lot of parallel reading and shuffling.
         # For eval, we want no shuffling and parallel reading doesn't matter.
-        return format_dataset(selected_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+        return dict_model_fn.format_dataset(selected_features, batch_size, is_training, flags, input_files, num_cpu_threads)
 
     return input_fn
-
-
-def format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads):
-    if is_training:
-        d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
-        if flags.repeat_data:
-            d = d.repeat()
-        d = d.shuffle(buffer_size=1000 * 1000)
-
-        # `cycle_length` is the number of parallel files that get read.
-        cycle_length = min(num_cpu_threads, len(input_files))
-        cycle_length = 100
-        # `sloppy` mode means that the interleaving is not exact. This adds
-        # even more randomness to the training pipeline.
-        d = d.apply(
-            tf.data.experimental.parallel_interleave(
-                tf.data.TFRecordDataset,
-                sloppy=is_training,
-                cycle_length=cycle_length))
-        d = d.shuffle(buffer_size=100)
-    else:
-        d = tf.data.TFRecordDataset(input_files)
-        # n_predict = flags.eval_batch_size * flags.max_pred_steps
-        # d = d.take(n_predict)
-
-        # Since we evaluate for a fixed number of steps we don't want to encounter
-        # out-of-range exceptions.
-        # d = d.repeat()
-    # We must `drop_remainder` on training because the TPU requires fixed
-    # size dimensions. For eval, we assume we are evaluating on the CPU or GPU
-    # and we *don't* want to drop the remainder, otherwise we wont cover
-    # every sample.
-    d = d.apply(
-        tf.data.experimental.map_and_batch(
-            lambda record: _decode_record(record, name_to_features),
-            batch_size=batch_size,
-            num_parallel_batches=num_cpu_threads,
-            drop_remainder=True))
-    return d

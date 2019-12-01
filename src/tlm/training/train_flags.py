@@ -140,6 +140,8 @@ flags.DEFINE_bool("target_lm", False, "Whether to run target_lm as training.")
 
 flags.DEFINE_bool("dict_lm", False, "Whether to run dict_lm as training.")
 
+flags.DEFINE_bool("dict_lm_vbatch", False, "Whether to run dict_lm as training.")
+
 flags.DEFINE_bool("log_debug", False, ".")
 
 flags.DEFINE_bool("fixed_mask", False, "Whether to fixed_mask.")
@@ -159,3 +161,7 @@ flags.DEFINE_integer("gradient_accumulation", 1, "How many batch to accumulate f
 flags.DEFINE_string("checkpoint_type", "", "Checkpoint type")
 
 flags.DEFINE_string("task_completion_mark", "", "make this file if the task is completed. Do not start the job if this file exists")
+
+flags.DEFINE_integer("inner_batch_size", 60, "Number of classes (in case of classification task.")
+
+flags.DEFINE_integer("def_per_batch", 180, "Number of classes (in case of classification task.")
