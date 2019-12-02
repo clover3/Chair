@@ -1,10 +1,14 @@
 import logging
-from absl import logging as ab_logging
 import time
+
+from absl import logging as ab_logging
 
 logging.root.addHandler(logging.StreamHandler())
 tf_logging = logging.getLogger('tensorflow')
 tf_logging.info("1")
+
+if tf_logging.handlers:
+    tf_logging.handlers = []
 
 
 class MyFormatter(logging.Formatter):
@@ -27,7 +31,6 @@ class MyFormatter(logging.Formatter):
           created_tuple.tm_min,
           created_tuple.tm_sec,
           record.filename,
-
          record.lineno,
           critical_prefix)
 

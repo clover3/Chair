@@ -32,6 +32,7 @@ class DictRunConfig:
         self.fixed_mask = fixed_mask
         self.inner_batch_size = inner_batch_size
         self.def_per_batch = def_per_batch
+
     @classmethod
     def from_flags(cls, flags):
         return DictRunConfig(
@@ -62,6 +63,7 @@ def get_bert_assignment_map_for_dict(tvars, lm_checkpoint):
 
         name_in_checkpoint = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
         name_in_checkpoint = re.sub("dense[_]?\d*", "dense", name_in_checkpoint)
+        name_in_checkpoint = re.sub("encoder[_]?\d*", "encoder", name_in_checkpoint)
 
         f_dict_var = False
         tokens = name_in_checkpoint.split("/")

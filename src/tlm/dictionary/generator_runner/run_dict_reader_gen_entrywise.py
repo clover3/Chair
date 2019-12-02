@@ -1,8 +1,6 @@
-from data_generator import job_runner
-from tlm.dictionary import wiki_dict_job_runner
-from tlm.dictionary import data_gen
 from cache import load_from_pickle
-from functools import partial
+from tlm.dictionary import data_gen
+from tlm.dictionary.generator_runner import wiki_dict_job_runner
 
 if __name__ == "__main__":
     class EntryWiseGen(data_gen.DictTrainGen):

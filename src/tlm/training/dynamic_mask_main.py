@@ -6,7 +6,7 @@ import tensorflow as tf
 import tlm.dictionary.ssdr_model_fn as ssdr_model_fn
 import tlm.model.base as modeling
 from tlm.dictionary.dict_reader_transformer import DictReaderModel
-from tlm.dictionary.sense_selecting_dictionary_reader import SSDR
+from tlm.dictionary.sense_selecting_dictionary_reader import SSDR, SSDRConfig
 from tlm.model.base import BertModel
 from tlm.tf_logging import tf_logging, logging
 from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
@@ -56,6 +56,8 @@ class TrainConfig:
             flags.checkpoint_type,
             flags.target_task_checkpoint,
         )
+
+
 
 def main(_):
     lm_pretrain()
@@ -151,11 +153,11 @@ def lm_pretrain():
         )
     elif task == TASK_DICT_LM_VBATCH:
         tf_logging.info("Running Dict LM with virtual batch_size")
-        dbert_config = modeling.BertConfig.from_json_file(FLAGS.dbert_config_file)
+        ssdr_config = SSDRConfig.from_json_file(FLAGS.dbert_config_file)
         input_fn_builder = ssdr_model_fn.input_fn_builder
         model_fn = ssdr_model_fn.model_fn_dict_reader(
             bert_config=bert_config,
-            dbert_config=dbert_config ,
+            ssdr_config=ssdr_config ,
             train_config=train_config,
             logging=tf_logging,
             model_class=SSDR,

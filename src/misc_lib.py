@@ -1,8 +1,9 @@
-import time
 import os
-import shutil
-from time import gmtime, strftime
 import random
+import shutil
+import time
+from time import gmtime, strftime
+
 
 def average(l):
     if len(l) == 0:
@@ -254,6 +255,13 @@ def get_dir_files(dir_path):
             path_list.append(os.path.join(dir_path, filename))
 
     return path_list
+
+
+def get_dir_files_sorted_by_mtime(dir_path):
+    path_list = get_dir_files(dir_path)
+    path_list.sort(key=lambda x: os.path.getmtime(x))
+    return path_list
+
 
 def get_dir_dir(dir_path):
     path_list = []

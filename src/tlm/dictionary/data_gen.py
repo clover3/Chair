@@ -1,22 +1,27 @@
-from tf_util.record_writer_wrap import RecordWriterWrap
-from tlm.data_gen.base import UnmaskedPairGen, pad0
+import os
+import random
+from abc import ABC, abstractmethod
+from collections import Counter, OrderedDict
+from functools import partial
+
+import numpy as np
+
 import tlm.data_gen.base as datagen_base
-
+import tlm.data_gen.bert_data_gen as btd
 from data_generator import tokenizer_wo_tf as tokenization
-
-from tlm.dictionary.data_gen_base import Word, SegmentInstanceWithDictEntry, TOKEN_LINE_SEP, TOKEN_DEF_SEP, \
-    DictPredictionEntry, DictLMFeaturizer, DictLMFeaturizerUnmasked
-from tlm.tf_logging import tf_logging
 from misc_lib import pick1, TimeEstimator, average
 from models.classic.stopword import load_stopwords
-import tlm.data_gen.bert_data_gen as btd
-import random
-import os
-from collections import Counter
 from path import data_path
+from tf_util.record_writer_wrap import RecordWriterWrap
+from tlm.data_gen.base import UnmaskedPairGen, pad0
+from tlm.dictionary.data_gen_base import Word, SegmentInstanceWithDictEntry, TOKEN_LINE_SEP, TOKEN_DEF_SEP, \
+    DictPredictionEntry, DictLMFeaturizer, DictLMFeaturizerUnmasked, MultiSenseEntry
+from tlm.tf_logging import tf_logging
 from trainer.tf_module import get_batches_ex
-from abc import ABC, abstractmethod
 
+
+def fetch_int_feature(v):
+    return v.int64_list.value
 
 def dictionary_encoder(entries, tokenizer):
     # entry = {
@@ -459,6 +464,7 @@ class DictCaseCounter(datagen_base.IfCaseCounter):
         super(DictCaseCounter, self).__init__(cases)
 
 
+# Generate instances with different definition entry
 class DictEntryPredictGen(UnmaskedPairGen):
     def __init__(self, parsed_dictionary, max_def_entry):
         super(DictEntryPredictGen, self).__init__()
@@ -561,4 +567,238 @@ class DictEntryPredictGen(UnmaskedPairGen):
         for msg in case_counter.count_report():
             tf_logging.info(msg)
 
+        return example_numbers
+
+
+#
+class SenseSelectingDictionaryReaderGen(UnmaskedPairGen):
+    def __init__(self, parsed_dictionary, batch_size,  def_per_batch, max_def_length):
+        super(SenseSelectingDictionaryReaderGen, self).__init__()
+        self.parsed_dictionary = parsed_dictionary
+        self.batch_size = batch_size
+        self.max_def_length = max_def_length
+        self.def_per_batch = def_per_batch
+        self.max_d_loc = 16
+        self.max_word_len = 8
+        self.stopword = load_stopwords()
+        self.get_basic_input_features_as_list = partial(datagen_base.get_basic_input_feature_as_list, self.tokenizer, self.max_seq_length)
+        self.get_masked_lm_features_as_list = partial(datagen_base.get_masked_lm_features_as_list, self.tokenizer, self.max_predictions_per_seq)
+
+
+    @staticmethod
+    def drop_definitions(batch_insts, max_def_length):
+        n_all_def = sum([len(entry.dict_def_list) for entry in batch_insts])
+
+        iterations = 0
+
+        inst_idx = 0
+        while n_all_def >= max_def_length:
+            iterations += 1
+            n_defs = len(batch_insts[inst_idx].dict_def_list)
+            if n_defs > 1:
+                drop_idx = random.randint(0, n_defs-1)
+                batch_insts[inst_idx].dict_def_list = batch_insts[inst_idx].dict_def_list[:drop_idx] \
+                                                      + batch_insts[inst_idx].dict_def_list[drop_idx+1:]
+                n_all_def -= 1
+
+            inst_idx += 1
+            if inst_idx == len(batch_insts):
+                inst_idx = 0
+
+            assert iterations < 10000
+
+    def create_instances_from_documents(self, documents):
+        instances = super(SenseSelectingDictionaryReaderGen, self).create_instances_from_documents(documents)
+        vocab_words = list(self.tokenizer.vocab.keys())
+
+        def valid_candidate(w):
+            return w.word not in self.stopword and w.word in self.parsed_dictionary
+
+
+        inst_list = []
+        cnt = 0
+        for inst in instances:
+            # We nedd both entries for entry prediction and LM prediction
+            (tokens, masked_lm_positions,
+             masked_lm_labels) = btd.create_masked_lm_predictions(inst.tokens,
+                                                      self.masked_lm_prob,
+                                                      self.max_predictions_per_seq, vocab_words, self.rng)
+            words = get_word_tokens(tokens)
+            words = list([w for w in words if valid_candidate(w)])
+            if words:
+                selected_word = pick1(words)
+                locations = get_locations(tokens, selected_word)
+                def_list = list([word_def for word_def in self.parsed_dictionary[selected_word.word]])
+
+                inst = MultiSenseEntry(
+                    tokens,
+                    inst.segment_ids,
+                    selected_word,
+                    def_list,
+                    locations,
+                    masked_lm_positions,
+                    masked_lm_labels
+                )
+            else:
+                selected_word = None
+                inst = MultiSenseEntry(
+                    tokens,
+                    inst.segment_ids,
+                    selected_word,
+                    [],
+                    [],
+                    masked_lm_positions,
+                    masked_lm_labels
+                )
+
+
+            inst_list.append(inst)
+
+        n_dropped_definitions = []
+        over_length_def = 0
+        n_global_defs = 0
+        batched_inst_list = []
+        for inst_idx in range(0, len(inst_list), self.batch_size):
+            batch_instances = inst_list[inst_idx:inst_idx + self.batch_size]
+            n_all_def = sum([len(entry.dict_def_list) for entry in batch_instances])
+            n_global_defs += n_all_def
+
+            dropped_definitions = max(n_all_def - self.def_per_batch,0)
+            n_dropped_definitions.append(dropped_definitions)
+
+            self.drop_definitions(batch_instances, self.def_per_batch)
+            if cnt < 5:
+                tf_logging.info("Dropped {} definitions".format(dropped_definitions))
+                for inst in batch_instances:
+                    tf_logging.info("Instance1:")
+                    tf_logging.info("Tokens : {}".format(inst.tokens))
+                    tf_logging.info("Text : {}".format(tokenization.pretty_tokens(inst.tokens)))
+                    tf_logging.info("-------------------")
+                    for def_text in inst.dict_def_list:
+                        tf_logging.info("Text : {}".format(tokenization.pretty_tokens(def_text)))
+                cnt += 1
+
+            ab_map = []
+            batch_defs = []
+            for idx, inst in enumerate(batch_instances):
+                for def_text in inst.dict_def_list:
+                    ab_map.append(idx)
+                    batch_defs.append(def_text)
+                    if len(def_text) > self.max_def_length:
+                        over_length_def += 1
+
+            batched_inst_list.append((batch_instances, ab_map, batch_defs))
+
+            assert len(batch_defs) < self.def_per_batch
+
+        tf_logging.info("{} of {} are over-length".format(over_length_def, n_global_defs))
+        tf_logging.info("Dropped definition stats \n: "
+                        "Avg: {} \n"
+                        "Std.dev: {} \n"
+                        "0 drop {} ".format(average(n_dropped_definitions),
+                                            np.std(n_dropped_definitions),
+                                            sum([1 for n in n_dropped_definitions if n ==0]))
+                        )
+
+
+        return batched_inst_list
+
+    def encode_dict_def_features(self, dict_def):
+        d_input_ids = self.tokenizer.convert_tokens_to_ids(dict_def)
+        d_input_ids = d_input_ids[:self.max_def_length]
+        d_input_mask = [1] * len(d_input_ids)
+        d_segment_ids = [0] * len(d_input_ids)
+
+        d_input_ids = pad0(d_input_ids, self.max_def_length)
+        d_input_mask = pad0(d_input_mask, self.max_def_length)
+        d_segment_ids = pad0(d_segment_ids, self.max_def_length)
+        return d_input_ids, d_input_mask, d_segment_ids
+
+    def encode_word(self, selected_word):
+        if selected_word is not None:
+            tokens = self.tokenizer.convert_tokens_to_ids(selected_word.subword_rep)
+        else:
+            tokens = []
+        selected_word = pad0(tokens, self.max_word_len)
+        return selected_word
+
+    def encode_locations(self, word_loc_list):
+        return pad0(word_loc_list[:self.max_d_loc], self.max_d_loc)
+
+    def write_instances(self, batched_inst_list, outfile):
+        writer = RecordWriterWrap(outfile)
+        example_numbers = []
+        for (inst_index, entry) in enumerate(batched_inst_list):
+            batched_inst_list, ab_map, batch_defs = entry
+
+            batch_features = {
+                "input_ids": list(),
+                "input_mask": list(),
+                "segment_ids": list(),
+                "masked_lm_positions": list(),
+                "masked_lm_ids": list(),
+                "masked_lm_weights": list(),
+                "selected_word": list(),
+                "d_location_ids": list(),
+
+                "d_input_ids": list(),
+                "d_input_mask": list(),
+                "d_segment_ids": list(),
+                "ab_mapping": pad0(ab_map, self.def_per_batch),
+            }
+            for inst in batched_inst_list:
+                input_ids, input_mask, segment_ids = self.get_basic_input_features_as_list(inst.tokens, inst.segment_ids)
+
+                batch_features["input_ids"].extend(input_ids)
+                batch_features["input_mask"].extend(input_mask)
+                batch_features["segment_ids"].extend(segment_ids)
+
+                masked_lm_positions, masked_lm_ids, masked_lm_weights = \
+                    self.get_masked_lm_features_as_list(inst.masked_lm_positions, inst.masked_lm_labels)
+
+                batch_features["masked_lm_positions"].extend(masked_lm_positions)
+                batch_features["masked_lm_ids"].extend(masked_lm_ids)
+                batch_features["masked_lm_weights"].extend(masked_lm_weights)
+
+                batch_features["selected_word"].extend(self.encode_word(inst.dict_word))
+                batch_features["d_location_ids"].extend(self.encode_locations(inst.word_loc_list))
+
+            for _ in range(len(batched_inst_list), self.batch_size):
+                batch_features["input_ids"].extend([0] * self.max_seq_length)
+                batch_features["input_mask"].extend([0] * self.max_seq_length)
+                batch_features["segment_ids"].extend([0] * self.max_seq_length)
+
+                batch_features["masked_lm_positions"].extend([0] * self.max_predictions_per_seq)
+                batch_features["masked_lm_ids"].extend([0] * self.max_predictions_per_seq)
+                batch_features["masked_lm_weights"].extend([0] * self.max_predictions_per_seq)
+
+                batch_features["selected_word"].extend([0] * self.max_word_len)
+                batch_features["d_location_ids"].extend([0] * self.max_d_loc)
+
+            for def_idx in range(self.def_per_batch):
+                if def_idx < len(batch_defs):
+                    def_text = batch_defs[def_idx]
+                else:
+                    def_text = []
+                d_input_ids, d_input_mask, d_segment_ids = self.encode_dict_def_features(def_text)
+                batch_features["d_input_ids"].extend(d_input_ids)
+                batch_features["d_input_mask"].extend(d_input_mask)
+                batch_features["d_segment_ids"].extend(d_segment_ids)
+
+            features = OrderedDict()
+            for key in batch_features:
+                if key == "masked_lm_weights":
+                    features[key] = btd.create_float_feature(batch_features[key])
+                else:
+                    features[key] = btd.create_int_feature(batch_features[key])
+
+            if inst_index == 0:
+                for key in batch_features:
+                    tf_logging.info("feature : {} , shape={}".format(key, len(batch_features[key])))
+
+
+            writer.write_feature(features)
+        writer.close()
+
+        tf_logging.info("Wrote %d total instances", writer.total_written)
         return example_numbers

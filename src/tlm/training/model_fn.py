@@ -1,16 +1,19 @@
-import tensorflow as tf
-from models.transformer import bert_common_v2 as bert_common
-from models.transformer import optimization_v2 as optimization
-from trainer.get_param_num import get_param_num
-from tlm.model.lm_objective import get_masked_lm_output, get_next_sentence_output
-from data_generator.special_tokens import MASK_ID, PAD_ID
-from tlm.model.masking import random_masking, biased_masking
-import tlm.training.target_mask_hp as target_mask_hp
-from tlm.model.nli_ex_v2 import transformer_nli
-from models.transformer import hyperparams
 import collections
 import re
+
+import tensorflow as tf
+
+import tlm.training.target_mask_hp as target_mask_hp
+from data_generator.special_tokens import MASK_ID, PAD_ID
+from models.transformer import bert_common_v2 as bert_common
+from models.transformer import hyperparams
+from models.transformer import optimization_v2 as optimization
+from tlm.model.lm_objective import get_masked_lm_output, get_next_sentence_output
+from tlm.model.masking import random_masking, biased_masking
+from tlm.model.nli_ex_v2 import transformer_nli
 from tlm.tf_logging import tf_logging
+from trainer.get_param_num import get_param_num
+
 
 def metric_fn(masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
               masked_lm_weights, next_sentence_example_loss,

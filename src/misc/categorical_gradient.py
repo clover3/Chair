@@ -6,7 +6,9 @@ def categorical_sampling(x):
     idx = tf.random.categorical(x, 1)
 
     def grad(dy):
-        return tf.expand_dims(dy, 1) * x
+        g = dy * x
+        return g
+
 
     return idx, grad
 
@@ -15,31 +17,38 @@ def categorical_sampling(x):
 def gather(param, indice):
     y = tf.gather_nd(param, indice)
 
+
     def grad(dy):
         g1 = tf.scatter_nd(updates=dy, indices=indice, shape=param.shape)
-        return g1, dy
+        g2 = dy
+        for _ in range(indice.shape[-1], len(param.shape)):
+            g2 = tf.reduce_sum(g2, axis=-1)
+        for _ in range(indice.shape[-1]):
+            g2 = tf.expand_dims(g2, -1)
+        return g1, g2
+
     return y, grad
 
 
 def code():
     # [batch, data_size]
     x = tf.random.uniform([10, 4],0,1)
-    z = tf.constant([1,2,3,4], dtype=tf.float32)
+    z = tf.ones([320, 4, 128])
     with tf.GradientTape(True) as g:
         g.watch(x)
         g.watch(z)
         idx = categorical_sampling(x)
+        print("idx:", idx.shape)
 
-        print(idx)
         y_shape = idx.shape[:-1] + z.shape[idx.shape[-1]:]
         y = gather(z, idx)
 
     print("x:", x)
-    print("Y:", y)
+    print("Y:", y.shape)
     dy_dz = g.gradient(y, z)
     dy_dx = g.gradient(y, x)
-    print("Gradient dy_dz: ", dy_dz)
-    print("Gradient dy_dx: ", dy_dx)
+    print("Gradient dy_dz: ", dy_dz.shape)
+    print("Gradient dy_dx: ", dy_dx.shape)
 
 
 def code_13():
@@ -74,3 +83,6 @@ def code_13():
         print("y_:", y_)
         print("w_", w_)
 
+
+if __name__ == "__main__":
+    code()

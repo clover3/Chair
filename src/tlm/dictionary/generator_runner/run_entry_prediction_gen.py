@@ -1,16 +1,15 @@
+import logging
 import random
-from cache import *
 import sys
-from sydney_manager import MarkedTaskManager
+
+from cache import *
+from data_generator.common import get_tokenizer
+from dictionary.reader import DictionaryReader, DictionaryParser, all_pos_list
+from misc_lib import TimeEstimator, lmap
 from misc_lib import exist_or_mkdir
+from sydney_manager import MarkedTaskManager
 from tlm.dictionary.data_gen import DictEntryPredictGen
 from tlm.tf_logging import tf_logging
-from tlm.dictionary.data_gen import Dictionary
-from dictionary.reader import DictionaryReader, DictionaryParser, all_pos_list
-import logging
-from data_generator.common import get_tokenizer
-from misc_lib import TimeEstimator, lmap
-
 
 working_path ="/mnt/nfs/work3/youngwookim/data/bert_tf"
 

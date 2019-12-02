@@ -1,7 +1,7 @@
-from data_generator import job_runner
 import os
-from data_generator.common import get_tokenizer
 import random
+
+from data_generator import job_runner
 from data_generator.job_runner import JobRunner
 from path import output_path
 

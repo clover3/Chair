@@ -1,16 +1,17 @@
+import collections
 import os
-from misc_lib import pick1
 import pickle
 import random
-from path import data_path
-import tensorflow as tf
-import collections
 import time
-import tlm.data_gen.bert_data_gen as btd
 from functools import partial
 
+import tensorflow as tf
+
+import tlm.data_gen.bert_data_gen as btd
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import flatten
+from misc_lib import pick1
+from path import data_path
 from tlm.tf_logging import tf_logging
 
 
@@ -228,7 +229,7 @@ class SegmentInstance(object):
         return self.__str__()
 
 
-def get_basic_input_feature(tokenizer, max_seq_length, input_tokens, segment_ids):
+def get_basic_input_feature_as_list(tokenizer, max_seq_length, input_tokens, segment_ids):
     input_ids = tokenizer.convert_tokens_to_ids(input_tokens)
     input_mask = [1] * len(input_ids)
     segment_ids = list(segment_ids)
@@ -243,6 +244,11 @@ def get_basic_input_feature(tokenizer, max_seq_length, input_tokens, segment_ids
     assert len(input_ids) == max_seq_length
     assert len(input_mask) == max_seq_length
     assert len(segment_ids) == max_seq_length
+    return input_ids, input_mask, segment_ids
+
+
+def get_basic_input_feature(tokenizer, max_seq_length, input_tokens, segment_ids):
+    input_ids, input_mask, segment_ids = get_basic_input_feature_as_list(tokenizer, max_seq_length, input_tokens, segment_ids)
     features = collections.OrderedDict()
     features["input_ids"] = btd.create_int_feature(input_ids)
     features["input_mask"] = btd.create_int_feature(input_mask)
@@ -250,7 +256,8 @@ def get_basic_input_feature(tokenizer, max_seq_length, input_tokens, segment_ids
     return features
 
 
-def get_masked_lm_features(tokenizer, max_predictions_per_seq, masked_lm_positions, masked_lm_labels):
+
+def get_masked_lm_features_as_list(tokenizer, max_predictions_per_seq, masked_lm_positions, masked_lm_labels):
     masked_lm_positions = list(masked_lm_positions)
     masked_lm_ids = tokenizer.convert_tokens_to_ids(masked_lm_labels)
     masked_lm_weights = [1.0] * len(masked_lm_ids)
@@ -259,6 +266,12 @@ def get_masked_lm_features(tokenizer, max_predictions_per_seq, masked_lm_positio
         masked_lm_positions.append(0)
         masked_lm_ids.append(0)
         masked_lm_weights.append(0.0)
+    return masked_lm_positions, masked_lm_ids, masked_lm_weights
+
+
+def get_masked_lm_features(tokenizer, max_predictions_per_seq, masked_lm_positions, masked_lm_labels):
+    masked_lm_positions, masked_lm_ids, masked_lm_weights = \
+        get_masked_lm_features_as_list(tokenizer, max_predictions_per_seq, masked_lm_positions, masked_lm_labels)
 
     features = collections.OrderedDict()
     features["masked_lm_positions"] = btd.create_int_feature(masked_lm_positions)

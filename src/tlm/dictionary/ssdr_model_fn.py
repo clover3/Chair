@@ -3,14 +3,14 @@ import tensorflow as tf
 import tlm.training.dict_model_fn as dict_model_fn
 from data_generator.special_tokens import MASK_ID
 from models.transformer import optimization_v2 as optimization
-from tlm.model.lm_objective import get_masked_lm_output, get_next_sentence_output
+from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
 from tlm.training.grad_accumulation import get_accumulated_optimizer_from_config
 from tlm.training.model_fn import metric_fn, get_assignment_map_as_is
 from trainer.get_param_num import get_param_num
 
 
-def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model_class, dict_run_config):
+def model_fn_dict_reader(bert_config, ssdr_config, train_config, logging, model_class, dict_run_config):
     """Returns `model_fn` closure for TPUEstimator."""
 
     def model_fn(features, labels, mode, params):    # pylint: disable=unused-argument
@@ -30,8 +30,7 @@ def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model
         segment_ids = reform_a_input(features["segment_ids"])
         d_input_ids = reform_b_input(features["d_input_ids"])
         d_input_mask = reform_b_input(features["d_input_mask"])
-        d_location_ids = reform_b_input(features["d_location_ids"])
-        next_sentence_labels = reform_a_input(features["next_sentence_labels"])
+        d_location_ids = reform_a_input(features["d_location_ids"])
         ab_mapping = features["ab_mapping"]
 
         if dict_run_config.prediction_op == "loss":
@@ -43,7 +42,7 @@ def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model
             masked_input_ids = input_ids
             masked_lm_positions = reform_a_input(features["masked_lm_positions"])
             masked_lm_ids = reform_a_input(features["masked_lm_ids"])
-            masked_lm_weights = tf.ones_like(masked_lm_positions, dtype=tf.float32)
+            masked_lm_weights = reform_a_input(features["masked_lm_weights"])
         else:
             masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights \
                 = random_masking(input_ids, input_mask, train_config.max_predictions_per_seq, MASK_ID, seed)
@@ -57,7 +56,7 @@ def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model
 
         model = model_class(
                 config=bert_config,
-                d_config=dbert_config,
+                ssdr_config=ssdr_config,
                 is_training=is_training,
                 input_ids=masked_input_ids,
                 input_mask=input_mask,
@@ -67,7 +66,6 @@ def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model
                 d_segment_ids=d_segment_ids,
                 d_location_ids=d_location_ids,
                 ab_mapping=ab_mapping,
-                use_target_pos_emb=dict_run_config.use_target_pos_emb,
                 use_one_hot_embeddings=train_config.use_one_hot_embeddings,
         )
 
@@ -76,9 +74,6 @@ def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model
          masked_lm_example_loss, masked_lm_log_probs) = get_masked_lm_output(
                  bert_config, model.get_sequence_output(), model.get_embedding_table(),
                  masked_lm_positions, masked_lm_ids, masked_lm_weights)
-        (next_sentence_loss, next_sentence_example_loss,
-         next_sentence_log_probs) = get_next_sentence_output(
-                 bert_config, model.get_pooled_output(), next_sentence_labels)
 
         total_loss = masked_lm_loss
         tvars = tf.compat.v1.trainable_variables()
@@ -179,9 +174,10 @@ def input_fn_builder(input_files, flags, is_training, num_cpu_threads=4):
 
         max_seq_length = flags.max_seq_length * inner_batch_size
         max_predictions_per_seq = flags.max_predictions_per_seq * inner_batch_size
+        max_loc_length = flags.max_loc_length * inner_batch_size
+        max_word_length = flags.max_word_length * inner_batch_size
+
         max_def_length = flags.max_def_length * def_per_batch
-        max_loc_length = flags.max_loc_length * def_per_batch
-        max_word_length = flags.max_word_length * def_per_batch
         FixedLenFeature = tf.io.FixedLenFeature
         all_features = {
             "input_ids":    FixedLenFeature([max_seq_length], tf.int64),
@@ -194,6 +190,7 @@ def input_fn_builder(input_files, flags, is_training, num_cpu_threads=4):
             "next_sentence_labels": FixedLenFeature([1], tf.int64),
             "masked_lm_positions": FixedLenFeature([max_predictions_per_seq], tf.int64),
             "masked_lm_ids": FixedLenFeature([max_predictions_per_seq], tf.int64),
+            "masked_lm_weights": FixedLenFeature([max_predictions_per_seq], tf.float32),
             "lookup_idx": FixedLenFeature([1], tf.int64),
             "selected_word": FixedLenFeature([max_word_length], tf.int64),
             "ab_mapping": FixedLenFeature([def_per_batch], tf.int64)
@@ -201,11 +198,12 @@ def input_fn_builder(input_files, flags, is_training, num_cpu_threads=4):
 
         active_feature = ["input_ids", "input_mask", "segment_ids",
                           "d_input_ids", "d_input_mask", "d_location_ids",
-                          "next_sentence_labels", "ab_mapping"]
+                          "ab_mapping"]
 
         if flags.fixed_mask:
             active_feature.append("masked_lm_positions")
             active_feature.append("masked_lm_ids")
+            active_feature.append("masked_lm_weights")
         if flags.train_op == "lookup":
             active_feature.append("masked_lm_positions")
             active_feature.append("masked_lm_ids")

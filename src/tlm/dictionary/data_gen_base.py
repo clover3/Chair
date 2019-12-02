@@ -47,6 +47,7 @@ TOKEN_LINE_SEP = "[unused5]"
 TOKEN_DEF_SEP = "[unused6]"
 
 
+
 def get_dict_input_features(tokenizer, max_def_length, max_d_loc, max_word_len,
                             segment_ids, dict_def, word_loc_list, dict_word):
     d_input_ids = tokenizer.convert_tokens_to_ids(dict_def)
@@ -79,6 +80,8 @@ def get_dict_input_features(tokenizer, max_def_length, max_d_loc, max_word_len,
     return features
 
 
+
+
 class DictPredictionEntry(object):
     def __init__(self, tokens, segment_ids, dict_word, dict_def, word_loc_list, masked_lm_positions, masked_lm_labels):
         self.tokens = tokens
@@ -86,6 +89,30 @@ class DictPredictionEntry(object):
         self.is_random_next = False
         self.dict_word = dict_word
         self.dict_def = dict_def
+        self.word_loc_list = word_loc_list
+        self.masked_lm_positions = masked_lm_positions
+        self.masked_lm_labels = masked_lm_labels
+
+    def __str__(self):
+        s = ""
+        s += "tokens: %s\n" % (" ".join(
+            [tokenization.printable_text(x) for x in self.tokens]))
+        s += "segment_ids: %s\n" % (" ".join([str(x) for x in self.segment_ids]))
+        s += "dict_word: %s\n" % (" ".join([str(x) for x in self.dict_word.word]))
+        s += "\n"
+        return s
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class MultiSenseEntry(object):
+    def __init__(self, tokens, segment_ids, dict_word, dict_def_list, word_loc_list, masked_lm_positions, masked_lm_labels):
+        self.tokens = tokens
+        self.segment_ids = segment_ids
+        self.is_random_next = False
+        self.dict_word = dict_word
+        self.dict_def_list = dict_def_list
         self.word_loc_list = word_loc_list
         self.masked_lm_positions = masked_lm_positions
         self.masked_lm_labels = masked_lm_labels

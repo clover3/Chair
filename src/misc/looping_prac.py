@@ -20,9 +20,12 @@ def code():
 
     result_val = encode(input_b, key) # 50, 4
     score = result_val[:, 0] # 50
+    print("score", score.shape)
     indice = tf.stack([tf.range(50), input_ba_map], 1)
     collect_bin = tf.scatter_nd(indice, tf.ones([50]), [50,10])
+    print("Collect_bin", collect_bin.shape)
     scattered_score = tf.transpose(tf.expand_dims(score,1) * collect_bin)
+    print("scattered_score", scattered_score.shape)
 
     best_match_idx = tf.argmax(scattered_score, axis=1)
     print(best_match_idx)
