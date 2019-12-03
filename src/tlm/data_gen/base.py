@@ -12,6 +12,7 @@ from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import flatten
 from misc_lib import pick1
 from path import data_path
+from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.tf_logging import tf_logging
 
 
@@ -29,6 +30,12 @@ class IfCaseCounter:
         for key in self.counter:
             yield "{} : {}".format(key, self.counter[key])
 
+
+def pad0(seq, max_len):
+    assert len(seq) <= max_len
+    while len(seq) < max_len:
+        seq.append(0)
+    return seq
 
 def truncate_seq(tokens_a, max_num_tokens, rng):
     """Truncates a pair of sequences to a maximum sequence length."""
@@ -279,6 +286,13 @@ def get_masked_lm_features(tokenizer, max_predictions_per_seq, masked_lm_positio
     features["masked_lm_weights"] = btd.create_float_feature(masked_lm_weights)
     return features
 
+
+class OrderedDictBuilder(collections.OrderedDict):
+    def extend(self, other_dict):
+        for key, value in other_dict.items():
+            self.update({key: value})
+
+
 class MLMFeaturizer:
     def __init__(self, tokenizer, max_seq_length, max_predictions_per_seq):
         self.get_basic_input_features = partial(get_basic_input_feature, tokenizer, max_seq_length)
@@ -287,9 +301,10 @@ class MLMFeaturizer:
     def instance_to_features(self, instance):
         basic_features = self.get_basic_input_features(instance.tokens, instance.segment_ids)
         lm_mask_features = self.get_masked_lm_features(instance.masked_lm_positions, instance.masked_lm_labels)
-
+        features = OrderedDictBuilder()
+        features.extend(basic_features)
+        features.extend(lm_mask_features)
         next_sentence_label = 1 if instance.is_random_next else 0
-        features = basic_features + lm_mask_features
         features["next_sentence_labels"] = btd.create_int_feature([next_sentence_label])
         return features
 
@@ -449,8 +464,45 @@ class UnmaskedPairGen(UnmaskedGen):
         return instances
 
 
-def pad0(seq, max_len):
-    assert len(seq) <= max_len
-    while len(seq) < max_len:
-        seq.append(0)
-    return seq
+class MaskedPairGen(UnmaskedPairGen):
+    def create_instances_from_documents(self, documents):
+        instances = super(MaskedPairGen, self).create_instances_from_documents(documents)
+        vocab_words = list(self.tokenizer.vocab.keys())
+
+        inst_list = []
+        for inst_index, inst in enumerate(instances):
+            # We nedd both entries for entry prediction and LM prediction
+            (tokens, masked_lm_positions,
+             masked_lm_labels) = btd.create_masked_lm_predictions(inst.tokens,
+                                                      self.masked_lm_prob,
+                                                      self.max_predictions_per_seq, vocab_words, self.rng)
+            instance = TrainingInstance(
+                tokens=tokens,
+                segment_ids=inst.segment_ids,
+                is_random_next=False,
+                masked_lm_positions=masked_lm_positions,
+                masked_lm_labels=masked_lm_labels)
+            inst_list.append(instance)
+
+            if inst_index < 20:
+                tf_logging.info(instance.__str__())
+
+        return inst_list
+
+    def write_instances(self, new_inst_list, outfile):
+        writer = RecordWriterWrap(outfile)
+        example_numbers = []
+        feature_formatter = MLMFeaturizer(self.tokenizer, self.max_seq_length, self.max_predictions_per_seq)
+
+        for (inst_index, instance) in enumerate(new_inst_list):
+            features = feature_formatter.instance_to_features(instance)
+            writer.write_feature(features)
+            if inst_index < 20:
+                self.log_print_inst(instance, features)
+        writer.close()
+
+        tf_logging.info("Wrote %d total instances", writer.total_written)
+
+        return example_numbers
+
+

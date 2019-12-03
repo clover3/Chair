@@ -53,132 +53,139 @@ def metric_fn(masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
 
 
 def model_fn_random_masking(bert_config, train_config, logging, model_class):
-  """Returns `model_fn` closure for TPUEstimator."""
+    """Returns `model_fn` closure for TPUEstimator."""
 
-  def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
-    """The `model_fn` for TPUEstimator."""
-    logging.info("*** Features ***")
-    for name in sorted(features.keys()):
-      logging.info("  name = %s, shape = %s" % (name, features[name].shape))
+    def model_fn(features, labels, mode, params):    # pylint: disable=unused-argument
+        """The `model_fn` for TPUEstimator."""
+        logging.info("*** Features ***")
+        for name in sorted(features.keys()):
+            logging.info("    name = %s, shape = %s" % (name, features[name].shape))
 
-    input_ids = features["input_ids"]
-    input_mask = features["input_mask"]
-    segment_ids = features["segment_ids"]
-    next_sentence_labels = features["next_sentence_labels"]
+        input_ids = features["input_ids"]
+        input_mask = features["input_mask"]
+        segment_ids = features["segment_ids"]
+        next_sentence_labels = features["next_sentence_labels"]
 
-    if mode == tf.estimator.ModeKeys.PREDICT:
-        tf.random.set_seed(0)
-        seed = 0
-        print("Seed as zero")
-    else:
-        seed = None
-
-    masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights = random_masking(input_ids,
-                                                                                         input_mask,
-                                                                                         train_config.max_predictions_per_seq,
-                                                                                         MASK_ID, seed)
-
-    is_training = (mode == tf.estimator.ModeKeys.TRAIN)
-
-    model = model_class(
-        config=bert_config,
-        is_training=is_training,
-        input_ids=masked_input_ids,
-        input_mask=input_mask,
-        token_type_ids=segment_ids,
-        use_one_hot_embeddings=train_config.use_one_hot_embeddings,
-    )
-
-    (masked_lm_loss,
-     masked_lm_example_loss, masked_lm_log_probs) = get_masked_lm_output(
-         bert_config, model.get_sequence_output(), model.get_embedding_table(),
-         masked_lm_positions, masked_lm_ids, masked_lm_weights)
-
-    (next_sentence_loss, next_sentence_example_loss,
-     next_sentence_log_probs) = get_next_sentence_output(
-         bert_config, model.get_pooled_output(), next_sentence_labels)
-
-    total_loss = masked_lm_loss
-
-    tvars = tf.compat.v1.trainable_variables()
-
-    initialized_variable_names = {}
-    scaffold_fn = None
-    if train_config.init_checkpoint:
-      if train_config.checkpoint_type == "":
-        assignment_map, initialized_variable_names = get_bert_assignment_map(tvars, train_config.init_checkpoint)
-        if train_config.use_tpu:
-          def tpu_scaffold():
-            tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
-            return tf.compat.v1.train.Scaffold()
-
-          scaffold_fn = tpu_scaffold
+        if mode == tf.estimator.ModeKeys.PREDICT:
+                tf.random.set_seed(0)
+                seed = 0
+                print("Seed as zero")
         else:
-          tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
-      elif train_config.checkpoint_type == "nli_and_bert":
-        assignment_map, initialized_variable_names = get_bert_assignment_map(tvars, train_config.init_checkpoint)
-        assignment_map2, initialized_variable_names2 = get_cls_assignment(tvars, train_config.second_init_checkpoint)
-        for vname in initialized_variable_names2:
-          logging.info("Loading from 2nd checkpoint : %s" % vname)
-        for k,v in initialized_variable_names2.items():
-          initialized_variable_names[k] = v
-        def init_fn():
-          tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
-          tf.compat.v1.train.init_from_checkpoint(train_config.second_init_checkpoint, assignment_map2)
-        if train_config.use_tpu:
-          def tpu_scaffold():
-            init_fn()
-            return tf.compat.v1.train.Scaffold()
+                seed = None
 
-          scaffold_fn = tpu_scaffold
+        if not train_config.fixed_mask:
+            logging.info("Doing dynamic masking (random)")
+            masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights \
+                = random_masking(input_ids, input_mask, train_config.max_predictions_per_seq, MASK_ID, seed)
         else:
-          init_fn()
+            logging.info("Using masking from input")
+            masked_input_ids = input_ids
+            masked_lm_positions = features["masked_lm_positions"]
+            masked_lm_ids = features["masked_lm_ids"]
+            masked_lm_weights = features["masked_lm_weights"]
 
-    logging.info("**** Trainable Variables ****")
-    for var in tvars:
-      init_string = ""
-      if var.name in initialized_variable_names:
-        init_string = ", *INIT_FROM_CKPT*"
-      logging.info("  name = %s, shape = %s%s", var.name, var.shape,
-                      init_string)
-    logging.info("Total parameters : %d" % get_param_num())
+        is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
-    output_spec = None
-    if mode == tf.estimator.ModeKeys.TRAIN:
-      train_op = optimization.create_optimizer_from_config(total_loss, train_config)
-      output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
-          mode=mode,
-          loss=total_loss,
-          train_op=train_op,
-          scaffold_fn=scaffold_fn)
-    elif mode == tf.estimator.ModeKeys.EVAL:
-      eval_metrics = (metric_fn, [
-          masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
-          masked_lm_weights, next_sentence_example_loss,
-          next_sentence_log_probs, next_sentence_labels
-      ])
-      output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
-          mode=mode,
-          loss=total_loss,
-          eval_metrics=eval_metrics,
-          scaffold_fn=scaffold_fn)
-    else:
-      predictions = {
-          "input_ids":input_ids,
-          "masked_input_ids":masked_input_ids,
-          "masked_lm_example_loss":masked_lm_example_loss,
-          "masked_lm_positions":masked_lm_positions,
-      }
-      output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
-          mode=mode,
-          loss=total_loss,
-          predictions=predictions,
-          scaffold_fn=scaffold_fn)
+        model = model_class(
+                config=bert_config,
+                is_training=is_training,
+                input_ids=masked_input_ids,
+                input_mask=input_mask,
+                token_type_ids=segment_ids,
+                use_one_hot_embeddings=train_config.use_one_hot_embeddings,
+        )
+
+        (masked_lm_loss,
+         masked_lm_example_loss, masked_lm_log_probs) = get_masked_lm_output(
+                 bert_config, model.get_sequence_output(), model.get_embedding_table(),
+                 masked_lm_positions, masked_lm_ids, masked_lm_weights)
+
+        (next_sentence_loss, next_sentence_example_loss,
+         next_sentence_log_probs) = get_next_sentence_output(
+                 bert_config, model.get_pooled_output(), next_sentence_labels)
+
+        total_loss = masked_lm_loss
+
+        tvars = tf.compat.v1.trainable_variables()
+
+        initialized_variable_names = {}
+        scaffold_fn = None
+        if train_config.init_checkpoint:
+            if train_config.checkpoint_type == "":
+                assignment_map, initialized_variable_names = get_bert_assignment_map(tvars, train_config.init_checkpoint)
+                if train_config.use_tpu:
+                    def tpu_scaffold():
+                        tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
+                        return tf.compat.v1.train.Scaffold()
+
+                    scaffold_fn = tpu_scaffold
+                else:
+                    tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
+            elif train_config.checkpoint_type == "nli_and_bert":
+                assignment_map, initialized_variable_names = get_bert_assignment_map(tvars, train_config.init_checkpoint)
+                assignment_map2, initialized_variable_names2 = get_cls_assignment(tvars, train_config.second_init_checkpoint)
+                for vname in initialized_variable_names2:
+                    logging.info("Loading from 2nd checkpoint : %s" % vname)
+                for k,v in initialized_variable_names2.items():
+                    initialized_variable_names[k] = v
+                def init_fn():
+                    tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
+                    tf.compat.v1.train.init_from_checkpoint(train_config.second_init_checkpoint, assignment_map2)
+                if train_config.use_tpu:
+                    def tpu_scaffold():
+                        init_fn()
+                        return tf.compat.v1.train.Scaffold()
+
+                    scaffold_fn = tpu_scaffold
+                else:
+                    init_fn()
+
+        logging.info("**** Trainable Variables ****")
+        for var in tvars:
+            init_string = ""
+            if var.name in initialized_variable_names:
+                init_string = ", *INIT_FROM_CKPT*"
+            logging.info("    name = %s, shape = %s%s", var.name, var.shape,
+                                            init_string)
+        logging.info("Total parameters : %d" % get_param_num())
+
+        output_spec = None
+        if mode == tf.estimator.ModeKeys.TRAIN:
+            train_op = optimization.create_optimizer_from_config(total_loss, train_config)
+            output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
+                    mode=mode,
+                    loss=total_loss,
+                    train_op=train_op,
+                    scaffold_fn=scaffold_fn)
+        elif mode == tf.estimator.ModeKeys.EVAL:
+            eval_metrics = (metric_fn, [
+                    masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
+                    masked_lm_weights, next_sentence_example_loss,
+                    next_sentence_log_probs, next_sentence_labels
+            ])
+            output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
+                    mode=mode,
+                    loss=total_loss,
+                    eval_metrics=eval_metrics,
+                    scaffold_fn=scaffold_fn)
+        else:
+            predictions = {
+                    "input_ids":input_ids,
+                    "masked_input_ids":masked_input_ids,
+                    "masked_lm_ids":masked_lm_ids,
+                    "masked_lm_example_loss":masked_lm_example_loss,
+                    "masked_lm_positions":masked_lm_positions,
+            }
+            output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
+                    mode=mode,
+                    loss=total_loss,
+                    predictions=predictions,
+                    scaffold_fn=scaffold_fn)
 
 
-    return output_spec
+        return output_spec
 
-  return model_fn
+    return model_fn
 
 
 

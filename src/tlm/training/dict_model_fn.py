@@ -8,7 +8,7 @@ from models.transformer import optimization_v2 as optimization
 from tlm.model.lm_objective import get_masked_lm_output, get_next_sentence_output
 from tlm.model.masking import random_masking
 from tlm.training.grad_accumulation import get_accumulated_optimizer_from_config
-from tlm.training.input_fn import _decode_record
+from tlm.training.input_fn_common import format_dataset
 from tlm.training.model_fn import metric_fn, get_assignment_map_as_is
 from trainer.get_param_num import get_param_num
 
@@ -20,7 +20,6 @@ class DictRunConfig:
                  train_op="LM",
                  prediction_op="",
                  pool_dict_output=False,
-                 fixed_mask=False,
                  inner_batch_size= None,
                  def_per_batch=None,
                  ):
@@ -29,7 +28,6 @@ class DictRunConfig:
         self.train_op = train_op
         self.prediction_op = prediction_op
         self.pool_dict_output = pool_dict_output
-        self.fixed_mask = fixed_mask
         self.inner_batch_size = inner_batch_size
         self.def_per_batch = def_per_batch
 
@@ -41,7 +39,6 @@ class DictRunConfig:
             flags.train_op,
             flags.prediction_op,
             flags.pool_dict_output,
-            flags.fixed_mask,
             flags.inner_batch_size,
             flags.def_per_batch
         )
@@ -154,7 +151,7 @@ def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model
         else:
             seed = None
 
-        if dict_run_config.prediction_op == "loss_fixed_mask" or dict_run_config.fixed_mask:
+        if dict_run_config.prediction_op == "loss_fixed_mask" or train_config.fixed_mask:
             masked_input_ids = input_ids
             masked_lm_positions = features["masked_lm_positions"]
             masked_lm_ids = features["masked_lm_ids"]
@@ -358,40 +355,3 @@ def input_fn_builder_dict(input_files, flags, is_training, num_cpu_threads=4):
     return input_fn
 
 
-def format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads):
-    if is_training:
-        d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
-        if flags.repeat_data:
-            d = d.repeat()
-        d = d.shuffle(buffer_size=1000 * 1000)
-
-        # `cycle_length` is the number of parallel files that get read.
-        cycle_length = min(num_cpu_threads, len(input_files))
-        cycle_length = 100
-        # `sloppy` mode means that the interleaving is not exact. This adds
-        # even more randomness to the training pipeline.
-        d = d.apply(
-            tf.data.experimental.parallel_interleave(
-                tf.data.TFRecordDataset,
-                sloppy=is_training,
-                cycle_length=cycle_length))
-        d = d.shuffle(buffer_size=100)
-    else:
-        d = tf.data.TFRecordDataset(input_files)
-        # n_predict = flags.eval_batch_size * flags.max_pred_steps
-        # d = d.take(n_predict)
-
-        # Since we evaluate for a fixed number of steps we don't want to encounter
-        # out-of-range exceptions.
-        # d = d.repeat()
-    # We must `drop_remainder` on training because the TPU requires fixed
-    # size dimensions. For eval, we assume we are evaluating on the CPU or GPU
-    # and we *don't* want to drop the remainder, otherwise we wont cover
-    # every sample.
-    d = d.apply(
-        tf.data.experimental.map_and_batch(
-            lambda record: _decode_record(record, name_to_features),
-            batch_size=batch_size,
-            num_parallel_batches=num_cpu_threads,
-            drop_remainder=True))
-    return d

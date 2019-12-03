@@ -1,5 +1,7 @@
 import os
+
 from path import output_path
+
 
 def normalize255(v, max):
     if max==0:
@@ -14,7 +16,7 @@ def get_color(r):
 
 
 class Cell:
-    def __init__(self, s, highlight_score=0, space_left=True, space_right=True):
+    def __init__(self, s, highlight_score=0, space_left=True, space_right=True, target_color="B"):
         self.s = str(s)
 
         # score should be normalized to 0~255 scale, or else floor
@@ -25,6 +27,7 @@ class Cell:
         self.highlight_score = highlight_score
         self.space_left = space_left
         self.space_right = space_right
+        self.target_color = target_color
 
 
 class HtmlVisualizer:
@@ -77,7 +80,7 @@ class HtmlVisualizer:
         right = "&nbsp;" if cell.space_right else ""
         if cell.highlight_score:
             if not self.dark_mode:
-                bg_color = self.get_blue(cell.highlight_score)
+                bg_color = self.get_color(cell.highlight_score, cell.target_color)
             else:
                 bg_color = self.get_blue_d(cell.highlight_score)
 
@@ -87,9 +90,16 @@ class HtmlVisualizer:
 
         return s
 
-    def get_blue(self, r):
-        r = 255 - int(r)
-        bg_color = ("%02x" % r) + ("%02x" % r) + "ff"
+    def get_color(self, score, color):
+        r = 255 - int(score)
+        if color == "B":
+            bg_color = ("%02x" % r) + ("%02x" % r) + "ff"
+        elif color == "R":
+            bg_color = "ff" + ("%02x" % r) + ("%02x" % r)
+        elif color == "G":
+            bg_color = ("%02x" % r) + "ff" + ("%02x" % r)
+        else:
+            assert False
         return bg_color
 
     def get_blue_d(self, r):

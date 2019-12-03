@@ -10,7 +10,7 @@ from tlm.dictionary.sense_selecting_dictionary_reader import SSDR, SSDRConfig
 from tlm.model.base import BertModel
 from tlm.tf_logging import tf_logging, logging
 from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
-from tlm.training.input_fn import input_fn_builder_unmasked
+from tlm.training.input_fn import input_fn_builder_unmasked, input_fn_builder_masked
 from tlm.training.model_fn import model_fn_random_masking, model_fn_target_masking
 from tlm.training.train_flags import *
 
@@ -27,7 +27,8 @@ class TrainConfig:
                  use_d_segment_ids,
                  gradient_accumulation=1,
                  checkpoint_type="",
-                 second_init_checkpoint=""
+                 second_init_checkpoint="",
+                 fixed_mask=False,
                  ):
         self.init_checkpoint = init_checkpoint
         self.learning_rate = learning_rate
@@ -40,6 +41,7 @@ class TrainConfig:
         self.gradient_accumulation = gradient_accumulation
         self.checkpoint_type = checkpoint_type
         self.second_init_checkpoint = second_init_checkpoint
+        self.fixed_mask = fixed_mask
 
     @classmethod
     def from_flags(cls, flags):
@@ -55,6 +57,7 @@ class TrainConfig:
             flags.gradient_accumulation,
             flags.checkpoint_type,
             flags.target_task_checkpoint,
+            flags.fixed_mask,
         )
 
 
@@ -122,7 +125,10 @@ def lm_pretrain():
     train_config = TrainConfig.from_flags(FLAGS)
     if task == TASK_LM:
         tf_logging.info("Running LM")
-        input_fn_builder = input_fn_builder_unmasked
+        if FLAGS.fixed_mask:
+            input_fn_builder = input_fn_builder_masked
+        else:
+            input_fn_builder = input_fn_builder_unmasked
 
         model_fn = model_fn_random_masking(
             bert_config=bert_config,

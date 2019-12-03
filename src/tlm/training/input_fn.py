@@ -1,18 +1,7 @@
 import tensorflow as tf
 
-def _decode_record(record, name_to_features):
-  """Decodes a record to a TensorFlow example."""
-  example = tf.io.parse_single_example(serialized=record, features=name_to_features)
+from tlm.training.input_fn_common import _decode_record, get_lm_basic_features, get_lm_mask_features, format_dataset
 
-  # tf.Example only supports tf.int64, but the TPU only supports tf.int32.
-  # So cast all int64 to int32.
-  for name in list(example.keys()):
-    t = example[name]
-    if t.dtype == tf.int64:
-      t = tf.cast(t, dtype=tf.int32)
-    example[name] = t
-
-  return example
 
 def input_fn_builder_unmasked(input_files,
                      flags,
@@ -133,3 +122,25 @@ def input_fn_builder_classification(input_files,
     return d
 
   return input_fn
+
+
+def input_fn_builder_masked(input_files, flags, is_training, num_cpu_threads=4):
+    def input_fn(params):
+        """The actual input function."""
+        batch_size = params["batch_size"]
+        all_features = {}
+        all_features.update(get_lm_basic_features(flags))
+        all_features.update(get_lm_mask_features(flags))
+
+        active_feature = ["input_ids", "input_mask", "segment_ids",
+                          "next_sentence_labels",
+                          "masked_lm_positions", "masked_lm_ids", "masked_lm_weights"
+                          ]
+        selected_features = {k: all_features[k] for k in active_feature}
+        return format_dataset(selected_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+    return input_fn
+
+
+
+
+

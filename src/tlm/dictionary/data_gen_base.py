@@ -3,7 +3,7 @@ from functools import partial
 
 from data_generator import tokenizer_wo_tf as tokenization
 from tlm.data_gen import bert_data_gen as btd
-from tlm.data_gen.base import pad0, get_basic_input_feature, get_masked_lm_features
+from tlm.data_gen.base import pad0, get_basic_input_feature, get_masked_lm_features, OrderedDictBuilder
 
 
 class Word:
@@ -130,10 +130,6 @@ class MultiSenseEntry(object):
         return self.__str__()
 
 
-class OrderedDictBuilder(collections.OrderedDict):
-    def extend(self, other_dict):
-        for key, value in other_dict.items():
-            self.update({key: value})
 
 
 class DictLMFeaturizer:

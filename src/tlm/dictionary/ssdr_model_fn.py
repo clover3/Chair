@@ -1,6 +1,8 @@
 import tensorflow as tf
 
 import tlm.training.dict_model_fn as dict_model_fn
+import tlm.training.input_fn
+import tlm.training.input_fn_common
 from data_generator.special_tokens import MASK_ID
 from models.transformer import optimization_v2 as optimization
 from tlm.model.lm_objective import get_masked_lm_output
@@ -38,7 +40,7 @@ def model_fn_dict_reader(bert_config, ssdr_config, train_config, logging, model_
         else:
             seed = None
 
-        if dict_run_config.prediction_op == "loss_fixed_mask" or dict_run_config.fixed_mask:
+        if dict_run_config.prediction_op == "loss_fixed_mask" or train_config.fixed_mask:
             masked_input_ids = input_ids
             masked_lm_positions = reform_a_input(features["masked_lm_positions"])
             masked_lm_ids = reform_a_input(features["masked_lm_ids"])
@@ -223,6 +225,6 @@ def input_fn_builder(input_files, flags, is_training, num_cpu_threads=4):
 
         # For training, we want a lot of parallel reading and shuffling.
         # For eval, we want no shuffling and parallel reading doesn't matter.
-        return dict_model_fn.format_dataset(selected_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+        return tlm.training.input_fn_common.format_dataset(selected_features, batch_size, is_training, flags, input_files, num_cpu_threads)
 
     return input_fn
