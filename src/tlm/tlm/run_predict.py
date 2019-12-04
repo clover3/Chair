@@ -18,11 +18,11 @@ def main(_):
 
     file_prefix = FLAGS.input_file
 
-    for st in range(100, 2000, 100):
+    for st in range(100, 500, 100):
         tf_logging.info("Starting {}".format(st))
         input_files = []
         ed = st + 100
-        FLAGS.out_file = "./disk_output/bert_{}_{}.pickle".format(st, ed)
+        FLAGS.out_file = "./disk_output/bfn_{}_{}.pickle".format(st, ed)
         for i in range(st, ed):
             input_files.append(file_prefix + "{}".format(i))
 

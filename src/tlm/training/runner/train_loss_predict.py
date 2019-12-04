@@ -1,8 +1,8 @@
 import tensorflow as tf
 
 import tlm.model.base as modeling
-from tlm.config_util import JsonConfig
 from tlm.model.base import BertModel
+from tlm.model_cnfig import JsonConfig
 from tlm.training.loss_diff_prediction_model import loss_diff_prediction_model, input_fn_builder_masked
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator, TrainConfig, show_input_files

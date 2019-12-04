@@ -6,10 +6,10 @@ import tensorflow as tf
 import tlm.dictionary.ssdr_model_fn as ssdr_model_fn
 import tlm.model.base as modeling
 from tf_util.tf_logging import tf_logging, logging
-from tlm.config_util import JsonConfig
 from tlm.dictionary.dict_reader_transformer import DictReaderModel
 from tlm.dictionary.sense_selecting_dictionary_reader import SSDR
 from tlm.model.base import BertModel
+from tlm.model_cnfig import JsonConfig
 from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
 from tlm.training.input_fn import input_fn_builder_unmasked, input_fn_builder_masked
 from tlm.training.model_fn import model_fn_random_masking, model_fn_target_masking

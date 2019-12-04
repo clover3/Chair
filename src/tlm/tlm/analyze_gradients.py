@@ -1,8 +1,10 @@
-import pickle
-import numpy as np
-from path import output_path, data_path
 import os
+import pickle
+
+import numpy as np
+
 from data_generator import tokenizer_wo_tf
+from path import output_path, data_path
 
 
 def load_and_analyze_gradient():
