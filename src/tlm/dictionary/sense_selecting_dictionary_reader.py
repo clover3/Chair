@@ -1,43 +1,10 @@
 import copy
-import json
 
-import six
 import tensorflow as tf
 
 import models.transformer.bert_common_v2 as bc
 import tlm.model.base as base
-from data_generator.tf_gfile_support import tf_gfile
 from misc.categorical_gradient import gather, categorical_sampling
-
-
-class SSDRConfig(object):
-    """Configuration for `BertModel`."""
-    def __init__(self):
-        pass
-
-    @classmethod
-    def from_dict(cls, json_object):
-        """Constructs a `BertConfig` from a Python dictionary of parameters."""
-        config = SSDRConfig()
-        for (key, value) in six.iteritems(json_object):
-            config.__dict__[key] = value
-        return config
-
-    @classmethod
-    def from_json_file(cls, json_file):
-        """Constructs a `BertConfig` from a json file of parameters."""
-        with tf_gfile(json_file, "r") as reader:
-            text = reader.read()
-        return cls.from_dict(json.loads(text))
-
-    def to_dict(self):
-        """Serializes this instance to a Python dictionary."""
-        output = copy.deepcopy(self.__dict__)
-        return output
-
-    def to_json_string(self):
-        """Serializes this instance to a JSON string."""
-        return json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n"
 
 
 def get_batch_and_seq_length(input_ids, expected_rank):

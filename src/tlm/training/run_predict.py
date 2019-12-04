@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from tlm.tf_logging import tf_logging, logging
+from tf_util.tf_logging import tf_logging, logging
 from tlm.training.dynamic_mask_main import lm_pretrain
 from tlm.training.train_flags import *
 

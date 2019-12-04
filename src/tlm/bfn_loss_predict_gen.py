@@ -9,8 +9,8 @@ from data_generator import tokenizer_wo_tf as tokenization
 from data_generator.common import get_tokenizer
 from misc_lib import TimeEstimator
 from tf_util.record_writer_wrap import RecordWriterWrap
+from tf_util.tf_logging import tf_logging, ab_logging
 from tlm.data_gen.bert_data_gen import create_int_feature, create_float_feature
-from tlm.tf_logging import tf_logging, ab_logging
 
 
 class PredictionOutput:
@@ -90,7 +90,7 @@ def get_sep_considering_masking(input_ids, sep_id, masked_lm_ids, masked_lm_posi
 
 def do(data_id):
     tokenzier = get_tokenizer()
-    name1 = os.path.join("disk_output","bert_{}.pickle".format(data_id))
+    name1 = os.path.join("disk_output", "bert_{}.pickle".format(data_id))
     name2 = os.path.join("disk_output", "bert_{}.pickle".format(data_id))
 
     tf_logging.debug("Loading data 1")

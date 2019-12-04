@@ -1,10 +1,9 @@
 import tensorflow as tf
 
 import tlm.model.base as modeling
-from tf_util.tf_logging import tf_logging
+from tlm.config_util import JsonConfig
 from tlm.model.base import BertModel
-from tlm.training.classification_model_fn import model_fn_classification
-from tlm.training.input_fn import input_fn_builder_classification as input_fn_builder
+from tlm.training.loss_diff_prediction_model import loss_diff_prediction_model, input_fn_builder_masked
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator, TrainConfig, show_input_files
 
@@ -15,25 +14,28 @@ def main(_):
     for input_pattern in FLAGS.input_file.split(","):
         input_files.extend(tf.io.gfile.glob(input_pattern))
     train_config = TrainConfig.from_flags(FLAGS)
+    model_config = JsonConfig.from_json_file(FLAGS.model_config_file)
 
     show_input_files(input_files)
 
-    model_fn = model_fn_classification(
+    model_fn = loss_diff_prediction_model(
         bert_config=bert_config,
         train_config=train_config,
-        logging=tf_logging,
         model_class=BertModel,
+        model_config=model_config,
     )
     if FLAGS.do_train:
-        input_fn = input_fn_builder(
+        input_fn = input_fn_builder_masked(
             input_files=input_files,
-            max_seq_length=FLAGS.max_seq_length,
+            flags=FLAGS,
             is_training=True)
-    if FLAGS.do_eval:
-        input_fn = input_fn_builder(
+    elif FLAGS.do_eval:
+        input_fn = input_fn_builder_masked(
             input_files=input_files,
-            max_seq_length=FLAGS.max_seq_length,
+            flags=FLAGS,
             is_training=False)
+    else:
+        raise Exception()
 
     run_estimator(model_fn, input_fn)
 

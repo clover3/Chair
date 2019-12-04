@@ -1,28 +1,24 @@
-from models.classic.stopword import load_stopwords
-from tensorflow import keras
-import tensorflow as tf
-from absl import app
-from trainer import tf_module
-from log import log as log_module
 import logging
 
-from models.transformer import hyperparams
-from path import output_path, data_path, get_bert_full_path, get_latest_model_path_from_dir_path
-import trainer.tf_train_module_v2 as train_module
-from tlm.training.model_fn import get_bert_assignment_map, get_assignment_map_as_is
+import tensorflow as tf
+from absl import app
+from tensorflow import keras
 
-from misc_lib import *
+import trainer.tf_train_module_v2 as train_module
+from cache import load_from_pickle, save_to_pickle, load_cache
 from data_generator.NLI import nli
-from trainer.model_saver import save_model_to_dir_path, load_bert_v2, load_model, get_canonical_model_path
+from log import log as log_module
+from misc_lib import *
+from path import output_path, data_path, get_bert_full_path, get_latest_model_path_from_dir_path
+from tf_util.tf_logging import tf_logging
+from tlm.dictionary.data_gen import DictAugment
 from tlm.dictionary.dict_reader_transformer import DictReaderModel
 from tlm.model.base import BertConfig
-from tlm.training.train_flags import *
-from tlm.dictionary.data_gen import DictAugment
-from tlm.tf_logging import tf_logging
 from tlm.training.dict_model_fn import get_bert_assignment_map_for_dict
-
-from data_generator import tokenizer_wo_tf as tokenization
-from cache import load_from_pickle, save_to_pickle, load_cache
+from tlm.training.model_fn import get_bert_assignment_map, get_assignment_map_as_is
+from tlm.training.train_flags import *
+from trainer import tf_module
+from trainer.model_saver import save_model_to_dir_path, load_model, get_canonical_model_path
 
 
 def setup_summary_writer(exp_name, sess):

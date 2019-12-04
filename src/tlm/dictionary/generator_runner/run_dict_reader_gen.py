@@ -5,10 +5,10 @@ from data_generator.common import get_tokenizer
 from dictionary.reader import DictionaryReader
 from misc_lib import exist_or_mkdir
 from sydney_manager import MarkedTaskManager
+from tf_util.tf_logging import tf_logging
 from tlm.data_gen import run_unmasked_pair_gen
 from tlm.dictionary.data_gen import DictTrainGen, Dictionary
 from tlm.dictionary.data_gen import dictionary_encoder
-from tlm.tf_logging import tf_logging
 
 working_path ="/mnt/nfs/work3/youngwookim/data/bert_tf"
 

@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from tlm.tf_logging import tf_logging, logging
+from tf_util.tf_logging import tf_logging, logging
 
 tf_logging.info("This is TF log")
 

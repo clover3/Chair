@@ -9,6 +9,11 @@ flags.DEFINE_string(
     "This specifies the model architecture.")
 
 flags.DEFINE_string(
+    "model_config_file", None,
+    "The config json file corresponding to the second part of the transformer model. "
+    "This specifies the model architecture.")
+
+flags.DEFINE_string(
     "dbert_config_file", None,
     "The config json file corresponding to the second part of the transformer model. "
     "This specifies the model architecture.")

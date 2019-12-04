@@ -1,10 +1,12 @@
-from cache import *
-from sydney_manager import MarkedTaskManager
-from tlm.tf_logging import tf_logging
 import logging
-from misc_lib import exist_or_mkdir
 import sys
 from abc import ABC, abstractmethod
+
+from cache import *
+from misc_lib import exist_or_mkdir
+from sydney_manager import MarkedTaskManager
+from tf_util.tf_logging import tf_logging
+
 
 # JobRunner is responsible for recording which job is done and assigning jobs
 # Worker is responsible for actually doing job

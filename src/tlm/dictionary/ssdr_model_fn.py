@@ -49,7 +49,7 @@ def model_fn_dict_reader(bert_config, ssdr_config, train_config, logging, model_
             masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights \
                 = random_masking(input_ids, input_mask, train_config.max_predictions_per_seq, MASK_ID, seed)
 
-        if train_config.use_d_segment_ids:
+        if dict_run_config.use_d_segment_ids:
             d_segment_ids = reform_b_input(features["d_segment_ids"])
         else:
             d_segment_ids = None

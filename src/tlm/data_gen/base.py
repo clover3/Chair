@@ -13,7 +13,7 @@ from misc_lib import flatten
 from misc_lib import pick1
 from path import data_path
 from tf_util.record_writer_wrap import RecordWriterWrap
-from tlm.tf_logging import tf_logging
+from tf_util.tf_logging import tf_logging
 
 
 class IfCaseCounter:

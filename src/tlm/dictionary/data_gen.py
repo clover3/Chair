@@ -13,10 +13,10 @@ from misc_lib import pick1, TimeEstimator, average
 from models.classic.stopword import load_stopwords
 from path import data_path
 from tf_util.record_writer_wrap import RecordWriterWrap
+from tf_util.tf_logging import tf_logging
 from tlm.data_gen.base import UnmaskedPairGen, pad0
 from tlm.dictionary.data_gen_base import Word, SegmentInstanceWithDictEntry, TOKEN_LINE_SEP, TOKEN_DEF_SEP, \
     DictPredictionEntry, DictLMFeaturizer, DictLMFeaturizerUnmasked, MultiSenseEntry
-from tlm.tf_logging import tf_logging
 from trainer.tf_module import get_batches_ex
 
 

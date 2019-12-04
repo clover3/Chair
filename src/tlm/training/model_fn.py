@@ -8,10 +8,10 @@ from data_generator.special_tokens import MASK_ID, PAD_ID
 from models.transformer import bert_common_v2 as bert_common
 from models.transformer import hyperparams
 from models.transformer import optimization_v2 as optimization
+from tf_util.tf_logging import tf_logging
 from tlm.model.lm_objective import get_masked_lm_output, get_next_sentence_output
 from tlm.model.masking import random_masking, biased_masking
 from tlm.model.nli_ex_v2 import transformer_nli
-from tlm.tf_logging import tf_logging
 from trainer.get_param_num import get_param_num
 
 

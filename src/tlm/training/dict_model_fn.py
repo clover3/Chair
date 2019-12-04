@@ -22,6 +22,7 @@ class DictRunConfig:
                  pool_dict_output=False,
                  inner_batch_size= None,
                  def_per_batch=None,
+                 use_d_segment_ids=False,
                  ):
         self.use_target_pos_emb = use_target_pos_emb
         self.is_bert_checkpoint = is_bert_checkpoint
@@ -30,6 +31,7 @@ class DictRunConfig:
         self.pool_dict_output = pool_dict_output
         self.inner_batch_size = inner_batch_size
         self.def_per_batch = def_per_batch
+        self.use_d_segment_ids = use_d_segment_ids
 
     @classmethod
     def from_flags(cls, flags):
@@ -40,7 +42,8 @@ class DictRunConfig:
             flags.prediction_op,
             flags.pool_dict_output,
             flags.inner_batch_size,
-            flags.def_per_batch
+            flags.def_per_batch,
+            flags.use_d_segment_ids,
         )
 
 
@@ -160,7 +163,7 @@ def model_fn_dict_reader(bert_config, dbert_config, train_config, logging, model
             masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights \
                 = random_masking(input_ids, input_mask, train_config.max_predictions_per_seq, MASK_ID, seed)
 
-        if train_config.use_d_segment_ids:
+        if dict_run_config.use_d_segment_ids:
             d_segment_ids = features["d_segment_ids"]
         else:
             d_segment_ids = None
