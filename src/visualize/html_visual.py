@@ -65,7 +65,7 @@ class HtmlVisualizer:
         self.f_html.write("<h{}>{}</h{}>\n".format(level, s, level))
 
     def write_table(self, rows):
-        self.f_html.write("<table>\n")
+        self.f_html.write("<table style=\"border-spacing: 0px;\">\n")
 
         for row in rows:
             self.f_html.write("<tr>\n")
@@ -78,15 +78,16 @@ class HtmlVisualizer:
     def get_cell_html(self, cell):
         left = "&nbsp;" if cell.space_left else ""
         right = "&nbsp;" if cell.space_right else ""
+        no_padding = "style=\"padding-right:0px; padding-left:0px\""
         if cell.highlight_score:
             if not self.dark_mode:
                 bg_color = self.get_color(cell.highlight_score, cell.target_color)
             else:
                 bg_color = self.get_blue_d(cell.highlight_score)
 
-            s = "<td bgcolor=\"#{}\">{}{}{}</td>".format(bg_color, left, cell.s, right)
+            s = "<td bgcolor=\"#{}\" {}>{}{}{}</td>".format(bg_color, no_padding, left, cell.s, right)
         else:
-            s = "<td>{}{}{}</td>".format(left, cell.s, right)
+            s = "<td {}>{}{}{}</td>".format(no_padding, left, cell.s, right)
 
         return s
 

@@ -1,8 +1,10 @@
-import tensorflow as tf
 import collections
+
+import tensorflow as tf
+
+import os
+import path
 from data_generator.tokenizer_b import FullTokenizer
-import numpy as np
-import path, os
 
 
 def create_int_feature(values):

@@ -1,4 +1,12 @@
 import tensorflow as tf
+from packaging import version
+
+
+if version.parse(tf.__version__) < version.parse("1.99.9"):
+    pass
+else:
+    tf = tf.compat.v1
+
 
 
 class RecordWriterWrap:

@@ -1,6 +1,7 @@
 import os
 import pickle
 
+import math
 import numpy as np
 
 from data_generator.common import get_tokenizer
@@ -133,6 +134,11 @@ def diff_view():
         loss_at_loc = {p:l for l, p in zip(masked_lm_example_loss[inst_idx], masked_lm_positions[inst_idx])}
         loss_at_loc2 = {p:l for l, p in zip(masked_lm_example_loss2[inst_idx], masked_lm_positions[inst_idx])}
 
+        score_at_loc = {k: math.exp(-v) for k,v in loss_at_loc.items()}
+        score_at_loc2 = {k: math.exp(-v) for k,v in loss_at_loc2.items()}
+
+        def is_dependent(token):
+            return len(token) == 1 and not token[0].isalnum()
 
         cells = []
         for i in range(len(tokens)):
@@ -140,7 +146,8 @@ def diff_view():
             score = 0
             if tokens[i] == "[MASK]":
                 tokens[i] = "[{}]".format(ans_keys[i])
-                score = (loss_at_loc2[i] - loss_at_loc[i]) * 255 / 25
+                score = (score_at_loc2[i] - score_at_loc[i]) * 180
+                score = -score
                 if score < 0:
                     f_inverse = True
                     score = abs(score)
@@ -149,10 +156,26 @@ def diff_view():
 
 
             if tokens[i] != "[PAD]":
-                if not f_inverse:
-                    cells.append(Cell(tokens[i], score))
+                term = tokens[i]
+                cont_left = term[:2] == "##"
+                cont_right = i+1 < len(tokens) and tokens[i+1][:2] == "##"
+                if i+1 < len(tokens):
+                    dependent_right = is_dependent(tokens[i+1])
                 else:
-                    cells.append(Cell(tokens[i], score, target_color="R"))
+                    dependent_right = False
+
+                dependent_left = is_dependent(tokens[i])
+
+                if cont_left:
+                    term = term[2:]
+
+                space_left = "&nbsp;" if not (cont_left or dependent_left) else ""
+                space_right = "&nbsp;" if not (cont_right or dependent_right) else ""
+
+                if not f_inverse:
+                    cells.append(Cell(term, score, space_left, space_right))
+                else:
+                    cells.append(Cell(term, score, space_left, space_right, target_color="R"))
         #s = tokenization.pretty_tokens(tokens)
 
         rows = []
@@ -173,7 +196,10 @@ def diff_view():
 
         rows = []
         for loss, pos in loss_infos:
-            rows.append((Cell(pos), Cell(loss)))
+            loss1 = score_at_loc[pos]
+            loss2 = score_at_loc2[pos]
+            loss_diff = loss1 - loss2
+            rows.append((Cell(pos), Cell(loss1), Cell(loss2), Cell(loss_diff)))
 
         html_writer.write_table(rows)
 

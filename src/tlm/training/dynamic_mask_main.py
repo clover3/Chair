@@ -63,20 +63,22 @@ class TrainConfig:
 
 
 def main(_):
-    lm_pretrain()
-
-def lm_pretrain():
     tf_logging.setLevel(logging.INFO)
     if FLAGS.log_debug:
         tf_logging.setLevel(logging.DEBUG)
 
-    bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
 
     tf.io.gfile.makedirs(FLAGS.output_dir)
 
     input_files = []
     for input_pattern in FLAGS.input_file.split(","):
         input_files.extend(tf.io.gfile.glob(input_pattern))
+
+    lm_pretrain(input_files)
+
+
+def lm_pretrain(input_files):
+    bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
 
     tf_logging.info("*** Input Files ***")
     for idx, input_file in enumerate(input_files):
