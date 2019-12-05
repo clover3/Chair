@@ -207,8 +207,8 @@ class MainTransformer(TransformerBase):
             n_remaining_layers = self.config.num_hidden_layers - self.layers_before_key_pooling
 
             # location : [batch_size, max_locations)
-            offset = tf.expand_dims(tf.range(self.batch_size, dtype=tf.int64) * self.seq_length, 1)
-            flat_location = locations + offset
+            offset = tf.expand_dims(tf.range(self.batch_size, dtype=tf.int32) * self.seq_length, 1)
+            flat_location = tf.cast(locations, tf.int32) + offset
             flat_location = tf.reshape(flat_location, [-1, 1]) #[batch_size*max_location, 1])
 
             l_begin = self.layers_before_key_pooling
@@ -365,8 +365,10 @@ def select_value(a_size, ab_mapping, b_scores, b_items, method):
     # [b_size]
     b_scores = tf.reshape(b_scores, [-1])
     b_size = bc.get_shape_list2(b_items)[0]
-    indice = tf.stack([tf.range(b_size, dtype=tf.int64), tf.reshape(ab_mapping, [-1])], 1)
-    collect_bin = tf.scatter_nd(indice, tf.ones([b_size]), [b_size, a_size])
+    t = tf.reshape(ab_mapping, [-1])
+    t = tf.cast(t, tf.int32)
+    indice = tf.stack([tf.range(b_size), t], 1)
+    collect_bin = tf.scatter_nd(indice, tf.ones([b_size], tf.float32), [b_size, a_size])
     scattered_score = tf.transpose(tf.expand_dims(b_scores, 1) * collect_bin)
     # scattered_score :  [a_size, b_size], if not corresponding item, the score is zero
 

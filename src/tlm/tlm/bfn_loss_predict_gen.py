@@ -25,13 +25,18 @@ class PredictionOutput:
         self.seq_length = seq_length
         self.prediction_per_seq = int(data[0]['masked_lm_example_loss'].shape[0] / batch_size)
 
-        for e in data:
-            input_ids.append(e["input_ids"])
-            losses = np.reshape(e["masked_lm_example_loss"], [-1, self.prediction_per_seq])
-            assert len(losses) == len(e["input_ids"])
-            masked_lm_example_loss.append(losses)
-            masked_lm_positions.append(e["masked_lm_positions"])
-            masked_lm_ids.append(e["masked_lm_ids"])
+        try:
+            for idx, e in enumerate(data):
+                losses = np.reshape(e["masked_lm_example_loss"], [-1, self.prediction_per_seq])
+                assert len(losses) == len(e["input_ids"])
+                input_ids.append(e["input_ids"])
+                masked_lm_example_loss.append(losses)
+                masked_lm_positions.append(e["masked_lm_positions"])
+                masked_lm_ids.append(e["masked_lm_ids"])
+        except:
+            tf_logging.info("idx={} losses={}".format(idx, e["masked_lm_example_loss"]))
+            tf_logging.info("input_ids={}".format(e["input_ids"]))
+
 
         self.input_ids = np.concatenate(input_ids)
         self.masked_lm_example_loss = np.concatenate(masked_lm_example_loss)
@@ -84,7 +89,7 @@ def get_sep_considering_masking(input_ids, sep_id, masked_lm_ids, masked_lm_posi
 def do(data_id):
     tokenzier = get_tokenizer()
     name1 = os.path.join("disk_output", "bert_{}.pickle".format(data_id))
-    name2 = os.path.join("disk_output", "bert_{}.pickle".format(data_id))
+    name2 = os.path.join("disk_output", "bfn_{}.pickle".format(data_id))
 
     tf_logging.debug("Loading data 1")
     output1 = PredictionOutput(name1)
