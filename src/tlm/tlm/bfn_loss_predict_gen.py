@@ -46,8 +46,6 @@ def assert_input_equal(input_ids1, input_ids2):
         assert input_ids1[i] == input_ids2[i]
 
 
-
-
 def get_segment_and_mask(input_ids, sep_id):
     indice = np.where(input_ids == sep_id)[0]
     if len(indice) != 2:
@@ -81,11 +79,6 @@ def get_sep_considering_masking(input_ids, sep_id, masked_lm_ids, masked_lm_posi
     if len(valid_sep) != 2 :
         raise Exception()
     return valid_sep
-
-
-
-
-
 
 
 def do(data_id):

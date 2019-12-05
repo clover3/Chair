@@ -7,7 +7,7 @@ from tf_util.tf_logging import tf_logging
 from tlm.training.train_flags import FLAGS
 
 
-def run_estimator(model_fn, input_fn):
+def run_estimator(model_fn, input_fn, host_call=None):
     tf_logging.setLevel(logging.INFO)
     if FLAGS.log_debug:
         tf_logging.setLevel(logging.DEBUG)

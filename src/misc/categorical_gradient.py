@@ -19,7 +19,7 @@ def gather(param, indice):
 
 
     def grad(dy):
-        g1 = tf.scatter_nd(updates=dy, indices=indice, shape=param.shape)
+        g1 = tf.scatter_nd(updates=dy, indices=indice, shape=tf.shape(param, out_type=tf.dtypes.int64))
         g2 = dy
         for _ in range(indice.shape[-1], len(param.shape)):
             g2 = tf.reduce_sum(g2, axis=-1)

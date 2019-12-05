@@ -121,8 +121,17 @@ def loss_diff_prediction_model(bert_config, train_config, model_class, model_con
             total_loss, loss1, loss2, per_example_loss1, per_example_loss2 \
                 = get_loss_independently(bert_config, model.get_sequence_output(),
                                          masked_lm_positions, masked_lm_weights, loss_base, loss_target)
-            tf.summary.scalar("loss_base", loss1)
-            tf.summary.scalar("loss_target", loss2)
+
+            def host_call_fn(total_loss, loss1, loss2):
+                tf.summary.scalar("total_loss", total_loss[0])
+                tf.summary.scalar("loss_base", loss1[0])
+                tf.summary.scalar("loss_target", loss2[0])
+                return tf.compat.v1.summary.all_v2_summary_ops()
+
+            host_call = (host_call_fn, [tf.reshape(total_loss, [1]),
+                                        tf.reshape(loss1, [1]),
+                                        tf.reshape(loss2, [1])])
+
         elif model_config.loss_model == "diff_regression":
             total_loss, losses, logits = get_diff_loss(bert_config, model.get_sequence_output(),
                                         masked_lm_positions, masked_lm_weights, loss_base, loss_target)
@@ -156,6 +165,7 @@ def loss_diff_prediction_model(bert_config, train_config, model_class, model_con
                     mode=mode,
                     loss=total_loss,
                     train_op=train_op,
+                    host_call=host_call,
                     scaffold_fn=scaffold_fn)
         elif mode == tf.estimator.ModeKeys.EVAL:
             eval_metrics = (None, [])
@@ -174,10 +184,10 @@ def loss_diff_prediction_model(bert_config, train_config, model_class, model_con
                     predictions=predictions,
                     scaffold_fn=scaffold_fn)
 
-
         return output_spec
 
     return model_fn
+
 
 def input_fn_builder_masked(input_files, flags, is_training, num_cpu_threads=4):
     def input_fn(params):

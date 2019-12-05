@@ -7,6 +7,62 @@ import tlm.model.base as base
 from misc.categorical_gradient import gather, categorical_sampling
 
 
+class SSDR(base.BertModelInterface):
+    def __init__(self,
+                 config,
+                 ssdr_config,
+                 is_training,
+                 input_ids,
+                 input_mask,
+                 token_type_ids,
+                 d_input_ids,
+                 d_input_mask,
+                 d_segment_ids,
+                 d_location_ids,
+                 ab_mapping,
+                 use_one_hot_embeddings=True,
+                 scope=None,
+                 ):
+        super(SSDR, self).__init__()
+
+        config = copy.deepcopy(config)
+        if not is_training:
+            config.hidden_dropout_prob = 0.0
+            config.attention_probs_dropout_prob = 0.0
+
+        batch_size, seq_length = get_batch_and_seq_length(input_ids, 2)
+
+        if input_mask is None:
+            input_mask = tf.ones(shape=[batch_size, seq_length], dtype=tf.int32)
+
+        if token_type_ids is None:
+            token_type_ids = tf.zeros(shape=[batch_size, seq_length], dtype=tf.int32)
+
+        if d_segment_ids is None:
+            d_segment_ids = d_input_mask
+
+        with tf.compat.v1.variable_scope(scope, default_name="bert"):
+            self.main_transformer = MainTransformer(
+                config, ssdr_config, input_ids, input_mask, token_type_ids, use_one_hot_embeddings)
+
+            key_out = self.main_transformer.build_key()
+            self.dict_tranformer = SecondTransformer(
+                config, ssdr_config, d_input_ids, d_input_mask, d_segment_ids, use_one_hot_embeddings)
+
+            aligned_key = tf.gather(key_out, ab_mapping)
+
+            scores, info_vectors = self.dict_tranformer.build(aligned_key)
+            info_vector = select_value(batch_size, ab_mapping, scores, info_vectors, "sample")
+
+            all_encoder_layers = self.main_transformer.build_remain(info_vector, d_location_ids)
+
+            self.all_encoder_layers = all_encoder_layers
+            self.sequence_output = self.all_encoder_layers[-1]
+            self.pooled_output = get_pooler(self.sequence_output, config)
+            self.embedding_output = self.main_transformer.embedding_output
+            self.embedding_table = self.main_transformer.embedding_table
+
+
 def get_batch_and_seq_length(input_ids, expected_rank):
     input_shape = bc.get_shape_list(input_ids, expected_rank=expected_rank)
     batch_size = input_shape[0]
@@ -133,7 +189,7 @@ class MainTransformer(TransformerBase):
         self.last_key_layer = prev_output
         with tf.compat.v1.variable_scope("mr_key"):
             key_vectors = bc.dense(self.key_dimension, self.initializer)(intermediate_output)
-            key_vectors = tf.reshape(key_vectors, [self.batch_size, self.seq_length, -1])
+            key_vectors = tf.reshape(key_vectors, [self.batch_size, self.seq_length, self.key_dimension])
             key_output = self.key_pooling(key_vectors)
         return key_output
 
@@ -151,7 +207,7 @@ class MainTransformer(TransformerBase):
             n_remaining_layers = self.config.num_hidden_layers - self.layers_before_key_pooling
 
             # location : [batch_size, max_locations)
-            offset = tf.expand_dims(tf.range(self.batch_size) * self.seq_length, 1)
+            offset = tf.expand_dims(tf.range(self.batch_size, dtype=tf.int64) * self.seq_length, 1)
             flat_location = locations + offset
             flat_location = tf.reshape(flat_location, [-1, 1]) #[batch_size*max_location, 1])
 
@@ -278,7 +334,7 @@ class SecondTransformer(TransformerBase):
             input_tensor = tf.concat([key_tokens, input_tensor], axis=1)
             input_shape = bc.get_shape_list(input_tensor, expected_rank=3)
 
-            mask_for_key = tf.ones([self.batch_size, num_key_tokens], dtype=tf.int32)
+            mask_for_key = tf.ones([self.batch_size, num_key_tokens], dtype=tf.int64)
             self.input_mask = tf.concat([mask_for_key, self.input_mask], axis=1)
             self.seq_length = self.seq_length + num_key_tokens
 
@@ -309,7 +365,7 @@ def select_value(a_size, ab_mapping, b_scores, b_items, method):
     # [b_size]
     b_scores = tf.reshape(b_scores, [-1])
     b_size = bc.get_shape_list2(b_items)[0]
-    indice = tf.stack([tf.range(b_size), tf.reshape(ab_mapping, [-1])], 1)
+    indice = tf.stack([tf.range(b_size, dtype=tf.int64), tf.reshape(ab_mapping, [-1])], 1)
     collect_bin = tf.scatter_nd(indice, tf.ones([b_size]), [b_size, a_size])
     scattered_score = tf.transpose(tf.expand_dims(b_scores, 1) * collect_bin)
     # scattered_score :  [a_size, b_size], if not corresponding item, the score is zero
@@ -328,59 +384,3 @@ def select_value(a_size, ab_mapping, b_scores, b_items, method):
     return result
     #return tf.gather_nd(b_items, selected_idx)
 
-
-
-class SSDR(base.BertModelInterface):
-    def __init__(self,
-                 config,
-                 ssdr_config,
-                 is_training,
-                 input_ids,
-                 input_mask,
-                 token_type_ids,
-                 d_input_ids,
-                 d_input_mask,
-                 d_segment_ids,
-                 d_location_ids,
-                 ab_mapping,
-                 use_one_hot_embeddings=True,
-                 scope=None,
-                 ):
-        super(SSDR, self).__init__()
-
-        config = copy.deepcopy(config)
-        if not is_training:
-            config.hidden_dropout_prob = 0.0
-            config.attention_probs_dropout_prob = 0.0
-
-        batch_size, seq_length = get_batch_and_seq_length(input_ids, 2)
-
-        if input_mask is None:
-            input_mask = tf.ones(shape=[batch_size, seq_length], dtype=tf.int32)
-
-        if token_type_ids is None:
-            token_type_ids = tf.zeros(shape=[batch_size, seq_length], dtype=tf.int32)
-
-        if d_segment_ids is None:
-            d_segment_ids = d_input_mask
-
-        with tf.compat.v1.variable_scope(scope, default_name="bert"):
-            self.main_transformer = MainTransformer(
-                config, ssdr_config, input_ids, input_mask, token_type_ids, use_one_hot_embeddings)
-
-            key_out = self.main_transformer.build_key()
-            self.dict_tranformer = SecondTransformer(
-                config, ssdr_config, d_input_ids, d_input_mask, d_segment_ids, use_one_hot_embeddings)
-
-            aligned_key = tf.gather(key_out, ab_mapping)
-
-            scores, info_vectors = self.dict_tranformer.build(aligned_key)
-            info_vector = select_value(batch_size, ab_mapping, scores, info_vectors, "sample")
-
-            all_encoder_layers = self.main_transformer.build_remain(info_vector, d_location_ids)
-
-            self.all_encoder_layers = all_encoder_layers
-            self.sequence_output = self.all_encoder_layers[-1]
-            self.pooled_output = get_pooler(self.sequence_output, config)
-            self.embedding_output = self.main_transformer.embedding_output
-            self.embedding_table = self.main_transformer.embedding_table

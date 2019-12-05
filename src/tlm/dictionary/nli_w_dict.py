@@ -1,4 +1,5 @@
 import logging
+from abc import ABC, abstractmethod
 
 import tensorflow as tf
 from absl import app
@@ -11,9 +12,11 @@ from log import log as log_module
 from misc_lib import *
 from path import output_path, data_path, get_bert_full_path, get_latest_model_path_from_dir_path
 from tf_util.tf_logging import tf_logging
-from tlm.dictionary.data_gen import DictAugment
+from tlm.dictionary.data_gen import DictAugment, SSDRAugment
 from tlm.dictionary.dict_reader_transformer import DictReaderModel
+from tlm.dictionary.sense_selecting_dictionary_reader import SSDR
 from tlm.model.base import BertConfig
+from tlm.model_cnfig import JsonConfig
 from tlm.training.dict_model_fn import get_bert_assignment_map_for_dict
 from tlm.training.model_fn import get_bert_assignment_map, get_assignment_map_as_is
 from tlm.training.train_flags import *
@@ -36,8 +39,31 @@ def setup_summary_writer(exp_name, sess):
     return train_writer, test_writer
 
 
-class DictReaderWrapper:
+
+class DictReaderInterface(ABC):
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def get_cls_loss(self):
+        pass
+
+    @abstractmethod
+    def get_lookup_loss(self):
+        pass
+
+    @abstractmethod
+    def batch2feed_dict(self, batch):
+        pass
+
+    @abstractmethod
+    def get_acc(self):
+        pass
+
+
+class DictReaderWrapper(DictReaderInterface):
     def __init__(self, num_classes, seq_length, is_training):
+        super(DictReaderWrapper, self).__init__()
         placeholder = tf.compat.v1.placeholder
         bert_config = BertConfig.from_json_file(os.path.join(data_path, "bert_config.json"))
         def_max_length = FLAGS.max_def_length
@@ -81,6 +107,12 @@ class DictReaderWrapper:
         self.lookup_loss = tf.reduce_mean(self.lookup_loss_per_example)
         self.acc = tf_module.accuracy(self.cls_logits, self.y_cls)
 
+    def get_cls_loss(self):
+        return self.cls_loss
+
+    def get_lookup_loss(self):
+        return self.lookup_loss
+
     def batch2feed_dict(self, batch):
         x0, x1, x2, x3, x4, x5, y= batch
         feed_dict = {
@@ -93,6 +125,83 @@ class DictReaderWrapper:
             self.y_cls: y,
         }
         return feed_dict
+
+    def get_acc(self):
+        return self.acc
+
+# Word Sense Selecting Dictionary Reader
+class WSSDRWrapper(DictReaderInterface):
+    def __init__(self, num_classes, ssdr_config, seq_length, is_training):
+        super(WSSDRWrapper, self).__init__()
+        placeholder = tf.compat.v1.placeholder
+        bert_config = BertConfig.from_json_file(os.path.join(data_path, "bert_config.json"))
+        def_max_length = FLAGS.max_def_length
+        loc_max_length = FLAGS.max_loc_length
+        self.input_ids = placeholder(tf.int64, [None, seq_length])
+        self.input_mask_ = placeholder(tf.int64, [None, seq_length])
+        self.segment_ids = placeholder(tf.int64, [None, seq_length])
+        self.d_location_ids = placeholder(tf.int64, [None, loc_max_length])
+
+        self.d_input_ids = placeholder(tf.int64, [None, def_max_length])
+        self.d_input_mask = placeholder(tf.int64, [None, def_max_length])
+        self.d_segment_ids = placeholder(tf.int64, [None, def_max_length])
+        self.ab_mapping = placeholder(tf.int64, [None, 1])
+
+        self.y_cls = placeholder(tf.int64, [None])
+        self.y_lookup = placeholder(tf.int64, [None, seq_length])
+
+        self.network = SSDR(
+                config=bert_config,
+                ssdr_config=ssdr_config,
+                is_training=is_training,
+                input_ids=self.input_ids,
+                input_mask=self.input_mask_,
+                token_type_ids=self.segment_ids,
+                d_input_ids=self.d_input_ids,
+                d_input_mask=self.d_input_mask,
+                d_segment_ids=self.d_segment_ids,
+                d_location_ids=self.d_location_ids,
+                ab_mapping=self.ab_mapping,
+                use_one_hot_embeddings=False,
+            )
+        self.cls_logits = keras.layers.Dense(num_classes)(self.network.get_pooled_output())
+        self.cls_loss_arr = tf.nn.sparse_softmax_cross_entropy_with_logits(
+            logits=self.cls_logits,
+            labels=self.y_cls)
+        self.cls_loss = tf.reduce_mean(self.cls_loss_arr)
+        print("self.cls_loss", self.cls_loss)
+
+        self.lookup_logits = keras.layers.Dense(2)(self.network.get_sequence_output())
+        self.lookup_loss_arr = tf.nn.sparse_softmax_cross_entropy_with_logits(
+            logits=self.lookup_logits,
+            labels=self.y_lookup)
+        self.lookup_loss_per_example = tf.reduce_sum(self.lookup_loss_arr, axis=-1)
+        self.lookup_loss = tf.reduce_mean(self.lookup_loss_per_example)
+        self.acc = tf_module.accuracy(self.cls_logits, self.y_cls)
+
+    def get_cls_loss(self):
+        return self.cls_loss
+
+    def get_lookup_loss(self):
+        return self.lookup_loss
+
+    def batch2feed_dict(self, batch):
+        x0, x1, x2, x3, y, x4, x5, x6, ab_map = batch
+        feed_dict = {
+            self.input_ids: x0,
+            self.input_mask_: x1,
+            self.segment_ids: x2,
+            self.d_location_ids: x3,
+            self.d_input_ids: x4,
+            self.d_input_mask: x5,
+            self.d_segment_ids: x6,
+            self.ab_mapping: ab_map,
+            self.y_cls: y,
+        }
+        return feed_dict
+
+    def get_acc(self):
+        return self.acc
 
 
 def init_dict_model_with_bert(sess, init_checkpoint):
@@ -140,7 +249,51 @@ def debug_names(is_training):
         print(name)
 
 
-def train_nli_w_dict(run_name, model_path, num_epochs, data_loader, model_init_fn, dictionary, is_training):
+
+def load_data_feeders_with_cache(data_loader, feeder_factory, feeder_name):
+    tf_logging.debug("Loading dictionary from pickle")
+    tf_logging.debug("Loading training data")
+    train_data = data_loader.get_train_data()
+    tf_logging.debug("Loading train_data_feeder")
+
+    train_cache_name = "train_data_feeder." + feeder_name
+    train_data_feeder = load_cache(train_cache_name)
+    if train_data_feeder is None:
+        tf_logging.info("Parsing terms in training data")
+        train_data_feeder = feeder_factory(train_data)
+    save_to_pickle(train_data_feeder, train_cache_name)
+
+    tf_logging.debug("Initializing dev batch")
+    train_cache_name = "dev_data_feeder." + feeder_name
+    dev_data_feeder = load_cache(train_cache_name)
+    if dev_data_feeder is None:
+        dev_data_feeder = feeder_factory(data_loader.get_dev_data())
+    save_to_pickle(dev_data_feeder, train_cache_name)
+    return train_data_feeder, dev_data_feeder
+
+
+def load_data_feeders_for_dict1(data_loader):
+    dictionary = load_from_pickle("webster")
+
+    def feeder_factory(data):
+        return DictAugment(data, dictionary)
+
+    return load_data_feeders_with_cache(data_loader, feeder_factory, "DictAugment")
+
+def load_data_feeder_for_wssder(data_loader):
+    dictionary = load_from_pickle("webster_parsed_w_cls")
+    ssdr_config = JsonConfig.from_json_file(FLAGS.model_config_file)
+
+    def feeder_factory(data):
+        return SSDRAugment(data, dictionary, ssdr_config, FLAGS.def_per_batch, FLAGS.max_def_length)
+
+    return load_data_feeders_with_cache(data_loader, feeder_factory, SSDRAugment.__name__)
+
+def train_nli_w_dict(run_name,
+                     model: DictReaderInterface,
+                     model_path, num_epochs,
+                     data_feeder_getter,
+                     model_init_fn):
     print("Train nil :", run_name)
 
     seq_max = 200
@@ -148,11 +301,10 @@ def train_nli_w_dict(run_name, model_path, num_epochs, data_loader, model_init_f
     batch_size = FLAGS.train_batch_size
 
     tf_logging.debug("Building graph")
-    model = DictReaderWrapper(3, seq_max, is_training)
 
     with tf.compat.v1.variable_scope("optimizer"):
-        train_cls, global_step = train_module.get_train_op(model.cls_loss, lr)
-        train_lookup, global_step = train_module.get_train_op(model.lookup_loss, lr, global_step)
+        train_cls, global_step = train_module.get_train_op(model.get_cls_loss(), lr)
+        train_lookup, global_step = train_module.get_train_op(model.get_lookup_loss(), lr, global_step)
 
     sess = train_module.init_session()
     sess.run(tf.compat.v1.global_variables_initializer())
@@ -167,22 +319,7 @@ def train_nli_w_dict(run_name, model_path, num_epochs, data_loader, model_init_f
         model_init_fn(sess)
 
     log = log_module.train_logger()
-
-    tf_logging.debug("Loading training data")
-    train_data = data_loader.get_train_data()
-
-    tf_logging.debug("Loading train_data_feeder")
-    train_data_feeder = load_cache("train_data_feeder")
-    if train_data_feeder is None:
-        print("Parsing terms in training data")
-        train_data_feeder = DictAugment(train_data, dictionary)
-    save_to_pickle(train_data_feeder, "train_data_feeder")
-
-    tf_logging.debug("Initializing dev batch")
-    dev_data_feeder = load_cache("dev_data_feeder")
-    if dev_data_feeder is None:
-        dev_data_feeder = DictAugment(data_loader.get_dev_data(), dictionary)
-    save_to_pickle(dev_data_feeder, "dev_data_feeder")
+    train_data_feeder, dev_data_feeder = data_feeder_getter()
 
     dev_batches = []
     n_dev_batch = 100
@@ -197,7 +334,7 @@ def train_nli_w_dict(run_name, model_path, num_epochs, data_loader, model_init_f
 
     def train_classification(step_i):
         batch = train_data_feeder.get_random_batch(batch_size)
-        loss_val, acc, _ = sess.run([model.cls_loss, model.acc, train_cls],
+        loss_val, acc, _ = sess.run([model.get_cls_loss(), model.get_acc(), train_cls],
                                                    feed_dict=model.batch2feed_dict(batch)
                                                    )
         log.info("Step {0} train loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
@@ -210,7 +347,7 @@ def train_nli_w_dict(run_name, model_path, num_epochs, data_loader, model_init_f
         loss_list = []
         acc_list = []
         for batch in dev_batches:
-            loss_val, acc = sess.run([model.cls_loss, model.acc],
+            loss_val, acc = sess.run([model.get_cls_loss(), model.get_acc()],
                                                    feed_dict=model.batch2feed_dict(batch)
                                                    )
             loss_list.append(loss_val)
@@ -225,7 +362,7 @@ def train_nli_w_dict(run_name, model_path, num_epochs, data_loader, model_init_f
     def save_fn():
         return save_model_to_dir_path(sess, model_path, global_step)
 
-    n_data = len(train_data)
+    n_data = train_data_feeder.get_data_len()
     step_per_epoch = int((n_data+batch_size-1)/batch_size)
     tf_logging.debug("{} data point -> {} batches / epoch".format(n_data, step_per_epoch))
     train_steps = step_per_epoch * num_epochs
@@ -264,8 +401,17 @@ def nli_initializer(nli_checkpoint_path):
 
 
 def dict_reader_initializer(dict_reader_checkpoint):
+    return as_is_initializer_wight_sanity_check(dict_reader_checkpoint,
+                                                'cross_1_to_2', "Initializing model with nli(main) and bert(dict reader)")
+
+def wssdr_initializer(dict_reader_checkpoint):
+    return as_is_initializer_wight_sanity_check(dict_reader_checkpoint,
+                                                'mr_key',
+                                                "Initializing model with wssdr")
+
+def as_is_initializer_wight_sanity_check(checkpoint, name_that_should_appear, init_description):
     def sanity_check(init_vars):
-        key = 'cross_1_to_2'
+        key = name_that_should_appear
         matched = False
         for vname in init_vars:
             if key in vname:
@@ -274,9 +420,9 @@ def dict_reader_initializer(dict_reader_checkpoint):
         return matched
 
     def init_from_dict_reader(sess):
-        tf_logging.info("Initializing model with nli(main) and bert(dict reader)")
+        tf_logging.info(init_description)
         tvars = tf.compat.v1.trainable_variables()
-        map, init_vars = get_assignment_map_as_is(tvars, dict_reader_checkpoint)
+        map, init_vars = get_assignment_map_as_is(tvars, checkpoint)
 
         if not sanity_check(init_vars):
             for v in tvars:
@@ -285,12 +431,48 @@ def dict_reader_initializer(dict_reader_checkpoint):
             raise KeyError
 
         loader = tf.compat.v1.train.Saver(map)
-        loader.restore(sess, dict_reader_checkpoint)
+        loader.restore(sess, checkpoint)
 
     return init_from_dict_reader
 
 
 
+def get_model_path(output_dir):
+    if FLAGS.output_dir[0] == "/":
+        run_name = output_dir.split("/")[-1]
+        model_path = output_dir
+    else:
+        assert "/" not in output_dir
+        run_name = output_dir
+        model_path = get_canonical_model_path(run_name)
+    return model_path, run_name
+
+
+def get_model(data_loader, seq_max, modeling, is_training):
+    if modeling == "dict_1":
+        model = DictReaderWrapper(3, seq_max, is_training)
+        data_feeder_getter = lambda: load_data_feeders_for_dict1(data_loader)
+    elif modeling == "wssdr":
+        ssdr_config = JsonConfig.from_json_file(FLAGS.model_config_file)
+        model = WSSDRWrapper(3, ssdr_config, seq_max, is_training)
+        data_feeder_getter = lambda: load_data_feeder_for_wssder(data_loader)
+    else:
+        assert False
+
+    return data_feeder_getter, model
+
+def get_restore_fn():
+    if FLAGS.is_bert_checkpoint:
+        restore_fn = init_from_bert
+    elif FLAGS.checkpoint_type == "nli":
+        restore_fn = nli_initializer(FLAGS.init_checkpoint)
+    elif FLAGS.checkpoint_type == "dict_reader":
+        restore_fn = dict_reader_initializer(FLAGS.init_checkpoint)
+    elif FLAGS.checkpoint_type == "wssdr":
+        restore_fn = wssdr_initializer(FLAGS.init_checkpoint)
+    else:
+        raise KeyError("Checkpoint type is not specified")
+    return restore_fn
 
 
 def dev_fn():
@@ -305,37 +487,27 @@ def dev_fn():
         tf_logging.setLevel(logging.DEBUG)
     seq_max = 200
     data_loader = nli.DataLoader(seq_max, "bert_voca.txt", True)
-    tf_logging.debug("Loading dictionary from pickle")
-    d = load_from_pickle("webster")
-    if FLAGS.is_bert_checkpoint:
-        init_fn = init_from_bert
-    elif FLAGS.checkpoint_type == "nli":
-        init_fn = nli_initializer(FLAGS.init_checkpoint)
-    elif FLAGS.checkpoint_type == "dict_reader":
-        init_fn = dict_reader_initializer(FLAGS.init_checkpoint)
-    else:
-        tf_logging.warn("Checkpoint type is not specified")
-        raise KeyError
 
+    is_training = FLAGS.do_train
+    restore_fn = get_restore_fn()
+    data_feeder_getter, model = get_model(data_loader, seq_max, FLAGS.modeling, is_training)
 
-    if FLAGS.output_dir[0] == "/":
-        run_name = FLAGS.output_dir.split("/")[-1]
-        model_path = FLAGS.output_dir
-    else:
-        assert "/" not in FLAGS.output_dir
-        run_name = FLAGS.output_dir
-        model_path = get_canonical_model_path(run_name)
+    model_path, run_name = get_model_path(FLAGS.output_dir)
 
-    saved_model = train_nli_w_dict(run_name, model_path, 2, data_loader,
-                                   init_fn, d, True)
+    saved_model = train_nli_w_dict(run_name, model, model_path, 2, data_feeder_getter,
+                                   restore_fn)
 
     if FLAGS.task_completion_mark:
         f = open(FLAGS.task_completion_mark, "w")
         f.write("Done")
         f.close()
 
+
+
 def main(_):
     dev_fn()
 
 if __name__ == '__main__':
+    flags.mark_flag_as_required("modeling")
+    flags.mark_flag_as_required("init_checkpoint")
     app.run(main)
