@@ -297,7 +297,6 @@ class SSDRAugment(DictAuxDataFeeder):
             new_dict[word] = enc_entries
         return new_dict
 
-
     @staticmethod
     def drop_definitions(def_entries_list, def_per_batch):
         n_all_def = sum([len(entry) for entry in def_entries_list])
@@ -338,7 +337,6 @@ class SSDRAugment(DictAuxDataFeeder):
 
         return ab_map, batch_defs
 
-
     def get_random_batch(self, batch_size):
         problem_data = []
         def_entries_list = []
@@ -366,6 +364,44 @@ class SSDRAugment(DictAuxDataFeeder):
         b_part = get_batches_ex(batch_defs, self.def_per_batch, 3)[0]
 
         return a_part + b_part + [ab_map]
+
+    def get_all_batches(self, batch_size):
+        problem_data = []
+        def_entries_list = []
+
+        for data_idx in self.data_info.keys():
+            appeared_words = self.data_info[data_idx]
+            if appeared_words:
+                word = pick1(appeared_words)
+                def_entries_list.append(self.dict[word.word])
+                d_location_ids = word.location
+            else:
+                def_entries_list.append([])
+                d_location_ids = [0] * self.max_d_loc
+
+            input_ids, input_mask, segment_ids, y = self.data[data_idx]
+            e = input_ids, input_mask, segment_ids, d_location_ids, y
+            problem_data.append(e)
+
+        n_insts = len(def_entries_list)
+        assert n_insts == len(problem_data)
+
+        batches = []
+        for i in range(0, n_insts, batch_size):
+            local_batch_len = min(batch_size, n_insts - i)
+            current_problems = problem_data[i:i+local_batch_len]
+            current_entries = def_entries_list[i:i+local_batch_len]
+            self.drop_definitions(current_entries, self.def_per_batch)
+
+            a_part = get_batches_ex(current_problems, batch_size, 5)[0]
+            ab_map, batch_defs = self.pack_data(current_entries, self.max_def_length, self.def_per_batch)
+            b_part = get_batches_ex(batch_defs, self.def_per_batch, 3)[0]
+            ab_map = np.expand_dims(ab_map, 1)
+
+            batch = a_part + b_part + [ab_map]
+            batches.append(batch)
+
+        return batches
 
 
 def hide_word(tokens, target_word, d_mask_token):

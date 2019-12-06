@@ -230,8 +230,6 @@ def get_nli_ex_model_segmented(input_ids, input_mask, segment_ids):
     return output
 
 
-tlm_prefix = "target_task"
-
 def get_bert_assignment_map(tvars, lm_checkpoint):
     lm_assignment_candidate = {}
     real_name_map = {}
@@ -302,7 +300,7 @@ def get_cls_assignment(tvars, lm_checkpoint):
 
 
 
-def get_tlm_assignment_map(tvars, lm_checkpoint, target_task_checkpoint):
+def get_tlm_assignment_map(tvars, tlm_prefix, lm_checkpoint, target_task_checkpoint):
     """Compute the union of the current variables and checkpoint variables."""
     assignment_map = {}
     initialized_variable_names = {}
@@ -394,6 +392,7 @@ def model_fn_target_masking(bert_config, train_config, logging, model_class, pri
     input_mask = features["input_mask"]
     segment_ids = features["segment_ids"]
     next_sentence_labels = features["next_sentence_labels"]
+    tlm_prefix = "target_task"
 
     with tf.compat.v1.variable_scope(tlm_prefix):
       priority_score = tf.stop_gradient(priority_model(input_ids,
@@ -434,7 +433,7 @@ def model_fn_target_masking(bert_config, train_config, logging, model_class, pri
     initialized_variable_names = {}
     scaffold_fn = None
     (assignment_map, assignment_map_tt, initialized_variable_names
-      ) = get_tlm_assignment_map(all_vars, train_config.init_checkpoint, train_config.second_init_checkpoint)
+      ) = get_tlm_assignment_map(all_vars, tlm_prefix, train_config.init_checkpoint, train_config.second_init_checkpoint)
 
     def load_fn():
       if train_config.init_checkpoint:

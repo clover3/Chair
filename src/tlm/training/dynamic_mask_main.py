@@ -1,5 +1,6 @@
 import os
 import pickle
+from functools import partial
 
 import tensorflow as tf
 
@@ -10,6 +11,7 @@ from tlm.dictionary.dict_reader_transformer import DictReaderModel
 from tlm.dictionary.sense_selecting_dictionary_reader import SSDR
 from tlm.model.base import BertModel
 from tlm.model_cnfig import JsonConfig
+from tlm.tlm.tlm2_model import tlm2
 from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
 from tlm.training.input_fn import input_fn_builder_unmasked, input_fn_builder_masked
 from tlm.training.model_fn import model_fn_random_masking, model_fn_target_masking, get_nli_ex_model_segmented
@@ -141,12 +143,19 @@ def lm_pretrain(input_files):
     elif task == TASK_TLM:
         tf_logging.info("Running TLM")
         input_fn_builder = input_fn_builder_unmasked
+        if FLAGS.modeling == "nli_ex":
+            priority_model = get_nli_ex_model_segmented
+        elif FLAGS.modeling == "tlm2":
+            priority_model = partial(tlm2, bert_config, FLAGS.use_tpu)
+        else:
+            raise Exception()
+
         model_fn = model_fn_target_masking(
             bert_config=bert_config,
             train_config=train_config,
             logging=tf_logging,
             model_class=BertModel,
-            priority_model=get_nli_ex_model_segmented,
+            priority_model=priority_model,
         )
     elif task == TASK_DICT_LM:
         tf_logging.info("Running Dict LM")

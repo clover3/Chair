@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from models.transformer import bert_common_v2 as bc
 from models.transformer import optimization_v2 as optimization
+from models.transformer.bert_common_v2 import get_shape_list
 from tf_util.tf_logging import tf_logging
 from tlm.training.input_fn_common import get_lm_basic_features, get_lm_mask_features, format_dataset
 from tlm.training.model_fn import get_bert_assignment_map
@@ -12,6 +13,71 @@ def loss_to_prob_pair(loss):
     y1 = 1 - y0
     return tf.stack([y0, y1], -1)
 
+
+class IndependentLossModel:
+    def __init__(self, bert_config):
+
+        initializer = bc.create_initializer(bert_config.initializer_range)
+        with tf.compat.v1.variable_scope("project"):
+            self.layer1 = bc.dense(bert_config.hidden_size,
+                              initializer,
+                              bc.get_activation(bert_config.hidden_act))
+
+        with tf.compat.v1.variable_scope("cls1"):
+            self.logit_dense1 = bc.dense(2, initializer)
+        with tf.compat.v1.variable_scope("cls2"):
+            self.logit_dense2 = bc.dense(2, initializer)
+
+        self.graph_built = False
+
+    def build_predictions(self, input_tensor):
+        if self.graph_built:
+            raise Exception()
+        hidden = self.layer1(input_tensor)
+        self.logits1 = self.logit_dense1(hidden)
+        self.logits2 = self.logit_dense2(hidden)
+        self.prob1 = tf.nn.softmax(self.logits1)[:, :, 0]
+        self.prob2 = tf.nn.softmax(self.logits2)[:, :, 0]
+        self.graph_built = True
+
+    def train_modeling(self, input_tensor,
+                       masked_lm_positions, masked_lm_weights,
+                       loss_base, loss_target):
+        if self.graph_built:
+            raise Exception()
+        batch_size, _, hidden_dims = get_shape_list(input_tensor)
+        input_tensor = bc.gather_indexes(input_tensor, masked_lm_positions)
+        input_tensor = tf.reshape(input_tensor, [batch_size, -1, hidden_dims])
+        hidden = self.layer1(input_tensor)
+
+        def cross_entropy(logits, loss_label):
+            gold_prob = loss_to_prob_pair(loss_label)
+            logits = tf.reshape(logits, gold_prob.shape)
+
+            per_example_loss = tf.nn.softmax_cross_entropy_with_logits(
+                gold_prob,
+                logits,
+                axis=-1,
+                name=None
+            )
+            per_example_loss = tf.cast(masked_lm_weights, tf.float32) * per_example_loss
+            losses = tf.reduce_sum(per_example_loss, axis=1)
+            loss = tf.reduce_mean(losses)
+            return loss, per_example_loss
+
+        self.logits1 = self.logit_dense1(hidden)
+        self.logits2 = self.logit_dense2(hidden)
+
+
+
+        self.loss1, self.per_example_loss1 = cross_entropy(self.logits1, loss_base)
+        self.loss2, self.per_example_loss2 = cross_entropy(self.logits2, loss_target)
+
+        self.prob1 = tf.nn.softmax(self.logits1)[:, :, 0]
+        self.prob2 = tf.nn.softmax(self.logits2)[:, :, 0]
+
+        self.total_loss = self.loss1 + self.loss2
+        self.graph_built = True
 
 def get_loss_independently(bert_config, input_tensor,
                            masked_lm_positions, masked_lm_weights, loss_base, loss_target):
@@ -128,9 +194,17 @@ def loss_diff_prediction_model(bert_config, train_config, model_class, model_con
         )
 
         if model_config.loss_model == "independent":
-            total_loss, loss1, loss2, per_example_loss1, per_example_loss2, prob1, prob2 \
-                = get_loss_independently(bert_config, model.get_sequence_output(),
-                                         masked_lm_positions, masked_lm_weights, loss_base, loss_target)
+            loss_model = IndependentLossModel(bert_config)
+            loss_model.train_modeling(model.get_sequence_output(), masked_lm_positions, masked_lm_weights,
+                       loss_base, loss_target)
+
+            total_loss = loss_model.total_loss
+            loss1 = loss_model.loss1
+            loss2 = loss_model.loss2
+            per_example_loss1 = loss_model.per_example_loss1
+            per_example_loss2 = loss_model.per_example_loss2
+            prob1 = loss_model.prob1
+            prob2 = loss_model.prob2
 
             def host_call_fn(total_loss, loss1, loss2):
                 tf.summary.scalar("total_loss", total_loss[0])
