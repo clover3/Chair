@@ -39,17 +39,25 @@ def get_loss_independently(bert_config, input_tensor,
         losses = tf.reduce_sum(per_example_loss, axis=1)
         loss = tf.reduce_mean(losses)
 
-        return loss, per_example_loss
+        return loss, per_example_loss, logits
 
-    loss1, per_example_loss1 = get_regression_and_loss(hidden, loss_base)
-    loss2, per_example_loss2 = get_regression_and_loss(hidden, loss_target)
+    loss1, per_example_loss1, logits1 = get_regression_and_loss(hidden, loss_base)
+    loss2, per_example_loss2, logits2 = get_regression_and_loss(hidden, loss_target)
+
+    prob1 = tf.nn.softmax(logits1)[:, :, 0]
+    prob2 = tf.nn.softmax(logits2)[:, :, 0]
 
     total_loss = loss1 + loss2
-    return total_loss, loss1, loss2, per_example_loss1, per_example_loss2
+    return total_loss, loss1, loss2, per_example_loss1, per_example_loss2, prob1, prob2
 
 
 def get_diff_loss(bert_config, input_tensor,
                            masked_lm_positions, masked_lm_weights, loss_base, loss_target):
+    base_prob = tf.exp(-loss_base)
+    target_prob = tf.exp(-loss_target)
+
+    prob_diff = base_prob - target_prob
+
     input_tensor = bc.gather_indexes(input_tensor, masked_lm_positions)
 
     hidden = bc.dense(bert_config.hidden_size,
@@ -57,13 +65,9 @@ def get_diff_loss(bert_config, input_tensor,
                       bc.get_activation(bert_config.hidden_act))(input_tensor)
 
     logits = bc.dense(1, bc.create_initializer(bert_config.initializer_range))(hidden)
+    logits = tf.reshape(logits, prob_diff.shape)
 
-    base_prob = tf.exp(-loss_base)
-    target_prob = tf.exp(-loss_target)
-
-    prob_diff = base_prob - target_prob
-
-    per_example_loss = tf.losses.MAE(prob_diff, logits)
+    per_example_loss = tf.abs(prob_diff-logits)
     per_example_loss = tf.cast(masked_lm_weights, tf.float32) * per_example_loss
     losses = tf.reduce_sum(per_example_loss, axis=1)
     loss = tf.reduce_mean(losses)
@@ -85,6 +89,12 @@ def recover_mask(input_ids, masked_lm_positions, masked_lm_ids):
     output = tf.reshape(output, [batch_size, seq_length])
     output = tf.concat([input_ids[:, :1], output[:,1:]], axis=1)
     return output
+
+def get_gold_diff(loss_base, loss_target):
+    prob_base = tf.exp(-loss_base)
+    prob_target = tf.exp(-loss_target)
+    return prob_base - prob_target
+
 
 
 def loss_diff_prediction_model(bert_config, train_config, model_class, model_config):
@@ -118,7 +128,7 @@ def loss_diff_prediction_model(bert_config, train_config, model_class, model_con
         )
 
         if model_config.loss_model == "independent":
-            total_loss, loss1, loss2, per_example_loss1, per_example_loss2 \
+            total_loss, loss1, loss2, per_example_loss1, per_example_loss2, prob1, prob2 \
                 = get_loss_independently(bert_config, model.get_sequence_output(),
                                          masked_lm_positions, masked_lm_weights, loss_base, loss_target)
 
@@ -135,7 +145,10 @@ def loss_diff_prediction_model(bert_config, train_config, model_class, model_con
         elif model_config.loss_model == "diff_regression":
             total_loss, losses, logits = get_diff_loss(bert_config, model.get_sequence_output(),
                                         masked_lm_positions, masked_lm_weights, loss_base, loss_target)
+            host_call = None
 
+        pred_diff = prob1 - prob2
+        gold_diff = get_gold_diff(loss_base, loss_target)
         tvars = tf.compat.v1.trainable_variables()
 
         initialized_variable_names = {}
@@ -176,7 +189,16 @@ def loss_diff_prediction_model(bert_config, train_config, model_class, model_con
                     scaffold_fn=scaffold_fn)
         else:
             predictions = {
-                    "loss": total_loss,
+                    "loss_base": loss_base,
+                    "loss_target": loss_target,
+                    "prob1": prob1,
+                    "prob2": prob2,
+                    "per_example_loss1": per_example_loss1,
+                    "per_example_loss2": per_example_loss2,
+                    "input_ids":input_ids,
+                    "masked_lm_positions":masked_lm_positions,
+                    "pred_diff": pred_diff,
+                    "gold_diff": gold_diff,
             }
             output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
                     mode=mode,

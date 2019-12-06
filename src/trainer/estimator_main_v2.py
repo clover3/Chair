@@ -1,3 +1,5 @@
+import time
+
 import tensorflow as tf
 
 import tlm.model.base as modeling
@@ -10,6 +12,8 @@ from trainer.tpu_estimator import run_estimator, TrainConfig, show_input_files
 
 
 def main(_):
+    begin = time.time()
+
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
     input_files = []
     for input_pattern in FLAGS.input_file.split(","):
@@ -36,6 +40,7 @@ def main(_):
             is_training=False)
 
     run_estimator(model_fn, input_fn)
+    print("Elapsed {}".format(time.time() - begin))
 
 
 if __name__ == "__main__":

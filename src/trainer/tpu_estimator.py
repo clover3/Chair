@@ -1,5 +1,6 @@
 import logging
 import os
+import pickle
 
 import tensorflow as tf
 
@@ -61,6 +62,14 @@ def run_estimator(model_fn, input_fn, host_call=None):
           for key in sorted(result.keys()):
             tf_logging.info("  %s = %s", key, str(result[key]))
             writer.write("%s = %s\n" % (key, str(result[key])))
+
+    if FLAGS.do_predict:
+        tf_logging.info("***** Running evaluation *****")
+        tf_logging.info("  Batch size = %d", FLAGS.eval_batch_size)
+
+        result = estimator.predict(input_fn=input_fn, yield_single_examples=False)
+
+        pickle.dump(list(result), open(FLAGS.out_file, "wb"))
 
 
 class TrainConfig:

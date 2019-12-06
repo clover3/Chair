@@ -1,7 +1,7 @@
 import collections
-import math
 import re
 
+import math
 import six
 import tensorflow as tf
 
@@ -188,8 +188,7 @@ def embedding_lookup(input_ids,
 
     input_shape = get_shape_list(input_ids)
 
-    output = tf.reshape(output,
-                                            input_shape[0:-1] + [input_shape[-1] * embedding_size])
+    output = tf.reshape(output, input_shape[0:-1] + [input_shape[-1] * embedding_size])
     return (output, embedding_table)
 
 

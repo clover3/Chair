@@ -289,6 +289,46 @@ def load_data_feeder_for_wssder(data_loader):
 
     return load_data_feeders_with_cache(data_loader, feeder_factory, SSDRAugment.__name__)
 
+
+
+def eval_nli_w_dict(run_name,
+                     model: DictReaderInterface,
+                     model_path, num_epochs,
+                     data_feeder_getter,
+                     model_init_fn):
+    print("Eval nil :", run_name)
+    tf_logging.debug("Building graph")
+    batch_size = FLAGS.train_batch_size
+
+    sess = train_module.init_session()
+    sess.run(tf.compat.v1.global_variables_initializer())
+    last_saved = get_latest_model_path_from_dir_path(model_path)
+    train_data_feeder, dev_data_feeder = data_feeder_getter()
+
+    tf_logging.info("Loading previous model from {}".format(last_saved))
+    load_model(sess, last_saved)
+    dev_batches = []
+    n_dev_batch = 100
+    for _ in range(n_dev_batch):
+        dev_batches.append(dev_data_feeder.get_random_batch(batch_size))
+
+    def valid_fn(step_i):
+        loss_list = []
+        acc_list = []
+        for batch in dev_batches:
+            loss_val, acc = sess.run([model.get_cls_loss(), model.get_acc()],
+                                                   feed_dict=model.batch2feed_dict(batch)
+                                                   )
+            loss_list.append(loss_val)
+            acc_list.append(acc)
+
+        loss_val = average(loss_list)
+        acc = average(acc_list)
+        print("Dev loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
+        return average(acc_list)
+
+    valid_fn(0)
+
 def train_nli_w_dict(run_name,
                      model: DictReaderInterface,
                      model_path, num_epochs,
@@ -296,7 +336,6 @@ def train_nli_w_dict(run_name,
                      model_init_fn):
     print("Train nil :", run_name)
 
-    seq_max = 200
     lr = 1e-5
     batch_size = FLAGS.train_batch_size
 
@@ -343,7 +382,6 @@ def train_nli_w_dict(run_name,
         return loss_val, acc
 
     def valid_fn(step_i):
-        return
         loss_list = []
         acc_list = []
         for batch in dev_batches:
@@ -461,18 +499,18 @@ def get_model(data_loader, seq_max, modeling, is_training):
 
     return data_feeder_getter, model
 
-def get_restore_fn():
+def get_checkpoint_init_fn():
     if FLAGS.is_bert_checkpoint:
-        restore_fn = init_from_bert
+        init_fn = init_from_bert
     elif FLAGS.checkpoint_type == "nli":
-        restore_fn = nli_initializer(FLAGS.init_checkpoint)
+        init_fn = nli_initializer(FLAGS.init_checkpoint)
     elif FLAGS.checkpoint_type == "dict_reader":
-        restore_fn = dict_reader_initializer(FLAGS.init_checkpoint)
+        init_fn = dict_reader_initializer(FLAGS.init_checkpoint)
     elif FLAGS.checkpoint_type == "wssdr":
-        restore_fn = wssdr_initializer(FLAGS.init_checkpoint)
+        init_fn = wssdr_initializer(FLAGS.init_checkpoint)
     else:
         raise KeyError("Checkpoint type is not specified")
-    return restore_fn
+    return init_fn
 
 
 def dev_fn():
@@ -489,18 +527,21 @@ def dev_fn():
     data_loader = nli.DataLoader(seq_max, "bert_voca.txt", True)
 
     is_training = FLAGS.do_train
-    restore_fn = get_restore_fn()
+    init_fn = get_checkpoint_init_fn()
     data_feeder_getter, model = get_model(data_loader, seq_max, FLAGS.modeling, is_training)
 
     model_path, run_name = get_model_path(FLAGS.output_dir)
 
-    saved_model = train_nli_w_dict(run_name, model, model_path, 2, data_feeder_getter,
-                                   restore_fn)
+    if FLAGS.do_train:
+        saved_model = train_nli_w_dict(run_name, model, model_path, 2, data_feeder_getter,
+                                   init_fn)
+        if FLAGS.task_completion_mark:
+            f = open(FLAGS.task_completion_mark, "w")
+            f.write("Done")
+            f.close()
 
-    if FLAGS.task_completion_mark:
-        f = open(FLAGS.task_completion_mark, "w")
-        f.write("Done")
-        f.close()
+    elif FLAGS.do_eval:
+        eval_nli_w_dict(run_name, model, model_path, 2, data_feeder_getter, None)
 
 
 

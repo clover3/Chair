@@ -87,25 +87,26 @@ def get_sep_considering_masking(input_ids, sep_id, masked_lm_ids, masked_lm_posi
 
 
 def do(data_id):
+    working_dir = os.environ["TF_WORKING_DIR"]
     tokenzier = get_tokenizer()
-    name1 = os.path.join("disk_output", "bert_{}.pickle".format(data_id))
-    name2 = os.path.join("disk_output", "bfn_{}.pickle".format(data_id))
+    name1 = os.path.join(working_dir, "bert_loss", "{}.pickle".format(data_id))
+    name2 = os.path.join(working_dir, "bfn_loss", "{}.pickle".format(data_id))
 
-    tf_logging.debug("Loading data 1")
+    tf_logging.debug("Loading " + name1)
     output1 = PredictionOutput(name1)
-    tf_logging.debug("Loading data 2")
+    tf_logging.debug("Loading " + name2)
     output2 = PredictionOutput(name2)
 
     assert len(output1.input_ids) == len(output2.input_ids)
 
-    record_writer = RecordWriterWrap("disk_output/loss_pred_{}".format(data_id))
+    out_path = os.path.join(working_dir, "loss_pred_train_data/{}".format(data_id))
+    record_writer = RecordWriterWrap(out_path)
     n_inst = len(output1.input_ids)
     sep_id = tokenzier.vocab["[SEP]"]
     tf_logging.debug("Iterating")
     ticker = TimeEstimator(n_inst, "", 1000)
     for i in range(n_inst):
         if i % 1000 == 0:
-            tf_logging.debug("Iterating {}".format(i))
             assert_input_equal(output1.input_ids[i], output2.input_ids[i])
         try:
             features = get_segment_and_mask(output1.input_ids[i], sep_id)

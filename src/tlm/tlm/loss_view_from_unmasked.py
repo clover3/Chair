@@ -206,6 +206,134 @@ def diff_view():
     html_writer.close()
 
 
+
+def pred_loss_view():
+    tokenizer = get_tokenizer()
+    filename = "tlm_loss_pred.pickle"
+    p = os.path.join(output_path, filename)
+    data = pickle.load(open(p, "rb"))
+
+    batch_size, seq_length = data[0]['input_ids'].shape
+
+    keys = list(data[0].keys())
+    vectors = {}
+
+
+    for e in data:
+        for key in keys:
+            if key not in vectors:
+                vectors[key] = []
+            vectors[key].append(e[key])
+
+    for key in keys:
+        vectors[key] = np.concatenate(vectors[key], axis=0)
+
+
+    html_writer = HtmlVisualizer("pred_make_sense.html", dark_mode=False)
+
+    n_instance = len(vectors['input_ids'])
+    n_instance = min(n_instance, 100)
+    for inst_idx in range(n_instance):
+        tokens = tokenizer.convert_ids_to_tokens(vectors['input_ids'][inst_idx])
+        locations = list(vectors['masked_lm_positions'][inst_idx])
+
+        def is_dependent(token):
+            return len(token) == 1 and not token[0].isalnum()
+
+        cells = []
+        for i in range(len(tokens)):
+            f_same_pred = False
+            score = 0
+            if i in locations and i != 0:
+                i_idx = locations.index(i)
+                tokens[i] = "[{}:{}]".format(i_idx, tokens[i])
+                pred_diff = vectors['pred_diff'][inst_idx][i_idx]
+                gold_diff = vectors['gold_diff'][inst_idx][i_idx]
+                pred_label = pred_diff > 0.3
+                gold_label = gold_diff > 0.3
+                if pred_label:
+                    score = 100
+                    if gold_label:
+                        f_same_pred = True
+                else:
+                    if gold_label:
+                        score = 30
+                        f_same_pred = False
+
+            if tokens[i] == "[SEP]":
+                tokens[i] = "[SEP]<br>"
+
+            if tokens[i] != "[PAD]":
+                term = tokens[i]
+                cont_left = term[:2] == "##"
+                cont_right = i+1 < len(tokens) and tokens[i+1][:2] == "##"
+                if i+1 < len(tokens):
+                    dependent_right = is_dependent(tokens[i+1])
+                else:
+                    dependent_right = False
+
+                dependent_left = is_dependent(tokens[i])
+
+                if cont_left:
+                    term = term[2:]
+
+                space_left = "&nbsp;" if not (cont_left or dependent_left) else ""
+                space_right = "&nbsp;" if not (cont_right or dependent_right) else ""
+
+                if f_same_pred:
+                    cells.append(Cell(term, score, space_left, space_right))
+                else:
+                    cells.append(Cell(term, score, space_left, space_right, target_color="R"))
+
+        row = []
+        for cell in cells:
+            row.append(cell)
+            if len(row) == 20:
+                html_writer.write_table([row])
+                row = []
+
+        row_head = [Cell("Index"),
+                    Cell("P]Prob1"), Cell("P]Prob2"),
+                    Cell("G]Prob1"), Cell("G]Prob2"),
+                    Cell("P]Diff"), Cell("G]Diff"),
+                    ]
+        
+        def f_cell(obj):
+            return Cell("{:04.2f}".format(obj))
+            
+        rows = [row_head]
+        pred_diff_list = []
+        gold_diff_list = []
+        for idx, pos in enumerate(locations):
+            if pos == 0:
+                break
+            pred_diff = vectors['pred_diff'][inst_idx][idx]
+            gold_diff = vectors['gold_diff'][inst_idx][idx]
+            pred_diff_list.append(pred_diff)
+            gold_diff_list.append(gold_diff)
+
+
+            row = [Cell(idx),
+                   f_cell(vectors['prob1'][inst_idx][idx]),
+                   f_cell(vectors['prob2'][inst_idx][idx]),
+                   f_cell(math.exp(-vectors['loss_base'][inst_idx][idx])),
+                   f_cell(math.exp(-vectors['loss_target'][inst_idx][idx])),
+                   f_cell(pred_diff),
+                   f_cell(gold_diff),
+                   ]
+            rows.append(row)
+
+        html_writer.write_table(rows)
+
+        pred_diff = np.average(pred_diff_list)
+        gold_diff = np.average(gold_diff_list)
+        html_writer.write_paragraph("Average Pred diff ={:04.2f} Observed diff={:04.2f} ".format(pred_diff, gold_diff))
+
+        if pred_diff > 0.3 :
+            html_writer.write_headline("High Drop")
+        elif pred_diff < 0.1 :
+            html_writer.write_headline("Low Drop")
+
 if __name__ == '__main__':
-    diff_view()
+    pred_loss_view()
 

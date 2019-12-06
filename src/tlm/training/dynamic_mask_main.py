@@ -12,7 +12,7 @@ from tlm.model.base import BertModel
 from tlm.model_cnfig import JsonConfig
 from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
 from tlm.training.input_fn import input_fn_builder_unmasked, input_fn_builder_masked
-from tlm.training.model_fn import model_fn_random_masking, model_fn_target_masking
+from tlm.training.model_fn import model_fn_random_masking, model_fn_target_masking, get_nli_ex_model_segmented
 from tlm.training.train_flags import *
 
 
@@ -146,6 +146,7 @@ def lm_pretrain(input_files):
             train_config=train_config,
             logging=tf_logging,
             model_class=BertModel,
+            priority_model=get_nli_ex_model_segmented,
         )
     elif task == TASK_DICT_LM:
         tf_logging.info("Running Dict LM")
@@ -219,6 +220,7 @@ def lm_pretrain(input_files):
             is_training=False,
         )
         result = estimator.predict(input_fn=predict_input_fn, yield_single_examples=False)
+        tf_logging.info("***** Pickling.. *****")
         pickle.dump(list(result), open(FLAGS.out_file, "wb"))
 
 

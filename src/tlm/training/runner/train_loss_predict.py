@@ -29,7 +29,7 @@ def main(_):
             input_files=input_files,
             flags=FLAGS,
             is_training=True)
-    elif FLAGS.do_eval:
+    elif FLAGS.do_eval or FLAGS.do_predict:
         input_fn = input_fn_builder_masked(
             input_files=input_files,
             flags=FLAGS,

@@ -1,8 +1,9 @@
 import tensorflow as tf
+
 from models.transformer import bert_common_v2 as bert_common
 from models.transformer import optimization_v2 as optimization
 from trainer.get_param_num import get_param_num
-from trainer import tf_module
+
 
 def model_fn_classification(bert_config, train_config, logging, model_class):
   """Returns `model_fn` closure for TPUEstimator."""
@@ -76,12 +77,22 @@ def model_fn_classification(bert_config, train_config, logging, model_class):
           scaffold_fn=scaffold_fn,
       )
     elif mode == tf.estimator.ModeKeys.EVAL:
-      def metric_fn(loss_arr, logits, label_ids):
-          loss = tf.reduce_mean(loss_arr)
-          return {"loss": loss}
+      def metric_fn(log_probs, label):
+          """Computes the loss and accuracy of the model."""
+          log_probs = tf.reshape(
+              log_probs, [-1, log_probs.shape[-1]])
+          pred = tf.argmax(
+              input=log_probs, axis=-1, output_type=tf.int32)
+          label = tf.reshape(label, [-1])
+          accuracy = tf.compat.v1.metrics.accuracy(
+              labels=label, predictions=pred)
+
+          return {
+              "accuracy": accuracy,
+          }
 
       eval_metrics = (metric_fn, [
-          loss_arr, logits, label_ids
+          logits, label_ids
       ])
       output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
           mode=mode,

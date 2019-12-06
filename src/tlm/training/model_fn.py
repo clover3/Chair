@@ -383,11 +383,9 @@ def get_assignment_map_as_is(tvars, checkpoint):
     return assignment_map, initialized_variable_names
 
 
-def model_fn_target_masking(bert_config, train_config, logging, model_class):
-  """Returns `model_fn` closure for TPUEstimator."""
+def model_fn_target_masking(bert_config, train_config, logging, model_class, priority_model):
 
   def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
-    """The `model_fn` for TPUEstimator."""
     logging.info("*** Features ***")
     for name in sorted(features.keys()):
       logging.info("  name = %s, shape = %s" % (name, features[name].shape))
@@ -397,7 +395,6 @@ def model_fn_target_masking(bert_config, train_config, logging, model_class):
     segment_ids = features["segment_ids"]
     next_sentence_labels = features["next_sentence_labels"]
 
-    priority_model = get_nli_ex_model_segmented
     with tf.compat.v1.variable_scope(tlm_prefix):
       priority_score = tf.stop_gradient(priority_model(input_ids,
                                      input_mask,
