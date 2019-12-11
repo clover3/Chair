@@ -1,12 +1,11 @@
 import time
-import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import tensorflow as tf
 
 import tlm.model.base as modeling
 from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging
+from tlm.benchmark.report import save_report
 from tlm.model.base import BertModel
 from tlm.training.classification_model_fn import model_fn_classification
 from tlm.training.input_fn import input_fn_builder_classification as input_fn_builder
@@ -15,7 +14,9 @@ from trainer.tpu_estimator import run_estimator, TrainConfig, show_input_files
 
 
 @report_run
-def main(_):
+def task():
+    run_name = FLAGS.output_dir.split("/")[-1]
+
     begin = time.time()
 
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
@@ -32,20 +33,22 @@ def main(_):
         logging=tf_logging,
         model_class=BertModel,
     )
-    if FLAGS.do_train:
-        input_fn = input_fn_builder(
-            input_files=input_files,
-            max_seq_length=FLAGS.max_seq_length,
-            is_training=True)
     if FLAGS.do_eval:
         input_fn = input_fn_builder(
             input_files=input_files,
             max_seq_length=FLAGS.max_seq_length,
             is_training=False)
+    else:
+        raise Exception()
 
-    r = run_estimator(model_fn, input_fn)
+    result = run_estimator(model_fn, input_fn)
+
+    save_report("nli", run_name, FLAGS, result["accuracy"])
     print("Elapsed {}".format(time.time() - begin))
-    return r
+    return result
+
+def main(_):
+    task()
 
 
 if __name__ == "__main__":

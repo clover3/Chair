@@ -1,7 +1,7 @@
-import numpy as np
 import tensorflow as tf
-from trainer.np_modules import *
+
 from misc_lib import *
+from trainer.np_modules import *
 
 
 def batch_train(sess, batch, train_op, model):
@@ -68,6 +68,15 @@ def step_runner(batches, step_fn,
     return average(l_loss), average(l_acc)
 
 
+def get_loss_from_batches(batches, step_fn):
+    l_loss = []
+    for step_i, batch in enumerate(batches):
+        output = step_fn(batch)
+        loss = output[0]
+        l_loss.append(loss)
+
+    return np.concatenate(l_loss)
+
 # a : [batch, 2]
 def cartesian_w2(a, b):
     r00 = tf.multiply(a[:,0], b[:,0]) # [None, ]
@@ -96,8 +105,6 @@ def precision_b(pred, y):
     y_int = tf.cast(y, tf.bool)
     tp = tf.logical_and(pred, tf.equal(pred,y_int))
     return tf.count_nonzero(tp) / tf.count_nonzero(pred)
-
-
 
 
 def recall(logits, y, axis=1):
@@ -180,4 +187,12 @@ def cossim(v1, v2):
     v2_n = tf.nn.l2_normalize(v2, axis=1)
     return tf.losses.cosine_distance(v1_n, v2_n, axis=1)
 
+
+# scores : [batch, seq_length]
+# label : [batch, seq_length]
+def p_at_1(scores, labels):
+    max_indice = tf.argmax(scores, axis=1) #[batch]
+    max_indice = tf.expand_dims(max_indice, 1)
+    rank1_preds = tf.gather_nd(labels, max_indice, batch_dims=1)
+    return tf.reduce_mean(tf.cast(rank1_preds,tf.float32))
 

@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 import tensorflow as tf
 from absl import app
 
@@ -9,13 +10,14 @@ from log import log as log_module
 from misc_lib import *
 from path import output_path, get_bert_full_path, get_latest_model_path_from_dir_path
 from tf_util.tf_logging import tf_logging
-from tlm.dictionary.dict_augment import DictAugmentedDataLoader
+from tlm.dictionary.dict_augment import DictAugmentedDataLoader, NAME_DUMMY_WSSDR
 from tlm.dictionary.dict_reader_interface import DictReaderInterface, DictReaderWrapper, WSSDRWrapper
 from tlm.model_cnfig import JsonConfig
 from tlm.training.dict_model_fn import get_bert_assignment_map_for_dict
-from tlm.training.model_fn import get_bert_assignment_map, get_assignment_map_as_is
+from tlm.training.lm_model_fn import get_bert_assignment_map, get_assignment_map_as_is
 from tlm.training.train_flags import *
 from trainer.model_saver import save_model_to_dir_path, load_model, get_canonical_model_path
+from trainer.tf_module import get_loss_from_batches
 
 
 def setup_summary_writer(exp_name, sess):
@@ -108,21 +110,37 @@ def eval_nli_w_dict(run_name,
 
     valid_fn(0)
 
+
+class TrainConfig:
+    def __init__(self, config_path):
+        config = JsonConfig.from_json_file(config_path)
+        self.learning_rate = config.learning_rate
+        self.lookup_threshold = config.lookup_threshold
+        self.lookup_min_step = config.lookup_min_step
+        self.num_epochs = config.num_epochs
+
+
+
+class NoLookupException(Exception):
+    pass
+
+
 def train_nli_w_dict(run_name,
                      model: DictReaderInterface,
-                     model_path, num_epochs,
+                     model_path,
+                     model_config,
                      data_feeder_loader,
                      model_init_fn):
     print("Train nil :", run_name)
-
-    lr = 1e-5
     batch_size = FLAGS.train_batch_size
-
+    f_train_lookup = "lookup" in FLAGS.train_op
     tf_logging.debug("Building graph")
 
     with tf.compat.v1.variable_scope("optimizer"):
+        lr = FLAGS.learning_rate
+        lr2 = lr * 0.1
         train_cls, global_step = train_module.get_train_op(model.get_cls_loss(), lr)
-        train_lookup, global_step = train_module.get_train_op(model.get_lookup_loss(), lr, global_step)
+        train_lookup_op, global_step = train_module.get_train_op(model.get_lookup_loss(), lr2, global_step)
 
     sess = train_module.init_session()
     sess.run(tf.compat.v1.global_variables_initializer())
@@ -140,6 +158,8 @@ def train_nli_w_dict(run_name,
     train_data_feeder = data_feeder_loader.get_train_feeder()
     dev_data_feeder = data_feeder_loader.get_dev_feeder()
 
+    lookup_train_feeder = train_data_feeder
+
     dev_batches = []
     n_dev_batch = 100
     for _ in range(n_dev_batch):
@@ -151,6 +171,33 @@ def train_nli_w_dict(run_name,
         summary.value.add(tag='accuracy', simple_value=acc)
         return summary
 
+    def get_summary_obj_lookup(loss, p_at_1):
+        summary = tf.compat.v1.Summary()
+        summary.value.add(tag='lookup_loss', simple_value=loss)
+        summary.value.add(tag='P@1', simple_value=p_at_1)
+        return summary
+
+    def train_lookup(step_i):
+        batches, info = lookup_train_feeder.get_lookup_train_batches(batch_size)
+        if not batches:
+            raise NoLookupException()
+
+        def get_cls_loss(batch):
+            return sess.run([model.get_cls_loss_arr()], feed_dict=model.batch2feed_dict(batch))
+
+        loss_array = get_loss_from_batches(batches, get_cls_loss)
+
+        supervision_for_lookup = train_data_feeder.get_lookup_training_batch(loss_array, batch_size, info)
+
+        def lookup_train(batch):
+            return sess.run([model.get_lookup_loss(), model.get_p_at_1(), train_lookup_op],
+                            feed_dict=model.batch2feed_dict(batch))
+
+        avg_loss, p_at_1, _ = lookup_train(supervision_for_lookup)
+        train_writer.add_summary(get_summary_obj_lookup(avg_loss, p_at_1), step_i)
+        log.info("Step {0} lookup loss={1:.04f}".format(step_i, avg_loss))
+        return avg_loss
+
     def train_classification(step_i):
         batch = train_data_feeder.get_random_batch(batch_size)
         loss_val, acc, _ = sess.run([model.get_cls_loss(), model.get_acc(), train_cls],
@@ -160,6 +207,49 @@ def train_nli_w_dict(run_name,
         train_writer.add_summary(get_summary_obj(loss_val, acc), step_i)
 
         return loss_val, acc
+
+    lookup_loss_window = MovingWindow(20)
+
+    def train_classification_w_lookup(step_i):
+        data_indices, batch = train_data_feeder.get_lookup_batch(batch_size)
+        logits, = sess.run([model.get_lookup_logits()],
+                                feed_dict=model.batch2feed_dict(batch)
+                                )
+        term_ranks = np.argsort(logits[:, :, 1], axis=1)
+        batch = train_data_feeder.augment_dict_info(data_indices, term_ranks)
+
+        loss_val, acc, _ = sess.run([model.get_cls_loss(), model.get_acc(), train_cls],
+                                    feed_dict=model.batch2feed_dict(batch)
+                                    )
+        log.info("Step {0} train loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
+        train_writer.add_summary(get_summary_obj(loss_val, acc), step_i)
+
+        return loss_val, acc
+
+    def lookup_enabled(lookup_loss_window, step_i):
+        return step_i > model_config.lookup_min_step\
+               and lookup_loss_window.get_average() < model_config.lookup_threshold
+
+    def train_fn(step_i):
+        if lookup_enabled(lookup_loss_window, step_i):
+            loss, acc = train_classification_w_lookup((step_i))
+        else:
+            loss, acc = train_classification(step_i)
+        if f_train_lookup and step_i % model_config.lookup_train_frequency == 0:
+            try:
+                lookup_loss = train_lookup(step_i)
+                lookup_loss_window.append(lookup_loss, 1)
+            except NoLookupException:
+                log.warning("No possible lookup found")
+
+        return loss, acc
+
+    def debug_fn(batch):
+        y_lookup,  = sess.run([model.y_lookup, ],
+                                                   feed_dict=model.batch2feed_dict(batch)
+                                                   )
+        print(y_lookup)
+        return 0, 0
 
     def valid_fn(step_i):
         loss_list = []
@@ -183,7 +273,7 @@ def train_nli_w_dict(run_name,
     n_data = train_data_feeder.get_data_len()
     step_per_epoch = int((n_data+batch_size-1)/batch_size)
     tf_logging.debug("{} data point -> {} batches / epoch".format(n_data, step_per_epoch))
-    train_steps = step_per_epoch * num_epochs
+    train_steps = step_per_epoch * FLAGS.num_train_epochs
     tf_logging.debug("Max train step : {}".format(train_steps))
     valid_freq = 100
     save_interval = 60 * 20
@@ -193,7 +283,7 @@ def train_nli_w_dict(run_name,
     print("Initial step : ", init_step)
     for step_i in range(init_step, train_steps):
         if dev_fn is not None:
-            if step_i % valid_freq == 0:
+            if (step_i+1) % valid_freq == 0:
                 valid_fn(step_i)
 
         if save_fn is not None:
@@ -201,7 +291,7 @@ def train_nli_w_dict(run_name,
                 save_fn()
                 last_save = time.time()
 
-        loss, acc = train_classification(step_i)
+        loss, acc = train_fn(step_i)
 
     return save_fn()
 
@@ -253,11 +343,15 @@ def as_is_initializer_wight_sanity_check(checkpoint, name_that_should_appear, in
 
     return init_from_dict_reader
 
-
+def looks_like_path(path_like):
+    return "/" in path_like or "\\" in path_like
 
 def get_model_path(output_dir):
-    if FLAGS.output_dir[0] == "/":
-        run_name = output_dir.split("/")[-1]
+    if looks_like_path(output_dir):
+
+        head, run_name = os.path.split(output_dir)
+        if not run_name:
+            _, run_name = os.path.split(head)
         model_path = output_dir
     else:
         assert "/" not in output_dir
@@ -306,14 +400,25 @@ def dev_fn():
 
     is_training = FLAGS.do_train
     init_fn = get_checkpoint_init_fn()
-    model = get_model(seq_max, FLAGS.modeling, is_training)
 
-    augment_data_loader = DictAugmentedDataLoader(FLAGS.modeling, data_loader)
+    model_name = FLAGS.modeling
+    if FLAGS.modeling == NAME_DUMMY_WSSDR:
+        tf_logging.info("Using dummy WSSDR")
+        model_name = "wssdr"
+
+    model = get_model(seq_max, model_name, is_training)
+    model_config = JsonConfig.from_json_file(FLAGS.model_config_file)
+
+    # assert that the attribute exists. ( and it should be 0 or positive)
+    assert model_config.lookup_threshold >= 0
+    assert model_config.lookup_min_step >= 0
+    assert model_config.lookup_train_frequency > 0
+    augment_data_loader = DictAugmentedDataLoader(FLAGS.modeling, data_loader, FLAGS.use_cache)
 
     model_path, run_name = get_model_path(FLAGS.output_dir)
 
     if FLAGS.do_train:
-        saved_model = train_nli_w_dict(run_name, model, model_path, 2, augment_data_loader, init_fn)
+        saved_model = train_nli_w_dict(run_name, model, model_path, model_config, augment_data_loader, init_fn)
         if FLAGS.task_completion_mark:
             f = open(FLAGS.task_completion_mark, "w")
             f.write("Done")
@@ -333,4 +438,5 @@ def main(_):
 if __name__ == '__main__':
     flags.mark_flag_as_required("modeling")
     flags.mark_flag_as_required("init_checkpoint")
+    flags.mark_flag_as_required("num_train_epochs")
     app.run(main)

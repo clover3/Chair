@@ -1,6 +1,8 @@
 import logging
 import os
 import pickle
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import tensorflow as tf
 
@@ -62,7 +64,7 @@ def run_estimator(model_fn, input_fn, host_call=None):
           for key in sorted(result.keys()):
             tf_logging.info("  %s = %s", key, str(result[key]))
             writer.write("%s = %s\n" % (key, str(result[key])))
-
+        return result
     if FLAGS.do_predict:
         tf_logging.info("***** Running evaluation *****")
         tf_logging.info("  Batch size = %d", FLAGS.eval_batch_size)
@@ -81,7 +83,8 @@ class TrainConfig:
                  use_tpu,
                  use_one_hot_embeddings,
                  num_classes,
-                 iterations_per_loop
+                 iterations_per_loop,
+                 checkpoint_type
                  ):
         self.init_checkpoint = init_checkpoint
         self.learning_rate = learning_rate
@@ -91,6 +94,7 @@ class TrainConfig:
         self.use_one_hot_embeddings = use_one_hot_embeddings
         self.num_classes = num_classes
         self.iterations_per_loop = iterations_per_loop
+        self.checkpoint_type = checkpoint_type
 
     @classmethod
     def from_flags(cls, flags):
@@ -102,7 +106,8 @@ class TrainConfig:
             flags.use_tpu,
             flags.use_tpu,
             flags.num_classes,
-            flags.iterations_per_loop
+            flags.iterations_per_loop,
+            flags.checkpoint_type,
         )
 
 

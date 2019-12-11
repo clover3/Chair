@@ -1,8 +1,12 @@
 import tensorflow as tf
 
-from models.transformer import bert_common_v2 as bert_common
 from models.transformer import optimization_v2 as optimization
+from tlm.training import lm_model_fn
 from trainer.get_param_num import get_param_num
+
+
+def shift(v):
+    return tf.math.floormod(v+2, 3)
 
 
 def model_fn_classification(bert_config, train_config, logging, model_class):
@@ -20,6 +24,11 @@ def model_fn_classification(bert_config, train_config, logging, model_class):
     label_ids = features["label_ids"]
     label_ids = tf.reshape(label_ids, [-1])
 
+    if "is_real_example" in features:
+        is_real_example = tf.cast(features["is_real_example"], dtype=tf.float32)
+    else:
+        is_real_example = tf.ones(tf.shape(label_ids), dtype=tf.float32)
+
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
     model = model_class(
@@ -31,8 +40,27 @@ def model_fn_classification(bert_config, train_config, logging, model_class):
         use_one_hot_embeddings=train_config.use_one_hot_embeddings,
     )
 
-    enc = model.get_sequence_output()
-    logits = tf.keras.layers.Dense(train_config.num_classes, name="cls_dense")(enc[:, 0, :])
+    pooled = model.get_pooled_output()
+    if train_config.checkpoint_type != "bert_nli":
+        logits = tf.keras.layers.Dense(train_config.num_classes, name="cls_dense")(pooled)
+    else:
+        output_weights = tf.compat.v1.get_variable(
+            "output_weights", [3, bert_config.hidden_size],
+            initializer=tf.compat.v1.truncated_normal_initializer(stddev=0.02)
+        )
+
+        output_bias = tf.compat.v1.get_variable(
+            "output_bias", [3],
+            initializer=tf.zeros_initializer()
+        )
+
+        if is_training:
+            pooled = tf.layers.dropout(pooled,
+                                     rate=0.1,
+                                     training=tf.convert_to_tensor(is_training))
+
+        logits = tf.matmul(pooled, output_weights, transpose_b=True)
+        logits = tf.nn.bias_add(logits, output_bias)
 
     print('label_ids', label_ids.shape)
 
@@ -43,11 +71,19 @@ def model_fn_classification(bert_config, train_config, logging, model_class):
     tvars = tf.compat.v1.trainable_variables()
 
     initialized_variable_names = {}
+
+    if train_config.checkpoint_type == "bert":
+        assignment_fn = lm_model_fn.get_bert_assignment_map
+    elif train_config.checkpoint_type == "v2":
+        assignment_fn = lm_model_fn.assignment_map_v2_to_v2
+    elif train_config.checkpoint_type == "bert_nli":
+        assignment_fn = lm_model_fn.get_bert_nli_assignment_map
+    else:
+        raise Exception("checkpoint_type not specified")
+
     scaffold_fn = None
     if train_config.init_checkpoint:
-      (assignment_map, initialized_variable_names
-      ) = bert_common.get_assignment_map_from_checkpoint(tvars, train_config.init_checkpoint)
-      #assignment_map = bert_common.compress_assignment_map(assignment_map)
+      assignment_map, initialized_variable_names = assignment_fn(tvars, train_config.init_checkpoint)
       if train_config.use_tpu:
 
         def tpu_scaffold():
@@ -77,22 +113,23 @@ def model_fn_classification(bert_config, train_config, logging, model_class):
           scaffold_fn=scaffold_fn,
       )
     elif mode == tf.estimator.ModeKeys.EVAL:
-      def metric_fn(log_probs, label):
+      def metric_fn(log_probs, label, is_real_example):
           """Computes the loss and accuracy of the model."""
           log_probs = tf.reshape(
               log_probs, [-1, log_probs.shape[-1]])
           pred = tf.argmax(
               input=log_probs, axis=-1, output_type=tf.int32)
+
           label = tf.reshape(label, [-1])
           accuracy = tf.compat.v1.metrics.accuracy(
-              labels=label, predictions=pred)
+              labels=label, predictions=pred, weights=is_real_example)
 
           return {
               "accuracy": accuracy,
           }
 
       eval_metrics = (metric_fn, [
-          logits, label_ids
+          logits, label_ids, is_real_example
       ])
       output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
           mode=mode,

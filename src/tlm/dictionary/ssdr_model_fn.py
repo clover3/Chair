@@ -8,7 +8,7 @@ from models.transformer import optimization_v2 as optimization
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
 from tlm.training.grad_accumulation import get_accumulated_optimizer_from_config
-from tlm.training.model_fn import metric_fn, get_assignment_map_as_is
+from tlm.training.lm_model_fn import metric_fn, get_assignment_map_as_is
 from trainer.get_param_num import get_param_num
 
 
@@ -54,6 +54,11 @@ def model_fn_dict_reader(bert_config, ssdr_config, train_config, logging, model_
         else:
             d_segment_ids = None
 
+        if dict_run_config.use_ab_mapping_mask:
+            ab_mapping_mask = reform_a_input(features["ab_mapping_mask"])
+        else:
+            ab_mapping_mask = None
+
         is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
         model = model_class(
@@ -68,6 +73,7 @@ def model_fn_dict_reader(bert_config, ssdr_config, train_config, logging, model_
                 d_segment_ids=d_segment_ids,
                 d_location_ids=d_location_ids,
                 ab_mapping=ab_mapping,
+                ab_mapping_mask=ab_mapping_mask,
                 use_one_hot_embeddings=train_config.use_one_hot_embeddings,
         )
 
@@ -195,7 +201,8 @@ def input_fn_builder(input_files, flags, is_training, num_cpu_threads=4):
             "masked_lm_weights": FixedLenFeature([max_predictions_per_seq], tf.float32),
             "lookup_idx": FixedLenFeature([1], tf.int64),
             "selected_word": FixedLenFeature([max_word_length], tf.int64),
-            "ab_mapping": FixedLenFeature([def_per_batch], tf.int64)
+            "ab_mapping": FixedLenFeature([def_per_batch], tf.int64),
+            "ab_mapping_mask": FixedLenFeature([inner_batch_size * def_per_batch], tf.int64),
         }
 
         active_feature = ["input_ids", "input_mask", "segment_ids",
@@ -217,6 +224,9 @@ def input_fn_builder(input_files, flags, is_training, num_cpu_threads=4):
 
         if flags.use_d_segment_ids:
             active_feature.append("d_segment_ids")
+
+        if flags.use_ab_mapping_mask:
+            active_feature.append("ab_mapping_mask")
 
         if max_word_length > 0:
             active_feature.append("selected_word")

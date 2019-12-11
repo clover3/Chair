@@ -1,5 +1,3 @@
-import tensorflow as tf
-import time
 from models.transformer.tranformer_nli import transformer_nli
 from trainer.tf_train_module import *
 from trainer.tf_module import epoch_runner
@@ -15,6 +13,23 @@ import sys
 from path import output_path
 from path import model_path
 from datetime import datetime
+import sys
+from datetime import datetime
+
+from data_generator.NLI import nli
+from data_generator.shared_setting import NLI
+from google_wrap.gs_wrap import download_model_last_auto
+from log import log as log_module
+from misc_lib import *
+from models.transformer.hyperparams import HPBert
+from models.transformer.tranformer_nli import transformer_nli
+from path import model_path
+from path import output_path
+from trainer.model_saver import save_model, load_bert_v2
+from trainer.np_modules import *
+from trainer.tf_module import epoch_runner
+from trainer.tf_train_module import *
+
 
 def get_model_path(run_name, step_name):
     return os.path.join(model_path, 'runs', run_name, step_name)
@@ -123,6 +138,7 @@ def test_nli(hparam, nli_setting, run_name, data, model_path):
 def save_report(task, run_name, init_model, avg_acc):
     file_name = "{}_{}".format(run_name, init_model)
     p = os.path.join(output_path, "report", file_name)
+    exist_or_mkdir(os.path.join(output_path, "report"))
     f = open(p, "w")
     time_str = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
     f.write("{}\n".format(time_str))

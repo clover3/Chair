@@ -1,5 +1,6 @@
 import os
 from os.path import dirname
+
 from misc_lib import exist_or_mkdir
 
 project_root = os.path.abspath(dirname(dirname((os.path.abspath(__file__)))))
@@ -53,7 +54,7 @@ def get_latest_model_path_from_dir_path(save_dir):
                     max_id = model_id
 
     if not max_id:
-        return ""
+        return False
     else:
         return os.path.join(save_dir, max_id)
 

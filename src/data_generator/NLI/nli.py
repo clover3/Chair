@@ -1,16 +1,15 @@
-from data_generator.text_encoder import SubwordTextEncoder, CLS_ID, SEP_ID
-from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
-import tensorflow as tf
-import csv
-from path import data_path
-from cache import *
-from evaluation import *
-from collections import Counter
-import unicodedata
-from data_generator.NLI.enlidef import *
 import copy
+import csv
+import unicodedata
+from collections import Counter
+
+from cache import *
+from data_generator.NLI.enlidef import *
 from data_generator.data_parser.esnli import load_split
+from data_generator.text_encoder import SubwordTextEncoder, CLS_ID, SEP_ID
 from data_generator.tf_gfile_support import tf_gfile
+from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
+from evaluation import *
 
 num_classes = 3
 
@@ -20,14 +19,18 @@ corpus_dir = os.path.join(data_path, "nli")
 
 
 class DataLoader:
-    def __init__(self, max_sequence, vocab_filename, using_alt_tokenizer= False):
+    def __init__(self, max_sequence, vocab_filename, using_alt_tokenizer=False, load_both_dev=False):
         self.train_data = None
         self.dev_data = None
         self.test_data = None
 
         self.train_file = os.path.join(corpus_dir, "train.tsv")
         self.dev_file = os.path.join(corpus_dir, "dev_matched.tsv")
+        self.dev_file2 = os.path.join(corpus_dir, "dev_mismatched.tsv")
         self.max_seq = max_sequence
+        self.load_both_dev = load_both_dev
+        self.CLS_ID = CLS_ID
+        self.SEP_ID = SEP_ID
         voca_path = os.path.join(data_path, vocab_filename)
         assert os.path.exists(voca_path)
         self.name = "nli"
@@ -59,6 +62,8 @@ class DataLoader:
 
         if self.dev_data is None:
             self.dev_data = list(self.example_generator(self.dev_file))
+            if self.load_both_dev:
+                self.dev_data += list(self.example_generator(self.dev_file2))
         save_to_pickle(self.dev_data, "nli_dev_cache")
         return self.dev_data
 
@@ -345,19 +350,19 @@ class DataLoader:
         # the entire model is fine-tuned.
         tokens = []
         segment_ids = []
-        tokens.append(CLS_ID)
+        tokens.append(self.CLS_ID)
         segment_ids.append(0)
         for token in tokens_a:
             tokens.append(token)
             segment_ids.append(0)
-        tokens.append(SEP_ID)
+        tokens.append(self.SEP_ID)
         segment_ids.append(0)
 
         if tokens_b:
             for token in tokens_b:
                 tokens.append(token)
                 segment_ids.append(1)
-            tokens.append(SEP_ID)
+            tokens.append(self.SEP_ID)
             segment_ids.append(1)
 
         input_ids = tokens

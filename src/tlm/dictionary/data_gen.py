@@ -1,4 +1,3 @@
-import os
 import random
 from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict
@@ -11,13 +10,11 @@ import tlm.data_gen.bert_data_gen as btd
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import pick1, TimeEstimator, average
 from models.classic.stopword import load_stopwords
-from path import data_path
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tf_util.tf_logging import tf_logging
 from tlm.data_gen.base import UnmaskedPairGen, pad0
 from tlm.dictionary.data_gen_base import Word, SegmentInstanceWithDictEntry, TOKEN_LINE_SEP, TOKEN_DEF_SEP, \
     DictPredictionEntry, DictLMFeaturizer, DictLMFeaturizerUnmasked, MultiSenseEntry
-from trainer.tf_module import get_batches_ex
 
 
 def fetch_int_feature(v):
@@ -138,270 +135,7 @@ def get_locations(tokens, target_word):
     return locations
 
 
-class DictAuxDataFeederInterface(ABC):
-    def __init__(self, data):
-        self.data = data
-        self.data_len = len(self.data)
-
-    def get_data_len(self):
-        return self.data_len
-
-    @abstractmethod
-    def get_random_batch(self, batch_size):
-        pass
-
-
 # Class that contains common functions
-class DictAuxDataFeeder(DictAuxDataFeederInterface):
-    def __init__(self, data):
-        super(DictAuxDataFeeder, self).__init__(data)
-        self.stopword = load_stopwords()
-        vocab_file = os.path.join(data_path, "bert_voca.txt")
-        self.tokenizer = tokenization.FullTokenizer(
-            vocab_file=vocab_file, do_lower_case=True)
-
-        self.dict = self.encode_dict_as_feature(self.raw_dictionary)
-
-        # data is already truncated and padded
-        self.data = data
-
-        self.data_len = len(self.data)
-        self.data_info = {}
-        ticker = TimeEstimator(len(data), "nli indexing", 100)
-        for data_idx, e in enumerate(data):
-            input_ids, input_mask, segment_ids, y = e
-            tokens = self.tokenizer.convert_ids_to_tokens(input_ids)
-            self.data_info[data_idx] = self.index(tokens)
-            ticker.tick()
-
-    @abstractmethod
-    def encode_dict_as_feature(self, dictionary):
-        pass
-
-    def get_data_len(self):
-        return self.data_len
-
-    def index(self, tokens):
-        words = get_word_tokens(tokens)
-        unique_words = filter_unique_words(words)
-        valid_words = []
-        for word in unique_words:
-            if word.word in self.stopword:
-                pass
-            elif not self.dict_contains(word.word):
-                pass
-            else:
-                word.location = get_locations(tokens, word)
-                word.location = word.location[:self.get_max_d_loc()]
-                word.enc_location = pad0(word.location, self.get_max_d_loc())
-                valid_words.append(word)
-
-        return valid_words
-
-    @abstractmethod
-    def get_max_d_loc(self):
-        pass
-
-    @abstractmethod
-    def dict_contains(self, word: str): #
-        pass
-
-
-class DictAugment(DictAuxDataFeeder):
-    def __init__(self, data, dictionary):
-        self.max_def_length = 256
-        self.max_d_loc = 16
-        self.raw_dictionary = dictionary
-        super(DictAugment, self).__init__(data)
-
-    def get_max_d_loc(self):
-        return self.max_d_loc
-
-    def encode_dict_as_feature(self, dictionary):
-        new_dict = {}
-        for word, dict_def in dictionary.items():
-            d_input_ids = self.tokenizer.convert_tokens_to_ids(dict_def)
-            d_input_ids = d_input_ids[:self.max_def_length]
-            d_input_mask = [1] * len(d_input_ids)
-            d_input_ids = pad0(d_input_ids, self.max_def_length)
-            d_input_mask = pad0(d_input_mask, self.max_def_length)
-            new_dict[word] = d_input_ids, d_input_mask
-        return new_dict
-
-    def dict_contains(self, word: str):
-        return word in self.dict
-
-    def get_best_def(self, data_idx, ranked_locations):
-        location_to_word = {}
-        for word in self.data_info[data_idx]:
-            for loc in word.location:
-                location_to_word[loc] = word
-
-        for loc in ranked_locations:
-            if loc in location_to_word:
-                return location_to_word[loc]
-
-        return None
-
-    def get_random_batch(self, batch_size):
-        data = []
-        for _ in range(batch_size):
-            data_idx = random.randint(0, self.data - 1)
-            input_ids, input_mask, segment_ids, y = self.data[data_idx]
-            appeared_words = self.data_info[data_idx]
-            if appeared_words:
-                word = pick1(appeared_words)
-                d_input_ids, d_input_mask = self.dict[word.word]
-                d_location_ids = word.location
-            else:
-                d_input_ids = [0] * self.max_def_length
-                d_input_mask = [0] * self.max_def_length
-                d_location_ids = [0] * self.max_d_loc
-
-            e = input_ids, input_mask, segment_ids, d_input_ids, d_input_mask, d_location_ids, y
-            data.append(e)
-        return get_batches_ex(data, batch_size, 7)[0]
-
-
-class SSDRAugment(DictAuxDataFeeder):
-    def __init__(self, data, dictionary, ssdr_config, def_per_batch, max_def_length):
-        self.max_def_length = max_def_length
-        self.max_d_loc = ssdr_config.max_loc_length
-        self.def_per_batch = def_per_batch
-        self.raw_dictionary = dictionary
-        super(SSDRAugment, self).__init__(data)
-
-    def get_max_d_loc(self):
-        return self.max_d_loc
-
-    def dict_contains(self, word: str):
-        return word in self.dict
-
-    def encode_dict_as_feature(self, dictionary):
-        new_dict = {}
-        for word, entries in dictionary.items():
-            enc_entries = []
-            for dict_def in entries:
-                d_input_ids = self.tokenizer.convert_tokens_to_ids(dict_def)
-                d_input_ids = d_input_ids[:self.max_def_length]
-                d_input_mask = [1] * len(d_input_ids)
-                d_segment_ids = [0] * len(d_input_ids)
-
-                d_input_ids = pad0(d_input_ids, self.max_def_length)
-                d_input_mask = pad0(d_input_mask, self.max_def_length)
-                d_segment_ids = pad0(d_segment_ids, self.max_def_length)
-
-                e = d_input_ids, d_input_mask, d_segment_ids
-                enc_entries.append(e)
-
-            new_dict[word] = enc_entries
-        return new_dict
-
-    @staticmethod
-    def drop_definitions(def_entries_list, def_per_batch):
-        n_all_def = sum([len(entry) for entry in def_entries_list])
-
-        iterations = 0
-
-        inst_idx = 0
-        while n_all_def >= def_per_batch:
-            iterations += 1
-            n_defs = len(def_entries_list[inst_idx])
-            if n_defs > 1:
-                drop_idx = random.randint(0, n_defs-1)
-                def_entries_list[inst_idx] = def_entries_list[inst_idx][:drop_idx] \
-                                                      + def_entries_list[inst_idx][drop_idx+1:]
-                n_all_def -= 1
-
-            inst_idx += 1
-            if inst_idx == len(def_entries_list):
-                inst_idx = 0
-
-            assert iterations < 10000
-
-    @staticmethod
-    def pack_data(def_entries_list, max_def_length, def_per_batch):
-        ab_map = []
-        batch_defs = []
-        for idx, inst in enumerate(def_entries_list):
-            for def_entry in inst:
-                ab_map.append(idx)
-                batch_defs.append(def_entry)
-
-        assert len(ab_map) == len(batch_defs)
-        while len(batch_defs) < def_per_batch:
-            ab_map.append(0)
-            dummy = [0] * max_def_length
-            dummy_entry = (dummy, dummy, dummy)
-            batch_defs.append(dummy_entry)
-
-        return ab_map, batch_defs
-
-    def get_random_batch(self, batch_size):
-        problem_data = []
-        def_entries_list = []
-        for _ in range(batch_size):
-            data_idx = random.randint(0, self.data_len - 1)
-            appeared_words = self.data_info[data_idx]
-            if appeared_words:
-                word = pick1(appeared_words)
-                def_entries_list.append(self.dict[word.word])
-                d_location_ids = word.location
-            else:
-                def_entries_list.append([])
-                d_location_ids = [0] * self.max_d_loc
-
-            input_ids, input_mask, segment_ids, y = self.data[data_idx]
-            e = input_ids, input_mask, segment_ids, d_location_ids, y
-            problem_data.append(e)
-
-        self.drop_definitions(def_entries_list, self.def_per_batch)
-
-        ab_map, batch_defs = self.pack_data(def_entries_list, self.max_def_length, self.def_per_batch)
-        ab_map = np.expand_dims(ab_map, 1)
-
-        a_part = get_batches_ex(problem_data, batch_size, 5)[0]
-        b_part = get_batches_ex(batch_defs, self.def_per_batch, 3)[0]
-
-        return a_part + b_part + [ab_map]
-
-    def get_all_batches(self, batch_size):
-        problem_data = []
-        def_entries_list = []
-
-        for data_idx in self.data_info.keys():
-            appeared_words = self.data_info[data_idx]
-            if appeared_words:
-                word = pick1(appeared_words)
-                def_entries_list.append(self.dict[word.word])
-                d_location_ids = word.location
-            else:
-                def_entries_list.append([])
-                d_location_ids = [0] * self.max_d_loc
-
-            input_ids, input_mask, segment_ids, y = self.data[data_idx]
-            e = input_ids, input_mask, segment_ids, d_location_ids, y
-            problem_data.append(e)
-
-        n_insts = len(def_entries_list)
-        assert n_insts == len(problem_data)
-
-        batches = []
-        for i in range(0, n_insts, batch_size):
-            local_batch_len = min(batch_size, n_insts - i)
-            current_problems = problem_data[i:i+local_batch_len]
-            current_entries = def_entries_list[i:i+local_batch_len]
-            self.drop_definitions(current_entries, self.def_per_batch)
-
-            a_part = get_batches_ex(current_problems, batch_size, 5)[0]
-            ab_map, batch_defs = self.pack_data(current_entries, self.max_def_length, self.def_per_batch)
-            b_part = get_batches_ex(batch_defs, self.def_per_batch, 3)[0]
-            ab_map = np.expand_dims(ab_map, 1)
-
-            batch = a_part + b_part + [ab_map]
-            batches.append(batch)
-
-        return batches
 
 
 def hide_word(tokens, target_word, d_mask_token):
@@ -909,6 +643,15 @@ class SenseSelectingDictionaryReaderGen(UnmaskedPairGen):
     def encode_locations(self, word_loc_list):
         return pad0(word_loc_list[:self.max_d_loc], self.max_d_loc)
 
+    @staticmethod
+    def _get_ab_mapping_mask(ab_map, a_size, b_size):
+        ab_mapping_mask = np.zeros([a_size, b_size], int)
+
+        for b_idx, a_idx in enumerate(ab_map):
+            ab_mapping_mask[a_idx, b_idx] = 1
+
+        return np.reshape(ab_mapping_mask, [-1])
+
     def write_instances(self, batched_inst_list, outfile):
         writer = RecordWriterWrap(outfile)
         example_numbers = []
@@ -929,6 +672,7 @@ class SenseSelectingDictionaryReaderGen(UnmaskedPairGen):
                 "d_input_mask": list(),
                 "d_segment_ids": list(),
                 "ab_mapping": pad0(ab_map, self.def_per_batch),
+                "ab_mapping_mask": self._get_ab_mapping_mask(ab_map, self.batch_size, self.def_per_batch),
             }
             for inst in batched_inst_list:
                 input_ids, input_mask, segment_ids = self.get_basic_input_features_as_list(inst.tokens, inst.segment_ids)

@@ -20,6 +20,7 @@ class SSDR(base.BertModelInterface):
                  d_segment_ids,
                  d_location_ids,
                  ab_mapping,
+                 ab_mapping_mask=None,
                  use_one_hot_embeddings=True,
                  scope=None,
                  ):
@@ -46,13 +47,24 @@ class SSDR(base.BertModelInterface):
                 config, ssdr_config, input_ids, input_mask, token_type_ids, use_one_hot_embeddings)
 
             key_out = self.main_transformer.build_key()
+
+            self.debug_intermdediate = self.main_transformer.last_intermediate_output
+            self.debug1 = self.main_transformer.debug1
             self.dict_tranformer = SecondTransformer(
                 config, ssdr_config, d_input_ids, d_input_mask, d_segment_ids, use_one_hot_embeddings)
 
             aligned_key = tf.gather(key_out, ab_mapping)
+            #### Debug Codes
+
+
+
+
+            #### End Debug ###
+
 
             scores, info_vectors = self.dict_tranformer.build(aligned_key)
-            info_vector = select_value(batch_size, ab_mapping, scores, info_vectors, "sample")
+
+            info_vector = select_value(batch_size, ab_mapping, scores, info_vectors, "sample", ab_mapping_mask)
 
             all_encoder_layers = self.main_transformer.build_remain(info_vector, d_location_ids)
 
@@ -179,16 +191,21 @@ class MainTransformer(TransformerBase):
             self.attention_mask = bc.create_attention_mask_from_input_mask(
                 input_tensor, self.input_mask)
             prev_output = bc.reshape_to_matrix(input_tensor)
+
             for layer_idx in range(self.layers_before_key_pooling):
                 with tf.compat.v1.variable_scope("layer_%d" % layer_idx):
                     intermediate_output, prev_output = self.forward_layer(prev_output)
-
+                    intermediate_output = tf.reshape(intermediate_output,
+                                                     [self.batch_size*self.seq_length, self.config.intermediate_size])
                     final_output = bc.reshape_from_matrix(prev_output, self.input_shape)
                     self.all_layer_outputs.append(final_output)
+
+        self.last_intermediate_output = intermediate_output
 
         self.last_key_layer = prev_output
         with tf.compat.v1.variable_scope("mr_key"):
             key_vectors = bc.dense(self.key_dimension, self.initializer)(intermediate_output)
+            self.debug1 = key_vectors
             key_vectors = tf.reshape(key_vectors, [self.batch_size, self.seq_length, self.key_dimension])
             key_output = self.key_pooling(key_vectors)
         return key_output
@@ -335,6 +352,7 @@ class SecondTransformer(TransformerBase):
             input_shape = bc.get_shape_list(input_tensor, expected_rank=3)
 
             mask_for_key = tf.ones([self.batch_size, num_key_tokens], dtype=tf.int64)
+            self.input_mask = tf.cast(self.input_mask, tf.int64)
             self.input_mask = tf.concat([mask_for_key, self.input_mask], axis=1)
             self.seq_length = self.seq_length + num_key_tokens
 
@@ -361,7 +379,9 @@ def align_keys(keys, ab_mapping):
     return tf.gather(keys, ab_mapping)
 
 
-def select_value(a_size, ab_mapping, b_scores, b_items, method):
+
+# ab_mapping_mask =
+def select_value(a_size, ab_mapping, b_scores, b_items, method, ab_mapping_mask):
     # [b_size]
     b_scores = tf.reshape(b_scores, [-1])
     b_size = bc.get_shape_list2(b_items)[0]
@@ -369,6 +389,8 @@ def select_value(a_size, ab_mapping, b_scores, b_items, method):
     t = tf.cast(t, tf.int32)
     indice = tf.stack([tf.range(b_size), t], 1)
     collect_bin = tf.scatter_nd(indice, tf.ones([b_size], tf.float32), [b_size, a_size])
+    if ab_mapping_mask is not None:
+        collect_bin = collect_bin * tf.cast(tf.transpose(ab_mapping_mask), tf.float32)
     scattered_score = tf.transpose(tf.expand_dims(b_scores, 1) * collect_bin)
     # scattered_score :  [a_size, b_size], if not corresponding item, the score is zero
 
@@ -379,10 +401,9 @@ def select_value(a_size, ab_mapping, b_scores, b_items, method):
         remover = tf.transpose(tf.ones([b_size, a_size]) - collect_bin) * -10000.00
         scattered_score += remover
         selected_idx = categorical_sampling(scattered_score)
-        #selected_idx = tf.random.categorical(scattered_score, 1)
 
     result = gather(b_items, selected_idx)
+
     #[n_items, n_layers, hidden]
     return result
-    #return tf.gather_nd(b_items, selected_idx)
 

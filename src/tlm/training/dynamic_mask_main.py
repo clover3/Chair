@@ -6,15 +6,16 @@ import tensorflow as tf
 
 import tlm.dictionary.ssdr_model_fn as ssdr_model_fn
 import tlm.model.base as modeling
+from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging, logging
 from tlm.dictionary.dict_reader_transformer import DictReaderModel
 from tlm.dictionary.sense_selecting_dictionary_reader import SSDR
 from tlm.model.base import BertModel
 from tlm.model_cnfig import JsonConfig
-from tlm.tlm.tlm2_model import tlm2
+from tlm.tlm.tlm2_network import tlm2
 from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
 from tlm.training.input_fn import input_fn_builder_unmasked, input_fn_builder_masked
-from tlm.training.model_fn import model_fn_random_masking, model_fn_target_masking, get_nli_ex_model_segmented
+from tlm.training.lm_model_fn import model_fn_random_masking, model_fn_target_masking, get_nli_ex_model_segmented
 from tlm.training.train_flags import *
 
 
@@ -78,7 +79,7 @@ def main(_):
 
     lm_pretrain(input_files)
 
-
+@report_run
 def lm_pretrain(input_files):
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
 
@@ -142,6 +143,7 @@ def lm_pretrain(input_files):
         )
     elif task == TASK_TLM:
         tf_logging.info("Running TLM")
+        model_config = modeling.BertConfig.from_json_file(FLAGS.model_config_file)
         input_fn_builder = input_fn_builder_unmasked
         if FLAGS.modeling == "nli_ex":
             priority_model = get_nli_ex_model_segmented
@@ -153,6 +155,7 @@ def lm_pretrain(input_files):
         model_fn = model_fn_target_masking(
             bert_config=bert_config,
             train_config=train_config,
+            model_config=model_config,
             logging=tf_logging,
             model_class=BertModel,
             priority_model=priority_model,
@@ -219,6 +222,7 @@ def lm_pretrain(input_files):
           for key in sorted(result.keys()):
             tf_logging.info("  %s = %s", key, str(result[key]))
             writer.write("%s = %s\n" % (key, str(result[key])))
+        return result
 
     if FLAGS.do_predict:
         tf_logging.info("***** Running prediction *****")
@@ -231,6 +235,7 @@ def lm_pretrain(input_files):
         result = estimator.predict(input_fn=predict_input_fn, yield_single_examples=False)
         tf_logging.info("***** Pickling.. *****")
         pickle.dump(list(result), open(FLAGS.out_file, "wb"))
+
 
 
 if __name__ == "__main__":

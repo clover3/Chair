@@ -96,6 +96,9 @@ def get_assignment_map_from_checkpoint(tvars, init_checkpoint):
     return (assignment_map, initialized_variable_names)
 
 
+
+
+
 def compress_assignment_map(assignment_map):
     new_assignment_map = {}
 

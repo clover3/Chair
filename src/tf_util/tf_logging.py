@@ -1,9 +1,13 @@
 import logging
+import os
 import time
 
 from absl import logging as ab_logging
 
 logging.root.addHandler(logging.StreamHandler())
+
+if "TF_FILE_LOG" in os.environ:
+    logging.root.addHandler(logging.FileHandler(os.environ["TF_FILE_LOG"]))
 tf_logging = logging.getLogger('tensorflow')
 tf_logging.info("1")
 

@@ -97,6 +97,8 @@ flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
 
 flags.DEFINE_integer("num_train_steps", 100000, "Number of training steps.")
 
+flags.DEFINE_integer("num_train_epochs", 2, "If applicable, it precedes the train_steps.")
+
 flags.DEFINE_integer("num_warmup_steps", 10000, "Number of warmup steps.")
 
 flags.DEFINE_integer("save_checkpoints_steps", 5000,
@@ -170,3 +172,7 @@ flags.DEFINE_string("task_completion_mark", "", "make this file if the task is c
 flags.DEFINE_integer("inner_batch_size", 60, "Number of classes (in case of classification task.")
 
 flags.DEFINE_integer("def_per_batch", 180, "Number of classes (in case of classification task.")
+
+flags.DEFINE_bool("use_ab_mapping_mask", False, "Whether to use ab_mapping_mask.")
+
+flags.DEFINE_bool("use_cache", False, "Whether to use cached data.")

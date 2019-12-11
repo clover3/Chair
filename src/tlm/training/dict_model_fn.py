@@ -9,7 +9,7 @@ from tlm.model.lm_objective import get_masked_lm_output, get_next_sentence_outpu
 from tlm.model.masking import random_masking
 from tlm.training.grad_accumulation import get_accumulated_optimizer_from_config
 from tlm.training.input_fn_common import format_dataset
-from tlm.training.model_fn import metric_fn, get_assignment_map_as_is
+from tlm.training.lm_model_fn import metric_fn, get_assignment_map_as_is
 from trainer.get_param_num import get_param_num
 
 
@@ -23,6 +23,7 @@ class DictRunConfig:
                  inner_batch_size= None,
                  def_per_batch=None,
                  use_d_segment_ids=False,
+                 use_ab_mapping_mask=False,
                  ):
         self.use_target_pos_emb = use_target_pos_emb
         self.is_bert_checkpoint = is_bert_checkpoint
@@ -32,6 +33,7 @@ class DictRunConfig:
         self.inner_batch_size = inner_batch_size
         self.def_per_batch = def_per_batch
         self.use_d_segment_ids = use_d_segment_ids
+        self.use_ab_mapping_mask = use_ab_mapping_mask
 
     @classmethod
     def from_flags(cls, flags):
@@ -44,6 +46,7 @@ class DictRunConfig:
             flags.inner_batch_size,
             flags.def_per_batch,
             flags.use_d_segment_ids,
+            flags.use_ab_mapping_mask,
         )
 
 
