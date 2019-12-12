@@ -4,7 +4,10 @@ from tlm.training.train_flags import FLAGS
 
 
 def flag_to_run_name(FLAGS):
-    return FLAGS.output_dir.split("/")[-1]
+    if FLAGS.run_name is not None:
+        return FLAGS.run_name
+    else:
+        return FLAGS.output_dir.split("/")[-1]
 
 
 def report_run(func):

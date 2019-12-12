@@ -5,7 +5,9 @@ import tensorflow as tf
 from absl import app
 
 import trainer.tf_train_module_v2 as train_module
+from cache import load_cache, save_to_pickle
 from data_generator.NLI import nli
+from data_generator.common import get_tokenizer
 from log import log as log_module
 from misc_lib import *
 from path import output_path, get_bert_full_path, get_latest_model_path_from_dir_path
@@ -18,6 +20,7 @@ from tlm.training.lm_model_fn import get_bert_assignment_map, get_assignment_map
 from tlm.training.train_flags import *
 from trainer.model_saver import save_model_to_dir_path, load_model, get_canonical_model_path
 from trainer.tf_module import get_loss_from_batches
+from visualize.html_visual import Cell, HtmlVisualizer
 
 
 def setup_summary_writer(exp_name, sess):
@@ -78,6 +81,54 @@ def debug_names(is_training):
         print(name)
 
 
+class WSSDRRunner:
+    def __init__(self, model, lookup_augment_fn, sess=None):
+        if sess is None:
+            self.sess = train_module.init_session()
+            self.sess.run(tf.compat.v1.global_variables_initializer())
+        else:
+            self.sess = sess
+
+        self.model = model
+        self.lookup_augment_fn = lookup_augment_fn
+
+    def load_last_saved_model(self, model_path):
+        last_saved = get_latest_model_path_from_dir_path(model_path)
+        load_model(self.sess, last_saved)
+        tf_logging.info("Loading previous model from {}".format(last_saved))
+
+    def run_batches_wo_lookup(self, batches):
+        return self._run_batches(batches, self.run_batch)
+
+    def run_batches_w_lookup(self, batches):
+        return self._run_batches(batches, self.run_batch_with_lookup)
+
+    def _run_batches(self, batches, batch_run_fn):
+        loss_list, acc_list = zip(*lmap(batch_run_fn, batches))
+        loss_val = average(loss_list)
+        acc = average(acc_list)
+        return loss_val, acc
+
+    def run_batch(self, batch):
+        loss_val, acc = self.sess.run([self.model.get_cls_loss(), self.model.get_acc()],
+                                      feed_dict=self.model.batch2feed_dict(batch)
+                                      )
+        return loss_val, acc
+
+    def get_term_rank(self, batch):
+        logits, = self.sess.run([self.model.get_lookup_logits()],
+                           feed_dict=self.model.batch2feed_dict(batch)
+                           )
+        ranks = np.argsort(logits[:, :, 1], axis=1)
+        return np.flip(ranks, axis=1)
+
+    def run_batch_with_lookup(self, indice_n_batch):
+        indice, batch = indice_n_batch
+        term_ranks = self.get_term_rank(batch)
+        batch = self.lookup_augment_fn(indice, term_ranks)
+        return self.run_batch(batch)
+
+
 def eval_nli_w_dict(run_name,
                     model: DictReaderInterface,
                     model_path,
@@ -85,30 +136,139 @@ def eval_nli_w_dict(run_name,
     print("Eval nil :", run_name)
     tf_logging.debug("Building graph")
     batch_size = FLAGS.train_batch_size
+    dev_data_feeder = data_feeder_loader.get_dev_feeder()
+    dev_batches = dev_data_feeder.get_all_batches(batch_size)
 
-    sess = train_module.init_session()
-    sess.run(tf.compat.v1.global_variables_initializer())
-    last_saved = get_latest_model_path_from_dir_path(model_path)
-    dev_batches = data_feeder_loader.get_dev_feeder().get_all_batches(batch_size)
+    runner = WSSDRRunner(model, dev_data_feeder.augment_dict_info)
+    runner.load_last_saved_model(model_path)
 
-    tf_logging.info("Loading previous model from {}".format(last_saved))
-    load_model(sess, last_saved)
     def valid_fn(step_i):
-        loss_list = []
-        acc_list = []
-        for batch in dev_batches:
-            loss_val, acc = sess.run([model.get_cls_loss(), model.get_acc()],
-                                                   feed_dict=model.batch2feed_dict(batch)
-                                                   )
-            loss_list.append(loss_val)
-            acc_list.append(acc)
+        loss, acc = runner.run_batches_wo_lookup(dev_batches)
+        print("Dev loss={1:.04f} acc={2:.03f}".format(step_i, loss, acc))
+        return acc
 
-        loss_val = average(loss_list)
-        acc = average(acc_list)
-        print("Dev loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
-        return average(acc_list)
+    return valid_fn(0)
 
-    valid_fn(0)
+def eval_nli_w_dict_lookup(run_name,
+                    model: DictReaderInterface,
+                    model_path,
+                    data_feeder_loader):
+    print("eval_nli_w_dict_lookup :", run_name)
+    tf_logging.debug("Building graph")
+    batch_size = FLAGS.train_batch_size
+    dev_data_feeder = data_feeder_loader.get_dev_feeder()
+    runner = WSSDRRunner(model, dev_data_feeder.augment_dict_info)
+    runner.load_last_saved_model(model_path)
+
+    dev_batches = dev_data_feeder.get_all_batches(batch_size, True)
+    n_batches = len(dev_batches)
+    print('{} batches, about {} data'.format(n_batches, n_batches*batch_size))
+    loss, acc = runner.run_batches_w_lookup(dev_batches)
+    print("Dev total loss={0:.04f} acc={1:.03f}".format(loss, acc))
+    return acc
+
+
+
+def demo_nli_w_dict(run_name,
+                    model: WSSDRWrapper,
+                    model_path,
+                    data_feeder_loader):
+    print("Demonstrate nil_w_dict :", run_name)
+    tf_logging.debug("Building graph")
+    batch_size = FLAGS.train_batch_size
+
+    dev_data_feeder = data_feeder_loader.get_dev_feeder()
+    runner = WSSDRRunner(model, dev_data_feeder.augment_dict_info)
+    runner.load_last_saved_model(model_path)
+    dev_batches = dev_data_feeder.get_all_batches(batch_size, True)
+    n_batches = len(dev_batches)
+    tokenizer = get_tokenizer()
+    html = HtmlVisualizer("nli_w_dict_demo.html")
+
+
+
+    def fetch_fn(step_i):
+        for indice, batch in dev_batches[:1]:
+            print(indice)
+            cache_name = "term_ranks_logits_cache"
+            logits = load_cache(cache_name)
+            if logits is None:
+                logits, = runner.sess.run([runner.model.get_lookup_logits()],
+                                        feed_dict=runner.model.batch2feed_dict(batch)
+                                        )
+            raw_scores = logits[:, :, 1]
+            term_ranks = np.argsort(logits[:, :, 1], axis=1)
+            save_to_pickle(logits, cache_name)
+
+            x0, x1, x2, x3, y, x4, x5, x6, ab_map, ab_mapping_mask = batch
+
+            for idx in range(len(indice)):
+                ranks = term_ranks[idx]
+                data_idx = indice[idx]
+                input_ids = x0[idx]
+                tokens = tokenizer.convert_ids_to_tokens(input_ids)
+
+                words = dev_data_feeder.data_info[data_idx]
+                location_to_word = dev_data_feeder.invert_index_word_locations(words)
+
+                row = []
+                for rank in term_ranks[idx]:
+                    row.append(Cell(rank))
+
+                for rank in ranks:
+                    if rank in location_to_word and rank != 0:
+                        highest_rank = rank
+                        break
+                for rank in ranks[::-1]:
+                    if rank in location_to_word and rank != 0:
+                        lowest_rank = rank
+                        break
+
+
+                html.write_table([row])
+                t1 = []
+                s1 = []
+                t2 = []
+                s2 = []
+                text = [t1, t2]
+                score_row = [s1, s2]
+
+                sent_idx = 0
+                for i, t in enumerate(tokens):
+                    score = raw_scores[idx, i]
+                    if i in location_to_word:
+                        if i == highest_rank:
+                            c = Cell(tokens[i], 150)
+                        elif i == lowest_rank:
+                            c = Cell(tokens[i], 150, target_color="R")
+                        else:
+                            c = Cell(tokens[i], 70)
+                        s = Cell(score, score * 100)
+                    else:
+                        c = Cell(tokens[i])
+                        s = Cell(score, score * 70)
+
+                    text[sent_idx].append(c)
+                    score_row[sent_idx].append(s)
+
+                    if tokens[i] == "[unused3]":
+                        sent_idx += 1
+                        if sent_idx == 2:
+                            break
+
+                html.write_table([t1, s1])
+                html.write_table([t2, s2])
+
+                rows = []
+                for word in words:
+                    row = [Cell(word.word), Cell(word.location)]
+                    rows.append(row)
+                html.write_table(rows)
+
+
+
+
+    fetch_fn(0)
 
 
 class TrainConfig:
@@ -157,13 +317,15 @@ def train_nli_w_dict(run_name,
     log = log_module.train_logger()
     train_data_feeder = data_feeder_loader.get_train_feeder()
     dev_data_feeder = data_feeder_loader.get_dev_feeder()
-
     lookup_train_feeder = train_data_feeder
+    valid_runner = WSSDRRunner(model, train_data_feeder.augment_dict_info, sess)
 
     dev_batches = []
+    dev_batches_w_dict = []
     n_dev_batch = 100
     for _ in range(n_dev_batch):
         dev_batches.append(dev_data_feeder.get_random_batch(batch_size))
+        dev_batches_w_dict.append(dev_data_feeder.get_lookup_batch(batch_size))
 
     def get_summary_obj(loss, acc):
         summary = tf.compat.v1.Summary()
@@ -215,13 +377,13 @@ def train_nli_w_dict(run_name,
         logits, = sess.run([model.get_lookup_logits()],
                                 feed_dict=model.batch2feed_dict(batch)
                                 )
-        term_ranks = np.argsort(logits[:, :, 1], axis=1)
+        term_ranks = np.flip(np.argsort(logits[:, :, 1], axis=1))
         batch = train_data_feeder.augment_dict_info(data_indices, term_ranks)
 
         loss_val, acc, _ = sess.run([model.get_cls_loss(), model.get_acc(), train_cls],
                                     feed_dict=model.batch2feed_dict(batch)
                                     )
-        log.info("Step {0} train loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
+        log.info("ClsW]Step {0} train loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
         train_writer.add_summary(get_summary_obj(loss_val, acc), step_i)
 
         return loss_val, acc
@@ -252,22 +414,26 @@ def train_nli_w_dict(run_name,
         return 0, 0
 
     def valid_fn(step_i):
-        loss_list = []
-        acc_list = []
-        for batch in dev_batches:
-            loss_val, acc = sess.run([model.get_cls_loss(), model.get_acc()],
-                                                   feed_dict=model.batch2feed_dict(batch)
-                                                   )
-            loss_list.append(loss_val)
-            acc_list.append(acc)
+        if lookup_enabled(lookup_loss_window, step_i):
+            valid_fn_w_lookup(step_i)
+        else:
+            valid_fn_wo_lookup(step_i)
 
-        loss_val = average(loss_list)
-        acc = average(acc_list)
+    def valid_fn_wo_lookup(step_i):
+        loss_val, acc = valid_runner.run_batches_wo_lookup(dev_batches)
         log.info("Step {0} Dev loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
         test_writer.add_summary(get_summary_obj(loss_val, acc), step_i)
-        return average(acc_list)
+        return acc
+
+    def valid_fn_w_lookup(step_i):
+        loss_val, acc = valid_runner.run_batches_w_lookup(dev_batches_w_dict)
+        log.info("Step {0} DevW loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
+        test_writer.add_summary(get_summary_obj(loss_val, acc), step_i)
+        return acc
 
     def save_fn():
+        op = tf.compat.v1.assign(global_step, step_i)
+        sess.run([op])
         return save_model_to_dir_path(sess, model_path, global_step)
 
     n_data = train_data_feeder.get_data_len()
@@ -428,9 +594,10 @@ def dev_fn():
         eval_nli_w_dict(run_name, model, saved_model, augment_data_loader)
 
     elif FLAGS.do_eval:
-        eval_nli_w_dict(run_name, model, model_path, augment_data_loader)
+        eval_nli_w_dict_lookup(run_name, model, model_path, augment_data_loader)
 
-
+    else:
+        demo_nli_w_dict(run_name, model, model_path, augment_data_loader)
 
 def main(_):
     dev_fn()

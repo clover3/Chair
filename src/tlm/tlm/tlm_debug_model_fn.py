@@ -4,7 +4,7 @@ from tlm.tlm.tlm2_network import tlm2_raw_prob
 from tlm.training.lm_model_fn import get_tlm_assignment_map_v2
 
 
-def model_fn_tlm_debug(bert_config, train_config, model_config, logging, model_class):
+def model_fn_tlm_debug(bert_config, train_config, logging, model_class):
 
   def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
     logging.info("*** Features ***")
@@ -72,7 +72,7 @@ def model_fn_tlm_debug(bert_config, train_config, model_config, logging, model_c
       }
       output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
           mode=mode,
-          loss=0,
+          loss=tf.constant(0),
           predictions=predictions,
           scaffold_fn=scaffold_fn)
 

@@ -2,7 +2,7 @@ import os
 
 import tensorflow as tf
 
-from tlm.tlm.bfn_loss_predict_gen import PredictionOutput
+from tlm.tlm.gen_bfn_bert_loss_predict import PredictionOutput
 
 
 def recover_mask(input_ids, masked_lm_positions, masked_lm_ids):

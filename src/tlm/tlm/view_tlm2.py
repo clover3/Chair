@@ -49,7 +49,7 @@ def doit():
 
         norm_scores = lmap(normalize, prob_scores)
         cells = data.cells_from_tokens(tokens, norm_scores)
-        cells2 =data.cells_from_anything(scores, norm_scores)
+        cells2 = data.cells_from_anything(scores, norm_scores)
         cells3 = data.cells_from_anything(prob_strs, norm_scores)
 
         row1 = []

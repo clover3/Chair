@@ -19,7 +19,7 @@ from tlm.training.lm_model_fn import model_fn_random_masking, model_fn_target_ma
 from tlm.training.train_flags import *
 
 
-class TrainConfig:
+class LMTrainConfig:
     def __init__(self,
                  init_checkpoint,
                  learning_rate,
@@ -47,7 +47,7 @@ class TrainConfig:
 
     @classmethod
     def from_flags(cls, flags):
-        return TrainConfig(
+        return LMTrainConfig(
             flags.init_checkpoint,
             flags.learning_rate,
             flags.num_train_steps,
@@ -62,7 +62,7 @@ class TrainConfig:
         )
 
 
-
+@report_run
 def main(_):
     tf_logging.setLevel(logging.INFO)
     if FLAGS.log_debug:
@@ -79,7 +79,7 @@ def main(_):
 
     lm_pretrain(input_files)
 
-@report_run
+
 def lm_pretrain(input_files):
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
 
@@ -127,7 +127,7 @@ def lm_pretrain(input_files):
     elif FLAGS.dict_lm_vbatch:
         task = TASK_DICT_LM_VBATCH
 
-    train_config = TrainConfig.from_flags(FLAGS)
+    train_config = LMTrainConfig.from_flags(FLAGS)
     if task == TASK_LM:
         tf_logging.info("Running LM")
         if FLAGS.fixed_mask:

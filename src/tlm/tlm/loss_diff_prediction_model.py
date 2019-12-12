@@ -99,7 +99,12 @@ def loss_diff_prediction_model(bert_config, train_config, model_class, model_con
                     host_call=host_call,
                     scaffold_fn=scaffold_fn)
         elif mode == tf.estimator.ModeKeys.EVAL:
-            eval_metrics = (None, [])
+            def metric_fn(loss):
+                return {
+                    "eval_loss": loss,
+                }
+
+            eval_metrics = (metric_fn, [total_loss])
             output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
                     mode=mode,
                     loss=total_loss,

@@ -144,8 +144,8 @@ def diff_view():
         for i in range(len(tokens)):
             f_inverse = False
             score = 0
-            if tokens[i] == "[MASK]":
-                tokens[i] = "[{}]".format(ans_keys[i])
+            if tokens[i] == "[MASK]" or i in loss_at_loc:
+                tokens[i] = "[{}-{}]".format(i, ans_keys[i])
                 score = (score_at_loc2[i] - score_at_loc[i]) * 180
                 score = -score
                 if score < 0:
@@ -210,6 +210,7 @@ def diff_view():
 def pred_loss_view():
     tokenizer = get_tokenizer()
     filename = "tlm_loss_pred.pickle"
+    filename = "tlm_loss_pred_on_dev.pickle"
     p = os.path.join(output_path, filename)
     data = pickle.load(open(p, "rb"))
 
@@ -229,7 +230,7 @@ def pred_loss_view():
         vectors[key] = np.concatenate(vectors[key], axis=0)
 
 
-    html_writer = HtmlVisualizer("pred_make_sense.html", dark_mode=False)
+    html_writer = HtmlVisualizer("pred_make_sense_dev.html", dark_mode=False)
 
     n_instance = len(vectors['input_ids'])
     n_instance = min(n_instance, 100)
@@ -311,7 +312,6 @@ def pred_loss_view():
             gold_diff = vectors['gold_diff'][inst_idx][idx]
             pred_diff_list.append(pred_diff)
             gold_diff_list.append(gold_diff)
-
 
             row = [Cell(idx),
                    f_cell(vectors['prob1'][inst_idx][idx]),

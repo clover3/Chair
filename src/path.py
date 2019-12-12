@@ -50,7 +50,7 @@ def get_latest_model_path_from_dir_path(save_dir):
                 model_id = filename[:-5]
                 step = int(model_id.split("-")[1])
                 if step > max_step:
-                    max_step = max_step
+                    max_step = step
                     max_id = model_id
 
     if not max_id:

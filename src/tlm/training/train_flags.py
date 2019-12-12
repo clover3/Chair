@@ -176,3 +176,7 @@ flags.DEFINE_integer("def_per_batch", 180, "Number of classes (in case of classi
 flags.DEFINE_bool("use_ab_mapping_mask", False, "Whether to use ab_mapping_mask.")
 
 flags.DEFINE_bool("use_cache", False, "Whether to use cached data.")
+
+flags.DEFINE_string(
+    "run_name", None,
+    ".")

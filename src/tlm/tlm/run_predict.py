@@ -17,7 +17,7 @@ def main(_):
     tf_logging.info("Predict Runner")
 
     file_prefix = FLAGS.input_file
-    step_size = 50
+    step_size = 100
     for st in range(FLAGS.predict_begin, FLAGS.predict_end, step_size):
         tf_logging.info("Starting {}".format(st))
         input_files = []

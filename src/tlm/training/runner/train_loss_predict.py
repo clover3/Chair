@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 import tlm.model.base as modeling
+from taskman_client.wrapper import report_run
 from tlm.model.base import BertModel
 from tlm.model_cnfig import JsonConfig
 from tlm.tlm.loss_diff_prediction_model import loss_diff_prediction_model, input_fn_builder_masked
@@ -8,6 +9,7 @@ from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator, TrainConfig, show_input_files
 
 
+@report_run
 def main(_):
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
     input_files = []
@@ -38,6 +40,7 @@ def main(_):
             is_training=False)
     else:
         raise Exception()
+
 
     run_estimator(model_fn, input_fn)
 

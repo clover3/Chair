@@ -421,11 +421,13 @@ class SSDRAugment(DictAuxDataFeeder):
         batch = self._get_batch(problem_data, def_entries_list, batch_size)
         return batch
 
-    def get_all_batches(self, batch_size):
+    def get_all_batches(self, batch_size, f_return_indices=False):
         problem_data = []
         def_entries_list = []
+        all_indice = []
 
         for data_idx in self.data_info.keys():
+            all_indice.append(data_idx)
             appeared_words = self.data_info[data_idx]
             if appeared_words:
                 word = pick1(appeared_words)
@@ -444,13 +446,19 @@ class SSDRAugment(DictAuxDataFeeder):
         batches = []
         for i in range(0, n_insts, batch_size):
             local_batch_len = min(batch_size, n_insts - i)
+            if local_batch_len < batch_size:
+                break
             current_problems = problem_data[i:i+local_batch_len]
             current_entries = def_entries_list[i:i+local_batch_len]
             self.drop_definitions(current_entries, self.def_per_batch)
             batch = self._get_batch(current_problems, current_entries, batch_size)
-            batches.append(batch)
+            if not f_return_indices:
+                batches.append(batch)
+            else:
+                batches.append((all_indice[i:i+local_batch_len], batch))
 
         return batches
+
 
     def _pack_to_batches(self, all_instances, def_entries_list, batch_size):
         assert len(all_instances) == len(def_entries_list)
