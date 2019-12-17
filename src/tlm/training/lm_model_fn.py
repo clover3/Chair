@@ -1,6 +1,3 @@
-import collections
-import re
-
 import tensorflow as tf
 
 from data_generator.special_tokens import MASK_ID, PAD_ID
@@ -11,6 +8,8 @@ from tf_util.tf_logging import tf_logging
 from tlm.model.lm_objective import get_masked_lm_output, get_next_sentence_output
 from tlm.model.masking import random_masking, biased_masking
 from tlm.model.nli_ex_v2 import transformer_nli
+from tlm.training.assignment_map import get_bert_assignment_map, get_cls_assignment, get_tlm_assignment_map_v2, \
+    assignment_map_v2_to_v2, get_assignment_map_remap_from_v2
 from trainer.get_param_num import get_param_num
 
 
@@ -50,15 +49,66 @@ def metric_fn(masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
     }
 
 
+def get_tpu_scaffold_or_init(init_fn, use_tpu):
+    if use_tpu:
+        def tpu_scaffold():
+            init_fn()
+            return tf.compat.v1.train.Scaffold()
 
-def model_fn_random_masking(bert_config, train_config, logging, model_class):
+        scaffold_fn = tpu_scaffold
+        return scaffold_fn
+    else:
+        init_fn()
+        return None
+
+
+def align_checkpoint(tvars,
+                     checkpoint_type,
+                     init_checkpoint,
+                     second_init_checkpoint=None,
+                     use_multiple_checkpoint=False):
+    initialized_variable_names2 = {}
+    if init_checkpoint:
+        if not use_multiple_checkpoint:
+            if checkpoint_type == "":
+                assignment_fn = get_bert_assignment_map
+            elif checkpoint_type == "v2":
+                assignment_fn = assignment_map_v2_to_v2
+            else:
+                raise Exception("Undefined checkpoint exists")
+
+            assignment_map, initialized_variable_names = assignment_fn(tvars, init_checkpoint)
+
+            def init_fn():
+                tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+
+        else:
+            if checkpoint_type == "nli_and_bert":
+                assignment_map, initialized_variable_names = get_bert_assignment_map(tvars,
+                                                                                     init_checkpoint)
+                assignment_map2, initialized_variable_names2 = get_cls_assignment(tvars,
+                                                                                  second_init_checkpoint)
+            else:
+                raise Exception("Undefined checkpoint exists")
+
+            def init_fn():
+                tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+                tf.compat.v1.train.init_from_checkpoint(second_init_checkpoint, assignment_map2)
+
+    else:
+        initialized_variable_names = {}
+        init_fn = None
+    return initialized_variable_names, initialized_variable_names2, init_fn
+
+
+def model_fn_random_masking(bert_config, train_config, model_class):
     """Returns `model_fn` closure for TPUEstimator."""
 
     def model_fn(features, labels, mode, params):    # pylint: disable=unused-argument
         """The `model_fn` for TPUEstimator."""
-        logging.info("*** Features ***")
+        tf_logging.info("*** Features ***")
         for name in sorted(features.keys()):
-            logging.info("    name = %s, shape = %s" % (name, features[name].shape))
+            tf_logging.info("    name = %s, shape = %s" % (name, features[name].shape))
 
         input_ids = features["input_ids"]
         input_mask = features["input_mask"]
@@ -73,11 +123,11 @@ def model_fn_random_masking(bert_config, train_config, logging, model_class):
                 seed = None
 
         if not train_config.fixed_mask:
-            logging.info("Doing dynamic masking (random)")
+            tf_logging.info("Doing dynamic masking (random)")
             masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights \
                 = random_masking(input_ids, input_mask, train_config.max_predictions_per_seq, MASK_ID, seed)
         else:
-            logging.info("Using masking from input")
+            tf_logging.info("Using masking from input")
             masked_input_ids = input_ids
             masked_lm_positions = features["masked_lm_positions"]
             masked_lm_ids = features["masked_lm_ids"]
@@ -107,46 +157,17 @@ def model_fn_random_masking(bert_config, train_config, logging, model_class):
 
         tvars = tf.compat.v1.trainable_variables()
 
-        initialized_variable_names = {}
-        scaffold_fn = None
-        if train_config.init_checkpoint:
-            if train_config.checkpoint_type == "":
-                assignment_map, initialized_variable_names = get_bert_assignment_map(tvars, train_config.init_checkpoint)
-                if train_config.use_tpu:
-                    def tpu_scaffold():
-                        tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
-                        return tf.compat.v1.train.Scaffold()
+        use_multiple_checkpoint = train_config.checkpoint_type == "nli_and_bert"
+        initialized_variable_names, initialized_variable_names2, init_fn\
+            = align_checkpoint(tvars,
+                               train_config.checkpoint_type,
+                               train_config.init_checkpoint,
+                               train_config.second_init_checkpoint,
+                               use_multiple_checkpoint)
 
-                    scaffold_fn = tpu_scaffold
-                else:
-                    tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
-            elif train_config.checkpoint_type == "nli_and_bert":
-                assignment_map, initialized_variable_names = get_bert_assignment_map(tvars, train_config.init_checkpoint)
-                assignment_map2, initialized_variable_names2 = get_cls_assignment(tvars, train_config.second_init_checkpoint)
-                for vname in initialized_variable_names2:
-                    logging.info("Loading from 2nd checkpoint : %s" % vname)
-                for k,v in initialized_variable_names2.items():
-                    initialized_variable_names[k] = v
-                def init_fn():
-                    tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
-                    tf.compat.v1.train.init_from_checkpoint(train_config.second_init_checkpoint, assignment_map2)
-                if train_config.use_tpu:
-                    def tpu_scaffold():
-                        init_fn()
-                        return tf.compat.v1.train.Scaffold()
+        scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
 
-                    scaffold_fn = tpu_scaffold
-                else:
-                    init_fn()
-
-        logging.info("**** Trainable Variables ****")
-        for var in tvars:
-            init_string = ""
-            if var.name in initialized_variable_names:
-                init_string = ", *INIT_FROM_CKPT*"
-            logging.info("    name = %s, shape = %s%s", var.name, var.shape,
-                                            init_string)
-        logging.info("Total parameters : %d" % get_param_num())
+        log_var_assignments(tvars, initialized_variable_names, initialized_variable_names2)
 
         output_spec = None
         if mode == tf.estimator.ModeKeys.TRAIN:
@@ -186,6 +207,19 @@ def model_fn_random_masking(bert_config, train_config, logging, model_class):
 
     return model_fn
 
+
+def log_var_assignments(tvars, initialized_variable_names, initialized_variable_names2=None):
+    tf_logging.info("**** Trainable Variables ****")
+    for var in tvars:
+        init_string = ""
+        if var.name in initialized_variable_names:
+            init_string = ", *INIT_FROM_CKPT*"
+        if initialized_variable_names2 is not None:
+            if var.name in initialized_variable_names2:
+                init_string = ", *INIT_FROM_CKPT2*"
+        tf_logging.info("    name = %s, shape = %s%s", var.name, var.shape,
+                     init_string)
+    tf_logging.info("Total parameters : %d" % get_param_num())
 
 
 
@@ -229,421 +263,113 @@ def get_nli_ex_model_segmented(input_ids, input_mask, segment_ids):
     return output
 
 
-def get_bert_assignment_map(tvars, lm_checkpoint):
-    lm_assignment_candidate = {}
-    real_name_map = {}
-    for var in tvars:
-        name = var.name
-        m = re.match("^(.*):\\d+$", name)
-        if m is not None:
-            name = m.group(1)
+def model_fn_target_masking(bert_config, train_config, target_model_config, model_class, priority_model):
+    def model_fn(features, labels, mode, params):    # pylint: disable=unused-argument
+        tf_logging.info("*** Features ***")
+        for name in sorted(features.keys()):
+            tf_logging.info("    name = %s, shape = %s" % (name, features[name].shape))
 
-        tokens = name.split("/")
-        top_scope = tokens[0]
-        targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
-        targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
-        lm_assignment_candidate[targ_name] = var
-        tf_logging.info("Init from lm_checkpoint : %s" % name)
-        real_name_map[targ_name] = name
+        input_ids = features["input_ids"]
+        input_mask = features["input_mask"]
+        segment_ids = features["segment_ids"]
+        next_sentence_labels = features["next_sentence_labels"]
+        tlm_prefix = "target_task"
 
-    assignment_map = {}
-    initialized_variable_names = {}
-    if lm_checkpoint:
-        for x in tf.train.list_variables(lm_checkpoint):
-            (name, var) = (x[0], x[1])
-            if name not in lm_assignment_candidate:
-                continue
-            assignment_map[name] = lm_assignment_candidate[name]
+        with tf.compat.v1.variable_scope(tlm_prefix):
+            priority_score = tf.stop_gradient(priority_model(features))
 
-            tvar_name = real_name_map[name]
+        priority_score = priority_score * target_model_config.amp
+        masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights\
+            = biased_masking(input_ids,
+                             input_mask,
+                             priority_score,
+                             target_model_config.alpha,
+                             train_config.max_predictions_per_seq,
+                             MASK_ID)
 
-            initialized_variable_names[tvar_name] = 1
-            initialized_variable_names[tvar_name + ":0"] = 1
+        is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
-    return (assignment_map, initialized_variable_names)
+        model = model_class(
+                config=bert_config,
+                is_training=is_training,
+                input_ids=masked_input_ids,
+                input_mask=input_mask,
+                token_type_ids=segment_ids,
+                use_one_hot_embeddings=train_config.use_one_hot_embeddings,
+        )
 
+        (masked_lm_loss,
+         masked_lm_example_loss, masked_lm_log_probs) = get_masked_lm_output(
+                 bert_config, model.get_sequence_output(), model.get_embedding_table(),
+                 masked_lm_positions, masked_lm_ids, masked_lm_weights)
 
+        (next_sentence_loss, next_sentence_example_loss,
+         next_sentence_log_probs) = get_next_sentence_output(
+                 bert_config, model.get_pooled_output(), next_sentence_labels)
 
-def get_bert_nli_assignment_map(tvars, lm_checkpoint):
-    lm_assignment_candidate = {}
-    real_name_map = {}
-    for var in tvars:
-        name = var.name
-        m = re.match("^(.*):\\d+$", name)
-        if m is not None:
-            name = m.group(1)
+        total_loss = masked_lm_loss + next_sentence_loss
 
-        tokens = name.split("/")
-        top_scope = tokens[0]
-        targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
-        targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
-        targ_name = targ_name.replace("cls_dense/kernel", "output_weights")
-        targ_name = targ_name.replace("cls_dense/bias", "output_bias")
-        lm_assignment_candidate[targ_name] = var
-        tf_logging.info("Init from lm_checkpoint : %s" % name)
-        real_name_map[targ_name] = name
+        all_vars = tf.compat.v1.all_variables()
 
-    assignment_map = {}
-    initialized_variable_names = {}
-    if lm_checkpoint:
-        for x in tf.train.list_variables(lm_checkpoint):
-            (name, var) = (x[0], x[1])
-            if name not in lm_assignment_candidate:
-                continue
-            assignment_map[name] = lm_assignment_candidate[name]
+        tf_logging.info("We assume priority model is from v2")
 
-            tvar_name = real_name_map[name]
-
-            initialized_variable_names[tvar_name] = 1
-            initialized_variable_names[tvar_name + ":0"] = 1
-
-    return (assignment_map, initialized_variable_names)
-
-
-def get_cls_assignment(tvars, lm_checkpoint):
-    lm_assignment_candidate = {}
-    real_name_map = {}
-    for var in tvars:
-        name = var.name
-        m = re.match("^(.*):\\d+$", name)
-        if m is not None:
-            name = m.group(1)
-
-        tokens = name.split("/")
-        top_scope = tokens[0]
-        targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
-        targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
-        lm_assignment_candidate[targ_name] = var
-        real_name_map[targ_name] = name
-
-    assignment_map = {}
-    initialized_variable_names = {}
-    if lm_checkpoint:
-        for x in tf.train.list_variables(lm_checkpoint):
-            (name, var) = (x[0], x[1])
-            if name not in lm_assignment_candidate:
-                continue
-            if not name.startswith("cls"):
-                continue
-            assignment_map[name] = lm_assignment_candidate[name]
-
-            tvar_name = real_name_map[name]
-
-            initialized_variable_names[tvar_name] = 1
-            initialized_variable_names[tvar_name + ":0"] = 1
-
-    return (assignment_map, initialized_variable_names)
-
-
-
-def get_tlm_assignment_map(tvars, tlm_prefix, lm_checkpoint, target_task_checkpoint):
-    """Compute the union of the current variables and checkpoint variables."""
-    assignment_map = {}
-    initialized_variable_names = {}
-    real_name_map = {}
-
-    target_task_name_to_var = collections.OrderedDict()
-    lm_assignment_candidate = {}
-    tt_assignment_candidate = {}
-    for var in tvars:
-        name = var.name
-        m = re.match("^(.*):\\d+$", name)
-        if m is not None:
-            name = m.group(1)
-
-        tokens = name.split("/")
-        top_scope = tokens[0]
-        if tlm_prefix == top_scope:
-            inner_name = "/".join(tokens[1:])
-            target_task_name_to_var[inner_name] = var
-            targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", inner_name)
-            targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
-            tt_assignment_candidate[targ_name] = var
-            tf_logging.info("Init from target_task_checkpoint : %s" % name)
+        if train_config.checkpoint_type == "v2":
+            assignment_map, initialized_variable_names = assignment_map_v2_to_v2(all_vars, train_config.init_checkpoint)
+            assignment_map2, initialized_variable_names2 = get_assignment_map_remap_from_v2(all_vars, tlm_prefix,
+                                                                                            train_config.second_init_checkpoint)
         else:
-            targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
-            targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
-            lm_assignment_candidate[targ_name] = var
-            tf_logging.info("Init from lm_checkpoint : %s" % name)
+            assignment_map, assignment_map2, initialized_variable_names \
+                                            = get_tlm_assignment_map_v2(all_vars,
+                                              tlm_prefix,
+                                              train_config.init_checkpoint,
+                                              train_config.second_init_checkpoint)
+            initialized_variable_names2 = None
 
-        real_name_map[targ_name] = name
+        def init_fn():
+            if train_config.init_checkpoint:
+                tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
+            if train_config.second_init_checkpoint:
+                tf.compat.v1.train.init_from_checkpoint(train_config.second_init_checkpoint, assignment_map2)
 
-    assignment_map_tt = collections.OrderedDict()
-    if target_task_checkpoint:
-        for x in tf.train.list_variables(target_task_checkpoint):
-            (name, var) = (x[0], x[1])
-            if name not in tt_assignment_candidate:
-                continue
-            assignment_map_tt[name] = tt_assignment_candidate[name]
+        scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
 
-            real_name = real_name_map[name]
-            initialized_variable_names[real_name] = 1
+        tvars = [v for v in all_vars if not v.name.startswith(tlm_prefix)]
+        log_var_assignments(tvars, initialized_variable_names, initialized_variable_names2)
 
-    if lm_checkpoint:
-        for x in tf.train.list_variables(lm_checkpoint):
-            (name, var) = (x[0], x[1])
-            if name not in lm_assignment_candidate:
-                continue
-            assignment_map[name] = lm_assignment_candidate[name]
-            initialized_variable_names[name] = 1
-            initialized_variable_names[name + ":0"] = 1
-
-    return assignment_map, assignment_map_tt, initialized_variable_names
-
-
-
-
-# target_task_checkpoint is from tf2.0
-def get_tlm_assignment_map_v2(tvars, tlm_prefix, lm_checkpoint, target_task_checkpoint_tf2):
-    """Compute the union of the current variables and checkpoint variables."""
-    assignment_map = {}
-    initialized_variable_names = {}
-    real_name_map = {}
-
-    target_task_name_to_var = collections.OrderedDict()
-    lm_assignment_candidate = {}
-    tt_assignment_candidate = {}
-    for var in tvars:
-        name = var.name
-        m = re.match("^(.*):\\d+$", name)
-        if m is not None:
-            name = m.group(1)
-
-        tokens = name.split("/")
-        top_scope = tokens[0]
-        if tlm_prefix == top_scope:
-            inner_name = "/".join(tokens[1:])
-            target_task_name_to_var[inner_name] = var
-            simple_name = inner_name
-            simple_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", simple_name)
-            simple_name = re.sub("dense[_]?\d*", "dense", simple_name)
-            tt_assignment_candidate[simple_name] = var
-            tf_logging.debug("Variable to be loaded from target_task_checkpoint : %s" % name)
-            real_name_map[simple_name] = name
+        output_spec = None
+        if mode == tf.estimator.ModeKeys.TRAIN:
+            train_op = optimization.create_optimizer_from_config(total_loss, train_config, tvars)
+            output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
+                    mode=mode,
+                    loss=total_loss,
+                    train_op=train_op,
+                    scaffold_fn=scaffold_fn)
+        elif mode == tf.estimator.ModeKeys.EVAL:
+            eval_metrics = (metric_fn, [
+                    masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
+                    masked_lm_weights, next_sentence_example_loss,
+                    next_sentence_log_probs, next_sentence_labels
+            ])
+            output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
+                    mode=mode,
+                    loss=total_loss,
+                    eval_metrics=eval_metrics,
+                    scaffold_fn=scaffold_fn)
         else:
-            simple_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
-            simple_name = re.sub("dense[_]?\d*", "dense", simple_name)
-            lm_assignment_candidate[simple_name] = var
-            tf_logging.debug("Variable to be loaded from lm_checkpoint : %s" % name)
-            real_name_map[simple_name] = name
+            predictions = {
+                    "input_ids": input_ids,
+                    "masked_input_ids": masked_input_ids,
+                    "priority_score": priority_score,
+            }
+            output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
+                    mode=mode,
+                    loss=total_loss,
+                    predictions=predictions,
+                    scaffold_fn=scaffold_fn)
 
+        return output_spec
 
-    assignment_map_tt = collections.OrderedDict()
-    if target_task_checkpoint_tf2:
-        for x in tf.train.list_variables(target_task_checkpoint_tf2):
-            (name, var) = (x[0], x[1])
-            simple_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
-            simple_name = re.sub("dense[_]?\d*", "dense", simple_name)
-            tf_logging.debug("Vars in TT : %s" % name)
-            tf_logging.debug("map to -> : %s" % simple_name)
-
-            if simple_name not in tt_assignment_candidate:
-                continue
-            assignment_map_tt[name] = tt_assignment_candidate[simple_name]
-
-            real_name = real_name_map[simple_name]
-            initialized_variable_names[real_name] = 1
-
-    if lm_checkpoint:
-        for x in tf.train.list_variables(lm_checkpoint):
-            (name, var) = (x[0], x[1])
-            if name not in lm_assignment_candidate:
-                continue
-            assignment_map[name] = lm_assignment_candidate[name]
-            real_name = real_name_map[name]
-            initialized_variable_names[real_name] = 1
-            initialized_variable_names[real_name + ":0"] = 1
-
-    return assignment_map, assignment_map_tt, initialized_variable_names
-
-
-
-
-# checkpoint is from tf2.0
-def assignment_map_v2_to_v2(tvars, lm_checkpoint_v2):
-    """Compute the union of the current variables and checkpoint variables."""
-    initialized_variable_names = {}
-    real_name_map = {}
-
-    lm_assignment_candidate = {}
-    for var in tvars:
-        name = var.name
-        m = re.match("^(.*):\\d+$", name)
-        if m is not None:
-            name = m.group(1)
-
-        simple_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
-        simple_name = re.sub("dense[_]?\d*", "dense", simple_name)
-        lm_assignment_candidate[simple_name] = var
-        tf_logging.debug("Variable to be loaded from lm_checkpoint : %s" % name)
-        tf_logging.debug("                            simple_name  : %s" % simple_name)
-        real_name_map[simple_name] = name
-
-
-    assignment_map = collections.OrderedDict()
-    if lm_checkpoint_v2:
-        for x in tf.train.list_variables(lm_checkpoint_v2):
-            (name, var) = (x[0], x[1])
-            simple_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
-            simple_name = re.sub("dense[_]?\d*", "dense", simple_name)
-            tf_logging.debug("Vars in TT : %s" % name)
-            tf_logging.debug("map to -> : %s" % simple_name)
-
-            if simple_name not in lm_assignment_candidate:
-                continue
-            assignment_map[name] = lm_assignment_candidate[simple_name]
-            tf_logging.debug("Matched variables : %s" % name)
-
-            real_name = real_name_map[simple_name]
-            initialized_variable_names[real_name] = 1
-            initialized_variable_names[real_name + ":0"] = 1
-
-    return assignment_map, initialized_variable_names
-
-
-
-
-def get_assignment_map_as_is(tvars, checkpoint):
-    current_vars = {}
-    for var in tvars:
-        name = var.name
-        m = re.match("^(.*):\\d+$", name)
-        if m is not None:
-            name = m.group(1)
-
-        current_vars[name] = var
-        tf_logging.info("Init from lm_checkpoint : %s" % name)
-
-    assignment_map = {}
-    initialized_variable_names = {}
-    if checkpoint:
-        for x in tf.train.list_variables(checkpoint):
-            (name, var) = (x[0], x[1])
-            if name not in current_vars:
-                continue
-            assignment_map[name] = current_vars[name]
-            tf_logging.info("Mapped : %s" % name)
-
-            initialized_variable_names[name] = 1
-            initialized_variable_names[name + ":0"] = 1
-
-    return assignment_map, initialized_variable_names
-
-
-def model_fn_target_masking(bert_config, train_config, model_config, logging, model_class, priority_model):
-
-  def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
-    logging.info("*** Features ***")
-    for name in sorted(features.keys()):
-      logging.info("  name = %s, shape = %s" % (name, features[name].shape))
-
-    input_ids = features["input_ids"]
-    input_mask = features["input_mask"]
-    segment_ids = features["segment_ids"]
-    next_sentence_labels = features["next_sentence_labels"]
-    tlm_prefix = "target_task"
-
-    with tf.compat.v1.variable_scope(tlm_prefix):
-      priority_score = tf.stop_gradient(priority_model(input_ids,
-                                     input_mask,
-                                     segment_ids))
-
-    priority_score = priority_score * model_config.amp
-    masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights = biased_masking(input_ids,
-                                                                                             input_mask,
-                                                                                             priority_score,
-                                                                                             model_config.alpha,
-                                                                                             train_config.max_predictions_per_seq,
-                                                                                             MASK_ID)
-
-    is_training = (mode == tf.estimator.ModeKeys.TRAIN)
-
-    model = model_class(
-        config=bert_config,
-        is_training=is_training,
-        input_ids=masked_input_ids,
-        input_mask=input_mask,
-        token_type_ids=segment_ids,
-        use_one_hot_embeddings=train_config.use_one_hot_embeddings,
-    )
-
-    (masked_lm_loss,
-     masked_lm_example_loss, masked_lm_log_probs) = get_masked_lm_output(
-         bert_config, model.get_sequence_output(), model.get_embedding_table(),
-         masked_lm_positions, masked_lm_ids, masked_lm_weights)
-
-    (next_sentence_loss, next_sentence_example_loss,
-     next_sentence_log_probs) = get_next_sentence_output(
-         bert_config, model.get_pooled_output(), next_sentence_labels)
-
-    total_loss = masked_lm_loss + next_sentence_loss
-
-    all_vars = tf.compat.v1.all_variables()
-
-    initialized_variable_names = {}
-    scaffold_fn = None
-    (assignment_map, assignment_map_tt, initialized_variable_names
-      ) = get_tlm_assignment_map_v2(all_vars, tlm_prefix, train_config.init_checkpoint, train_config.second_init_checkpoint)
-
-    def load_fn():
-      if train_config.init_checkpoint:
-        tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
-      tf.compat.v1.train.init_from_checkpoint(train_config.second_init_checkpoint, assignment_map_tt)
-
-    if train_config.use_tpu:
-      def tpu_scaffold():
-        load_fn()
-        return tf.compat.v1.train.Scaffold()
-      scaffold_fn = tpu_scaffold
-    else:
-      load_fn()
-
-    tvars = [v for v in all_vars if not v.name.startswith(tlm_prefix)]
-
-    logging.info("**** Trainable Variables ****")
-    for var in tvars:
-      init_string = ""
-      if var.name in initialized_variable_names:
-        init_string = ", *INIT_FROM_CKPT*"
-      logging.info("  name = %s, shape = %s%s", var.name, var.shape,
-                      init_string)
-    logging.info("Total parameters : %d" % get_param_num())
-
-    output_spec = None
-    if mode == tf.estimator.ModeKeys.TRAIN:
-      train_op = optimization.create_optimizer_from_config(total_loss, train_config, tvars)
-      output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
-          mode=mode,
-          loss=total_loss,
-          train_op=train_op,
-          scaffold_fn=scaffold_fn)
-    elif mode == tf.estimator.ModeKeys.EVAL:
-      eval_metrics = (metric_fn, [
-          masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
-          masked_lm_weights, next_sentence_example_loss,
-          next_sentence_log_probs, next_sentence_labels
-      ])
-      output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
-          mode=mode,
-          loss=total_loss,
-          eval_metrics=eval_metrics,
-          scaffold_fn=scaffold_fn)
-    else:
-      predictions = {
-          "input_ids": input_ids,
-          "masked_input_ids": masked_input_ids,
-          "priority_score": priority_score,
-      }
-      output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
-          mode=mode,
-          loss=total_loss,
-          predictions=predictions,
-          scaffold_fn=scaffold_fn)
-
-
-    return output_spec
-
-  return model_fn
+    return model_fn
 
 
 

@@ -7,8 +7,9 @@ from data_generator.special_tokens import MASK_ID
 from models.transformer import optimization_v2 as optimization
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
+from tlm.training.assignment_map import get_assignment_map_as_is
 from tlm.training.grad_accumulation import get_accumulated_optimizer_from_config
-from tlm.training.lm_model_fn import metric_fn, get_assignment_map_as_is
+from tlm.training.lm_model_fn import metric_fn
 from trainer.get_param_num import get_param_num
 
 
@@ -34,6 +35,11 @@ def model_fn_dict_reader(bert_config, ssdr_config, train_config, logging, model_
         d_input_mask = reform_b_input(features["d_input_mask"])
         d_location_ids = reform_a_input(features["d_location_ids"])
         ab_mapping = features["ab_mapping"]
+
+        if hasattr(ssdr_config, "blind_dictionary") and ssdr_config.blind_dictionary:
+            logging.info("Hide dictionary")
+            d_input_ids = tf.zeros_like(d_input_ids)
+            d_input_mask = tf.zeros_like(d_input_mask)
 
         if dict_run_config.prediction_op == "loss":
             seed = 0

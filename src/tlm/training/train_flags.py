@@ -177,6 +177,11 @@ flags.DEFINE_bool("use_ab_mapping_mask", False, "Whether to use ab_mapping_mask.
 
 flags.DEFINE_bool("use_cache", False, "Whether to use cached data.")
 
+flags.DEFINE_bool("use_old_logits", True,
+                  "Whether to use older version of logistic regression for classification_model_fn.")
+
 flags.DEFINE_string(
     "run_name", None,
     ".")
+
+flags.DEFINE_string("report_field", None, "Report this field of the dictionary")

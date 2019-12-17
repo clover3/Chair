@@ -1,5 +1,6 @@
-from tlm.retrieve_lm.select_sentence import get_random_sent
 from rpc.text_reader import TextReaderClient
+from tlm.retrieve_lm.select_sentence import get_random_sent
+
 
 def demo():
     n_repeat = 30

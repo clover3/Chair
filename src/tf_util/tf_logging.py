@@ -45,7 +45,9 @@ class MyFormatter(logging.Formatter):
 
 
 class TFFilter(logging.Filter):
-    excludes = ["Outfeed finished for iteration", "TPUPollingThread found TPU"]
+    excludes = ["Outfeed finished for iteration",
+                "TPUPollingThread found TPU",
+                "is deprecated"]
     def filter(self, record):
         for e in self.excludes:
             if e in record.msg:

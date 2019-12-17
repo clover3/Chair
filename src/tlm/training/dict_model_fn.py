@@ -7,9 +7,10 @@ from models.transformer import bert_common_v2 as bert_common
 from models.transformer import optimization_v2 as optimization
 from tlm.model.lm_objective import get_masked_lm_output, get_next_sentence_output
 from tlm.model.masking import random_masking
+from tlm.training.assignment_map import get_assignment_map_as_is
 from tlm.training.grad_accumulation import get_accumulated_optimizer_from_config
 from tlm.training.input_fn_common import format_dataset
-from tlm.training.lm_model_fn import metric_fn, get_assignment_map_as_is
+from tlm.training.lm_model_fn import metric_fn
 from trainer.get_param_num import get_param_num
 
 

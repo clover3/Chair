@@ -1,12 +1,13 @@
 import collections
 
-from cache import *
 import path
+from cache import *
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import *
-from tlm.retrieve_lm.stem import stemmed_counter
-from tlm.retrieve_lm.segment_ranker_0 import PassageRanker, get_visible
 from rpc.disk_dump import DumpAccess
+from tlm.retrieve_lm.segment_ranker_0 import PassageRanker, get_visible
+from tlm.retrieve_lm.stem import stemmed_counter
+
 
 class LazyLoader:
     def __init__(self, c_path):

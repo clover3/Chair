@@ -1,7 +1,7 @@
-from tlm.model.base import BertModel
-from models.transformer.bert_common_v2 import get_shape_list, gather_index2d, get_shape_list2
+from models.transformer.bert_common_v2 import gather_index2d, get_shape_list2
 import tensorflow as tf
-from data_generator import special_tokens
+from models.transformer.bert_common_v2 import gather_index2d, get_shape_list2
+
 
 def pad_as_shape(value, shape_like, dims):
     for _ in range(dims):

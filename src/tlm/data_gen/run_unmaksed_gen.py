@@ -1,12 +1,8 @@
-import random
-from cache import *
-from path import data_path
-from data_generator import tokenizer_wo_tf as tokenization
 import sys
+
+from cache import *
 from sydney_manager import MarkedTaskManager
-from misc_lib import TimeEstimator
 from tlm.data_gen.base import UnmaskedGen
-import time
 
 working_path ="/mnt/nfs/work3/youngwookim/data/bert_tf"
 

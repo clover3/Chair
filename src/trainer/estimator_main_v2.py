@@ -1,5 +1,8 @@
 import time
 import warnings
+
+from taskman_client.task_proxy import get_task_manager_proxy
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import tensorflow as tf
@@ -44,6 +47,12 @@ def main(_):
             is_training=False)
 
     r = run_estimator(model_fn, input_fn)
+    if FLAGS.report_field:
+        value = r[FLAGS.report_field]
+        proxy = get_task_manager_proxy()
+        proxy.report_number(FLAGS.run_name, value)
+
+
     print("Elapsed {}".format(time.time() - begin))
     return r
 

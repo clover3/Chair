@@ -68,6 +68,28 @@ def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
             trunc_tokens.pop()
 
 
+def log_print_inst(instance, features):
+    tf_logging.info("*** Example ***")
+    tf_logging.info("tokens: %s" % " ".join(
+        [tokenization.printable_text(x) for x in instance.tokens]))
+
+    log_print_feature(features)
+
+
+def log_print_feature(features):
+    for feature_name in features.keys():
+        feature = features[feature_name]
+        values = []
+        if feature.int64_list.value:
+            values = feature.int64_list.value
+        elif feature.float_list.value:
+            values = feature.float_list.value
+        tf_logging.info(
+            "%s: %s" % (feature_name, " ".join([str(x) for x in values])))
+
+
+
+
 class TrainingInstance(object):
     """A single training instance (sentence pair)."""
 
@@ -194,22 +216,6 @@ class LMTrainGen:
             instances.append(instance)
 
         return instances
-
-
-    def log_print_inst(self, instance, features):
-        tf_logging.info("*** Example ***")
-        tf_logging.info("tokens: %s" % " ".join(
-            [tokenization.printable_text(x) for x in instance.tokens]))
-
-        for feature_name in features.keys():
-            feature = features[feature_name]
-            values = []
-            if feature.int64_list.value:
-                values = feature.int64_list.value
-            elif feature.float_list.value:
-                values = feature.float_list.value
-            tf_logging.info(
-                "%s: %s" % (feature_name, " ".join([str(x) for x in values])))
 
     def pad0(self, seq, max_len):
         assert len(seq) <= max_len
@@ -372,7 +378,7 @@ class UnmaskedGen(LMTrainGen):
             total_written += 1
 
             if inst_index < 20:
-                self.log_print_inst(instance, features)
+                log_print_inst(instance, features)
 
         for writer in writers:
             writer.close()
@@ -498,7 +504,7 @@ class MaskedPairGen(UnmaskedPairGen):
             features = feature_formatter.instance_to_features(instance)
             writer.write_feature(features)
             if inst_index < 20:
-                self.log_print_inst(instance, features)
+                log_print_inst(instance, features)
         writer.close()
 
         tf_logging.info("Wrote %d total instances", writer.total_written)

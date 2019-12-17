@@ -27,12 +27,12 @@ def geo_mean_prob(scores, amp):
     return final_p
 
 
-def doit():
-    filename = "tlm_view.pickle"
+def doit(filename):
+    name = filename.split(".")[0]
 
     data = EstimatorPredictionViewer(filename)
     amp = 40
-    html_writer = HtmlVisualizer("tlm_view{}.html".format(amp), dark_mode=False)
+    html_writer = HtmlVisualizer("{}_{}.html".format(name, amp), dark_mode=False)
 
     for inst_i, entry in enumerate(data):
         if inst_i > 100:
@@ -67,6 +67,11 @@ def doit():
         html_writer.write_headline("")
 
 
+def show_tlm2():
+    filename = "tlm_view.pickle"
+    doit(filename)
+
+
 def per_doc_score():
     filename = "tlm_view.pickle"
     html_writer = HtmlVisualizer("per_doc_score.html", dark_mode=False)
@@ -99,4 +104,4 @@ def per_doc_score():
 
 
 if __name__ == '__main__':
-    doit()
+    show_tlm2()

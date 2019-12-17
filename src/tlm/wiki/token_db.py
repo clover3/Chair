@@ -1,9 +1,12 @@
-from tlm.wiki.sample_segments import EndofDocument
-import path, os
-from data_generator import tokenizer_wo_tf as tokenization
 import sys
+
+import os
+import path
 from cache import DumpPickle, DumpPickleLoader
-from misc_lib import TimeEstimator,lmap, flatten
+from data_generator import tokenizer_wo_tf as tokenization
+from misc_lib import TimeEstimator, lmap, flatten
+from tlm.wiki.sample_segments import EndofDocument
+
 
 def tokenize_stream(in_file, out_path):
     dp = DumpPickle(out_path)

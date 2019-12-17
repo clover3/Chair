@@ -1,11 +1,13 @@
-from cache import *
-from misc_lib import *
 from collections import Counter
-from data_generator import tokenizer_b as tokenization
-from models.classic.stopword import load_stopwords
+
 import path
-from tlm.retrieve_lm.stem import CacheStemmer
+from cache import *
+from data_generator import tokenizer_b as tokenization
+from misc_lib import *
+from models.classic.stopword import load_stopwords
 from tlm.retrieve_lm.retrieve_doc import RobustCollection
+from tlm.retrieve_lm.stem import CacheStemmer
+
 
 def translate_mask2token_level(sent_list, target_tokens, mask_indice, tokenizer):
     basic_tokens = list([tokenizer.basic_tokenizer.tokenize(s) for s in sent_list])

@@ -1,12 +1,12 @@
-from tlm.wiki.generate_bert_tf import parse_wiki
+import os
+import pickle
+
+from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import TimeEstimator
 from path import data_path
-import os
-import sys
-from data_generator import tokenizer_wo_tf as tokenization
 from sydney_manager import MTM
+from tlm.wiki.generate_bert_tf import parse_wiki
 
-import pickle
 working_path ="/mnt/nfs/work3/youngwookim/data/bert_tf"
 
 def work(job_id, all_docs, tokenizer):

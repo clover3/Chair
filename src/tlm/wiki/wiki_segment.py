@@ -1,7 +1,8 @@
-from tlm.wiki.split_wikipedia import WikiSpliter
-from tlm.fast_tokenizer import FTokenizer
-from misc_lib import TimeEstimator
 import sys
+
+from misc_lib import TimeEstimator
+from tlm.fast_tokenizer import FTokenizer
+from tlm.wiki.split_wikipedia import WikiSpliter
 
 
 def empty_line(line):

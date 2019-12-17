@@ -1,8 +1,11 @@
+import os
+import path
+
+from data_generator import tokenizer_wo_tf as tokenization
+from data_generator.data_parser import trec
 from rpc.disk_dump import dump_dict
 from tlm.retrieve_lm.robust_tokens import load_robust_token
-from data_generator.data_parser import trec
-import os, path
-from data_generator import tokenizer_wo_tf as tokenization
+
 
 def dump_robust():
     c = trec.load_robust_ingham()

@@ -84,7 +84,8 @@ class TrainConfig:
                  use_one_hot_embeddings,
                  num_classes,
                  iterations_per_loop,
-                 checkpoint_type
+                 checkpoint_type,
+                 use_old_logits
                  ):
         self.init_checkpoint = init_checkpoint
         self.learning_rate = learning_rate
@@ -95,6 +96,7 @@ class TrainConfig:
         self.num_classes = num_classes
         self.iterations_per_loop = iterations_per_loop
         self.checkpoint_type = checkpoint_type
+        self.use_old_logits = use_old_logits
 
     @classmethod
     def from_flags(cls, flags):
@@ -108,6 +110,7 @@ class TrainConfig:
             flags.num_classes,
             flags.iterations_per_loop,
             flags.checkpoint_type,
+            flags.use_old_logits,
         )
 
 

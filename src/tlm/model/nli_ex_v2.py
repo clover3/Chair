@@ -1,9 +1,11 @@
 # This code is for tensorflow 2.0
 
-import tlm.model.base as bert
 import tensorflow as tf
+
+import tlm.model.base as bert
 from data_generator.NLI import nli
 from trainer import tf_module
+
 
 class Classification:
     def __init__(self, num_classes):

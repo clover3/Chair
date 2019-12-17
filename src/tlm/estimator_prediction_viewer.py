@@ -13,6 +13,19 @@ def is_dependent(token):
     return len(token) == 1 and not token[0].isalnum()
 
 
+def flatten_batches(data):
+    keys = list(data[0].keys())
+    vectors = {}
+    for e in data:
+        for key in keys:
+            if key not in vectors:
+                vectors[key] = []
+            vectors[key].append(e[key])
+    for key in keys:
+        vectors[key] = np.concatenate(vectors[key], axis=0)
+    return vectors
+
+
 class EstimatorPredictionViewer:
     class Entry:
         def __init__(self, idx, viewer):
@@ -51,21 +64,13 @@ class EstimatorPredictionViewer:
         batch_size, seq_length = data[0]['input_ids'].shape
 
         keys = list(data[0].keys())
-        vectors = {}
-
-        for e in data:
-            for key in keys:
-                if key not in vectors:
-                    vectors[key] = []
-                vectors[key].append(e[key])
-
-        for key in keys:
-            vectors[key] = np.concatenate(vectors[key], axis=0)
+        vectors = flatten_batches(data)
 
         any_key = keys[0]
         data_len = len(vectors[any_key])
 
         return vectors, keys, data_len
+
 
     def get_mask_resolved_input_mask_with_input(self, idx, key=""):
         tokens = self.get_tokens(idx, "input_ids")

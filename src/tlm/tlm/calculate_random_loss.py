@@ -32,7 +32,7 @@ def independent_model(loss1, loss2, mask, method):
 
         loss1 = cross_entropy(pred_prob1, gold_prob1)
         loss2 = cross_entropy(pred_prob2, gold_prob2)
-
+        print(loss1)
         loss = loss1 + loss2
 
         loss_list.append(loss)
@@ -63,6 +63,8 @@ def run(filename, n_item):
         loss1 = features["loss_base"].float_list.value
         loss2 = features["loss_target"].float_list.value
         mask = features["masked_lm_weights"].float_list.value
+        print(loss1)
+
 
 
         loss_list.append(independent_model(loss1, loss2, mask, proportion_random))

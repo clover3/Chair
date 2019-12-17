@@ -1,10 +1,11 @@
-import random
-from sydney_manager import MarkedTaskManager
-import path
 import os
-from data_generator import tokenizer_wo_tf as tokenization
-from tlm.two_seg_pretraining import write_instance_to_example_files, write_predict_instance
 import pickle
+import random
+
+import path
+from data_generator import tokenizer_wo_tf as tokenization
+from sydney_manager import MarkedTaskManager
+from tlm.two_seg_pretraining import write_instance_to_example_files, write_predict_instance
 
 
 def filter_instances(data):

@@ -1,36 +1,31 @@
 
 # My library
-import path
-from misc_lib import TimeEstimator, left, tprint, CodeTiming
-from data_generator import tokenizer_b as tokenization
-from models.classic.stopword import load_stopwords
-
-
-from adhoc.galago import load_galago_judgement
-
-from tlm.retrieve_lm import per_doc_posting_server
-from tlm.retrieve_lm.select_sentence import get_random_sent
-from tlm.retrieve_lm.sample_segments import get_doc_sent,extend
-from tlm.retrieve_lm.segment2problem import generate_mask
-from tlm.retrieve_lm.retreive_candidates import translate_mask2token_level, remove
-from tlm.retrieve_lm.galago_query_maker import clean_query
-from tlm.retrieve_lm.stem import CacheStemmer, stemmed_counter
-from tlm.feature2 import FeatureExtractor
-from tlm.feature_extractor import libsvm_str
-from tlm.two_seg_pretraining import write_predict_instance
-from tlm.retrieve_lm.tf_record_writer import filter_instances
-from tlm.retrieve_lm.tf_instance_writer import TFRecordMaker
-from sydney_manager import MarkedTaskManager, ReadyMarkTaskManager
-
-
-
-### Python Library
-import sys
+import json
+import os
 import pickle
 import random
-import os
-import json
+### Python Library
+import sys
 from collections import Counter
+
+import path
+from adhoc.galago import load_galago_judgement
+from data_generator import tokenizer_b as tokenization
+from misc_lib import TimeEstimator, left, tprint, CodeTiming
+from models.classic.stopword import load_stopwords
+from sydney_manager import MarkedTaskManager, ReadyMarkTaskManager
+from tlm.feature2 import FeatureExtractor
+from tlm.feature_extractor import libsvm_str
+from tlm.retrieve_lm import per_doc_posting_server
+from tlm.retrieve_lm.galago_query_maker import clean_query
+from tlm.retrieve_lm.retreive_candidates import translate_mask2token_level, remove
+from tlm.retrieve_lm.sample_segments import get_doc_sent, extend
+from tlm.retrieve_lm.segment2problem import generate_mask
+from tlm.retrieve_lm.select_sentence import get_random_sent
+from tlm.retrieve_lm.stem import CacheStemmer, stemmed_counter
+from tlm.retrieve_lm.tf_instance_writer import TFRecordMaker
+from tlm.retrieve_lm.tf_record_writer import filter_instances
+from tlm.two_seg_pretraining import write_predict_instance
 
 
 class Pipeline:

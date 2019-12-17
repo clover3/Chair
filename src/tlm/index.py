@@ -1,14 +1,16 @@
-import data_generator.data_parser.trec as trec
-import nltk.tokenize
-from krovetzstemmer import Stemmer
-import path
 import os
 import pickle
+from collections import Counter, defaultdict
+
+import nltk.tokenize
+from krovetzstemmer import Stemmer
+
+import data_generator.data_parser.trec as trec
+import path
+from data_generator import tokenizer_b as tokenization
+from misc_lib import TimeEstimator
 from models.classic.stopword import load_stopwords
 from tlm.retrieve_lm.stem import CacheStemmer
-from misc_lib import TimeEstimator
-from collections import Counter, defaultdict
-from data_generator import tokenizer_b as tokenization
 from tlm.retrieve_lm.token_server import get_token_reader
 
 

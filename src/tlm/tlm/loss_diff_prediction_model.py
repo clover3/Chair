@@ -3,8 +3,8 @@ import tensorflow as tf
 from models.transformer import optimization_v2 as optimization
 from tf_util.tf_logging import tf_logging
 from tlm.tlm.loss_diff_common import IndependentLossModel, get_diff_loss, recover_mask, get_gold_diff
+from tlm.training.assignment_map import get_bert_assignment_map
 from tlm.training.input_fn_common import get_lm_basic_features, get_lm_mask_features, format_dataset
-from tlm.training.lm_model_fn import get_bert_assignment_map
 
 
 def loss_diff_prediction_model(bert_config, train_config, model_class, model_config):
@@ -47,6 +47,8 @@ def loss_diff_prediction_model(bert_config, train_config, model_class, model_con
             loss2 = loss_model.loss2
             per_example_loss1 = loss_model.per_example_loss1
             per_example_loss2 = loss_model.per_example_loss2
+            losses1 = tf.reduce_sum(per_example_loss1, axis=1)
+            losses2 = tf.reduce_sum(per_example_loss2, axis=1)
             prob1 = loss_model.prob1
             prob2 = loss_model.prob2
 
@@ -99,12 +101,21 @@ def loss_diff_prediction_model(bert_config, train_config, model_class, model_con
                     host_call=host_call,
                     scaffold_fn=scaffold_fn)
         elif mode == tf.estimator.ModeKeys.EVAL:
-            def metric_fn(loss):
+            def metric_fn(per_example_loss1, per_example_loss2):
+                loss1 = tf.compat.v1.metrics.mean(
+                    values=per_example_loss1)
+                loss2 = tf.compat.v1.metrics.mean(
+                    values=per_example_loss2)
+
+                pel = per_example_loss1 + per_example_loss2
+
                 return {
-                    "eval_loss": loss,
+                #    "eval_loss": loss,
+                    "loss1": loss1,
+                    "loss2": loss2,
                 }
 
-            eval_metrics = (metric_fn, [total_loss])
+            eval_metrics = (metric_fn, [losses1, losses2])
             output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
                     mode=mode,
                     loss=total_loss,

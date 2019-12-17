@@ -251,7 +251,7 @@ class DictTrainGen(UnmaskedPairGen):
             writer_index = (writer_index + 1) % len(writers)
 
             if inst_index < 20:
-                self.log_print_inst(instance, features)
+                datagen_base.log_print_inst(instance, features)
 
         total_written = 0
         for writer in writers:
@@ -478,7 +478,7 @@ class DictEntryPredictGen(UnmaskedPairGen):
                 writer.write_feature(features)
                 case_counter.update(instance)
                 if inst_index < 20:
-                    self.log_print_inst(instance, features)
+                    datagen_base.log_print_inst(instance, features)
         writer.close()
 
         tf_logging.info("Wrote %d total instances", writer.total_written)
@@ -499,9 +499,10 @@ class SenseSelectingDictionaryReaderGen(UnmaskedPairGen):
         self.max_d_loc = 16
         self.max_word_len = 8
         self.stopword = load_stopwords()
-        self.get_basic_input_features_as_list = partial(datagen_base.get_basic_input_feature_as_list, self.tokenizer, self.max_seq_length)
-        self.get_masked_lm_features_as_list = partial(datagen_base.get_masked_lm_features_as_list, self.tokenizer, self.max_predictions_per_seq)
-
+        self.get_basic_input_features_as_list =\
+            partial(datagen_base.get_basic_input_feature_as_list, self.tokenizer, self.max_seq_length)
+        self.get_masked_lm_features_as_list =\
+            partial(datagen_base.get_masked_lm_features_as_list, self.tokenizer, self.max_predictions_per_seq)
 
     @staticmethod
     def drop_definitions(batch_insts, max_def_length):

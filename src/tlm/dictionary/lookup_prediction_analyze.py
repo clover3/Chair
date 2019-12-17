@@ -1,14 +1,16 @@
-import pickle
-from path import output_path, data_path
-import os
-from misc_lib import pick1
-import tensorflow as tf
-from data_generator import tokenizer_wo_tf
-from tf_util.enum_features import load_record
-from visualize.html_visual import Cell, HtmlVisualizer
 import collections
+import os
+import pickle
 import random
+
+import tensorflow as tf
+
+from data_generator import tokenizer_wo_tf
+from misc_lib import pick1
+from path import output_path, data_path
+from tf_util.enum_features import load_record
 from tlm.wiki import bert_training_data as btd
+from visualize.html_visual import Cell, HtmlVisualizer
 
 
 def take(v):

@@ -5,7 +5,7 @@ import tensorflow as tf
 from absl import app
 
 import trainer.tf_train_module_v2 as train_module
-from cache import load_cache, save_to_pickle
+from cache import save_to_pickle
 from data_generator.NLI import nli
 from data_generator.common import get_tokenizer
 from log import log as log_module
@@ -15,8 +15,8 @@ from tf_util.tf_logging import tf_logging
 from tlm.dictionary.dict_augment import DictAugmentedDataLoader, NAME_DUMMY_WSSDR
 from tlm.dictionary.dict_reader_interface import DictReaderInterface, DictReaderWrapper, WSSDRWrapper
 from tlm.model_cnfig import JsonConfig
+from tlm.training.assignment_map import get_bert_assignment_map, get_assignment_map_as_is
 from tlm.training.dict_model_fn import get_bert_assignment_map_for_dict
-from tlm.training.lm_model_fn import get_bert_assignment_map, get_assignment_map_as_is
 from tlm.training.train_flags import *
 from trainer.model_saver import save_model_to_dir_path, load_model, get_canonical_model_path
 from trainer.tf_module import get_loss_from_batches
@@ -31,10 +31,8 @@ def setup_summary_writer(exp_name, sess):
 
     train_log_path = os.path.join(summary_run_path, "train")
     test_log_path = os.path.join(summary_run_path, "test")
-    train_writer = tf.compat.v1.summary.FileWriter(train_log_path,
-                                              sess.graph)
-    test_writer = tf.compat.v1.summary.FileWriter(test_log_path,
-                                             sess.graph)
+    train_writer = tf.compat.v1.summary.FileWriter(train_log_path)
+    test_writer = tf.compat.v1.summary.FileWriter(test_log_path)
     return train_writer, test_writer
 
 
@@ -160,7 +158,7 @@ def eval_nli_w_dict_lookup(run_name,
     runner = WSSDRRunner(model, dev_data_feeder.augment_dict_info)
     runner.load_last_saved_model(model_path)
 
-    dev_batches = dev_data_feeder.get_all_batches(batch_size, True)
+    dev_batches = dev_data_feeder.get_all_batches(batch_size, True)[:100]
     n_batches = len(dev_batches)
     print('{} batches, about {} data'.format(n_batches, n_batches*batch_size))
     loss, acc = runner.run_batches_w_lookup(dev_batches)
@@ -188,16 +186,16 @@ def demo_nli_w_dict(run_name,
 
 
     def fetch_fn(step_i):
-        for indice, batch in dev_batches[:1]:
+        for indice, batch in dev_batches:
             print(indice)
             cache_name = "term_ranks_logits_cache"
-            logits = load_cache(cache_name)
-            if logits is None:
-                logits, = runner.sess.run([runner.model.get_lookup_logits()],
-                                        feed_dict=runner.model.batch2feed_dict(batch)
-                                        )
+            #logits = load_cache(cache_name)
+            logits, = runner.sess.run([runner.model.get_lookup_logits()],
+                                    feed_dict=runner.model.batch2feed_dict(batch)
+                                    )
             raw_scores = logits[:, :, 1]
             term_ranks = np.argsort(logits[:, :, 1], axis=1)
+            term_ranks = np.flip(term_ranks)
             save_to_pickle(logits, cache_name)
 
             x0, x1, x2, x3, y, x4, x5, x6, ab_map, ab_mapping_mask = batch
@@ -318,11 +316,11 @@ def train_nli_w_dict(run_name,
     train_data_feeder = data_feeder_loader.get_train_feeder()
     dev_data_feeder = data_feeder_loader.get_dev_feeder()
     lookup_train_feeder = train_data_feeder
-    valid_runner = WSSDRRunner(model, train_data_feeder.augment_dict_info, sess)
+    valid_runner = WSSDRRunner(model, dev_data_feeder.augment_dict_info, sess)
 
     dev_batches = []
-    dev_batches_w_dict = []
     n_dev_batch = 100
+    dev_batches_w_dict = dev_data_feeder.get_all_batches(batch_size, True)[:n_dev_batch]
     for _ in range(n_dev_batch):
         dev_batches.append(dev_data_feeder.get_random_batch(batch_size))
         dev_batches_w_dict.append(dev_data_feeder.get_lookup_batch(batch_size))

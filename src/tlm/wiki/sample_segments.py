@@ -1,8 +1,13 @@
-import os
 from misc_lib import TimeEstimator
-from cache import load_from_pickle, StreamPickler
+from cache import StreamPickler
 from random import randint
 from tlm.wiki.parse import parse_title_line
+from random import randint
+
+from cache import StreamPickler
+from misc_lib import TimeEstimator
+from tlm.wiki.parse import parse_title_line
+
 
 class EndofDocument(EOFError):
     pass

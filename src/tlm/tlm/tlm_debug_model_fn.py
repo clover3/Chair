@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from tlm.tlm.tlm2_network import tlm2_raw_prob
-from tlm.training.lm_model_fn import get_tlm_assignment_map_v2
+from tlm.training.assignment_map import get_tlm_assignment_map_v2
 
 
 def model_fn_tlm_debug(bert_config, train_config, logging, model_class):

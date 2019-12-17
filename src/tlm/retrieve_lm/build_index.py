@@ -1,6 +1,7 @@
-from tlm.retrieve_lm.mysql_sentence import get_sent_gid, mydb
 import nltk
+
 from misc_lib import TimeEstimator
+from tlm.retrieve_lm.mysql_sentence import get_sent_gid, mydb
 
 # create table terms (term_id INT PRIMARY KEY AUTO INCREMENT, term VARCHAR(255));
 # create table invindex (term_id INT, doc_id INT, loc INT);

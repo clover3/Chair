@@ -1,5 +1,7 @@
 from collections import Counter
+
 import numpy as np
+
 
 ####
 #  Reading webster dictionary
@@ -664,6 +666,22 @@ def parser_dev():
                 print("content {}: {}".format(sense_idx+1, definition))
 
 
+def count_phrasal():
+    path = "c:\\work\\Data\\webster\\webster_headerless.txt"
+    d1 = DictionaryReader.open(path)
+    d2 = DictionaryParser(d1)
+
+    cnt = 0
+    for word, word_entry in d2.word2entry.items():
+        if len(word.split()) > 1:
+            print(word)
+            cnt += 1
+
+    print(len(d2.word2entry))
+    print(cnt)
+
+
+
 def dictionary_reader_demo():
     path = "c:\\work\\Data\\webster\\webster_headerless.txt"
     d1 = DictionaryReader.open(path)
@@ -682,4 +700,4 @@ def dictionary_reader_demo():
 
 
 if __name__ == "__main__":
-    parser_dev()
+    count_phrasal()

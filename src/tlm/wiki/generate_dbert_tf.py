@@ -1,11 +1,12 @@
-from cache import *
-from path import data_path
-from data_generator import tokenizer_wo_tf as tokenization
 import sys
+import time
+
+from cache import *
+from data_generator import tokenizer_wo_tf as tokenization
+from path import data_path
 from sydney_manager import MarkedTaskManager
 from tlm.wiki import bert_training_data as btd
 from tlm.wiki.bert_training_data import *
-import time
 
 working_path ="/mnt/nfs/work3/youngwookim/data/dbert_tf"
 

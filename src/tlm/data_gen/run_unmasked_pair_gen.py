@@ -1,12 +1,9 @@
 import random
-from cache import *
-from path import data_path
-from data_generator import tokenizer_wo_tf as tokenization
 import sys
+
+from cache import *
 from sydney_manager import MarkedTaskManager
-from misc_lib import TimeEstimator
 from tlm.data_gen.base import UnmaskedPairGen
-import time
 
 working_path ="/mnt/nfs/work3/youngwookim/data/bert_tf"
 
@@ -28,8 +25,8 @@ class Worker:
         self.gen.write_instance_to_example_files(insts, [output_file])
 
 def main():
-    mark_path = os.path.join(working_path, "wiki_unmasked_pair_repeat_mark")
-    out_path = os.path.join(working_path, "tf_unmasked_pair_repeat")
+    mark_path = os.path.join(working_path, "unmasked_pair_x3_mark")
+    out_path = os.path.join(working_path, "unmasked_pair_x3")
     if not os.path.exists(out_path):
         os.mkdir(out_path)
     mtm = MarkedTaskManager(4000, mark_path, 1)

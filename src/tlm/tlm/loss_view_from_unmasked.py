@@ -1,10 +1,14 @@
 import os
 import pickle
+from collections import Counter, defaultdict
 
 import math
+import matplotlib.pyplot as plt
+import mpld3
 import numpy as np
 
 from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import pretty_tokens
 from path import output_path
 from visualize.html_visual import Cell, HtmlVisualizer
 
@@ -334,6 +338,158 @@ def pred_loss_view():
         elif pred_diff < 0.1 :
             html_writer.write_headline("Low Drop")
 
+
+def loss_drop_tendency():
+    tokenizer = get_tokenizer()
+    filename = "tlm_loss_pred_on_dev.pickle"
+    filename = "412.pickle"
+    p = os.path.join(output_path, filename)
+    data = pickle.load(open(p, "rb"))
+
+    batch_size, seq_length = data[0]['input_ids'].shape
+
+    keys = list(data[0].keys())
+    vectors = {}
+
+    for e in data:
+        for key in keys:
+            if key not in vectors:
+                vectors[key] = []
+            vectors[key].append(e[key])
+
+    for key in keys:
+        vectors[key] = np.concatenate(vectors[key], axis=0)
+
+
+    n_instance = len(vectors['input_ids'])
+    print("n_instance ", n_instance )
+    token_cnt = Counter()
+    acc_prob_before = Counter()
+    acc_prob_after = Counter()
+    num_predictions = len(vectors["grouped_positions"][0][0])
+
+    prev_word = defaultdict(list)
+    context = defaultdict(list)
+
+    def combine(t1,t2):
+        if t2.startswith("##"):
+            return t1+t2
+        else:
+            return t1 + "_" + t2
+
+    n_instance = 1000
+    for i in range(n_instance):
+        tokens = tokenizer.convert_ids_to_tokens(vectors['input_ids'][i])
+        positions = vectors["grouped_positions"][i]
+
+        num_trials = len(positions)
+        for t_i in range(num_trials):
+            for p_i in range(num_predictions):
+                loc = vectors["grouped_positions"][i][t_i][p_i]
+                loss1 = vectors["grouped_loss1"][i][t_i][p_i]
+                loss2 = vectors["grouped_loss2"][i][t_i][p_i]
+
+                t = combine(tokens[loc-1], tokens[loc])
+                prev_word[t].append(tokens[loc-1])
+
+                ctx = pretty_tokens(tokens[loc-5:loc+4], drop_sharp=False)
+                context[t].append(ctx)
+
+                prob_before = math.exp(-loss1)
+                prob_after = math.exp(-loss2)
+                token_cnt[t] += 1
+                acc_prob_before[t] += prob_before
+                acc_prob_after[t] += prob_after
+
+    infos = []
+
+    for t in token_cnt:
+        cnt = token_cnt[t]
+        avg_prob_before = acc_prob_before[t] / cnt
+        avg_prob_after = acc_prob_after[t] / cnt
+        avg_diff = avg_prob_before - avg_prob_after
+        e = t, avg_prob_before, avg_prob_after, avg_diff, cnt
+        infos.append(e)
+
+    infos = list([e for e in infos if e[4] > 10])
+
+
+    def entropy(cnt_dict:Counter):
+        total = sum(cnt_dict.values())
+
+        ent = 0
+        for key, value in cnt_dict.items():
+            p = value / total
+
+            ent += -p * math.log(p)
+        return ent
+
+    def print_n(e_list, n):
+        for e in e_list[:n]:
+            t, avg_prob_before, avg_prob_after, avg_diff, cnt = e
+            print("{}  ({})".format(t, cnt))
+            print("Before : {0:3f}".format(avg_prob_before))
+            print("After  : {0:3f}".format(avg_prob_after))
+            print("AvgDiff: {0:3f}".format(avg_diff))
+            term_stat = Counter(prev_word[e[0]])
+            print(term_stat)
+            print(context[t])
+            print("Entropy: ", entropy(term_stat))
+
+    print(type(infos[0][0]))
+    print(type(infos[0][1]))
+    print(type(infos[0][2]))
+
+
+    print("<< Most common >>")
+    infos.sort(key=lambda x:x[1], reverse=True)
+    print_n(infos, 10)
+    print("---------------------")
+
+    infos.sort(key=lambda x: x[3], reverse=True)
+    print("<<  Big Drop  >>")
+    print_n(infos, 10)
+    print("---------------------")
+
+    infos.sort(key=lambda x: x[3], reverse=False)
+    print("<< Negative Drop (NLI Improve >>")
+    print_n(infos, 10)
+    print("---------------------")
+
+    plt.rcParams.update({'font.size': 22})
+    fig, ax = plt.subplots()
+    infos = list([e for e in infos if e[4] > 30])
+
+    y = list([x[1] for x in infos])
+    z = list([x[2] for x in infos])
+    fig.set_size_inches(18.5, 10.5)
+
+    ax.scatter(z, y)
+    x = np.linspace(0, 1, 1000)
+    ax.plot(x, x)
+
+    for i, e in enumerate(infos):
+        ax.annotate(e[0], (z[i], y[i]))
+
+    mpld3.show()
+
+def debug_it():
+    y = [0] *10
+    z = [0] * 10
+    fig, ax = plt.subplots()
+
+    infos = [["good"]] * 10
+    ax.scatter(z, y)
+
+    for i, e in enumerate(infos):
+        ax.annotate(e[0], (z[i], y[i]))
+
+    mpld3.show()
+
+
+
+
 if __name__ == '__main__':
-    pred_loss_view()
+    loss_drop_tendency()
+
 

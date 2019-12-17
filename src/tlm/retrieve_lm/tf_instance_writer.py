@@ -1,13 +1,14 @@
-import random
-from sydney_manager import MarkedTaskManager
 import collections
-from misc_lib import flatten
-from cache import load_pickle_from
-import path
 import os
-from data_generator import tokenizer_wo_tf as tokenization
-from tlm.retrieve_lm.robust_tokens import load_robust_token
 import pickle
+import random
+
+import path
+from cache import load_pickle_from
+from data_generator import tokenizer_wo_tf as tokenization
+from misc_lib import flatten
+from sydney_manager import MarkedTaskManager
+from tlm.retrieve_lm.robust_tokens import load_robust_token
 
 
 class TrainingInstance(object):

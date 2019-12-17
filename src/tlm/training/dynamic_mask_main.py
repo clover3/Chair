@@ -12,9 +12,10 @@ from tlm.dictionary.dict_reader_transformer import DictReaderModel
 from tlm.dictionary.sense_selecting_dictionary_reader import SSDR
 from tlm.model.base import BertModel
 from tlm.model_cnfig import JsonConfig
-from tlm.tlm.tlm2_network import tlm2
+from tlm.tlm.blc_scorer import brutal_loss_compare
+from tlm.tlm.tlm2_network import tlm2, tlm_prefer_hard
 from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
-from tlm.training.input_fn import input_fn_builder_unmasked, input_fn_builder_masked
+from tlm.training.input_fn import input_fn_builder_unmasked, input_fn_builder_masked, input_fn_builder_blc
 from tlm.training.lm_model_fn import model_fn_random_masking, model_fn_target_masking, get_nli_ex_model_segmented
 from tlm.training.train_flags import *
 
@@ -32,6 +33,7 @@ class LMTrainConfig:
                  checkpoint_type="",
                  second_init_checkpoint="",
                  fixed_mask=False,
+                 older_logits=False
                  ):
         self.init_checkpoint = init_checkpoint
         self.learning_rate = learning_rate
@@ -138,25 +140,34 @@ def lm_pretrain(input_files):
         model_fn = model_fn_random_masking(
             bert_config=bert_config,
             train_config=train_config,
-            logging=tf_logging,
             model_class=BertModel,
         )
     elif task == TASK_TLM:
         tf_logging.info("Running TLM")
-        model_config = modeling.BertConfig.from_json_file(FLAGS.model_config_file)
+        model_config = JsonConfig.from_json_file(FLAGS.model_config_file)
+
+        target_model_config = bert_config
+        if model_config.compare_attrib_value_safe("not_twin", True):
+            target_model_config = model_config
+
         input_fn_builder = input_fn_builder_unmasked
+
         if FLAGS.modeling == "nli_ex":
             priority_model = get_nli_ex_model_segmented
         elif FLAGS.modeling == "tlm2":
-            priority_model = partial(tlm2, bert_config, FLAGS.use_tpu)
+            priority_model = partial(tlm2, target_model_config, FLAGS.use_tpu)
+        elif FLAGS.modeling == "tlm_hard":
+            priority_model = partial(tlm_prefer_hard, target_model_config, FLAGS.use_tpu)
+        elif FLAGS.modeling == "BLC":
+            priority_model = brutal_loss_compare
+            input_fn_builder = input_fn_builder_blc
         else:
             raise Exception()
 
         model_fn = model_fn_target_masking(
             bert_config=bert_config,
             train_config=train_config,
-            model_config=model_config,
-            logging=tf_logging,
+            target_model_config=model_config,
             model_class=BertModel,
             priority_model=priority_model,
         )

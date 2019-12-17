@@ -1,11 +1,14 @@
 from models.transformer.bert import *
-from models.transformer import bert
-from models.transformer import hyperparams
-import os
+from collections import Counter
+
 import numpy as np
+
 import path
 from cache import *
-from collections import Counter
+from models.transformer import bert
+from models.transformer import hyperparams
+from models.transformer.bert import *
+
 
 def fetch_bert_parameter(model_path):
     hp = hyperparams.HPSENLI()
@@ -78,6 +81,21 @@ def load_parameter():
     save_to_pickle(nli_params, "nli_params")
 
 
+def is_near_zero(v):
+    return abs(v) < 1e-3
+
+def count_zero(l):
+    l = np.abs(l)
+    l = l < 1e-2
+    return np.count_nonzero(l)
+
+
+def count_less_than_one(l):
+    l = np.abs(l)
+    l = l < 1
+    return np.count_nonzero(l)
+
+
 def analyze_parameter():
     bert_params = load_from_pickle("bert_params")
     nli_params = load_from_pickle("nli_params")
@@ -97,8 +115,14 @@ def analyze_parameter():
     def dist_avg(m1, m2):
         return np.average(np.abs(m1 - m2))
 
-
+    def num_elems(shape):
+        v = 1
+        for l in shape:
+            v = v*l
+        return v
     layer_sum = Counter()
+    acc_bert = 1
+    acc_nli = 1
     for key in bert_params:
         v1 = bert_params[key]
         v2 = nli_params[key]
@@ -106,7 +130,18 @@ def analyze_parameter():
         sum_d = dist_sum(v1, v2)
         avg_d = dist_avg(v1, v2)
         max_d = dist_max(v1, v2)
-        print("{}\t{}\t{}\t{}\t{}".format(key, v1.shape, sum_d, avg_d, max_d))
+        #print("{}\t{}\t{}\t{}\t{}".format(key, v1.shape, sum_d, avg_d, max_d))
+
+
+
+        n = num_elems(v1.shape)
+        n_zero_bert = count_zero(v1)
+        n_zero_nli = count_zero(v2)
+        if "bias" not in key and "attention" not in key:
+            acc_bert *= (n-n_zero_bert)
+            acc_nli *= (n - n_zero_nli)
+            if "LayerNorm" not in key:
+                print("{}\t{}\t{}\t{}\t{}".format(key, v1.shape, n_zero_bert, n_zero_nli, n_zero_bert-n_zero_nli))
 
         tokens = key.split("/")
         if tokens[2].startswith("layer_"):
@@ -115,6 +150,7 @@ def analyze_parameter():
         if tokens[1].startswith("embeddings"):
             layer_sum[tokens[1]] += sum_d
 
+    print("BERT/NLI", acc_bert/acc_nli)
     for key in layer_sum:
         print(key, layer_sum[key])
 

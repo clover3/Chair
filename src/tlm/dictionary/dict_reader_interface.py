@@ -185,7 +185,7 @@ class WSSDRWrapper(DictReaderInterface):
         self.cls_loss = tf.reduce_mean(self.cls_loss_arr)
 
         self.lookup_logits = keras.layers.Dense(2)(self.network.get_sequence_output())
-        self.lookup_p_at_1 = tf_module.p_at_1(self.lookup_logits[:, 1], y_lookup)
+        self.lookup_p_at_1 = tf_module.p_at_1(self.lookup_logits[:,:, 1], y_lookup)
         self.lookup_loss_arr = tf.nn.sparse_softmax_cross_entropy_with_logits(
             logits=self.lookup_logits,
             labels=y_lookup)

@@ -1,14 +1,14 @@
-from adhoc.bm25 import BM25_3, BM25_3_q_weight
-
-from cache import *
-import path
 from collections import Counter
+
+import path
+from adhoc.bm25 import BM25_3, BM25_3_q_weight
+from cache import *
 from data_generator import tokenizer_wo_tf as tokenization
-from tlm.retrieve_lm.retreive_candidates import get_visible
 from misc_lib import *
-from tlm.retrieve_lm.stem import CacheStemmer, stemmed_counter
 from models.classic.stopword import load_stopwords
 from tlm.retrieve_lm import per_doc_posting_server
+from tlm.retrieve_lm.retreive_candidates import get_visible
+from tlm.retrieve_lm.stem import CacheStemmer, stemmed_counter
 
 
 class PassageRanker:

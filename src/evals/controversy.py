@@ -1,10 +1,10 @@
 
-from models.controversy import *
-from models.bert_controversy import BertPredictor
-from models.cnn_predictor import CNNPredictor
-from evaluation import *
-from path import data_path
 from data_generator.tokenizer_b import FullTokenizerWarpper
+from evaluation import *
+from models.cnn_predictor import CNNPredictor
+from models.controversy import *
+from path import data_path
+
 
 def eval_all_contrv():
     ams_X, ams_Y = amsterdam.get_dev_data(False)
@@ -16,11 +16,11 @@ def eval_all_contrv():
     models = []
     #models.append(("CNN/Wiki", CNNPredictor("WikiContrvCNN")))
     models.append(("CNN/Wiki", CNNPredictor("WikiContrvCNN_sigmoid", "WikiContrvCNN")))
-    #models.append(("lm/wiki", get_wiki_doc_lm()))
+    #models.append(("tlm/wiki", get_wiki_doc_lm()))
     #models.append(("Bert/Wiki", BertPredictor("WikiContrv2009")))
     #models.append(("Bert/Wiki", BertPredictor("WikiContrv2009_only_wiki")))
-    #models.append(("lm/dbpedia", get_dbpedia_contrv_lm()))
-    #models.append(("lm/Guardian", get_guardian16_lm()))
+    #models.append(("tlm/dbpedia", get_dbpedia_contrv_lm()))
+    #models.append(("tlm/Guardian", get_guardian16_lm()))
     #models.append(("yw_may", get_yw_may()))
     #models.append(("Guardian2", get_guardian_selective_lm()))
 

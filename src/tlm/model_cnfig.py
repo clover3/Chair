@@ -33,3 +33,8 @@ class JsonConfig(object):
 
     def dummy(self):
         NotImplemented
+
+    def compare_attrib_value_safe(self, attrib, value):
+        if hasattr(self, attrib):
+            return self.__dict__[attrib] == value
+        return False

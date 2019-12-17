@@ -1,6 +1,7 @@
 
-from tlm.model.masking import *
 from data_generator import special_tokens
+from tlm.model.masking import *
+
 
 def test_routine():
     input_ids = tf.constant([[special_tokens.CLS_ID, 1002,1003,1004,1005, special_tokens.SEP_ID, special_tokens.PAD_ID],

@@ -1,6 +1,7 @@
-import os
 import json
-from sydney_manager import MarkedTaskManager, ReadyMarkTaskManager
+import os
+
+from sydney_manager import ReadyMarkTaskManager
 
 iteration_dir = "/mnt/scratch/youngwookim/data/tlm_simple"
 if not os.path.exists("/mnt/scratch/youngwookim/"):

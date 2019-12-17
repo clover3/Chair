@@ -1,0 +1,16 @@
+{
+  "num_hidden_layers": 4,
+  "type_vocab_size": 2,
+  "vocab_size": 30522,
+  "key_dimension": 728,
+  "key_pooling_method": "max_pooling",
+  "num_key_tokens": 1,
+  "num_merge_layers":1,
+  "max_loc_length":16,
+  "info_pooling_method":"first_tokens",
+  "use_ab_mapping_mask": true,
+  "lookup_threshold": 10,
+  "lookup_min_step": 1,
+  "lookup_train_frequency": 1,
+  "blind_dictionary": true
+}

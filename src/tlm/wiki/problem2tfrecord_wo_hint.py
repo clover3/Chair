@@ -1,14 +1,15 @@
-import os
 working_path ="/mnt/nfs/work3/youngwookim/data/tlm_simple"
 import random
+
 from cache import *
-from path import data_path
 from data_generator import tokenizer_wo_tf as tokenization
-from sydney_manager import MarkedTaskManager
 from misc_lib import TimeEstimator
-from tlm.wiki.token_db import load_seg_token_readers
-from tlm.wiki.tf_instance_maker import TFInstanceMakerPair
+from path import data_path
+from sydney_manager import MarkedTaskManager
 from tlm.two_seg_pretraining import write_predict_instance
+from tlm.wiki.tf_instance_maker import TFInstanceMakerPair
+from tlm.wiki.token_db import load_seg_token_readers
+
 
 class Worker:
     def __init__(self):

@@ -135,7 +135,7 @@ def diff_and_grad(v1, v2, g):
     for i in range(l):
         d = np.abs(v1[i]-v2[i])
 
-        if abs(g[i]) > 1e-2:
+        if abs(g[i]) > 1e-2 or True:
             if d < 1e-1:
                 n_diff_1 += 1
             if d < 1e-2:

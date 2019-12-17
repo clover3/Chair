@@ -1,14 +1,15 @@
-import pickle
-import os
-import tensorflow as tf
 import collections
+import os
+import pickle
 
-from tlm.dictionary.feature_to_text import take, Feature2Text
-from tlm.wiki import bert_training_data as btd
-from tf_util.enum_features import load_record2
-from visualize.html_visual import Cell, HtmlVisualizer
+import tensorflow as tf
+
 from data_generator.common import get_tokenizer
 from path import output_path
+from tf_util.enum_features import load_record2
+from tlm.dictionary.feature_to_text import take, Feature2Text
+from tlm.wiki import bert_training_data as btd
+from visualize.html_visual import Cell, HtmlVisualizer
 
 working_path ="/mnt/nfs/work3/youngwookim/data/bert_tf"
 if os.name == "nt":

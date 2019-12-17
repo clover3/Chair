@@ -12,7 +12,7 @@ def main(_):
     if FLAGS.log_debug:
         tf_logging.setLevel(logging.DEBUG)
 
-    tf_logging.filters[0].excludes.extend(["Dequeue next", "Enqueue next"])
+    tf_logging.filters[0].excludes.extend()
     tf.io.gfile.makedirs(FLAGS.output_dir)
     tf_logging.info("Predict Runner")
 

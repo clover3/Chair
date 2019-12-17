@@ -3,6 +3,7 @@ import time
 import tensorflow as tf
 
 import tlm.model.base as modeling
+from taskman_client.task_proxy import get_task_manager_proxy
 from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging
 from tlm.benchmark.report import save_report
@@ -42,10 +43,15 @@ def task():
         raise Exception()
 
     result = run_estimator(model_fn, input_fn)
+    if FLAGS.report_field:
+        value = result[FLAGS.report_field]
+        proxy = get_task_manager_proxy()
+        proxy.report_number(FLAGS.run_name, value)
 
     save_report("nli", run_name, FLAGS, result["accuracy"])
     print("Elapsed {}".format(time.time() - begin))
     return result
+
 
 def main(_):
     task()
