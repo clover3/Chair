@@ -45,7 +45,7 @@ def fetch_params(hparam, vocab_size, run_name, data_loader, model_path):
     sess.run(tf.global_variables_initializer())
 
     load_model_w_scope(sess, model_path, ["bert"])
-    vars = tf.compat.v1.trainable_variables()
+    vars = tf.trainable_variables()
     names = list([v.name for v in vars])
 
     vars_out, = sess.run([vars])
