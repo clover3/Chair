@@ -1,74 +1,63 @@
-from log import log
-from path import get_model_full_path
-import pickle
 from concurrent.futures import ProcessPoolExecutor
 
-from adhoc.bm25 import get_bm25
-
-from trainer.promise import *
-from trainer.queue_feader import QueueFeader
-import cache
-
-from models.transformer.hyperparams import HPMerger
-from task.MLM import TransformerLM
-from task.PairLM import TransformerPairLM
-from task.AuxLM import AuxLM
-from task.PairFeature import PairFeature, PairFeatureClassification
-from task.classification import TransformerClassifier
-from task.consistent_classification import ConsistentClassifier
-from task.aux_classification import AuxClassification
-
-from task.metrics import stance_f1, eval_2label
-from task.metrics import eval_3label, eval_2label
-
-from sklearn.svm import LinearSVC
-from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn import metrics
-from sklearn.metrics import roc_curve
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
 
-
-from data_generator.stance import stance_detection
-from data_generator.mask_lm import enwiki
+import cache
+import data_generator.NLI.enlidef as ENLIDef
+import data_generator.adhoc.score_loader as score_loader
+from adhoc.bm25 import get_bm25
+from attribution.baselines import *
+from attribution.eval import eval_explain, eval_pairing, predict_translate
+from attribution.eval import eval_fidelity
+from attribution.lime import *
 from data_generator import shared_setting
 from data_generator.adhoc.ws import *
-from data_generator.data_parser.trec import *
-from data_generator.data_parser import controversy
-from data_generator.data_parser.robust import *
-from data_generator.data_parser import controversy, load_protest
 from data_generator.argmining import ukp
 from data_generator.cnn import SimpleLoader
-
-import data_generator.adhoc.score_loader as score_loader
-import data_generator.NLI.enlidef as ENLIDef
+from data_generator.data_parser import controversy, load_protest
+from data_generator.data_parser.robust import *
+from data_generator.data_parser.trec import *
+from data_generator.mask_lm import enwiki
+from data_generator.stance import stance_detection
 from data_generator.ubuntu import ubuntu
-
-from models.baselines import svm
-from models.cnn import CNN
-from models.transformer.tranformer_nli import transformer_nli, transformer_nli_embedding_in, transformer_nli_vector
-from models.transformer.transformer_controversy import transformer_controversy
-from models.transformer.transformer_paired import transformer_paired
-from models.transformer.transformer_adhoc import transformer_adhoc, transformer_adhoc2, transformer_adhoc_ex
-from models.transformer.transformer_lm import transformer_ql
-from models.transformer.transformer_multitask import transformer_mt
-from models.transformer.transformer_weight import transformer_weight
-from models.transformer.transformer_arg_dist import transformer_distribution
-from models.transformer.ScoreCombiner import *
-from models.transformer.cie import token_regression, span_selection
-from models.transformer.transformer_binary import transformer_binary
-from models.transformer.transformer_concat import transformer_concat
-from models.controversy import get_wiki_doc
-from models import word2vec
-from task.crs_classifier import crs_transformer as CrsModel
-
-from attribution.eval import eval_explain, eval_pairing, predict_translate
-from attribution.baselines import *
-from attribution.lime import *
-from attribution.eval import eval_fidelity
 from evaluation import *
 from explain import visualize
 from explain.train_ex import ExplainTrainer
+from log import log
+from models import word2vec
+from models.baselines import svm
+from models.cnn import CNN
+from models.controversy import get_wiki_doc
+from models.transformer.ScoreCombiner import *
+from models.transformer.cie import token_regression, span_selection
+from models.transformer.hyperparams import HPMerger
+from models.transformer.tranformer_nli import transformer_nli, transformer_nli_embedding_in, transformer_nli_vector
+from models.transformer.transformer_adhoc import transformer_adhoc, transformer_adhoc2, transformer_adhoc_ex
+from models.transformer.transformer_arg_dist import transformer_distribution
+from models.transformer.transformer_binary import transformer_binary
+from models.transformer.transformer_concat import transformer_concat
+from models.transformer.transformer_controversy import transformer_controversy
+from models.transformer.transformer_lm import transformer_ql
+from models.transformer.transformer_multitask import transformer_mt
+from models.transformer.transformer_paired import transformer_paired
+from models.transformer.transformer_weight import transformer_weight
+from task.AuxLM import AuxLM
+from task.MLM import TransformerLM
+from task.PairFeature import PairFeature, PairFeatureClassification
+from task.PairLM import TransformerPairLM
+from task.aux_classification import AuxClassification
+from task.classification import TransformerClassifier
+from task.consistent_classification import ConsistentClassifier
+from task.crs_classifier import crs_transformer as CrsModel
+from task.metrics import eval_3label, eval_2label
+from task.metrics import stance_f1
 from trainer.np_modules import *
+from trainer.promise import *
+from trainer.queue_feader import QueueFeader
+
+
 # Experiment is the most outside module.
 # This module can reference any module in the system.
 
@@ -1585,7 +1574,6 @@ class Experiment:
                                save_fn, self.save_interval,
                               steps=steps)
         return save_fn()
-
 
     def nli_attribution_baselines(self, nli_setting, exp_config, data_loader, preload_id):
         print("attribution_explain")

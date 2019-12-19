@@ -53,7 +53,7 @@ class DataLoader:
 
         if self.train_data is None:
             self.train_data = list(self.example_generator(self.train_file))
-        save_to_pickle(self.train_data, "nli_train_cache")
+        #save_to_pickle(self.train_data, "nli_train_cache")
         return self.train_data
 
     def get_dev_data(self):

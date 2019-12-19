@@ -1,5 +1,4 @@
 from models.transformer.tranformer_nli import transformer_nli_grad, transformer_nli_hidden
-from models.transformer.tranformer_nli import transformer_nli_grad, transformer_nli_hidden
 from trainer.model_saver import load_model_w_scope
 from trainer.np_modules import *
 from trainer.tf_train_module import *
@@ -46,23 +45,11 @@ def fetch_params(hparam, vocab_size, run_name, data_loader, model_path):
     sess.run(tf.global_variables_initializer())
 
     load_model_w_scope(sess, model_path, ["bert"])
-    dev_batches = get_batches_ex(data_loader.get_dev_data(), hparam.batch_size, 4)
+    vars = tf.compat.v1.trainable_variables()
+    names = list([v.name for v in vars])
 
-    def batch2feed_dict(batch):
-        x0, x1, x2, y  = batch
-        feed_dict = {
-            task.x_list[0]: x0,
-            task.x_list[1]: x1,
-            task.x_list[2]: x2,
-            task.y: y,
-        }
-        return feed_dict
-
-        vars = tf.compat.v1.trainable_variables()
-
-        outputs = []
-        all_layers, emb_outputs = sess.run([task.all_layers, task.embedding_output],
-                               )
+    vars_out, = sess.run([vars])
+    return names, vars_out
 
 
 

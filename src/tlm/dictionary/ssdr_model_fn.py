@@ -13,6 +13,43 @@ from tlm.training.lm_model_fn import metric_fn
 from trainer.get_param_num import get_param_num
 
 
+# APR : Auxiliary Parameter Reader
+
+def model_fn_apr(bert_config, ssdr_config, train_config, logging, model_class, dict_run_config):
+
+    def model_fn(features, labels, mode, params):    # pylint: disable=unused-argument
+        """The `model_fn` for TPUEstimator."""
+        logging.info("*** Features ***")
+        for name in sorted(features.keys()):
+            logging.info("    name = %s, shape = %s" % (name, features[name].shape))
+
+        def reform_a_input(raw_input):
+            return tf.reshape(raw_input, [dict_run_config.inner_batch_size, -1])
+
+        def reform_b_input(raw_input):
+            return tf.reshape(raw_input, [dict_run_config.def_per_batch, -1])
+
+        input_ids = features["input_ids"]
+        input_mask = features["input_mask"]
+        segment_ids = features["segment_ids"]
+
+        b_shape = [dict_run_config.def_per_batch, ssdr_config.max_position_embeddings ]
+        d_input_ids = tf.zeros(b_shape)
+        d_input_mask = tf.zeros(b_shape)
+
+
+        d_location_ids = tf.zeros()
+        ab_mapping = features["ab_mapping"]
+
+        if hasattr(ssdr_config, "blind_dictionary") and ssdr_config.blind_dictionary:
+            logging.info("Hide dictionary")
+            d_input_ids = tf.zeros_like(d_input_ids)
+            d_input_mask = tf.zeros_like(d_input_mask)
+
+        if dict_run_config.prediction_op == "loss":
+            seed = 0
+
+
 def model_fn_dict_reader(bert_config, ssdr_config, train_config, logging, model_class, dict_run_config):
     """Returns `model_fn` closure for TPUEstimator."""
 

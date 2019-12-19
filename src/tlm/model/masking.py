@@ -1,5 +1,6 @@
-from models.transformer.bert_common_v2 import gather_index2d, get_shape_list2
 import tensorflow as tf
+
+from data_generator import special_tokens
 from models.transformer.bert_common_v2 import gather_index2d, get_shape_list2
 
 

@@ -13,7 +13,7 @@ from misc_lib import *
 from path import output_path, get_bert_full_path, get_latest_model_path_from_dir_path
 from tf_util.tf_logging import tf_logging
 from tlm.dictionary.dict_augment import DictAugmentedDataLoader, NAME_DUMMY_WSSDR
-from tlm.dictionary.dict_reader_interface import DictReaderInterface, DictReaderWrapper, WSSDRWrapper
+from tlm.dictionary.dict_reader_interface import DictReaderInterface, DictReaderWrapper, WSSDRWrapper, APRWrapper
 from tlm.model_cnfig import JsonConfig
 from tlm.training.assignment_map import get_bert_assignment_map, get_assignment_map_as_is
 from tlm.training.dict_model_fn import get_bert_assignment_map_for_dict
@@ -23,7 +23,7 @@ from trainer.tf_module import get_loss_from_batches
 from visualize.html_visual import Cell, HtmlVisualizer
 
 
-def setup_summary_writer(exp_name, sess):
+def setup_summary_writer(exp_name):
     summary_path = os.path.join(output_path, "summary")
     exist_or_mkdir(summary_path)
     summary_run_path = os.path.join(summary_path, exp_name)
@@ -283,6 +283,37 @@ class NoLookupException(Exception):
     pass
 
 
+def get_train_op_sep_lr(loss, lr, factor, scope_key, global_step = None, name='Adam'):
+    if global_step is None:
+        global_step = tf.Variable(0, name='global_step', trainable=False)
+    all_vars = tf.compat.v1.trainable_variables()
+
+    def cond(full_name, key):
+        tokens = full_name.split("/")
+        if key in tokens:
+            return True
+        else:
+            return False
+
+    vars1 = list([v for v in all_vars if not cond(v.name, scope_key)])
+    for v in vars1:
+        tf_logging.info("Group1 Variables : %s" % v.name)
+
+    vars2 = list([v for v in all_vars if cond(v.name, scope_key)])
+    for v in vars2:
+        tf_logging.info("Group2 Variables : %s" % v.name)
+
+    optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=lr, beta1=0.9, beta2=0.98, epsilon=1e-8, name=name)
+    train_op = optimizer.minimize(loss, global_step=global_step, var_list=vars1)
+    optimizer2 = tf.compat.v1.train.AdamOptimizer(learning_rate=lr*factor, beta1=0.9, beta2=0.98, epsilon=1e-8, name=name)
+    train_op2 = optimizer2.minimize(loss, global_step=global_step, var_list=vars2)
+
+    train_op = tf.group([train_op, train_op2])
+    return train_op, global_step
+
+
+
+
 def train_nli_w_dict(run_name,
                      model: DictReaderInterface,
                      model_path,
@@ -297,13 +328,17 @@ def train_nli_w_dict(run_name,
     with tf.compat.v1.variable_scope("optimizer"):
         lr = FLAGS.learning_rate
         lr2 = lr * 0.1
-        train_cls, global_step = train_module.get_train_op(model.get_cls_loss(), lr)
+        if model_config.compare_attrib_value_safe("use_two_lr", True):
+            tf_logging.info("Using two lr for each parts")
+            train_cls, global_step = get_train_op_sep_lr(model.get_cls_loss(), lr, 5, "dict")
+        else:
+            train_cls, global_step = train_module.get_train_op(model.get_cls_loss(), lr)
         train_lookup_op, global_step = train_module.get_train_op(model.get_lookup_loss(), lr2, global_step)
 
     sess = train_module.init_session()
     sess.run(tf.compat.v1.global_variables_initializer())
 
-    train_writer, test_writer = setup_summary_writer(run_name, sess)
+    train_writer, test_writer = setup_summary_writer(run_name)
 
     last_saved = get_latest_model_path_from_dir_path(model_path)
     if last_saved:
@@ -530,6 +565,9 @@ def get_model(seq_max, modeling, is_training):
     elif modeling == "wssdr":
         ssdr_config = JsonConfig.from_json_file(FLAGS.model_config_file)
         model = WSSDRWrapper(3, ssdr_config, seq_max, is_training)
+    elif modeling == "apr":
+        ssdr_config = JsonConfig.from_json_file(FLAGS.model_config_file)
+        model = APRWrapper(3, ssdr_config, seq_max, is_training)
     else:
         assert False
 

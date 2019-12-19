@@ -10,7 +10,7 @@ from tlm.model.masking import random_masking, biased_masking
 from tlm.model.nli_ex_v2 import transformer_nli
 from tlm.training.assignment_map import get_bert_assignment_map, get_cls_assignment, get_tlm_assignment_map_v2, \
     assignment_map_v2_to_v2, get_assignment_map_remap_from_v2
-from trainer.get_param_num import get_param_num
+from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments
 
 
 def metric_fn(masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
@@ -47,19 +47,6 @@ def metric_fn(masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
         "next_sentence_accuracy": next_sentence_accuracy,
         "next_sentence_loss": next_sentence_mean_loss,
     }
-
-
-def get_tpu_scaffold_or_init(init_fn, use_tpu):
-    if use_tpu:
-        def tpu_scaffold():
-            init_fn()
-            return tf.compat.v1.train.Scaffold()
-
-        scaffold_fn = tpu_scaffold
-        return scaffold_fn
-    else:
-        init_fn()
-        return None
 
 
 def align_checkpoint(tvars,
@@ -206,21 +193,6 @@ def model_fn_random_masking(bert_config, train_config, model_class):
         return output_spec
 
     return model_fn
-
-
-def log_var_assignments(tvars, initialized_variable_names, initialized_variable_names2=None):
-    tf_logging.info("**** Trainable Variables ****")
-    for var in tvars:
-        init_string = ""
-        if var.name in initialized_variable_names:
-            init_string = ", *INIT_FROM_CKPT*"
-        if initialized_variable_names2 is not None:
-            if var.name in initialized_variable_names2:
-                init_string = ", *INIT_FROM_CKPT2*"
-        tf_logging.info("    name = %s, shape = %s%s", var.name, var.shape,
-                     init_string)
-    tf_logging.info("Total parameters : %d" % get_param_num())
-
 
 
 def get_nli_ex_model(input_ids, input_mask, segment_ids):

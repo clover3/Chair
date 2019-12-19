@@ -19,6 +19,7 @@ from trainer.np_modules import get_batches_ex
 NAME_WSSDR = "wssdr"
 NAME_dict_1 = "dict_1"
 NAME_DUMMY_WSSDR = "dummy_wssdr"
+NAME_APR = "apr"
 
 class DictAugmentedDataLoader:
     def __init__(self, feeder_name, data_loader, use_cache=False):
@@ -27,6 +28,8 @@ class DictAugmentedDataLoader:
         if feeder_name == NAME_dict_1:
             self.feeder_getter = self.get_dict1_feeder
         elif feeder_name == NAME_WSSDR:
+            self.feeder_getter = self.get_wssdr_feeder
+        elif feeder_name == NAME_APR:
             self.feeder_getter = self.get_wssdr_feeder
         elif feeder_name == NAME_DUMMY_WSSDR:
             self.feeder_getter = self.get_dummy_wssdr_feeder

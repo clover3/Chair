@@ -7,6 +7,52 @@ from tlm.training.assignment_map import get_bert_assignment_map
 from tlm.training.input_fn_common import get_lm_basic_features, get_lm_mask_features, format_dataset
 
 
+def loss_diff_predict_only_model_fn(bert_config, train_config, model_class, model_config):
+    def model_fn(features, labels, mode, params):    # pylint: disable=unused-argument
+        """The `model_fn` for TPUEstimator."""
+        tf_logging.info("*** Features ***")
+        for name in sorted(features.keys()):
+            tf_logging.info("name = %s, shape = %s" % (name, features[name].shape))
+
+        input_ids = features["input_ids"]
+        input_mask = features["input_mask"]
+        segment_ids = features["segment_ids"]
+
+        is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+        model = model_class(
+                config=bert_config,
+                is_training=is_training,
+                input_ids=input_ids,
+                input_mask=input_mask,
+                token_type_ids=segment_ids,
+                use_one_hot_embeddings=train_config.use_one_hot_embeddings,
+        )
+
+        if model_config.loss_model != "independent":
+            raise Exception("Only independent loss model is allowed")
+
+        loss_model = IndependentLossModel(bert_config)
+        loss_model.build_predictions(model.get_sequence_output())
+        # We do not expect initialization here
+
+        if mode != tf.estimator.ModeKeys.PREDICT:
+            raise Exception("Only PREDICT mode is allowed")
+
+        predictions = {
+            "prob1": loss_model.prob1,
+            "prob2": loss_model.prob2
+        }
+
+        output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
+            mode=mode,
+            predictions=predictions,
+            scaffold_fn=None)
+
+        return output_spec
+
+    return model_fn
+
+
 def loss_diff_prediction_model(bert_config, train_config, model_class, model_config):
     """Returns `model_fn` closure for TPUEstimator."""
 

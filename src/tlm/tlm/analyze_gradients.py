@@ -1,10 +1,12 @@
 import os
 import pickle
+from collections import Counter
 
 import numpy as np
 
 from data_generator import tokenizer_wo_tf
 from path import output_path, data_path
+from visualize.html_visual import HtmlVisualizer, Cell
 
 
 def load_and_analyze_gradient():
@@ -135,13 +137,52 @@ def diff_and_grad(v1, v2, g):
     for i in range(l):
         d = np.abs(v1[i]-v2[i])
 
-        if abs(g[i]) > 1e-2 or True:
+        if abs(g[i]) > 1e-3 :
             if d < 1e-1:
                 n_diff_1 += 1
-            if d < 1e-2:
+            if d < 10:
                 n_diff_2 += 1
 
     return n_diff_1, n_diff_2
+
+
+def calculate_diff_prob(hv_tt, hv_lm, tokenizer):
+    batch_size = 16
+    seq_len = 200
+    hidden_dim = 768
+
+    hv_tt, x_list = reshape(hv_tt)
+    hv_lm, x_list = reshape(hv_lm)
+
+    count = Counter()
+    all_cnt = 0
+    assert len(hv_lm) == len(hv_tt)
+    n_inst = min(len(hv_lm), 5)
+    for inst_i in range(n_inst):
+        print(inst_i, end=" ")
+        all_cnt += seq_len
+        for layer_i in range(13):
+            layer_no = layer_i
+            for seq_i in range(seq_len):
+                v1 = hv_lm[inst_i, layer_i, seq_i]
+                v2 = hv_tt[inst_i, layer_i, seq_i]
+
+                diff = np.abs(v1-v2)
+
+                for dim_i in range(len(v1)):
+                    if diff[dim_i] < 1e-1:
+                        count[(layer_i, dim_i)] += 1
+    print()
+    for layer_i in range(13):
+        p_distrib = Counter()
+        for dim_i in range(hidden_dim):
+            p = count[(layer_i, dim_i)] / all_cnt
+            assert p <= 1
+            bin = int((p+0.05) * 10)
+            p_distrib[bin] += 1
+        print(layer_i, p_distrib)
+
+
 
 
 def analyze_hv(hv_tt, hv_lm, tt_grad, tokenizer):
@@ -154,13 +195,19 @@ def analyze_hv(hv_tt, hv_lm, tt_grad, tokenizer):
     hv_lm, x_list = reshape(hv_lm)
 
     assert len(hv_lm) == len(hv_tt)
+
+    html = HtmlVisualizer("Preserved.html")
     for inst_i in range(len(hv_lm)):
         print("\t", end="")
+        tokens = tokenizer.convert_ids_to_tokens(x_list[inst_i])
         for seq_i in range(seq_len):
             token = tokenizer.convert_ids_to_tokens([x_list[inst_i, seq_i]])[0]
             print("{}".format(token), end="\t")
         print()
+        scores = []
         for layer_i in range(13):
+            if layer_i != 1 :
+                continue
             layer_no = layer_i
             if layer_no >= 1:
                 print("Layer {} :".format(layer_no), end="\t")
@@ -170,8 +217,15 @@ def analyze_hv(hv_tt, hv_lm, tt_grad, tokenizer):
                 n_diff_1, n_diff_2 = diff_and_grad(hv_lm[inst_i, layer_i, seq_i],
                                                  hv_tt[inst_i, layer_i, seq_i],
                                                  reshaped_grad[inst_i, layer_i, seq_i])
+                scores.append(n_diff_1)
                 print("{}({})".format(n_diff_1, n_diff_2), end="\t")
             print("\n")
+
+        row = []
+        for t, s in zip(tokens, scores):
+            score = s / hidden_dim * 100
+            row.append(Cell(t, score))
+        html.write_table([row])
         print("-----------------")
 
 

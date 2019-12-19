@@ -17,4 +17,3 @@ def get_train_op(loss, lr, global_step = None, name='Adam',):
     train_op = optimizer.minimize(loss, global_step=global_step)
     return train_op, global_step
 
-

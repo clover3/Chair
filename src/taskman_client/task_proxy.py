@@ -77,4 +77,8 @@ def get_task_manager_proxy():
     return TaskManagerProxy("gosford.cs.umass.edu", 8000)
 
 if __name__ == "__main__":
-    TaskManagerProxy("gosford.cs.umass.edu", 8000).report_number("test_number", "3.14159")
+    import numpy
+    arr = numpy.array([0.1,0.242])
+    value = arr[0]
+
+    TaskManagerProxy("gosford.cs.umass.edu", 8000).report_number("test_number", value)

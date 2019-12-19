@@ -44,7 +44,7 @@ def task():
 
     result = run_estimator(model_fn, input_fn)
     if FLAGS.report_field:
-        value = result[FLAGS.report_field]
+        value = float(result[FLAGS.report_field])
         proxy = get_task_manager_proxy()
         proxy.report_number(FLAGS.run_name, value)
 
@@ -61,4 +61,5 @@ if __name__ == "__main__":
     flags.mark_flag_as_required("input_file")
     flags.mark_flag_as_required("bert_config_file")
     flags.mark_flag_as_required("output_dir")
+    flags.mark_flag_as_required("run_name")
     tf.compat.v1.app.run()

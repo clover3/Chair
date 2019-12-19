@@ -18,7 +18,7 @@ def get_color(r):
 class Cell:
     def __init__(self, s, highlight_score=0, space_left=True, space_right=True, target_color="B"):
         if type(s) == float:
-            self.s = "{:04.2f}".format(s)
+            self.s = "{:02.2f}".format(s)
         else:
             self.s = str(s)
 

@@ -21,10 +21,10 @@ from __future__ import print_function
 import collections
 import random
 
-from data_generator import tokenizer_b
 import tensorflow as tf
 
-from flags_support import flags
+from data_generator import tokenizer_b
+from tf_v2_support import flags
 
 FLAGS = flags.FLAGS
 

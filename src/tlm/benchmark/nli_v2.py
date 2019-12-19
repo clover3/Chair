@@ -1,29 +1,100 @@
-from datetime import datetime
+import tensorflow as tf
 
 from data_generator.NLI import nli
 from data_generator.shared_setting import NLI
 from log import log as log_module
 from misc_lib import *
 from models.transformer.hyperparams import HPBert
-from models.transformer.tranformer_nli import transformer_nli
-from path import model_path
-from path import output_path
-from tf_v2_support import disable_eager_execution
+from tf_v2_support import placeholder, variable_scope
+from tlm.benchmark.nli import get_batches_from_data_loader, save_report
 from tlm.dictionary.nli_w_dict import setup_summary_writer
-from trainer.model_saver import save_model, load_bert_v2
-from trainer.np_modules import *
+from tlm.model.base import BertModel, BertConfig
+from tlm.training.assignment_map import get_bert_assignment_map
+from trainer import tf_module
+from trainer.model_saver import save_model
 from trainer.tf_module import epoch_runner
-from trainer.tf_train_module import *
+from trainer.tf_train_module_v2 import init_session, get_train_op
 
 
-def get_model_path(run_name, step_name):
-    return os.path.join(model_path, 'runs', run_name, step_name)
+class Classification:
+    def __init__(self, num_classes):
+        self.num_classes = num_classes
+
+    def predict(self, enc, Y, is_train):
+        if is_train:
+            mode = tf.estimator.ModeKeys.TRAIN
+        else:
+            mode = tf.estimator.ModeKeys.EVAL
+        return self.predict_ex(enc, Y, mode)
+
+    def predict_ex(self, enc, Y, mode):
+        feature_loc = 0
+        pooled = enc[:,feature_loc,:]
+        logits = tf.keras.layers.Dense(self.num_classes, name="cls_dense")(pooled)
+        preds = tf.argmax(logits, axis=-1)
+        self.acc = tf_module.accuracy(logits, Y)
+        self.logits = logits
+        if mode == tf.estimator.ModeKeys.TRAIN or mode == tf.estimator.ModeKeys.EVAL:
+            self.loss_arr = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                logits=logits,
+                labels=Y)
+            self.loss = tf.reduce_mean(self.loss_arr)
+            return preds, self.loss
+        else:
+            return preds
+
+
+class transformer_nli:
+    def __init__(self, hp, voca_size, method, is_training=True):
+        config = BertConfig(vocab_size=voca_size,
+                             hidden_size=hp.hidden_units,
+                             num_hidden_layers=hp.num_blocks,
+                             num_attention_heads=hp.num_heads,
+                             intermediate_size=hp.intermediate_size,
+                             type_vocab_size=hp.type_vocab_size,
+                             )
+
+        seq_length = hp.seq_max
+        use_tpu = False
+        task = Classification(nli.num_classes)
+
+        input_ids = placeholder(tf.int64, [None, seq_length])
+        input_mask = placeholder(tf.int64, [None, seq_length])
+        segment_ids = placeholder(tf.int64, [None, seq_length])
+        label_ids = placeholder(tf.int64, [None])
+
+        self.x_list = [input_ids, input_mask, segment_ids]
+        self.y = label_ids
+
+        use_one_hot_embeddings = use_tpu
+        self.model = BertModel(
+            config=config,
+            is_training=is_training,
+            input_ids=input_ids,
+            input_mask=input_mask,
+            token_type_ids=segment_ids,
+            use_one_hot_embeddings=use_one_hot_embeddings)
+
+        pred, loss = task.predict(self.model.get_sequence_output(), label_ids, True)
+
+        self.logits = task.logits
+        self.sout = tf.nn.softmax(self.logits)
+        self.pred = pred
+        self.loss = loss
+        self.acc = task.acc
+
+
+def init_model_with_bert(sess, init_checkpoint):
+    tvars = tf.compat.v1.trainable_variables()
+    map1, init_vars = get_bert_assignment_map(tvars, init_checkpoint)
+    loader = tf.compat.v1.train.Saver(map1)
+    loader.restore(sess, init_checkpoint)
 
 
 def train_nli(hparam, nli_setting, run_name, num_epochs, data, model_path):
     print("Train nil :", run_name)
     task = transformer_nli(hparam, nli_setting.vocab_size, 2)
-    with tf.variable_scope("optimizer"):
+    with variable_scope("optimizer"):
         train_cls, global_step = get_train_op(task.loss, hparam.lr)
 
     train_batches, dev_batches = data
@@ -37,10 +108,10 @@ def train_nli(hparam, nli_setting, run_name, num_epochs, data, model_path):
         return summary
 
     sess = init_session()
-    sess.run(tf.global_variables_initializer())
+    sess.run(tf.compat.v1.global_variables_initializer())
     train_writer, test_writer = setup_summary_writer(run_name)
     if model_path is not None:
-        load_bert_v2(sess, model_path)
+        init_model_with_bert(sess, model_path)
 
     def batch2feed_dict(batch):
         x0, x1, x2, y  = batch
@@ -54,12 +125,12 @@ def train_nli(hparam, nli_setting, run_name, num_epochs, data, model_path):
 
     g_step_i = 0
     def train_classification(batch, step_i):
-        loss_val, acc,  _ = sess.run([task.loss, task.acc, train_cls,
-                                                    ],
-                                                   feed_dict=batch2feed_dict(batch)
-                                                   )
+        loss_val, acc,  _ = sess.run([task.loss, task.acc, train_cls],
+                                       feed_dict=batch2feed_dict(batch)
+                                       )
         log.debug("Step {0} train loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
         train_writer.add_summary(get_summary_obj(loss_val, acc), step_i)
+        nonlocal g_step_i
         g_step_i = step_i
         return loss_val, acc
 
@@ -76,7 +147,7 @@ def train_nli(hparam, nli_setting, run_name, num_epochs, data, model_path):
 
         loss_val = average(loss_list)
         acc = average(acc_list)
-        train_writer.add_summary(get_summary_obj(loss_val, acc), g_step_i)
+        test_writer.add_summary(get_summary_obj(loss_val, acc), g_step_i)
 
         return average(acc_list)
 
@@ -91,8 +162,8 @@ def train_nli(hparam, nli_setting, run_name, num_epochs, data, model_path):
                                valid_fn, valid_freq,
                                save_fn, save_interval)
 
-
     return save_fn()
+
 
 def test_nli(hparam, nli_setting, run_name, data, model_path):
     print("test nil :", run_name)
@@ -132,27 +203,9 @@ def test_nli(hparam, nli_setting, run_name, data, model_path):
     return valid_fn()
 
 
-def save_report(task, run_name, init_model, avg_acc):
-    file_name = "{}_{}".format(run_name, init_model)
-    p = os.path.join(output_path, "report", file_name)
-    exist_or_mkdir(os.path.join(output_path, "report"))
-    f = open(p, "w")
-    time_str = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-    f.write("{}\n".format(time_str))
-    f.write("{}\t{}\n".format(task, avg_acc))
-
-
-
-
-def get_batches_from_data_loader(data_loader, batch_size):
-    train_batches = get_batches_ex(data_loader.get_train_data(), batch_size, 4)
-    dev_batches = get_batches_ex(data_loader.get_dev_data(), batch_size, 4)
-    return train_batches, dev_batches
-
 
 def run_nli_w_path(run_name, step_name, model_path):
     #run_name
-    disable_eager_execution()
     hp = HPBert()
     nli_setting = NLI()
     nli_setting.vocab_size = 30522
@@ -167,9 +220,4 @@ def run_nli_w_path(run_name, step_name, model_path):
     print("avg_acc: ", avg_acc)
 
     save_report("nli", run_name, step_name, avg_acc)
-
-
-def run_nli(run_name, step_name):
-    model_path = get_model_path(run_name, step_name)
-    return run_nli_w_path(run_name, step_name, model_path)
 

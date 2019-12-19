@@ -1,10 +1,11 @@
-from task.transformer_est import Transformer, Classification
+import tensorflow as tf
+
+from data_generator.NLI import nli
 from models.transformer import bert
 from models.transformer import bert_get_hidden
-import tensorflow as tf
-from data_generator.NLI import nli
+from task.transformer_est import Classification
+from tf_v2_support import placeholder
 from trainer import tf_module
-
 
 METHOD_CROSSENT = 2
 METHOD_HINGE = 7
@@ -23,14 +24,14 @@ class transformer_nli:
         use_tpu = False
         task = Classification(nli.num_classes)
 
-        input_ids = tf.placeholder(tf.int64, [None, seq_length])
-        input_mask = tf.placeholder(tf.int64, [None, seq_length])
-        segment_ids = tf.placeholder(tf.int64, [None, seq_length])
-        label_ids = tf.placeholder(tf.int64, [None])
+        input_ids = placeholder(tf.int64, [None, seq_length])
+        input_mask = placeholder(tf.int64, [None, seq_length])
+        segment_ids = placeholder(tf.int64, [None, seq_length])
+        label_ids = placeholder(tf.int64, [None])
         if method in [0,1,3,4,5,6]:
-            self.rf_mask = tf.placeholder(tf.float32, [None, seq_length])
+            self.rf_mask = placeholder(tf.float32, [None, seq_length])
         elif method in [METHOD_CROSSENT, METHOD_HINGE]:
-            self.rf_mask = tf.placeholder(tf.int32, [None, seq_length])
+            self.rf_mask = placeholder(tf.int32, [None, seq_length])
 
         self.x_list = [input_ids, input_mask, segment_ids]
         self.y = label_ids

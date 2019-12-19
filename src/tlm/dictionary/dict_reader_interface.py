@@ -45,7 +45,28 @@ class DictReaderInterface(ABC):
         pass
 
 
-class DictReaderWrapper(DictReaderInterface):
+class DictReaderCommon(DictReaderInterface):
+    def __init__(self):
+        super(DictReaderCommon, self).__init__()
+        self.cls_loss = NotImplemented
+        self.cls_loss_arr = NotImplemented
+        self.lookup_loss = NotImplemented
+        self.acc = NotImplemented
+
+    def get_cls_loss(self):
+        return self.cls_loss
+
+    def get_cls_loss_arr(self):
+        return self.cls_loss_arr
+
+    def get_lookup_loss(self):
+        return self.lookup_loss
+
+    def get_acc(self):
+        return self.acc
+
+
+class DictReaderWrapper(DictReaderCommon):
     def __init__(self, num_classes, seq_length, is_training):
         super(DictReaderWrapper, self).__init__()
         placeholder = tf.compat.v1.placeholder
@@ -96,15 +117,6 @@ class DictReaderWrapper(DictReaderInterface):
         self.lookup_loss = tf.reduce_mean(self.lookup_loss_per_example)
         self.acc = tf_module.accuracy(self.cls_logits, self.y_cls)
 
-    def get_cls_loss(self):
-        return self.cls_loss
-
-    def get_cls_loss_arr(self):
-        return self.cls_loss_arr
-
-    def get_lookup_loss(self):
-        return self.lookup_loss
-
     def batch2feed_dict(self, batch):
         x0, x1, x2, x3, x4, x5, y= batch
         feed_dict = {
@@ -118,9 +130,6 @@ class DictReaderWrapper(DictReaderInterface):
         }
         return feed_dict
 
-    def get_acc(self):
-        return self.acc
-
 
 # [Batch, loc_max_length]
 def get_y_lookup_from_location_ids(location_ids, seq_length):
@@ -132,7 +141,7 @@ def get_y_lookup_from_location_ids(location_ids, seq_length):
     return z
 
 # Word Sense Selecting Dictionary Reader
-class WSSDRWrapper(DictReaderInterface):
+class WSSDRWrapper(DictReaderCommon):
     def __init__(self, num_classes, ssdr_config, seq_length, is_training):
         super(WSSDRWrapper, self).__init__()
         placeholder = tf.compat.v1.placeholder
@@ -194,14 +203,6 @@ class WSSDRWrapper(DictReaderInterface):
         self.lookup_loss = tf.reduce_mean(self.lookup_loss_per_example)
         self.acc = tf_module.accuracy(self.cls_logits, self.y_cls)
 
-    def get_cls_loss(self):
-        return self.cls_loss
-
-    def get_cls_loss_arr(self):
-        return self.cls_loss_arr
-
-    def get_lookup_loss(self):
-        return self.lookup_loss
 
     def batch2feed_dict(self, batch):
         if self.ab_mapping_mask is None:
@@ -241,8 +242,106 @@ class WSSDRWrapper(DictReaderInterface):
         }
         return feed_dict
 
-    def get_acc(self):
-        return self.acc
+    def get_p_at_1(self):
+        return self.lookup_p_at_1
+
+
+# Word Sense Selecting Dictionary Reader
+class APRWrapper(DictReaderCommon):
+    def __init__(self, num_classes, ssdr_config, seq_length, is_training):
+        super(APRWrapper, self).__init__()
+        placeholder = tf.compat.v1.placeholder
+        bert_config = BertConfig.from_json_file(os.path.join(data_path, "bert_config.json"))
+        def_max_length = FLAGS.max_def_length
+        loc_max_length = FLAGS.max_loc_length
+        tf_logging.debug("WSSDRWrapper init()")
+        tf_logging.debug("seq_length %d" % seq_length)
+        tf_logging.debug("def_max_length %d" % def_max_length)
+        tf_logging.debug("loc_max_length %d" % loc_max_length)
+
+        self.input_ids = placeholder(tf.int64, [None, seq_length], name="input_ids")
+        self.input_mask_ = placeholder(tf.int64, [None, seq_length], name="input_mask")
+        self.segment_ids = placeholder(tf.int64, [None, seq_length], name="segment_ids")
+        self.d_location_ids = placeholder(tf.int64, [None, loc_max_length], name="d_location_ids")
+
+        b_shape = [FLAGS.def_per_batch, def_max_length]
+        self.d_input_ids = tf.zeros(b_shape, dtype=tf.int64)
+        self.d_input_mask = tf.zeros(b_shape, dtype=tf.int64)
+        self.d_segment_ids = tf.zeros(b_shape, dtype=tf.int64)
+        self.ab_mapping = placeholder(tf.int64, [None, 1], name="ab_mapping")
+        if ssdr_config.use_ab_mapping_mask:
+            self.ab_mapping_mask = placeholder(tf.int64, [None, FLAGS.def_per_batch], name="ab_mapping_mask")
+        else:
+            self.ab_mapping_mask = None
+
+        # [batch,seq_len], 1 if the indices in d_locations_id
+        y_lookup = get_y_lookup_from_location_ids(self.d_location_ids, seq_length)
+
+        self.y_cls = placeholder(tf.int64, [None])
+
+        self.network = SSDR(
+                config=bert_config,
+                ssdr_config=ssdr_config,
+                is_training=is_training,
+                input_ids=self.input_ids,
+                input_mask=self.input_mask_,
+                token_type_ids=self.segment_ids,
+                d_input_ids=self.d_input_ids,
+                d_input_mask=self.d_input_mask,
+                d_segment_ids=self.d_segment_ids,
+                d_location_ids=self.d_location_ids,
+                ab_mapping=self.ab_mapping,
+                ab_mapping_mask=self.ab_mapping_mask,
+                use_one_hot_embeddings=False,
+            )
+        self.cls_logits = keras.layers.Dense(num_classes)(self.network.get_pooled_output())
+        self.cls_loss_arr = tf.nn.sparse_softmax_cross_entropy_with_logits(
+            logits=self.cls_logits,
+            labels=self.y_cls)
+        self.cls_loss = tf.reduce_mean(self.cls_loss_arr)
+
+        self.lookup_logits = keras.layers.Dense(2)(self.network.get_sequence_output())
+        self.lookup_p_at_1 = tf_module.p_at_1(self.lookup_logits[:,:, 1], y_lookup)
+        self.lookup_loss_arr = tf.nn.sparse_softmax_cross_entropy_with_logits(
+            logits=self.lookup_logits,
+            labels=y_lookup)
+        self.y_lookup = y_lookup
+        self.lookup_loss_per_example = tf.reduce_sum(self.lookup_loss_arr, axis=-1)
+        self.lookup_loss = tf.reduce_mean(self.lookup_loss_per_example)
+        self.acc = tf_module.accuracy(self.cls_logits, self.y_cls)
+
+
+    def batch2feed_dict(self, batch):
+        if self.ab_mapping_mask is None:
+            return self._batch2feed_dict(batch)
+        else:
+            return self._batch2feed_dict_w_abmapping(batch)
+
+    def _batch2feed_dict(self, batch):
+        x0, x1, x2, x3, y, x4, x5, x6, ab_map = batch
+        feed_dict = {
+            self.input_ids: x0,
+            self.input_mask_: x1,
+            self.segment_ids: x2,
+            self.d_location_ids: x3,
+            self.ab_mapping: ab_map,
+            self.y_cls: y,
+        }
+        return feed_dict
+
+    def _batch2feed_dict_w_abmapping(self, batch):
+        x0, x1, x2, x3, y, x4, x5, x6, ab_map, ab_mapping_mask = batch
+
+        feed_dict = {
+            self.input_ids: x0,
+            self.input_mask_: x1,
+            self.segment_ids: x2,
+            self.d_location_ids: x3,
+            self.ab_mapping: ab_map,
+            self.ab_mapping_mask: ab_mapping_mask,
+            self.y_cls: y,
+        }
+        return feed_dict
 
     def get_p_at_1(self):
         return self.lookup_p_at_1

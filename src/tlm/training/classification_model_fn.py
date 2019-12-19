@@ -3,7 +3,7 @@ import tensorflow as tf
 import tlm.training.assignment_map
 from models.transformer import optimization_v2 as optimization
 from models.transformer.bert_common_v2 import dropout
-from tlm.training.lm_model_fn import get_tpu_scaffold_or_init
+from tlm.training.model_fn_common import get_tpu_scaffold_or_init
 from trainer.get_param_num import get_param_num
 
 
