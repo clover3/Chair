@@ -5,7 +5,7 @@ import math
 import numpy as np
 
 from misc_lib import average
-from tf_util.enum_features import load_record2
+from tf_util.enum_features import load_record_v2
 
 
 def proportion_random(prob1):
@@ -56,7 +56,7 @@ def run(filename, n_item):
     loss_list = []
     loss_list2 = []
     loss_list3 = []
-    for idx, features in enumerate(load_record2(filename)):
+    for idx, features in enumerate(load_record_v2(filename)):
         if idx > n_item :
             break
         keys = features.keys()

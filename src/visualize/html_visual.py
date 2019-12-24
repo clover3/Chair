@@ -78,6 +78,12 @@ class HtmlVisualizer:
             self.f_html.write("</tr>\n")
         self.f_html.write("</table>\n")
 
+    def multirow_print(self, cells, width=20):
+        i = 0
+        while i < len(cells):
+            self.write_table([cells[i:i+width]])
+            i += width
+
     def get_cell_html(self, cell):
         left = "&nbsp;" if cell.space_left else ""
         right = "&nbsp;" if cell.space_right else ""

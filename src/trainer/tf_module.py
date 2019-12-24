@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 from misc_lib import *
+from tf_util.tf_logging import tf_logging
 from trainer.np_modules import *
 
 
@@ -196,3 +197,21 @@ def p_at_1(scores, labels):
     rank1_preds = tf.gather_nd(labels, max_indice, batch_dims=1)
     return tf.reduce_mean(tf.cast(rank1_preds,tf.float32))
 
+
+def split_tvars(all_vars, scope_key):
+    def cond(full_name, key):
+        tokens = full_name.split("/")
+        if key in tokens:
+            return True
+        else:
+            return False
+
+    vars1 = list([v for v in all_vars if not cond(v.name, scope_key)])
+    for v in vars1:
+        tf_logging.info("Group1 Variables : %s" % v.name)
+
+    vars2 = list([v for v in all_vars if cond(v.name, scope_key)])
+    for v in vars2:
+        tf_logging.info("Group2 Variables : %s" % v.name)
+
+    return vars1, vars2

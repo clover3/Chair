@@ -28,17 +28,26 @@ def validate_data(fn):
 
 
 def validate_dir(dir_path, idx_range):
+    corrupt_list = []
     for i in idx_range:
         print("Check {}".format(i))
         fn = os.path.join(dir_path, str(i))
         if os.path.exists(fn):
-            validate_data(fn)
+            try:
+                validate_data(fn)
+            except Exception as e:
+                corrupt_list.append(i)
+
         else:
             print("WARNING data {} doesn't exist".format(i))
 
+    if corrupt_list:
+        print("Corrputed _list")
+    for e in corrupt_list:
+        print(e)
 
 if __name__ == "__main__":
-    dir_path = "/mnt/nfs/work3/youngwookim/data/bert_tf/unmasked_pair_x3"
-    st = int(sys.argv[1])
-    ed = int(sys.argv[2])
+    dir_path = os.path.join("/mnt/nfs/work3/youngwookim/data/bert_tf/", sys.argv[1])
+    st = int(sys.argv[2])
+    ed = int(sys.argv[3])
     validate_dir(dir_path, range(st, ed))

@@ -6,7 +6,7 @@ import tensorflow as tf
 
 from data_generator.common import get_tokenizer
 from path import output_path
-from tf_util.enum_features import load_record2
+from tf_util.enum_features import load_record_v2
 from tlm.dictionary.feature_to_text import take, Feature2Text
 from tlm.wiki import bert_training_data as btd
 from visualize.html_visual import Cell, HtmlVisualizer
@@ -27,7 +27,7 @@ def visualize_prediction_data(data_id):
         loss_outputs.extend(e["masked_lm_example_loss"])
     print("Total of {} loss outputs".format(len(loss_outputs)))
     instance_idx = 0
-    feature_itr = load_record2(os.path.join(working_path, "entry_prediction_tf.done", data_id))
+    feature_itr = load_record_v2(os.path.join(working_path, "entry_prediction_tf.done", data_id))
     n = len(num_samples_list)
     n = 100
     html = HtmlVisualizer("entry_prediction.html")
@@ -73,7 +73,7 @@ def generate_training_data(data_id):
     for e in loss_outputs_list:
         loss_outputs.extend(e["masked_lm_example_loss"])
     print("Total of {} loss outputs".format(len(loss_outputs)))
-    feature_itr = load_record2(os.path.join(working_path, "entry_prediction_tf.done", data_id))
+    feature_itr = load_record_v2(os.path.join(working_path, "entry_prediction_tf.done", data_id))
 
     instance_idx = 0
     writer = tf.python_io.TFRecordWriter(os.path.join(working_path, "entry_prediction_train", data_id))

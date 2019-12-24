@@ -19,12 +19,19 @@ def _decode_record(record, name_to_features):
 def get_lm_basic_features(flags):
     FixedLenFeature = tf.io.FixedLenFeature
     max_seq_length = flags.max_seq_length
-    features = {
-        "input_ids": FixedLenFeature([max_seq_length], tf.int64),
-        "input_mask": FixedLenFeature([max_seq_length], tf.int64),
-        "segment_ids": FixedLenFeature([max_seq_length], tf.int64),
-        "next_sentence_labels": FixedLenFeature([1], tf.int64),
-    }
+    if flags.not_use_next_sentence:
+        features = {
+            "input_ids": FixedLenFeature([max_seq_length], tf.int64),
+            "input_mask": FixedLenFeature([max_seq_length], tf.int64),
+            "segment_ids": FixedLenFeature([max_seq_length], tf.int64),
+        }
+    else:
+        features = {
+            "input_ids": FixedLenFeature([max_seq_length], tf.int64),
+            "input_mask": FixedLenFeature([max_seq_length], tf.int64),
+            "segment_ids": FixedLenFeature([max_seq_length], tf.int64),
+            "next_sentence_labels": FixedLenFeature([1], tf.int64),
+        }
     return features
 
 

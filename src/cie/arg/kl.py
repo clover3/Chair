@@ -1,16 +1,34 @@
-import math
-from models.classic.stopword import load_stopwords
 from collections import Counter
-from misc_lib import flatten, average
+
+import math
+
+from misc_lib import flatten
+from models.classic.stopword import load_stopwords
 from summarization import tokenizer
 
-def kl_divergence(a, b):
+
+def kl_divergence_subset(a, b):
     tf_sum = sum(a.values())
     btf_sum = sum(b.values())
     kl = 0
     for term, tf in a.items():
         p_a = tf / tf_sum
         p_b = (b[term] + tf) / (btf_sum + tf)
+        kl += -p_a * math.log(p_b / p_a)
+    return kl
+
+
+def kl_divergence(a, b):
+    tf_sum = sum(a.values())
+    btf_sum = sum(b.values())
+    kl = 0
+
+    all_terms = set(a.keys())
+    all_terms.update(b.keys())
+    l = len(all_terms)
+    for term in all_terms:
+        p_a = (a[term]+1) / (tf_sum + l)
+        p_b = (b[term]+1) / (btf_sum+ l)
         kl += -p_a * math.log(p_b / p_a)
     return kl
 
@@ -24,7 +42,7 @@ class KLPredictor:
         return tokenizer.tokenize(x, self.stopwords)
 
     def divergence(self, sent):
-        return kl_divergence(Counter(self.tokenize(sent)), self.topic_tf)
+        return kl_divergence_subset(Counter(self.tokenize(sent)), self.topic_tf)
 
 
     def tune(self, sents, true_portion):

@@ -1,11 +1,11 @@
 
 import sys
 
-from tf_util.enum_features import load_record2
+from tf_util.enum_features import load_record_v2
 
 
 def visualize(filename, n_item):
-    for idx, features in enumerate(load_record2(filename)):
+    for idx, features in enumerate(load_record_v2(filename)):
         if idx > n_item :
             break
         keys = features.keys()

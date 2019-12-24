@@ -1,15 +1,19 @@
-import tensorflow as tf
+import collections
 import os
-from path import data_path
-from data_generator import tokenizer_wo_tf
 import sys
 
-def read_bert_data(fn):
-    for record in tf.python_io.tf_record_iterator(fn):
-        example = tf.train.Example()
-        example.ParseFromString(record)
-        feature = example.features.feature
-        yield feature
+from data_generator import tokenizer_wo_tf
+from path import data_path
+from tf_util.enum_features import load_record
+from tlm.token_utils import cells_from_tokens
+from visualize.html_visual import HtmlVisualizer
+
+
+def repack_features(feature):
+    new_feature = collections.OrderedDict()
+    for key in feature.keys():
+        new_feature[key] = feature[key]
+    return new_feature
 
 
 def inst2str(feature, tokenizer):
@@ -41,8 +45,30 @@ def inst2str(feature, tokenizer):
             out_str += t
     return out_str
 
+
+def print_as_html(fn):
+    examples = load_record(fn)
+    tokenizer = tokenizer_wo_tf.FullTokenizer(os.path.join(data_path, "bert_voca.txt"))
+
+    html_output = HtmlVisualizer("out_name.html")
+
+    for feature in examples:
+        masked_inputs = feature["input_ids"].int64_list.value
+        idx = 0
+        step = 512
+        while idx < len(masked_inputs):
+            slice = masked_inputs[idx:idx+step]
+            tokens = tokenizer.convert_ids_to_tokens(slice)
+            idx += step
+            cells = cells_from_tokens(tokens)
+            html_output.multirow_print(cells)
+        html_output.write_paragraph("----------")
+
+
+
+
 def read(fn):
-    examples = read_bert_data(fn)
+    examples = load_record(fn)
     tokenizer = tokenizer_wo_tf.FullTokenizer(os.path.join(data_path, "bert_voca.txt"))
 
     for feature in examples:
@@ -53,4 +79,4 @@ def read(fn):
 
 if __name__ == "__main__":
     fn = sys.argv[1]
-    read(fn)
+    print_as_html(fn)

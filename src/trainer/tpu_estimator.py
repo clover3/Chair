@@ -85,7 +85,8 @@ class TrainConfig:
                  num_classes,
                  iterations_per_loop,
                  checkpoint_type,
-                 use_old_logits
+                 use_old_logits,
+                 learning_rate2,
                  ):
         self.init_checkpoint = init_checkpoint
         self.learning_rate = learning_rate
@@ -97,6 +98,7 @@ class TrainConfig:
         self.iterations_per_loop = iterations_per_loop
         self.checkpoint_type = checkpoint_type
         self.use_old_logits = use_old_logits
+        self.learning_rate2 = learning_rate2
 
     @classmethod
     def from_flags(cls, flags):
@@ -111,6 +113,7 @@ class TrainConfig:
             flags.iterations_per_loop,
             flags.checkpoint_type,
             flags.use_old_logits,
+            flags.learning_rate2,
         )
 
 

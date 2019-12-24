@@ -351,6 +351,14 @@ def assignment_map_v2_to_v2(tvars, lm_checkpoint_v2):
     return assignment_map, initialized_variable_names
 
 
+def assignment_map_v2_to_v2_only_attention(tvars, lm_checkpoint_v2):
+    def allow(var_name):
+        return "attention" in var_name or "embedding" in var_name
+
+    tvars = [v for v in tvars if allow(v.name)]
+    return assignment_map_v2_to_v2(tvars, lm_checkpoint_v2)
+
+
 def get_assignment_map_as_is(tvars, checkpoint):
     current_vars = {}
     for var in tvars:
@@ -360,7 +368,7 @@ def get_assignment_map_as_is(tvars, checkpoint):
             name = m.group(1)
 
         current_vars[name] = var
-        tf_logging.info("Init from lm_checkpoint : %s" % name)
+        tf_logging.debug("Init from lm_checkpoint : %s" % name)
 
     assignment_map = {}
     initialized_variable_names = {}
@@ -370,9 +378,92 @@ def get_assignment_map_as_is(tvars, checkpoint):
             if name not in current_vars:
                 continue
             assignment_map[name] = current_vars[name]
-            tf_logging.info("Mapped : %s" % name)
+            tf_logging.debug("Mapped : %s" % name)
 
             initialized_variable_names[name] = 1
             initialized_variable_names[name + ":0"] = 1
 
     return assignment_map, initialized_variable_names
+
+
+
+def bert_assignment_only_attention(tvars, lm_checkpoint):
+    lm_assignment_candidate = {}
+    real_name_map = {}
+
+    def allow(var_name):
+        return "attention" in var_name or "embedding" in var_name
+
+    for var in tvars:
+        name = var.name
+        if not allow(name):
+            continue
+        m = re.match("^(.*):\\d+$", name)
+        if m is not None:
+            name = m.group(1)
+
+        tokens = name.split("/")
+        top_scope = tokens[0]
+        targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
+        targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
+        lm_assignment_candidate[targ_name] = var
+        tf_logging.debug("Init from lm_checkpoint : %s" % name)
+        real_name_map[targ_name] = name
+
+    assignment_map = {}
+    initialized_variable_names = {}
+    if lm_checkpoint:
+        for x in tf.train.list_variables(lm_checkpoint):
+            (name, var) = (x[0], x[1])
+            if name not in lm_assignment_candidate:
+                continue
+            assignment_map[name] = lm_assignment_candidate[name]
+
+            tvar_name = real_name_map[name]
+
+            initialized_variable_names[tvar_name] = 1
+            initialized_variable_names[tvar_name + ":0"] = 1
+
+    return (assignment_map, initialized_variable_names)
+
+
+
+def bert_assignment_wo_attention(tvars, lm_checkpoint):
+    lm_assignment_candidate = {}
+    real_name_map = {}
+
+    def allow(var_name):
+        return "attention" not in var_name
+
+    for var in tvars:
+        name = var.name
+        if not allow(name):
+            continue
+        m = re.match("^(.*):\\d+$", name)
+        if m is not None:
+            name = m.group(1)
+
+        tokens = name.split("/")
+        top_scope = tokens[0]
+        targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
+        targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
+        lm_assignment_candidate[targ_name] = var
+        tf_logging.info("Init from lm_checkpoint : %s" % name)
+        real_name_map[targ_name] = name
+
+    assignment_map = {}
+    initialized_variable_names = {}
+    if lm_checkpoint:
+        for x in tf.train.list_variables(lm_checkpoint):
+            (name, var) = (x[0], x[1])
+            if name not in lm_assignment_candidate:
+                continue
+            assignment_map[name] = lm_assignment_candidate[name]
+
+            tvar_name = real_name_map[name]
+
+            initialized_variable_names[tvar_name] = 1
+            initialized_variable_names[tvar_name + ":0"] = 1
+
+    return (assignment_map, initialized_variable_names)
+

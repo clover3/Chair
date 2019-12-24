@@ -91,10 +91,15 @@ def input_fn_builder_masked(input_files, flags, is_training, num_cpu_threads=4):
         all_features.update(get_lm_basic_features(flags))
         all_features.update(get_lm_mask_features(flags))
 
-        active_feature = ["input_ids", "input_mask", "segment_ids",
-                          "next_sentence_labels",
-                          "masked_lm_positions", "masked_lm_ids", "masked_lm_weights"
-                          ]
+        if flags.not_use_next_sentence:
+            active_feature = ["input_ids", "input_mask", "segment_ids",
+                              "masked_lm_positions", "masked_lm_ids", "masked_lm_weights"
+                              ]
+        else:
+            active_feature = ["input_ids", "input_mask", "segment_ids",
+                              "next_sentence_labels",
+                              "masked_lm_positions", "masked_lm_ids", "masked_lm_weights"
+                              ]
         selected_features = {k: all_features[k] for k in active_feature}
         return format_dataset(selected_features, batch_size, is_training, flags, input_files, num_cpu_threads)
     return input_fn

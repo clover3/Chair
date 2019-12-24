@@ -3,8 +3,7 @@ import tensorflow as tf
 import tlm.training.assignment_map
 from models.transformer import optimization_v2 as optimization
 from models.transformer.bert_common_v2 import dropout
-from tlm.training.model_fn_common import get_tpu_scaffold_or_init
-from trainer.get_param_num import get_param_num
+from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments, classification_metric_fn
 
 
 def shift(v):
@@ -80,6 +79,12 @@ def model_fn_classification(bert_config, train_config, logging, model_class):
         assignment_fn = tlm.training.assignment_map.assignment_map_v2_to_v2
     elif train_config.checkpoint_type == "bert_nli":
         assignment_fn = tlm.training.assignment_map.get_bert_nli_assignment_map
+    elif train_config.checkpoint_type == "attention_bert":
+        assignment_fn = tlm.training.assignment_map.bert_assignment_only_attention
+    elif train_config.checkpoint_type == "attention_bert_v2":
+        assignment_fn = tlm.training.assignment_map.assignment_map_v2_to_v2_only_attention
+    elif train_config.checkpoint_type == "wo_attention_bert":
+        assignment_fn = tlm.training.assignment_map.bert_assignment_wo_attention
     else:
         raise Exception("checkpoint_type not specified")
 
@@ -90,50 +95,23 @@ def model_fn_classification(bert_config, train_config, logging, model_class):
       def init_fn():
         tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
       scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
+    log_var_assignments(tvars, initialized_variable_names)
 
-    logging.info("**** Trainable Variables ****")
-    for var in tvars:
-      init_string = ""
-      if var.name in initialized_variable_names:
-        init_string = ", *INIT_FROM_CKPT*"
-      logging.info("  name = %s, shape = %s%s", var.name, var.shape,
-                      init_string)
-    logging.info("Total parameters : %d" % get_param_num())
-
+    TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
     output_spec = None
     if mode == tf.estimator.ModeKeys.TRAIN:
-      train_op = optimization.create_optimizer_from_config(loss, train_config)
-      output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
-          mode=mode,
-          loss=loss,
-          train_op=train_op,
-          scaffold_fn=scaffold_fn,
-      )
+        train_op = optimization.create_optimizer_from_config(loss, train_config)
+        output_spec = TPUEstimatorSpec(mode=mode, loss=loss, train_op=train_op, scaffold_fn=scaffold_fn)
+
     elif mode == tf.estimator.ModeKeys.EVAL:
-      def metric_fn(log_probs, label, is_real_example):
-          """Computes the loss and accuracy of the model."""
-          log_probs = tf.reshape(
-              log_probs, [-1, log_probs.shape[-1]])
-          pred = tf.argmax(
-              input=log_probs, axis=-1, output_type=tf.int32)
-
-          label = tf.reshape(label, [-1])
-          accuracy = tf.compat.v1.metrics.accuracy(
-              labels=label, predictions=pred, weights=is_real_example)
-
-          return {
-              "accuracy": accuracy,
-          }
-
-      eval_metrics = (metric_fn, [
-          logits, label_ids, is_real_example
-      ])
-      output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
-          mode=mode,
-          loss=loss,
-          eval_metrics=eval_metrics,
-          scaffold_fn=scaffold_fn)
+        eval_metrics = (classification_metric_fn, [
+            logits, label_ids, is_real_example
+        ])
+        output_spec = TPUEstimatorSpec(mode=model, loss=loss, eval_metrics=eval_metrics, scaffold_fn=scaffold_fn)
 
     return output_spec
 
   return model_fn
+
+
+

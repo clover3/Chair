@@ -5,6 +5,7 @@ import math
 import numpy as np
 import scipy.special
 
+from data_generator.common import get_tokenizer
 from misc_lib import lmap
 from path import output_path
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
@@ -22,16 +23,16 @@ def draw():
     amp = 10
     html_writer = HtmlVisualizer("tlm_loss_pred_view{}.html".format(amp), dark_mode=False)
 
-
+    tokenizer = get_tokenizer()
     for inst_i, entry in enumerate(data):
         if inst_i > 100:
             break
-        tokens = entry.get_tokens("input_ids")
-        print(len(tokens))
+
+        input_ids = entry.get_vector("input_ids")
+        tokens = tokenizer.convert_ids_to_tokens(input_ids)
+        #tokens = entry.get_tokens("input_ids")
         prob1 = entry.get_vector("prob1")
         prob2 = entry.get_vector("prob2")
-        print(len(prob1))
-        print(len(prob2))
 
         proximity = (1-(prob1 - prob2))
         difficulty = np.power(1-prob1, 0.3)
@@ -48,7 +49,7 @@ def draw():
         norm_scores = lmap(normalize, prob_scores)
 
 
-        cells = data.cells_from_tokens(tokens, norm_scores)
+        cells = data.cells_from_tokens(tokens, norm_scores, stop_at_pad=False)
         cells2 = data.cells_from_anything(prob1, norm_scores)
         cells3 = data.cells_from_anything(prob2, norm_scores)
         cells31 = data.cells_from_anything(difficulty, norm_scores)

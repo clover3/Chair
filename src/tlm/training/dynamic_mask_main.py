@@ -16,7 +16,7 @@ from tlm.tlm.blc_scorer import brutal_loss_compare
 from tlm.tlm.tlm2_network import tlm2, tlm_prefer_hard
 from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
 from tlm.training.input_fn import input_fn_builder_unmasked, input_fn_builder_masked, input_fn_builder_blc
-from tlm.training.lm_model_fn import model_fn_random_masking, model_fn_target_masking, get_nli_ex_model_segmented
+from tlm.training.lm_model_fn import model_fn_lm, model_fn_target_masking, get_nli_ex_model_segmented
 from tlm.training.train_flags import *
 
 
@@ -137,7 +137,7 @@ def lm_pretrain(input_files):
         else:
             input_fn_builder = input_fn_builder_unmasked
 
-        model_fn = model_fn_random_masking(
+        model_fn = model_fn_lm(
             bert_config=bert_config,
             train_config=train_config,
             model_class=BertModel,
@@ -186,15 +186,51 @@ def lm_pretrain(input_files):
     elif task == TASK_DICT_LM_VBATCH:
         tf_logging.info("Running Dict LM with virtual batch_size")
         ssdr_config = JsonConfig.from_json_file(FLAGS.model_config_file)
-        input_fn_builder = ssdr_model_fn.input_fn_builder
-        model_fn = ssdr_model_fn.model_fn_dict_reader(
-            bert_config=bert_config,
-            ssdr_config=ssdr_config ,
-            train_config=train_config,
-            logging=tf_logging,
-            model_class=SSDR,
-            dict_run_config=DictRunConfig.from_flags(FLAGS),
-        )
+
+        if FLAGS.modeling == "mockup":
+            input_fn_builder = input_fn_builder_unmasked
+            model_fn = ssdr_model_fn.model_fn_apr_lm(
+                bert_config=bert_config,
+                ssdr_config=ssdr_config,
+                train_config=train_config,
+                dict_run_config=DictRunConfig.from_flags(FLAGS),
+            )
+        elif FLAGS.modeling == "debug":
+            tf_logging.info("Running Debugging")
+            input_fn_builder = ssdr_model_fn.input_fn_builder
+#            input_fn_builder = input_fn_builder_unmasked
+
+            model_fn = ssdr_model_fn.model_fn_apr_debug(
+                bert_config=bert_config,
+                ssdr_config=ssdr_config ,
+                train_config=train_config,
+                logging=tf_logging,
+                model_name="APR",
+                dict_run_config=DictRunConfig.from_flags(FLAGS),
+            )
+        elif FLAGS.modeling == "debug2":
+            tf_logging.info("Running Debugging2")
+            input_fn_builder = ssdr_model_fn.input_fn_builder
+            #            input_fn_builder = input_fn_builder_unmasked
+
+            model_fn = ssdr_model_fn.model_fn_apr_debug(
+                bert_config=bert_config,
+                ssdr_config=ssdr_config,
+                train_config=train_config,
+                logging=tf_logging,
+                model_name="BERT",
+                dict_run_config=DictRunConfig.from_flags(FLAGS),
+            )
+        else:
+            input_fn_builder = ssdr_model_fn.input_fn_builder
+            model_fn = ssdr_model_fn.model_fn_dict_reader(
+                bert_config=bert_config,
+                ssdr_config=ssdr_config ,
+                train_config=train_config,
+                logging=tf_logging,
+                model_class=SSDR,
+                dict_run_config=DictRunConfig.from_flags(FLAGS),
+            )
     # If TPU is not available, this will fall back to normal Estimator on CPU
     # or GPU.
     estimator = tf.compat.v1.estimator.tpu.TPUEstimator(

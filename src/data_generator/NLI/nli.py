@@ -12,10 +12,7 @@ from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
 from evaluation import *
 
 num_classes = 3
-
 corpus_dir = os.path.join(data_path, "nli")
-
-
 
 
 class DataLoader:
@@ -45,7 +42,6 @@ class DataLoader:
 
         self.dev_explain_0 = None
         self.dev_explain_1 = None
-
 
     def get_train_data(self):
         if self.train_data is None:
@@ -274,6 +270,46 @@ class DataLoader:
 
     def class_labels(self):
         return ["entailment", "neutral", "contradiction",]
+
+    def get_genres(self, filename):
+        genres = set()
+        for idx, line in enumerate(tf_gfile(filename, "rb")):
+            if idx == 0: continue  # skip header
+            line = line.strip().decode("utf-8")
+            split_line = line.split("\t")
+            # Works for both splits even though dev has some extra human labels.
+            genres.add(split_line[3])
+        return genres
+
+    def get_train_genres(self):
+        return self.get_genres(self.train_file)
+
+    def example_generator_w_genre(self, filename, target_genre):
+        label_list = self.class_labels()
+        for idx, line in enumerate(tf_gfile(filename, "rb")):
+            if idx == 0: continue  # skip header
+            line = line.strip().decode("utf-8")
+            split_line = line.split("\t")
+            # Works for both splits even though dev has some extra human labels.
+            s1, s2 = split_line[8:10]
+            genre = split_line[3]
+            if genre == target_genre:
+                l = label_list.index(split_line[-1])
+                entry = self.encode(s1, s2)
+                yield entry["input_ids"], entry["input_mask"], entry["segment_ids"], l
+
+    def get_raw_example(self, filename, target_genre ):
+        label_list = self.class_labels()
+        for idx, line in enumerate(tf_gfile(filename, "rb")):
+            if idx == 0: continue  # skip header
+            line = line.strip().decode("utf-8")
+            split_line = line.split("\t")
+            # Works for both splits even though dev has some extra human labels.
+            s1, s2 = split_line[8:10]
+            genre = split_line[3]
+            if genre == target_genre:
+                l = label_list.index(split_line[-1])
+                yield s1, s2, l
 
     def example_generator(self, filename):
         label_list = self.class_labels()

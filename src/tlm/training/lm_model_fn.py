@@ -49,6 +49,29 @@ def metric_fn(masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
     }
 
 
+def metric_fn_lm(masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
+              masked_lm_weights):
+    """Computes the loss and accuracy of the model."""
+    masked_lm_log_probs = tf.reshape(masked_lm_log_probs,
+                                     [-1, masked_lm_log_probs.shape[-1]])
+    masked_lm_predictions = tf.argmax(
+        input=masked_lm_log_probs, axis=-1, output_type=tf.int32)
+    masked_lm_example_loss = tf.reshape(masked_lm_example_loss, [-1])
+    masked_lm_ids = tf.reshape(masked_lm_ids, [-1])
+    masked_lm_weights = tf.reshape(masked_lm_weights, [-1])
+    masked_lm_accuracy = tf.compat.v1.metrics.accuracy(
+        labels=masked_lm_ids,
+        predictions=masked_lm_predictions,
+        weights=masked_lm_weights)
+    masked_lm_mean_loss = tf.compat.v1.metrics.mean(
+        values=masked_lm_example_loss, weights=masked_lm_weights)
+
+    return {
+        "masked_lm_accuracy": masked_lm_accuracy,
+        "masked_lm_loss": masked_lm_mean_loss,
+    }
+
+
 def align_checkpoint(tvars,
                      checkpoint_type,
                      init_checkpoint,
@@ -84,11 +107,12 @@ def align_checkpoint(tvars,
 
     else:
         initialized_variable_names = {}
-        init_fn = None
+        def init_fn():
+            pass
     return initialized_variable_names, initialized_variable_names2, init_fn
 
 
-def model_fn_random_masking(bert_config, train_config, model_class):
+def model_fn_lm(bert_config, train_config, model_class):
     """Returns `model_fn` closure for TPUEstimator."""
 
     def model_fn(features, labels, mode, params):    # pylint: disable=unused-argument
@@ -100,7 +124,10 @@ def model_fn_random_masking(bert_config, train_config, model_class):
         input_ids = features["input_ids"]
         input_mask = features["input_mask"]
         segment_ids = features["segment_ids"]
-        next_sentence_labels = features["next_sentence_labels"]
+        if "next_sentence_labels" in features:
+            next_sentence_labels = features["next_sentence_labels"]
+        else:
+            next_sentence_labels = get_dummy_next_sentence_labels(input_ids)
 
         if mode == tf.estimator.ModeKeys.PREDICT:
                 tf.random.set_seed(0)
@@ -165,10 +192,9 @@ def model_fn_random_masking(bert_config, train_config, model_class):
                     train_op=train_op,
                     scaffold_fn=scaffold_fn)
         elif mode == tf.estimator.ModeKeys.EVAL:
-            eval_metrics = (metric_fn, [
+            eval_metrics = (metric_fn_lm, [
                     masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
-                    masked_lm_weights, next_sentence_example_loss,
-                    next_sentence_log_probs, next_sentence_labels
+                    masked_lm_weights,
             ])
             output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
                     mode=mode,
@@ -235,6 +261,13 @@ def get_nli_ex_model_segmented(input_ids, input_mask, segment_ids):
     return output
 
 
+def get_dummy_next_sentence_labels(input_ids):
+    sequence_shape = bert_common.get_shape_list2(input_ids)
+    batch_size = sequence_shape[0]
+    next_sentence_labels = tf.zeros([batch_size, 1], tf.int64)
+    return next_sentence_labels
+
+
 def model_fn_target_masking(bert_config, train_config, target_model_config, model_class, priority_model):
     def model_fn(features, labels, mode, params):    # pylint: disable=unused-argument
         tf_logging.info("*** Features ***")
@@ -244,7 +277,10 @@ def model_fn_target_masking(bert_config, train_config, target_model_config, mode
         input_ids = features["input_ids"]
         input_mask = features["input_mask"]
         segment_ids = features["segment_ids"]
-        next_sentence_labels = features["next_sentence_labels"]
+        if "next_sentence_labels" in features:
+            next_sentence_labels = features["next_sentence_labels"]
+        else:
+            next_sentence_labels = get_dummy_next_sentence_labels(input_ids)
         tlm_prefix = "target_task"
 
         with tf.compat.v1.variable_scope(tlm_prefix):

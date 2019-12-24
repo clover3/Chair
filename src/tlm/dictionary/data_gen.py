@@ -490,7 +490,7 @@ class DictEntryPredictGen(UnmaskedPairGen):
 
 #
 class SenseSelectingDictionaryReaderGen(UnmaskedPairGen):
-    def __init__(self, parsed_dictionary, batch_size,  def_per_batch, max_def_length):
+    def __init__(self, parsed_dictionary, batch_size,  def_per_batch, max_def_length, shuuffle=False):
         super(SenseSelectingDictionaryReaderGen, self).__init__()
         self.parsed_dictionary = parsed_dictionary
         self.batch_size = batch_size
@@ -499,6 +499,7 @@ class SenseSelectingDictionaryReaderGen(UnmaskedPairGen):
         self.max_d_loc = 16
         self.max_word_len = 8
         self.stopword = load_stopwords()
+        self.shuffle = shuuffle
         self.get_basic_input_features_as_list =\
             partial(datagen_base.get_basic_input_feature_as_list, self.tokenizer, self.max_seq_length)
         self.get_masked_lm_features_as_list =\
@@ -528,11 +529,13 @@ class SenseSelectingDictionaryReaderGen(UnmaskedPairGen):
 
     def create_instances_from_documents(self, documents):
         instances = super(SenseSelectingDictionaryReaderGen, self).create_instances_from_documents(documents)
+
+        if self.shuffle:
+            random.shuffle(instances)
         vocab_words = list(self.tokenizer.vocab.keys())
 
         def valid_candidate(w):
             return w.word not in self.stopword and w.word in self.parsed_dictionary
-
 
         inst_list = []
         cnt = 0
@@ -569,8 +572,6 @@ class SenseSelectingDictionaryReaderGen(UnmaskedPairGen):
                     masked_lm_positions,
                     masked_lm_labels
                 )
-
-
             inst_list.append(inst)
 
         n_dropped_definitions = []

@@ -1,22 +1,17 @@
-from data_generator.argmining import ukp
+from collections import Counter
+
+import math
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC, LinearSVC
 from sklearn.neural_network import MLPClassifier
 
-from task.metrics import eval_3label, eval_2label
-
-
+from cie.arg import kl
+from data_generator.argmining import ukp
+from misc_lib import flatten, average, tprint
 from models.classic.stopword import load_stopwords
 from summarization import tokenizer
 from summarization.text_rank import TextRank
-from misc_lib import flatten, average, tprint
-from cie.arg import kl
-
-import numpy as np
-from collections import Counter
-import math
-
+from task.metrics import eval_3label, eval_2label
 
 
 class ArgExperiment:
@@ -148,7 +143,7 @@ class ArgExperiment:
             narg_div = []
             for e in entries:
                 sent_tf = Counter(tokenize(e['sentence']))
-                div = kl.kl_divergence(sent_tf, topic_tf)
+                div = kl.kl_divergence_subset(sent_tf, topic_tf)
                 assert not math.isnan(div)
 
                 if e['set'] == 'train' and is_argument(e):
@@ -192,7 +187,7 @@ class ArgExperiment:
                 for e in entries:
                     if e['set'] == 'train':
                         sent_tf = Counter(tokenize(e['sentence']))
-                        div = kl.kl_divergence(sent_tf, topic_tf)
+                        div = kl.kl_divergence_subset(sent_tf, topic_tf)
                         assert not math.isnan(div)
                         train_X_v[data_idx,-1] = div
                         data_idx += 1
@@ -214,7 +209,7 @@ class ArgExperiment:
             for e in data_loader.all_data[dev_topic]:
                 if e['set'] == 'val':
                     sent_tf = Counter(tokenize(e['sentence']))
-                    div = kl.kl_divergence(sent_tf, topic_tf)
+                    div = kl.kl_divergence_subset(sent_tf, topic_tf)
                     train_X_v[data_idx, -1] = div
                     data_idx += 1
 

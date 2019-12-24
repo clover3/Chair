@@ -41,7 +41,7 @@ def random_masking(input_ids, input_masks, n_sample, mask_token, seed=None):
         maxval=1,
         dtype=tf.dtypes.float32,
         seed=seed,
-        name=None
+        name="masking_uniform"
     )
 
     rand = remove_special_mask(input_ids, input_masks, rand)
@@ -49,7 +49,7 @@ def random_masking(input_ids, input_masks, n_sample, mask_token, seed=None):
         rand,
         k=n_sample,
         sorted=False,
-        name=None
+        name="masking_top_k"
     )
     masked_lm_positions = indice # [batch, n_samples]
     #masked_lm_ids = tf.gather(input_ids, masked_lm_positions, axis=1, batch_dims=0)

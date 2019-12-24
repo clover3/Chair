@@ -61,8 +61,6 @@ class EstimatorPredictionViewer:
         p = os.path.join(output_path, filename)
         data = pickle.load(open(p, "rb"))
 
-        batch_size, seq_length = data[0]['input_ids'].shape
-
         keys = list(data[0].keys())
         vectors = flatten_batches(data)
 
@@ -87,36 +85,10 @@ class EstimatorPredictionViewer:
             if tokens[i] == "[SEP]":
                 tokens[i] = "[SEP]<br>"
 
-
         return masked_tokens
 
-    def cells_from_tokens(self, tokens, scores=None):
-        cells = []
-        for i, token in enumerate(tokens):
-            if tokens[i] == "[PAD]":
-                break
-            term = tokens[i]
-            cont_left = term[:2] == "##"
-            cont_right = i+1 < len(tokens) and tokens[i+1][:2] == "##"
-            if i+1 < len(tokens):
-                dependent_right = is_dependent(tokens[i+1])
-            else:
-                dependent_right = False
-
-            dependent_left = is_dependent(tokens[i])
-
-            if cont_left:
-                term = term[2:]
-
-            space_left = "&nbsp;" if not (cont_left or dependent_left) else ""
-            space_right = "&nbsp;" if not (cont_right or dependent_right) else ""
-
-            if scores is not None:
-                score = scores[i]
-            else:
-                score = 0
-            cells.append(Cell(term, score, space_left, space_right))
-        return cells
+    def cells_from_tokens(self, tokens, scores=None, stop_at_pad=True):
+        return self.cells_from_tokens(tokens, scores, stop_at_pad)
 
     def cells_from_anything(self, vectors, scores=None):
         cells = []

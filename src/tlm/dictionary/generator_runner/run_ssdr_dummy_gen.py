@@ -16,7 +16,7 @@ if __name__ == "__main__":
     def_per_batch = 320
 
     def get_generator():
-        return data_gen.SenseSelectingDictionaryReaderGen(new_d, batch_size, def_per_batch, 96)
-    runner = tlm.data_gen.lm_worker.LMJobRunner(4000, "ssdr_dummy", get_generator)
+        return data_gen.SenseSelectingDictionaryReaderGen(new_d, batch_size, def_per_batch, 96, True)
+    runner = tlm.data_gen.lm_worker.LMJobRunner(1000, "ssdr_dummy3", get_generator)
     runner.start()
 

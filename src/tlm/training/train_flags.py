@@ -95,6 +95,8 @@ flags.DEFINE_integer("eval_batch_size", 8, "Total batch size for eval.")
 
 flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
 
+flags.DEFINE_float("learning_rate2", 5e-4, "The initial learning rate for second part of model.")
+
 flags.DEFINE_integer("num_train_steps", 100000, "Number of training steps.")
 
 flags.DEFINE_integer("num_train_epochs", 2, "If applicable, it precedes the train_steps.")
@@ -110,7 +112,7 @@ flags.DEFINE_integer("keep_checkpoint_every_n_hours", 1,
 flags.DEFINE_integer("iterations_per_loop", 1000,
                      "How many steps to make in each estimator call.")
 
-flags.DEFINE_integer("max_eval_steps", 100, "Maximum number of eval steps.")
+flags.DEFINE_integer("max_eval_steps", None, "Maximum number of eval steps.")
 
 flags.DEFINE_integer("max_pred_steps", 0, "Maximum number of prediction steps.")
 
@@ -153,6 +155,8 @@ flags.DEFINE_bool("log_debug", False, ".")
 
 flags.DEFINE_bool("fixed_mask", False, "Whether to fixed_mask.")
 
+flags.DEFINE_bool("not_use_next_sentence", False, "not_use_next_sentence.")
+
 flags.DEFINE_bool("use_d_segment_ids", False, "Whether to use d_segment_ids.")
 
 flags.DEFINE_bool("pool_dict_output", False, "pool_dict_output.")
@@ -185,3 +189,4 @@ flags.DEFINE_string(
     ".")
 
 flags.DEFINE_string("report_field", None, "Report this field of the dictionary")
+flags.DEFINE_string("report_condition", None, "Report this condition ")

@@ -8,7 +8,7 @@ import tensorflow as tf
 from data_generator import tokenizer_wo_tf
 from misc_lib import pick1
 from path import output_path, data_path
-from tf_util.enum_features import load_record
+from tf_util.enum_features import load_record_v1
 from tlm.wiki import bert_training_data as btd
 from visualize.html_visual import Cell, HtmlVisualizer
 
@@ -25,7 +25,7 @@ def generate_training_data(data_id):
     for e in loss_outputs_list:
         loss_outputs.extend( e["masked_lm_example_loss"])
     print("Total of {} loss outputs".format(len(loss_outputs)))
-    feature_itr = load_record(os.path.join(output_path, "lookup_example", data_id))
+    feature_itr = load_record_v1(os.path.join(output_path, "lookup_example", data_id))
 
     instance_idx = 0
     writer = tf.python_io.TFRecordWriter(os.path.join(output_path, "lookup_train", data_id))
@@ -89,7 +89,7 @@ def load_and_visualize():
     data = pickle.load(open(p, "rb"))
     data = data[0]["masked_lm_example_loss"]
 
-    feature_itr = load_record(os.path.join(output_path, "lookup_example", data_id))
+    feature_itr = load_record_v1(os.path.join(output_path, "lookup_example", data_id))
 
     n = len(n_list)
     feature_idx = 0

@@ -32,10 +32,11 @@ class TaskManagerProxy(RESTProxy):
         update_type = "ABNORMAL_TERMINATE"
         return self.task_update(run_name, uuid_var, tpu_name, machine, update_type, msg)
 
-    def report_number(self, name, value):
+    def report_number(self, name, value, condition):
         data = {
             'name': name,
-            "number": value
+            "number": value,
+            "condition": condition,
         }
         return self.post("/experiment/update", data)
 
@@ -52,12 +53,18 @@ class TaskProxy:
             self.uuid_var = uuid_var
 
     def task_start(self, run_name, msg=None):
+        if run_name == "dontreport":
+            return
         return self.proxy.task_start(run_name, self.uuid_var, self.tpu_name, self.machine, msg)
 
     def task_complete(self, run_name, msg=None):
+        if run_name == "dontreport":
+            return
         return self.proxy.task_complete(run_name, self.uuid_var, self.tpu_name, self.machine, msg)
 
     def task_interrupted(self, run_name, msg=None):
+        if run_name == "dontreport":
+            return
         return self.proxy.task_interrupted(run_name, self.uuid_var, self.tpu_name, self.machine, msg)
 
 

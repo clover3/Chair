@@ -8,7 +8,7 @@ from sklearn.preprocessing import PolynomialFeatures
 
 from misc_lib import average
 from path import output_path
-from tf_util.enum_features import load_record2
+from tf_util.enum_features import load_record_v2
 from tlm.estimator_prediction_viewer import flatten_batches, EstimatorPredictionViewer
 from visualize.html_visual import HtmlVisualizer, Cell
 
@@ -32,7 +32,7 @@ def do_verfiy():
     p = os.path.join(output_path, pred_file_name)
     data = pickle.load(open(p, "rb"))
     data = flatten_batches(data)
-    itr1 = load_record2(record_file_name)
+    itr1 = load_record_v2(record_file_name)
     itr2 = data["prob1"]
     print("itr2 len", len(itr2))
     cnt = 0
@@ -58,7 +58,7 @@ def do():
     for pred_file_name, record_file_name, out_name in todo:
         viewer = EstimatorPredictionViewer(pred_file_name)
         html = HtmlVisualizer(out_name)
-        itr1 = load_record2(record_file_name)
+        itr1 = load_record_v2(record_file_name)
         itr2 = viewer.__iter__()
         cnt = 0
         for features, entry in zip(itr1, itr2):

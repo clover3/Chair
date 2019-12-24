@@ -25,6 +25,7 @@ class DictRunConfig:
                  def_per_batch=None,
                  use_d_segment_ids=False,
                  use_ab_mapping_mask=False,
+                 max_def_length=None,
                  ):
         self.use_target_pos_emb = use_target_pos_emb
         self.is_bert_checkpoint = is_bert_checkpoint
@@ -35,6 +36,7 @@ class DictRunConfig:
         self.def_per_batch = def_per_batch
         self.use_d_segment_ids = use_d_segment_ids
         self.use_ab_mapping_mask = use_ab_mapping_mask
+        self.max_def_length = max_def_length
 
     @classmethod
     def from_flags(cls, flags):
@@ -48,6 +50,7 @@ class DictRunConfig:
             flags.def_per_batch,
             flags.use_d_segment_ids,
             flags.use_ab_mapping_mask,
+            flags.max_def_length,
         )
 
 

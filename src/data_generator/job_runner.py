@@ -50,3 +50,10 @@ class JobRunner:
         worker = self.worker_factory(self.out_path)
         worker.work(int(sys.argv[1]))
 
+# Example Usage
+#
+# if __name__ == "__main__":
+#     runner = JobRunner(working_dir, 4000, "unmasked_split", SplitWorker)
+#     runner.start()
+#
+

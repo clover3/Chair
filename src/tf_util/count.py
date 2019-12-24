@@ -1,12 +1,12 @@
 import os
 import sys
 
-import tensorflow as tf
+from tf_v2_support import tf_record_enum
 
 
 def file_cnt(fn):
     c = 0
-    for record in tf.python_io.tf_record_iterator(fn):
+    for record in tf_record_enum(fn):
        c += 1
     return c
 
@@ -23,4 +23,8 @@ def count_instance(dir_name):
 
 
 if __name__ == "__main__":
-    print("Number of record : ", file_cnt(sys.argv[1]))
+    p = sys.argv[1]
+    if os.path.isdir(p):
+        print(count_instance(p))
+    else:
+        print("Number of record : ", file_cnt(p))
