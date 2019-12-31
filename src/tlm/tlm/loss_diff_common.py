@@ -89,9 +89,7 @@ def get_loss_independently(bert_config, input_tensor,
 
     def get_regression_and_loss(hidden_vector, loss_label):
         logits = bc.dense(2, bc.create_initializer(bert_config.initializer_range))(hidden_vector)
-        print("logits", logits.shape)
         gold_prob = loss_to_prob_pair(loss_label)
-        print("gold_prob", gold_prob.shape)
         logits = tf.reshape(logits, gold_prob.shape)
 
         per_example_loss = tf.nn.softmax_cross_entropy_with_logits(

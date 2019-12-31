@@ -72,11 +72,12 @@ def metric_fn_lm(masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
     }
 
 
-def align_checkpoint(tvars,
-                     checkpoint_type,
-                     init_checkpoint,
-                     second_init_checkpoint=None,
-                     use_multiple_checkpoint=False):
+def align_checkpoint_for_lm(tvars,
+                            checkpoint_type,
+                            init_checkpoint,
+                            second_init_checkpoint=None,
+                            use_multiple_checkpoint=False):
+    tf_logging.debug("align_checkpoint_for_lm")
     initialized_variable_names2 = {}
     if init_checkpoint:
         if not use_multiple_checkpoint:
@@ -173,11 +174,11 @@ def model_fn_lm(bert_config, train_config, model_class):
 
         use_multiple_checkpoint = train_config.checkpoint_type == "nli_and_bert"
         initialized_variable_names, initialized_variable_names2, init_fn\
-            = align_checkpoint(tvars,
-                               train_config.checkpoint_type,
-                               train_config.init_checkpoint,
-                               train_config.second_init_checkpoint,
-                               use_multiple_checkpoint)
+            = align_checkpoint_for_lm(tvars,
+                                      train_config.checkpoint_type,
+                                      train_config.init_checkpoint,
+                                      train_config.second_init_checkpoint,
+                                      use_multiple_checkpoint)
 
         scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
 

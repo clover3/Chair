@@ -195,6 +195,49 @@ def embedding_lookup(input_ids,
     return (output, embedding_table)
 
 
+
+def embedding_lookup2(input_ids,
+                     vocab_size,
+                     embedding_table,
+                     embedding_size=128,
+                     use_one_hot_embeddings=False):
+    """Looks up words embeddings for id tensor.
+
+    Args:
+        input_ids: int32 Tensor of shape [batch_size, seq_length] containing word
+            ids.
+        vocab_size: int. Size of the embedding vocabulary.
+        embedding_size: int. Width of the word embeddings.
+        initializer_range: float. Embedding initialization range.
+        word_embedding_name: string. Name of the embedding table.
+        use_one_hot_embeddings: bool. If True, use one-hot method for word
+            embeddings. If False, use `tf.nn.embedding_lookup()`. One hot is better
+            for TPUs.
+
+    Returns:
+        float Tensor of shape [batch_size, seq_length, embedding_size].
+    """
+    # This function assumes that the input is of shape [batch_size, seq_length,
+    # num_inputs].
+    #
+    # If the input is a 2D tensor of shape [batch_size, seq_length], we
+    # reshape to [batch_size, seq_length, 1].
+    if input_ids.shape.ndims == 2:
+        input_ids = tf.expand_dims(input_ids, axis=[-1])
+
+    if use_one_hot_embeddings:
+        flat_input_ids = tf.reshape(input_ids, [-1])
+        one_hot_input_ids = tf.one_hot(flat_input_ids, depth=vocab_size)
+        output = tf.matmul(one_hot_input_ids, embedding_table)
+    else:
+        output = tf.nn.embedding_lookup(params=embedding_table, ids=input_ids)
+
+    input_shape = get_shape_list2(input_ids)
+
+    output = tf.reshape(output, input_shape[0:-1] + [input_shape[-1] * embedding_size])
+    return (output, embedding_table)
+
+
 def embedding_postprocessor(input_tensor,
                                                         use_token_type=False,
                                                         token_type_ids=None,
@@ -290,6 +333,62 @@ def embedding_postprocessor(input_tensor,
     return output
 
 
+def embedding_postprocessor2(input_tensor, token_type_table, full_position_embeddings,
+                                                        use_token_type=False,
+                                                        token_type_ids=None,
+                                                        token_type_vocab_size=16,
+                                                        use_position_embeddings=True,
+                                                        max_position_embeddings=512,
+                                                        dropout_prob=0.1):
+    input_shape = get_shape_list2(input_tensor)
+    batch_size = input_shape[0]
+    seq_length = input_shape[1]
+    width = input_shape[2]
+
+    output = input_tensor
+
+    if use_token_type:
+        if token_type_ids is None:
+            raise ValueError("`token_type_ids` must be specified if"
+                                             "`use_token_type` is True.")
+        # This vocab will be small so we always do one-hot here, since it is always
+        # faster for a small vocabulary.
+        flat_token_type_ids = tf.reshape(token_type_ids, [-1])
+        one_hot_ids = tf.one_hot(flat_token_type_ids, depth=token_type_vocab_size)
+        token_type_embeddings = tf.matmul(one_hot_ids, token_type_table)
+        token_type_embeddings = tf.reshape(token_type_embeddings,
+                                                                             [batch_size, seq_length, width])
+        output += token_type_embeddings
+
+    if use_position_embeddings:
+        assert_op = tf.compat.v1.assert_less_equal(seq_length, max_position_embeddings)
+        with tf.control_dependencies([assert_op]):
+            # Since the position embedding table is a learned variable, we create it
+            # using a (long) sequence length `max_position_embeddings`. The actual
+            # sequence length might be shorter than this, for faster training of
+            # tasks that do not have long sequences.
+            #
+            # So `full_position_embeddings` is effectively an embedding table
+            # for position [0, 1, 2, ..., max_position_embeddings-1], and the current
+            # sequence has positions [0, 1, 2, ... seq_length-1], so we can just
+            # perform a slice.
+            position_embeddings = tf.slice(full_position_embeddings, [0, 0],
+                                                                         [seq_length, -1])
+            num_dims = len(output.shape.as_list())
+
+            # Only the last two dimensions are relevant (`seq_length` and `width`), so
+            # we broadcast among the first dimensions, which is typically just
+            # the batch size.
+            position_broadcast_shape = []
+            for _ in range(num_dims - 2):
+                position_broadcast_shape.append(1)
+            position_broadcast_shape.extend([seq_length, width])
+            position_embeddings = tf.reshape(position_embeddings, position_broadcast_shape)
+            output += position_embeddings
+
+    output = layer_norm_and_dropout(output, dropout_prob)
+    return output
+
 def create_attention_mask_from_input_mask(from_tensor, to_mask):
     """Create 3D attention mask from a 2D tensor mask.
 
@@ -305,6 +404,40 @@ def create_attention_mask_from_input_mask(from_tensor, to_mask):
     from_seq_length = from_shape[1]
 
     to_shape = get_shape_list(to_mask, expected_rank=2)
+    to_seq_length = to_shape[1]
+
+    to_mask = tf.cast(
+            tf.reshape(to_mask, [batch_size, 1, to_seq_length]), tf.float32)
+
+    # We don't assume that `from_tensor` is a mask (although it could be). We
+    # don't actually care if we attend *from* padding tokens (only *to* padding)
+    # tokens so we create a tensor of all ones.
+    #
+    # `broadcast_ones` = [batch_size, from_seq_length, 1]
+    broadcast_ones = tf.ones(
+            shape=[batch_size, from_seq_length, 1], dtype=tf.float32)
+
+    # Here we broadcast along two dimensions to create the mask.
+    mask = broadcast_ones * to_mask
+
+    return mask
+
+
+def create_attention_mask_from_input_mask2(from_tensor, to_mask):
+    """Create 3D attention mask from a 2D tensor mask.
+
+    Args:
+        from_tensor: 2D or 3D Tensor of shape [batch_size, from_seq_length, ...].
+        to_mask: int32 Tensor of shape [batch_size, to_seq_length].
+
+    Returns:
+        float Tensor of shape [batch_size, from_seq_length, to_seq_length].
+    """
+    from_shape = get_shape_list2(from_tensor)
+    batch_size = from_shape[0]
+    from_seq_length = from_shape[1]
+
+    to_shape = get_shape_list2(to_mask)
     to_seq_length = to_shape[1]
 
     to_mask = tf.cast(
@@ -381,6 +514,18 @@ def reshape_from_matrix(output_tensor, orig_shape_list):
         return output_tensor
 
     output_shape = get_shape_list(output_tensor)
+
+    orig_dims = orig_shape_list[0:-1]
+    width = output_shape[-1]
+
+    return tf.reshape(output_tensor, orig_dims + [width])
+
+def reshape_from_matrix2(output_tensor, orig_shape_list):
+    """Reshapes a rank 2 tensor back to its original rank >= 2 tensor."""
+    if len(orig_shape_list) == 2:
+        return output_tensor
+
+    output_shape = get_shape_list2(output_tensor)
 
     orig_dims = orig_shape_list[0:-1]
     width = output_shape[-1]
@@ -510,6 +655,7 @@ def self_attention(layer_input,
     return attention_output
 
 
+
 def attention_layer(from_tensor,
                     to_tensor,
                     attention_mask=None,
@@ -586,6 +732,123 @@ def attention_layer(from_tensor,
     # `query_layer` = [B, N, F, H]
     query_layer = transpose_for_scores(query_layer, batch_size,
                                                                          num_attention_heads, from_seq_length,
+                                                                         size_per_head)
+
+    # `key_layer` = [B, N, T, H]
+    key_layer = transpose_for_scores(key_layer, batch_size, num_attention_heads,
+                                                                     to_seq_length, size_per_head)
+
+    # Take the dot product between "query" and "key" to get the raw
+    # attention scores.
+    # `attention_scores` = [B, N, F, T]
+    attention_scores = tf.matmul(query_layer, key_layer, transpose_b=True)
+    attention_scores = tf.multiply(attention_scores,
+                                                                 1.0 / math.sqrt(float(size_per_head)))
+
+    if attention_mask is not None:
+        # `attention_mask` = [B, 1, F, T]
+        attention_mask = tf.expand_dims(attention_mask, axis=[1])
+
+        # Since attention_mask is 1.0 for positions we want to attend and 0.0 for
+        # masked positions, this operation will create a tensor which is 0.0 for
+        # positions we want to attend and -10000.0 for masked positions.
+        adder = (1.0 - tf.cast(attention_mask, tf.float32)) * -10000.0
+
+        # Since we are adding it to the raw scores before the softmax, this is
+        # effectively the same as removing these entirely.
+        attention_scores += adder
+
+    # Normalize the attention scores to probabilities.
+    # `attention_probs` = [B, N, F, T]
+    attention_probs = tf.nn.softmax(attention_scores)
+
+    # This is actually dropping out entire tokens to attend to, which might
+    # seem a bit unusual, but is taken from the original Transformer paper.
+    attention_probs = dropout(attention_probs, attention_probs_dropout_prob)
+
+    # `value_layer` = [B, T, N, H]
+    value_layer = tf.reshape(
+            value_layer,
+            [batch_size, to_seq_length, num_attention_heads, size_per_head])
+
+    # `value_layer` = [B, N, T, H]
+    value_layer = tf.transpose(a=value_layer, perm=[0, 2, 1, 3])
+
+    # `context_layer` = [B, N, F, H]
+    context_layer = tf.matmul(attention_probs, value_layer)
+
+    # `context_layer` = [B, F, N, H]
+    context_layer = tf.transpose(a=context_layer, perm=[0, 2, 1, 3])
+
+    if do_return_2d_tensor:
+        # `context_layer` = [B*F, N*V]
+        context_layer = tf.reshape(
+                context_layer,
+                [batch_size * from_seq_length, num_attention_heads * size_per_head])
+    else:
+        # `context_layer` = [B, F, N*V]
+        context_layer = tf.reshape(
+                context_layer,
+                [batch_size, from_seq_length, num_attention_heads * size_per_head])
+
+    return context_layer
+
+
+def attention_layer2(from_tensor,
+                    to_tensor,
+                    query_ff,
+                    key_ff,
+                    value_ff,
+                    attention_mask=None,
+                    num_attention_heads=1,
+                    size_per_head=512,
+                    attention_probs_dropout_prob=0.0,
+                    do_return_2d_tensor=False,
+                    batch_size=None,
+                    from_seq_length=None,
+                    to_seq_length=None):
+
+    def transpose_for_scores(input_tensor, batch_size, num_attention_heads,
+                                                     seq_length, width):
+        output_tensor = tf.reshape(
+                input_tensor, [batch_size, seq_length, num_attention_heads, width])
+
+        output_tensor = tf.transpose(a=output_tensor, perm=[0, 2, 1, 3])
+        return output_tensor
+
+    from_shape = get_shape_list2(from_tensor)
+    to_shape = get_shape_list2(to_tensor)
+
+    if len(from_shape) != len(to_shape):
+        raise ValueError(
+                "The rank of `from_tensor` must match the rank of `to_tensor`.")
+
+    if len(from_shape) == 3:
+        batch_size = from_shape[0]
+        from_seq_length = from_shape[1]
+        to_seq_length = to_shape[1]
+    elif len(from_shape) == 2:
+        if (batch_size is None or from_seq_length is None or to_seq_length is None):
+            raise ValueError(
+                    "When passing in rank 2 tensors to attention_layer, the values "
+                    "for `batch_size`, `from_seq_length`, and `to_seq_length` "
+                    "must all be specified.")
+
+    from_tensor_2d = reshape_to_matrix(from_tensor)
+    to_tensor_2d = reshape_to_matrix(to_tensor)
+
+
+    # `query_layer` = [B*F, N*H]
+    query_layer = query_ff(from_tensor_2d)
+
+    # `key_layer` = [B*T, N*H]
+    key_layer = key_ff(to_tensor_2d)
+
+    # `value_layer` = [B*T, N*H]
+    value_layer = value_ff(to_tensor_2d)
+
+    # `query_layer` = [B, N, F, H]
+    query_layer = transpose_for_scores(query_layer, batch_size, num_attention_heads, from_seq_length,
                                                                          size_per_head)
 
     # `key_layer` = [B, N, T, H]

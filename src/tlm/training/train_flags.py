@@ -69,7 +69,7 @@ flags.DEFINE_integer(
     "Must match data generation.")
 
 flags.DEFINE_string(
-    "modeling", "", "Which model to use"
+    "modeling", None, "Which model to use"
 )
 
 flags.DEFINE_bool("do_train", False, "Whether to run training.")

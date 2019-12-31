@@ -24,9 +24,14 @@ def scatter_with_batch(input_ids, indice, mask_token):
     return tf.reshape(flat_output, [batch_size, seq_length])
 
 
-def remove_special_mask(input_ids, input_masks, t):
+def remove_special_mask(input_ids, input_masks, t, special_token_list=None):
     special_mask = tf.logical_or(tf.equal(input_ids, special_tokens.SEP_ID),
                                  tf.equal(input_ids, special_tokens.CLS_ID))
+
+    if special_token_list is None:
+        special_token_list = []
+    for token in special_token_list:
+        special_mask = tf.logical_or(tf.equal(input_ids, token), special_mask)
 
     special_mask = tf.logical_or(special_mask, tf.equal(input_ids, special_tokens.UNUSED_4))
     t = t * tf.cast(input_masks, tf.float32)
@@ -34,7 +39,7 @@ def remove_special_mask(input_ids, input_masks, t):
     return t
 
 
-def random_masking(input_ids, input_masks, n_sample, mask_token, seed=None):
+def random_masking(input_ids, input_masks, n_sample, mask_token, seed=None, special_tokens=None):
     rand = tf.random.uniform(
         input_ids.shape,
         minval=0,
@@ -44,7 +49,9 @@ def random_masking(input_ids, input_masks, n_sample, mask_token, seed=None):
         name="masking_uniform"
     )
 
-    rand = remove_special_mask(input_ids, input_masks, rand)
+    if special_tokens is None:
+        special_tokens = []
+    rand = remove_special_mask(input_ids, input_masks, rand, special_tokens)
     _, indice = tf.math.top_k(
         rand,
         k=n_sample,

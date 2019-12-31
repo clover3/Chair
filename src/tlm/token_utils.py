@@ -1,4 +1,3 @@
-from tlm.estimator_prediction_viewer import is_dependent
 from visualize.html_visual import Cell
 
 
@@ -58,3 +57,7 @@ def cells_from_tokens(tokens, scores=None, stop_at_pad=True):
             score = 0
         cells.append(Cell(term, score, space_left, space_right))
     return cells
+
+
+def is_dependent(token):
+    return len(token) == 1 and not token[0].isalnum()

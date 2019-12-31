@@ -29,11 +29,6 @@ class SSDR(base.BertModelInterface):
                  ):
         super(SSDR, self).__init__()
 
-        print("input_ids", input_ids.shape)
-        print("input_mask", input_mask.shape)
-        print("d_input_ids", d_input_ids.shape)
-        print("d_input_mask", d_input_mask.shape)
-        print("d_location_ids", d_location_ids.shape)
         config = copy.deepcopy(config)
         if not is_training:
             config.hidden_dropout_prob = 0.0
@@ -61,8 +56,6 @@ class SSDR(base.BertModelInterface):
             self.dict_tranformer = SecondTransformer(
                 config, ssdr_config, d_input_ids, d_input_mask, d_segment_ids, use_one_hot_embeddings)
 
-            print("key_out", key_out.shape)
-            print("ab_mapping", ab_mapping.shape)
             aligned_key = tf.gather(key_out, ab_mapping)
 
             scores, info_vectors = self.dict_tranformer.build(aligned_key)
@@ -290,7 +283,6 @@ def self_attention_with_add(layer_input,
                             values,
                             add_locations
                             ):
-
     attention_head_size = int(hidden_size / config.num_attention_heads)
     with tf.compat.v1.variable_scope("attention"):
         attention_heads = []
@@ -578,9 +570,6 @@ class APR(SSDR):
                                   inner_batch_size,
                                   ssdr_config.max_loc_length,
                                   max_def_length)
-        print("d_input_ids", d_input_ids.shape)
-        print("d_input_mask", d_input_mask.shape)
-        print("d_location_ids", d_location_ids.shape)
         super(APR, self).__init__(
             config=bert_config,
             ssdr_config=ssdr_config,
@@ -618,9 +607,6 @@ class APR_Debug(SSDR):
                                  inner_batch_size,
                                  ssdr_config.max_loc_length,
                                  max_def_length)
-        print("d_input_ids", d_input_ids.shape)
-        print("d_input_mask", d_input_mask.shape)
-        print("d_location_ids", d_location_ids.shape)
         super(APR_Debug, self).__init__(
             config=config,
             ssdr_config=ssdr_config,

@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 
 from taskman_client.RESTProxy import RESTProxy
@@ -40,6 +41,11 @@ class TaskManagerProxy(RESTProxy):
         }
         return self.post("/experiment/update", data)
 
+    def get_tpu(self, tpu_condition=None):
+        data = {
+            "v": tpu_condition
+        }
+        return self.post("/task/get_tpu", data)
 
 class TaskProxy:
     def __init__(self, host, port, machine, tpu_name=None, uuid_var=None):
@@ -82,6 +88,27 @@ def get_task_proxy(tpu_name=None, uuid_var=None):
 
 def get_task_manager_proxy():
     return TaskManagerProxy("gosford.cs.umass.edu", 8000)
+
+
+def assign_tpu(wait=True):
+    print("Auto assign TPU")
+    machine = get_local_machine_name()
+    if machine == "lesterny":
+        condition = "v2"
+    elif machine == "instance-3":
+        condition = "v3"
+    else:
+        condition = None
+
+    assigned_tpu = get_task_manager_proxy().get_tpu(condition)['tpu_name']
+
+    while wait and assigned_tpu is None:
+        time.sleep(300)
+        assigned_tpu = get_task_manager_proxy().get_tpu(condition)['tpu_name']
+    print("Assigned tpu : ", assigned_tpu)
+    return assigned_tpu
+
+
 
 if __name__ == "__main__":
     import numpy

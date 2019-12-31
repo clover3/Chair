@@ -118,6 +118,52 @@ def get_assignment_map_remap_from_v2(tvars, remap_prefix, lm_checkpoint):
     return assignment_map, initialized_variable_names
 
 
+def sero_from_bert(tvars, lm_checkpoint):
+    def get_target_name(var_name):
+        targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", var_name)
+        targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
+        tokens = targ_name.split("/")
+        if tokens[0] == "sero":
+            tokens[0] = "bert"
+
+        if len(tokens) > 2:
+            if tokens[1] == "lower":
+                tokens[1] = "encoder"
+            elif tokens[1] == "upper":
+                str_layer, str_no = tokens[2].split("_")
+                str_no = str(int(str_no) + 6)
+                tokens[1] = "encoder"
+                tokens[2] = str_layer + "_" + str_no
+        targ_name = "/".join(tokens)
+        return targ_name
+
+    assignment_candidate = {}
+    real_name_map = {}
+    for var in tvars:
+        name = var.name
+        m = re.match("^(.*):\\d+$", name)
+        if m is not None:
+            name = m.group(1)
+        targ_name = get_target_name(name)
+        assignment_candidate[targ_name] = var
+        tf_logging.info("Init from v1 : %s" % name)
+        real_name_map[targ_name] = name
+
+    assignment_map = {}
+    initialized_variable_names = {}
+    if lm_checkpoint:
+        for x in tf.train.list_variables(lm_checkpoint):
+            (name, var) = (x[0], x[1])
+            tf_logging.info("Checkpoint Var : %s" % name)
+            if name not in assignment_candidate:
+                continue
+            assignment_map[name] = assignment_candidate[name]
+            tvar_name = real_name_map[name]
+            initialized_variable_names[tvar_name] = 1
+            initialized_variable_names[tvar_name + ":0"] = 1
+
+    return assignment_map, initialized_variable_names
+
 
 def get_bert_nli_assignment_map(tvars, lm_checkpoint):
     lm_assignment_candidate = {}

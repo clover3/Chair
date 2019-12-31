@@ -73,6 +73,7 @@ def main(_):
     if FLAGS.dbert_config_file:
         FLAGS.model_config_file = FLAGS.dbert_config_file
 
+
     tf.io.gfile.makedirs(FLAGS.output_dir)
 
     input_files = []

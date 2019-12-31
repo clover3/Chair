@@ -38,3 +38,11 @@ class JsonConfig(object):
         if hasattr(self, attrib):
             return self.__dict__[attrib] == value
         return False
+
+    def compare_attrib_value_safe_lambda(self, attrib, fn):
+        if hasattr(self, attrib):
+            return fn(self.__dict__[attrib])
+        return False
+
+    def set_attrib(self, key, value):
+        self.__dict__[key] = value

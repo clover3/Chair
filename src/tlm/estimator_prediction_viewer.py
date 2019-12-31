@@ -6,11 +6,8 @@ import numpy as np
 
 from data_generator.common import get_tokenizer
 from path import output_path
+from tlm.token_utils import cells_from_tokens
 from visualize.html_visual import Cell
-
-
-def is_dependent(token):
-    return len(token) == 1 and not token[0].isalnum()
 
 
 def flatten_batches(data):
@@ -69,7 +66,6 @@ class EstimatorPredictionViewer:
 
         return vectors, keys, data_len
 
-
     def get_mask_resolved_input_mask_with_input(self, idx, key=""):
         tokens = self.get_tokens(idx, "input_ids")
         masked_tokens = self.get_tokens(idx, "masked_input_ids")
@@ -88,7 +84,7 @@ class EstimatorPredictionViewer:
         return masked_tokens
 
     def cells_from_tokens(self, tokens, scores=None, stop_at_pad=True):
-        return self.cells_from_tokens(tokens, scores, stop_at_pad)
+        return cells_from_tokens(tokens, scores, stop_at_pad)
 
     def cells_from_anything(self, vectors, scores=None):
         cells = []

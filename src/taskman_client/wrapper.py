@@ -1,4 +1,4 @@
-from taskman_client.task_proxy import get_task_proxy, get_task_manager_proxy
+from taskman_client.task_proxy import get_task_proxy, get_task_manager_proxy, assign_tpu
 from tlm.benchmark.report import get_hp_str_from_flag
 from tlm.training.train_flags import FLAGS
 
@@ -26,6 +26,9 @@ def report_number(r):
 
 def report_run(func):
     def func_wrapper(*args):
+        if FLAGS.use_tpu and FLAGS.tpu_name is None:
+            FLAGS.tpu_name = assign_tpu()
+
         task_proxy = get_task_proxy(FLAGS.tpu_name)
         run_name = flag_to_run_name(FLAGS)
         flags_str = get_hp_str_from_flag(FLAGS)
@@ -39,9 +42,11 @@ def report_run(func):
 
             task_proxy.task_complete(run_name, str(msg))
         except Exception as e:
+            print("Reporting Exception ")
             task_proxy.task_interrupted(run_name, "Exception\n" + str(e))
             raise
         except KeyboardInterrupt as e:
+            print("Reporting Interrupts ")
             task_proxy.task_interrupted(run_name, "KeyboardInterrupt\n" + str(e))
             raise
 

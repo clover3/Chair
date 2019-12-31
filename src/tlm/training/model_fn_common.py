@@ -28,8 +28,12 @@ def log_var_assignments(tvars, initialized_variable_names, initialized_variable_
         if initialized_variable_names2 is not None:
             if var.name in initialized_variable_names2:
                 init_string = ", *INIT_FROM_CKPT2*"
-        tf_logging.info("    name = %s, shape = %s%s", var.name, var.shape,
+        if init_string:
+            tf_logging.debug("    name = %s, shape = %s%s", var.name, var.shape,
                      init_string)
+        else:
+            tf_logging.info("    name = %s, shape = %s%s", var.name, var.shape,
+                             " - Not Initialized")
     tf_logging.info("Total parameters : %d" % get_param_num())
 
 
