@@ -86,7 +86,10 @@ def model_fn_classification(bert_config, train_config, logging, model_class):
     elif train_config.checkpoint_type == "wo_attention_bert":
         assignment_fn = tlm.training.assignment_map.bert_assignment_wo_attention
     else:
-        raise Exception("checkpoint_type not specified")
+        if not train_config.init_checkpoint:
+            pass
+        else:
+            raise Exception("init_checkpoint exists, but checkpoint_type is not specified")
 
     scaffold_fn = None
     if train_config.init_checkpoint:

@@ -7,6 +7,17 @@ from tlm.model import base
 from tlm.model_cnfig import JsonConfig
 
 
+def get_per_layer_config(all_config:JsonConfig):
+    keys = ["attention_probs_dropout_prob", "hidden_act", "hidden_dropout_prob", "hidden_size",
+              "initializer_range", "intermediate_size", "num_attention_heads"]
+
+    d = {}
+    for key in keys:
+        d[key] = all_config.__dict__[key]
+
+    return JsonConfig.from_dict(d)
+
+
 class SelfAttentionLayer:
     def __init__(self, config):
         hidden_size = config.hidden_size
@@ -153,10 +164,10 @@ class Embedding:
 
 
 class LowerTransformer(tf.keras.layers.Layer):
-    def __init__(self, config, use_one_hot_embeddings, **kwargs):
+    def __init__(self, config, n_layers, use_one_hot_embeddings, **kwargs):
         kwargs['autocast'] = False
         super(LowerTransformer, self).__init__(kwargs)
-        self.n_layers = config.lower_layers
+        self.n_layers = n_layers
         self.all_layer_outputs = []
         self.last_key_layer = None
         self.config = config
@@ -194,10 +205,10 @@ class LowerTransformer(tf.keras.layers.Layer):
 
 
 class UpperTransformer(tf.keras.layers.Layer):
-    def __init__(self, config, **kwargs):
+    def __init__(self, config, n_layers, **kwargs):
         kwargs['autocast'] = False
         super(UpperTransformer, self).__init__(kwargs)
-        self.n_layers = config.lower_layers
+        self.n_layers = n_layers
         self.all_layer_outputs = []
         self.last_key_layer = None
         self.config = config
@@ -211,21 +222,22 @@ class UpperTransformer(tf.keras.layers.Layer):
                 self.layer_list.append(layer)
 
     def call(self, input_vectors, attention_mask):
-        with tf.compat.v1.variable_scope("upper"):
-            prev_output = input_vectors
-            input_shape = bc.get_shape_list2(input_vectors)
-            batch_size, seq_length, _ = input_shape
-            prev_output = bc.reshape_to_matrix(prev_output)
-            for layer_idx in range(self.n_layers):
-                with tf.compat.v1.variable_scope("layer_%d" % layer_idx):
-                    layer = self.layer_list[layer_idx]
-                    intermediate_output, prev_output = layer.apply(prev_output, batch_size, seq_length,
-                                                                   attention_mask)
-                    final_output = bc.reshape_from_matrix2(prev_output, input_shape)
-                    self.all_layer_outputs.append(final_output)
+        prev_output = input_vectors
+        input_shape = bc.get_shape_list2(input_vectors)
+        batch_size, seq_length, _ = input_shape
+        prev_output = bc.reshape_to_matrix(prev_output)
+        for layer_idx in range(self.n_layers):
+            with tf.compat.v1.variable_scope("layer_%d" % layer_idx):
+                layer = self.layer_list[layer_idx]
+                intermediate_output, prev_output = layer.apply(prev_output, batch_size, seq_length,
+                                                               attention_mask)
+                final_output = bc.reshape_from_matrix2(prev_output, input_shape)
+                self.all_layer_outputs.append(final_output)
 
         return prev_output
 
+    def get_last_layer_output(self):
+        return self.all_layer_outputs[-1]
 
 def split_and_append_sep(input_ids,
                 input_mask,
@@ -281,7 +293,7 @@ class SeroAlpha(base.BertModelInterface):
         self.total_sequence_length = config.total_sequence_length
         self.window_size = config.window_size
 
-        self.lower_module = LowerTransformer(config, use_one_hot_embeddings)
+        self.lower_module = LowerTransformer(config, config.lower_layers, use_one_hot_embeddings)
         if config.compare_attrib_value_safe_lambda("", lambda x: x > 0):
             self.mid_layers = MidModuleExpanding(config)
         else:
@@ -305,8 +317,8 @@ class SeroAlpha(base.BertModelInterface):
         else:
             input_vectors = lower_module_last_layer
 
-
-        self.upper_module.call(input_vectors, self.lower_module.attention_mask)
+        with tf.compat.v1.variable_scope("upper"):
+            self.upper_module.call(input_vectors, self.lower_module.attention_mask)
         self.embedding_table = self.lower_module.embedding_layer.embedding_table
         self.sequence_output = self.upper_module.all_layer_outputs[-1]
         self.all_encoder_layers = self.lower_module.all_layer_outputs + self.upper_module.all_layer_outputs
@@ -329,7 +341,7 @@ class SeroBeta(base.BertModelInterface):
         self.total_sequence_length = config.total_sequence_length
         self.window_size = config.window_size
 
-        self.lower_module = LowerTransformer(config, use_one_hot_embeddings)
+        self.lower_module = LowerTransformer(config, config.lower_layers, use_one_hot_embeddings)
         self.mid_layers = MidModule(config)
         self.upper_module = UpperTransformer(config)
         self.skip_mid_layer = config.compare_attrib_value_safe("skip_mid_layer", True)
@@ -351,8 +363,8 @@ class SeroBeta(base.BertModelInterface):
         attention_mask = tf.pad(self.lower_module.attention_mask,
                                 [[0,0], [0, added_tokens], [0, added_tokens]], 'CONSTANT', constant_values=1)
 
-
-        self.upper_module.call(input_vectors, attention_mask)
+        with tf.compat.v1.variable_scope("upper"):
+            self.upper_module.call(input_vectors, attention_mask)
         self.embedding_table = self.lower_module.embedding_layer.embedding_table
         self.sequence_output = self.upper_module.all_layer_outputs[-1]
         self.all_encoder_layers = self.lower_module.all_layer_outputs + self.upper_module.all_layer_outputs
@@ -382,7 +394,7 @@ class SeroGamma(base.BertModelInterface):
         self.total_sequence_length = config.total_sequence_length
         self.window_size = config.window_size
 
-        self.lower_module = LowerTransformer(config, use_one_hot_embeddings)
+        self.lower_module = LowerTransformer(config, config.lower_layers, use_one_hot_embeddings)
         self.mid_layers = MidModuleGamma(config)
         self.upper_module = UpperTransformer(config)
         self.skip_mid_layer = config.compare_attrib_value_safe("skip_mid_layer", True)
@@ -409,10 +421,83 @@ class SeroGamma(base.BertModelInterface):
         attention_mask = tf.pad(self.lower_module.attention_mask,
                                 [[0,0], [0, added_tokens], [0, added_tokens]], 'CONSTANT', constant_values=1)
 
-
-        self.upper_module.call(input_vectors, attention_mask)
+        with tf.compat.v1.variable_scope("upper"):
+            self.upper_module.call(input_vectors, attention_mask)
         self.embedding_table = self.lower_module.embedding_layer.embedding_table
         self.sequence_output = self.upper_module.all_layer_outputs[-1]
+        self.all_encoder_layers = self.lower_module.all_layer_outputs + self.upper_module.all_layer_outputs
+
+        self.all_encoder_layers = []
+        self.embedding_output = self.lower_module.embedding_output
+        return self.sequence_output
+
+
+class SeroDelta(base.BertModelInterface):
+    def __init__(self,
+                 config,  # This is different from BERT config,
+                 is_training,
+                 use_one_hot_embeddings=True,
+                 ):
+        super(SeroDelta, self).__init__()
+
+        if not is_training:
+            config.set_attrib("hidden_dropout_prob", 0.0)
+            config.set_attrib("attention_probs_dropout_prob", 0.0)
+
+        self.total_sequence_length = config.total_sequence_length
+        self.window_size = config.window_size
+
+        self.lower_module = LowerTransformer(config, config.lower_layers, use_one_hot_embeddings)
+
+        per_layer_config = get_per_layer_config(config)
+        self.mid_layers = UpperTransformer(per_layer_config, config.middle_layers)
+        self.upper_module = UpperTransformer(per_layer_config, config.upper_layers)
+        self.skip_mid_layer = config.compare_attrib_value_safe("skip_mid_layer", True)
+
+    def call(self, stacked_input_ids, stacked_input_mask,
+             stacked_segment_ids, use_context):
+        self.lower_module.call(r3to2(stacked_input_ids),
+                               r3to2(stacked_input_mask),
+                               r3to2(stacked_segment_ids),
+                               )
+
+        lower_module_last_layer = self.lower_module.all_layer_outputs[
+            -1]  # [ batch_size * num_window, seq_length, hidden_size)
+        window_vectors = lower_module_last_layer[:, -1, :]
+
+        batch_size, num_window, seq_length = bc.get_shape_list2(stacked_input_ids)
+        window_vectors = tf.reshape(window_vectors, [batch_size, num_window, -1])
+        window_vectors = window_vectors * tf.cast(tf.reshape(use_context, [-1, 1, 1]), tf.float32)
+        window_vectors = tf.tile(window_vectors, [1, num_window, 1]) # [batch_size, num_window * num_window, hidden_size]
+        window_vectors = tf.reshape(window_vectors, [batch_size * num_window, num_window, -1])
+        print("window_vectors", window_vectors.shape)
+        input_vectors = tf.concat([lower_module_last_layer, window_vectors], axis=1)
+        # input_vectors : [batch_size * num_window, window_length + num_window, hidden_size]
+        print("input_vectors", input_vectors.shape)
+        added_tokens = num_window
+        attention_mask = tf.pad(self.lower_module.attention_mask,
+                                [[0, 0], [0, added_tokens], [0, added_tokens]], 'CONSTANT', constant_values=1)
+        with tf.compat.v1.variable_scope("mid"):
+            self.mid_layers.call(input_vectors, attention_mask)
+            middle_output = self.mid_layers.get_last_layer_output()
+        print("middle_output ", middle_output.shape)
+
+        middle_output_head = middle_output[:, :self.window_size, :]
+
+        # Now re-distribute the context
+        middle_output_tail = middle_output[:, self.window_size:, :]  # [batch_size * num_window, num_window, hidden_size]
+        middle_output_tail = tf.reshape(middle_output_tail , [batch_size, num_window, num_window, -1])
+        # tail[batch_idx, idx1, idx2, :] : response value to window[idx2] from window[idx1]
+        # -> This is what window[idx2] may want to know about window[idx1]
+        middle_output_tail = tf.transpose(middle_output_tail, [0,2,1,3])
+        middle_output_tail = tf.reshape(middle_output_tail, [batch_size * num_window, num_window, -1])
+
+        input_to_upper = tf.concat([middle_output_head,middle_output_tail], axis=1)
+        with tf.compat.v1.variable_scope("upper"):
+            self.upper_module.call(input_to_upper, attention_mask)
+        self.embedding_table = self.lower_module.embedding_layer.embedding_table
+        raw_sequence_output = self.upper_module.all_layer_outputs[-1]
+        self.sequence_output = raw_sequence_output[:, :self.window_size, :]
         self.all_encoder_layers = self.lower_module.all_layer_outputs + self.upper_module.all_layer_outputs
 
         self.all_encoder_layers = []
@@ -610,6 +695,7 @@ class MidModuleGamma:
 
     def concat_all_layers(self):
         return tf.stack(self.all_layer_outputs, axis=1)
+
 
 
 def check_SeroAlpha():

@@ -6,7 +6,7 @@ from models.transformer.bert_common_v2 import create_initializer, get_shape_list
 from tf_util.tf_logging import tf_logging
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
-from tlm.sero.sero_core import SeroAlpha, split_and_append_sep, SeroGamma
+from tlm.sero.sero_core import SeroAlpha, split_and_append_sep, SeroDelta
 from tlm.training import assignment_map
 from tlm.training.input_fn_common import format_dataset
 from tlm.training.lm_model_fn import metric_fn_lm
@@ -76,7 +76,8 @@ def model_fn_sero_lm(config, train_config, modeling):
         else:
             assert False
 
-        model_class = SeroGamma
+
+        model_class = SeroDelta
 
         with tf.compat.v1.variable_scope("sero"):
             model = model_class(

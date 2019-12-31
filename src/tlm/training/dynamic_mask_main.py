@@ -82,6 +82,7 @@ def main(_):
 
     lm_pretrain(input_files)
 
+    tf_logging.log("Now terminating process")
 
 def lm_pretrain(input_files):
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)

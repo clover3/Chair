@@ -2,6 +2,9 @@ import logging
 import os
 import pickle
 import warnings
+
+from google_wrap.gs_wrap import auto_resolve_init_checkpoint
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import tensorflow as tf
@@ -14,7 +17,7 @@ def run_estimator(model_fn, input_fn, host_call=None):
     tf_logging.setLevel(logging.INFO)
     if FLAGS.log_debug:
         tf_logging.setLevel(logging.DEBUG)
-
+    FLAGS.init_checkpoint = auto_resolve_init_checkpoint(FLAGS.init_checkpoint)
     tf.io.gfile.makedirs(FLAGS.output_dir)
 
     tpu_cluster_resolver = None

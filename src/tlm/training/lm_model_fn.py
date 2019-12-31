@@ -104,6 +104,7 @@ def align_checkpoint_for_lm(tvars,
 
             def init_fn():
                 tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+
                 tf.compat.v1.train.init_from_checkpoint(second_init_checkpoint, assignment_map2)
 
     else:

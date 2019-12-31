@@ -32,12 +32,12 @@ def get_modified_data_loader(sequence_length):
 
 
 def gen_tf_recored():
-    sequence_length = 300
+    sequence_length = 512
     data_loader = get_modified_data_loader(sequence_length)
     todo = [("train", [data_loader.train_file]), ("dev", [data_loader.dev_file])]
 
     for name, files in todo[::-1]:
-        dir_path = os.path.join(output_path, "nli_tfrecord_d2_{}".format(sequence_length))
+        dir_path = os.path.join(output_path, "nli_tfrecord_{}".format(sequence_length))
         exist_or_mkdir(dir_path)
         output_file = os.path.join(dir_path, name)
         writer = RecordWriterWrap(output_file)
@@ -103,4 +103,4 @@ def gen_tf_record_per_genre():
 
 
 if __name__ == "__main__":
-    split_train_to_tdev()
+    gen_tf_recored()

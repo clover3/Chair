@@ -35,12 +35,15 @@ def report_run(func):
         task_proxy.task_start(run_name, flags_str)
         try:
             r = func(*args)
+            print("Run completed")
             msg = "{}\n".format(r) + flags_str
 
             if FLAGS.report_field:
                 report_number(r)
 
+            print("Now reporting task : ", run_name)
             task_proxy.task_complete(run_name, str(msg))
+            print("Done")
         except Exception as e:
             print("Reporting Exception ")
             task_proxy.task_interrupted(run_name, "Exception\n" + str(e))
