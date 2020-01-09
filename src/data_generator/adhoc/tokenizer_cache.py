@@ -1,8 +1,10 @@
 
-from data_generator.data_parser.trec import *
-from path import data_path
-from data_generator.tokenizer_b import EncoderUnit
 import sys
+
+from cpath import data_path
+from data_generator.data_parser.trec import *
+from data_generator.tokenizer_b import EncoderUnit
+
 
 def build_tokenzier_cache(job_id):
     vocab_filename = "bert_voca.txt"

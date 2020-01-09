@@ -1,25 +1,24 @@
 from __future__ import print_function
+
 import os
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 from datetime import datetime
 import time
 from models.transformer.hp_finetue import HP
 
-import tensorflow as tf
-from tensorflow.python import debug as tf_debug
 from task.transformer_est import Transformer, Classification
-from models.transformer import bert
 from models.transformer import hyperparams
 from models.transformer import transformer_est
 from data_generator import shared_setting
 from data_generator.stance import stance_detection
 import pandas as pd
-import path
+import cpath
 from misc_lib import delete_if_exist
 from trainer.bert_estimator_builder import *
 def get_model_dir(run_id, delete_exist = True):
-    run_dir = os.path.join(path.model_path, 'runs')
+    run_dir = os.path.join(cpath.model_path, 'runs')
     save_dir = os.path.join(run_dir, run_id)
     if delete_exist:
         delete_if_exist(save_dir)
@@ -135,8 +134,8 @@ class EstimatorRunner:
             init_checkpoint = FLAGS.init_checkpoint
         else:
             model_dir = get_model_dir("causal")
-            input_pattern = os.path.join(path.data_path, "causal", "Thus.train_*")
-            init_checkpoint = os.path.join(path.model_path, "runs", FLAGS.init_checkpoint)
+            input_pattern = os.path.join(cpath.data_path, "causal", "Thus.train_*")
+            init_checkpoint = os.path.join(cpath.model_path, "runs", FLAGS.init_checkpoint)
 
         vocab_size = 30522
 
@@ -239,8 +238,8 @@ class EstimatorRunner:
             init_checkpoint = FLAGS.init_checkpoint
         else:
             model_dir = get_model_dir("causal")
-            input_pattern = os.path.join(path.data_path, "causal", "Thus.train_*")
-            init_checkpoint = os.path.join(path.model_path, "runs", FLAGS.init_checkpoint)
+            input_pattern = os.path.join(cpath.data_path, "causal", "Thus.train_*")
+            init_checkpoint = os.path.join(cpath.model_path, "runs", FLAGS.init_checkpoint)
 
 
         vocab_size = 30522

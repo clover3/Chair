@@ -2,7 +2,9 @@ import os
 import random
 import shutil
 import time
+from collections import Counter
 from time import gmtime, strftime
+
 
 
 def average(l):
@@ -290,3 +292,13 @@ def list_print(l, width):
             print()
             cnt = 0
     print()
+
+
+class BinHistogram:
+    def __init__(self, bin_fn):
+        self.counter = Counter()
+        self.bin_fn = bin_fn
+
+    def add(self, v):
+        self.counter[self.bin_fn(v)] += 1
+

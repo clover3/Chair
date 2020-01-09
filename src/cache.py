@@ -1,6 +1,6 @@
-from path import cache_path, data_path
 import os
-import pickle
+
+from cpath import cache_path, data_path
 
 
 def load_from_pickle(name):

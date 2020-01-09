@@ -1,6 +1,6 @@
 import os
-import path
 
+import cpath
 from data_generator import tokenizer_wo_tf as tokenization
 from data_generator.data_parser import trec
 from rpc.disk_dump import dump_dict
@@ -17,7 +17,7 @@ def dump_tokens():
 
 
 def dump_robust_cap_tokens():
-    vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+    vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
     cap_tokenizer = tokenization.FullTokenizer(
         vocab_file=vocab_file, do_lower_case=False)
 

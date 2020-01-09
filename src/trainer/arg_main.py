@@ -4,10 +4,10 @@ import sys
 import tensorflow as tf
 
 from arg.ukp_train_test import *
+from cpath import get_model_full_path, output_path, get_bert_full_path
 from data_generator.argmining import NextSentPred, DocStance
 from data_generator.argmining.ukp import StreamExplainer
 from google_wrap import gsutil
-from path import get_model_full_path, output_path, get_bert_full_path
 from tlm.param_analysis import fetch_grad, fetch_hidden_vector, fetch_params
 from trainer import loader
 from trainer.arg_experiment import ArgExperiment

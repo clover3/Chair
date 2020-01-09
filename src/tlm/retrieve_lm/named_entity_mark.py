@@ -1,9 +1,8 @@
-import spacy
-import en_core_web_sm
-from config.input_path import robust_path
-from data_generator.data_parser.trec import *
 import random
-from data_generator.adhoc.data_sampler import DataSampler
+
+import en_core_web_sm
+
+from data_generator.data_parser.trec import *
 
 nlp = en_core_web_sm.load()
 

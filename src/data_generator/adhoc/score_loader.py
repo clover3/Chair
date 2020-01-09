@@ -1,12 +1,13 @@
-import pickle
-import path
 import os
-from misc_lib import pair_shuffle
-from config.input_path import train_data_dir
-from trainer.np_modules import get_batches_ex
+import pickle
 import random
 import threading
-from multiprocessing import Process, Queue
+from multiprocessing import Queue
+
+import cpath
+from config.input_path import train_data_dir
+from trainer.np_modules import get_batches_ex
+
 
 class DataLoader:
     def __init__(self, max_seq, dim):
@@ -15,7 +16,7 @@ class DataLoader:
         self.train_data = None
         self.dev_data = None
         self.test_data = None
-        item_path = os.path.join(path.data_path, "cache", "items.pickle")
+        item_path = os.path.join(cpath.data_path, "cache", "items.pickle")
         self.items = pickle.load(open(item_path, "rb"))
         random.shuffle(self.items)
         self.idx = 0

@@ -1,8 +1,10 @@
-from misc_lib import *
 import numpy as np
+from sklearn import metrics
 from sklearn.metrics import precision_recall_curve, auc
 from sklearn.metrics import roc_curve
-from sklearn import metrics
+
+from misc_lib import *
+
 
 def top_k_idx(arr, k):
     return np.flip(np.argsort(arr))[:k]
@@ -102,7 +104,7 @@ def MAP_rank(preds, golds):
         sum_prec = 0
         for idx in pred:
             n_pred_pos += 1
-            if gold[idx] == 1:
+            if idx in gold and gold[idx] == 1:
                 tp += 1
                 sum_prec += (tp / n_pred_pos)
         return sum_prec / sum(gold)
@@ -110,6 +112,28 @@ def MAP_rank(preds, golds):
     scores = []
     for pred, gold, in zip(preds, golds):
         if sum(gold) > 0:
+            scores.append(AP(pred, gold))
+
+    return average(scores)
+
+def MAP_rank_w_dict(preds, golds):
+    def num_true_label(gold):
+        return sum(gold.values())
+
+    def AP(pred, gold):
+        n_pred_pos = 0
+        tp = 0
+        sum_prec = 0
+        for idx in pred:
+            n_pred_pos += 1
+            if idx in gold and gold[idx] == 1:
+                tp += 1
+                sum_prec += (tp / n_pred_pos)
+        return sum_prec / num_true_label(gold)
+
+    scores = []
+    for pred, gold, in zip(preds, golds):
+        if num_true_label(gold) > 0:
             scores.append(AP(pred, gold))
 
     return average(scores)

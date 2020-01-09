@@ -1,23 +1,17 @@
 from datetime import datetime
 
+from cpath import output_path
 from data_generator.NLI import nli
 from data_generator.shared_setting import NLI
 from log import log as log_module
 from misc_lib import *
 from models.transformer.hyperparams import HPBert
 from models.transformer.tranformer_nli import transformer_nli
-from path import model_path
-from path import output_path
 from tf_v2_support import disable_eager_execution
 from tlm.dictionary.nli_w_dict import setup_summary_writer
-from trainer.model_saver import save_model, load_bert_v2
-from trainer.np_modules import *
-from trainer.tf_module import epoch_runner
+from trainer.model_saver import save_model, load_bert_v2, get_model_path
+from trainer.tf_module import epoch_runner, get_nli_batches_from_data_loader
 from trainer.tf_train_module import *
-
-
-def get_model_path(run_name, step_name):
-    return os.path.join(model_path, 'runs', run_name, step_name)
 
 
 def train_nli(hparam, nli_setting, run_name, num_epochs, data, model_path):
@@ -142,14 +136,6 @@ def save_report(task, run_name, init_model, avg_acc):
     f.write("{}\t{}\n".format(task, avg_acc))
 
 
-
-
-def get_batches_from_data_loader(data_loader, batch_size):
-    train_batches = get_batches_ex(data_loader.get_train_data(), batch_size, 4)
-    dev_batches = get_batches_ex(data_loader.get_dev_data(), batch_size, 4)
-    return train_batches, dev_batches
-
-
 def run_nli_w_path(run_name, step_name, model_path):
     #run_name
     disable_eager_execution()
@@ -159,7 +145,7 @@ def run_nli_w_path(run_name, step_name, model_path):
     nli_setting.vocab_filename = "bert_voca.txt"
 
     data_loader = nli.DataLoader(hp.seq_max, "bert_voca.txt", True)
-    data = get_batches_from_data_loader(data_loader, hp.batch_size)
+    data = get_nli_batches_from_data_loader(data_loader, hp.batch_size)
     run_name = "{}_{}_NLI".format(run_name, step_name)
     saved_model = train_nli(hp, nli_setting, run_name, 3, data, model_path)
     tf.reset_default_graph()

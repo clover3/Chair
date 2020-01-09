@@ -1,7 +1,7 @@
 import os
 
+from cpath import output_path
 from misc_lib import average
-from path import output_path
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 
 

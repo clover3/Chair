@@ -15,7 +15,7 @@ class WikiWorker:
     def __init__(self, out_path):
         self.out_dir = out_path
         target_seq_len = (128 - 2) * 24
-        self.gen = WikiGen(target_seq_len)
+        self.gen = WikiGen(target_seq_len, True)
 
     def work(self, job_id):
         doc_id = job_id
@@ -30,7 +30,7 @@ class WikiWorker:
             inst_list.extend(insts)
 
         avg_len = average([len(t[0]) for t in inst_list])
-        tf_logging.debug("{} docs, {} chunks, avg_Len={}".format(len(docs), len(inst_list), avg_len))
+        tf_logging.info("{} docs, {} chunks, avg_Len={}".format(len(docs), len(inst_list), avg_len))
 
         histogram = Counter()
         for inst in inst_list:
@@ -38,17 +38,16 @@ class WikiWorker:
             num_window = int(len(tokens) / 126)
             histogram[num_window] += 1
 
-        #print(histogram)
-
         random.shuffle(inst_list)
         self.gen.write_instances(inst_list, output_file)
 
 
 class WikiGen(LMTrainGen):
-    def __init__(self, target_seq_length):
+    def __init__(self, target_seq_length, drop_short=True):
         super(WikiGen, self).__init__()
         self.rng = random.Random(time.time())
         self.target_seq_length = target_seq_length
+        self.drop_short = drop_short
 
     def pool_tokens(self, sent_list, target_seq_length, skip=False):
         results = []
@@ -77,6 +76,8 @@ class WikiGen(LMTrainGen):
         length_l = []
         for tokens in self.pool_tokens(doc, self.target_seq_length, True):
             l = len(tokens)
+            if self.drop_short and l < 0.5 * self.target_seq_length:
+                continue
             length_l.append(l)
             segment_ids = [1] * l
             yield tokens, segment_ids
@@ -97,5 +98,5 @@ class WikiGen(LMTrainGen):
 
 if __name__ == "__main__":
     working_dir = sydney_working_dir
-    runner = JobRunner(working_dir, 1000, "sero_wiki", WikiWorker)
+    runner = JobRunner(working_dir, 1000, "sero_wiki_2", WikiWorker)
     runner.start()

@@ -4,8 +4,8 @@ import pickle
 import math
 import numpy as np
 
+from cpath import output_path
 from data_generator.common import get_tokenizer
-from path import output_path
 from visualize.html_visual import Cell, HtmlVisualizer
 
 
@@ -30,7 +30,7 @@ def visual(filename):
 
     any_key = keys[0]
     data_len = len(vectors[any_key])
-    html = HtmlVisualizer("all_losses.html")
+    html = HtmlVisualizer("all_losses_wo_c.html")
     num_predictions = len(vectors["grouped_positions"][0][0])
     for i in range(data_len):
         input_ids = vectors["input_ids"][i]
@@ -75,4 +75,5 @@ def visual(filename):
 
 
 if __name__ == "__main__":
-    visual("{}_{}.pickle")
+    #visual("all_loss_0.pickle")
+    visual("all_loss_nli_vs_wo_c.pickle")

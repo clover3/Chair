@@ -1,9 +1,8 @@
-from models.transformer.bert import *
 from collections import Counter
 
 import numpy as np
 
-import path
+import cpath
 from cache import *
 from models.transformer import bert
 from models.transformer import hyperparams
@@ -65,7 +64,7 @@ def fetch_bert_parameter(model_path):
 
 
 def get_path_from_model_id(load_id):
-    run_dir = os.path.join(path.output_path, "model", 'runs')
+    run_dir = os.path.join(cpath.output_path, "model", 'runs')
     save_dir = os.path.join(run_dir, load_id[0])
     return os.path.join(save_dir, "{}".format(load_id[1]))
 

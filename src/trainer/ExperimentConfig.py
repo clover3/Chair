@@ -7,3 +7,4 @@ class ExperimentConfig:
     num_epoch = 1
     name = "experiment"
     load_names = ""
+    save_payload = False

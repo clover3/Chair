@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 
+from cpath import output_path
 from misc_lib import average
-from path import output_path
 from tf_util.enum_features import load_record_v2
 from tlm.estimator_prediction_viewer import flatten_batches, EstimatorPredictionViewer
 from visualize.html_visual import HtmlVisualizer, Cell

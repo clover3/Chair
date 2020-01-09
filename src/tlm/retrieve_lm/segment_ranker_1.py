@@ -1,6 +1,4 @@
-from collections import Counter
-
-import path
+import cpath
 from adhoc.bm25 import BM25_3, BM25_3_q_weight
 from cache import *
 from data_generator import tokenizer_wo_tf as tokenization
@@ -18,13 +16,13 @@ class PassageRanker:
         self.doc_posting = None
         self.stopword = load_stopwords()
 
-        vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+        vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
         self.tokenizer = tokenization.FullTokenizer(
             vocab_file=vocab_file, do_lower_case=True)
 
 
         def load_pickle(name):
-            p = os.path.join(path.data_path, "adhoc", name + ".pickle")
+            p = os.path.join(cpath.data_path, "adhoc", name + ".pickle")
             return pickle.load(open(p, "rb"))
 
         self.doc_len_dict = load_pickle("doc_len")

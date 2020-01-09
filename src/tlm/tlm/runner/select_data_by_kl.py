@@ -4,9 +4,9 @@ import random
 
 import cache
 from cie.arg import kl
+from cpath import output_path
 from data_generator.job_runner import JobRunner
 from misc_lib import get_dir_files, TimeEstimator
-from path import output_path
 from tf_util.enum_features import load_record
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.generate_bert_dummy import read_bert_data

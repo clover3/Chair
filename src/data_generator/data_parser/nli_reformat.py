@@ -1,7 +1,8 @@
-import tensorflow as tf
 import os
-from path import data_path
 
+import tensorflow as tf
+
+from cpath import data_path
 
 label_list = ["entailment", "neutral", "contradiction",]
 corpus_dir = os.path.join(data_path, "nli")

@@ -1,6 +1,6 @@
 import collections
 
-import path
+import cpath
 from cache import *
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import *
@@ -35,7 +35,7 @@ class FeatureExtractor(PassageRanker):
         self.text_dump = DumpAccess("robust")
         c_path = os.path.join(data_path, "stream_pickled", "CandiSet_{}_0")
         self.ll = LazyLoader(c_path)
-        vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+        vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
         self.cap_tokenizer = tokenization.FullTokenizer(
             vocab_file=vocab_file, do_lower_case=False)
 
@@ -149,11 +149,11 @@ def load_run_1():
 
     info_d = {}
     for job_id in range(5):
-        p = os.path.join(path.data_path, "tlm", "pred", "info_d_{}.pickle".format(job_id))
+        p = os.path.join(cpath.data_path, "tlm", "pred", "info_d_{}.pickle".format(job_id))
         d = pickle.load(open(p, "rb"))
         info_d.update(d)
 
-    p = os.path.join(path.data_path, "tlm", "pred", "tlm1.pickle")
+    p = os.path.join(cpath.data_path, "tlm", "pred", "tlm1.pickle")
     pred = pickle.load(open(p, "rb"))
 
     tf_id_set = set()
@@ -241,7 +241,7 @@ def run():
     train_set = "\n".join(feature_str_list[:cut])
     test_set = "\n".join(feature_str_list[cut:])
 
-    out_dir = os.path.join(path.data_path, "tlm", "feature")
+    out_dir = os.path.join(cpath.data_path, "tlm", "feature")
     open(os.path.join(out_dir, "train.txt"), "w").write(train_set)
     open(os.path.join(out_dir, "test.txt"), "w").write(test_set)
 

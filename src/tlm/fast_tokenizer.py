@@ -1,12 +1,13 @@
+import os
+
+import cpath
 from data_generator import tokenizer_b as tokenization
 
-import path
-import os
 
 class FTokenizer:
     def __init__(self):
         self.d_num_sub_tokens = dict()
-        vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+        vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
         self.tokenizer = tokenization.FullTokenizer(
             vocab_file=vocab_file, do_lower_case=True)
 

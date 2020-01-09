@@ -1,13 +1,9 @@
+import tensorflow as tf
+
+from cache import *
 from data_generator.text_encoder import SubwordTextEncoder, CLS_ID, SEP_ID
 from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
-import tensorflow as tf
-import csv
-from path import data_path
-from cache import *
 from evaluation import *
-import unicodedata
-from data_generator.NLI.enlidef import *
-import copy
 
 num_classes = 2
 

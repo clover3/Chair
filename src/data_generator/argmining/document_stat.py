@@ -1,10 +1,10 @@
-from misc_lib import average
-from data_generator.argmining.ukp import all_topics
-from data_generator.data_parser.ukp import load
+import os
 from collections import defaultdict, Counter
 
-import os
-import path
+import cpath
+from data_generator.argmining.ukp import all_topics
+from data_generator.data_parser.ukp import load
+from misc_lib import average
 
 
 def stat():
@@ -50,10 +50,10 @@ def visualize():
         target_topic = topic
         topic_data = all_data[topic]
 
-        f_html = open(os.path.join(path.output_path, "visualize", "stance_{}_gold_doc.html".format(topic)), "w")
+        f_html = open(os.path.join(cpath.output_path, "visualize", "stance_{}_gold_doc.html".format(topic)), "w")
         f_html.write("<html><head>\n")
 
-        #tooptip_style = open(os.path.join(path.data_path, "html", "tooltip")).read()
+        #tooptip_style = open(os.path.join(cpath.data_path, "html", "tooltip")).read()
         #f_html.write(tooptip_style)
         f_html.write("</head>\n")
         f_html.write("<h4>{}<h4>\n".format(target_topic))

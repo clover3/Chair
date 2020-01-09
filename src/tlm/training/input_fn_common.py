@@ -63,7 +63,7 @@ def format_dataset(name_to_features, batch_size, is_training, flags, input_files
                 tf.data.TFRecordDataset,
                 sloppy=is_training,
                 cycle_length=cycle_length))
-        d = d.shuffle(buffer_size=100)
+        d = d.shuffle(buffer_size=1000 * 1000)
     else:
         d = tf.data.TFRecordDataset(input_files)
 

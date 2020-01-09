@@ -1,7 +1,8 @@
 
 
-from path import data_path
 import os
+
+from cpath import data_path
 
 #train_data_name = "robust_train_3"
 train_data_name = "train_data_old"

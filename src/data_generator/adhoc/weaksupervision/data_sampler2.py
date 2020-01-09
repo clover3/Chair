@@ -1,9 +1,11 @@
 import sys
-from data_generator.data_parser.trec import *
-from misc_lib import *
+
+import cpath
 from adhoc.bm25 import get_bm25
 from data_generator.cached_tokenizer import EncoderUnit
-import path
+from data_generator.data_parser.trec import *
+from misc_lib import *
+
 
 class DataSampler:
     def __init__(self, queries, collection):
@@ -150,7 +152,7 @@ def get_encoded_path(job_id):
     return save_path
 
 def encode(job_id):
-    cache_path = os.path.join(path.cache_path, "sub_tokens.pickle")
+    cache_path = os.path.join(cpath.model_path, "sub_tokens.pickle")
     vocab_filename = "bert_voca.txt"
     voca_path = os.path.join(data_path, vocab_filename)
     encoder = EncoderUnit(cache_path=cache_path, max_sequence=512, voca_path=voca_path)

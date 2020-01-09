@@ -1,8 +1,10 @@
 
-import os
-from path import data_path
 import csv
+import os
+
 import nltk
+
+from cpath import data_path
 
 scope_path = os.path.join(data_path, "arg", "extend")
 sentence_path = os.path.join(scope_path, "sentences")

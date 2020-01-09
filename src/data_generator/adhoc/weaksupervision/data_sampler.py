@@ -1,20 +1,18 @@
-from xmlrpc.server import SimpleXMLRPCServer
-from xmlrpc.server import SimpleXMLRPCRequestHandler
-import xmlrpc.client
-from trainer.np_modules import *
-from multiprocessing import Process, Queue
-from trainer.queue_feader import QueueFeader
-import threading
-import pickle
-from path import data_path
-from data_generator.tokenizer_b import EncoderUnit
-from data_generator.data_parser.trec import *
-import random
 import sys
-from misc_lib import *
-from data_generator.adhoc.ws import load_marco_queries
+import threading
+import xmlrpc.client
+from multiprocessing import Process, Queue
+from xmlrpc.server import SimpleXMLRPCRequestHandler
+from xmlrpc.server import SimpleXMLRPCServer
+
 from adhoc.bm25 import get_bm25
 from config.input_path import train_data_dir
+from data_generator.adhoc.ws import load_marco_queries
+from data_generator.data_parser.trec import *
+from data_generator.tokenizer_b import EncoderUnit
+from misc_lib import *
+from trainer.np_modules import *
+
 
 class DataSampler:
     def __init__(self, queries, collection):

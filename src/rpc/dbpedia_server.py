@@ -1,11 +1,13 @@
-from rpc.text_reader import *
-from data_generator.data_parser import trec
-import path
-import time
 import os
+import time
+
+import cpath
+from data_generator.data_parser import trec
+from rpc.text_reader import *
+
 
 def read_dbpedia():
-    dbpedia_dir = os.path.join(path.data_path, "dbpedia")
+    dbpedia_dir = os.path.join(cpath.data_path, "dbpedia")
     d_all = dict()
     for i in range(19):
         filename = "docs.{}.trectext".format(i)

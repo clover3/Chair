@@ -1,6 +1,7 @@
 import os
-from path import data_path
 import pickle
+
+from cpath import data_path
 from crawl.guardian_api import *
 
 save_dir = os.path.join(data_path, "guardian", "any")

@@ -1,11 +1,14 @@
-import os
-from path import model_path
-from misc_lib import *
-import tensorflow as tf
 import logging
 import re
 
+import tensorflow as tf
+
+from cpath import model_path, output_path
+from misc_lib import *
+from tf_v2_support import tf1
+
 tf_logger = logging.getLogger('tensorflow')
+
 
 
 def get_canonical_model_path(name):
@@ -17,6 +20,18 @@ def get_canonical_model_path(name):
     exist_or_mkdir(save_dir)
     return save_dir
 
+
+def setup_summary_writer(exp_name):
+    summary_path = os.path.join(output_path, "summary")
+    exist_or_mkdir(summary_path)
+    summary_run_path = os.path.join(summary_path, exp_name)
+    exist_or_mkdir(summary_run_path)
+
+    train_log_path = os.path.join(summary_run_path, "train")
+    test_log_path = os.path.join(summary_run_path, "test")
+    train_writer = tf.summary.FileWriter(train_log_path)
+    test_writer = tf.summary.FileWriter(test_log_path)
+    return train_writer, test_writer
 
 
 def save_model(sess, name, global_step):
@@ -31,16 +46,15 @@ def save_model(sess, name, global_step):
 
 def save_model_to_dir_path(sess, save_dir, global_step):
     path = os.path.join(save_dir, "model")
-    saver = tf.compat.v1.train.Saver(tf.compat.v1.global_variables(), max_to_keep=1)
+    saver = tf1.train.Saver(tf1.global_variables(), max_to_keep=1)
     ret = saver.save(sess, path, global_step=global_step)
     tf_logger.info("Model saved at {} - {}".format(path, ret))
     return ret
 
 
 def load_model(sess, model_path):
-    loader = tf.compat.v1.train.Saver(tf.compat.v1.global_variables(), max_to_keep=1)
+    loader = tf1.train.Saver(tf1.global_variables(), max_to_keep=1)
     loader.restore(sess, model_path)
-
 
 
 def load_bert_v2(sess, model_path):
@@ -55,16 +69,23 @@ def load_bert_v2(sess, model_path):
 
     init_vars = tf.train.list_variables(model_path)
 
+    initialized = set()
     load_mapping = dict()
     for v in init_vars:
         name_tokens = v[0].split('/')
         checkpoint_name = '/'.join(name_tokens).split(":")[0]
         tvar_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", checkpoint_name)
         tvar_name = re.sub("dense[_]?\d*", "dense", tvar_name)
+        print(tvar_name)
         if tvar_name in name_to_variable:
+            print("{} -> {}".format(checkpoint_name, tvar_name))
             tf_logger.debug("{} -> {}".format(checkpoint_name, tvar_name))
             load_mapping[checkpoint_name] = name_to_variable[tvar_name]
+            initialized.add(tvar_name)
 
+    for name in name_to_variable:
+        if name not in initialized and "adam" not in name:
+            print(name, "not initialized")
     print("Restoring: {}".format(model_path))
     loader = tf.train.Saver(load_mapping, max_to_keep=1)
     loader.restore(sess, model_path)
@@ -85,3 +106,6 @@ def load_model_w_scope(sess, path, include_namespace, verbose=True):
     loader = tf.train.Saver(variables_to_restore, max_to_keep=1)
     loader.restore(sess, path)
 
+
+def get_model_path(run_name, step_name):
+    return os.path.join(model_path, 'runs', run_name, step_name)

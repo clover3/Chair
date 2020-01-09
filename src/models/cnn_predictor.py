@@ -1,13 +1,14 @@
-from data_generator.cnn import *
-from trainer.tf_module import init_session
-from models.cnn import CNN
 import numpy as np
 import tensorflow as tf
-from trainer.np_modules import get_batches_ex
-import path
-from models.transformer import hyperparams
+
 import cache
+import cpath
+from data_generator.cnn import *
+from models.cnn import CNN
+from models.transformer import hyperparams
 from summarization.tokenizer import *
+from trainer.np_modules import get_batches_ex
+from trainer.tf_module import init_session
 
 
 class CNNPredictor:
@@ -30,7 +31,7 @@ class CNNPredictor:
         self.tokenize = lambda x: tokenize(x, set(), False)
 
         loader = tf.train.Saver()
-        loader.restore(self.sess, path.get_model_full_path(name))
+        loader.restore(self.sess, cpath.get_model_full_path(name))
 
     def encode(self, docs):
 

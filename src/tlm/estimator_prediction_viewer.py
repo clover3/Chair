@@ -4,8 +4,8 @@ from functools import partial
 
 import numpy as np
 
+from cpath import output_path
 from data_generator.common import get_tokenizer
-from path import output_path
 from tlm.token_utils import cells_from_tokens
 from visualize.html_visual import Cell
 

@@ -25,7 +25,7 @@ def validate_data(fn):
                 pass
             else:
                 print("Error at {}".format(fn))
-
+    print(keys)
 
 def validate_dir(dir_path, idx_range):
     corrupt_list = []
@@ -47,7 +47,11 @@ def validate_dir(dir_path, idx_range):
         print(e)
 
 if __name__ == "__main__":
-    dir_path = os.path.join("/mnt/nfs/work3/youngwookim/data/bert_tf/", sys.argv[1])
-    st = int(sys.argv[2])
-    ed = int(sys.argv[3])
-    validate_dir(dir_path, range(st, ed))
+    if len(sys.argv) == 4:
+        dir_path = os.path.join("/mnt/nfs/work3/youngwookim/data/bert_tf/", sys.argv[1])
+        st = int(sys.argv[2])
+        ed = int(sys.argv[3])
+        validate_dir(dir_path, range(st, ed))
+    elif len(sys.argv) == 2:
+        p = sys.argv[1]
+        validate_data(p)

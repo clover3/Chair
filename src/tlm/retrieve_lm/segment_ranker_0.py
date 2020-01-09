@@ -1,6 +1,4 @@
-from collections import Counter
-
-import path
+import cpath
 from adhoc.bm25 import BM25_3, BM25_3_q_weight
 from adhoc.galago import load_galago_judgement
 from cache import *
@@ -58,13 +56,13 @@ class PassageRanker:
         self.doc_posting = None
         self.stopword = load_stopwords()
 
-        vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+        vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
         self.tokenizer = tokenization.FullTokenizer(
             vocab_file=vocab_file, do_lower_case=True)
 
 
         def load_pickle(name):
-            p = os.path.join(path.data_path, "adhoc", name + ".pickle")
+            p = os.path.join(cpath.data_path, "adhoc", name + ".pickle")
             return pickle.load(open(p, "rb"))
 
         self.doc_len_dict = load_pickle("doc_len")
@@ -270,10 +268,10 @@ def do_seg_rank(pr, dr, job_id):
 
 def main():
     print("Segment_ranker_0")
-    mark_path = os.path.join(path.data_path, "adhoc", "seg_rank0_mark")
+    mark_path = os.path.join(cpath.data_path, "adhoc", "seg_rank0_mark")
     mtm = MarkedTaskManager(1000*1000, mark_path, 1000)
     pr = PassageRanker(256 - 3)
-    dir_path = os.path.join(path.data_path, "tlm_res")
+    dir_path = os.path.join(cpath.data_path, "tlm_res")
     dr = DocRelLoader(dir_path)
 
     job_id = mtm.pool_job()

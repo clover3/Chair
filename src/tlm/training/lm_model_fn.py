@@ -370,6 +370,8 @@ def model_fn_target_masking(bert_config, train_config, target_model_config, mode
                     "input_ids": input_ids,
                     "masked_input_ids": masked_input_ids,
                     "priority_score": priority_score,
+                    "lm_loss1":features["loss1"],
+                    "lm_loss2": features["loss2"],
             }
             output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
                     mode=mode,

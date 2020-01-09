@@ -1,4 +1,3 @@
-import path
 import os
 import pickle
 

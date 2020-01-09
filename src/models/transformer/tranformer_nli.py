@@ -445,3 +445,49 @@ class transformer_nli_vector:
 
 
 
+
+class transformer_nli_e:
+    def __init__(self, hp, voca_size, method, is_training=True):
+        config = bert.BertConfig(vocab_size=voca_size,
+                                 hidden_size=hp.hidden_units,
+                                 num_hidden_layers=hp.num_blocks,
+                                 num_attention_heads=hp.num_heads,
+                                 intermediate_size=hp.intermediate_size,
+                                 type_vocab_size=hp.type_vocab_size,
+                                 )
+
+        seq_length = hp.seq_max
+        use_tpu = False
+        input_ids = placeholder(tf.int64, [None, seq_length])
+        input_mask = placeholder(tf.int64, [None, seq_length])
+        segment_ids = placeholder(tf.int64, [None, seq_length])
+        label_ids = placeholder(tf.int64, [None])
+        if method in [0,1,3,4,5,6]:
+            self.rf_mask = placeholder(tf.float32, [None, seq_length])
+        elif method in [METHOD_CROSSENT, METHOD_HINGE]:
+            self.rf_mask = placeholder(tf.int32, [None, seq_length])
+
+        self.x_list = [input_ids, input_mask, segment_ids]
+        self.y = label_ids
+
+        use_one_hot_embeddings = use_tpu
+        self.model = bert.BertModel(
+            config=config,
+            is_training=is_training,
+            input_ids=input_ids,
+            input_mask=input_mask,
+            token_type_ids=segment_ids,
+            use_one_hot_embeddings=use_one_hot_embeddings)
+
+        pooled = self.model.get_pooled_output()
+        pooled = tf.nn.dropout(pooled, hp.dropout_rate)
+        logits = tf.layers.dense(pooled, nli.num_classes, name="cls_dense")
+        labels = tf.one_hot(label_ids, nli.num_classes)
+        self.acc = tf_module.accuracy(logits, label_ids)
+        self.logits = logits
+        tf.summary.scalar("acc", self.acc)
+        self.loss_arr = tf.nn.softmax_cross_entropy_with_logits_v2(
+            logits=logits,
+            labels=labels)
+        self.loss = tf.reduce_mean(self.loss_arr)
+        tf.summary.scalar("loss", self.loss)

@@ -1,12 +1,13 @@
-from trainer.experiment import Experiment
 from data_generator.controversy import Ams18
-from trainer.tf_module import init_session
-from models.transformer.transformer_binary import transformer_binary
-from models.transformer.hyperparams import HPBert
 import numpy as np
 import tensorflow as tf
+
+from data_generator.controversy import Ams18
+from models.transformer.hyperparams import HPBert
+from models.transformer.transformer_binary import transformer_binary
 from trainer.np_modules import get_batches_ex
-import path
+from trainer.tf_module import init_session
+
 
 class BertPredictor:
     def __init__(self, name= "WikiContrv"):

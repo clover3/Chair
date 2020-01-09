@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from data_generator.special_tokens import MASK_ID
 from models.transformer import optimization_v2 as optimization
-from models.transformer.bert_common_v2 import get_shape_list2
+from models.transformer.bert_common_v2 import get_shape_list2, dropout
 from tf_util.tf_logging import tf_logging
 from tlm.model.base import BertModel
 from tlm.model.lm_objective import get_masked_lm_output
@@ -11,8 +11,37 @@ from tlm.training.assignment_map import get_bert_assignment_map
 from tlm.training.input_fn_common import format_dataset
 from tlm.training.lm_model_fn import metric_fn_lm
 from tlm.training.model_fn_common import log_features, align_checkpoint, get_tpu_scaffold_or_init, log_var_assignments, \
-    Classification
+    classification_metric_fn
 
+
+class ClassificationIgnore12:
+    def __init__(self, num_classes, features, rep, is_training):
+        self.num_classes = num_classes
+        self.label_ids = features["label_ids"]
+        self.label_ids = tf.cast(tf.equal(self.label_ids, 0), tf.int32)
+        self.label_ids = tf.reshape(self.label_ids, [-1])
+        if "is_real_example" in features:
+            is_real_example = tf.cast(features["is_real_example"], dtype=tf.float32)
+        else:
+            is_real_example = tf.ones(tf.shape(self.label_ids), dtype=tf.float32)
+        self.is_real_example = is_real_example
+
+        if is_training:
+            rep = dropout(rep, 0.1)
+        logits = tf.keras.layers.Dense(self.num_classes, name="cls_dense")(rep)
+
+        self.logits = logits
+        self.loss_arr = tf.nn.sparse_softmax_cross_entropy_with_logits(
+            logits=logits,
+            labels=self.label_ids)
+        self.loss = tf.reduce_mean(input_tensor=self.loss_arr)
+        self.preds = tf.cast(tf.argmax(logits, axis=-1), dtype=tf.int32)
+
+    def eval_metrics(self):
+        eval_metrics = (classification_metric_fn, [
+            self.logits, self.label_ids, self.is_real_example
+        ])
+        return eval_metrics
 
 def model_fn_nli_lm(config, train_config):
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -65,7 +94,8 @@ def model_fn_nli_lm(config, train_config):
                                      masked_lm_positions, masked_lm_ids, masked_lm_weights)
 
         pooled = model.get_pooled_output()[batch_size:]
-        task = Classification(3, features, pooled, is_training)
+        #task = Classification(3, features, pooled, is_training)
+        task = ClassificationIgnore12(3, features, pooled, is_training)
         nli_loss = task.loss
         loss = masked_lm_loss + nli_loss
         tvars = tf.compat.v1.trainable_variables()

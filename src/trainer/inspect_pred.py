@@ -1,12 +1,9 @@
 import collections
-from misc_lib import average
-import path
 import os
 import pickle
 
-
-
-
+import cpath
+from misc_lib import average
 
 RawResult = collections.namedtuple("RawResult",
                                    ["unique_ids", "losses"])
@@ -15,11 +12,11 @@ RawResult = collections.namedtuple("RawResult",
 def main():
     info_d = {}
     for job_id in range(5):
-        p = os.path.join(path.data_path, "tlm", "pred", "info_d_{}.pickle".format(job_id))
+        p = os.path.join(cpath.data_path, "tlm", "pred", "info_d_{}.pickle".format(job_id))
         d = pickle.load(open(p, "rb"))
         info_d.update(d)
 
-    p = os.path.join(path.data_path, "tlm", "pred", "tlm1.pickle")
+    p = os.path.join(cpath.data_path, "tlm", "pred", "tlm1.pickle")
     pred = pickle.load(open(p, "rb"))
 
     p_l = list([list() for i in range(5)])

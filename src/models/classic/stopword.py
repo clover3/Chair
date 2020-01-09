@@ -1,5 +1,7 @@
-from path import data_path
 import os
+
+from cpath import data_path
+
 
 def load_stopwords():
     s = set()

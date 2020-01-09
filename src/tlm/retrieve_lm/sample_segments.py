@@ -1,6 +1,6 @@
 import os
 
-import path
+import cpath
 from cache import StreamPickler
 from data_generator import tokenizer_b as tokenization
 from misc_lib import TimeEstimator
@@ -91,7 +91,7 @@ def visualize_inst(inst):
 def main():
     num_inst = 1000 * 1000
     max_seq = 256
-    vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+    vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
     tokenizer = tokenization.FullTokenizer(
             vocab_file=vocab_file, do_lower_case=True)
 

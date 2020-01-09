@@ -3,7 +3,7 @@ from collections import Counter
 import numpy as np
 from tensorflow.python import pywrap_tensorflow
 
-from path import get_bert_full_path
+from cpath import get_bert_full_path
 from visualize.html_visual import HtmlVisualizer, Cell
 
 

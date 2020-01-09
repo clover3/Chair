@@ -2,7 +2,7 @@ import os
 import pickle
 import random
 
-import path
+import cpath
 from data_generator import tokenizer_wo_tf as tokenization
 from sydney_manager import MarkedTaskManager
 from tlm.two_seg_pretraining import write_instance_to_example_files, write_predict_instance
@@ -29,14 +29,14 @@ def worker(job_id):
     max_seq = 512
     print("TF_record_writer")
     rng = random.Random(0)
-    vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+    vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
     tokenizer = tokenization.FullTokenizer(
         vocab_file=vocab_file, do_lower_case=True)
 
-    p = os.path.join(path.data_path , "tlm", "instances_local", "inst_{}.pickle".format(job_id))
+    p = os.path.join(cpath.data_path , "tlm", "instances_local", "inst_{}.pickle".format(job_id))
     if not os.path.exists(p):
         return
-    output_path = os.path.join(path.data_path , "tlm", "tf_record_local", "tf_rand_{}.pickle".format(job_id))
+    output_path = os.path.join(cpath.data_path , "tlm", "tf_record_local", "tf_rand_{}.pickle".format(job_id))
     if os.path.exists(output_path):
         return
     inst_list, info_list = filter_instances(pickle.load(open(p, "rb")))
@@ -49,14 +49,14 @@ def worker(job_id):
 
 def worker_p(job_id):
     max_seq = 512
-    vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+    vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
     tokenizer = tokenization.FullTokenizer(
         vocab_file=vocab_file, do_lower_case=True)
 
-    p = os.path.join(path.data_path, "tlm", "instances", "inst_{}.pickle".format(job_id))
+    p = os.path.join(cpath.data_path, "tlm", "instances", "inst_{}.pickle".format(job_id))
     if not os.path.exists(p):
         return
-    output_path = os.path.join(path.data_path, "tlm", "tf_record_pred", "tf_{}.pickle".format(job_id))
+    output_path = os.path.join(cpath.data_path, "tlm", "tf_record_pred", "tf_{}.pickle".format(job_id))
     #if os.path.exists(output_path):
     #    return
     inst_list, info_list = filter_instances(pickle.load(open(p, "rb")))
@@ -72,7 +72,7 @@ def worker_p(job_id):
     max_pred = 20
     data = zip(inst_list, uid_list)
 
-    p = os.path.join(path.data_path, "tlm", "pred", "info_d_{}.pickle".format(job_id))
+    p = os.path.join(cpath.data_path, "tlm", "pred", "info_d_{}.pickle".format(job_id))
     pickle.dump(info_d, open(p, "wb"))
     write_predict_instance(data, tokenizer, max_seq, max_pred, [output_path])
 
@@ -81,7 +81,7 @@ def worker_p(job_id):
 def main():
     print("TF_record_writer")
 
-    mark_path = os.path.join(path.data_path, "tlm", "tf_record_pred_mark")
+    mark_path = os.path.join(cpath.data_path, "tlm", "tf_record_pred_mark")
     mtm = MarkedTaskManager(1000*1000, mark_path, 1000)
     job_id = mtm.pool_job()
     print("Job id : ", job_id)

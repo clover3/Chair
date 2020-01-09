@@ -1,9 +1,9 @@
 import os
 import pickle
 
+from cpath import get_model_full_path, output_path
 from data_generator.argmining.ukp import BertDataLoader
 from models.transformer import hyperparams
-from path import get_model_full_path, output_path
 from tlm.param_analysis import fetch_params
 
 

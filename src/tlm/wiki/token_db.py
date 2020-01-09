@@ -1,7 +1,7 @@
+import os
 import sys
 
-import os
-import path
+import cpath
 from cache import DumpPickle, DumpPickleLoader
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import TimeEstimator, lmap, flatten
@@ -10,7 +10,7 @@ from tlm.wiki.sample_segments import EndofDocument
 
 def tokenize_stream(in_file, out_path):
     dp = DumpPickle(out_path)
-    vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+    vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
     tokenizer = tokenization.FullTokenizer(
         vocab_file=vocab_file, do_lower_case=True)
 

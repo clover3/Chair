@@ -1,9 +1,9 @@
 
+from cpath import data_path
 from data_generator.tokenizer_b import FullTokenizerWarpper
 from evaluation import *
 from models.cnn_predictor import CNNPredictor
 from models.controversy import *
-from path import data_path
 
 
 def eval_all_contrv():

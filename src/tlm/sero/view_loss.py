@@ -1,7 +1,7 @@
 import os
 import pickle
 
-from path import output_path
+from cpath import output_path
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 from visualize.html_visual import HtmlVisualizer
 

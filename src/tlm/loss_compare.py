@@ -1,9 +1,11 @@
-import pickle
-import numpy as np
-from path import output_path, data_path
 import os
-from misc_lib import right
+import pickle
+
+import numpy as np
 from scipy.stats import ttest_ind
+
+from cpath import output_path
+
 
 def load_and_compare():
     names = ["dict.pickle", "no_dict.pickle"]

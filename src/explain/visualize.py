@@ -1,7 +1,8 @@
-from collections import Counter
-from data_generator.text_encoder import SEP_ID
-from path import output_path
 import os
+from collections import Counter
+
+from cpath import output_path
+from data_generator.text_encoder import SEP_ID
 
 visualize_dir = os.path.join(output_path, "visualize")
 

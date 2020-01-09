@@ -1,10 +1,8 @@
-import tensorflow as tf
 from models.transformer.tranformer_nli import transformer_nli
-from trainer.np_modules import *
-from trainer.tf_module import *
 from models.transformer import hyperparams
-import path
-from data_generator.argmining.ukp import BertDataLoader
+from models.transformer.tranformer_nli import transformer_nli
+from trainer.tf_module import *
+
 
 class Predictor:
     def __init__(self, topic, cheat = False, cheat_topic=None):
@@ -16,7 +14,7 @@ class Predictor:
         else:
             run_name = "arg_key_neccesary_{}".format(cheat_topic)
         self.hp = hyperparams.HPBert()
-        self.model_dir = path.model_path
+        self.model_dir = cpath.model_path
         self.data_loader = BertDataLoader(topic, True, self.hp.seq_max, "bert_voca.txt")
 
         self.task = transformer_nli(self.hp, self.voca_size, 0, False)

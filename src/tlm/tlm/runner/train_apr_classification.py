@@ -5,9 +5,10 @@ from taskman_client.wrapper import report_run
 from tlm.dictionary.ssdr_model_fn import model_fn_apr_classification
 from tlm.model_cnfig import JsonConfig
 from tlm.training.dict_model_fn import DictRunConfig
+from tlm.training.flags_wrapper import show_input_files
 from tlm.training.input_fn import input_fn_builder_classification as input_fn_builder
 from tlm.training.train_flags import *
-from trainer.tpu_estimator import run_estimator, TrainConfig, show_input_files
+from trainer.tpu_estimator import run_estimator, TrainConfig
 
 
 @report_run

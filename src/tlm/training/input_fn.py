@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+from tlm.training.flags_wrapper import get_input_files_from_flags, show_input_files
 from tlm.training.input_fn_common import _decode_record, get_lm_basic_features, get_lm_mask_features, format_dataset
 
 
@@ -22,6 +23,37 @@ def input_fn_builder_unmasked(input_files,
         return format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
 
     return input_fn
+
+
+def input_fn_builder_pairwise_for_bert(flags):
+    return input_fn_builder_pairwise(flags.max_seq_length, flags)
+
+def input_fn_builder_pairwise_for_sero(max_seq_length, flags):
+    return input_fn_builder_pairwise(max_seq_length, flags)
+
+
+def input_fn_builder_pairwise(max_seq_length, flags):
+    input_files = get_input_files_from_flags(flags)
+    show_input_files(input_files)
+    is_training = flags.do_train
+    num_cpu_threads = 4
+
+    def input_fn(params):
+        """The actual input function."""
+        batch_size = params["batch_size"]
+
+        name_to_features = {
+                "input_ids1":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_mask1":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "segment_ids1":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_ids2": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_mask2": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "segment_ids2": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+        }
+        return format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+
+    return input_fn
+
 
 
 def input_fn_builder_classification(input_files,
@@ -72,6 +104,34 @@ def input_fn_builder_classification(input_files,
         # size dimensions. For eval, we assume we are evaluating on the CPU or GPU
         # and we *don't* want to drop the remainder, otherwise we wont cover
         # every sample.
+        d = d.apply(
+                tf.data.experimental.map_and_batch(
+                        lambda record: _decode_record(record, name_to_features),
+                        batch_size=batch_size,
+                        num_parallel_batches=num_cpu_threads,
+                        drop_remainder=True))
+        return d
+
+    return input_fn
+
+
+def input_fn_builder_prediction(input_files,
+                                         max_seq_length,
+                                         num_cpu_threads=4,):
+
+    def input_fn(params):
+        batch_size = params["batch_size"]
+
+        name_to_features = {
+                "input_ids":
+                        tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_mask":
+                        tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "segment_ids":
+                        tf.io.FixedLenFeature([max_seq_length], tf.int64),
+        }
+
+        d = tf.data.TFRecordDataset(input_files)
         d = d.apply(
                 tf.data.experimental.map_and_batch(
                         lambda record: _decode_record(record, name_to_features),

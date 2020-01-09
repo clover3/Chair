@@ -1,13 +1,10 @@
-from models.transformer import bert
 from models.transformer import hyperparams
-from data_generator.shared_setting import NLI
-from trainer.tf_module import *
-from data_generator.crs.claim_text_classifier import DataGenerator
-from trainer.experiment import Experiment
-from trainer.ExperimentConfig import ExperimentConfig
-import path
 import sys
 
+from data_generator.crs.claim_text_classifier import DataGenerator
+from models.transformer import hyperparams
+from trainer.ExperimentConfig import ExperimentConfig
+from trainer.experiment import Experiment
 
 
 def crs_stance_baseline():

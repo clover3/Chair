@@ -5,9 +5,9 @@ import random
 
 import tensorflow as tf
 
+from cpath import output_path, data_path
 from data_generator import tokenizer_wo_tf
 from misc_lib import pick1
-from path import output_path, data_path
 from tf_util.enum_features import load_record_v1
 from tlm.wiki import bert_training_data as btd
 from visualize.html_visual import Cell, HtmlVisualizer

@@ -1,5 +1,6 @@
 import os
-from path import data_path
+
+from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
 
 

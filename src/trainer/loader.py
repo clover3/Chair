@@ -1,6 +1,8 @@
 import os
-import path
-run_dir = os.path.join(path.model_path, 'runs')
+
+import cpath
+
+run_dir = os.path.join(cpath.model_path, 'runs')
 
 def find_model_name(dir_name):
     save_dir = os.path.join(run_dir, dir_name)

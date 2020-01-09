@@ -2,8 +2,8 @@ import sys
 import time
 
 from cache import *
+from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
-from path import data_path
 from sydney_manager import MarkedTaskManager
 from tlm.wiki import bert_training_data as btd
 from tlm.wiki.bert_training_data import *

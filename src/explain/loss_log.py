@@ -1,5 +1,7 @@
-from path import output_path
 import os
+
+from cpath import output_path
+
 
 def pretty_print(i):
     file_path = os.path.join(output_path, "report_log", "LossFn_{}_conflict".format(i))

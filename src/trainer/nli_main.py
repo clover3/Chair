@@ -1,17 +1,14 @@
 
 import sys
-from task.transformer_est import Transformer, Classification
-from models.transformer import bert
-from models.transformer import hyperparams
-from data_generator.shared_setting import NLI
-from trainer.tf_module import *
+
 import tensorflow as tf
+
 from data_generator.NLI import nli
+from data_generator.shared_setting import NLI
 from data_generator.ubuntu import ubuntu
-from trainer.experiment import Experiment
+from models.transformer import hyperparams
 from trainer.ExperimentConfig import ExperimentConfig
-
-
+from trainer.experiment import Experiment
 
 
 def train_nil():
@@ -701,5 +698,5 @@ def test_ubuntu():
 
 
 if __name__ == '__main__':
-    action = "predict_rf_tune"
+    action = "train_nli_with_reinforce"
     locals()[action]()

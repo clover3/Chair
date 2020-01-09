@@ -4,8 +4,8 @@ import pickle
 
 import tensorflow as tf
 
+from cpath import output_path
 from data_generator.common import get_tokenizer
-from path import output_path
 from tf_util.enum_features import load_record_v2
 from tlm.dictionary.feature_to_text import take, Feature2Text
 from tlm.wiki import bert_training_data as btd

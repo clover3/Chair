@@ -1,11 +1,13 @@
-import os
-from path import data_path
-from misc_lib import *
-from dispute.guardian import load_article_w_title
+from cpath import data_path
+import pickle
+from collections import Counter
+
 from adhoc.bm25 import stem_tokenize, BM25_2
 from adhoc.idf import Idf_tokens
-from collections import Counter
-import pickle
+from cpath import data_path
+from dispute.guardian import load_article_w_title
+from misc_lib import *
+
 
 def get_file_list(query):
     save_dir = os.path.join(data_path, "guardian", "controversy")

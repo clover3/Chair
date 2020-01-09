@@ -4,8 +4,8 @@ from collections import Counter
 
 import numpy as np
 
+from cpath import output_path, data_path
 from data_generator import tokenizer_wo_tf
-from path import output_path, data_path
 from visualize.html_visual import HtmlVisualizer, Cell
 
 

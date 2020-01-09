@@ -5,8 +5,8 @@ from collections import Counter, defaultdict
 import nltk.tokenize
 from krovetzstemmer import Stemmer
 
+import cpath
 import data_generator.data_parser.trec as trec
-import path
 from data_generator import tokenizer_b as tokenization
 from misc_lib import TimeEstimator
 from models.classic.stopword import load_stopwords
@@ -58,7 +58,7 @@ def build_krovetz_index():
 
         ticker.tick()
 
-    save_path = os.path.join(path.data_path, "adhoc", "robust_inv_index.pickle")
+    save_path = os.path.join(cpath.data_path, "adhoc", "robust_inv_index.pickle")
     pickle.dump(inv_index, open(save_path, "wb"))
 
 
@@ -74,26 +74,26 @@ def save_doc_len():
         doc_len[doc_id] = len(tokens)
         ticker.tick()
 
-    save_path = os.path.join(path.data_path, "adhoc", "doc_len.pickle")
+    save_path = os.path.join(cpath.data_path, "adhoc", "doc_len.pickle")
     pickle.dump(doc_len, open(save_path, "wb"))
 
 
 
 def save_qdf():
-    ii_path = os.path.join(path.data_path, "adhoc", "robust_inv_index.pickle")
+    ii_path = os.path.join(cpath.data_path, "adhoc", "robust_inv_index.pickle")
     inv_index = pickle.load(open(ii_path, "rb"))
     qdf_d = Counter()
     for term in inv_index:
         qdf = len(inv_index[term])
         qdf_d[term] = qdf
 
-    save_path = os.path.join(path.data_path, "adhoc", "robust_qdf.pickle")
+    save_path = os.path.join(cpath.data_path, "adhoc", "robust_qdf.pickle")
     pickle.dump(qdf_d, open(save_path, "wb"))
 
 def save_qdf_ex():
-    ii_path = os.path.join(path.data_path, "adhoc", "robust_inv_index.pickle")
+    ii_path = os.path.join(cpath.data_path, "adhoc", "robust_inv_index.pickle")
     inv_index = pickle.load(open(ii_path, "rb"))
-    save_path = os.path.join(path.data_path, "adhoc", "robust_meta.pickle")
+    save_path = os.path.join(cpath.data_path, "adhoc", "robust_meta.pickle")
     meta = pickle.load(open(save_path, "rb"))
     stopwords = load_stopwords()
     stemmer = CacheStemmer()
@@ -125,20 +125,20 @@ def save_qdf_ex():
         qdf = len(simple_posting[term])
         qdf_d[term] = qdf
 
-    save_path = os.path.join(path.data_path, "adhoc", "robust_qdf_ex.pickle")
+    save_path = os.path.join(cpath.data_path, "adhoc", "robust_qdf_ex.pickle")
     pickle.dump(qdf_d, open(save_path, "wb"))
 
 
 def save_title():
     collection = trec.load_robust_meta(trec.robust_path)
-    save_path = os.path.join(path.data_path, "adhoc", "robust_meta.pickle")
+    save_path = os.path.join(cpath.data_path, "adhoc", "robust_meta.pickle")
     pickle.dump(collection, open(save_path, "wb"))
 
 
 def save_title_tokens():
-    meta_path = os.path.join(path.data_path, "adhoc", "robust_meta.pickle")
+    meta_path = os.path.join(cpath.data_path, "adhoc", "robust_meta.pickle")
     meta = pickle.load(open(meta_path, "rb"))
-    vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+    vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
     tokenizer = tokenization.FullTokenizer(
         vocab_file=vocab_file, do_lower_case=True)
 
@@ -150,13 +150,13 @@ def save_title_tokens():
         head_tokens[doc_id] = h_tokens
         ticker.tick()
 
-    save_path = os.path.join(path.data_path, "adhoc", "robust_title_tokens.pickle")
+    save_path = os.path.join(cpath.data_path, "adhoc", "robust_title_tokens.pickle")
     pickle.dump(head_tokens, open(save_path, "wb"))
 
 
 
 def get_doc_task(task_id):
-    doclen_path = os.path.join(path.data_path, "adhoc", "doc_len.pickle")
+    doclen_path = os.path.join(cpath.data_path, "adhoc", "doc_len.pickle")
     doc_len = pickle.load(open(doclen_path, "rb"))
     doc_id_list = list(doc_len.keys())
     doc_id_list.sort()
@@ -177,7 +177,7 @@ def subtoken_split(task_id):
     num_doc = len(doc_id_list)
 
 
-    vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+    vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
     tokenizer = tokenization.FullTokenizer(
         vocab_file=vocab_file, do_lower_case=True)
 
@@ -225,7 +225,7 @@ def subtoken_split(task_id):
         doc_seg_info[key] = interval_list
         ticker.tick()
 
-    p = os.path.join(path.data_path, "adhoc", "robust_seg_info_{}.pickle".format(task_id))
+    p = os.path.join(cpath.data_path, "adhoc", "robust_seg_info_{}.pickle".format(task_id))
     pickle.dump(doc_seg_info, open(p, "wb"))
 
 
@@ -234,7 +234,7 @@ def segment_per_doc_index(task_id):
     stemmer = CacheStemmer()
     stopword = load_stopwords()
 
-    p = os.path.join(path.data_path, "adhoc", "robust_seg_info.pickle")
+    p = os.path.join(cpath.data_path, "adhoc", "robust_seg_info.pickle")
     seg_info = pickle.load(open(p, "rb"))
     def get_doc_posting_list(doc_id):
         doc_posting = defaultdict(list)
@@ -258,7 +258,7 @@ def segment_per_doc_index(task_id):
         doc_posting_d[doc_id] = get_doc_posting_list(doc_id)
         ticker.tick()
 
-    save_path = os.path.join(path.data_path, "adhoc", "per_doc_posting_{}.pickle".format(task_id))
+    save_path = os.path.join(cpath.data_path, "adhoc", "per_doc_posting_{}.pickle".format(task_id))
     pickle.dump(doc_posting_d, open(save_path, "wb"))
 
 
@@ -277,14 +277,14 @@ def merge_sub_pickle(n_task, format_path, save_path):
 
 def merge_per_posting():
     n_task = 40
-    format_path = os.path.join(path.data_path, "adhoc", "per_doc_posting_{}.pickle")
-    save_path = os.path.join(path.data_path, "adhoc", "per_doc_posting.pickle")
+    format_path = os.path.join(cpath.data_path, "adhoc", "per_doc_posting_{}.pickle")
+    save_path = os.path.join(cpath.data_path, "adhoc", "per_doc_posting.pickle")
     merge_sub_pickle(n_task, format_path, save_path)
 
 def merge_seg_info():
     n_task = 10
-    format_path = os.path.join(path.data_path, "adhoc", "robust_seg_info_{}.pickle")
-    save_path = os.path.join(path.data_path, "adhoc", "robust_seg_info.pickle")
+    format_path = os.path.join(cpath.data_path, "adhoc", "robust_seg_info_{}.pickle")
+    save_path = os.path.join(cpath.data_path, "adhoc", "robust_seg_info.pickle")
     merge_sub_pickle(n_task, format_path, save_path)
 
 

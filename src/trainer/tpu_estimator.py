@@ -73,8 +73,8 @@ def run_estimator(model_fn, input_fn, host_call=None):
         tf_logging.info("  Batch size = %d", FLAGS.eval_batch_size)
 
         result = estimator.predict(input_fn=input_fn, yield_single_examples=False)
-
         pickle.dump(list(result), open(FLAGS.out_file, "wb"))
+        tf_logging.info("Prediction saved at {}".format(FLAGS.out_file))
 
 
 class TrainConfig:
@@ -120,10 +120,3 @@ class TrainConfig:
         )
 
 
-def show_input_files(input_files):
-    tf_logging.info("*** Input Files ***")
-    for idx, input_file in enumerate(input_files):
-        tf_logging.info("  %s" % input_file)
-        if idx > 10:
-            break
-    tf_logging.info("Total of %d files" % len(input_files))

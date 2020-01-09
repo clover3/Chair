@@ -18,6 +18,7 @@ from data_generator.argmining import ukp
 from data_generator.cnn import SimpleLoader
 from data_generator.data_parser import controversy, load_protest
 from data_generator.data_parser.robust import *
+from data_generator.data_parser.robust2 import load_2k_rank
 from data_generator.data_parser.trec import *
 from data_generator.mask_lm import enwiki
 from data_generator.stance import stance_detection
@@ -33,7 +34,8 @@ from models.controversy import get_wiki_doc
 from models.transformer.ScoreCombiner import *
 from models.transformer.cie import token_regression, span_selection
 from models.transformer.hyperparams import HPMerger
-from models.transformer.tranformer_nli import transformer_nli, transformer_nli_embedding_in, transformer_nli_vector
+from models.transformer.tranformer_nli import transformer_nli, transformer_nli_embedding_in, transformer_nli_vector, \
+    transformer_nli_e
 from models.transformer.transformer_adhoc import transformer_adhoc, transformer_adhoc2, transformer_adhoc_ex
 from models.transformer.transformer_arg_dist import transformer_distribution
 from models.transformer.transformer_binary import transformer_binary
@@ -71,7 +73,7 @@ class Experiment:
         self.save_interval = 10 * 60
         self.log = log.train_logger()
         self.log2 = log.aux_logger()
-        self.model_dir = path.model_path
+        self.model_dir = cpath.model_path
         self.sess = None
         self.g_step = 0
     @staticmethod
@@ -84,7 +86,8 @@ class Experiment:
         return tf.Session(config=config)
 
     def get_train_op(self, loss, name='Adam'):
-        self.global_step = tf.Variable(0, name='global_step', trainable=False)
+        #self.global_step = tf.Variable(0, name='global_step', trainable=True)
+        self.global_step = tf.train.get_or_create_global_step()
         optimizer = tf.train.AdamOptimizer(learning_rate=self.hparam.lr, beta1=0.9, beta2=0.98, epsilon=1e-8,
                                            name=name)
         train_op = optimizer.minimize(loss, global_step=self.global_step)
@@ -931,7 +934,7 @@ class Experiment:
         self.save_model(exp_config.name+"_final")
 
     def setup_summary_writer(self, exp_name):
-        summary_path = os.path.join(path.output_path, "summary")
+        summary_path = os.path.join(cpath.output_path, "summary")
         exist_or_mkdir(summary_path)
         summary_run_path = os.path.join(summary_path, exp_name)
         exist_or_mkdir(summary_run_path)
@@ -1478,7 +1481,7 @@ class Experiment:
         self.loader.restore(self.sess, path)
 
     def pickle_cacher(self, pickle_name, get_fn, use_pickle):
-        pickle_path = os.path.join(path.cache_path, pickle_name)
+        pickle_path = os.path.join(cpath.model_path, pickle_name)
         print(pickle_path)
         if not use_pickle:
             obj = get_fn()
@@ -2198,6 +2201,97 @@ class Experiment:
         return save_fn()
 
 
+
+    def train_nli_only_new(self, nli_setting, exp_config, data_loader, preload_id):
+        task = transformer_nli_e(self.hparam, nli_setting.vocab_size, 2)
+        with tf.variable_scope("optimizer"):
+            train_cls = self.get_train_op(task.loss)
+        print("Training ", data_loader.name)
+        self.sess = self.init_sess()
+        self.sess.run(tf.global_variables_initializer())
+        self.merged = tf.summary.merge_all()
+        self.setup_summary_writer(exp_config.name)
+
+        if preload_id is not None:
+            name = preload_id[0]
+            id = preload_id[1]
+            if exp_config.load_names :
+                self.load_model_white(name, id, exp_config.load_names)
+            elif name in exp_config.name:
+                self.load_model_all(name, id)
+            elif "NLI" in name:
+                self.load_model_white(name, id, ['bert', 'dense_cls'])
+            else:
+                self.load_model_bert(name, id)
+
+
+        def batch2feed_dict(batch):
+            x0, x1, x2, y  = batch
+            feed_dict = {
+                task.x_list[0]: x0,
+                task.x_list[1]: x1,
+                task.x_list[2]: x2,
+                task.y: y,
+            }
+            return feed_dict
+
+
+        def train_classification(batch, step_i):
+            loss_val, summary, acc,  _ = self.sess.run([task.loss, self.merged, task.acc, train_cls,
+                                             ],
+                                            feed_dict=batch2feed_dict(batch)
+                                            )
+            self.log.debug("Step {0} train loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
+            self.train_writer.add_summary(summary, self.g_step)
+            return loss_val, acc
+
+
+
+        def train_ex_fn(batch, step_i):
+            # normal train
+            loss_val, acc = train_classification(batch, step_i)
+            self.g_step += 1
+            return loss_val, acc
+
+        def valid_fn():
+            loss_list = []
+            acc_list = []
+            for batch in dev_batches[:100]:
+                loss_val, summary, acc = self.sess.run([task.loss, self.merged, task.acc],
+                                                  feed_dict=batch2feed_dict(batch)
+                                                  )
+                loss_list.append(loss_val)
+                acc_list.append(acc)
+
+                self.test_writer.add_summary(summary, self.g_step)
+            self.log.info("Validation : loss={0:.04f} acc={1:.04f}".format(average(loss_list), average(acc_list)))
+            return average(acc_list)
+
+        def save_fn():
+            return self.save_model(exp_config.name, 2)
+
+        train_batches, dev_batches = self.load_nli_data(data_loader)
+
+        print("{} train batches".format(len(train_batches)))
+        valid_freq = 10000
+        num_epochs = exp_config.num_epoch
+        for i_epoch in range(num_epochs):
+            loss, _ = epoch_runner(train_batches, train_ex_fn,
+                                   valid_fn, valid_freq,
+                                   save_fn, self.save_interval)
+
+        steps = int(len(train_batches) * 0.5)
+        loss, _ = step_runner(train_batches, train_ex_fn,
+                               valid_fn, valid_freq,
+                               save_fn, self.save_interval,
+                              steps=steps)
+
+        acc =valid_fn()
+        print("Last val acc : ", acc)
+        return save_fn()
+
+
+
     # Refactored version of explain train
     def test_acc2(self, nli_setting, exp_config, data_loader, save_path):
         method = 6
@@ -2603,7 +2697,7 @@ class Experiment:
         print(target_class)
 
         def save_payload(reinforce_payload, step_i):
-            path_save = os.path.join(path.data_path, "nli_temp", "reinforce{}.pickle".format(step_i))
+            path_save = os.path.join(cpath.data_path, "nli_explain_train", "reinforce{}.pickle".format(step_i))
             pickle.dump(reinforce_payload, open(path_save, "wb"))
 
         def forward_runs(insts):
@@ -2871,7 +2965,6 @@ class Experiment:
                 assert False
 
         def eval(step_i):
-            print(step_i)
             begin = time.time()
             batches = get_batches_ex(enc_explain_dev, self.hparam.batch_size, 3)
 
@@ -2888,12 +2981,10 @@ class Experiment:
             conf_logit = np.concatenate(conf_logit_list)
             assert len(conf_logit) == len(explain_dev)
             end = time.time()
-            print("Elapsed Time : {}".format(end- begin))
-
+            print(step_i)
             scores = eval_explain(conf_logit, data_loader, explain_tag)
-            for metric in scores.keys():
-                print("{}\t{}".format(metric, scores[metric]))
-
+            for key, value in scores.items():
+                print(key, value)
             p_at_1, MAP_score = scores["P@1"], scores["MAP"]
             summary = tf.Summary()
             summary.value.add(tag='P@1', simple_value=p_at_1)
@@ -2941,23 +3032,27 @@ class Experiment:
             self.save_model(exp_config.name, 1)
 
         save_interval = 10 * 60
-        valid_freq = 100
+        valid_freq = 2000
         num_epochs = exp_config.num_epoch
         last_save = time.time()
         for i_epoch in range(1):
-            step_size = 5200
+            step_size = 12000
             for step_i in range(step_size):
                 if step_i % valid_freq == 0:
                     valid_fn(step_i)
 
-                path_save = os.path.join(path.data_path, "nli_temp", "reinforce{}.pickle".format(step_i))
+                path_save = os.path.join(cpath.data_path, "nli_payload", explain_tag, "{}.pickle".format(step_i))
                 if os.path.exists(path_save):
                     reinforce_payload = pickle.load(open(path_save, "rb"))
                     train_ex_fn(reinforce_payload, step_i)
+                else:
+                    print("Training data does not exists : ", path_save)
+                    break
 
                 if time.time() - last_save > save_interval:
                     save_fn()
                     last_save = time.time()
+        save_fn()
 
     def train_nli_smart(self, nli_setting, exp_config, data_loader, preload_id, explain_tag, method):
         print("train_nli_smart")
@@ -3092,23 +3187,8 @@ class Experiment:
             alt_logits = np.concatenate(alt_logits)
             return alt_logits
 
-        def fetch_confs(insts):
-            alt_batches = get_batches_ex(insts, self.hparam.batch_size, 3)
-            conf_logit_list = []
-            for batch in alt_batches:
-                x0, x1, x2 = batch
-                conf_logits, = self.sess.run([task.conf_logits, ],
-                                        feed_dict={
-                                            task.x_list[0]: x0,
-                                            task.x_list[1]: x1,
-                                            task.x_list[2]: x2,
-                                        })
-
-                conf_logit_list.append(conf_logits)
-            return np.concatenate(conf_logit_list)
-
         def save_payload(reinforce_payload, step_i):
-            path_save = os.path.join(path.data_path, "nli_payload", explain_tag,
+            path_save = os.path.join(cpath.data_path, "nli_payload", explain_tag,
                                      "{}.pickle".format(step_i))
             pickle.dump(reinforce_payload, open(path_save, "wb"))
 
@@ -3307,7 +3387,7 @@ class Experiment:
                 return reinforce_payload_list
 
             reinforce_payload = calc_reward(alt_logits, instance_infos, deleted_mask_list)
-            #save_payload(reinforce_payload, step_i)
+            save_payload(reinforce_payload, step_i)
 
             def commit_reward(reinforce_payload):
                 batches = get_batches_ex(reinforce_payload, self.hparam.batch_size, 5)
@@ -3707,7 +3787,7 @@ class Experiment:
         train_batches, train_batches_info, dev_batches = self.load_nli_data_with_info(data_loader)
         train_batches = list(zip(train_batches, train_batches_info))
 
-        valid_freq = 25
+        valid_freq = 1000
         print("Total of {} train batches".format(len(train_batches)))
         steps = int(len(train_batches) * 0.5)
         loss, _ = step_runner(train_batches, train_fn,
@@ -5286,7 +5366,7 @@ class Experiment:
         bm25_result = bm25_run(unique_queries)
 
         def rerank():
-            fout = path.open_pred_output("rerank_{}".format(exp_config.name))
+            fout = cpath.open_pred_output("rerank_{}".format(exp_config.name))
             tprint("rerank")
             pay_load = []
             for q, top_docs in bm25_result:
@@ -6079,13 +6159,13 @@ class Experiment:
         pk.do_duty()
         tprint("Completed GPU computations")
         per_query = defaultdict(list)
-        f_out_log = path.open_pred_output("detail_rerank_{}_{}_{}".format(exp_config.name, st, ed))
+        f_out_log = cpath.open_pred_output("detail_rerank_{}_{}_{}".format(exp_config.name, st, ed))
         for q_id, doc_id, y_futures in score_list_future:
             scores = list([f.get() for f in y_futures])
             f_out_log.write("{} {} ".format(q_id, doc_id) + " ".join([str(s) for s in scores]) + "\n")
             per_query[q_id].append((doc_id, max(scores)))
 
-        fout = path.open_pred_output("rerank_{}_{}_{}".format(exp_config.name, st, ed))
+        fout = cpath.open_pred_output("rerank_{}_{}_{}".format(exp_config.name, st, ed))
         for q_id in per_query:
             q_result = per_query[q_id]
             q_result.sort(key=lambda x: x[1], reverse=True)
@@ -6184,7 +6264,7 @@ class Experiment:
 
         tail = "middle_rerank_{}_{}_{}".format(exp_config.name, st, ed)
 
-        fout = open(os.path.join(path.prediction_dir, tail), "wb")
+        fout = open(os.path.join(cpath.prediction_dir, tail), "wb")
 
         middle = []
         for q_id, doc_id, y_futures in score_list_future:
@@ -6264,7 +6344,7 @@ class Experiment:
             per_query[q_id].append((doc_id, MyPromise(entry, pk2).future()))
         pk2.do_duty()
         st, ed = interval
-        fout = path.open_pred_output("rerank_{}_{}_{}".format(exp_config.name, st, ed))
+        fout = cpath.open_pred_output("rerank_{}_{}_{}".format(exp_config.name, st, ed))
         for q_id in per_query:
             q_result_f = per_query[q_id]
             q_result = list([(doc_id, future.get()) for doc_id, future in q_result_f])
@@ -6464,7 +6544,7 @@ class Experiment:
         avdl = collection_len / len(collection)
         print("len(collection)", len(collection))
         print("avdl ", avdl)
-        fout = path.open_pred_output("rerank_{}".format("bm25"))
+        fout = cpath.open_pred_output("rerank_{}".format("bm25"))
         for q_id in ranked_lists:
             ranked = ranked_lists[q_id]
             ranked.sort(key=lambda x:x[1])
@@ -6614,7 +6694,7 @@ class Experiment:
         bm25_result = bm25_run(unique_queries)
 
         def rerank():
-            fout = path.open_pred_output("rerank_{}".format(exp_config.name))
+            fout = cpath.open_pred_output("rerank_{}".format(exp_config.name))
             tprint("rerank")
             pay_load = []
             for q, top_docs in bm25_result:
@@ -8335,7 +8415,6 @@ class Experiment:
             data_loader.finish_write()
             return
 
-
     def train_ukp_ex(self, exp_config, data_loader, load_run_name, explain_tag):
         print("train_ukp_ex")
         tf.reset_default_graph()
@@ -8376,7 +8455,6 @@ class Experiment:
                 assert False
             score = score - penalty
             return score
-
 
         def forward_run(inputs):
             batches = get_batches_ex(inputs, self.hparam.batch_size, 3)

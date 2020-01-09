@@ -72,6 +72,36 @@ def biased_masking(input_ids, input_masks, priority_score, alpha, n_sample, mask
     batch_size = sequence_shape[0]
     seq_length = sequence_shape[1]
 
+    # alpha =1 implies uniform masking
+    p1 = tf.ones_like(prob, dtype=tf.float32) / seq_length * alpha
+    p2 = prob * (1-alpha)
+    final_p = p1 + p2
+
+    final_p = remove_special_mask(input_ids, input_masks, final_p)
+
+    indice = tf.random.categorical(
+        final_p,
+        n_sample,
+        dtype=tf.int32,
+        seed=None,
+        name=None
+    )
+
+
+    masked_lm_positions = indice # [batch, n_samples]
+    masked_lm_ids = gather_index2d(input_ids, masked_lm_positions)
+    masked_lm_weights = tf.ones_like(masked_lm_positions, dtype=tf.float32)
+    masked_input_ids = scatter_with_batch(input_ids, indice, mask_token)
+    return masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights
+
+
+
+def biased_masking_old(input_ids, input_masks, priority_score, alpha, n_sample, mask_token):
+    prob = tf.nn.softmax(priority_score, axis=1)
+    sequence_shape = get_shape_list2(prob)
+    batch_size = sequence_shape[0]
+    seq_length = sequence_shape[1]
+
     rand = tf.random.uniform(
         prob.shape,
         minval=0,

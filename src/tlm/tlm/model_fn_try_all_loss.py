@@ -7,7 +7,7 @@ from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import remove_special_mask, scatter_with_batch
 from tlm.training.assignment_map import get_assignment_map_remap_from_v1, \
     get_assignment_map_remap_from_v2
-from trainer.get_param_num import get_param_num
+from tlm.training.model_fn_common import log_var_assignments
 
 
 # input_id : [batch_size, max_sequence]
@@ -112,7 +112,8 @@ def model_fn_try_all_loss(bert_config, train_config, logging):
         tvars = tf.compat.v1.trainable_variables()
 
         scaffold_fn = None
-        initialized_variable_names, init_fn = get_init_fn(tvars,
+        initialized_variable_names, init_fn = get_init_fn(train_config,
+                                                          tvars,
                                                           train_config.init_checkpoint,
                                                           prefix1,
                                                           train_config.second_init_checkpoint,
@@ -126,14 +127,7 @@ def model_fn_try_all_loss(bert_config, train_config, logging):
         else:
             init_fn()
 
-        logging.info("**** Trainable Variables ****")
-        for var in tvars:
-            init_string = ""
-            if var.name in initialized_variable_names:
-                init_string = ", *INIT_FROM_CKPT*"
-            logging.info("    name = %s, shape = %s%s", var.name, var.shape,
-                                            init_string)
-        logging.info("Total parameters : %d" % get_param_num())
+        log_var_assignments(tvars, initialized_variable_names)
 
         output_spec = None
         if mode == tf.estimator.ModeKeys.PREDICT:
@@ -158,9 +152,14 @@ def model_fn_try_all_loss(bert_config, train_config, logging):
 
 # init_checkpoint : BERT (v1)
 # second_init_checkpoint : v2
-def get_init_fn(tvars, init_checkpoint, remap_prefix, second_init_checkpoint, remap_prefix2):
+def get_init_fn(train_config, tvars, init_checkpoint, remap_prefix, second_init_checkpoint, remap_prefix2):
+    if train_config.checkpoint_type == "v2":
+        assignment_fn1 = get_assignment_map_remap_from_v2
+    else:
+        assignment_fn1 = get_assignment_map_remap_from_v1
+
     assignment_map, initialized_variable_names \
-        = get_assignment_map_remap_from_v1(tvars, remap_prefix, init_checkpoint)
+        = assignment_fn1(tvars, remap_prefix, init_checkpoint)
     assignment_map2, initialized_variable_names2 \
         = get_assignment_map_remap_from_v2(tvars, remap_prefix2, second_init_checkpoint)
     for k, v in initialized_variable_names2.items():

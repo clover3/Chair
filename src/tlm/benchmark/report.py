@@ -1,8 +1,8 @@
 import os
 from datetime import datetime
 
+from cpath import output_path
 from misc_lib import exist_or_mkdir
-from path import output_path
 
 
 def save_report(task, run_name, flags, avg_acc):

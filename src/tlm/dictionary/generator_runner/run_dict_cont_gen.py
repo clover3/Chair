@@ -2,8 +2,8 @@ import os
 import random
 
 from cache import load_from_pickle
+from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
-from path import data_path
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tf_util.tf_logging import tf_logging
 from tlm.data_gen.base import get_basic_input_feature

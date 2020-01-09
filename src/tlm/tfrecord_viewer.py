@@ -2,8 +2,8 @@ import collections
 import os
 import sys
 
+from cpath import data_path
 from data_generator import tokenizer_wo_tf
-from path import data_path
 from tf_util.enum_features import load_record
 from tlm.token_utils import cells_from_tokens
 from visualize.html_visual import HtmlVisualizer

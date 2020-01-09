@@ -1,12 +1,10 @@
-from cache import load_cache
-
-import pickle
-import numpy as np
-from path import output_path, data_path
 import os
+
+from cache import load_cache
+from cpath import data_path
 from data_generator import tokenizer_wo_tf
-from misc_lib import right
-from visualize.html_visual import get_color, Cell, HtmlVisualizer
+from visualize.html_visual import HtmlVisualizer
+
 
 def dev():
     train_data_feeder = load_cache("train_data_feeder")

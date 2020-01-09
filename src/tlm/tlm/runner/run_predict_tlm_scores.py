@@ -14,7 +14,8 @@ from tf_util.tf_logging import tf_logging
 from tlm.model.base import BertModel
 from tlm.training.input_fn import input_fn_builder_unmasked
 from tlm.training.train_flags import *
-from trainer.tpu_estimator import run_estimator, show_input_files
+from trainer.tpu_estimator import run_estimator
+from tlm.training.flags_wrapper import show_input_files
 
 
 @report_run

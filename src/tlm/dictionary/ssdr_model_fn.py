@@ -230,7 +230,7 @@ def model_fn_dict_reader(bert_config, ssdr_config, train_config, logging, model_
         def reform_b_input(raw_input):
             return tf.reshape(raw_input, [dict_run_config.def_per_batch, -1])
 
-        input_ids = reform_a_input(features["input_ids"])
+        input_ids = reform_a_input(features["input_ids"]) # [batch_size, def]
         input_mask = reform_a_input(features["input_mask"])
         segment_ids = reform_a_input(features["segment_ids"])
         d_input_ids = reform_b_input(features["d_input_ids"])
@@ -266,6 +266,33 @@ def model_fn_dict_reader(bert_config, ssdr_config, train_config, logging, model_
             ab_mapping_mask = reform_a_input(features["ab_mapping_mask"])
         else:
             ab_mapping_mask = None
+
+        if ssdr_config.compare_attrib_value_safe("consistency", True):
+
+            print("masked_input_ids", masked_input_ids.shape)
+            print('d_input_ids', d_input_ids.shape)
+            print("ab_mapping_mask", ab_mapping_mask.shape)
+
+            masked_input_ids = tf.tile(masked_input_ids, [2, 1])
+            input_mask = tf.tile(input_mask, [2, 1])
+            segment_ids = tf.tile(segment_ids, [2, 1])
+
+            dummy = tf.zeros_like(d_input_ids, tf.int32)
+            #d_input_ids = tf.concat([d_input_ids, dummy], axis=0)
+            #d_input_mask = tf.concat([d_input_mask, dummy], axis=0)
+            #if d_segment_ids is not None:
+            #    d_segment_ids = tf.concat([d_segment_ids, dummy], axis=0)
+            d_location_ids = tf.concat([d_location_ids, tf.zeros_like(d_location_ids, tf.int32)], axis=0)
+            #ab_mapping = tf.concat([ab_mapping, tf.zeros_like(ab_mapping, tf.int32)], axis=0)
+            ab_mapping_mask = tf.concat([ab_mapping_mask, tf.zeros_like(ab_mapping_mask, tf.int32)], axis=0)
+
+            masked_lm_positions = tf.tile(masked_lm_positions, [2, 1])
+            masked_lm_ids = tf.tile(masked_lm_ids, [2, 1])
+            masked_lm_weights = tf.tile(masked_lm_weights, [2, 1])
+
+            print("masked_input_ids", masked_input_ids.shape)
+            print('d_input_ids', d_input_ids.shape)
+            print("ab_mapping_mask", ab_mapping_mask.shape)
 
         is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 

@@ -12,7 +12,7 @@ from tlm.dictionary.dict_reader_transformer import DictReaderModel
 from tlm.dictionary.sense_selecting_dictionary_reader import SSDR
 from tlm.model.base import BertModel
 from tlm.model_cnfig import JsonConfig
-from tlm.tlm.blc_scorer import brutal_loss_compare
+from tlm.tlm.blc_scorer import brutal_loss_compare, blc_beta
 from tlm.tlm.tlm2_network import tlm2, tlm_prefer_hard
 from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
 from tlm.training.input_fn import input_fn_builder_unmasked, input_fn_builder_masked, input_fn_builder_blc
@@ -33,7 +33,6 @@ class LMTrainConfig:
                  checkpoint_type="",
                  second_init_checkpoint="",
                  fixed_mask=False,
-                 older_logits=False
                  ):
         self.init_checkpoint = init_checkpoint
         self.learning_rate = learning_rate
@@ -82,7 +81,7 @@ def main(_):
 
     lm_pretrain(input_files)
 
-    tf_logging.log("Now terminating process")
+    tf_logging.info("Now terminating process")
 
 def lm_pretrain(input_files):
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
@@ -162,6 +161,9 @@ def lm_pretrain(input_files):
             priority_model = partial(tlm_prefer_hard, target_model_config, FLAGS.use_tpu)
         elif FLAGS.modeling == "BLC":
             priority_model = brutal_loss_compare
+            input_fn_builder = input_fn_builder_blc
+        elif FLAGS.modeling == "BLC_beta":
+            priority_model = blc_beta
             input_fn_builder = input_fn_builder_blc
         else:
             raise Exception()

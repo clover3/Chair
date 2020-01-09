@@ -4,12 +4,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from models.transformer.bert_common_v2 import *
 import copy
 import json
+
 import six
 import tensorflow as tf
 
+from models.transformer.bert_common_v2 import *
 from models.transformer.bert_common_v2 import attention_layer
 
 
@@ -124,6 +125,7 @@ class BertModel(BertModelInterface):
                scope=None):
       super(BertModel, self).__init__()
       config = copy.deepcopy(config)
+      self.config = config
       if not is_training:
           config.hidden_dropout_prob = 0.0
           config.attention_probs_dropout_prob = 0.0
@@ -189,6 +191,39 @@ class BertModel(BertModelInterface):
                                                          activation=tf.keras.activations.tanh,
                                                          kernel_initializer=create_initializer(config.initializer_range))(
                   first_token_tensor)
+
+
+class BertModelMoreFF(BertModel):
+  def __init__(self,
+               config,
+               is_training,
+               input_ids,
+               input_mask=None,
+               token_type_ids=None,
+               use_one_hot_embeddings=True,
+               scope=None):
+      super(BertModelMoreFF, self).__init__(
+               config,
+               is_training,
+               input_ids,
+               input_mask,
+               token_type_ids,
+               use_one_hot_embeddings,
+               scope)
+
+  def get_pooled_output(self):
+      h1_dim = 2048
+      h2_dim = 2048
+      h1 = tf.keras.layers.Dense(h1_dim, activation=tf.keras.activations.tanh,
+                                 kernel_initializer=create_initializer(self.config.initializer_range))(self.pooled_output)
+      h2 = tf.keras.layers.Dense(h1_dim, activation=tf.keras.activations.tanh,
+                                 kernel_initializer=create_initializer(self.config.initializer_range))(
+          h1)
+      h3 = tf.keras.layers.Dense(self.config.hidden_size, activation=tf.keras.activations.tanh,
+                                 kernel_initializer=create_initializer(self.config.initializer_range))(
+          h2)
+      return h3
+
 
 
 def transformer_model(input_tensor,

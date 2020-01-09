@@ -1,6 +1,6 @@
 import os
-from path import data_path
 
+from cpath import data_path
 
 agree_path = os.path.join(data_path,"agree", "commentAgree.txt")
 

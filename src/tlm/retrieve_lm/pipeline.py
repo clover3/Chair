@@ -8,7 +8,7 @@ import random
 import sys
 from collections import Counter
 
-import path
+import cpath
 from adhoc.galago import load_galago_judgement
 from data_generator import tokenizer_b as tokenization
 from misc_lib import TimeEstimator, left, tprint, CodeTiming
@@ -32,7 +32,7 @@ class Pipeline:
     def __init__(self):
         tprint("Pipeline Init")
         self.stemmer = CacheStemmer()
-        vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+        vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
         self.tokenizer = tokenization.FullTokenizer(
             vocab_file=vocab_file, do_lower_case=True)
         self.iteration_dir = "/mnt/scratch/youngwookim/data/tlm_iter1"

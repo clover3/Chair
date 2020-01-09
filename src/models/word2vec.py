@@ -1,7 +1,9 @@
 import os
+
 import numpy
-from path import data_path
-import pickle
+
+from cpath import data_path
+
 
 def load_w2v_gensim(path):
     import gensim

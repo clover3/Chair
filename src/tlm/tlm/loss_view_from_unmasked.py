@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 import mpld3
 import numpy as np
 
+from cpath import output_path
 from data_generator.common import get_tokenizer
 from data_generator.tokenizer_wo_tf import pretty_tokens
-from path import output_path
 from visualize.html_visual import Cell, HtmlVisualizer
 
 
@@ -341,9 +341,8 @@ def pred_loss_view():
 
 def loss_drop_tendency():
     tokenizer = get_tokenizer()
-    filename = "tlm_loss_pred_on_dev.pickle"
-    filename = "412.pickle"
-    p = os.path.join(output_path, filename)
+    filename = "0.pickle"
+    p = os.path.join(output_path, "all_loss", filename)
     data = pickle.load(open(p, "rb"))
 
     batch_size, seq_length = data[0]['input_ids'].shape

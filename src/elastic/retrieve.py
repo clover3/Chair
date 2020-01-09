@@ -1,7 +1,3 @@
-from path import data_path
-import os
-from misc_lib import get_dir_files
-from crawl import parse_comment
 from elasticsearch import Elasticsearch
 
 server = "gosford.cs.umass.edu"

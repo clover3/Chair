@@ -1,6 +1,7 @@
 import warnings
 from collections import Counter
 
+from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging, logging
 from tlm.tlm.model_fn_try_all_loss import model_fn_try_all_loss
 from tlm.training import flags_wrapper
@@ -10,7 +11,8 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 import tensorflow as tf
 import tlm.model.base as modeling
 from tlm.training.input_fn import input_fn_builder_unmasked
-from trainer.tpu_estimator import run_estimator, show_input_files
+from trainer.tpu_estimator import run_estimator
+from tlm.training.flags_wrapper import show_input_files
 from tlm.training.train_flags import *
 
 
@@ -25,7 +27,7 @@ class CounterFilter(logging.Filter):
                 return True
         return True
 
-
+@report_run
 def main(_):
     tf_logging.addFilter(CounterFilter())
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)

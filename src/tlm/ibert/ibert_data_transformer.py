@@ -1,9 +1,9 @@
 import collections
+import os
 
 import tensorflow as tf
 
-import os
-import path
+import cpath
 from data_generator.tokenizer_b import FullTokenizer
 
 
@@ -52,7 +52,7 @@ class VocaMasker:
 
 
 def convert_write(output_file, examples):
-    vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+    vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
     vm = VocaMasker(vocab_file)
     writers = tf.python_io.TFRecordWriter(output_file)
     cnt =0

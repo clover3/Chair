@@ -1,7 +1,7 @@
 import os
 
+from cpath import data_path
 from crawl.load_guardian import load_articles_from_dir
-from path import data_path
 
 save_dir = os.path.join(data_path, "guardian", "opinion")
 

@@ -1,18 +1,18 @@
+import csv
 import os
-from xmlrpc.server import SimpleXMLRPCServer
-from xmlrpc.server import SimpleXMLRPCRequestHandler
+import pickle
+import random
+import sys
 import xmlrpc.client
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from xmlrpc.server import SimpleXMLRPCRequestHandler
+from xmlrpc.server import SimpleXMLRPCServer
 
 from adhoc.galago import load_galago_judgement
+from cpath import data_path
 from data_generator.data_parser.trec import load_trec
-import random
-import csv
-from path import data_path
 from data_generator.tokenizer_b import EncoderUnit
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from misc_lib import pick1
-import pickle
-import sys
 
 
 def load_doc_list(path):

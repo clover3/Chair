@@ -19,7 +19,7 @@ def compare_ukp_and_wiki():
 
 
 def compare_nli_and_wiki():
-    from path import output_path
+    from cpath import output_path
     nli_dev_fiction = os.path.join(output_path, "nli_tfrecord_per_genre", "dev_fiction")
     nli_train_fiction = os.path.join(output_path, "nli_tfrecord_per_genre", "train_fiction")
     nli_dev_telephone = os.path.join(output_path, "nli_tfrecord_per_genre", "dev_telephone")

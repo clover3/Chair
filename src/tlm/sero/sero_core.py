@@ -215,6 +215,7 @@ class UpperTransformer(tf.keras.layers.Layer):
         self.embedding = None
         self.layer_list = []
         self.initializer = base.create_initializer(config.initializer_range)
+        self.layer_idx_base = 0
 
         for layer_idx in range(self.n_layers):
             with tf.compat.v1.variable_scope("layer_%d" % layer_idx):
@@ -227,7 +228,7 @@ class UpperTransformer(tf.keras.layers.Layer):
         batch_size, seq_length, _ = input_shape
         prev_output = bc.reshape_to_matrix(prev_output)
         for layer_idx in range(self.n_layers):
-            with tf.compat.v1.variable_scope("layer_%d" % layer_idx):
+            with tf.compat.v1.variable_scope("layer_%d" % (layer_idx + self.layer_idx_base)):
                 layer = self.layer_list[layer_idx]
                 intermediate_output, prev_output = layer.apply(prev_output, batch_size, seq_length,
                                                                attention_mask)
@@ -282,6 +283,7 @@ def split_and_append_sep(input_ids,
     return stacked_input_ids, stacked_input_mask, stacked_segment_ids
 
 
+
 class SeroAlpha(base.BertModelInterface):
     def __init__(self,
                  config, # This is different from BERT config,
@@ -298,7 +300,7 @@ class SeroAlpha(base.BertModelInterface):
             self.mid_layers = MidModuleExpanding(config)
         else:
             self.mid_layers = MidModule(config)
-        self.upper_module = UpperTransformer(config)
+        self.upper_module = UpperTransformer(config, config.upper_layers)
         self.skip_mid_layer = config.compare_attrib_value_safe("skip_mid_layer", True)
 
     def call(self, stacked_input_ids, stacked_input_mask,
@@ -432,6 +434,40 @@ class SeroGamma(base.BertModelInterface):
         return self.sequence_output
 
 
+def apply_cotext_mask(info_vectors, use_context):
+    dims = len(info_vectors.shape)
+    if dims == 3:
+        broadcast_shape = [-1, 1, 1]
+    elif dims == 4:
+        broadcast_shape = [-1, 1, 1, 1]
+    info_vectors = info_vectors * tf.cast(tf.reshape(use_context, broadcast_shape), tf.float32)
+    return info_vectors
+
+def exchange_return_context(batch_size, middle_output, window_size, num_window, use_context):
+    middle_output_head = middle_output[:, :window_size, :]
+    # Now re-distribute the context
+    middle_output_tail = middle_output[:, window_size:,
+                         :]  # [batch_size * num_window, num_window, hidden_size]
+    middle_output_tail = tf.reshape(middle_output_tail, [batch_size, num_window, num_window, -1])
+    # tail[batch_idx, idx1, idx2, :] : response value to window[idx2] from window[idx1]
+    # -> This is what window[idx2] may want to know about window[idx1]
+    middle_output_tail = tf.transpose(middle_output_tail, [0, 2, 1, 3])
+    middle_output_tail = apply_cotext_mask(middle_output_tail , use_context)
+    middle_output_tail = tf.reshape(middle_output_tail, [batch_size * num_window, num_window, -1])
+    input_to_upper = tf.concat([middle_output_head, middle_output_tail], axis=1)
+    return input_to_upper
+
+def exchange_contexts(batch_size, lower_module_last_layer, num_window, use_context):
+    window_vectors = lower_module_last_layer[:, -1, :]
+    window_vectors = tf.reshape(window_vectors, [batch_size, num_window, -1])
+    window_vectors = apply_cotext_mask(window_vectors, use_context)
+    window_vectors = tf.tile(window_vectors,
+                             [1, num_window, 1])  # [batch_size, num_window * num_window, hidden_size]
+    window_vectors = tf.reshape(window_vectors, [batch_size * num_window, num_window, -1])
+    input_vectors = tf.concat([lower_module_last_layer, window_vectors], axis=1)
+    return input_vectors
+
+
 class SeroDelta(base.BertModelInterface):
     def __init__(self,
                  config,  # This is different from BERT config,
@@ -456,6 +492,8 @@ class SeroDelta(base.BertModelInterface):
 
     def call(self, stacked_input_ids, stacked_input_mask,
              stacked_segment_ids, use_context):
+        batch_size, num_window, seq_length = bc.get_shape_list2(stacked_input_ids)
+
         self.lower_module.call(r3to2(stacked_input_ids),
                                r3to2(stacked_input_mask),
                                r3to2(stacked_segment_ids),
@@ -463,42 +501,83 @@ class SeroDelta(base.BertModelInterface):
 
         lower_module_last_layer = self.lower_module.all_layer_outputs[
             -1]  # [ batch_size * num_window, seq_length, hidden_size)
-        window_vectors = lower_module_last_layer[:, -1, :]
-
-        batch_size, num_window, seq_length = bc.get_shape_list2(stacked_input_ids)
-        window_vectors = tf.reshape(window_vectors, [batch_size, num_window, -1])
-        window_vectors = window_vectors * tf.cast(tf.reshape(use_context, [-1, 1, 1]), tf.float32)
-        window_vectors = tf.tile(window_vectors, [1, num_window, 1]) # [batch_size, num_window * num_window, hidden_size]
-        window_vectors = tf.reshape(window_vectors, [batch_size * num_window, num_window, -1])
-        print("window_vectors", window_vectors.shape)
-        input_vectors = tf.concat([lower_module_last_layer, window_vectors], axis=1)
+        input_vectors = exchange_contexts(batch_size, lower_module_last_layer, num_window, use_context)
         # input_vectors : [batch_size * num_window, window_length + num_window, hidden_size]
-        print("input_vectors", input_vectors.shape)
         added_tokens = num_window
         attention_mask = tf.pad(self.lower_module.attention_mask,
                                 [[0, 0], [0, added_tokens], [0, added_tokens]], 'CONSTANT', constant_values=1)
         with tf.compat.v1.variable_scope("mid"):
             self.mid_layers.call(input_vectors, attention_mask)
             middle_output = self.mid_layers.get_last_layer_output()
-        print("middle_output ", middle_output.shape)
 
-        middle_output_head = middle_output[:, :self.window_size, :]
-
-        # Now re-distribute the context
-        middle_output_tail = middle_output[:, self.window_size:, :]  # [batch_size * num_window, num_window, hidden_size]
-        middle_output_tail = tf.reshape(middle_output_tail , [batch_size, num_window, num_window, -1])
-        # tail[batch_idx, idx1, idx2, :] : response value to window[idx2] from window[idx1]
-        # -> This is what window[idx2] may want to know about window[idx1]
-        middle_output_tail = tf.transpose(middle_output_tail, [0,2,1,3])
-        middle_output_tail = tf.reshape(middle_output_tail, [batch_size * num_window, num_window, -1])
-
-        input_to_upper = tf.concat([middle_output_head,middle_output_tail], axis=1)
+        input_to_upper = exchange_return_context(batch_size, middle_output,
+                                                      self.window_size, num_window, use_context)
         with tf.compat.v1.variable_scope("upper"):
             self.upper_module.call(input_to_upper, attention_mask)
         self.embedding_table = self.lower_module.embedding_layer.embedding_table
         raw_sequence_output = self.upper_module.all_layer_outputs[-1]
         self.sequence_output = raw_sequence_output[:, :self.window_size, :]
         self.all_encoder_layers = self.lower_module.all_layer_outputs + self.upper_module.all_layer_outputs
+
+        self.all_encoder_layers = []
+        self.embedding_output = self.lower_module.embedding_output
+        return self.sequence_output
+
+
+class SeroEpsilon(base.BertModelInterface):
+    def __init__(self,
+                 config,  # This is different from BERT config,
+                 is_training,
+                 use_one_hot_embeddings=True,
+                 ):
+        super(SeroEpsilon, self).__init__()
+
+
+        if not is_training:
+            config.set_attrib("hidden_dropout_prob", 0.0)
+            config.set_attrib("attention_probs_dropout_prob", 0.0)
+        self.is_training = is_training
+        self.total_sequence_length = config.total_sequence_length
+        self.window_size = config.window_size
+
+        self.lower_module = LowerTransformer(config, config.lower_layers, use_one_hot_embeddings)
+
+        per_layer_config = get_per_layer_config(config)
+        self.upper_module_list = []
+        for i in range(0, config.upper_layers, 2):
+            ut = UpperTransformer(per_layer_config, 2)
+            ut.layer_idx_base = i
+            self.upper_module_list.append(ut)
+
+    def network_stacked(self, stacked_input_ids, stacked_input_mask,
+                        stacked_segment_ids, use_context):
+        batch_size, num_window, seq_length = bc.get_shape_list2(stacked_input_ids)
+
+        self.lower_module.call(r3to2(stacked_input_ids),
+                               r3to2(stacked_input_mask),
+                               r3to2(stacked_segment_ids),
+                               )
+
+        lower_module_last_layer = self.lower_module.all_layer_outputs[
+            -1]  # [ batch_size * num_window, seq_length, hidden_size)
+        input_to_upper = exchange_contexts(batch_size, lower_module_last_layer, num_window, use_context)
+        # input_vectors : [batch_size * num_window, window_length + num_window, hidden_size]
+        added_tokens = num_window
+        attention_mask = tf.pad(self.lower_module.attention_mask,
+                                [[0, 0], [0, added_tokens], [0, added_tokens]], 'CONSTANT', constant_values=1)
+        with tf.compat.v1.variable_scope("upper"):
+            for upper_module in self.upper_module_list:
+                upper_module.call(input_to_upper, attention_mask)
+                middle_output = upper_module.get_last_layer_output()
+                input_to_upper = exchange_return_context(batch_size, middle_output, self.window_size,
+                                                         num_window, use_context)
+
+        self.embedding_table = self.lower_module.embedding_layer.embedding_table
+        raw_sequence_output = self.upper_module_list[-1].all_layer_outputs[-1]
+        self.sequence_output = raw_sequence_output[:, :self.window_size, :]
+        self.all_encoder_layers = self.lower_module.all_layer_outputs
+        for upper_module in self.upper_module_list:
+            self.all_encoder_layers.extend(upper_module.all_layer_outputs)
 
         self.all_encoder_layers = []
         self.embedding_output = self.lower_module.embedding_output
@@ -701,7 +780,7 @@ class MidModuleGamma:
 def check_SeroAlpha():
     dummy_input_ids = tf.ones([128 * 128], tf.int64)
     dummy_input_mask = tf.ones([128 * 128], tf.int64)
-    from path import data_path
+    from cpath import data_path
     config = JsonConfig.from_json_file(os.path.join(data_path, "config", "sero.json"))
     model = SeroAlpha(config, True, dummy_input_ids, dummy_input_mask, dummy_input_mask)
 

@@ -1,7 +1,6 @@
 import copy
 import csv
 import unicodedata
-from collections import Counter
 
 from cache import *
 from data_generator.NLI.enlidef import *
@@ -48,8 +47,9 @@ class DataLoader:
             self.train_data = load_cache("nli_train_cache")
 
         if self.train_data is None:
-            self.train_data = list(self.example_generator(self.train_file))
-        #save_to_pickle(self.train_data, "nli_train_cache")
+            data = list(self.example_generator(self.train_file))
+            self.train_data = data
+        save_to_pickle(self.train_data, "nli_train_cache")
         return self.train_data
 
     def get_dev_data(self):
@@ -218,20 +218,20 @@ class DataLoader:
     def convert_index_out(self, raw_sentence, subtoken_ids, target_idx):
         if self.lower_case:
             raw_sentence = raw_sentence.lower()
-        #print("-------")
-        #print("raw_sentence", raw_sentence)
-        #print("subtoken_ids", subtoken_ids)
-        #print("target_idx", target_idx)
+        # print("-------")
+        # print("raw_sentence", raw_sentence)
+        # print("subtoken_ids", subtoken_ids)
+        # print("target_idx", target_idx)
         tokens = raw_sentence.split()
         subword_tokens = self.encoder.decode_list(subtoken_ids)
-        #print("subword_tokens", subword_tokens)
-        #print("target subword", subword_tokens[target_idx])
+        # print("subword_tokens", subword_tokens)
+        # print("target subword", subword_tokens[target_idx])
         if subword_tokens[target_idx].replace("_", "").replace(" ", "") == "":
             target_idx = target_idx - 1
-            #print("Replace target_idx to previous", subword_tokens[target_idx])
+            # print("Replace target_idx to previous", subword_tokens[target_idx])
         prev_text = "".join(subword_tokens[:target_idx])
         text_idx = 0
-        #print("prev text", prev_text)
+        # print("prev text", prev_text)
         # now we want to find a token from raw_sentence which appear after prev_text equivalent
 
         def update_text_idx(target_char, text_idx):
@@ -337,22 +337,20 @@ class DataLoader:
             yield s1, s2, bp1, bp2
 
     # split the np_arr, which is an attribution scores
-    @staticmethod
-    def split_p_h(np_arr, input_x):
+    def split_p_h(self, np_arr, input_x):
         input_ids, _, seg_idx = input_x
-        return DataLoader.split_p_h_with_input_ids(np_arr, input_ids)
+        return self.split_p_h_with_input_ids(np_arr, input_ids)
 
-    @staticmethod
-    def split_p_h_with_input_ids(np_arr, input_ids):
+    def split_p_h_with_input_ids(self, np_arr, input_ids):
 
         for i in range(len(input_ids)):
-            if input_ids[i] == SEP_ID:
+            if input_ids[i] == self.SEP_ID:
                 idx_sep1 = i
                 break
 
         p = np_arr[1:idx_sep1]
         for i in range(idx_sep1 + 1, len(input_ids)):
-            if input_ids[i] == SEP_ID:
+            if input_ids[i] == self.SEP_ID:
                 idx_sep2 = i
         h = np_arr[idx_sep1 + 1:idx_sep2]
         return p, h
@@ -616,11 +614,10 @@ def load_nli_explain():
 
 
 def load_nli_explain_1(name):
-
     path_idx = os.path.join(corpus_dir, "{}.txt".format(name))
     path_text = os.path.join(corpus_dir, "{}.csv".format(name))
 
-    reader = csv.reader(open(path_text, "r"), delimiter=',')
+    reader = csv.reader(open(path_text, "r", encoding="utf-8"), delimiter=',')
 
     texts_list = []
     for row in reader:

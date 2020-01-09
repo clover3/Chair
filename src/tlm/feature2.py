@@ -1,4 +1,4 @@
-import path
+import cpath
 from cache import *
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import *
@@ -25,7 +25,7 @@ class FeatureExtractor(PassageRanker):
         self.token_dump_cap = DumpAccess("robust_token_cap")
         self.text_dump = DumpAccess("robust")
         c_path = os.path.join(data_path, "stream_pickled", "CandiSet_{}_0")
-        vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+        vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
         self.cap_tokenizer = tokenization.FullTokenizer(
             vocab_file=vocab_file, do_lower_case=False)
 

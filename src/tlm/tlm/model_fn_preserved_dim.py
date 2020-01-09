@@ -72,7 +72,8 @@ def model_fn_preserved_dim(bert_config, train_config):
 
         tvars = tf.compat.v1.trainable_variables()
 
-        initialized_variable_names, init_fn = get_init_fn(tvars,
+        initialized_variable_names, init_fn = get_init_fn(train_config,
+                                                          tvars,
                                                           train_config.init_checkpoint,
                                                           prefix1,
                                                           train_config.second_init_checkpoint,

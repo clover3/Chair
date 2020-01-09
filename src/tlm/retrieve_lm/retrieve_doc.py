@@ -1,17 +1,18 @@
-from adhoc.bm25 import BM25_3, BM25_3_q_weight
+import os
+import pickle
 from collections import Counter
-from misc_lib import tprint
-import pickle, os, path
-from rpc.text_reader import TextReaderClient
-from misc_lib import left
 
+from adhoc.bm25 import BM25_3, BM25_3_q_weight
+from misc_lib import left
+from misc_lib import tprint
+from rpc.text_reader import TextReaderClient
 
 
 class RobustCollection:
     def __init__(self):
-        ii_path = os.path.join(path.data_path, "adhoc", "robust_inv_index.pickle")
+        ii_path = os.path.join(cpath.data_path, "adhoc", "robust_inv_index.pickle")
         self.inv_index = pickle.load(open(ii_path, "rb"))
-        dl_path = os.path.join(path.data_path, "adhoc", "doc_len.pickle")
+        dl_path = os.path.join(cpath.data_path, "adhoc", "doc_len.pickle")
         self.doc_len_dict = pickle.load(open(dl_path, "rb"))
         self.total_doc_n =  len(self.doc_len_dict)
         self.avdl = sum(self.doc_len_dict.values()) / len(self.doc_len_dict)

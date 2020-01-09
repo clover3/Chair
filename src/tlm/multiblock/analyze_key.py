@@ -1,15 +1,16 @@
-from data_generator.tokenizer_wo_tf import FullTokenizerWarpper, pretty_tokens
-from path import data_path, output_path
-import os, pickle
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+import os
+import pickle
 from collections import Counter
-from sklearn.metrics import classification_report
-from misc_lib import average, flatten
 
-from sklearn.feature_extraction.text import CountVectorizer
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report
+
+from cpath import data_path, output_path
+from data_generator.tokenizer_wo_tf import FullTokenizerWarpper, pretty_tokens
+from misc_lib import average, flatten
 
 
 def plot_data(summary_list):

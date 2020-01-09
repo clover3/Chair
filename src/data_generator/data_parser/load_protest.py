@@ -1,7 +1,9 @@
 import json
-import path
 import os
-corpus_path = os.path.join(path.data_path, "protest")
+
+import cpath
+
+corpus_path = os.path.join(cpath.data_path, "protest")
 
 def load_data(split):
     json_path = os.path.join(corpus_path, "{}_filled.json".format(split))

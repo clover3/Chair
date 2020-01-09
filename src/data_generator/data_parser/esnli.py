@@ -1,6 +1,7 @@
 import csv
-from path import data_path
 import os
+
+from cpath import data_path
 
 scope_path = os.path.join(data_path, "nli", "e-snli")
 

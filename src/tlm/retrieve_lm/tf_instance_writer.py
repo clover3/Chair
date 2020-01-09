@@ -3,7 +3,7 @@ import os
 import pickle
 import random
 
-import path
+import cpath
 from cache import load_pickle_from
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import flatten
@@ -40,7 +40,7 @@ class TrainingInstance(object):
 
 
 def get_candiset(i):
-    p = os.path.join(path.data_path, "stream_pickled", "CandiSet_{}_0".format(i))
+    p = os.path.join(cpath.data_path, "stream_pickled", "CandiSet_{}_0".format(i))
 
     if not os.path.exists(p):
         return None
@@ -54,13 +54,13 @@ class TFRecordMaker:
         print("TFRecordMaker Init")
         self.max_seq = max_seq
         self.robust_tokens = load_robust_token()
-        vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+        vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
         self.tokenizer = tokenization.FullTokenizer(
             vocab_file=vocab_file, do_lower_case=True)
         self.vocab_words = list(self.tokenizer.vocab.keys())
         self.rng = random.Random(0)
         def load_pickle(name):
-            p = os.path.join(path.data_path, "adhoc", name + ".pickle")
+            p = os.path.join(cpath.data_path, "adhoc", name + ".pickle")
             return pickle.load(open(p, "rb"))
 
         self.seg_info = load_pickle("robust_seg_info")
@@ -194,7 +194,7 @@ def worker(tf_maker, job_id):
 
     result = inst_list, info_list
 
-    p = os.path.join(path.data_path , "tlm", "instances_local", "inst_{}.pickle".format(job_id))
+    p = os.path.join(cpath.data_path , "tlm", "instances_local", "inst_{}.pickle".format(job_id))
     pickle.dump(result, open(p, "wb"))
 
 
@@ -204,7 +204,7 @@ def main():
     print("TF_Instance_writer")
     tf_maker = TFRecordMaker(max_seq)
 
-    mark_path = os.path.join(path.data_path, "tlm", "tf_inst_local_mark")
+    mark_path = os.path.join(cpath.data_path, "tlm", "tf_inst_local_mark")
     mtm = MarkedTaskManager(1000*1000, mark_path, 1000)
     job_id = mtm.pool_job()
     print("Job id : ", job_id)

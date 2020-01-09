@@ -8,12 +8,13 @@ from functools import partial
 import tensorflow as tf
 
 import tlm.data_gen.bert_data_gen as btd
+from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import flatten
 from misc_lib import pick1
-from path import data_path
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tf_util.tf_logging import tf_logging
+from tlm.estimator_prediction_viewer import float_aware_strize
 
 
 class IfCaseCounter:
@@ -85,7 +86,7 @@ def log_print_feature(features):
         elif feature.float_list.value:
             values = feature.float_list.value
         tf_logging.info(
-            "%s: %s" % (feature_name, " ".join([str(x) for x in values])))
+            "%s: %s" % (feature_name, " ".join([float_aware_strize(x) for x in values])))
 
 
 

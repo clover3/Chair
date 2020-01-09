@@ -1,11 +1,8 @@
-import random
-
 from data_generator.common import *
 from data_generator.group_sampler import KeySampler, pos_sampling
+from data_generator.text_encoder import PAD_ID
 from data_generator.text_encoder import SubwordTextEncoder
-from data_generator.text_encoder import C_MASK_ID, PAD_ID, SEP_ID
 from misc_lib import slice_n_pad
-from path import cache_path
 
 
 class AuxPairLoader:

@@ -1,21 +1,18 @@
+import os
+import pickle
+import random
+from collections import Counter
+
+from krovetzstemmer import Stemmer
+
 import adhoc.galago
-from data_generator.data_parser import controversy, load_protest
-from summarization.tokenizer import *
-from summarization.text_rank import TextRank
-from models.classic.lm_classifier import LMClassifer
+import cpath
+from evaluation import compute_auc, compute_pr_auc, AP
+from misc_lib import left
 from models.classic.lm_ex import LMClassifierEx
 from models.controversy import *
-from models.bert_controversy import BertPredictor
-from evaluation import compute_auc, compute_pr_auc, compute_acc, AP
-from krovetzstemmer import Stemmer
-from nltk.tokenize import wordpunct_tokenize
-from misc_lib import left
-import random
-import os
-import path
+from summarization.text_rank import TextRank
 
-from collections import Counter
-import pickle
 
 class ControversyExperiment:
     def __init__(self):
@@ -140,8 +137,8 @@ class ControversyExperiment:
         dev_X, dev_Y = load_protest.load_data("dev")
 
         stemmer = Stemmer()
-        dir_path = os.path.join(path.data_path, "protest", "pseudo_docs", "dbpedia")
-        tf_path = os.path.join(path.data_path, "protest", "pseudo_docs", "tf_dump_100.txt")
+        dir_path = os.path.join(cpath.data_path, "protest", "pseudo_docs", "dbpedia")
+        tf_path = os.path.join(cpath.data_path, "protest", "pseudo_docs", "tf_dump_100.txt")
         tokenizer = lambda x: tokenize(x, set(), False)
 
         c2 = LMClassifer(tokenizer, stemmer)
@@ -242,9 +239,9 @@ class ControversyExperiment:
         dev_X, dev_Y = load_protest.load_data("dev")
 
         stemmer = Stemmer()
-        dir_protest = os.path.join(path.data_path, "protest", "pseudo_docs", "dbpedia")
-        dir_crime = os.path.join(path.data_path, "protest", "crime_docs")
-        tf_path = os.path.join(path.data_path, "protest", "pseudo_docs", "tf_dump_100.txt")
+        dir_protest = os.path.join(cpath.data_path, "protest", "pseudo_docs", "dbpedia")
+        dir_crime = os.path.join(cpath.data_path, "protest", "crime_docs")
+        tf_path = os.path.join(cpath.data_path, "protest", "pseudo_docs", "tf_dump_100.txt")
         tokenizer = lambda x: tokenize(x, set(), False)
 
         n_docs = 3000

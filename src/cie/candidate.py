@@ -1,10 +1,12 @@
-import nltk
 import os
-from nltk import word_tokenize
-import en_core_web_sm
 
+import en_core_web_sm
+import nltk
+from nltk import word_tokenize
+
+from cpath import data_path
 from misc_lib import list_print
-from path import data_path
+
 nlp = en_core_web_sm.load()
 
 def get_verbs(sent):

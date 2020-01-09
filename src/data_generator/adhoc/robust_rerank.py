@@ -1,13 +1,14 @@
-from data_generator.adhoc.data_sampler import DataSampler, DataWriter
-from data_generator.data_parser.robust import *
-
-from concurrent.futures import ProcessPoolExecutor, wait
-from data_generator.data_parser import trec
-from data_generator.tokenizer_b import EncoderUnit
-from path import data_path
-from collections import defaultdict
-from misc_lib import *
 import pickle
+from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor
+
+from cpath import data_path
+from data_generator.data_parser import trec
+from data_generator.data_parser.robust import *
+from data_generator.data_parser.robust2 import load_2k_rank
+from data_generator.tokenizer_b import EncoderUnit
+from misc_lib import *
+
 
 def encode_pred_set(top_k, max_sequence):
     vocab_filename = "bert_voca.txt"
@@ -54,6 +55,11 @@ def encode_pred_set(top_k, max_sequence):
             payload.append((doc_id, q_id, get_flist(f_list)))
 
     pickle.dump(payload, open("payload_B_{}.pickle".format(top_k), "wb"))
+
+
+
+def write_to_tf_record():
+    NotImplemented
 
 
 def write_payload_in_plain(top_k, max_seq):

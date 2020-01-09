@@ -1,8 +1,6 @@
-from crs.load_stance_annotation import load_stance_annot
-from path import output_path
-import os
-from elastic.retrieve import get_comment, get_paragraph, get_title
 import csv
+
+from crs.load_stance_annotation import load_stance_annot
 
 
 def generate(path_list):

@@ -1,12 +1,9 @@
-import os
-from path import data_path
-from data_generator.data_parser import ukp
-from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
-from data_generator.text_encoder import SubwordTextEncoder, CLS_ID, SEP_ID
-from models.classic.stopword import load_stopwords
-from collections import Counter
-from misc_lib import *
+from cpath import data_path
 from data_generator.data_parser import agree
+from data_generator.text_encoder import CLS_ID, SEP_ID
+from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
+from misc_lib import *
+
 
 class DataLoader:
     def __init__(self, max_sequence, vocab_filename):

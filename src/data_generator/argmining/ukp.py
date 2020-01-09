@@ -1,13 +1,11 @@
-import os
-from path import data_path
 from data_generator.data_parser import ukp
+from cache import *
+from data_generator.data_parser import ukp
+from data_generator.text_encoder import CLS_ID, SEP_ID
 from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
-from data_generator.text_encoder import SubwordTextEncoder, CLS_ID, SEP_ID
+from misc_lib import *
 from models.classic.stopword import load_stopwords
 from trainer.tf_module import get_batches_ex
-from collections import Counter
-from misc_lib import *
-from cache import *
 
 all_topics = ["abortion", "cloning", "death_penalty", "gun_control",
                        "marijuana_legalization", "minimum_wage", "nuclear_energy", "school_uniforms"]
@@ -86,6 +84,8 @@ class BertDataLoader(DataLoader):
         self.sep_char = "#"
         self.encoder = FullTokenizerWarpper(voca_path)
         self.option = option
+        self.CLS_ID = CLS_ID
+        self.SEP_ID = SEP_ID
         self.weight = 0.0
 
     @staticmethod
@@ -217,19 +217,19 @@ class BertDataLoader(DataLoader):
         # the entire model is fine-tuned.
         tokens = []
         segment_ids = []
-        tokens.append(CLS_ID)
+        tokens.append(self.CLS_ID)
         segment_ids.append(0)
         for token in tokens_a:
             tokens.append(token)
             segment_ids.append(0)
-        tokens.append(SEP_ID)
+        tokens.append(self.SEP_ID)
         segment_ids.append(0)
 
         if tokens_b:
             for token in tokens_b:
                 tokens.append(token)
                 segment_ids.append(1)
-            tokens.append(SEP_ID)
+            tokens.append(self.SEP_ID)
             segment_ids.append(1)
 
         input_ids = tokens

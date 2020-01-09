@@ -1,15 +1,6 @@
-import xml.sax
-import time
-import xml.etree.ElementTree as ET
-from collections import Counter, defaultdict
-from path import *
-from misc_lib import *
-import math
-import os
-from cache import *
-import glob
-import re
 import json
+
+from cache import *
 
 scope_dir = os.path.join(data_path, "controversy")
 corpus_dir = os.path.join(scope_dir, "Amsterdam_data")

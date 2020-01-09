@@ -5,10 +5,10 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 from cache import load_cache, save_to_pickle, load_from_pickle
+from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import TimeEstimator, pick1
 from models.classic.stopword import load_stopwords
-from path import data_path
 from tf_util.tf_logging import tf_logging
 from tlm.data_gen.base import pad0
 from tlm.dictionary.data_gen import get_word_tokens, filter_unique_words, get_locations

@@ -1,8 +1,10 @@
 import os
-from data_generator.tokenizer_b import EncoderUnit
-from path import data_path
 import pickle
 import sys
+
+from cpath import data_path
+from data_generator.tokenizer_b import EncoderUnit
+
 
 def encode(input_path, output_path):
     payload = pickle.load(open(input_path, "rb"))

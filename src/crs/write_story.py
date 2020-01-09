@@ -1,9 +1,11 @@
-from path import data_path
 import json
 import os
-from crs.load_claim_annotation import load_claim_annot
+
+from cpath import data_path
 from crawl.guardian_uk import load_commented_articles_opinion
+from crs.load_claim_annotation import load_claim_annot
 from elastic.insert_comment import load_guardian_uk_comments
+
 
 def write_guardian_claims(name, add_comment=False):
     file_path = os.path.join(data_path, "guardian", "claim", name)

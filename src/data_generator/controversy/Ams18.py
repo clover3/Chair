@@ -1,11 +1,6 @@
-from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair, EncoderUnit
-from data_generator.text_encoder import SubwordTextEncoder, TokenTextEncoder, CLS_ID, SEP_ID, EOS_ID
-
+from cpath import data_path
 from data_generator.data_parser import amsterdam
-from path import data_path
-import random
-
-import os
+from data_generator.tokenizer_b import EncoderUnit
 from misc_lib import *
 
 

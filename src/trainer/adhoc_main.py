@@ -1,16 +1,14 @@
-from task.transformer_est import Transformer, Classification
-from models.transformer import bert
-from models.transformer import hyperparams
-from data_generator.shared_setting import NLI
-from trainer.tf_module import *
-import tensorflow as tf
-from data_generator.adhoc import ws, data_sampler
-from trainer.experiment import Experiment
-from trainer.ExperimentConfig import ExperimentConfig
-from data_generator.adhoc import score_loader
-import path
-from data_generator.adhoc.data_sampler import *
 import sys
+
+import cpath
+from data_generator.adhoc import score_loader
+from data_generator.adhoc import ws
+from data_generator.adhoc.weaksupervision import data_sampler
+from data_generator.adhoc.weaksupervision.data_sampler import *
+from models.transformer import hyperparams
+from trainer.ExperimentConfig import ExperimentConfig
+from trainer.experiment import Experiment
+
 
 def train_adhoc_with_reinforce():
     hp = hyperparams.HPAdhoc()
@@ -78,7 +76,7 @@ def predict_adhoc512():
     e_config.load_names = ['bert', 'reg_dense']
     vocab_size = 30522
 
-    payload_path = os.path.join(path.data_path, "robust_payload", "enc_payload_512.pickle")
+    payload_path = os.path.join(cpath.data_path, "robust_payload", "enc_payload_512.pickle")
     task_idx = int(sys.argv[2])
     print(task_idx)
     load_id = ("Adhoc_J_512", 'model-6180')
@@ -134,8 +132,8 @@ def predict_adhoc_robust_J():
     e_config.name = "Adhoc_{}_eval".format("J")
     e_config.load_names = ['bert', 'reg_dense']
     vocab_size = 30522
-    payload_path = os.path.join(path.data_path, "robust_payload", "payload_B_200.pickle")
-    #payload_path = os.path.join(path.data_path, "robust_payload", "payload_desc.pickle")
+    payload_path = os.path.join(cpath.data_path, "robust_payload", "payload_B_200.pickle")
+    #payload_path = os.path.join(cpath.data_path, "robust_payload", "payload_desc.pickle")
     task_idx = int(sys.argv[2])
     print(task_idx)
     load_id = ("Adhoc_J", 'model-9475')
@@ -153,8 +151,8 @@ def predict_adhoc_robust_K():
     e_config.name = "Adhoc_{}_eval".format("K")
     e_config.load_names = ['bert', 'dense1', 'dense_reg']
     vocab_size = 30522
-    #payload_path = os.path.join(path.data_path, "robust_payload", "payload_B_200.pickle")
-    payload_path = os.path.join(path.data_path, "robust_payload", "payload_desc.pickle")
+    #payload_path = os.path.join(cpath.data_path, "robust_payload", "payload_B_200.pickle")
+    payload_path = os.path.join(cpath.data_path, "robust_payload", "payload_desc.pickle")
     task_idx = int(sys.argv[2])
     print(task_idx)
     load_id = ("Adhoc_K", 'model-6397')
@@ -173,7 +171,7 @@ def predict_adhoc_robust_L():
     #e_config.load_names = ['bert', 'reg_dense']
     e_config.load_names = ['bert', 'reg_dense', 'aux_q_info']
     vocab_size = 30522
-    payload_path = os.path.join(path.data_path, "robust_payload", "payload_B_200.pickle")
+    payload_path = os.path.join(cpath.data_path, "robust_payload", "payload_B_200.pickle")
     task_idx = int(sys.argv[2])
     print(task_idx)
 
@@ -315,7 +313,7 @@ def pool_adhoc():
     vocab_size = 30522
     task_idx = int(sys.argv[2])
     print(task_idx)
-    payload_path = os.path.join(path.data_path, "robust", "robust_train_merge", "merger_train_{}.pickle".format(task_idx))
+    payload_path = os.path.join(cpath.data_path, "robust", "robust_train_merge", "merger_train_{}.pickle".format(task_idx))
 
     load_id = ("Adhoc_L", 'model-644')
     e.predict_for_pooling(e_config, vocab_size, load_id, payload_path)

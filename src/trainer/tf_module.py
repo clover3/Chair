@@ -3,6 +3,7 @@ import tensorflow as tf
 from misc_lib import *
 from tf_util.tf_logging import tf_logging
 from trainer.np_modules import *
+from trainer.np_modules import get_batches_ex
 
 
 def batch_train(sess, batch, train_op, model):
@@ -215,3 +216,10 @@ def split_tvars(all_vars, scope_key):
         tf_logging.info("Group2 Variables : %s" % v.name)
 
     return vars1, vars2
+
+
+def get_nli_batches_from_data_loader(data_loader, batch_size):
+    train_batches = get_batches_ex(data_loader.get_train_data(), batch_size, 4)
+    dev_batches = get_batches_ex(data_loader.get_dev_data(), batch_size, 4)
+    return train_batches, dev_batches
+

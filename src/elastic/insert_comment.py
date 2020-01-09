@@ -1,8 +1,11 @@
-from path import data_path
 import os
-from misc_lib import get_dir_files
-from crawl import parse_comment
+
 from elasticsearch import Elasticsearch
+
+from cpath import data_path
+from crawl import parse_comment
+from misc_lib import get_dir_files
+
 
 def load_all_comments(dir_path):
     for comment_path in get_dir_files(dir_path):

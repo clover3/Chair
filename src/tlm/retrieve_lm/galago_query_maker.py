@@ -1,8 +1,9 @@
 import json
-import os
-import path
-from cache import *
 import string
+
+import cpath
+from cache import *
+
 
 def clean_query(query):
     q_term = []
@@ -30,7 +31,7 @@ def main():
 
         data = {"queries": queries}
 
-        out_path = os.path.join(path.output_path, "query", "g_query_{}.json".format(out_idx))
+        out_path = os.path.join(cpath.output_path, "query", "g_query_{}.json".format(out_idx))
         fout = open(out_path, "w")
         fout.write(json.dumps(data, indent=True))
         fout.close()

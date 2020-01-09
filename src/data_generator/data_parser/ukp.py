@@ -1,13 +1,14 @@
-import os
 import csv
-import path
+import os
 
-corpus_dir = os.path.join(path.data_path, "ukp")
+import cpath
+
+corpus_dir = os.path.join(cpath.data_path, "ukp")
 
 def load(topic):
     filename = "{}.tsv".format(topic)
     path = os.path.join(corpus_dir, filename)
-    f = open(path, "r")
+    f = open(path, "r", encoding="utf-8")
     reader = csv.reader(f, delimiter='\t', quotechar=None)
 
     data = []

@@ -1,10 +1,13 @@
+import os
+import pickle
+
+import cpath
 from rpc.text_reader import *
-import os, pickle
-import path
+
 PORT_TOKENREADER = 8124
 
 def load_robust_token():
-    token_path = os.path.join(path.data_path, "adhoc", "robust_tokens.pickle")
+    token_path = os.path.join(cpath.data_path, "adhoc", "robust_tokens.pickle")
     return pickle.load(open(token_path, "rb"))
 
 def start_token_server():

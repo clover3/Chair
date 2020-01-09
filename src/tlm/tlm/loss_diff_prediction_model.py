@@ -1,10 +1,16 @@
 import tensorflow as tf
 
+from data_generator.special_tokens import MASK_ID
 from models.transformer import optimization_v2 as optimization
 from tf_util.tf_logging import tf_logging
+from tlm.model.base import BertModel
+from tlm.model.lm_objective import get_masked_lm_output
+from tlm.model.masking import random_masking
 from tlm.tlm.loss_diff_common import IndependentLossModel, get_diff_loss, recover_mask, get_gold_diff
+from tlm.tlm.model_fn_try_all_loss import get_init_fn
 from tlm.training.assignment_map import get_bert_assignment_map
 from tlm.training.input_fn_common import get_lm_basic_features, get_lm_mask_features, format_dataset
+from tlm.training.model_fn_common import log_features, get_tpu_scaffold_or_init, log_var_assignments
 
 
 def loss_diff_predict_only_model_fn(bert_config, train_config, model_class, model_config):
@@ -52,6 +58,145 @@ def loss_diff_predict_only_model_fn(bert_config, train_config, model_class, mode
 
     return model_fn
 
+
+def loss_diff_prediction_model_online(bert_config, train_config, model_class):
+    def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
+        log_features(features)
+        input_ids = features["input_ids"]
+        input_mask = features["input_mask"]
+        segment_ids = features["segment_ids"]
+        next_sentence_labels = features["next_sentence_labels"]
+
+        masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights \
+            = random_masking(input_ids, input_mask, train_config.max_predictions_per_seq, MASK_ID)
+
+        is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+
+        prefix1 = "MaybeBERT"
+        prefix2 = "MaybeBFN"
+        with tf.compat.v1.variable_scope(prefix1):
+            model1 = BertModel(
+                    config=bert_config,
+                    is_training=is_training,
+                    input_ids=masked_input_ids,
+                    input_mask=input_mask,
+                    token_type_ids=segment_ids,
+                    use_one_hot_embeddings=train_config.use_one_hot_embeddings,
+            )
+            (masked_lm_loss,
+             masked_lm_example_loss1, masked_lm_log_probs1) = get_masked_lm_output(
+                     bert_config, model1.get_sequence_output(), model1.get_embedding_table(),
+                     masked_lm_positions, masked_lm_ids, masked_lm_weights)
+
+            masked_lm_example_loss1 = tf.reshape(masked_lm_example_loss1, masked_lm_ids.shape)
+
+        with tf.compat.v1.variable_scope(prefix2):
+            model2 = BertModel(
+                config=bert_config,
+                is_training=is_training,
+                input_ids=masked_input_ids,
+                input_mask=input_mask,
+                token_type_ids=segment_ids,
+                use_one_hot_embeddings=train_config.use_one_hot_embeddings,
+            )
+
+            (masked_lm_loss,
+             masked_lm_example_loss2, masked_lm_log_probs2) = get_masked_lm_output(
+                bert_config, model2.get_sequence_output(), model2.get_embedding_table(),
+                masked_lm_positions, masked_lm_ids, masked_lm_weights)
+
+            print(model2.get_sequence_output().shape)
+            masked_lm_example_loss2 = tf.reshape(masked_lm_example_loss2, masked_lm_ids.shape)
+
+        model = model_class(
+                config=bert_config,
+                is_training=is_training,
+                input_ids=input_ids,
+                input_mask=input_mask,
+                token_type_ids=segment_ids,
+                use_one_hot_embeddings=train_config.use_one_hot_embeddings,
+        )
+
+        loss_model = IndependentLossModel(bert_config)
+        loss_model.train_modeling(model.get_sequence_output(), masked_lm_positions, masked_lm_weights,
+                   tf.stop_gradient(masked_lm_example_loss1), tf.stop_gradient(masked_lm_example_loss2))
+
+        total_loss = loss_model.total_loss
+        loss1 = loss_model.loss1
+        loss2 = loss_model.loss2
+        per_example_loss1 = loss_model.per_example_loss1
+        per_example_loss2 = loss_model.per_example_loss2
+        losses1 = tf.reduce_sum(per_example_loss1, axis=1)
+        losses2 = tf.reduce_sum(per_example_loss2, axis=1)
+        prob1 = loss_model.prob1
+        prob2 = loss_model.prob2
+
+        checkpoint2_1 , checkpoint2_2 = train_config.second_init_checkpoint.split(",")
+        tvars = tf.compat.v1.trainable_variables()
+        initialized_variable_names_1, init_fn_1 = get_init_fn(train_config,
+                                                              tvars,
+                                                              checkpoint2_1 ,
+                                                              prefix1,
+                                                              checkpoint2_2,
+                                                              prefix2)
+        assignment_fn = get_bert_assignment_map
+        assignment_map2, initialized_variable_names_2 = assignment_fn(tvars, train_config.init_checkpoint)
+
+        initialized_variable_names = {}
+        initialized_variable_names.update(initialized_variable_names_1)
+        initialized_variable_names.update(initialized_variable_names_2)
+
+        def init_fn():
+            init_fn_1()
+            tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map2)
+
+        scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
+
+        log_var_assignments(tvars, initialized_variable_names)
+
+        if mode == tf.estimator.ModeKeys.TRAIN:
+            train_op = optimization.create_optimizer_from_config(total_loss, train_config)
+            output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
+                    mode=mode,
+                    loss=total_loss,
+                    train_op=train_op,
+                    scaffold_fn=scaffold_fn)
+
+        elif mode == tf.estimator.ModeKeys.EVAL:
+            def metric_fn(per_example_loss1, per_example_loss2):
+                loss1 = tf.compat.v1.metrics.mean(
+                    values=per_example_loss1)
+                loss2 = tf.compat.v1.metrics.mean(
+                    values=per_example_loss2)
+                return {
+                    "loss1": loss1,
+                    "loss2": loss2,
+                }
+
+            eval_metrics = (metric_fn, [losses1, losses2])
+            output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
+                    mode=mode,
+                    loss=total_loss,
+                    eval_metrics=eval_metrics,
+                    scaffold_fn=scaffold_fn)
+        else:
+            predictions = {
+                    "prob1": prob1,
+                    "prob2": prob2,
+                    "per_example_loss1": per_example_loss1,
+                    "per_example_loss2": per_example_loss2,
+                    "input_ids":input_ids,
+                    "masked_lm_positions":masked_lm_positions,
+            }
+            output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
+                    mode=mode,
+                    loss=total_loss,
+                    predictions=predictions,
+                    scaffold_fn=scaffold_fn)
+
+        return output_spec
+
+    return model_fn
 
 def loss_diff_prediction_model(bert_config, train_config, model_class, model_config):
     """Returns `model_fn` closure for TPUEstimator."""

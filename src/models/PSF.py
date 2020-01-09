@@ -1,17 +1,18 @@
-import os
 #os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 import sys
-import path
-from arg.predictor import Predictor
-from collections import Counter, defaultdict
-from misc_lib import *
-from nltk.tokenize import sent_tokenize
+from collections import defaultdict
+
 import tensorflow as tf
+from nltk.tokenize import sent_tokenize
+
+import cpath
+from arg.predictor import Predictor
 from cache import *
+from misc_lib import *
 
 
 def get_relevant_docs(topic):
-    dir_path = os.path.join(path.data_path, "arg", "plain")
+    dir_path = os.path.join(cpath.data_path, "arg", "plain")
     return load_dir_docs(os.path.join(dir_path, topic))
 
 def load_dir_docs(dir_path):
@@ -203,10 +204,10 @@ def stance_pattern(target_topic, cheat_topic):
     line_split = sent_tokenize
     sents_list = lmap(line_split, docs)
 
-    f_html = open(os.path.join(path.output_path, "visualize", "stance_{}_cheat.html".format(target_topic)), "w")
+    f_html = open(os.path.join(cpath.output_path, "visualize", "stance_{}_cheat.html".format(target_topic)), "w")
     f_html.write("<html><head>\n")
 
-    tooptip_style = open(os.path.join(path.data_path,"html", "tooltip")).read()
+    tooptip_style = open(os.path.join(cpath.data_path,"html", "tooltip")).read()
     f_html.write(tooptip_style)
     f_html.write("</head>\n")
     f_html.write("<h4>{}<h4>\n".format(target_topic))

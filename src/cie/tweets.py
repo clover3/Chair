@@ -1,7 +1,7 @@
 import os
-from path import data_path
 from datetime import timedelta, date
-import os
+
+from cpath import data_path
 
 
 def lines_contain(lines, keywords):

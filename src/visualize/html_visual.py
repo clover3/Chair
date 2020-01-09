@@ -1,6 +1,6 @@
 import os
 
-from path import output_path
+from cpath import output_path
 
 
 def normalize255(v, max):
@@ -82,6 +82,18 @@ class HtmlVisualizer:
         i = 0
         while i < len(cells):
             self.write_table([cells[i:i+width]])
+            i += width
+
+    def multirow_print_from_cells_list(self, cells_list, width=20):
+        i = 0
+        cells = cells_list[0]
+        while i < len(cells):
+            rows = []
+            for row_idx, _ in enumerate(cells_list):
+                row = cells_list[row_idx][i:i+width]
+                rows.append(row)
+
+            self.write_table(rows)
             i += width
 
     def get_cell_html(self, cell):

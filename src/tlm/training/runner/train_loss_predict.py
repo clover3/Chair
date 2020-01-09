@@ -5,8 +5,9 @@ from taskman_client.wrapper import report_run
 from tlm.model.base import BertModel
 from tlm.model_cnfig import JsonConfig
 from tlm.tlm.loss_diff_prediction_model import loss_diff_prediction_model, input_fn_builder_masked
+from tlm.training.flags_wrapper import show_input_files
 from tlm.training.train_flags import *
-from trainer.tpu_estimator import run_estimator, TrainConfig, show_input_files
+from trainer.tpu_estimator import run_estimator, TrainConfig
 
 
 @report_run
@@ -19,8 +20,6 @@ def main(_):
     model_config = JsonConfig.from_json_file(FLAGS.model_config_file)
 
     show_input_files(input_files)
-
-
 
     model_fn = loss_diff_prediction_model(
         bert_config=bert_config,

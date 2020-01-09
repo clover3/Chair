@@ -3,7 +3,7 @@ import pickle
 
 import numpy as np
 
-from path import output_path
+from cpath import output_path
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 from visualize.html_visual import HtmlVisualizer, Cell
 
@@ -19,10 +19,14 @@ def per_doc_score():
     n_skip = 0
     data = EstimatorPredictionViewer(filename)
     for inst_i, entry in enumerate(data):
+        if inst_i > 100:
+            break
         count_preserved = entry.get_vector("layer_count")
         tokens = entry.get_tokens("input_ids")
         cells = data.cells_from_tokens(tokens)
         valid_parst = count_preserved[:len(cells)]
+        print(count_preserved.shape)
+        return
         avg = np.average(count_preserved)
         row = []
         row2 = []

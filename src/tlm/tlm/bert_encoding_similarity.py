@@ -5,11 +5,11 @@ import numpy as np
 import scipy
 import tensorflow as tf
 
+from cpath import get_bert_full_path
+from cpath import output_path
 from data_generator.NLI.nli import DataLoader
 from models.transformer import hyperparams
 from models.transformer.tranformer_nli import transformer_nli_hidden
-from path import get_bert_full_path
-from path import output_path
 from tlm.tlm.analyze_gradients import reshape
 from trainer.model_saver import load_model_w_scope
 from trainer.np_modules import get_batches_ex

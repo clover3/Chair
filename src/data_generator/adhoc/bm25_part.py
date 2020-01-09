@@ -1,8 +1,9 @@
-import random
-from data_generator.adhoc.data_sampler import DataSampler
-from adhoc.bm25 import BM25_2
-from collections import Counter
 import pickle
+import random
+from collections import Counter
+
+from adhoc.bm25 import BM25_2
+from data_generator.adhoc.weaksupervision.data_sampler import DataSampler
 
 
 def sample_debiase(data_list):

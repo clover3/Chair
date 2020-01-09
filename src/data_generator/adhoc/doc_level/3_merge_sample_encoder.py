@@ -1,8 +1,9 @@
 import os
-from path import data_path, output_path
-from data_generator.tokenizer_b import EncoderUnit
 import pickle
 import sys
+
+from cpath import data_path, output_path
+from data_generator.tokenizer_b import EncoderUnit
 
 
 def split_text(content):

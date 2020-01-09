@@ -1,10 +1,10 @@
-import os
 import csv
-import path
 from collections import Counter
+
+import cpath
 from cache import *
 
-corpus_dir = os.path.join(path.data_path, "RTE")
+corpus_dir = os.path.join(cpath.data_path, "RTE")
 
 def load(split):
     filename = "{}.tsv".format(split)

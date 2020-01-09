@@ -45,6 +45,7 @@ import uuid
 
 # pylint: disable=wildcard-import,unused-wildcard-import
 from data_generator.mlperf_tags import *
+
 # pylint: enable=wildcard-import,unused-wildcard-import
 
 
@@ -120,7 +121,7 @@ def _mlperf_print(key, value=None, benchmark=None, stack_offset=0,
   extra_print: Print a blank line before logging to clear any text in the line.
 
   Example output:
-    :::MLP-1537375353 MINGO[17] (eval.py:42) QUALITY: 43.7
+    :::MLP-1537375353 MINGO[17] (eval_metrics.py:42) QUALITY: 43.7
   """
 
   return_value = None

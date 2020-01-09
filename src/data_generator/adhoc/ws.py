@@ -1,10 +1,7 @@
-from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair, EncoderUnit
-from data_generator.text_encoder import SubwordTextEncoder, TokenTextEncoder, CLS_ID, SEP_ID, EOS_ID
-
-import tensorflow as tf
 import csv
-from path import data_path
-from evaluation import *
+
+from data_generator.tokenizer_b import FullTokenizerWarpper, EncoderUnit
+
 num_classes = 3
 import random
 from data_generator.data_parser.trec import *

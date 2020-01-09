@@ -3,8 +3,8 @@ from os.path import join as pjoin
 
 from google.cloud import storage
 
+from cpath import model_path
 from misc_lib import exist_or_mkdir
-from path import model_path
 
 
 def credential_check():

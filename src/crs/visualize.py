@@ -1,7 +1,9 @@
-from crs.load_stance_annotation import load_stance_annot
-from path import output_path
 import os
+
+from cpath import output_path
+from crs.load_stance_annotation import load_stance_annot
 from elastic.retrieve import get_comment, get_paragraph, get_title
+
 
 def visulize(path):
     r = load_stance_annot(path)

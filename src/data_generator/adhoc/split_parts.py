@@ -1,6 +1,8 @@
-import pickle
-import path
 import os
+import pickle
+
+import cpath
+
 
 def split():
     q_id_list = [
@@ -28,7 +30,7 @@ def split():
     for q_id in range(301, 701):
         q_id_dict[q_id] = find_range_idx(q_id)
 
-    payload_path = os.path.join(path.data_path, "robust_payload", "enc_payload_512.pickle")
+    payload_path = os.path.join(cpath.data_path, "robust_payload", "enc_payload_512.pickle")
 
     payload = pickle.load(open(payload_path, "rb"))
 
@@ -38,7 +40,7 @@ def split():
         payload_parts[idx].append((doc_id, q_id, runs))
 
     for i in range(10):
-        payload_part_path = os.path.join(path.data_path, "robust_payload", "enc_payload_512_{}.pickle".format(i))
+        payload_part_path = os.path.join(cpath.data_path, "robust_payload", "enc_payload_512_{}.pickle".format(i))
         pickle.dump(payload_parts, open(payload_part_path, "wb"))
 
 

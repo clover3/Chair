@@ -1,22 +1,24 @@
-from crs.load_stance_annotation import load_stance_verify_annot
-from elasticsearch import Elasticsearch
-import json
-import path
-import random
 import os
 import pickle
-from elastic import retrieve
+import random
+
+from elasticsearch import Elasticsearch
+
+import cpath
+from crs.load_stance_annotation import load_stance_verify_annot
 from data_generator.tokenizer_wo_tf import EncoderUnit
+from elastic import retrieve
+
 
 class DataGenerator:
     def __init__(self):
         self.es = None
         name = "-1.csv"
-        self.file_path= os.path.join(path.data_path, "crs", "verify", name)
+        self.file_path= os.path.join(cpath.data_path, "crs", "verify", name)
         data = self.load_data(self.file_path)
         self.split_train_dev(data)
         vocab_filename = "bert_voca.txt"
-        voca_path = os.path.join(path.data_path, vocab_filename)
+        voca_path = os.path.join(cpath.data_path, vocab_filename)
         self.lower_case = True
         self.encoder = EncoderUnit(256, voca_path)
 

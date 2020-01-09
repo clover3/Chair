@@ -1,11 +1,6 @@
-import random
-import sys
-from misc_lib import *
 import pickle
 
-def load_qrel():
-    NotImplemented
-
+from misc_lib import *
 
 
 class DataWriter:

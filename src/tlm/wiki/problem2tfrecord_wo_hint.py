@@ -2,9 +2,9 @@ working_path ="/mnt/nfs/work3/youngwookim/data/tlm_simple"
 import random
 
 from cache import *
+from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import TimeEstimator
-from path import data_path
 from sydney_manager import MarkedTaskManager
 from tlm.two_seg_pretraining import write_predict_instance
 from tlm.wiki.tf_instance_maker import TFInstanceMakerPair

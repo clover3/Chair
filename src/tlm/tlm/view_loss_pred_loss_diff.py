@@ -5,9 +5,9 @@ import math
 import numpy as np
 import scipy.special
 
+from cpath import output_path
 from data_generator.common import get_tokenizer
 from misc_lib import lmap
-from path import output_path
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 from visualize.html_visual import HtmlVisualizer, Cell
 
@@ -17,11 +17,12 @@ def probabilty(scores, amp):
     return prob
 
 
-def draw():
-    filename = os.path.join(output_path, "tlm_scores.pickle")
+def draw(in_file, out_file):
+
+    filename = os.path.join(output_path, in_file)
     data = EstimatorPredictionViewer(filename)
     amp = 10
-    html_writer = HtmlVisualizer("tlm_loss_pred_view{}.html".format(amp), dark_mode=False)
+    html_writer = HtmlVisualizer(out_file, dark_mode=False)
 
     tokenizer = get_tokenizer()
     for inst_i, entry in enumerate(data):
@@ -82,13 +83,41 @@ def draw():
                 row5 = [Cell("Mask Prob")]
 
 
+def draw2(in_file, out_file):
+    filename = os.path.join(output_path, in_file)
+    data = EstimatorPredictionViewer(filename)
+    html_writer = HtmlVisualizer(out_file, dark_mode=False)
+
+    tokenizer = get_tokenizer()
+    for inst_i, entry in enumerate(data):
+        if inst_i > 100:
+            break
+
+        tokens = entry.get_tokens("input_ids")
+        # tokens = entry.get_tokens("input_ids")
+        prob1 = entry.get_vector("prob1")
+        prob2 = entry.get_vector("prob2")
+        real_loss1 = entry.get_vector("per_example_loss1")
+        real_loss2 = entry.get_vector("per_example_loss2")
+
+        masked_lm_positions = entry.get_vector("masked_lm_positions")
+
+        for i, loc in enumerate(masked_lm_positions):
+
+            tokens[loc] = "[{}:{}]".format(i, tokens[loc])
+
+        html_writer.multirow_print(data.cells_from_tokens(tokens))
+
+        row2 = [Cell("prob1:")] + data.cells_from_anything(prob1)
+        row3 = [Cell("prob2:")] + data.cells_from_anything(prob2)
+        row4 = [Cell("real_loss1:")] + data.cells_from_anything(real_loss1)
+        row5 = [Cell("real_loss2:")] + data.cells_from_anything(real_loss2)
+        html_writer.multirow_print_from_cells_list([row2, row3, row4,row5])
+
 def plain_analyze():
     f = open(os.path.join(output_path, "tlm_loss_pred.pickle"), "rb")
 
     data = pickle.load(f)
-
-
-
     for batch in data:
         pred_diff = batch['pred_diff']
         gold_diff = batch['gold_diff']
@@ -155,5 +184,8 @@ def plain_analyze():
         print("F1", f1)
 
 
-
-draw()
+if __name__ == "__main__":
+    "tlm_scores.pickle"
+    in_path = "loss_predictor4.pickle"
+    out_path = "loss_predictor4.html"
+    draw2(in_path, out_path)

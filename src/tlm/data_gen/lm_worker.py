@@ -1,9 +1,9 @@
 import os
 import random
 
+from cpath import output_path
 from data_generator import job_runner
 from data_generator.job_runner import JobRunner
-from path import output_path
 
 
 class LMWorker(job_runner.WorkerInterface):

@@ -1,12 +1,9 @@
-
-import os
-import pickle
-from path import data_path, model_path
-from misc_lib import *
+from cpath import model_path
+from dispute.adreaction import FLAGS
 from dispute.guardian import save_local_pickle, load_local_pickle
-from dispute.adreaction import ADReaction, FLAGS
-from trainer.tf_module import *
 from models.cnn import CNN
+from trainer.tf_module import *
+
 
 def get_predictor():
     dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")

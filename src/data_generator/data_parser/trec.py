@@ -1,16 +1,14 @@
+import re
+import xml.etree.ElementTree as ET
 import xml.sax
+from collections import Counter, defaultdict
+
+import math
 from dateutil import parser
 
-import time
-import xml.etree.ElementTree as ET
-from collections import Counter, defaultdict
-from path import *
-import re
-import math
-import os
 from cache import *
-from misc_lib import TimeEstimator
 from misc_lib import tprint
+
 #from adhoc.bm25 import stem_tokenize
 
 corpus_dir = os.path.join(data_path, "adhoc")
@@ -588,8 +586,6 @@ def load_robust(docs_dir, only_one_seg = False):
                 break
     return collections
 
-
-from config.input_path import robust_path
 
 def load_robust_meta(docs_dir, only_one_seg=False):
     collections = dict()

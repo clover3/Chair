@@ -1,6 +1,7 @@
-import pickle
 import os
-from path import data_path
+import pickle
+
+from cpath import data_path
 from crawl.load_guardian import load_article_only_short_url
 from misc_lib import get_dir_files, get_dir_dir
 

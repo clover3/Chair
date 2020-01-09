@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 import tensorflow as tf
 from tensorflow import keras
 
-from path import data_path
+from cpath import data_path
 from tf_util.tf_logging import tf_logging
 from tlm.dictionary.dict_reader_transformer import DictReaderModel
 from tlm.dictionary.sense_selecting_dictionary_reader import SSDR

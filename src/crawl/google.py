@@ -1,9 +1,10 @@
-import pickle
 import json
-from path import data_path
-import os
-from bs4 import BeautifulSoup
+import pickle
+
 import requests
+from bs4 import BeautifulSoup
+
+from cpath import data_path
 from misc_lib import *
 
 scope_path = os.path.join(data_path, "arg", "extend")

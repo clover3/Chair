@@ -6,13 +6,13 @@ from log import log as log_module
 from misc_lib import *
 from models.transformer.hyperparams import HPBert
 from tf_v2_support import placeholder, variable_scope
-from tlm.benchmark.nli import get_batches_from_data_loader, save_report
+from tlm.benchmark.nli import save_report
 from tlm.dictionary.nli_w_dict import setup_summary_writer
 from tlm.model.base import BertModel, BertConfig
 from tlm.training.assignment_map import get_bert_assignment_map
 from trainer import tf_module
 from trainer.model_saver import save_model
-from trainer.tf_module import epoch_runner
+from trainer.tf_module import epoch_runner, get_nli_batches_from_data_loader
 from trainer.tf_train_module_v2 import init_session, get_train_op
 
 
@@ -212,7 +212,7 @@ def run_nli_w_path(run_name, step_name, model_path):
     nli_setting.vocab_filename = "bert_voca.txt"
 
     data_loader = nli.DataLoader(hp.seq_max, "bert_voca.txt", True)
-    data = get_batches_from_data_loader(data_loader, hp.batch_size)
+    data = get_nli_batches_from_data_loader(data_loader, hp.batch_size)
     run_name = "{}_{}_NLI".format(run_name, step_name)
     saved_model = train_nli(hp, nli_setting, run_name, 3, data, model_path)
     tf.reset_default_graph()

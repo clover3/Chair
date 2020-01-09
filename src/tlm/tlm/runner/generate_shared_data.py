@@ -1,8 +1,8 @@
 import collections
 import os
 
+from cpath import data_path, output_path
 from misc_lib import get_dir_files
-from path import data_path, output_path
 from tf_util.enum_features import load_record_v2
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.data_gen.bert_data_gen import create_int_feature

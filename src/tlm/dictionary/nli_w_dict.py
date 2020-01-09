@@ -6,11 +6,11 @@ from absl import app
 
 import trainer.tf_train_module_v2 as train_module
 from cache import save_to_pickle
+from cpath import output_path, get_bert_full_path, get_latest_model_path_from_dir_path
 from data_generator.NLI import nli
 from data_generator.common import get_tokenizer
 from log import log as log_module
 from misc_lib import *
-from path import output_path, get_bert_full_path, get_latest_model_path_from_dir_path
 from tf_util.tf_logging import tf_logging
 from tlm.dictionary.dict_augment import DictAugmentedDataLoader, NAME_DUMMY_WSSDR
 from tlm.dictionary.dict_reader_interface import DictReaderInterface, DictReaderWrapper, WSSDRWrapper, APRWrapper

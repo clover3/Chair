@@ -1,8 +1,8 @@
 import os
 import pickle
 
+from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
-from path import data_path
 from sydney_manager import MTM
 from tlm.wiki.generate_bert_tf import parse_wiki
 

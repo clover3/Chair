@@ -1,8 +1,9 @@
-import tensorflow as tf
 import collections
-from data_generator.tokenizer_b import FullTokenizer
-import numpy as np
-import path, os
+
+import tensorflow as tf
+
+import cpath
+import os
 from misc_lib import TimeEstimator
 
 
@@ -21,7 +22,7 @@ def read_bert_data(fn):
 
 
 def convert_write(output_file, examples):
-    vocab_file = os.path.join(path.data_path, "bert_voca.txt")
+    vocab_file = os.path.join(cpath.data_path, "bert_voca.txt")
     writers = tf.python_io.TFRecordWriter(output_file)
     cnt =0
     dummy_size = 512 * 512

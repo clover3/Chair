@@ -1,8 +1,8 @@
 import os
 import pickle
 
+from cpath import output_path
 from data_generator.common import get_tokenizer
-from path import output_path
 from tlm.token_utils import get_resolved_tokens_from_masked_tokens_and_ids, cells_from_tokens
 from visualize.html_visual import HtmlVisualizer, Cell
 

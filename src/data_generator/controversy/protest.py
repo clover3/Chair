@@ -1,10 +1,8 @@
-from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair, EncoderUnit
-from data_generator.text_encoder import SubwordTextEncoder, TokenTextEncoder, CLS_ID, SEP_ID, EOS_ID
-
-from data_generator.data_parser import load_protest
-from path import data_path
-
 import os
+
+from cpath import data_path
+from data_generator.data_parser import load_protest
+from data_generator.tokenizer_b import FullTokenizerWarpper, EncoderUnit
 
 
 class DataLoader:

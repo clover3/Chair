@@ -1,10 +1,9 @@
 from functools import partial
-from evaluation import *
-from cache import *
+
+import cpath
 from data_generator.NLI.nli import *
-import path
-from explain.eval_pr import *
 from data_generator.data_parser import esnli
+from explain.eval_pr import *
 
 
 def eval(pred_list, gold_list, only_prem, only_hypo = False):
@@ -280,7 +279,7 @@ def run_eval():
 
 
 def load_prediction(name):
-    file_path = os.path.join(path.output_path, "prediction", "nli", name + ".pickle")
+    file_path = os.path.join(cpath.output_path, "prediction", "nli", name + ".pickle")
     return pickle.load(open(file_path, "rb"))
 
 
@@ -369,8 +368,6 @@ def McNemar(score_list1, score_list2):
     return None, mcnemar_p(b, c)
 
 def paired_p_test2(scorer1, scorer2, predictions1, predictions2, gold_list, only_prem, only_hypo):
-    from scipy import stats
-
     p_score_list1, h_score_list1 = scorer1(predictions1, gold_list)
     p_score_list2, h_score_list2 = scorer2(predictions2, gold_list)
 
@@ -803,7 +800,7 @@ def run_eval_acl():
         print()
 
 def load_part_from_prediction(run_name, data_size):
-    file_path = os.path.join(path.output_path, "prediction", "nli", run_name + ".pickle")
+    file_path = os.path.join(cpath.output_path, "prediction", "nli", run_name + ".pickle")
     data = pickle.load(open(file_path, "rb"))
     if len(data) == 900:
         return data[:data_size]
@@ -812,7 +809,7 @@ def load_part_from_prediction(run_name, data_size):
 
 
 def load_prediction_head(run_name):
-    file_path = os.path.join(path.output_path, "prediction", "nli", run_name + ".pickle")
+    file_path = os.path.join(cpath.output_path, "prediction", "nli", run_name + ".pickle")
     data = pickle.load(open(file_path, "rb"))
     if len(data) == 1000:
         return data[:100]

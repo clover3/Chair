@@ -1,28 +1,33 @@
 import collections
+import logging
 import os
 import pickle
 import sys
 
 from tf_util.record_writer_wrap import RecordWriterWrap
-from tlm.data_gen.base import log_print_feature
+from tf_util.tf_logging import tf_logging
 from tlm.data_gen.bert_data_gen import create_int_feature, create_float_feature
 from tlm.estimator_prediction_viewer import flatten_batches
 
+working_dir = os.environ["TF_WORKING_DIR"]
+
 
 def load(job_id):
-    file_path = "disk_output/all_loss/{}.pickle".format(job_id)
+    file_path = os.path.join(working_dir, "manual_all_loss", "{}.pickle".format(job_id))
     if os.path.exists(file_path):
         return pickle.load(open(file_path, "rb"))
     else:
+        print(file_path)
         return None
 
 
 def work(job_id):
-    outfile = "disk_output/BLC_data/{}".format(job_id)
+    outfile = os.path.join(working_dir, "BLC_data", "{}".format(job_id))
     if os.path.exists(outfile):
         return "Skip"
+    tf_logging.debug("Loading data")
     data = load(job_id)
-
+    tf_logging.debug("Done")
     if data is None:
         return "No Input"
 
@@ -60,16 +65,17 @@ def work(job_id):
 
         features["loss_valid"] = create_int_feature(mask_valid)
         features["loss1"] = create_float_feature(loss1_arr)
-        features["loss2"] = create_float_feature(loss1_arr)
+        features["loss2"] = create_float_feature(loss2_arr)
         features["next_sentence_labels"] = create_int_feature([0])
         writer.write_feature(features)
-        if i < 20:
-            log_print_feature(features)
+        #if i < 20:
+        #    log_print_feature(features)
     writer.close()
     return "Done"
 
 
 if __name__ == "__main__":
+    tf_logging.setLevel(logging.INFO)
     st = int(sys.argv[1])
     ed = int(sys.argv[2])
     for i in range(st, ed):

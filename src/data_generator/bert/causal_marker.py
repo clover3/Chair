@@ -1,8 +1,7 @@
-from data_generator.bert.create_training_data import *
-from misc_lib import pick1
-import re
 import os
-import path
+
+import cpath
+from data_generator.bert.create_training_data import *
 from text_lib import line_split
 
 NO_MARKER = 0
@@ -305,12 +304,12 @@ def parse_grep_result(filename):
 
 
 if __name__ == '__main__':
-  causal_path = os.path.join(path.data_path,"causal")
+  causal_path = os.path.join(cpath.data_path,"causal")
   tf.logging.set_verbosity(tf.logging.INFO)
   src_file = os.path.join(causal_path,"Thus.txt")
   docs = parse_grep_result(src_file)
   rng = random.Random(FLAGS.random_seed)
-  voca_path = os.path.join(path.data_path, "bert_voca.txt")
+  voca_path = os.path.join(cpath.data_path, "bert_voca.txt")
 
   tokenizer = tokenizer_b.FullTokenizer(
       vocab_file=voca_path, do_lower_case=True)
