@@ -8,19 +8,19 @@ from data_generator.shared_setting import NLI
 from misc_lib import average
 from models.transformer import hyperparams
 from models.transformer.nli_base import transformer_nli_pooled
-from trainer.model_saver import load_bert_v2
+from trainer.model_saver import load_bert_v2, load_model
 from trainer.tf_module import get_batches_ex
 from trainer.tf_train_module import init_session
 
 
-def eval_nli(hparam, nli_setting, run_name, dev_batches, model_path):
+def eval_nli(hparam, nli_setting, run_name, dev_batches, model_path, load_fn):
     print("eval_nli :", run_name)
     task = transformer_nli_pooled(hparam, nli_setting.vocab_size, False)
     sess = init_session()
     sess.run(tf.global_variables_initializer())
     if model_path is not None:
         #load_model(sess, model_path)
-        load_bert_v2(sess, model_path)
+        load_fn(sess, model_path)
 
     def batch2feed_dict(batch):
         x0, x1, x2, y  = batch
@@ -50,8 +50,8 @@ def eval_nli(hparam, nli_setting, run_name, dev_batches, model_path):
     return valid_fn()
 
 
-def eval_accuracy(model_path):
-    hp = hyperparams.HPSENLI2()
+def eval_accuracy(model_path, load_type):
+    hp = hyperparams.HPSENLI3()
     hp.batch_size = 128
     nli_setting = NLI()
     nli_setting.vocab_size = 30522
@@ -59,8 +59,14 @@ def eval_accuracy(model_path):
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     run_name = os.path.split(model_path)[-1]
     dev_batches = get_batches_ex(data_loader.get_dev_data(), hp.batch_size, 4)
-    acc = eval_nli(hp, nli_setting, run_name, dev_batches, model_path)
+
+    if load_type == "v2":
+        load_fn = load_bert_v2
+    else:
+        load_fn = load_model
+
+    acc = eval_nli(hp, nli_setting, run_name, dev_batches, model_path, load_fn)
     print(run_name, acc)
 
 if __name__  == "__main__":
-    eval_accuracy(sys.argv[1])
+    eval_accuracy(sys.argv[1], sys.argv[2])

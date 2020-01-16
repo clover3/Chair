@@ -1,5 +1,5 @@
-from collections import Counter
 import json
+from collections import Counter
 
 
 def parse_line(line):
@@ -27,7 +27,7 @@ def load_galago_judgement2(path):
     return q_group
 
 
-def load_galago_judgement(path):
+def load_galago_ranked_list(path):
 # Sample Format : 475287 Q0 LA053190-0016_1274 1 15.07645119 galago
     q_group = dict()
     for line in open(path, "r"):

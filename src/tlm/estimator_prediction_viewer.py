@@ -24,6 +24,13 @@ def flatten_batches(data):
 
 
 class EstimatorPredictionViewer:
+    def __init__(self, file_path):
+        self.vectors, self.keys, self.data_len = self.estimator_prediction_loader(file_path)
+        self.tokenizer = get_tokenizer()
+        self.method_list = list([func for func in dir(EstimatorPredictionViewer)
+                                 if callable(getattr(EstimatorPredictionViewer, func))])
+
+
     class Entry:
         def __init__(self, idx, viewer):
             self.idx = idx
@@ -36,13 +43,6 @@ class EstimatorPredictionViewer:
                     wrap_fn = partial(method_fn, self.viewer, self.idx)
                     setattr(self, method, wrap_fn)
 
-
-    def __init__(self, filename):
-        self.vectors, self.keys, self.data_len = self.estimator_prediction_loader(filename)
-        self.tokenizer = get_tokenizer()
-        self.method_list = list([func for func in dir(EstimatorPredictionViewer)
-                            if callable(getattr(EstimatorPredictionViewer, func))])
-
     def __iter__(self):
         for i in range(self.data_len):
             yield self.Entry(i, self)
@@ -52,19 +52,6 @@ class EstimatorPredictionViewer:
 
     def get_vector(self, idx, key):
         return self.vectors[key][idx]
-
-    @staticmethod
-    def estimator_prediction_loader(filename):
-        p = os.path.join(output_path, filename)
-        data = pickle.load(open(p, "rb"))
-
-        keys = list(data[0].keys())
-        vectors = flatten_batches(data)
-
-        any_key = keys[0]
-        data_len = len(vectors[any_key])
-
-        return vectors, keys, data_len
 
     def get_mask_resolved_input_mask_with_input(self, idx, key=""):
         tokens = self.get_tokens(idx, "input_ids")
@@ -99,6 +86,24 @@ class EstimatorPredictionViewer:
             h_score = scores if hightlight else 0
             cells.append(Cell(float_aware_strize(score), h_score))
         return cells
+
+    @staticmethod
+    def estimator_prediction_loader(p):
+        data = pickle.load(open(p, "rb"))
+
+        keys = list(data[0].keys())
+        vectors = flatten_batches(data)
+
+        any_key = keys[0]
+        data_len = len(vectors[any_key])
+
+        return vectors, keys, data_len
+
+class EstimatorPredictionViewerGosford(EstimatorPredictionViewer):
+    def __init__(self, filename):
+        p = os.path.join(output_path, filename)
+        super(EstimatorPredictionViewerGosford, self).__init__()
+
 
 
 def float_aware_strize(obj):

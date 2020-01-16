@@ -4,9 +4,9 @@ import tensorflow as tf
 from trainer.bert_optimizer import AdamWeightDecayOptimizer
 
 
-def init_session():
-    config = tf.ConfigProto(allow_soft_placement=True,
-                            log_device_placement=False)
+def init_session(allow_soft_placement=True, log_device_placement=False):
+    config = tf.ConfigProto(allow_soft_placement=allow_soft_placement,
+                            log_device_placement=log_device_placement)
     config.gpu_options.allow_growth = True
 
     return tf.Session(config=config)
@@ -118,9 +118,14 @@ def get_gradient_acc_train_op(loss, lr, num_train_steps=0):
 
 
 def get_train_op2(loss, lr, name='Adam', num_train_steps=0):
-    global_step = tf.train.get_or_create_global_step()
+    tvars = tf.trainable_variables()
+    grads = tf.gradients(ys=loss, xs=tvars)
+    return get_train_op_from_grads_and_tvars(grads, tvars, lr, name, num_train_steps)
 
-    learning_rate = get_learning_rate(global_step, lr, num_train_steps)
+
+def get_train_op_from_grads_and_tvars(grads, tvars, lr, name='Adam', num_train_steps=0):
+    global_step = tf.train.get_or_create_global_step()
+    learning_rate = get_learning_rate_w_warmup(global_step, lr, num_train_steps, 10000)
 
     optimizer = AdamWeightDecayOptimizer(
         learning_rate=learning_rate,
@@ -129,10 +134,6 @@ def get_train_op2(loss, lr, name='Adam', num_train_steps=0):
         beta_2=0.999,
         epsilon=1e-6,
         exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"])
-
-    tvars = tf.trainable_variables()
-
-    grads = tf.gradients(ys=loss, xs=tvars)
 
     # This is how the model was pre-trained.
     (grads, _) = tf.clip_by_global_norm(grads, clip_norm=1.0)
@@ -148,7 +149,6 @@ def get_train_op2(loss, lr, name='Adam', num_train_steps=0):
 
     return train_op
 
-
 def get_learning_rate(global_step, lr, num_train_steps):
     if num_train_steps:
         learning_rate = tf.constant(value=lr, shape=[], dtype=tf.float32)
@@ -163,4 +163,33 @@ def get_learning_rate(global_step, lr, num_train_steps):
             cycle=False)
     else:
         learning_rate = lr
+    return learning_rate
+
+def get_learning_rate_w_warmup(global_step, init_lr, num_train_steps, num_warmup_steps):
+    learning_rate = tf.constant(value=init_lr, shape=[], dtype=tf.float32)
+
+    # Implements linear decay of the learning rate.
+    learning_rate = tf.train.polynomial_decay(
+        learning_rate,
+        global_step,
+        num_train_steps,
+        end_learning_rate=0.0,
+        power=1.0,
+        cycle=False)
+
+    # Implements linear warmup. I.e., if global_step < num_warmup_steps, the
+    # learning rate will be `global_step/num_warmup_steps * init_lr`.
+    if num_warmup_steps:
+        global_steps_int = tf.cast(global_step, tf.int32)
+        warmup_steps_int = tf.constant(num_warmup_steps, dtype=tf.int32)
+
+        global_steps_float = tf.cast(global_steps_int, tf.float32)
+        warmup_steps_float = tf.cast(warmup_steps_int, tf.float32)
+
+        warmup_percent_done = global_steps_float / warmup_steps_float
+        warmup_learning_rate = init_lr * warmup_percent_done
+
+        is_warmup = tf.cast(global_steps_int < warmup_steps_int, tf.float32)
+        learning_rate = (
+                (1.0 - is_warmup) * learning_rate + is_warmup * warmup_learning_rate)
     return learning_rate

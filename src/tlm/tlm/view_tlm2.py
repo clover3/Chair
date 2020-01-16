@@ -2,7 +2,7 @@ import numpy as np
 import scipy.special
 
 from misc_lib import lmap, average
-from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
+from tlm.estimator_prediction_viewer import EstimatorPredictionViewerGosford
 from visualize.html_visual import HtmlVisualizer
 
 
@@ -72,7 +72,7 @@ def doit(filename):
         scores = np.sum(all_scores, axis=1)
         return scores
 
-    data = EstimatorPredictionViewer(filename)
+    data = EstimatorPredictionViewerGosford(filename)
     amp = 0.5
     html_writer = HtmlVisualizer("{}_{}.html".format(name, amp), dark_mode=False)
 
@@ -127,7 +127,7 @@ def get_bin_fn_from_interval(begin, end, interval):
 
 def statistics_tlm():
     filename = "blc_cold_scores.pickle"
-    data = EstimatorPredictionViewer(filename)
+    data = EstimatorPredictionViewerGosford(filename)
 
     bins = {}
     bin_fn = get_bin_fn_from_interval(0, 1.05, 0.05)
@@ -163,7 +163,7 @@ def per_doc_score():
     filename = "tlm_view.pickle"
     html_writer = HtmlVisualizer("per_doc_score.html", dark_mode=False)
 
-    data = EstimatorPredictionViewer(filename)
+    data = EstimatorPredictionViewerGosford(filename)
     amp = 20
     small_threshold = 40
     for inst_i, entry in enumerate(data):

@@ -7,11 +7,8 @@ from __future__ import print_function
 import copy
 import json
 
-import six
-import tensorflow as tf
-
 from models.transformer.bert_common_v2 import *
-from models.transformer.bert_common_v2 import attention_layer
+from models.transformer.bert_common_v2 import attention_layer, create_initializer
 
 
 class BertConfig(object):
@@ -325,5 +322,10 @@ def transformer_model(input_tensor,
         return final_output
 
 
-
-
+def mimic_pooling(sequence_output, hidden_size, initializer_range):
+    first_token_tensor = tf.squeeze(sequence_output[:, 0:1, :], axis=1)
+    pooled_output = tf.keras.layers.Dense(hidden_size,
+                                          activation=tf.keras.activations.tanh,
+                                          kernel_initializer=create_initializer(initializer_range))(
+        first_token_tensor)
+    return pooled_output

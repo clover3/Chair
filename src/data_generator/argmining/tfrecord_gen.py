@@ -7,14 +7,14 @@ from misc_lib import exist_or_mkdir
 
 
 def gen_tfrecord():
-    max_sequence = 300
+    max_sequence = 512
     dir_path = os.path.join(data_path, "ukp_{}".format(max_sequence))
     exist_or_mkdir(dir_path)
     for topic in all_topics:
         data_loader = modify_data_loader(BertDataLoader(topic, True, max_sequence, "bert_voca.txt", "only_topic_word"))
         todo = [("train", data_loader.get_train_data()), ("dev", data_loader.get_dev_data())]
 
-        for name, data in todo:
+        for name, data in todo[::-1]:
             features = lmap(entry_to_feature_dict, data)
             out_name = "{}_{}".format(name, topic)
             out_path = os.path.join(dir_path, out_name)

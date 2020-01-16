@@ -8,7 +8,7 @@ import scipy.special
 from cpath import output_path
 from data_generator.common import get_tokenizer
 from misc_lib import lmap
-from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
+from tlm.estimator_prediction_viewer import EstimatorPredictionViewerGosford
 from visualize.html_visual import HtmlVisualizer, Cell
 
 
@@ -20,7 +20,7 @@ def probabilty(scores, amp):
 def draw(in_file, out_file):
 
     filename = os.path.join(output_path, in_file)
-    data = EstimatorPredictionViewer(filename)
+    data = EstimatorPredictionViewerGosford(filename)
     amp = 10
     html_writer = HtmlVisualizer(out_file, dark_mode=False)
 
@@ -85,7 +85,7 @@ def draw(in_file, out_file):
 
 def draw2(in_file, out_file):
     filename = os.path.join(output_path, in_file)
-    data = EstimatorPredictionViewer(filename)
+    data = EstimatorPredictionViewerGosford(filename)
     html_writer = HtmlVisualizer(out_file, dark_mode=False)
 
     tokenizer = get_tokenizer()

@@ -7,8 +7,9 @@ from tlm.model_cnfig import JsonConfig
 from tlm.training.dict_model_fn import DictRunConfig
 from tlm.training.flags_wrapper import show_input_files
 from tlm.training.input_fn import input_fn_builder_classification as input_fn_builder
+from tlm.training.train_config import TrainConfig
 from tlm.training.train_flags import *
-from trainer.tpu_estimator import run_estimator, TrainConfig
+from trainer.tpu_estimator import run_estimator
 
 
 @report_run

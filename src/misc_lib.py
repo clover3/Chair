@@ -302,3 +302,28 @@ class BinHistogram:
     def add(self, v):
         self.counter[self.bin_fn(v)] += 1
 
+
+
+
+class BinAverage:
+    def __init__(self, bin_fn):
+        self.list_dict = {}
+        self.bin_fn = bin_fn
+
+    def add(self, k, v):
+        bin_id = self.bin_fn(k)
+        if bin_id not in self.list_dict:
+            self.list_dict[bin_id] = []
+
+        self.list_dict[bin_id].append(v)
+
+    def all_average(self):
+        output = {}
+        for k, v in self.list_dict.items():
+            output[k] = average(v)
+        return output
+
+
+class IntBinAverage(BinAverage):
+    def __init__(self):
+        super(IntBinAverage, self).__init__(lambda x: int(x))

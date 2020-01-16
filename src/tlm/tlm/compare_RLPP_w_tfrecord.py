@@ -9,7 +9,7 @@ from sklearn.preprocessing import PolynomialFeatures
 from cpath import output_path
 from misc_lib import average
 from tf_util.enum_features import load_record_v2
-from tlm.estimator_prediction_viewer import flatten_batches, EstimatorPredictionViewer
+from tlm.estimator_prediction_viewer import flatten_batches, EstimatorPredictionViewerGosford
 from visualize.html_visual import HtmlVisualizer, Cell
 
 
@@ -56,7 +56,7 @@ def do():
     x = []
     y = []
     for pred_file_name, record_file_name, out_name in todo:
-        viewer = EstimatorPredictionViewer(pred_file_name)
+        viewer = EstimatorPredictionViewerGosford(pred_file_name)
         html = HtmlVisualizer(out_name)
         itr1 = load_record_v2(record_file_name)
         itr2 = viewer.__iter__()

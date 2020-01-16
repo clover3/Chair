@@ -7,7 +7,7 @@ from tf_util.tf_logging import tf_logging
 from tlm.model.base import BertModel
 from tlm.training import assignment_map
 from tlm.training.model_fn_common import log_features, align_checkpoint, get_tpu_scaffold_or_init, log_var_assignments
-from trainer.tpu_estimator import TrainConfig
+from tlm.training.train_config import TrainConfig
 
 
 class PairWise:
@@ -87,6 +87,21 @@ def ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_fa
     return output_spec
 
 
+def apply_loss_modeling(modeling_opt, pooled_output):
+    if modeling_opt == "hinge":
+        loss, losses, y_pred = pairwise_model(pooled_output)
+    elif modeling_opt == "pair_ce":
+        loss, losses, y_pred = pairwise_cross_entropy(pooled_output)
+    elif modeling_opt == "ce":
+        loss, losses, y_pred = cross_entropy(pooled_output)
+    elif modeling_opt == "all_pooling":
+
+        loss, losses, y_pred = cross_entropy(pooled_output)
+    else:
+        assert False
+    return loss, losses, y_pred
+
+
 def model_fn_ranking(FLAGS):
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
     train_config = TrainConfig.from_flags(FLAGS)
@@ -113,15 +128,7 @@ def model_fn_ranking(FLAGS):
         if is_training:
             pooled_output = dropout(pooled_output, 0.1)
 
-        if modeling_opt == "hinge":
-            loss, losses, y_pred = pairwise_model(pooled_output)
-        elif modeling_opt == "pair_ce":
-            loss, losses, y_pred = pairwise_cross_entropy(pooled_output)
-        elif modeling_opt == "ce":
-            loss, losses, y_pred = cross_entropy(pooled_output)
-        else:
-            assert False
-            #loss = tf.reduce_mean(tf.losses.hinge(y_true=labels, y_pred=y_pred))
+        loss, losses, y_pred = apply_loss_modeling(modeling_opt, pooled_output)
 
 
         assignment_fn = assignment_map.get_bert_assignment_map
@@ -129,6 +136,7 @@ def model_fn_ranking(FLAGS):
 
         optimizer_factory = lambda x: create_optimizer_from_config(x, train_config)
         return ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_factory)
+
 
     return model_fn
 
@@ -141,7 +149,24 @@ def rank_predict_estimator_spec(logits, mode, scaffold_fn):
         assert False
     return output_spec
 
-def model_fn_rank_pred(bert_config, train_config):
+
+def get_prediction_structure(modeling_opt, pooled_output):
+    if modeling_opt == "hinge" or modeling_opt == "pair_ce":
+        logits = tf.keras.layers.Dense(1, name="cls_dense")(pooled_output)
+    elif modeling_opt == "ce":
+        raw_logits = tf.keras.layers.Dense(2, name="cls_dense")(pooled_output)
+        probs = tf.nn.softmax(raw_logits, axis=1)
+        logits = probs[:, 1]
+    else:
+        assert False
+    return logits
+
+
+def model_fn_rank_pred(FLAGS):
+    train_config = TrainConfig.from_flags(FLAGS)
+    bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
+    modeling_opt = FLAGS.modeling
+
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
         tf_logging.info("model_fn_sero_classification")
         """The `model_fn` for TPUEstimator."""
@@ -164,8 +189,7 @@ def model_fn_rank_pred(bert_config, train_config):
         if is_training:
             pooled_output = dropout(pooled_output, 0.1)
 
-
-        logits = tf.keras.layers.Dense(1, name="cls_dense")(pooled_output)
+        logits = get_prediction_structure(modeling_opt, pooled_output)
         loss = 0
 
         tvars = tf.compat.v1.trainable_variables()

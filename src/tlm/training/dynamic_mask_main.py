@@ -17,50 +17,8 @@ from tlm.tlm.tlm2_network import tlm2, tlm_prefer_hard
 from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
 from tlm.training.input_fn import input_fn_builder_unmasked, input_fn_builder_masked, input_fn_builder_blc
 from tlm.training.lm_model_fn import model_fn_lm, model_fn_target_masking, get_nli_ex_model_segmented
+from tlm.training.train_config import LMTrainConfig
 from tlm.training.train_flags import *
-
-
-class LMTrainConfig:
-    def __init__(self,
-                 init_checkpoint,
-                 learning_rate,
-                 num_train_steps,
-                 num_warmup_steps,
-                 use_tpu,
-                 use_one_hot_embeddings,
-                 max_predictions_per_seq,
-                 gradient_accumulation=1,
-                 checkpoint_type="",
-                 second_init_checkpoint="",
-                 fixed_mask=False,
-                 ):
-        self.init_checkpoint = init_checkpoint
-        self.learning_rate = learning_rate
-        self.num_train_steps = num_train_steps
-        self.num_warmup_steps = num_warmup_steps
-        self.use_tpu = use_tpu
-        self.use_one_hot_embeddings = use_one_hot_embeddings
-        self.max_predictions_per_seq = max_predictions_per_seq
-        self.gradient_accumulation = gradient_accumulation
-        self.checkpoint_type = checkpoint_type
-        self.second_init_checkpoint = second_init_checkpoint
-        self.fixed_mask = fixed_mask
-
-    @classmethod
-    def from_flags(cls, flags):
-        return LMTrainConfig(
-            flags.init_checkpoint,
-            flags.learning_rate,
-            flags.num_train_steps,
-            flags.num_warmup_steps,
-            flags.use_tpu,
-            flags.use_tpu,
-            flags.max_predictions_per_seq,
-            flags.gradient_accumulation,
-            flags.checkpoint_type,
-            flags.target_task_checkpoint,
-            flags.fixed_mask,
-        )
 
 
 @report_run

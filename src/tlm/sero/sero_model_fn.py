@@ -7,6 +7,7 @@ from models.transformer import optimization_v2 as optimization
 from models.transformer.bert_common_v2 import create_initializer, get_shape_list, get_shape_list2, dropout
 from models.transformer.optimization_v2 import create_optimizer_from_config
 from tf_util.tf_logging import tf_logging
+from tlm.model.base import mimic_pooling
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
 from tlm.sero.sero_core import split_and_append_sep, SeroDelta, SeroEpsilon
@@ -14,8 +15,8 @@ from tlm.training import assignment_map
 from tlm.training.input_fn_common import format_dataset
 from tlm.training.model_fn_common import log_features, get_tpu_scaffold_or_init, log_var_assignments, align_checkpoint, \
     Classification
-from tlm.training.ranking_model_fn import combine_paired_input_features, pairwise_model, checkpoint_init, \
-    ranking_estimator_spec, rank_predict_estimator_spec
+from tlm.training.ranking_model_fn import combine_paired_input_features, checkpoint_init, \
+    ranking_estimator_spec, rank_predict_estimator_spec, get_prediction_structure, apply_loss_modeling
 from trainer.tf_train_module_v2 import OomReportingHook
 
 
@@ -23,6 +24,18 @@ def r3to2(t):
     a, b, c = get_shape_list2(t)
     return tf.reshape(t, [-1, c])
 
+
+def get_assignment_map_from_checkpoint_type(checkpoint_type, num_lower_layers):
+    if checkpoint_type == "bert":
+        assignment_fn = partial(assignment_map.sero_from_bert, num_lower_layers)
+    elif checkpoint_type == "v2":
+        assignment_fn = assignment_map.sero_from_v2
+    elif checkpoint_type == "sero":
+        assignment_fn = assignment_map.assignment_map_v2_to_v2
+    else:
+        raise Exception("Undefined checkpoint exists")
+
+    return assignment_fn
 
 def model_fn_sero_lm(config, train_config, modeling):
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -99,16 +112,13 @@ def model_fn_sero_lm(config, train_config, modeling):
 
         loss = masked_lm_loss  #+ bert_task.masked_lm_loss
         tvars = tf.compat.v1.trainable_variables()
-        if train_config.checkpoint_type == "":
-            assignment_fn = partial(assignment_map.sero_from_bert, config.lower_layers)
-        elif train_config.checkpoint_type == "v2":
-            assignment_fn = assignment_map.sero_from_v2
+        if train_config.init_checkpoint:
+            assignment_fn = get_assignment_map_from_checkpoint_type(train_config.checkpoint_type, config.lower_layers)
         else:
-            raise Exception("Undefined checkpoint exists")
-
+            assignment_fn = None
         initialized_variable_names, init_fn = align_checkpoint(tvars, train_config.init_checkpoint, assignment_fn)
-        scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
         log_var_assignments(tvars, initialized_variable_names)
+        scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
 
         TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
         if mode == tf.estimator.ModeKeys.TRAIN:
@@ -140,8 +150,7 @@ def model_fn_sero_lm(config, train_config, modeling):
     return model_fn
 
 
-def model_fn_sero_ranking_train(config, train_config ):
-
+def model_fn_sero_ranking_train(config, train_config, modeling_opt):
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
         tf_logging.info("model_fn_ranking")
         log_features(features)
@@ -166,31 +175,32 @@ def model_fn_sero_ranking_train(config, train_config ):
             )
             sequence_output_3d = model.network_stacked(stacked_input_ids, stacked_input_mask, stacked_segment_ids, use_context)
 
-        first_sequence_output = tf.reshape(sequence_output_3d, [batch_size, -1, config.window_size, config.hidden_size])[:, 0]
-        pooled_output = mimic_pooling(first_sequence_output, config.hidden_size, config.initializer_range)
+        seq_4d = tf.reshape(sequence_output_3d, [batch_size, -1, config.window_size, config.hidden_size])
+        first_sequence_output = seq_4d[:, 0]
+        nonlocal modeling_opt
+        if "all_pooling" not in modeling_opt:
+            pooled_output = mimic_pooling(first_sequence_output, config.hidden_size, config.initializer_range)
+        else:
+            seq_4d = tf.transpose(seq_4d, [0,2,1,3])
+            pooled_output = mimic_pooling(seq_4d, config.hidden_size, config.initializer_range)
+            pooled_output = tf.reduce_max(pooled_output, axis=2)
+
+            modeling_opt = "ce"
+
         if is_training:
             pooled_output = dropout(pooled_output, 0.1)
 
-        loss, losses, y_pred = pairwise_model(pooled_output)
-        assignment_fn = assignment_map.assignment_map_v2_to_v2
-        scaffold_fn = checkpoint_init(assignment_fn, train_config)
+        loss, losses, y_pred = apply_loss_modeling(modeling_opt, pooled_output)
 
+        assignment_fn = get_assignment_map_from_checkpoint_type(train_config.checkpoint_type, config.lower_layers)
+        scaffold_fn = checkpoint_init(assignment_fn, train_config)
         optimizer_factory = lambda x: create_optimizer_from_config(x, train_config)
         return ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_factory)
 
     return model_fn
 
 
-def mimic_pooling(sequence_output, hidden_size, initializer_range):
-    first_token_tensor = tf.squeeze(sequence_output[:, 0:1, :], axis=1)
-    pooled_output = tf.keras.layers.Dense(hidden_size,
-                                          activation=tf.keras.activations.tanh,
-                                          kernel_initializer=create_initializer(initializer_range))(
-        first_token_tensor)
-    return pooled_output
-
-
-def model_fn_sero_ranking_predict(config, train_config):
+def model_fn_sero_ranking_predict(config, train_config, modeling_opt):
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
         tf_logging.info("model_fn_sero_ranking_predict")
         """The `model_fn` for TPUEstimator."""
@@ -218,10 +228,19 @@ def model_fn_sero_ranking_predict(config, train_config):
                 train_config.use_one_hot_embeddings
             )
             sequence_output_3d = model.network_stacked(stacked_input_ids, stacked_input_mask, stacked_segment_ids, use_context)
+        seq_4d = tf.reshape(sequence_output_3d, [batch_size, -1, config.window_size, config.hidden_size])
+        first_sequence_output = seq_4d[:, 0]
+        nonlocal modeling_opt
+        if "all_pooling" not in modeling_opt:
+            pooled_output = mimic_pooling(first_sequence_output, config.hidden_size, config.initializer_range)
+        else:
+            seq_4d = tf.transpose(seq_4d, [0,2,1,3])
+            pooled_output = mimic_pooling(seq_4d, config.hidden_size, config.initializer_range)
+            pooled_output = tf.reduce_max(pooled_output, axis=2)
+            modeling_opt = "ce"
 
-        first_sequence_output = tf.reshape(sequence_output_3d, [batch_size, -1, config.window_size, config.hidden_size])[:, 0]
-        pooled_output = mimic_pooling(first_sequence_output, config.hidden_size, config.initializer_range)
-        logits = tf.keras.layers.Dense(1, name="cls_dense")(pooled_output)
+
+        logits = get_prediction_structure(modeling_opt, pooled_output)
         loss = 0
 
         tvars = tf.compat.v1.trainable_variables()

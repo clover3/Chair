@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 from data_generator.common import get_tokenizer
 from data_generator.data_parser.robust import load_robust04_query
-from data_generator.data_parser.robust2 import load_2k_rank, load_qrel
+from data_generator.data_parser.robust2 import load_qrel, load_bm25_best
 from data_generator.job_runner import sydney_working_dir
 from misc_lib import pick1
 from tf_util.record_writer_wrap import RecordWriterWrap
@@ -172,7 +172,7 @@ class RobustPredictGen:
         self.data = self.load_tokens_from_pickles()
         self.max_seq_length = max_seq_length
         self.queries = load_robust04_query()
-        self.galago_rank = load_2k_rank()
+        self.galago_rank = load_bm25_best()
         self.top_k = top_k
 
         self.encoder = encoder
@@ -180,7 +180,7 @@ class RobustPredictGen:
 
     @staticmethod
     def load_tokens_from_pickles():
-        path = os.path.join(sydney_working_dir, "RobustPredictTokensClean", "1")
+        path = os.path.join(sydney_working_dir, "RobustPredictTokens3", "1")
         return pickle.load(open(path, "rb"))
 
     def generate(self, query_list):

@@ -1,5 +1,6 @@
 import os
 import pickle
+import random
 from collections import Counter, defaultdict
 
 import math
@@ -10,6 +11,7 @@ import numpy as np
 from cpath import output_path
 from data_generator.common import get_tokenizer
 from data_generator.tokenizer_wo_tf import pretty_tokens
+from misc_lib import BinAverage
 from visualize.html_visual import Cell, HtmlVisualizer
 
 
@@ -341,8 +343,8 @@ def pred_loss_view():
 
 def loss_drop_tendency():
     tokenizer = get_tokenizer()
-    filename = "0.pickle"
-    p = os.path.join(output_path, "all_loss", filename)
+    filename = "ukp_all_loss_1.pickle"
+    p = os.path.join(output_path, filename)
     data = pickle.load(open(p, "rb"))
 
     batch_size, seq_length = data[0]['input_ids'].shape
@@ -376,7 +378,13 @@ def loss_drop_tendency():
         else:
             return t1 + "_" + t2
 
-    n_instance = 1000
+
+    def bin_fn(v):
+        return int(v / 0.05)
+
+
+    bin_avg_builder = BinAverage(bin_fn)
+
     for i in range(n_instance):
         tokens = tokenizer.convert_ids_to_tokens(vectors['input_ids'][i])
         positions = vectors["grouped_positions"][i]
@@ -399,7 +407,8 @@ def loss_drop_tendency():
                 token_cnt[t] += 1
                 acc_prob_before[t] += prob_before
                 acc_prob_after[t] += prob_after
-
+                bin_avg_builder.add(prob_before, prob_after)
+    bin_avg = bin_avg_builder.all_average()
     infos = []
 
     for t in token_cnt:
@@ -410,8 +419,43 @@ def loss_drop_tendency():
         e = t, avg_prob_before, avg_prob_after, avg_diff, cnt
         infos.append(e)
 
-    infos = list([e for e in infos if e[4] > 10])
 
+    infos = list([e for e in infos if e[4] > 10])
+    info_d = {e[0]:e for e in infos}
+    relation_extraction_keywords = ["founded_by", "located_in" , "died_of", "such_as",
+                      "or_other", "and_other", "is_buried", "was_born"]
+
+    ukp_keywords = ["be_legal", "do_you", "poll_shows", "the_dangers", "to_risk", "an_increase", "may_not" ]
+
+    things_to_test = ukp_keywords
+    random_things = random.choices(list(info_d.keys()), k=8)
+    def get_avg_drop_nli(score):
+        mapping = [0.00592526, 0.046476, 0.06966591, 0.0852695, 0.0819463, 0.11604176
+            , 0.13313128, 0.14524656, 0.17160586, 0.18507012, 0.19524361, 0.23223796
+            , 0.23867801, 0.2618752, 0.28670366, 0.31369072, 0.3431509, 0.39701927
+            , 0.45573084, 0.72065012, 0.99999865]
+        st = [0., 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65
+            , 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1., ]
+        for i, st_i in enumerate(st):
+            if st_i <= score < st_i + 0.05:
+                return mapping[i]
+        assert False
+
+    def get_avg_drop(v):
+        bin_id = bin_fn(v)
+        return bin_avg[bin_id]
+
+    for t in things_to_test + random_things:
+        if t not in info_d:
+            print("Does not exists: ", t)
+        else:
+            t, avg_prob_before, avg_prob_after, avg_diff, cnt = info_d[t]
+            v = get_avg_drop(avg_prob_before)
+
+            if avg_prob_after > v:
+                print("RIGHT: {} bf={} af={} av_af={}".format(t, avg_prob_before, avg_prob_after, v))
+            else:
+                print("LEFT: {} bf={} af={} av_af={}".format(t, avg_prob_before, avg_prob_after, v))
 
     def entropy(cnt_dict:Counter):
         total = sum(cnt_dict.values())

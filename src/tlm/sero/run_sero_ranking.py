@@ -4,8 +4,8 @@ import tensorflow as tf
 from taskman_client.wrapper import report_run
 from tlm.model_cnfig import JsonConfig
 from tlm.sero.sero_model_fn import model_fn_sero_ranking_train
-from tlm.training.dynamic_mask_main import LMTrainConfig
 from tlm.training.input_fn import input_fn_builder_pairwise
+from tlm.training.train_config import LMTrainConfig
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
 
@@ -15,7 +15,7 @@ def main(_):
     config = JsonConfig.from_json_file(FLAGS.model_config_file)
     train_config = LMTrainConfig.from_flags(FLAGS)
     input_fn = input_fn_builder_pairwise(config.total_sequence_length, FLAGS)
-    model_fn = model_fn_sero_ranking_train(config, train_config)
+    model_fn = model_fn_sero_ranking_train(config, train_config, FLAGS.modeling)
     return run_estimator(model_fn, input_fn)
 
 if __name__ == "__main__":

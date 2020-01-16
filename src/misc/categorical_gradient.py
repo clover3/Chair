@@ -9,7 +9,6 @@ def categorical_sampling(x):
         g = dy * x
         return g
 
-
     return idx, grad
 
 

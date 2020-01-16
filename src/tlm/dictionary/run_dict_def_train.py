@@ -3,9 +3,9 @@ import tensorflow as tf
 from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging, logging
 from tlm.model_cnfig import JsonConfig
-from tlm.training.dynamic_mask_main import LMTrainConfig
 from tlm.training.flags_wrapper import get_input_files_from_flags
 from tlm.training.seq2seq_model_fn import input_fn_builder, mask_lm_as_seq2seq
+from tlm.training.train_config import LMTrainConfig
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
 

@@ -8,7 +8,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 from xmlrpc.server import SimpleXMLRPCServer
 
-from adhoc.galago import load_galago_judgement
+from adhoc.galago import load_galago_ranked_list
 from cpath import data_path
 from data_generator.data_parser.trec import load_trec
 from data_generator.tokenizer_b import EncoderUnit
@@ -46,7 +46,7 @@ class DataSampler:
     def __init__(self, doc_ids, judgement_path, query):
         print("DataSample init")
         # load doc_lisself.doc_ids = load_doc_list(doc_id_path)t
-        self.q_group = load_galago_judgement(judgement_path)
+        self.q_group = load_galago_ranked_list(judgement_path)
 
         # load query-judgement
         self.doc_ids = list(doc_ids)

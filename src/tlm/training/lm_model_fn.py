@@ -99,6 +99,12 @@ def align_checkpoint_for_lm(tvars,
                                                                                      init_checkpoint)
                 assignment_map2, initialized_variable_names2 = get_cls_assignment(tvars,
                                                                                   second_init_checkpoint)
+            if checkpoint_type == "v2_and_bert":
+                assignment_map, initialized_variable_names = assignment_map_v2_to_v2(tvars,
+                                                                                     init_checkpoint)
+                assignment_map2, initialized_variable_names2 = get_cls_assignment(tvars,
+                                                                                  second_init_checkpoint)
+
             else:
                 raise Exception("Undefined checkpoint exists")
 
@@ -173,7 +179,9 @@ def model_fn_lm(bert_config, train_config, model_class):
 
         tvars = tf.compat.v1.trainable_variables()
 
-        use_multiple_checkpoint = train_config.checkpoint_type == "nli_and_bert"
+        def is_multiple_checkpoint(checkpoint_type):
+            return checkpoint_type in ["v2_and_bert" , "nli_and_bert"]
+        use_multiple_checkpoint = is_multiple_checkpoint(train_config.checkpoint_type)
         initialized_variable_names, initialized_variable_names2, init_fn\
             = align_checkpoint_for_lm(tvars,
                                       train_config.checkpoint_type,

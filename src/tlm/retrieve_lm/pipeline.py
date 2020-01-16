@@ -9,7 +9,7 @@ import sys
 from collections import Counter
 
 import cpath
-from adhoc.galago import load_galago_judgement
+from adhoc.galago import load_galago_ranked_list
 from data_generator import tokenizer_b as tokenization
 from misc_lib import TimeEstimator, left, tprint, CodeTiming
 from models.classic.stopword import load_stopwords
@@ -296,7 +296,7 @@ class Pipeline:
 
     def load_candidate_docs(self, job_id):
         out_path = self.get_path("q_res", "{}.txt".format(job_id))
-        return load_galago_judgement(out_path)
+        return load_galago_ranked_list(out_path)
 
     def save_ltr(self, job_idx, data):
         out_path = self.get_path("ltr", str(job_idx))

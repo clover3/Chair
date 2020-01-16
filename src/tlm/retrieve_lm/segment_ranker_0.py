@@ -1,6 +1,6 @@
 import cpath
 from adhoc.bm25 import BM25_3, BM25_3_q_weight
-from adhoc.galago import load_galago_judgement
+from adhoc.galago import load_galago_ranked_list
 from cache import *
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import *
@@ -26,7 +26,7 @@ class DocRelLoader:
             print("Not exists : ")
             print(chunk_path)
 
-        self.cur_chunk = load_galago_judgement(chunk_path)
+        self.cur_chunk = load_galago_ranked_list(chunk_path)
         self.cur_chunk_id = chunk_id
 
 

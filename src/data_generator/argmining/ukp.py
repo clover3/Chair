@@ -1,4 +1,3 @@
-from data_generator.data_parser import ukp
 from cache import *
 from data_generator.data_parser import ukp
 from data_generator.text_encoder import CLS_ID, SEP_ID
@@ -135,7 +134,7 @@ class BertDataLoader(DataLoader):
     def get_train_data(self):
         self.load_data()
         train_data = []
-        data_name = "ukp_train_{}_{}".format(self.test_topic, self.option)
+        data_name = "ukp_train_{}_{}_{}".format(self.test_topic, self.option, self.max_seq)
         cached = load_cache(data_name)
         if cached is not None:
             return cached
@@ -165,7 +164,7 @@ class BertDataLoader(DataLoader):
 
     def get_dev_data(self):
         dev_data = []
-        data_name = "ukp_dev_{}_{}".format(self.test_topic, self.option)
+        data_name = "ukp_dev_{}_{}_{}".format(self.test_topic, self.option, self.max_seq)
         cached = load_cache(data_name)
         if cached is not None:
             return cached

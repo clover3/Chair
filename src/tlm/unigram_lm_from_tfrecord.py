@@ -40,6 +40,11 @@ class LM:
         for word in words:
             yield "".join(word)
 
+    def update_from_lm(self, other_lm):
+        for key in other_lm.tf:
+            tf = other_lm.tf[key]
+            self.tf[key] += tf
+
 
 def get_lm_tf(fn, sample_size=None, as_subword=True):
     tokenizer = get_tokenizer()

@@ -30,7 +30,8 @@ def visual(filename):
 
     any_key = keys[0]
     data_len = len(vectors[any_key])
-    html = HtmlVisualizer("all_losses_wo_c.html")
+    file_name_head = filename.split(".")[0]
+    html = HtmlVisualizer("{}.html".format(file_name_head))
     num_predictions = len(vectors["grouped_positions"][0][0])
     for i in range(data_len):
         input_ids = vectors["input_ids"][i]
@@ -76,4 +77,5 @@ def visual(filename):
 
 if __name__ == "__main__":
     #visual("all_loss_0.pickle")
-    visual("all_loss_nli_vs_wo_c.pickle")
+    #visual("all_loss_nli_vs_wo_c.pickle")
+    visual("ukp_all_loss_1.pickle")

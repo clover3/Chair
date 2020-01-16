@@ -11,7 +11,8 @@ from tlm.model.base import BertModel
 from tlm.training.classification_model_fn import model_fn_classification
 from tlm.training.input_fn import input_fn_builder_classification as input_fn_builder
 from tlm.training.train_flags import *
-from trainer.tpu_estimator import run_estimator, TrainConfig
+from trainer.tpu_estimator import run_estimator
+from tlm.training.train_config import TrainConfig
 
 
 @report_run

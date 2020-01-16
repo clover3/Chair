@@ -11,7 +11,7 @@ from misc_lib import left, average
 from tlm.estimator_prediction_viewer import flatten_batches
 
 
-def eval_from_single_entry(tf_prediction_data, payload_info, data_id, k=100):
+def generate_ranked_list(tf_prediction_data, payload_info, k):
     tf_prediction_data = flatten_batches(tf_prediction_data)
     logits = tf_prediction_data["logits"]
 
@@ -21,6 +21,7 @@ def eval_from_single_entry(tf_prediction_data, payload_info, data_id, k=100):
     g_idx = 0
     pred_list = []
 
+    all_ranked_list = []
     for _ in range(50):
         ranked_list = []
         for _ in range(k):
@@ -30,7 +31,36 @@ def eval_from_single_entry(tf_prediction_data, payload_info, data_id, k=100):
             g_idx += 1
 
         ranked_list.sort(key=lambda x: x[1], reverse=True)
-        pred = left(ranked_list)
+
+        new_ranked_list = []
+        for idx, (doc_id, score) in enumerate(ranked_list):
+            new_ranked_list.append((doc_id, idx+1, score))
+        all_ranked_list.append(new_ranked_list)
+
+    return all_ranked_list
+
+
+def write_ranked_list(q_id_list, all_ranked_list, out_path):
+    assert len(q_id_list) == len(all_ranked_list)
+
+    f = open(out_path, "w")
+    for q_id, ranked_list in zip(q_id_list, all_ranked_list):
+        for doc_id, rank, score in ranked_list:
+            line = "{} Q0 {} {} {} galago\n".format(q_id, doc_id, rank, score)
+            f.write(line)
+    f.close()
+
+def parse_prediction_and_eval(prediction_path, payload_type, data_id, k=100):
+    payload_info = get_payload_info(payload_type, data_id)
+    tf_prediction_data = load_pickle_from(prediction_path)
+    all_ranked_list = generate_ranked_list(tf_prediction_data, payload_info, k)
+
+    text_output_path = prediction_path + ".txt"
+    st = int(data_id)
+    write_ranked_list(range(st, st+50), all_ranked_list, text_output_path)
+    pred_list = []
+    for ranked_list in all_ranked_list:
+        pred = [x[0] for x in ranked_list]
         pred_list.append(pred)
 
     return eval(pred_list, data_id)
@@ -126,7 +156,8 @@ def eval(pred_list, data_id):
     P20= p_at_k(pred_list, gold_set_list, 20)
     print("P20:", P20)
     print("NDCG20:", NDCG20)
-    return P20
+
+    return P20, NDCG20
 
 
 def get_payload_info(payload_type, data_id):
@@ -135,9 +166,9 @@ def get_payload_info(payload_type, data_id):
 
 if __name__ == "__main__":
     payload_type = sys.argv[1]
-    tf_prediction_data = load_pickle_from(sys.argv[2])
+    prediction_path = sys.argv[2]
     data_id = sys.argv[3]
-    payload_info = get_payload_info(payload_type, data_id)
     #show(tf_prediction_data, payload_info, data_id)
-    eval_from_single_entry(tf_prediction_data, payload_info, data_id)
-
+    P20, NDCG20 = parse_prediction_and_eval(prediction_path, payload_type, data_id)
+    #proxy = get_task_manager_proxy()
+    #proxy.report_number(sys.argv[2], NDCG20, "NDCG")

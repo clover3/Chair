@@ -5,7 +5,7 @@ from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging, logging
 from tlm.tlm.model_fn_try_all_loss import model_fn_try_all_loss
 from tlm.training import flags_wrapper
-from tlm.training.dynamic_mask_main import LMTrainConfig
+from tlm.training.train_config import LMTrainConfig
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 import tensorflow as tf

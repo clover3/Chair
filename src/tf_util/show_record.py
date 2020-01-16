@@ -15,7 +15,8 @@ def file_show(fn):
                 v = feature[key].float_list.value
             else:
                 v = feature[key].int64_list.value
-            print(key, v)
+            print(key)
+            print(v)
         break
 
 if __name__ == "__main__":

@@ -4,8 +4,8 @@ from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging
 from tlm.model_cnfig import JsonConfig
 from tlm.sero.sero_model_fn import model_fn_sero_lm, input_fn_builder
-from tlm.training.dynamic_mask_main import LMTrainConfig
 from tlm.training.input_fn import input_fn_builder_unmasked
+from tlm.training.train_config import LMTrainConfig
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
 
@@ -23,7 +23,7 @@ def main(_):
 
     if "sero" in FLAGS.modeling:
         total_sequence_length = config.total_sequence_length
-        input_fn = input_fn_builder(input_files, total_sequence_length, FLAGS, config, is_training)
+        input_fn = input_fn_builder(input_files, total_sequence_length, FLAGS, is_training)
     elif FLAGS.modeling == "bert":
         input_fn = input_fn_builder_unmasked(input_files, FLAGS, is_training)
     else:

@@ -1,6 +1,7 @@
 import os
 
 import cpath
+from adhoc.galago import load_galago_ranked_list
 
 
 def load_2k_rank():
@@ -19,6 +20,10 @@ def load_2k_rank():
 
     return ranked_list
 
+
+def load_bm25_best():
+    path =os.path.join(robust_path, "rob04.desc.galago.2k.out")
+    return load_galago_ranked_list(path)
 
 def load_qrel(path):
     f = open(path, "r")
@@ -39,23 +44,18 @@ def load_robust_qrel():
 
 
 
-def gen_100_rank():
+def select_top_k_galago(k):
     path =os.path.join(robust_path, "rob04.desc.galago.2k.out")
     f = open(path, "r")
 
-    ranked_list = {}
+    all_lines = []
 
-    f_out = open("rob04.galago.100.out", "w")
     for line in f:
         q_id, _, doc_id, rank, score, _ = line.split()
 
-        if q_id not in ranked_list:
-            ranked_list[q_id] = []
-        if int(rank) <= 100:
-            f_out.write(line)
-    f_out.close()
+        if int(rank) <= k:
+            all_lines.append(line)
 
-
-    return ranked_list
+    return all_lines
 
 robust_path = os.path.join(cpath.data_path, "robust")

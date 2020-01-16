@@ -1,11 +1,9 @@
 import tensorflow as tf
 
-from taskman_client.wrapper import report_run
 from tlm.training.train_flags import *
 from trainer.estimator_main_v2 import main_inner
 
 
-@report_run
 def main(_):
     return main_inner()
 

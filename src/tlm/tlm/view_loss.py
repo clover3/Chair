@@ -2,12 +2,12 @@ import os
 
 from cpath import output_path
 from misc_lib import average
-from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
+from tlm.estimator_prediction_viewer import EstimatorPredictionViewerGosford
 
 
 def view():
     filename = os.path.join(output_path, "nli_dev_loss.pickle")
-    data = EstimatorPredictionViewer(filename)
+    data = EstimatorPredictionViewerGosford(filename)
 
     loss_arr = []
     for inst_i, entry in enumerate(data):

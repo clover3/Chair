@@ -2,16 +2,18 @@ import tensorflow as tf
 
 from data_generator.special_tokens import MASK_ID
 from models.transformer import optimization_v2 as optimization
-from models.transformer.bert_common_v2 import get_shape_list2, dropout
+from models.transformer.bert_common_v2 import get_shape_list2, dropout, create_attention_mask_from_input_mask2
 from tf_util.tf_logging import tf_logging
-from tlm.model.base import BertModel
+from tlm.model import base
+from tlm.model.base import BertModel, mimic_pooling
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
+from tlm.model.units import ForwardLayer
 from tlm.training.assignment_map import get_bert_assignment_map
 from tlm.training.input_fn_common import format_dataset
 from tlm.training.lm_model_fn import metric_fn_lm
 from tlm.training.model_fn_common import log_features, align_checkpoint, get_tpu_scaffold_or_init, log_var_assignments, \
-    classification_metric_fn
+    classification_metric_fn, Classification
 
 
 class ClassificationIgnore12:
@@ -43,21 +45,145 @@ class ClassificationIgnore12:
         ])
         return eval_metrics
 
-def model_fn_nli_lm(config, train_config):
+
+def shared_gradient(loss, y2):
+    tvars = tf.compat.v1.trainable_variables()
+
+    grads_1 = tf.gradients(ys=loss, xs=tvars)
+    grads_2 = tf.gradients(ys=y2, xs=tvars)
+    acc = 0
+    for g1, g2 in zip(grads_1, grads_2):
+        if g1 is not None and g2 is not None:
+            acc += tf.reduce_sum(tf.abs(g1 * g2))
+    return acc
+
+
+class SimpleSharingModel:
+    def __init__(self, config, use_one_hot_embeddings, is_training,
+                 masked_input_ids, input_mask, segment_ids,
+                 nli_input_ids, nli_input_mask, nli_segment_ids,
+                 ):
+
+        all_input_ids = tf.concat([masked_input_ids, nli_input_ids], axis=0)
+        all_input_mask = tf.concat([input_mask, nli_input_mask], axis=0)
+        all_segment_ids = tf.concat([segment_ids, nli_segment_ids], axis=0)
+        self.batch_size, _ = get_shape_list2(masked_input_ids)
+        self.model = BertModel(
+            config,
+            is_training,
+            all_input_ids,
+            all_input_mask,
+            all_segment_ids,
+            use_one_hot_embeddings
+        )
+
+    def lm_sequence_output(self):
+        return self.model.get_sequence_output()[:self.batch_size]
+
+    def get_embedding_table(self):
+        return self.model.get_embedding_table()
+
+    def get_tt_feature(self):
+        return self.model.get_pooled_output()[self.batch_size:]
+
+
+class AddLayerSharingModel:
+    def __init__(self, config, use_one_hot_embeddings, is_training,
+                 masked_input_ids, input_mask, segment_ids,
+                 tt_input_ids, tt_input_mask, tt_segment_ids,
+                 ):
+
+        all_input_ids = tf.concat([masked_input_ids, tt_input_ids], axis=0)
+        all_input_mask = tf.concat([input_mask, tt_input_mask], axis=0)
+        all_segment_ids = tf.concat([segment_ids, tt_segment_ids], axis=0)
+        self.config = config
+        self.lm_batch_size, _ = get_shape_list2(masked_input_ids)
+        self.model = BertModel(
+            config,
+            is_training,
+            all_input_ids,
+            all_input_mask,
+            all_segment_ids,
+            use_one_hot_embeddings
+        )
+        initializer = base.create_initializer(config.initializer_range)
+        self.tt_layer = ForwardLayer(config, initializer)
+        
+        self.tt_input_mask = tt_input_mask
+        seq_output = self.model.get_sequence_output()[self.lm_batch_size:]
+        tt_batch_size, seq_length = get_shape_list2(tt_input_ids)
+        tt_attention_mask = create_attention_mask_from_input_mask2(
+            seq_output, self.tt_input_mask)
+
+        print('tt_attention_mask', tt_attention_mask.shape)
+        print("seq_output", seq_output.shape)
+        seq_output = self.tt_layer.apply_3d(seq_output, tt_batch_size, seq_length, tt_attention_mask)
+        self.tt_feature = mimic_pooling(seq_output, self.config.hidden_size, self.config.initializer_range)
+
+    def lm_sequence_output(self):
+        return self.model.get_sequence_output()[:self.lm_batch_size]
+
+    def get_embedding_table(self):
+        return self.model.get_embedding_table()
+
+    def get_tt_feature(self):
+        return self.tt_feature
+
+def const_combine(loss1, loss2):
+    loss = loss1 + loss2 * 0.1
+    return loss
+
+def decay_combine(loss1, loss2):
+    combine_factor_init = 0.1
+    num_warmup_steps = 10000
+    num_train_steps= 1000 * 1000
+    combine_factor = tf.constant(value=combine_factor_init, shape=[], dtype=tf.float32)
+    global_step = tf.compat.v1.train.get_or_create_global_step()
+
+    # Implements linear decay of the learning rate.
+    combine_factor = tf.compat.v1.train.polynomial_decay(
+        combine_factor,
+        global_step,
+        num_train_steps,
+        end_learning_rate=0.0,
+        power=1.0,
+        cycle=False)
+
+    global_steps_int = tf.cast(global_step, tf.int32)
+    warmup_steps_int = tf.constant(num_warmup_steps, dtype=tf.int32)
+
+    global_steps_float = tf.cast(global_steps_int, tf.float32)
+    warmup_steps_float = tf.cast(warmup_steps_int, tf.float32)
+
+    warmup_percent_done = global_steps_float / warmup_steps_float
+    warmup_learning_rate = combine_factor_init * warmup_percent_done
+
+    is_warmup = tf.cast(global_steps_int < warmup_steps_int, tf.float32)
+    combine_factor = (
+            (1.0 - is_warmup) * combine_factor + is_warmup * warmup_learning_rate)
+
+    loss = loss1 + loss2 * combine_factor
+    return loss
+
+def model_fn_nli_lm(config, train_config, sharing_model_factory, combine_loss_fn=const_combine):
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
-        tf_logging.info("model_fn_apr_lm")
+        tf_logging.info("model_fn_nli_lm")
         """The `model_fn` for TPUEstimator."""
         log_features(features)
 
         input_ids = features["input_ids"] # [batch_size, seq_length]
         input_mask = features["input_mask"]
         segment_ids = features["segment_ids"]
-
-        nli_input_ids = features["nli_input_ids"] # [batch_size, seq_length]
-        nli_input_mask = features["nli_input_mask"]
-        nli_segment_ids = features["nli_segment_ids"]
-
         batch_size, _ = get_shape_list2(input_ids)
+        if "nli_input_ids" in features:
+            nli_input_ids = features["nli_input_ids"] # [batch_size, seq_length]
+            nli_input_mask = features["nli_input_mask"]
+            nli_segment_ids = features["nli_segment_ids"]
+        else:
+            nli_input_ids = input_ids
+            nli_input_mask = input_mask
+            nli_segment_ids = segment_ids
+            features["label_ids"] = tf.ones([batch_size], tf.int32)
 
         if mode == tf.estimator.ModeKeys.PREDICT:
             tf.random.set_seed(0)
@@ -72,32 +198,31 @@ def model_fn_nli_lm(config, train_config):
             = random_masking(input_ids, input_mask,
                              train_config.max_predictions_per_seq, MASK_ID, seed)
 
-        all_input_ids = tf.concat([masked_input_ids, nli_input_ids], axis=0)
-        all_input_mask = tf.concat([input_mask, nli_input_mask], axis=0)
-        all_segment_ids = tf.concat([segment_ids, nli_segment_ids], axis=0)
-
-        model_class = BertModel
-
-        model = model_class(
+        sharing_model = sharing_model_factory(
             config,
+            train_config.use_one_hot_embeddings,
             is_training,
-            all_input_ids,
-            all_input_mask,
-            all_segment_ids,
-            train_config.use_one_hot_embeddings
+            masked_input_ids,
+            input_mask,
+            segment_ids,
+            nli_input_ids,
+            nli_input_mask,
+            nli_segment_ids
         )
 
-        sequence_output_lm = model.get_sequence_output()[:batch_size]
+        sequence_output_lm = sharing_model.lm_sequence_output()
+        nli_feature = sharing_model.get_tt_feature()
 
         masked_lm_loss, masked_lm_example_loss, masked_lm_log_probs \
-            = get_masked_lm_output(config, sequence_output_lm, model.get_embedding_table(),
+            = get_masked_lm_output(config, sequence_output_lm, sharing_model.get_embedding_table(),
                                      masked_lm_positions, masked_lm_ids, masked_lm_weights)
 
-        pooled = model.get_pooled_output()[batch_size:]
-        #task = Classification(3, features, pooled, is_training)
-        task = ClassificationIgnore12(3, features, pooled, is_training)
+        task = Classification(3, features, nli_feature, is_training)
         nli_loss = task.loss
-        loss = masked_lm_loss + nli_loss
+
+        overlap_score = shared_gradient(masked_lm_loss, task.logits)
+        overlap_score = tf.tile([overlap_score], [input_ids.shape[0]])
+        loss = combine_loss_fn(masked_lm_loss, nli_loss)
         tvars = tf.compat.v1.trainable_variables()
         assignment_fn = get_bert_assignment_map
         initialized_variable_names, init_fn = align_checkpoint(tvars, train_config.init_checkpoint, assignment_fn)
@@ -131,10 +256,10 @@ def model_fn_nli_lm(config, train_config):
                     "masked_lm_ids": masked_lm_ids,
                     "masked_lm_example_loss": masked_lm_example_loss,
                     "masked_lm_positions": masked_lm_positions,
+                    "overlap_score":overlap_score
             }
             output_spec = TPUEstimatorSpec(
                     mode=mode,
-                    loss=loss,
                     predictions=predictions,
                     scaffold_fn=scaffold_fn)
 
@@ -142,7 +267,7 @@ def model_fn_nli_lm(config, train_config):
     return model_fn
 
 
-def input_fn_builder(input_files, flags, is_training, num_cpu_threads=4):
+def input_fn_builder(input_files, flags, is_training, use_next_sentence_labels, num_cpu_threads=4):
 
     def input_fn(params):
         """The actual input function."""
@@ -158,6 +283,12 @@ def input_fn_builder(input_files, flags, is_training, num_cpu_threads=4):
             "nli_segment_ids": FixedLenFeature([max_sequence_length], tf.int64),
             "label_ids": FixedLenFeature([1], tf.int64),
         }
+        if use_next_sentence_labels:
+            all_features["next_sentence_labels"] = FixedLenFeature([1], tf.int64)
+
         return format_dataset(all_features, batch_size, is_training, flags, input_files, num_cpu_threads)
 
     return input_fn
+
+
+

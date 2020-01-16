@@ -11,6 +11,14 @@ def get_resolved_tokens_from_masked_tokens_and_ids(tokens, answer_mask_tokens, m
 
     return tokens
 
+def mask_resolve_1(tokens, masked_tokens):
+    for i in range(len(tokens)):
+        if masked_tokens[i] == "[MASK]":
+            masked_tokens[i] = "[{}]".format(tokens[i])
+        if tokens[i] == "[SEP]":
+            tokens[i] = "[SEP]<br>"
+
+    return masked_tokens
 
 
 def get_resolved_tokens_by_mask_id(tokenizer, feature):
@@ -28,6 +36,13 @@ def get_resolved_tokens_by_mask_id(tokenizer, feature):
             tokens[i] = "[{}:{}]".format(i_idx, mask_tokens[i])
 
     return tokens
+
+
+def is_mask(token):
+    if len(token) > 2 and token[-1] == "]" and token[-2].islower():
+        return 100
+    else:
+        return 0
 
 
 def cells_from_tokens(tokens, scores=None, stop_at_pad=True):

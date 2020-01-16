@@ -9,7 +9,7 @@ def generate_robust_first_for_prediction():
     max_seq_length = 512
     encoder = FirstSegmentAsDoc(max_seq_length)
     worker_factory = partial(RobustWorker, RobustPredictGen(encoder, max_seq_length))
-    runner = JobRunner(sydney_working_dir, 4, "RobustFirstPredClean", worker_factory)
+    runner = JobRunner(sydney_working_dir, 4, "RobustFirstPred3", worker_factory)
     runner.start()
 
 

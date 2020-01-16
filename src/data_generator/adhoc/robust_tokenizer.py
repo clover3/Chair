@@ -4,7 +4,7 @@ import re
 
 from data_generator.common import get_tokenizer
 from data_generator.data_parser import trec
-from data_generator.data_parser.robust2 import load_2k_rank, load_qrel
+from data_generator.data_parser.robust2 import load_qrel, load_bm25_best
 from data_generator.job_runner import sydney_working_dir
 from misc_lib import TimeEstimator
 
@@ -58,7 +58,7 @@ class RobustPreprocessTrain(RobustPreprocess):
 class RobustPreprocessPredict(RobustPreprocess):
     def __init__(self, top_k=150):
         super(RobustPreprocessPredict, self).__init__()
-        self.galago_rank = load_2k_rank()
+        self.galago_rank = load_bm25_best()
         self.top_k = top_k
 
     def get_required_doc_ids(self):
@@ -79,5 +79,5 @@ if __name__ == "__main__":
     gen = RobustPreprocessPredict()
     d = gen.tokenize()
 
-    save_path = os.path.join(sydney_working_dir, "RobustPredictTokens", "1")
+    save_path = os.path.join(sydney_working_dir, "RobustPredictTokens3", "1")
     pickle.dump(d, open(save_path, "wb"))

@@ -4,7 +4,7 @@ import pickle
 import numpy as np
 
 from cpath import output_path
-from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
+from tlm.estimator_prediction_viewer import EstimatorPredictionViewerGosford
 from visualize.html_visual import HtmlVisualizer, Cell
 
 
@@ -17,7 +17,7 @@ def per_doc_score():
 
 
     n_skip = 0
-    data = EstimatorPredictionViewer(filename)
+    data = EstimatorPredictionViewerGosford(filename)
     for inst_i, entry in enumerate(data):
         if inst_i > 100:
             break

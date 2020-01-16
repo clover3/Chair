@@ -66,6 +66,7 @@ def load_bert_v2(sess, model_path):
         if m is not None:
             name = m.group(1)
         name_to_variable[name] = var
+        print("Current vars : ", name)
 
     init_vars = tf.train.list_variables(model_path)
 
@@ -82,13 +83,65 @@ def load_bert_v2(sess, model_path):
             tf_logger.debug("{} -> {}".format(checkpoint_name, tvar_name))
             load_mapping[checkpoint_name] = name_to_variable[tvar_name]
             initialized.add(tvar_name)
+        else:
+            print("NOT used : ", tvar_name)
+            raise Exception()
 
     for name in name_to_variable:
-        if name not in initialized and "adam" not in name:
+        if name not in initialized :
             print(name, "not initialized")
     print("Restoring: {}".format(model_path))
     loader = tf.train.Saver(load_mapping, max_to_keep=1)
     loader.restore(sess, model_path)
+
+
+def load_v2_to_v2(sess, model_path):
+    tvars = tf1.global_variables()
+
+    def get_simple_name(name):
+        name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
+        name = re.sub("dense[_]?\d*", "dense", name)
+        return name
+
+    name_to_variable = {}
+    real_name = {}
+    for var in tvars:
+        name = var.name
+        m = re.match("^(.*):\\d+$", name)
+        if m is not None:
+            name = m.group(1)
+
+        simple_name = get_simple_name(name)
+        name_to_variable[simple_name] = var
+        real_name[simple_name] = name
+        print("Current vars : ", name)
+
+    init_vars = tf.train.list_variables(model_path)
+
+    initialized = set()
+    load_mapping = dict()
+    for v in init_vars:
+        name_tokens = v[0].split('/')
+        checkpoint_name = '/'.join(name_tokens).split(":")[0]
+        simple_name = get_simple_name(checkpoint_name)
+        print(checkpoint_name)
+        if simple_name in name_to_variable:
+            print("{} -> {}".format(checkpoint_name, real_name[simple_name]))
+            tf_logger.debug("{} -> {}".format(checkpoint_name, real_name[simple_name]))
+            load_mapping[checkpoint_name] = name_to_variable[simple_name]
+            initialized.add(real_name[simple_name])
+        else:
+            print("NOT used : ", checkpoint_name)
+            raise Exception()
+
+    for simple_name in name_to_variable:
+        name = real_name[simple_name]
+        if name not in initialized:
+            print(name, "not initialized")
+    print("Restoring: {}".format(model_path))
+    loader = tf1.train.Saver(load_mapping, max_to_keep=1)
+    loader.restore(sess, model_path)
+
 
 
 def load_model_w_scope(sess, path, include_namespace, verbose=True):

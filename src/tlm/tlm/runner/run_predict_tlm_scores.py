@@ -2,7 +2,7 @@ import warnings
 
 from tlm.tlm.tlm_debug_model_fn import model_fn_tlm_debug
 from tlm.training import flags_wrapper
-from tlm.training.dynamic_mask_main import LMTrainConfig
+from tlm.training.train_config import LMTrainConfig
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 

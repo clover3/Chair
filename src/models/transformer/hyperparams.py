@@ -110,11 +110,11 @@ class HPSENLI2:
     g_val = 0.5
 
 
-class HPSENLI_grad_acc:
+class HPSENLI3:
     '''Hyperparameters'''
     # data
     # training
-    batch_size = 8  # alias = N
+    batch_size = 16  # alias = N
     lr = 2e-5  # learning rate. In paper, learning rate is adjusted to the global step.
     logdir = 'logdir'  # log directory
 

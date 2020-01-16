@@ -2211,7 +2211,6 @@ class Experiment:
         self.sess.run(tf.global_variables_initializer())
         self.merged = tf.summary.merge_all()
         self.setup_summary_writer(exp_config.name)
-
         if preload_id is not None:
             name = preload_id[0]
             id = preload_id[1]

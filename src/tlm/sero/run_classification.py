@@ -4,8 +4,8 @@ from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging, logging
 from tlm.model_cnfig import JsonConfig
 from tlm.sero.sero_model_fn import model_fn_sero_classification
-from tlm.training.dynamic_mask_main import LMTrainConfig
 from tlm.training.input_fn import input_fn_builder_classification as input_fn_builder
+from tlm.training.train_config import LMTrainConfig
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
 

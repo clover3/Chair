@@ -2,7 +2,7 @@ import os
 import pickle
 
 from cpath import output_path
-from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
+from tlm.estimator_prediction_viewer import EstimatorPredictionViewerGosford
 from visualize.html_visual import HtmlVisualizer
 
 
@@ -15,15 +15,14 @@ def loss_view():
 
     html_writer = HtmlVisualizer("sero_pred.html", dark_mode=False)
 
-    data = EstimatorPredictionViewer(filename)
+    data = EstimatorPredictionViewerGosford(filename)
     for inst_i, entry in enumerate(data):
-        if inst_i > 10:
-            break
         losses = entry.get_vector("masked_lm_example_loss")
         print(losses)
         tokens = entry.get_tokens("masked_input_ids")
         cells = data.cells_from_tokens(tokens)
         row = []
+
         for idx, cell in enumerate(cells):
             row.append(cell)
             if len(row) == 20:
