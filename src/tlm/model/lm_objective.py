@@ -48,8 +48,9 @@ def get_masked_lm_output(bert_config, input_tensor, output_weights, positions,
 
 
 
-def get_masked_lm_output_2(bert_config, dense_layer, input_tensor, output_weights, positions,
-                         label_ids, label_weights):
+
+def get_masked_lm_output_albert(model_config, input_tensor, output_weights, positions,
+                                label_ids, label_weights):
   """Get loss and log probs for the masked LM."""
   input_tensor = bert_common.gather_indexes(input_tensor, positions)
 
@@ -57,16 +58,20 @@ def get_masked_lm_output_2(bert_config, dense_layer, input_tensor, output_weight
     # We apply one more non-linear transformation before the output layer.
     # This matrix is not used after pre-training.
     with tf.compat.v1.variable_scope("transform"):
-      input_tensor = dense_layer(input_tensor)
+      input_tensor = tf.keras.layers.Dense(model_config.embedding_size,
+                                           activation=bert_common.get_activation(model_config.hidden_act),
+                                           kernel_initializer=bert_common.create_initializer(
+                                               model_config.initializer_range)
+                                           )(input_tensor)
       input_tensor = bert_common.layer_norm(input_tensor)
 
     # The output weights are the same as the input embeddings, but there is
     # an output-only bias for each token.
     output_bias = tf.compat.v1.get_variable(
         "output_bias",
-        shape=[bert_config.vocab_size],
+        shape=[model_config.vocab_size],
         initializer=tf.compat.v1.zeros_initializer())
-
+    print("output_weights", output_weights.shape)
     logits = tf.matmul(input_tensor, output_weights, transpose_b=True)
     logits = tf.nn.bias_add(logits, output_bias)
     log_probs = tf.nn.log_softmax(logits, axis=-1)
@@ -75,7 +80,7 @@ def get_masked_lm_output_2(bert_config, dense_layer, input_tensor, output_weight
     label_weights = tf.reshape(label_weights, [-1])
 
     one_hot_labels = tf.one_hot(
-        label_ids, depth=bert_config.vocab_size, dtype=tf.float32)
+        label_ids, depth=model_config.vocab_size, dtype=tf.float32)
 
     # The `positions` tensor might be zero-padded (if the sequence is too
     # short to have the maximum number of predictions). The `label_weights`
@@ -87,6 +92,8 @@ def get_masked_lm_output_2(bert_config, dense_layer, input_tensor, output_weight
     loss = numerator / denominator
 
   return (loss, per_example_loss, log_probs)
+
+
 
 
 

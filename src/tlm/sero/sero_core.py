@@ -1,7 +1,10 @@
+from abc import ABC, abstractmethod
+
 import tensorflow as tf
 
 import models.transformer.bert_common_v2 as bc
 from tlm.model import base
+from tlm.model.base import mimic_pooling
 from tlm.model.units import ForwardLayer, Embedding
 from tlm.model_cnfig import JsonConfig
 
@@ -391,27 +394,30 @@ class SeroEpsilon(base.BertModelInterface):
         self.is_training = is_training
         self.total_sequence_length = config.total_sequence_length
         self.window_size = config.window_size
-
+        self.initializer_range = config.initializer_range
         self.lower_module = LowerTransformer(config, config.lower_layers, use_one_hot_embeddings)
-
+        self.hidden_size = config.hidden_size
         per_layer_config = get_per_layer_config(config)
         self.upper_module_list = []
         for i in range(0, config.upper_layers, 2):
             ut = UpperTransformer(per_layer_config, 2)
             ut.layer_idx_base = i
             self.upper_module_list.append(ut)
+        self.pooling = config.pooling
+
 
     def network_stacked(self, stacked_input_ids, stacked_input_mask,
                         stacked_segment_ids, use_context):
         batch_size, num_window, seq_length = bc.get_shape_list2(stacked_input_ids)
+        self.batch_size = batch_size
+        self.num_window = num_window
 
         self.lower_module.call(r3to2(stacked_input_ids),
                                r3to2(stacked_input_mask),
                                r3to2(stacked_segment_ids),
                                )
 
-        lower_module_last_layer = self.lower_module.all_layer_outputs[
-            -1]  # [ batch_size * num_window, seq_length, hidden_size)
+        lower_module_last_layer = self.lower_module.all_layer_outputs[-1]  # [ batch_size * num_window, seq_length, hidden_size)
         input_to_upper = exchange_contexts(batch_size, lower_module_last_layer, num_window, use_context)
         # input_vectors : [batch_size * num_window, window_length + num_window, hidden_size]
         added_tokens = num_window
@@ -433,7 +439,25 @@ class SeroEpsilon(base.BertModelInterface):
 
         self.all_encoder_layers = []
         self.embedding_output = self.lower_module.embedding_output
+        if self.pooling == "head":
+            self.pooled_output = self.head_pooling()
+        elif self.pooling == "all":
+            self.pooled_output = self.all_pooling()
+
         return self.sequence_output
+
+    def head_pooling(self):
+        seq_4d = tf.reshape(self.sequence_output, [self.batch_size, self.num_window, self.window_size, self.hidden_size])
+        first_sequence_output = seq_4d[:, 0]
+        pooled_output = mimic_pooling(first_sequence_output, self.hidden_size, self.initializer_range)
+        return pooled_output
+
+    def all_pooling(self):
+        seq_4d = tf.reshape(self.sequence_output, [self.batch_size, self.num_window, self.window_size, self.hidden_size])
+        seq_4d = tf.transpose(seq_4d, [0, 2, 1, 3])
+        pooled_output = mimic_pooling(seq_4d, self.hidden_size, self.initializer_range)
+        pooled_output = tf.reduce_max(pooled_output, axis=2)
+        return pooled_output
 
 
 class MidModuleExpanding:
@@ -628,8 +652,125 @@ class MidModuleGamma:
         return tf.stack(self.all_layer_outputs, axis=1)
 
 
+class SeroZeta(base.BertModelInterface):
+    def __init__(self, config, is_training, use_one_hot_embeddings):
+        super(SeroZeta, self).__init__()
 
+        if not is_training:
+            config.set_attrib("hidden_dropout_prob", 0.0)
+            config.set_attrib("attention_probs_dropout_prob", 0.0)
+
+        self.total_sequence_length = config.total_sequence_length
+        self.window_size = config.window_size
+
+        self.lower_module = LowerTransformer(config, config.num_hidden_layers, use_one_hot_embeddings)
+
+        if config.pooling == "lstm":
+            self.combine_model = LSTMCombiner(config.hidden_size)
+        elif config.pooling == "bilstm":
+            self.combine_model = BiLSTMCombiner(config.hidden_size)
+        elif config.pooling.startswith("lstm"):
+            self.combine_model = SubLSTMCombiner(config.pooling, config.hidden_size)
+        elif config.pooling == "first":
+            self.combine_model = FirstTaker(config.hidden_size)
+        else:
+            print("config.pooling is not specified default to LSTMCombiner")
+            self.combine_model = LSTMCombiner(config.hidden_size)
+
+
+    def network_stacked(self, stacked_input_ids, stacked_input_mask,
+                 stacked_segment_ids, use_context):
+        batch_size, num_window, seq_length = bc.get_shape_list2(stacked_input_ids)
+        self.lower_module.call(r3to2(stacked_input_ids),
+                               r3to2(stacked_input_mask),
+                               r3to2(stacked_segment_ids),
+                               )
+
+        lower_module_last_layer = self.lower_module.all_layer_outputs[-1]
+        #[ batch_size * num_window, seq_length, hidden_size)
+        lower_module_last_layer = tf.reshape(lower_module_last_layer, [batch_size, num_window, seq_length, -1])
+
+        self.pooled_output = self.combine_model.call(lower_module_last_layer)
+        print(self.pooled_output)
+
+        self.embedding_table = self.lower_module.embedding_layer.embedding_table
+        self.sequence_output = lower_module_last_layer
+        self.all_encoder_layers = self.lower_module.all_layer_outputs
+        self.embedding_output = self.lower_module.embedding_output
+        return self.sequence_output
+
+
+class CombinerInterface(ABC):
+    @abstractmethod
+    def call(self, input_tensor):
+        # input_tensor : [batch_size, num_window, seq_length, hidden_size]
+        pass
+
+
+class LSTMCombiner:
+    def __init__(self, hidden_size):
+        self.hidden_size = hidden_size
+    def call(self, input_tensor):
+        lstm = tf.compat.v1.keras.layers.LSTM(self.hidden_size, return_sequences=True, return_state=True)
+        first_tokens = input_tensor[:, :, 0, :]
+        print(input_tensor.shape)
+        whole_seq_output, final_memory_state, final_carry_state = lstm(first_tokens)
+
+        last_output = whole_seq_output[:, -1]
+        return last_output
+
+
+class SubLSTMCombiner:
+    def __init__(self, pool_method, hidden_size):
+        pool_loc = int(pool_method[4:])
+        self.hidden_size = hidden_size
+        self.pool_loc = pool_loc
+        print("Pool loc : ", pool_loc)
+
+    def call(self, input_tensor):
+        lstm = tf.compat.v1.keras.layers.LSTM(self.hidden_size, return_sequences=True, return_state=True)
+        first_tokens = input_tensor[:, :, 0, :]
+        whole_seq_output, final_memory_state, final_carry_state = lstm(first_tokens)
+
+        last_output = whole_seq_output[:, self.pool_loc]
+        return last_output
+
+
+
+class BiLSTMCombiner:
+    def __init__(self, hidden_size):
+        self.hidden_size = hidden_size
+    def call(self, input_tensor):
+        lstm_fw = tf.compat.v1.keras.layers.LSTM(self.hidden_size, return_sequences=True, return_state=True)
+        lstm_bw = tf.compat.v1.keras.layers.LSTM(self.hidden_size, return_sequences=True, return_state=True)
+
+        first_tokens = input_tensor[:, :, 0, :]
+        whole_seq_output_fw, final_memory_state, final_carry_state = lstm_fw(first_tokens)
+        whole_seq_output_bw, _, _ = lstm_bw(first_tokens[:, ::-1, :])
+
+        h1 = tf.concat([whole_seq_output_fw[:, -1], whole_seq_output_bw[:, -1]], axis=1)
+        pooled_output = tf.keras.layers.Dense(self.hidden_size, activation=tf.nn.relu)(h1)
+        return pooled_output
+
+class FirstTaker:
+    def __init__(self, hidden_size):
+        self.hidden_size = hidden_size
+
+    def call(self, input_tensor):
+        first_tokens = input_tensor[:, :, 0, :]
+        tf.keras.layers.Dense(self.hidden_size, activation=tf.nn.relu)(first_tokens)
+        return first_tokens[:,0]
+
+def try_lstm_combiner():
+    hidden_size = 128
+    combiner = LSTMCombiner(hidden_size)
+
+    input_tensor = tf.ones([10, 8, 20, hidden_size])
+    pooled = combiner.call(input_tensor)
+    print(pooled.shape)
+
+    print(pooled)
 
 
 if __name__ == "__main__":
-    NotImplemented
+    try_lstm_combiner()

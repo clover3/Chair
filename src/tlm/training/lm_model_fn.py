@@ -11,6 +11,7 @@ from tlm.model.nli_ex_v2 import transformer_nli
 from tlm.training.assignment_map import get_bert_assignment_map, get_cls_assignment, get_tlm_assignment_map_v2, \
     assignment_map_v2_to_v2, get_assignment_map_remap_from_v2
 from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments
+from trainer.tf_train_module_v2 import OomReportingHook
 
 
 def metric_fn(masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
@@ -120,9 +121,16 @@ def align_checkpoint_for_lm(tvars,
     return initialized_variable_names, initialized_variable_names2, init_fn
 
 
-def model_fn_lm(bert_config, train_config, model_class):
-    """Returns `model_fn` closure for TPUEstimator."""
+def print_all_tensor():
+    graph = tf.compat.v1.get_default_graph()
+    tensors_per_node = [op.values() for op in graph.get_operations()]
+    for tensors in tensors_per_node:
+        for t in tensors:
+            print(t.name, t.shape)
 
+def model_fn_lm(model_config, train_config, model_class,
+                get_masked_lm_output_fn=get_masked_lm_output):
+    """Returns `model_fn` closure for TPUEstimator."""
     def model_fn(features, labels, mode, params):    # pylint: disable=unused-argument
         """The `model_fn` for TPUEstimator."""
         tf_logging.info("*** Features ***")
@@ -158,7 +166,7 @@ def model_fn_lm(bert_config, train_config, model_class):
         is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
         model = model_class(
-                config=bert_config,
+                config=model_config,
                 is_training=is_training,
                 input_ids=masked_input_ids,
                 input_mask=input_mask,
@@ -167,13 +175,13 @@ def model_fn_lm(bert_config, train_config, model_class):
         )
 
         (masked_lm_loss,
-         masked_lm_example_loss, masked_lm_log_probs) = get_masked_lm_output(
-                 bert_config, model.get_sequence_output(), model.get_embedding_table(),
+         masked_lm_example_loss, masked_lm_log_probs) = get_masked_lm_output_fn(
+                 model_config, model.get_sequence_output(), model.get_embedding_table(),
                  masked_lm_positions, masked_lm_ids, masked_lm_weights)
 
         (next_sentence_loss, next_sentence_example_loss,
          next_sentence_log_probs) = get_next_sentence_output(
-                 bert_config, model.get_pooled_output(), next_sentence_labels)
+                 model_config, model.get_pooled_output(), next_sentence_labels)
 
         total_loss = masked_lm_loss
 
@@ -196,11 +204,14 @@ def model_fn_lm(bert_config, train_config, model_class):
         output_spec = None
         if mode == tf.estimator.ModeKeys.TRAIN:
             train_op = optimization.create_optimizer_from_config(total_loss, train_config)
+            print_all_tensor()
             output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
                     mode=mode,
                     loss=total_loss,
                     train_op=train_op,
-                    scaffold_fn=scaffold_fn)
+                    training_hooks=[OomReportingHook()],
+
+                scaffold_fn=scaffold_fn)
         elif mode == tf.estimator.ModeKeys.EVAL:
             eval_metrics = (metric_fn_lm, [
                     masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,

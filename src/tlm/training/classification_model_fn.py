@@ -89,6 +89,8 @@ def model_fn_classification(bert_config, train_config, model_class):
         assignment_fn = tlm.training.assignment_map.assignment_map_v2_to_v2_only_attention
     elif train_config.checkpoint_type == "wo_attention_bert":
         assignment_fn = tlm.training.assignment_map.bert_assignment_wo_attention
+    elif train_config.checkpoint_type == "as_is":
+        assignment_fn = tlm.training.assignment_map.get_assignment_map_as_is
     else:
         if not train_config.init_checkpoint:
             pass

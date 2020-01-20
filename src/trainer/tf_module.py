@@ -43,11 +43,11 @@ def epoch_runner(batches, step_fn,
     return average(l_loss), average(l_acc)
 
 
-def step_runner(batches, step_fn,
-                 dev_fn=None, valid_freq = 1000,
-                 save_fn=None, save_interval=10000,
-                 steps=999999,
-                 shuffle=True):
+def sub_step_runner(batches, step_fn,
+                    dev_fn=None, valid_freq = 1000,
+                    save_fn=None, save_interval=10000,
+                    steps=999999,
+                    shuffle=True):
     l_loss =[]
     l_acc = []
     last_save = time.time()
@@ -69,6 +69,36 @@ def step_runner(batches, step_fn,
 
     return average(l_loss), average(l_acc)
 
+
+def step_runner(batches, step_fn, init_step=0,
+                    dev_fn=None, valid_freq = 1000,
+                    save_fn=None, save_interval=10000,
+                    steps=999999,
+                    shuffle=True):
+    l_loss = []
+    l_acc = []
+    last_save = time.time()
+    if shuffle:
+        np.random.shuffle(batches)
+
+    step_i = init_step
+    while step_i < steps:
+        step_i += 1
+        batch = batches[step_i % len(batches)]
+        if dev_fn is not None:
+            if step_i % valid_freq == 0:
+                dev_fn()
+
+        if save_fn is not None:
+            if time.time() - last_save > save_interval:
+                save_fn()
+                last_save = time.time()
+
+        loss, acc = step_fn(batch, step_i)
+        l_acc.append(acc)
+        l_loss.append(loss)
+
+    return average(l_loss), average(l_acc)
 
 def get_loss_from_batches(batches, step_fn):
     l_loss = []

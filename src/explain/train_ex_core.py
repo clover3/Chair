@@ -5,15 +5,12 @@ from misc_lib import *
 from tf_util.tf_logging import tf_logging
 from tf_v2_support import placeholder
 from trainer.np_modules import *
-from trainer.tf_train_module import get_train_op2
 
 
 class ExplainTrainer:
     def __init__(self, forward_runs, action_score, sess, rl_loss, sout, ex_logits,
                  train_rl, input_rf_mask, batch2feed_dict, target_class_set, hparam, log2):
         self.forward_runs = forward_runs
-
-
         self.action_score = action_score
         self.compare_deletion_num = 20
 
@@ -172,6 +169,13 @@ class ExplainTrainer:
         summary.value.add(tag='RL_Loss', simple_value=window_rl_loss)
 
 
+def get_other_train_op(loss, lr, name):
+    global_step = tf.Variable(0, name=name + '_global_step', trainable=False)
+    optimizer = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.9, beta2=0.98, epsilon=1e-8,
+                                       name="adam")
+    train_op = optimizer.minimize(loss, global_step=global_step)
+    return train_op, global_step
+
 
 class ExplainTrainerM:
     def __init__(self,
@@ -180,13 +184,15 @@ class ExplainTrainerM:
                  sequence_output,
                  num_tags,
                  batch2feed_dict,
-                 hparam
+                 hparam,
+                 modeling_option="default"
                  ):
         self.sequence_output = sequence_output
 
         self.informative_score_fn_list = informative_score_fn_list
         self.compare_deletion_num = 20
         self.num_tags = num_tags
+        self.commit_input_len = 4 + num_tags
 
         # Model Information
 
@@ -195,59 +201,110 @@ class ExplainTrainerM:
 
         self.batch2feed_dict = batch2feed_dict
         self.hparam = hparam
+        self.lr = self.hparam.lr * 0.1
 
         self.logit2tag = over_zero
 
         self.loss_window = list([MovingWindow(self.hparam.batch_size) for _ in range(self.num_tags)])
+        self.modeling_option = modeling_option
         self.modeling_ce()
+
+    def loss_combine(self, losses):
+        if self.modeling_option == "default":
+            return tf.reduce_mean(losses)
+        elif self.modeling_option == "debug_conflict":
+            return losses[0]
+        elif self.modeling_option == "weighted":
+            return losses[0] * 3 + losses[1] * 2 + losses[0]
+        else:
+            raise Exception("unexpected modeling option")
 
     def modeling_ce(self):
         self.ex_labels = []
         self.ex_probs = []
-        self.ex_loss = []
+        self.ex_losses = []
         self.ex_logits = []
-        self.ex_train_op = []
-        for tag_idx in range(self.num_tags):
-            ex_label = placeholder(tf.int32, [None, self.hparam.seq_max])
-            with tf.variable_scope("ex_{}".format(tag_idx)):
-                ex_logits = tf.layers.dense(self.sequence_output, 2, name="ex_{}".format(tag_idx))
-                ex_prob = tf.nn.softmax(ex_logits)
-                losses = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(ex_label, 2), logits=ex_logits)
-                loss = tf.reduce_mean(losses)
-                train_op = get_train_op2(loss, self.hparam.lr, name="train_ex_{}".format(tag_idx))
 
-            self.ex_labels.append(ex_label)
-            self.ex_logits.append(ex_logits)
-            self.ex_probs.append(ex_prob[:, :, 1])
-            self.ex_loss.append(loss)
-            self.ex_train_op.append(train_op)
+        with tf.variable_scope("explain"):
+            for tag_idx in range(self.num_tags):
+                ex_label = placeholder(tf.int32, [None, self.hparam.seq_max])
+                with tf.variable_scope("ex_{}".format(tag_idx)):
+                    ex_logits = tf.layers.dense(self.sequence_output, 2, name="ex_{}".format(tag_idx))
+                    ex_prob = tf.nn.softmax(ex_logits)
+                    losses = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(ex_label, 2), logits=ex_logits)
+                    loss = tf.reduce_mean(losses)
+
+                self.ex_labels.append(ex_label)
+                self.ex_logits.append(ex_logits)
+                self.ex_probs.append(ex_prob[:, :, 1])
+                self.ex_losses.append(loss)
+
+            self.loss = self.loss_combine(self.ex_losses)
+            self.train_op = get_other_train_op(self.loss, self.lr, name="train_ex")
+
         self.sample_deleter = get_seq_deleter(self.hparam.g_val)
-        self.reinforce_method = self.reinforce_ce
+        self.action_to_label = self.get_ce_label
 
     def get_ex_logits(self, label_idx):
         return self.ex_logits[label_idx][:, :, 1]
 
 
     @staticmethod
-    def reinforce_one(good_action, input_x):
+    def get_co_label(good_action):
         pos_reward_indice = np.int_(good_action)
         loss_mask = -pos_reward_indice + np.ones_like(pos_reward_indice) * 0.1
-        x0, x1, x2, y = input_x
-        reward_payload = (x0, x1, x2, y, loss_mask)
-        return reward_payload
+        return loss_mask
 
     @staticmethod
-    def reinforce_ce(good_action, input_x):
+    def get_ce_label(good_action):
         pos_reward_indice = np.int_(good_action)
         loss_mask = pos_reward_indice
-        x0, x1, x2, y = input_x
-        reward_payload = (x0, x1, x2, y, loss_mask)
-        return reward_payload
+        return loss_mask
 
+    @staticmethod
+    def get_best_deletion(informative_score_fn, init_output, alt_logits, deleted_mask_list):
+        good_action = None
+        best_score = -1e5
+        for after_logits, deleted_indices in zip(alt_logits, deleted_mask_list):
+            alt_score = informative_score_fn(init_output, after_logits, deleted_indices)
+            if alt_score > best_score:
+                best_score = alt_score
+                good_action = deleted_indices
 
+        assert good_action is not None
+        return good_action
+
+    def calc_reward(self,
+                    all_alt_logits,
+                    instance_infos,
+                    all_deleted_mask_list
+                    ):
+        models_score_list = []
+        reinforce_payload_list = []
+        num_tag_list = []
+        for info in instance_infos:
+            init_output = info['init_logit']
+            input_x = info['orig_input']
+            label_list = []
+            for tag_idx, informative_score_fn in enumerate(self.informative_score_fn_list):
+                alt_logits = [all_alt_logits[i] for i in info['indice_delete_random']]
+                deleted_mask_list = [all_deleted_mask_list[i] for i in info['indice_delete_random']]
+                good_action = self.get_best_deletion(informative_score_fn, init_output, alt_logits, deleted_mask_list)
+                assert good_action is not None
+                label = self.action_to_label(good_action)
+                label_list.append(label)
+
+            x0, x1, x2, y = input_x
+            reward_payload = [x0, x1, x2, y] + label_list
+            reinforce_payload_list.append(reward_payload)
+
+        avg_score = average(models_score_list)
+        summary = tf.Summary()
+        summary.value.add(tag='#Tags', simple_value=average(num_tag_list))
+        summary.value.add(tag='Score', simple_value=avg_score)
+        return reinforce_payload_list, summary
 
     def train_batch(self, batch, sess):
-        summary = tf.Summary()
         def sample_size():
             prob = [(1, 0.8), (2, 0.2)]
             v = random.random()
@@ -298,60 +355,34 @@ class ExplainTrainerM:
 
         new_insts, instance_infos, deleted_mask_list = generate_alt_runs(batch)
 
-        if not new_insts:
-            tf_logging.debug("Skip this batch")
-            return
+        assert new_insts
         # Step 2) Execute deletion Runs
         alt_logits = forward_runs(new_insts)
 
-        reinforce = self.reinforce_method
-
         # Step 3) Calc reward
-        def calc_reward(informative_score_fn, alt_logits, instance_infos, deleted_mask_list):
-            models_score_list = []
-            reinforce_payload_list = []
-            num_tag_list = []
-            for info in instance_infos:
-                init_output = info['init_logit']
-                input_x = info['orig_input']
-                good_action = None
-                best_score = -1e5
-                for idx_delete_random in info['indice_delete_random']:
-                    alt_after_output = alt_logits[idx_delete_random]
-                    random_action = deleted_mask_list[idx_delete_random]
-                    alt_score = informative_score_fn(init_output, alt_after_output, random_action)
-                    if alt_score > best_score:
-                        best_score = alt_score
-                        good_action = random_action
-
-                if good_action is not None:
-                    reward_payload = reinforce(good_action, input_x)
-                    reinforce_payload_list.append(reward_payload)
-
-            avg_score = average(models_score_list)
-            summary.value.add(tag='#Tags', simple_value=average(num_tag_list))
-            summary.value.add(tag='Score', simple_value=avg_score)
-            return reinforce_payload_list
-
-        def commit_reward(reinforce_payload, label_ids, train_op, loss):
-            batches = get_batches_ex(reinforce_payload, self.hparam.batch_size, 5)
-            rl_loss_list = []
+        def commit_reward(reinforce_payload):
+            batches = get_batches_ex(reinforce_payload, self.hparam.batch_size, self.commit_input_len)
+            ex_loss_list = []
             for batch in batches:
-                x0, x1, x2, y, rf_mask = batch
+                x0, x1, x2, y = batch[:4]
+                labels = batch[4:]
                 feed_dict = self.batch2feed_dict((x0, x1, x2, y))
-                feed_dict[label_ids] = rf_mask
-                _, rl_loss, = sess.run([train_op, loss], feed_dict=feed_dict)
-                rl_loss_list.append((rl_loss, len(x0)))
-            return rl_loss_list
+                for tag_idx in range(self.num_tags):
+                    label = labels[tag_idx]
+                    feed_dict[self.ex_labels[tag_idx]] = label
+                _, ex_losses, = sess.run([self.train_op, self.ex_losses], feed_dict=feed_dict)
+                ex_loss_list.append((ex_losses, len(x0)))
+            return ex_loss_list
 
-        for i in range(self.num_tags):
-            informative_score_fn = self.informative_score_fn_list[i]
-            reinforce_payload = calc_reward(informative_score_fn, alt_logits, instance_infos, deleted_mask_list)
-            ## Step 4) Update gradient
-            rl_loss_list = commit_reward(reinforce_payload, self.ex_labels[i], self.ex_train_op[i], self.ex_loss[i])
-            self.loss_window[i].append_list(rl_loss_list)
+        reinforce_payload, summary = self.calc_reward(alt_logits, instance_infos, deleted_mask_list)
+        ## Step 4) Update gradient
+        ex_loss_list = commit_reward(reinforce_payload)
+        for ex_losses, num_insts in ex_loss_list:
+            for tag_idx, loss_val in enumerate(ex_losses):
+                self.loss_window[tag_idx].append(loss_val, num_insts)
 
-            window_rl_loss = self.loss_window[i].get_average()
-            summary.value.add(tag='Ex_loss_{}'.format(i), simple_value=window_rl_loss)
+        for tag_idx in range(self.num_tags):
+            window_rl_loss = self.loss_window[tag_idx].get_average()
+            summary.value.add(tag='Ex_loss_{}'.format(tag_idx), simple_value=window_rl_loss)
 
         return summary

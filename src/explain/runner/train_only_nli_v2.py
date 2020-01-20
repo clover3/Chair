@@ -11,7 +11,7 @@ from models.transformer import hyperparams
 from models.transformer.nli_base_v2 import transformer_nli_pooled
 from tf_v2_support import tf1, disable_eager_execution
 from trainer.model_saver import save_model, tf_logger, load_v2_to_v2
-from trainer.tf_module import step_runner, get_nli_batches_from_data_loader
+from trainer.tf_module import sub_step_runner, get_nli_batches_from_data_loader
 from trainer.tf_train_module_v2 import init_session, get_train_op2
 
 
@@ -74,9 +74,9 @@ def train_nli(hparam, nli_setting, run_name, num_steps, data, model_path):
     print("{} train batches".format(len(train_batches)))
     valid_freq = 100
     save_interval = 1000
-    loss, _ = step_runner(train_batches, train_classification,
-                           valid_fn, valid_freq,
-                           save_fn, save_interval, num_steps)
+    loss, _ = sub_step_runner(train_batches, train_classification,
+                              valid_fn, valid_freq,
+                              save_fn, save_interval, num_steps)
 
     return save_fn()
 

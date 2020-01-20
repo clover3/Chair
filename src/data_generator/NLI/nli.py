@@ -13,6 +13,13 @@ from evaluation import *
 num_classes = 3
 corpus_dir = os.path.join(data_path, "nli")
 
+def get_modified_data_loader(tokenizer, max_sequence, vocab_filename):
+    data_loader = DataLoader(max_sequence, vocab_filename, True)
+    CLS_ID = tokenizer.convert_tokens_to_ids(["[CLS]"])[0]
+    SEP_ID = tokenizer.convert_tokens_to_ids(["[SEP]"])[0]
+    data_loader.CLS_ID = CLS_ID
+    data_loader.SEP_ID = SEP_ID
+    return data_loader
 
 class DataLoader:
     def __init__(self, max_sequence, vocab_filename, using_alt_tokenizer=False, load_both_dev=False):

@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import re
+
 import tensorflow as tf
 
 
@@ -146,7 +147,6 @@ class AdamWeightDecayOptimizer(tf.train.Optimizer):
       update_with_lr = self.learning_rate * update
 
       next_param = param - update_with_lr
-
       assignments.extend(
           [param.assign(next_param),
            m.assign(next_m),

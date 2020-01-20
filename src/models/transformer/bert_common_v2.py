@@ -508,6 +508,20 @@ def reshape_to_matrix(input_tensor):
     return output_tensor
 
 
+def reshape_to_matrix_attn(input_tensor):
+    """Reshapes a >= rank 2 tensor to a rank 2 tensor (i.e., a matrix)."""
+    ndims = input_tensor.shape.ndims
+    if ndims < 2:
+        raise ValueError("Input tensor must have at least rank 2. Shape = %s" %
+                                         (input_tensor.shape))
+    if ndims == 2:
+        return input_tensor
+
+    width = input_tensor.shape[-1]
+    output_tensor = tf.reshape(input_tensor, [-1, width], name="reshape_to_matrix_attn")
+    return output_tensor
+
+
 def reshape_from_matrix(output_tensor, orig_shape_list):
     """Reshapes a rank 2 tensor back to its original rank >= 2 tensor."""
     if len(orig_shape_list) == 2:
@@ -793,7 +807,8 @@ def attention_layer(from_tensor,
 
     return context_layer
 
-
+# from_tensor makes query
+# to_tensor makes key and value
 def attention_layer2(from_tensor,
                     to_tensor,
                     query_ff,
@@ -804,6 +819,122 @@ def attention_layer2(from_tensor,
                     size_per_head=512,
                     attention_probs_dropout_prob=0.0,
                     do_return_2d_tensor=False,
+                    batch_size=None,
+                    from_seq_length=None,
+                    to_seq_length=None):
+
+    def transpose_for_scores(input_tensor, batch_size, num_attention_heads,
+                                                     seq_length, width):
+        output_tensor = tf.reshape(
+                input_tensor, [batch_size, seq_length, num_attention_heads, width], name="reshape_transpose_for_scores")
+
+        output_tensor = tf.transpose(a=output_tensor, perm=[0, 2, 1, 3])
+        return output_tensor
+
+    from_shape = get_shape_list2(from_tensor)
+    to_shape = get_shape_list2(to_tensor)
+
+    if len(from_shape) != len(to_shape):
+        raise ValueError(
+                "The rank of `from_tensor` must match the rank of `to_tensor`.")
+
+    if len(from_shape) == 3:
+        batch_size = from_shape[0]
+        from_seq_length = from_shape[1]
+        to_seq_length = to_shape[1]
+    elif len(from_shape) == 2:
+        if (batch_size is None or from_seq_length is None or to_seq_length is None):
+            raise ValueError(
+                    "When passing in rank 2 tensors to attention_layer, the values "
+                    "for `batch_size`, `from_seq_length`, and `to_seq_length` "
+                    "must all be specified.")
+
+    from_tensor_2d = reshape_to_matrix_attn(from_tensor)
+    to_tensor_2d = reshape_to_matrix_attn(to_tensor)
+
+
+    # `query_layer` = [B*F, N*H]
+    query_layer = query_ff(from_tensor_2d)
+
+    # `key_layer` = [B*T, N*H]
+    key_layer = key_ff(to_tensor_2d)
+
+    # `value_layer` = [B*T, N*H]
+    value_layer = value_ff(to_tensor_2d)
+
+    # `query_layer` = [B, N, F, H]
+    query_layer = transpose_for_scores(query_layer, batch_size, num_attention_heads, from_seq_length,
+                                                                         size_per_head)
+
+    # `key_layer` = [B, N, T, H]
+    key_layer = transpose_for_scores(key_layer, batch_size, num_attention_heads,
+                                                                     to_seq_length, size_per_head)
+
+    # Take the dot product between "query" and "key" to get the raw
+    # attention scores.
+    # `attention_scores` = [B, N, F, T]
+    attention_scores = tf.matmul(query_layer, key_layer, transpose_b=True)
+    attention_scores = tf.multiply(attention_scores,
+                                                                 1.0 / math.sqrt(float(size_per_head)))
+
+    if attention_mask is not None:
+        # `attention_mask` = [B, 1, F, T]
+        attention_mask = tf.expand_dims(attention_mask, axis=[1])
+
+        # Since attention_mask is 1.0 for positions we want to attend and 0.0 for
+        # masked positions, this operation will create a tensor which is 0.0 for
+        # positions we want to attend and -10000.0 for masked positions.
+        adder = (1.0 - tf.cast(attention_mask, tf.float32)) * -10000.0
+
+        # Since we are adding it to the raw scores before the softmax, this is
+        # effectively the same as removing these entirely.
+        attention_scores += adder
+
+    # Normalize the attention scores to probabilities.
+    # `attention_probs` = [B, N, F, T]
+    attention_probs = tf.nn.softmax(attention_scores)
+
+    # This is actually dropping out entire tokens to attend to, which might
+    # seem a bit unusual, but is taken from the original Transformer paper.
+    #attention_probs = dropout(attention_probs, attention_probs_dropout_prob)
+
+    # `value_layer` = [B, T, N, H]
+    value_layer = tf.reshape(
+            value_layer,
+            [batch_size, to_seq_length, num_attention_heads, size_per_head], name="value_reshape")
+
+    # `value_layer` = [B, N, T, H]
+    value_layer = tf.transpose(a=value_layer, perm=[0, 2, 1, 3])
+
+    # `context_layer` = [B, N, F, H]
+    context_layer = tf.matmul(attention_probs, value_layer)
+
+    # `context_layer` = [B, F, N, H]
+    context_layer = tf.transpose(a=context_layer, perm=[0, 2, 1, 3])
+
+    if do_return_2d_tensor:
+        # `context_layer` = [B*F, N*V]
+        context_layer = tf.reshape(
+                context_layer,
+                [batch_size * from_seq_length, num_attention_heads * size_per_head])
+    else:
+        # `context_layer` = [B, F, N*V]
+        context_layer = tf.reshape(
+                context_layer,
+                [batch_size, from_seq_length, num_attention_heads * size_per_head])
+
+    return context_layer
+
+
+def attention_layer3(from_tensor,
+                    to_tensor,
+                    query_ff,
+                    key_ff,
+                    value_ff,
+                    attention_mask=None,
+                    num_attention_heads=1,
+                    size_per_head=512,
+                    attention_probs_dropout_prob=0.0,
                     batch_size=None,
                     from_seq_length=None,
                     to_seq_length=None):
@@ -897,15 +1028,9 @@ def attention_layer2(from_tensor,
     # `context_layer` = [B, F, N, H]
     context_layer = tf.transpose(a=context_layer, perm=[0, 2, 1, 3])
 
-    if do_return_2d_tensor:
-        # `context_layer` = [B*F, N*V]
-        context_layer = tf.reshape(
-                context_layer,
-                [batch_size * from_seq_length, num_attention_heads * size_per_head])
-    else:
-        # `context_layer` = [B, F, N*V]
-        context_layer = tf.reshape(
-                context_layer,
-                [batch_size, from_seq_length, num_attention_heads * size_per_head])
+    # `context_layer` = [B, F, N*V]
+    context_layer = tf.reshape(
+            context_layer,
+            [batch_size, from_seq_length, num_attention_heads * size_per_head])
 
     return context_layer

@@ -1,5 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor
 
+from explain.train_ex import ExplainTrainer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC
@@ -25,7 +26,6 @@ from data_generator.stance import stance_detection
 from data_generator.ubuntu import ubuntu
 from evaluation import *
 from explain import visualize
-from explain.train_ex import ExplainTrainer
 from log import log
 from models import word2vec
 from models.baselines import svm
@@ -1572,10 +1572,10 @@ class Experiment:
                                    save_fn, self.save_interval)
 
         steps = int(len(train_batches) * 0.5)
-        loss, _ = step_runner(train_batches, train_fn,
-                               valid_fn, valid_freq,
-                               save_fn, self.save_interval,
-                              steps=steps)
+        loss, _ = sub_step_runner(train_batches, train_fn,
+                                  valid_fn, valid_freq,
+                                  save_fn, self.save_interval,
+                                  steps=steps)
         return save_fn()
 
     def nli_attribution_baselines(self, nli_setting, exp_config, data_loader, preload_id):
@@ -2191,10 +2191,10 @@ class Experiment:
                                    save_fn, self.save_interval)
 
         steps = int(len(train_batches) * 0.5)
-        loss, _ = step_runner(train_batches, train_ex_fn,
-                               valid_fn, valid_freq,
-                               save_fn, self.save_interval,
-                              steps=steps)
+        loss, _ = sub_step_runner(train_batches, train_ex_fn,
+                                  valid_fn, valid_freq,
+                                  save_fn, self.save_interval,
+                                  steps=steps)
 
         acc =valid_fn()
         print("Last val acc : ", acc)
@@ -2280,10 +2280,10 @@ class Experiment:
                                    save_fn, self.save_interval)
 
         steps = int(len(train_batches) * 0.5)
-        loss, _ = step_runner(train_batches, train_ex_fn,
-                               valid_fn, valid_freq,
-                               save_fn, self.save_interval,
-                              steps=steps)
+        loss, _ = sub_step_runner(train_batches, train_ex_fn,
+                                  valid_fn, valid_freq,
+                                  save_fn, self.save_interval,
+                                  steps=steps)
 
         acc =valid_fn()
         print("Last val acc : ", acc)
@@ -2935,10 +2935,10 @@ class Experiment:
         train_batches, dev_batches = self.load_nli_data(data_loader)
         valid_freq = 25
         steps = int(len(train_batches) * 0.5)
-        loss, _ = step_runner(train_batches, train_ex_fn,
-                              valid_fn, valid_freq,
-                              save_fn, self.save_interval,
-                              steps=steps)
+        loss, _ = sub_step_runner(train_batches, train_ex_fn,
+                                  valid_fn, valid_freq,
+                                  save_fn, self.save_interval,
+                                  steps=steps)
 
 
 
@@ -3789,10 +3789,10 @@ class Experiment:
         valid_freq = 1000
         print("Total of {} train batches".format(len(train_batches)))
         steps = int(len(train_batches) * 0.5)
-        loss, _ = step_runner(train_batches, train_fn,
-                               valid_fn, valid_freq,
-                               save_fn, self.save_interval,
-                              steps=steps)
+        loss, _ = sub_step_runner(train_batches, train_fn,
+                                  valid_fn, valid_freq,
+                                  save_fn, self.save_interval,
+                                  steps=steps)
 
 
     def train_nli_any_way(self, nli_setting, exp_config, data_loader, preload_id):
@@ -4213,10 +4213,10 @@ class Experiment:
         valid_freq = 25
         print("Total of {} train batches".format(len(train_batches)))
         steps = int(len(train_batches) * 0.3)
-        loss, _ = step_runner(train_batches, train_fn,
-                               valid_fn, valid_freq,
-                               save_fn, self.save_interval,
-                              steps=steps)
+        loss, _ = sub_step_runner(train_batches, train_fn,
+                                  valid_fn, valid_freq,
+                                  save_fn, self.save_interval,
+                                  steps=steps)
 
 
     def train_nli_v2(self, nli_setting, exp_config, data_loader, preload_id, explain_tag):
@@ -4679,10 +4679,10 @@ class Experiment:
         valid_freq = 25
         print("Total of {} train batches".format(len(train_batches)))
         steps = int(len(train_batches) * 0.3)
-        loss, _ = step_runner(train_batches, train_fn,
-                               valid_fn, valid_freq,
-                               save_fn, self.save_interval,
-                              steps=steps)
+        loss, _ = sub_step_runner(train_batches, train_fn,
+                                  valid_fn, valid_freq,
+                                  save_fn, self.save_interval,
+                                  steps=steps)
 
 
     def nli_visualization(self, nli_setting, exp_config, data_loader, preload_id, explain_tag):
@@ -8029,10 +8029,10 @@ class Experiment:
                                    save_fn, exp_config.save_interval)
 
         steps = int(len(train_batches) * 0.2)
-        loss, _ = step_runner(train_batches, train_fn,
-                               valid_fn, valid_freq,
-                               save_fn, self.save_interval,
-                              steps=steps)
+        loss, _ = sub_step_runner(train_batches, train_fn,
+                                  valid_fn, valid_freq,
+                                  save_fn, self.save_interval,
+                                  steps=steps)
 
 
         save_fn()

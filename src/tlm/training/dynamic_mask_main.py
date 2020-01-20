@@ -97,7 +97,7 @@ def lm_pretrain(input_files):
             input_fn_builder = input_fn_builder_unmasked
 
         model_fn = model_fn_lm(
-            bert_config=bert_config,
+            model_config=bert_config,
             train_config=train_config,
             model_class=BertModel,
         )

@@ -1,8 +1,8 @@
-import tensorflow as tf
+from tf_v2_support import tf1
 
 def get_param_num():
     total_parameters = 0
-    for variable in tf.compat.v1.trainable_variables():
+    for variable in tf1.trainable_variables():
         # shape is an array of tf.Dimension
         shape = variable.get_shape()
         variable_parameters = 1

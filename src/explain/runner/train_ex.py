@@ -1,3 +1,4 @@
+import os
 import sys
 from functools import partial
 
@@ -5,18 +6,18 @@ import numpy as np
 import tensorflow as tf
 
 from attribution.eval import eval_explain
-from cache import save_to_pickle, load_cache
-from data_generator.NLI import nli
+from data_generator.NLI.nli import get_modified_data_loader
 from data_generator.common import get_tokenizer
-from data_generator.shared_setting import NLI
-from explain.train_ex import ExplainTrainerM
-from misc_lib import average
+from data_generator.shared_setting import BertNLI
+from explain.nli_common import train_classification_factory, save_fn_factory, valid_fn_factory
+from explain.train_ex_core import ExplainTrainerM
+from explain.train_nli import get_nli_data
 from models.transformer import hyperparams
 from models.transformer.nli_base import transformer_nli_pooled
-from tf_util.tf_logging import tf_logging, logging
-from trainer.model_saver import save_model, load_bert_v2, setup_summary_writer
+from tf_util.tf_logging import tf_logging, set_level_debug
+from trainer.model_saver import setup_summary_writer, load_model_with_blacklist
 from trainer.np_modules import get_batches_ex
-from trainer.tf_module import step_runner, get_nli_batches_from_data_loader
+from trainer.tf_module import step_runner
 from trainer.tf_train_module import init_session, get_train_op2
 
 
@@ -37,16 +38,19 @@ def tag_informative(explain_tag, before_prob, after_prob, action):
     return score
 
 
-def train_nli_ex(hparam, nli_setting, run_name, data, data_loader, model_path):
+def train_nli_ex(hparam, nli_setting, save_dir, max_steps, data, data_loader, model_path, modeling_option):
     print("train_nli_ex")
     train_batches, dev_batches = data
 
     task = transformer_nli_pooled(hparam, nli_setting.vocab_size)
     with tf.variable_scope("optimizer"):
-        train_cls = get_train_op2(task.loss, hparam.lr, 75000)
+        train_cls = get_train_op2(task.loss, hparam.lr, "adam", max_steps)
+    global_step = tf.train.get_or_create_global_step()
 
     tags = ["conflict", "match", "mismatch"]
     explain_dev_data_list = {tag: data_loader.get_dev_explain(tag) for tag in tags}
+
+    run_name = os.path.basename(save_dir)
     train_writer, test_writer = setup_summary_writer(run_name)
 
     information_fn_list = list([partial(tag_informative, t) for t in tags])
@@ -70,19 +74,19 @@ def train_nli_ex(hparam, nli_setting, run_name, data, data_loader, model_path):
         return feed_dict
 
     explain_trainer = ExplainTrainerM(information_fn_list,
-                    task.logits,
-                    task.model.get_sequence_output(),
-                    len(tags),
-                    batch2feed_dict,
-                    hparam,
-                    )
+                                      task.logits,
+                                      task.model.get_sequence_output(),
+                                      len(tags),
+                                      batch2feed_dict,
+                                      hparam,
+                                      modeling_option,
+                                      )
 
     sess = init_session()
     sess.run(tf.global_variables_initializer())
     if model_path is not None:
-        load_bert_v2(sess, model_path)
+        load_model_with_blacklist(sess, model_path, ["explain"])
 
-    g_step = 0
     def eval_tag():
         print("Eval")
         for label_idx in range(3):
@@ -112,83 +116,70 @@ def train_nli_ex(hparam, nli_setting, run_name, data, data_loader, model_path):
             summary = tf.Summary()
             summary.value.add(tag='{}_P@1'.format(tag), simple_value=p_at_1)
             summary.value.add(tag='{}_MAP'.format(tag), simple_value=MAP_score)
-            train_writer.add_summary(summary, g_step)
+            train_writer.add_summary(summary, fetch_global_step())
             train_writer.flush()
 
-
+    # make explain train_op does not increase global step
 
     def train_explain(batch, step_i):
         summary = explain_trainer.train_batch(batch, sess)
-        train_writer.add_summary(summary, g_step)
+        train_writer.add_summary(summary, fetch_global_step())
 
-    def train_classification(batch, step_i):
-        loss_val, acc, _ = sess.run([task.loss, task.acc, train_cls,
-                                                   ],
-                                                  feed_dict=batch2feed_dict(batch)
-                                                  )
-        tf_logging.debug("Step {0} train loss={1:.04f} acc={2:.03f}".format(step_i, loss_val, acc))
-        return loss_val, acc
+    def fetch_global_step():
+        step, = sess.run([global_step])
+        return step
+
+    train_classification = partial(train_classification_factory, sess, task.loss, task.acc, train_cls, batch2feed_dict)
+    eval_acc = partial(valid_fn_factory, sess, dev_batches[:20], task.loss, task.acc, global_step, batch2feed_dict)
+
+    save_fn = partial(save_fn_factory, sess, save_dir, global_step)
+    init_step,  = sess.run([global_step])
 
     def train_fn(batch, step_i):
+        step_before_cls = fetch_global_step()
         loss_val, acc = train_classification(batch, step_i)
-        train_explain(batch, step_i)
-        nonlocal g_step
-        g_step += 1
-        return loss_val, acc
+        summary = tf.Summary()
+        summary.value.add(tag='acc', simple_value=acc)
+        summary.value.add(tag='loss', simple_value=loss_val)
+        train_writer.add_summary(summary, fetch_global_step())
+        train_writer.flush()
 
-    def eval_acc():
-        loss_list = []
-        acc_list = []
-        for batch in dev_batches[:10]:
-            loss_val, acc = sess.run([task.loss, task.acc],
-                                                   feed_dict=batch2feed_dict(batch)
-                                                   )
-            loss_list.append(loss_val)
-            acc_list.append(acc)
-        tf_logging.info("Step dev loss={0:.04f} acc={1:.03f}".format(average(loss_list), average(acc_list)))
+        step_after_cls = fetch_global_step()
+
+        assert step_after_cls == step_before_cls + 1
+        train_explain(batch, step_i)
+        step_after_ex = fetch_global_step()
+        assert step_after_cls == step_after_ex
+        return loss_val, acc
 
     def valid_fn():
         eval_acc()
         eval_tag()
 
-    def save_fn():
-        global_step = tf.train.get_or_create_global_step()
-        return save_model(sess, run_name, global_step)
-
+    print("Initialize step to {}".format(init_step))
+    print("{} train batches".format(len(train_batches)))
     valid_freq = 1000
-    save_interval = 1000
-    print("Total of {} train batches".format(len(train_batches)))
-    steps = int(len(train_batches) * 0.5)
-    loss, _ = step_runner(train_batches, train_fn,
-                          valid_fn, valid_freq,
-                          save_fn, save_interval,
-                          steps=steps)
+    save_interval = 5000
+    loss, _ = step_runner(train_batches, train_fn, init_step,
+                              valid_fn, valid_freq,
+                              save_fn, save_interval, max_steps)
+    return save_fn()
 
 
-def train_nil_from_v2_checkpoint(run_name, model_path):
-    tf_logging.info("train_nil_from_v2_checkpoint")
-    hp = hyperparams.HPSENLI2()
-    hp.seq_max = 300
-    nli_setting = NLI()
-    nli_setting.vocab_size = 30522
-    nli_setting.vocab_filename = "bert_voca.txt"
-    tf_logging.info("Intializing dataloader")
-    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+def train_from(start_model_path, save_dir, modeling_option):
+    tf_logging.info("train_from : nli_ex")
+    hp = hyperparams.HPSENLI3()
+    nli_setting = BertNLI()
+    max_steps = 73630
+    set_level_debug()
+
     tokenizer = get_tokenizer()
-    CLS_ID = tokenizer.convert_tokens_to_ids(["[CLS]"])[0]
-    SEP_ID = tokenizer.convert_tokens_to_ids(["[SEP]"])[0]
-    data_loader.CLS_ID = CLS_ID
-    data_loader.SEP_ID = SEP_ID
-    tf_logging.setLevel(logging.INFO)
-    #model_path = get_model_path("nli_batch16", 'model.ckpt-61358')
+    tf_logging.info("Intializing dataloader")
+    data_loader = get_modified_data_loader(tokenizer, hp.seq_max, nli_setting.vocab_filename)
     tf_logging.info("loading batches")
-    data = load_cache("train_nil_from_v2_checkpoint")
-    if data is None:
-        data = get_nli_batches_from_data_loader(data_loader, hp.batch_size)
-        save_to_pickle(data, "train_nil_from_v2_checkpoint")
-    train_nli_ex(hp, nli_setting, run_name,
-                 data, data_loader, model_path)
+    data = get_nli_data(hp, nli_setting)
+    train_nli_ex(hp, nli_setting, save_dir, max_steps, data, data_loader, start_model_path, modeling_option)
 
 
 if __name__  == "__main__":
-    train_nil_from_v2_checkpoint(sys.argv[1], sys.argv[2])
+    train_from(sys.argv[1], sys.argv[2], sys.argv[3])

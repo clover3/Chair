@@ -7,7 +7,6 @@ from models.transformer import optimization_v2 as optimization
 from models.transformer.bert_common_v2 import create_initializer, get_shape_list, get_shape_list2, dropout
 from models.transformer.optimization_v2 import create_optimizer_from_config
 from tf_util.tf_logging import tf_logging
-from tlm.model.base import mimic_pooling
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
 from tlm.sero.sero_core import split_and_append_sep, SeroDelta, SeroEpsilon
@@ -150,7 +149,7 @@ def model_fn_sero_lm(config, train_config, modeling):
     return model_fn
 
 
-def model_fn_sero_ranking_train(config, train_config, modeling_opt):
+def model_fn_sero_ranking_train(config, train_config, model_class):
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
         tf_logging.info("model_fn_ranking")
         log_features(features)
@@ -164,33 +163,21 @@ def model_fn_sero_ranking_train(config, train_config, modeling_opt):
                                    config.total_sequence_length, config.window_size, CLS_ID, EOW_ID)
 
         is_training = (mode == tf.estimator.ModeKeys.TRAIN)
-        # Updated
-        model_class = SeroEpsilon
-
         with tf.compat.v1.variable_scope("sero"):
             model = model_class(
                 config,
                 is_training,
                 train_config.use_one_hot_embeddings
             )
-            sequence_output_3d = model.network_stacked(stacked_input_ids, stacked_input_mask, stacked_segment_ids, use_context)
+            sequence_output_3d = model.network_stacked(stacked_input_ids, stacked_input_mask,
+                                                       stacked_segment_ids, use_context)
 
-        seq_4d = tf.reshape(sequence_output_3d, [batch_size, -1, config.window_size, config.hidden_size])
-        first_sequence_output = seq_4d[:, 0]
-        nonlocal modeling_opt
-        if "all_pooling" not in modeling_opt:
-            pooled_output = mimic_pooling(first_sequence_output, config.hidden_size, config.initializer_range)
-        else:
-            seq_4d = tf.transpose(seq_4d, [0,2,1,3])
-            pooled_output = mimic_pooling(seq_4d, config.hidden_size, config.initializer_range)
-            pooled_output = tf.reduce_max(pooled_output, axis=2)
-
-            modeling_opt = "ce"
+        pooled_output = model.get_pooled_output()
 
         if is_training:
             pooled_output = dropout(pooled_output, 0.1)
 
-        loss, losses, y_pred = apply_loss_modeling(modeling_opt, pooled_output)
+        loss, losses, y_pred = apply_loss_modeling(config.loss, pooled_output)
 
         assignment_fn = get_assignment_map_from_checkpoint_type(train_config.checkpoint_type, config.lower_layers)
         scaffold_fn = checkpoint_init(assignment_fn, train_config)
@@ -200,7 +187,7 @@ def model_fn_sero_ranking_train(config, train_config, modeling_opt):
     return model_fn
 
 
-def model_fn_sero_ranking_predict(config, train_config, modeling_opt):
+def model_fn_sero_ranking_predict(config, train_config, model_class):
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
         tf_logging.info("model_fn_sero_ranking_predict")
         """The `model_fn` for TPUEstimator."""
@@ -219,7 +206,6 @@ def model_fn_sero_ranking_predict(config, train_config, modeling_opt):
 
         is_training = (mode == tf.estimator.ModeKeys.TRAIN)
         # Updated
-        model_class = SeroEpsilon
 
         with tf.compat.v1.variable_scope("sero"):
             model = model_class(
@@ -227,21 +213,10 @@ def model_fn_sero_ranking_predict(config, train_config, modeling_opt):
                 is_training,
                 train_config.use_one_hot_embeddings
             )
-            sequence_output_3d = model.network_stacked(stacked_input_ids, stacked_input_mask, stacked_segment_ids, use_context)
-        seq_4d = tf.reshape(sequence_output_3d, [batch_size, -1, config.window_size, config.hidden_size])
-        first_sequence_output = seq_4d[:, 0]
-        nonlocal modeling_opt
-        if "all_pooling" not in modeling_opt:
-            pooled_output = mimic_pooling(first_sequence_output, config.hidden_size, config.initializer_range)
-        else:
-            seq_4d = tf.transpose(seq_4d, [0,2,1,3])
-            pooled_output = mimic_pooling(seq_4d, config.hidden_size, config.initializer_range)
-            pooled_output = tf.reduce_max(pooled_output, axis=2)
-            modeling_opt = "ce"
+            model.network_stacked(stacked_input_ids, stacked_input_mask, stacked_segment_ids, use_context)
 
-
-        logits = get_prediction_structure(modeling_opt, pooled_output)
-        loss = 0
+        pooled_output = model.get_pooled_output()
+        logits = get_prediction_structure(config.loss, pooled_output)
 
         tvars = tf.compat.v1.trainable_variables()
         assignment_fn = assignment_map.assignment_map_v2_to_v2

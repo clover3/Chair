@@ -21,7 +21,7 @@ def main(_):
     input_files = get_input_files_from_flags(FLAGS)
     input_fn = input_fn_builder_classification(input_files, FLAGS.max_seq_length, is_training)
     model_fn = model_fn_classification(config, train_config, Albert.factory)
-    run_estimator(model_fn, input_fn)
+    return run_estimator(model_fn, input_fn)
 
 
 if __name__ == "__main__":

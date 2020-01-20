@@ -116,14 +116,6 @@ def model_fn_apr_classification(bert_config, ssdr_config, train_config, dict_run
     return model_fn
 
 
-def print_all_tensor():
-    return
-    graph = tf.compat.v1.get_default_graph()
-    tensors_per_node = [op.values() for op in graph.get_operations()]
-    for tensors in tensors_per_node:
-        for t in tensors:
-            print(t.name, t.shape)
-
 
 def model_fn_apr_lm(bert_config, ssdr_config, train_config, dict_run_config):
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -319,7 +311,6 @@ def model_fn_dict_reader(bert_config, ssdr_config, train_config, logging, model_
                  masked_lm_positions, masked_lm_ids, masked_lm_weights)
 
         total_loss = masked_lm_loss
-        print_all_tensor()
         tvars = tf.compat.v1.trainable_variables()
 
         init_vars = {}

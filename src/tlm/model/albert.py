@@ -59,8 +59,6 @@ class SharedTransformer(tf.keras.layers.Layer):
         with tf.compat.v1.variable_scope("embedding_projection", reuse=True):
             return bc.dense(self.config.hidden_size, self.initializer)(input_tensor)
 
-    def get_embedding_table(self):
-        return self.embedding_projection(self.embedding_layer.embedding_table)
 
 class Albert(base.BertModelInterface):
     def __init__(self,
@@ -83,10 +81,20 @@ class Albert(base.BertModelInterface):
 
     def call(self, input_ids, input_mask, segment_ids):
         self.module.call(input_ids, input_mask, segment_ids)
-        self.embedding_table = self.module.get_embedding_table()
         self.sequence_output = self.module.all_layer_outputs[-1]
         self.all_encoder_layers = self.module.all_layer_outputs
         self.all_encoder_layers = []
         self.embedding_output = self.module.embedding_output
         self.pooled_output = mimic_pooling(self.sequence_output, self.config.hidden_size, self.config.initializer_range)
+        self.embedding_table = self.module.embedding_layer.embedding_table
         return self.sequence_output
+
+
+class BertologyFactory:
+    def __init__(self, class_ref):
+        self.class_ref = class_ref
+
+    def __call__(self, config, is_training, input_ids, input_mask, token_type_ids, use_one_hot_embeddings):
+        model = self.class_ref(config, is_training, use_one_hot_embeddings)
+        model.call(input_ids, input_mask, token_type_ids)
+        return model

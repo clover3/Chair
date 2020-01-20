@@ -15,6 +15,10 @@ if tf_logging.handlers:
     tf_logging.handlers = []
 
 
+def set_level_debug():
+    tf_logging.setLevel(logging.DEBUG)
+
+
 class MyFormatter(logging.Formatter):
     def prefix(self, record):
         """Returns the absl log prefix for the log record.

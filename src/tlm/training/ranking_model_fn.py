@@ -46,6 +46,7 @@ def pairwise_cross_entropy(pooled_output):
     loss = tf.reduce_mean(losses)
     return loss, losses, prob[0, :]
 
+
 def cross_entropy(pooled_output):
     logits = tf.keras.layers.Dense(2, name="cls_dense")(pooled_output)
     real_batch_size = tf.cast(logits.shape[0] / 2, tf.int32)
@@ -57,6 +58,7 @@ def cross_entropy(pooled_output):
         labels=labels)
     loss = tf.reduce_mean(losses)
     return loss, losses, tf.reshape(logits, [2, -1, 2])[0, :, 1]
+
 
 def checkpoint_init(assignment_fn, train_config):
     tvars = tf.compat.v1.trainable_variables()

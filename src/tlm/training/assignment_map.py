@@ -417,6 +417,7 @@ def assignment_map_v2_to_v2(tvars, lm_checkpoint_v2):
     """Compute the union of the current variables and checkpoint variables."""
     initialized_variable_names = {}
     real_name_map = {}
+    tf_logging.debug("assignment_map_v2_to_v2")
 
     lm_assignment_candidate = {}
     for var in tvars:

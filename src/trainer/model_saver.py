@@ -95,7 +95,7 @@ def load_bert_v2(sess, model_path):
     loader.restore(sess, model_path)
 
 
-def load_v2_to_v2(sess, model_path):
+def load_v2_to_v2(sess, model_path, exception_on_not_used = True):
     tvars = tf1.global_variables()
 
     def get_simple_name(name):
@@ -131,8 +131,10 @@ def load_v2_to_v2(sess, model_path):
             load_mapping[checkpoint_name] = name_to_variable[simple_name]
             initialized.add(real_name[simple_name])
         else:
+
             print("NOT used : ", checkpoint_name)
-            raise Exception()
+            if exception_on_not_used:
+                raise Exception()
 
     for simple_name in name_to_variable:
         name = real_name[simple_name]
@@ -155,7 +157,24 @@ def load_model_w_scope(sess, path, include_namespace, verbose=True):
     if verbose:
         for v in variables_to_restore:
             print(v)
+    loader = tf.train.Saver(variables_to_restore, max_to_keep=1)
+    loader.restore(sess, path)
 
+
+def load_model_with_blacklist(sess, path, exclude_namespace, verbose=True):
+    def exclude(v):
+        if v.name.split('/')[0] in exclude_namespace:
+            return True
+        return False
+
+    variables = tf.contrib.slim.get_variables_to_restore()
+    variables_to_restore = [v for v in variables if not exclude(v)]
+    if verbose:
+        for v in variables_to_restore:
+            print(v)
+        for v in variables:
+            if exclude(v):
+                print("Skip: ", v)
     loader = tf.train.Saver(variables_to_restore, max_to_keep=1)
     loader.restore(sess, path)
 
