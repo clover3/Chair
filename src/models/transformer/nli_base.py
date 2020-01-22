@@ -83,3 +83,46 @@ class transformer_nli_pooled:
         self.loss = task.loss
         self.logits = task.logits
         self.acc = task.acc
+
+
+class transformer_nli_pooled_embedding_in:
+    def __init__(self, hp, voca_size, is_training):
+        config = bert.BertConfig(vocab_size=voca_size,
+                                 hidden_size=hp.hidden_units,
+                                 num_hidden_layers=hp.num_blocks,
+                                 num_attention_heads=hp.num_heads,
+                                 intermediate_size=hp.intermediate_size,
+                                 type_vocab_size=hp.type_vocab_size,
+                                 )
+
+        seq_length = hp.seq_max
+        use_tpu = False
+
+        input_ids = tf.placeholder(tf.int64, [None, seq_length])
+        input_mask = tf.placeholder(tf.int64, [None, seq_length])
+        segment_ids = tf.placeholder(tf.int64, [None, seq_length])
+        label_ids = tf.placeholder(tf.int64, [None])
+        self.x_list = [input_ids, input_mask, segment_ids]
+        self.y = label_ids
+
+        self.encoded_embedding_in = tf.placeholder(tf.float32, [None, seq_length, hp.hidden_units])
+        self.attention_mask_in = tf.placeholder(tf.float32, [None, seq_length, seq_length])
+        use_one_hot_embeddings = use_tpu
+        self.model = bert.BertEmbeddingInOut(
+            config=config,
+            is_training=is_training,
+            input_ids=input_ids,
+            input_mask=input_mask,
+            token_type_ids=segment_ids,
+            use_one_hot_embeddings=use_one_hot_embeddings,
+            embeddding_as_input=(self.encoded_embedding_in, self.attention_mask_in),
+        )
+        self.encoded_embedding_out = self.model.embedding_output
+        self.attention_mask_out = self.model.attention_mask
+
+        pooled_output = self.model.get_pooled_output()
+        task = ClassificationB(is_training, hp.hidden_units, 3)
+        task.call(pooled_output, label_ids)
+        self.loss = task.loss
+        self.logits = task.logits
+        self.acc = task.acc

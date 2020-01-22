@@ -10,7 +10,7 @@ from tf_util.tf_logging import tf_logging
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
 from tlm.sero.sero_core import split_and_append_sep, SeroDelta, SeroEpsilon
-from tlm.training import assignment_map
+from tlm.training import assignment_map, grad_accumulation
 from tlm.training.input_fn_common import format_dataset
 from tlm.training.model_fn_common import log_features, get_tpu_scaffold_or_init, log_var_assignments, align_checkpoint, \
     Classification
@@ -158,6 +158,7 @@ def model_fn_sero_ranking_train(config, train_config, model_class):
         batch_size, _ = get_shape_list(input_mask) # This is not real batch_size, 2 * real_batch_size
         use_context = tf.ones([batch_size, 1], tf.int32)
 
+
         stacked_input_ids, stacked_input_mask, stacked_segment_ids, \
             = split_and_append_sep(input_ids, input_mask, segment_ids,
                                    config.total_sequence_length, config.window_size, CLS_ID, EOW_ID)
@@ -181,8 +182,18 @@ def model_fn_sero_ranking_train(config, train_config, model_class):
 
         assignment_fn = get_assignment_map_from_checkpoint_type(train_config.checkpoint_type, config.lower_layers)
         scaffold_fn = checkpoint_init(assignment_fn, train_config)
-        optimizer_factory = lambda x: create_optimizer_from_config(x, train_config)
-        return ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_factory)
+        prediction = {
+            "stacked_input_ids": stacked_input_ids,
+            "stacked_input_mask": stacked_input_mask,
+            "stacked_segment_ids": stacked_segment_ids,
+        }
+
+        if train_config.gradient_accumulation != 1:
+            optimizer_factory = lambda x: grad_accumulation.get_accumulated_optimizer_from_config(x, train_config,
+                                                  tf.compat.v1.trainable_variables(), train_config.gradient_accumulation)
+        else:
+            optimizer_factory = lambda x: create_optimizer_from_config(x, train_config)
+        return ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_factory, prediction)
 
     return model_fn
 

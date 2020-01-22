@@ -68,7 +68,7 @@ def checkpoint_init(assignment_fn, train_config):
     return scaffold_fn
 
 
-def ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_factory):
+def ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_factory, prediction=None):
     TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
     if mode == tf.estimator.ModeKeys.TRAIN:
         tf_logging.info("Using single lr ")
@@ -78,11 +78,13 @@ def ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_fa
         output_spec = TPUEstimatorSpec(mode=mode, loss=loss, eval_metrics=None,
                                        scaffold_fn=scaffold_fn)
     elif mode == tf.estimator.ModeKeys.PREDICT:
+        if prediction is None:
+            prediction = {
+                "y_pred": y_pred,
+                "losses": losses,
+            }
         output_spec = TPUEstimatorSpec(mode=mode, loss=loss,
-                                       predictions={
-                                           "y_pred": y_pred,
-                                           "losses": losses,
-                                       },
+                                       predictions=prediction,
                                        scaffold_fn=scaffold_fn)
     else:
         assert False
@@ -137,7 +139,13 @@ def model_fn_ranking(FLAGS):
         scaffold_fn = checkpoint_init(assignment_fn, train_config)
 
         optimizer_factory = lambda x: create_optimizer_from_config(x, train_config)
-        return ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_factory)
+        input_ids1 = tf.identity(features["input_ids1"])
+        input_ids2 = tf.identity(features["input_ids2"])
+        prediction = {
+            "input_ids1": input_ids1,
+            "input_ids2": input_ids2
+        }
+        return ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_factory, prediction)
 
 
     return model_fn

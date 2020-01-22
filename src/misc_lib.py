@@ -294,6 +294,17 @@ def list_print(l, width):
     print()
 
 
+def group_by(interable, key_fn):
+    grouped = {}
+    for elem in interable:
+        key = key_fn(elem)
+        if key not in grouped:
+            grouped[key] = list()
+
+        grouped[key].append(elem)
+    return grouped
+
+
 class BinHistogram:
     def __init__(self, bin_fn):
         self.counter = Counter()

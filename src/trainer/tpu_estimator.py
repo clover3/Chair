@@ -33,10 +33,14 @@ def run_estimator(model_fn, input_fn, host_call=None):
       save_checkpoints_steps=FLAGS.save_checkpoints_steps,
       keep_checkpoint_every_n_hours =FLAGS.keep_checkpoint_every_n_hours,
       session_config=config,
+      tf_random_seed=FLAGS.random_seed,
       tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(
           iterations_per_loop=FLAGS.iterations_per_loop,
           num_shards=FLAGS.num_tpu_cores,
           per_host_input_for_training=is_per_host))
+
+    if FLAGS.random_seed is not None:
+        tf_logging.info("Using random seed : {}".format(FLAGS.random_seed))
 
     # If TPU is not available, this will fall back to normal Estimator on CPU
     # or GPU.

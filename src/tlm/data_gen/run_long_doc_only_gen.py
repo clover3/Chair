@@ -1,6 +1,6 @@
 from data_generator.job_runner import sydney_working_dir, JobRunner
 from tlm.data_gen.base import UnmaskedPairGen
-from tlm.data_gen.lm_worker import LMWorker
+from tlm.data_gen.lm_worker import WikiLMWorker
 
 
 class LongOnlyGen(UnmaskedPairGen):
@@ -26,5 +26,5 @@ class LongOnlyGen(UnmaskedPairGen):
 
 if __name__ == "__main__":
     working_dir = sydney_working_dir
-    runner = JobRunner(working_dir, 1000, "wiki_long_only", lambda out_path: LMWorker(out_path, LongOnlyGen))
+    runner = JobRunner(working_dir, 1000, "wiki_long_only", lambda out_path: WikiLMWorker(out_path, LongOnlyGen))
     runner.start()

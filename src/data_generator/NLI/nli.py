@@ -8,10 +8,24 @@ from data_generator.data_parser.esnli import load_split
 from data_generator.text_encoder import SubwordTextEncoder, CLS_ID, SEP_ID
 from data_generator.tf_gfile_support import tf_gfile
 from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
+from data_generator.tokenizer_wo_tf import FullTokenizer
 from evaluation import *
 
 num_classes = 3
 corpus_dir = os.path.join(data_path, "nli")
+tags = ["conflict", "match", "mismatch"]
+
+
+def get_modified_data_loader2(hp, nli_setting):
+    voca_path = os.path.join(data_path, "bert_voca.txt")
+    tokenizer = FullTokenizer(voca_path)
+    data_loader = DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    CLS_ID = tokenizer.convert_tokens_to_ids(["[CLS]"])[0]
+    SEP_ID = tokenizer.convert_tokens_to_ids(["[SEP]"])[0]
+    data_loader.CLS_ID = CLS_ID
+    data_loader.SEP_ID = SEP_ID
+    return data_loader
+
 
 def get_modified_data_loader(tokenizer, max_sequence, vocab_filename):
     data_loader = DataLoader(max_sequence, vocab_filename, True)

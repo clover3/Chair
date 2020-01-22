@@ -6,11 +6,12 @@ import numpy as np
 import tensorflow as tf
 
 from attribution.eval import eval_explain
+from data_generator.NLI import nli
 from data_generator.NLI.nli import get_modified_data_loader
 from data_generator.common import get_tokenizer
 from data_generator.shared_setting import BertNLI
+from explain.explain_trainer import ExplainTrainerM
 from explain.nli_common import train_classification_factory, save_fn_factory, valid_fn_factory
-from explain.train_ex_core import ExplainTrainerM
 from explain.train_nli import get_nli_data
 from models.transformer import hyperparams
 from models.transformer.nli_base import transformer_nli_pooled
@@ -38,7 +39,7 @@ def tag_informative(explain_tag, before_prob, after_prob, action):
     return score
 
 
-def train_nli_ex(hparam, nli_setting, save_dir, max_steps, data, data_loader, model_path, modeling_option):
+def train_nli_ex(hparam, nli_setting, save_dir, max_steps, data, data_loader, model_path, tags, modeling_option):
     print("train_nli_ex")
     train_batches, dev_batches = data
 
@@ -47,7 +48,6 @@ def train_nli_ex(hparam, nli_setting, save_dir, max_steps, data, data_loader, mo
         train_cls = get_train_op2(task.loss, hparam.lr, "adam", max_steps)
     global_step = tf.train.get_or_create_global_step()
 
-    tags = ["conflict", "match", "mismatch"]
     explain_dev_data_list = {tag: data_loader.get_dev_explain(tag) for tag in tags}
 
     run_name = os.path.basename(save_dir)
@@ -89,15 +89,14 @@ def train_nli_ex(hparam, nli_setting, save_dir, max_steps, data, data_loader, mo
 
     def eval_tag():
         print("Eval")
-        for label_idx in range(3):
-            tag = tags[label_idx]
+        for label_idx, tag in enumerate(tags):
             enc_explain_dev, explain_dev = explain_dev_data_list[tag]
             batches = get_batches_ex(enc_explain_dev, hparam.batch_size, 3)
 
             ex_logit_list = []
             for batch in batches:
                 x0, x1, x2 = batch
-                ex_logits,  = sess.run([explain_trainer.get_ex_logits(label_idx)],
+                ex_logits,  = sess.run([explain_trainer.get_ex_scores(label_idx)],
                                                    feed_dict={
                                                        task.x_list[0]: x0,
                                                        task.x_list[1]: x1,
@@ -155,7 +154,7 @@ def train_nli_ex(hparam, nli_setting, save_dir, max_steps, data, data_loader, mo
     def valid_fn():
         eval_acc()
         eval_tag()
-
+    eval_tag()
     print("Initialize step to {}".format(init_step))
     print("{} train batches".format(len(train_batches)))
     valid_freq = 1000
@@ -178,7 +177,8 @@ def train_from(start_model_path, save_dir, modeling_option):
     data_loader = get_modified_data_loader(tokenizer, hp.seq_max, nli_setting.vocab_filename)
     tf_logging.info("loading batches")
     data = get_nli_data(hp, nli_setting)
-    train_nli_ex(hp, nli_setting, save_dir, max_steps, data, data_loader, start_model_path, modeling_option)
+    tags = nli.tags
+    train_nli_ex(hp, nli_setting, save_dir, max_steps, data, data_loader, start_model_path, tags, modeling_option)
 
 
 if __name__  == "__main__":

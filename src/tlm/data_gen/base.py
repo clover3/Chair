@@ -88,6 +88,28 @@ def log_print_feature(features):
         tf_logging.info(
             "%s: %s" % (feature_name, " ".join([float_aware_strize(x) for x in values])))
 
+def pool_tokens(max_seq_length, rng, document, target_seq_length, skip = False):
+    results = []
+    current_chunk = []
+    current_length = 0
+    max_num_tokens = max_seq_length - 2
+    i = 0
+    if skip:
+        i = i + rng.randint(0,3)
+    while i < len(document):
+        segment = document[i]
+        current_chunk.append(segment)
+        current_length += len(segment)
+        if i == len(document) - 1 or current_length >= target_seq_length:
+            tokens_a = flatten(current_chunk)
+            tokens_a = truncate_seq(tokens_a, max_num_tokens, rng)
+            results.append(tokens_a)
+            current_chunk = []
+            current_length = 0
+            if skip:
+                i = i + rng.randint(0, 3)
+        i += 1
+    return results
 
 
 
@@ -119,19 +141,85 @@ class TrainingInstance(object):
         return self.__str__()
 
 
-class LMTrainGen:
+def format_tokens_n_segid(raw_tokens):
+    tokens = []
+    segment_ids = []
+    tokens.append("[CLS]")
+    segment_ids.append(0)
+    for token in raw_tokens:
+        tokens.append(token)
+        segment_ids.append(0)
+
+    tokens.append("[SEP]")
+    segment_ids.append(0)
+    return tokens, segment_ids
+
+
+def format_tokens_pair_n_segid(tokens_a, tokens_b):
+    tokens = []
+    segment_ids = []
+    tokens.append("[CLS]")
+    segment_ids.append(0)
+    for token in tokens_a:
+        tokens.append(token)
+        segment_ids.append(0)
+
+    tokens.append("[SEP]")
+    segment_ids.append(0)
+
+    for token in tokens_b:
+        tokens.append(token)
+        segment_ids.append(1)
+
+    tokens.append("[SEP]")
+    segment_ids.append(1)
+
+    return tokens, segment_ids
+
+
+class LMTrainBase:
     def __init__(self):
         vocab_file = os.path.join(data_path, "bert_voca.txt")
         self.tokenizer = tokenization.FullTokenizer(
             vocab_file=vocab_file, do_lower_case=True)
-
         self.masked_lm_prob = 0.15
-        self.short_seq_prob = 0.1
-        self.problem_per_job = 100 * 1000
         self.max_seq_length = 512
-        self.max_predictions_per_seq = 20
         self.dupe_factor = 1
         self.rng = random.Random(time.time())
+
+    def pool_tokens(self, document, target_seq_length, skip=False):
+        return pool_tokens(self.max_seq_length, self.rng, document, target_seq_length, skip)
+
+    def pool_chunks(self, document, target_seq_length, skip = False):
+        results = []
+        current_chunk = []
+        current_length = 0
+        i = 0
+        if skip:
+            i = i + self.rng.randint(0,3)
+        while i < len(document):
+            segment = document[i]
+            current_chunk.append(segment)
+            current_length += len(segment)
+            if i == len(document) - 1 or current_length >= target_seq_length:
+                results.append(current_chunk)
+                current_chunk = []
+                current_length = 0
+                if skip:
+                    i = i + self.rng.randint(0, 3)
+            i += 1
+        return results
+
+class LMTrainGen(LMTrainBase):
+    def __init__(self):
+        super(LMTrainGen, self).__init__()
+        vocab_file = os.path.join(data_path, "bert_voca.txt")
+        self.tokenizer = tokenization.FullTokenizer(
+            vocab_file=vocab_file, do_lower_case=True)
+
+        self.short_seq_prob = 0.1
+        self.problem_per_job = 100 * 1000
+        self.max_predictions_per_seq = int(self.max_seq_length * self.masked_lm_prob)
 
     def load_subset_documents(self, start, end):
         all_docs = []
@@ -155,41 +243,6 @@ class LMTrainGen:
             all_docs.extend(pickle.load(f))
         return all_docs
 
-    def pool_tokens(self, document, target_seq_length, skip = False):
-        results = []
-        current_chunk = []
-        current_length = 0
-        max_num_tokens = self.max_seq_length - 2
-        i = 0
-        if skip:
-            i = i + self.rng.randint(0,3)
-        while i < len(document):
-            segment = document[i]
-            current_chunk.append(segment)
-            current_length += len(segment)
-            if i == len(document) - 1 or current_length >= target_seq_length:
-                tokens_a = flatten(current_chunk)
-                tokens_a = truncate_seq(tokens_a, max_num_tokens, self.rng)
-                results.append(tokens_a)
-                current_chunk = []
-                current_length = 0
-                if skip:
-                    i = i + self.rng.randint(0, 3)
-            i += 1
-        return results
-
-    def format_tokens_n_segid(self, raw_tokens):
-        tokens = []
-        segment_ids = []
-        tokens.append("[CLS]")
-        segment_ids.append(0)
-        for token in raw_tokens:
-            tokens.append(token)
-            segment_ids.append(0)
-
-        tokens.append("[SEP]")
-        segment_ids.append(0)
-        return tokens, segment_ids
 
     def create_instances_from_document(self, document):
         vocab_words = list(self.tokenizer.vocab.keys())
@@ -202,7 +255,7 @@ class LMTrainGen:
         instances = []
 
         for raw_tokens in self.pool_tokens(document, target_seq_length):
-            tokens, segment_ids = self.format_tokens_n_segid(raw_tokens)
+            tokens, segment_ids = format_tokens_n_segid(raw_tokens)
 
             (tokens, masked_lm_positions,
              masked_lm_labels) = btd.create_masked_lm_predictions(tokens,
@@ -330,7 +383,7 @@ class UnmaskedGen(LMTrainGen):
         instances = []
 
         for raw_tokens in self.pool_tokens(document, target_seq_length):
-            tokens, segment_ids = self.format_tokens_n_segid(raw_tokens)
+            tokens, segment_ids = format_tokens_n_segid(raw_tokens)
 
             instance = SegmentInstance(
                 tokens=tokens,
@@ -394,46 +447,6 @@ class UnmaskedPairGen(UnmaskedGen):
     def create_instances_from_document(self, document):
         raise Exception()
 
-    def pool_chunks(self, document, target_seq_length, skip = False):
-        results = []
-        current_chunk = []
-        current_length = 0
-        i = 0
-        if skip:
-            i = i + self.rng.randint(0,3)
-        while i < len(document):
-            segment = document[i]
-            current_chunk.append(segment)
-            current_length += len(segment)
-            if i == len(document) - 1 or current_length >= target_seq_length:
-                results.append(current_chunk)
-                current_chunk = []
-                current_length = 0
-                if skip:
-                    i = i + self.rng.randint(0, 3)
-            i += 1
-        return results
-
-    def format_tokens_pair_n_segid(self, tokens_a, tokens_b):
-        tokens = []
-        segment_ids = []
-        tokens.append("[CLS]")
-        segment_ids.append(0)
-        for token in tokens_a:
-            tokens.append(token)
-            segment_ids.append(0)
-
-        tokens.append("[SEP]")
-        segment_ids.append(0)
-
-        for token in tokens_b:
-            tokens.append(token)
-            segment_ids.append(1)
-
-        tokens.append("[SEP]")
-        segment_ids.append(1)
-
-        return tokens, segment_ids
 
     def create_instances_from_documents(self, documents):
         max_num_tokens = self.max_seq_length - 3
@@ -460,9 +473,7 @@ class UnmaskedPairGen(UnmaskedGen):
                 tokens_b = flatten(chunk_1[m:])[:b_length]
             truncate_seq_pair(tokens_a, tokens_b, target_seq_length, self.rng)
 
-            self.format_tokens_pair_n_segid(tokens_a, tokens_b)
-
-            tokens, segment_ids = self.format_tokens_pair_n_segid(tokens_a, tokens_b)
+            tokens, segment_ids = format_tokens_pair_n_segid(tokens_a, tokens_b)
             instance = SegmentInstance(
                 tokens=tokens,
                 segment_ids=segment_ids)
@@ -512,4 +523,61 @@ class MaskedPairGen(UnmaskedPairGen):
 
         return example_numbers
 
+
+class UnmaskedPairedDataGen(LMTrainBase):
+    def __init__(self):
+        super(UnmaskedPairedDataGen, self).__init__()
+
+    def create_instances_from_documents(self, documents):
+        max_num_tokens = self.max_seq_length - 3
+        target_seq_length = max_num_tokens
+
+        target_inst_num = 0
+        docs_as_chunks = []
+        for doc in documents:
+            chunks = self.pool_chunks(doc, target_seq_length)
+            docs_as_chunks.append(chunks)
+            target_inst_num += len(chunks)
+
+        instances = []
+        for _ in range(target_inst_num):
+            chunk_1 = pick1(pick1(docs_as_chunks))
+
+            m = self.rng.randint(1, len(chunk_1))
+            tokens_a = flatten(chunk_1[:m])
+            b_length = target_seq_length - len(tokens_a)
+            if self.rng.random() < 0.5 :
+                chunk_2 = pick1(pick1(docs_as_chunks))
+                tokens_b = flatten(chunk_2)[:b_length]
+            else:
+                tokens_b = flatten(chunk_1[m:])[:b_length]
+            truncate_seq_pair(tokens_a, tokens_b, target_seq_length, self.rng)
+
+            tokens, segment_ids = format_tokens_pair_n_segid(tokens_a, tokens_b)
+            instance = SegmentInstance(
+                tokens=tokens,
+                segment_ids=segment_ids)
+            instances.append(instance)
+
+        return instances
+
+    def write_instances(self, new_inst_list, outfile):
+        writer = RecordWriterWrap(outfile)
+        example_numbers = []
+
+        for (inst_index, instance) in enumerate(new_inst_list):
+            features = get_basic_input_feature(self.tokenizer,
+                                               self.max_seq_length,
+                                               instance.tokens,
+                                               instance.segment_ids)
+            features["next_sentence_labels"] = btd.create_int_feature([0])
+
+            writer.write_feature(features)
+            if inst_index < 20:
+                log_print_inst(instance, features)
+        writer.close()
+
+        tf_logging.info("Wrote %d total instances", writer.total_written)
+
+        return example_numbers
 

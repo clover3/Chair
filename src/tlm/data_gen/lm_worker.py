@@ -6,7 +6,7 @@ from data_generator import job_runner
 from data_generator.job_runner import JobRunner
 
 
-class LMWorker(job_runner.WorkerInterface):
+class WikiLMWorker(job_runner.WorkerInterface):
     def __init__(self, out_path, generator):
         self.out_dir = out_path
         self.gen = generator()
@@ -32,6 +32,6 @@ class LMJobRunner(JobRunner):
             working_path = "/mnt/nfs/work3/youngwookim/data/bert_tf"
 
         def worker_factory(out_path):
-            return LMWorker(out_path, data_generator)
+            return WikiLMWorker(out_path, data_generator)
 
         super(LMJobRunner, self).__init__(working_path, max_job, job_name, worker_factory)

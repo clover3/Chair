@@ -6,7 +6,7 @@ from data_generator.data_parser import esnli
 from explain.eval_pr import *
 
 
-def eval(pred_list, gold_list, only_prem, only_hypo = False):
+def eval_nli_explain(pred_list, gold_list, only_prem, only_hypo = False):
     if len(pred_list) != len(gold_list):
         print("Warning")
         print("pred len={}".format(len(pred_list)))
@@ -272,7 +272,7 @@ def run_eval():
     for run_name in runs_list:
         predictions = load_from_pickle(run_name)
         only_prem = False if data_id == 'conflict' else False
-        scores = eval(predictions, gold_list, only_prem)
+        scores = eval_nli_explain(predictions, gold_list, only_prem)
         print(run_name)
         for key in scores:
             print("{}\t{}".format(key, scores[key]))
@@ -787,11 +787,11 @@ def run_eval_acl():
         predictions = load_prediction(run_name)
         print(run_name)
         if target_label =='conflict':
-            scores = eval(predictions, gold_list, False, False)
+            scores = eval_nli_explain(predictions, gold_list, False, False)
         elif target_label == 'match':
-            scores = eval(predictions, gold_list, True, False)
+            scores = eval_nli_explain(predictions, gold_list, True, False)
         elif target_label == 'mismatch':
-            scores = eval(predictions, gold_list, False, True)
+            scores = eval_nli_explain(predictions, gold_list, False, True)
         for key in scores:
             print("{}".format(key), end="\t")
         print()
@@ -816,7 +816,7 @@ def load_prediction_head(run_name):
     else:
         assert False
 
-def run_test_eval_emnlp(target_label):
+def run_test_eval_emnlp(target_label, all_methods_str):
     gold_list = read_gold_label("gold_{}_100_700.csv".format(target_label))
     pred_id = "{}_1000".format(target_label)
     model_name = {
@@ -830,9 +830,11 @@ def run_test_eval_emnlp(target_label):
         'conflict':'CE_conflict',
     }[target_label]
 
-    all_methods = ["random", "idf", "saliency",  "grad*input", "intgrad", "LIME", "deletion", "deletion_seq", "NLIEx_AnyA", model_name, ce_run]
-    all_methods= ["X_match_del_0.1", "X_match_del_0.2","X_match_del_0.3","X_match_del_0.4", "X_match_del_0.5",
-                  "X_match_del_0.6","X_match_del_0.7", "X_match_del_0.8", "X_match_del_0.9"]
+    all_methods = all_methods_str.split(",")
+
+    # all_methods = ["random", "idf", "saliency",  "grad*input", "intgrad", "LIME", "deletion", "deletion_seq", "NLIEx_AnyA", model_name, ce_run]
+    #all_methods= ["X_match_del_0.1", "X_match_del_0.2","X_match_del_0.3","X_match_del_0.4", "X_match_del_0.5",
+#                  "X_match_del_0.6","X_match_del_0.7", "X_match_del_0.8", "X_match_del_0.9"]
     run_names = []
     for method_name in all_methods:
         run_name = "pred_" + method_name + "_" + pred_id
@@ -843,11 +845,11 @@ def run_test_eval_emnlp(target_label):
         predictions = load_part_from_prediction(run_name, 600)
 
         if target_label == 'conflict':
-            scores = eval(predictions, gold_list, False, False)
+            scores = eval_nli_explain(predictions, gold_list, False, False)
         elif target_label == 'match':
-            scores = eval(predictions, gold_list, True, False)
+            scores = eval_nli_explain(predictions, gold_list, True, False)
         elif target_label == 'mismatch':
-            scores = eval(predictions, gold_list, False, True)
+            scores = eval_nli_explain(predictions, gold_list, False, True)
 
         print(run_name, end="\t")
         for key in scores:
@@ -886,9 +888,9 @@ if __name__ == '__main__':
     #run_cut_off("match")
     #run_cut_off("mismatch")
     #paired_p_test_runner()
-    #run_test_eval_emnlp("mismatch")
-    #run_test_eval_emnlp("match")
-    #run_test_eval_emnlp("conflict")
+    run_test_eval_emnlp("mismatch")
+    run_test_eval_emnlp("match")
+    run_test_eval_emnlp("conflict")
 
     #eval_snli()
     #debuglime()

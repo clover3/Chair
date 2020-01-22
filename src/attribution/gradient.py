@@ -1,8 +1,4 @@
-import numpy as np
-from .deleter_trsfmr import *
 from trainer.tf_module import *
-from collections import Counter
-from .deepexplain.tensorflow import DeepExplain
 from .baselines import get_real_len
 from .deepexplain.tensorflow import methods
 
@@ -38,7 +34,7 @@ def explain_by_gradient(data, method_name, label_type, sess, de, feed_end_input,
         print(methods.total_runs)
         for i in range(3):
             fl = de.explain_prepared(T_attrib_list[i], method_name, softmax_output[:, i], stop, x_input, xi, stop_val)
-    #        fl = de.explain(method_name, softmax_output[:, i], stop, x_input, xi, stop_val)
+            #fl = de.explain(method_name, softmax_output[:, i], stop, x_input, xi, stop_val)
             # len(fl) == 1
             # fl has shape [-1, max_seq, emb_dim]
             emb2logit_attribution.append(fl[0])

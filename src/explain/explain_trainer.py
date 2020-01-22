@@ -1,9 +1,12 @@
+import abc
+
 import tensorflow as tf
 
 from attribution.deleter_trsfmr import *
 from misc_lib import *
 from tf_util.tf_logging import tf_logging
 from tf_v2_support import placeholder
+from trainer import tf_module
 from trainer.np_modules import *
 
 
@@ -177,6 +180,44 @@ def get_other_train_op(loss, lr, name):
     return train_op, global_step
 
 
+class ExplainPredictor:
+    def __init__(self, num_tags, sequence_output, modeling_option="default"):
+        self.num_tags = num_tags
+        self.sequence_output = sequence_output
+        if modeling_option == "correlation":
+            self.modeling_co()
+        else:
+            self.modeling_ce()
+
+    def modeling_ce(self):
+        self.ex_probs = []
+        self.ex_logits = []
+
+        with tf.variable_scope("explain"):
+            for tag_idx in range(self.num_tags):
+                with tf.variable_scope("ex_{}".format(tag_idx)):
+                    ex_logits = tf.layers.dense(self.sequence_output, 2, name="ex_{}".format(tag_idx))
+                    ex_prob = tf.nn.softmax(ex_logits)
+
+                self.ex_logits.append(ex_logits)
+                self.ex_probs.append(ex_prob[:, :, 1])
+
+    def modeling_co(self):
+        self.ex_probs = []
+        self.ex_logits = []
+
+        with tf.variable_scope("explain"):
+            for tag_idx in range(self.num_tags):
+                with tf.variable_scope("ex_{}".format(tag_idx)):
+                    ex_logits = tf.layers.dense(self.sequence_output, 1, name="ex_{}".format(tag_idx))
+
+                self.ex_logits.append(ex_logits)
+                self.ex_probs.append(ex_logits)
+
+    def get_score(self):
+        return self.ex_probs
+
+
 class ExplainTrainerM:
     def __init__(self,
                  informative_score_fn_list, #
@@ -185,13 +226,13 @@ class ExplainTrainerM:
                  num_tags,
                  batch2feed_dict,
                  hparam,
-                 modeling_option="default"
+                 modeling_option="ce"
                  ):
         self.sequence_output = sequence_output
+        self.num_tags = num_tags
 
         self.informative_score_fn_list = informative_score_fn_list
         self.compare_deletion_num = 20
-        self.num_tags = num_tags
         self.commit_input_len = 4 + num_tags
 
         # Model Information
@@ -206,22 +247,103 @@ class ExplainTrainerM:
         self.logit2tag = over_zero
 
         self.loss_window = list([MovingWindow(self.hparam.batch_size) for _ in range(self.num_tags)])
+        self.sample_deleter = get_seq_deleter(self.hparam.g_val)
+
         self.modeling_option = modeling_option
-        self.modeling_ce()
+        if modeling_option == "ce":
+            self.modeling_ce()
+        elif modeling_option == "co":
+            self.modeling_co()
+
 
     def loss_combine(self, losses):
-        if self.modeling_option == "default":
-            return tf.reduce_mean(losses)
-        elif self.modeling_option == "debug_conflict":
-            return losses[0]
-        elif self.modeling_option == "weighted":
-            return losses[0] * 3 + losses[1] * 2 + losses[0]
-        else:
-            raise Exception("unexpected modeling option")
+        return tf.reduce_mean(losses)
+
+    class ExplainModeling(abc.ABC):
+        @abc.abstractmethod
+        def get_losses(self):
+            pass
+
+        @abc.abstractmethod
+        def feed_ex_labels(self, labels):
+            pass
+
+        @abc.abstractmethod
+        def get_scores(self):
+            pass
+
+    class CorrelationModeling(ExplainModeling):
+        def __init__(self, sequence_output, seq_max, num_tags):
+            self.tag_info = []
+            with tf.variable_scope("explain"):
+                for tag_idx in range(num_tags):
+                    self.tag_info.append(self.model_tag(sequence_output, seq_max, "ex_{}".format(tag_idx)))
+
+        def model_tag(self, sequence_output, seq_max, var_name):
+            ex_labels = placeholder(tf.float32, [None, seq_max])
+            with tf.variable_scope(var_name):
+                ex_logits = tf.layers.dense(sequence_output, 1, name=var_name)
+                ex_logits = tf.reshape(ex_logits, [-1, seq_max])
+                labels_ = tf.cast(tf.greater(ex_labels, 0), tf.float32)
+                losses = tf_module.correlation_coefficient_loss(ex_logits, -labels_)
+            loss = tf.reduce_mean(losses)
+            score = ex_logits
+
+            return {
+                'labels': ex_labels,
+                'ex_logits': ex_logits,
+                'score': score,
+                'loss': loss
+            }
+
+        def feed_ex_labels(self, labels):
+            feed_dict = {}
+            for tag_idx, info in enumerate(self.tag_info):
+                feed_dict[info['labels']] = labels[tag_idx]
+            return feed_dict
+
+        def get_losses(self):
+            return [info['loss'] for info in self.tag_info]
+
+        def get_scores(self):
+            return [info['score'] for info in self.tag_info]
+
+    def modeling_co(self):
+        self.ex_labels = []
+        self.ex_scores = []
+        self.ex_losses = []
+        self.ex_logits = []
+
+        with tf.variable_scope("explain"):
+            for tag_idx in range(self.num_tags):
+                ex_labels = placeholder(tf.float32, [None, self.hparam.seq_max])
+                with tf.variable_scope("ex_{}".format(tag_idx)):
+                    ex_logits = tf.layers.dense(self.sequence_output, 1, name="ex_{}".format(tag_idx))
+                    ex_logits = tf.reshape(ex_logits, [-1, self.hparam.seq_max])
+                    labels_ = tf.cast(tf.greater(ex_labels, 0), tf.float32)
+                    losses = tf_module.correlation_coefficient_loss(ex_logits, -labels_)
+                    loss = tf.reduce_mean(losses)
+
+                self.ex_labels.append(ex_labels)
+                self.ex_losses.append(loss)
+                self.ex_logits.append(ex_logits)
+                self.ex_scores.append(ex_logits)
+
+            self.loss = self.loss_combine(self.ex_losses)
+            self.train_op = get_other_train_op(self.loss, self.lr, name="train_ex")
+        self.action_to_label = self.get_co_label
+
+    def feed_ex_batch(self, batch):
+        x0, x1, x2, y = batch[:4]
+        labels = batch[4:]
+        feed_dict = self.batch2feed_dict((x0, x1, x2, y))
+        for tag_idx in range(self.num_tags):
+            label = labels[tag_idx]
+            feed_dict[self.ex_labels[tag_idx]] = label
 
     def modeling_ce(self):
         self.ex_labels = []
-        self.ex_probs = []
+        self.ex_scores = []
         self.ex_losses = []
         self.ex_logits = []
 
@@ -236,17 +358,16 @@ class ExplainTrainerM:
 
                 self.ex_labels.append(ex_label)
                 self.ex_logits.append(ex_logits)
-                self.ex_probs.append(ex_prob[:, :, 1])
+                self.ex_scores.append(ex_prob[:, :, 1])
                 self.ex_losses.append(loss)
 
             self.loss = self.loss_combine(self.ex_losses)
             self.train_op = get_other_train_op(self.loss, self.lr, name="train_ex")
 
-        self.sample_deleter = get_seq_deleter(self.hparam.g_val)
         self.action_to_label = self.get_ce_label
 
-    def get_ex_logits(self, label_idx):
-        return self.ex_logits[label_idx][:, :, 1]
+    def get_ex_scores(self, label_idx):
+        return self.ex_scores[label_idx]
 
 
     @staticmethod
@@ -364,13 +485,10 @@ class ExplainTrainerM:
             batches = get_batches_ex(reinforce_payload, self.hparam.batch_size, self.commit_input_len)
             ex_loss_list = []
             for batch in batches:
-                x0, x1, x2, y = batch[:4]
-                labels = batch[4:]
-                feed_dict = self.batch2feed_dict((x0, x1, x2, y))
-                for tag_idx in range(self.num_tags):
-                    label = labels[tag_idx]
-                    feed_dict[self.ex_labels[tag_idx]] = label
+                feed_dict = self.feed_ex_batch(batch)
                 _, ex_losses, = sess.run([self.train_op, self.ex_losses], feed_dict=feed_dict)
+
+                x0 = batch[0]
                 ex_loss_list.append((ex_losses, len(x0)))
             return ex_loss_list
 

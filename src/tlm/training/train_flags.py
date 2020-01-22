@@ -177,6 +177,8 @@ flags.DEFINE_integer("inner_batch_size", 60, "Number of classes (in case of clas
 
 flags.DEFINE_integer("def_per_batch", 180, "Number of classes (in case of classification task.")
 
+flags.DEFINE_integer("random_seed", None, "Number of classes (in case of classification task.")
+
 flags.DEFINE_bool("use_ab_mapping_mask", False, "Whether to use ab_mapping_mask.")
 
 flags.DEFINE_bool("use_cache", False, "Whether to use cached data.")

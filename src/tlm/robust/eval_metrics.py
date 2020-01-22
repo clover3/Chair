@@ -8,6 +8,7 @@ from data_generator.common import get_tokenizer
 from data_generator.data_parser.robust2 import load_robust_qrel, robust_path
 from evals.adhoc import p_at_k, dcg_at_k
 from misc_lib import left, average
+from taskman_client.task_proxy import get_task_manager_proxy
 from tlm.estimator_prediction_viewer import flatten_batches
 
 
@@ -170,5 +171,5 @@ if __name__ == "__main__":
     data_id = sys.argv[3]
     #show(tf_prediction_data, payload_info, data_id)
     P20, NDCG20 = parse_prediction_and_eval(prediction_path, payload_type, data_id)
-    #proxy = get_task_manager_proxy()
-    #proxy.report_number(sys.argv[2], NDCG20, "NDCG")
+    proxy = get_task_manager_proxy()
+    proxy.report_number(sys.argv[2], NDCG20, "NDCG")

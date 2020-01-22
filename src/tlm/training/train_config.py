@@ -11,6 +11,7 @@ class LMTrainConfig:
                  checkpoint_type="",
                  second_init_checkpoint="",
                  fixed_mask=False,
+                 random_seed=None,
                  ):
         self.init_checkpoint = init_checkpoint
         self.learning_rate = learning_rate
@@ -23,6 +24,7 @@ class LMTrainConfig:
         self.checkpoint_type = checkpoint_type
         self.second_init_checkpoint = second_init_checkpoint
         self.fixed_mask = fixed_mask
+        self.random_seed = random_seed
 
     @classmethod
     def from_flags(cls, flags):
@@ -38,6 +40,7 @@ class LMTrainConfig:
             flags.checkpoint_type,
             flags.target_task_checkpoint,
             flags.fixed_mask,
+            flags.random_seed
         )
 
 

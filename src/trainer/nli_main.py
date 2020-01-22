@@ -156,9 +156,6 @@ def pred_snli_ex():
     e.predict_rf(nli_setting, e_config, data_loader, load_id, "test")
 
 
-
-
-
 def train_nli_with_reinforce():
     hp = hyperparams.HPBert()
     e = Experiment(hp)

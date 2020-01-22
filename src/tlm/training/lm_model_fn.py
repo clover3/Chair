@@ -204,7 +204,6 @@ def model_fn_lm(model_config, train_config, model_class,
         output_spec = None
         if mode == tf.estimator.ModeKeys.TRAIN:
             train_op = optimization.create_optimizer_from_config(total_loss, train_config)
-            print_all_tensor()
             output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
                     mode=mode,
                     loss=total_loss,

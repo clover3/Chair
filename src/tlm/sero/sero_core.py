@@ -118,14 +118,13 @@ def split_and_append_sep(input_ids,
         window_input_mask_list.append(input_mask[:, st:ed])
         window_segment_ids_list.append(segment_ids[:, st:ed])
 
-
     stacked_input_ids = tf.stack(window_input_ids_list, 1) # [batch_size, num_window, src_window_length]
-    stacked_input_mask= tf.stack(window_input_mask_list, 1)  # [batch_size, num_window, src_window_length]
+    stacked_input_mask = tf.stack(window_input_mask_list, 1)  # [batch_size, num_window, src_window_length]
     stacked_segment_ids = tf.stack(window_segment_ids_list, 1)  # [batch_size, num_window, src_window_length]
 
     batch_size, num_window, _ = bc.get_shape_list2(stacked_input_ids)
     edge_shape = [batch_size, num_window, 1]
-    cls_arr = tf.ones(edge_shape, tf.int32) * CLS_ID
+    cls_arr = tf.ones(edge_shape, tf.int32) * 23
     eow_arr = tf.ones(edge_shape, tf.int32) * EOW_ID
 
     stacked_input_ids = tf.concat([cls_arr, stacked_input_ids, eow_arr], axis=2)

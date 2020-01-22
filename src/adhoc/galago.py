@@ -72,7 +72,6 @@ def load_df(file_path):
     return df_dict
 
 
-
 def write_query_json(queries, out_path):
     j_queries = []
     for q_id, query in queries:
