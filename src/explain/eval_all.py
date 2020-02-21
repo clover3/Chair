@@ -384,8 +384,8 @@ def paired_p_test2(scorer1, scorer2, predictions1, predictions2, gold_list, only
         score_list_1 = p_score_list1 + h_score_list1
         score_list_2 = p_score_list2 + h_score_list2
 
-    print("pp2", average(score_list_1))
-    print("pp2", average(score_list_2))
+    # print("pp2", average(score_list_1))
+    # print("pp2", average(score_list_2))
     _, p = McNemar(score_list_1, score_list_2)
     #_, p = stats.ttest_rel(score_list_1, score_list_2)
     return p

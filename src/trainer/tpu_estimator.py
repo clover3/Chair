@@ -1,9 +1,10 @@
 import logging
 import os
 import pickle
+import time
 import warnings
 
-from google_wrap.gs_wrap import auto_resolve_init_checkpoint
+from google_wrap.gs_wrap import auto_resolve_init_checkpoint, check_gs_exists
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -11,6 +12,13 @@ import tensorflow as tf
 
 from tf_util.tf_logging import tf_logging
 from tlm.training.train_flags import FLAGS
+bert_checkpoint_path = "gs://clovertpu/training/bert_model/bert_model.ckpt"
+
+
+def verify_checkpoint(checkpoint_path):
+    checkpoint_path_found = tf.train.latest_checkpoint(checkpoint_path)
+    if not checkpoint_path_found:
+        raise FileNotFoundError("Cannot find checkpoint : " + checkpoint_path)
 
 
 def run_estimator(model_fn, input_fn, host_call=None):
@@ -32,6 +40,7 @@ def run_estimator(model_fn, input_fn, host_call=None):
       model_dir=FLAGS.output_dir,
       save_checkpoints_steps=FLAGS.save_checkpoints_steps,
       keep_checkpoint_every_n_hours =FLAGS.keep_checkpoint_every_n_hours,
+      keep_checkpoint_max=FLAGS.keep_checkpoint_max,
       session_config=config,
       tf_random_seed=FLAGS.random_seed,
       tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(
@@ -56,14 +65,26 @@ def run_estimator(model_fn, input_fn, host_call=None):
     if FLAGS.do_train:
         tf_logging.info("***** Running training *****")
         tf_logging.info("  Batch size = %d", FLAGS.train_batch_size)
+        if FLAGS.init_checkpoint and FLAGS.init_checkpoint != bert_checkpoint_path :
+            if not check_gs_exists(FLAGS.init_checkpoint):
+                raise FileNotFoundError("FLAGS.init_checkpoint does not exist : {}".format(FLAGS.init_checkpoint))
+            time.sleep(1)
+
         estimator.train(input_fn=input_fn, max_steps=FLAGS.num_train_steps)
 
     if FLAGS.do_eval:
         tf_logging.info("***** Running evaluation *****")
         tf_logging.info("  Batch size = %d", FLAGS.eval_batch_size)
 
+        if FLAGS.initialize_to_predict:
+            checkpoint = FLAGS.init_checkpoint
+        else:
+            checkpoint = None
         result = estimator.evaluate(
-            input_fn=input_fn, steps=FLAGS.max_eval_steps)
+            input_fn=input_fn,
+            steps=FLAGS.max_eval_steps,
+            checkpoint_path=checkpoint
+        )
 
         output_eval_file = os.path.join(FLAGS.output_dir, "eval_results.txt")
         with tf.io.gfile.GFile(output_eval_file, "w") as writer:
@@ -75,6 +96,11 @@ def run_estimator(model_fn, input_fn, host_call=None):
     if FLAGS.do_predict:
         tf_logging.info("***** Running evaluation *****")
         tf_logging.info("  Batch size = %d", FLAGS.eval_batch_size)
+
+
+        if not FLAGS.initialize_to_predict:
+            verify_checkpoint(estimator.model_dir)
+            time.sleep(1)
 
         result = estimator.predict(input_fn=input_fn, yield_single_examples=False)
         pickle.dump(list(result), open(FLAGS.out_file, "wb"))

@@ -1,7 +1,7 @@
-
+import numpy as np
 
 from data_generator.stance.stance_detection import stance_label
-import numpy as np
+
 
 def stance_f1(predictions, gold):
     idx_none = stance_label.index("NONE")

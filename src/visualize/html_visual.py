@@ -1,4 +1,6 @@
+import abc
 import os
+from abc import ABC
 
 from cpath import output_path
 
@@ -33,7 +35,36 @@ class Cell:
         self.target_color = target_color
 
 
-class HtmlVisualizer:
+def set_cells_color(cells, color):
+    for c in cells:
+        c.target_color = color
+
+
+class VisualizerCommon(ABC):
+    @abc.abstractmethod
+    def write_table(self, rows):
+        pass
+
+    def multirow_print(self, cells, width=20):
+        i = 0
+        while i < len(cells):
+            self.write_table([cells[i:i+width]])
+            i += width
+
+    def multirow_print_from_cells_list(self, cells_list, width=20):
+        i = 0
+        cells = cells_list[0]
+        while i < len(cells):
+            rows = []
+            for row_idx, _ in enumerate(cells_list):
+                row = cells_list[row_idx][i:i+width]
+                rows.append(row)
+
+            self.write_table(rows)
+            i += width
+
+
+class HtmlVisualizer(VisualizerCommon):
     def __init__(self, filename, dark_mode=False):
         p = os.path.join(output_path, "visualize", filename)
         self.f_html = open(p, "w", encoding="utf-8")
@@ -78,24 +109,6 @@ class HtmlVisualizer:
             self.f_html.write("</tr>\n")
         self.f_html.write("</table>\n")
 
-    def multirow_print(self, cells, width=20):
-        i = 0
-        while i < len(cells):
-            self.write_table([cells[i:i+width]])
-            i += width
-
-    def multirow_print_from_cells_list(self, cells_list, width=20):
-        i = 0
-        cells = cells_list[0]
-        while i < len(cells):
-            rows = []
-            for row_idx, _ in enumerate(cells_list):
-                row = cells_list[row_idx][i:i+width]
-                rows.append(row)
-
-            self.write_table(rows)
-            i += width
-
     def get_cell_html(self, cell):
         left = "&nbsp;" if cell.space_left else ""
         right = "&nbsp;" if cell.space_right else ""
@@ -120,6 +133,8 @@ class HtmlVisualizer:
             bg_color = "ff" + ("%02x" % r) + ("%02x" % r)
         elif color == "G":
             bg_color = ("%02x" % r) + "ff" + ("%02x" % r)
+        elif color == "Y":
+            bg_color = "ffff" + ("%02x" % r)
         else:
             assert False
         return bg_color

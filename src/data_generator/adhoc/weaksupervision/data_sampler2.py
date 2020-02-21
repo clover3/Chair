@@ -1,7 +1,7 @@
 import sys
 
 import cpath
-from adhoc.bm25 import get_bm25
+from adhoc.bm25_ex import get_bm25
 from data_generator.cached_tokenizer import EncoderUnit
 from data_generator.data_parser.trec import *
 from misc_lib import *

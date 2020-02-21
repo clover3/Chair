@@ -24,7 +24,7 @@ class BookCorpusGen:
         current_length = 0
         i = 0
         if skip:
-            i = i + self.rng.randint(0,3)
+            i = i + self.rng.randint(0, 3)
 
         def is_new_doc(segment):
             return 'isbn' in segment

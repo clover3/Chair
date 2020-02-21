@@ -1,350 +1,147 @@
-import copy
-import json
-import logging
 import os
-import threading
+import signal
 import time
 
 import psutil
 
 from misc_lib import exist_or_mkdir
-from taskman_client.task import Task, STATUS_CANCELLED, STATUS_COMPLETED, STATUS_RUNNING, STATUS_WAIT
+from taskman_client.sync import JsonTiedDict
+from taskman_client.task_proxy import get_task_manager_proxy, get_local_machine_name
 
-logger = logging.getLogger("TaskExecuter")
-logger.addHandler(logging.StreamHandler())
+sh_path = os.path.join("task", "task_sh")
+mark_path = os.path.join("task", "task_mark")
+log_path = os.path.join("task", "task_log")
 
-logger2 = logging.getLogger("TaskExecuter_thread")
-logger2.addHandler(logging.StreamHandler())
+exist_or_mkdir(sh_path)
+exist_or_mkdir(mark_path)
+exist_or_mkdir(log_path)
 
-root_dir = "/home/lesterny/te"
-root_dir = "C:\work\Data\TaskExecuter"
+info_path = os.path.join("task", "info.json")
+task_info = JsonTiedDict(info_path)
 
+def preexec_function():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-class JsonTiedList:
-    def __init__(self, file_path):
-        self.file_path = file_path
-        if os.path.exists(file_path):
-            self.list = json.load(open(self.file_path, "r"))
-            logger.debug("JsonTiedList() path={} list={}".format(file_path, self.list))
-        else:
-            self.list = []
-            logger.debug("JsonTiedList() path={} list={}".format(file_path, self.list))
-
-    def save(self):
-        with open(self.file_path, "w") as f:
-            json.dump(self.list, f)
-
-    def add(self, value):
-        self.list.append(value)
-        self.save()
-
-    def remove(self, value):
-        self.list.remove(value)
-        self.save()
-
-    def __iter__(self):
-        for value in self.list:
-            yield value
-
-class JsonTiedDict:
-    def __init__(self, file_path):
-        self.file_path = file_path
-        if os.path.exists(file_path):
-            dict = json.load(open(self.file_path, "r"))
-
-        else:
-            dict = {
-                "last_task_id": 0
-            }
-        for key, value in dict.items():
-            self.__dict__[key] = value
-
-    def save(self):
-        with open(self.file_path, "w") as f:
-            json.dump(self.to_dict(), f)
-
-    def set(self, key, value):
-        self.__dict__[key] = value
-        self.save()
-
-    def to_dict(self):
-        output = copy.deepcopy(self.__dict__)
-        return output
-
-
-class ResourceList:
-    def __init__(self, resource_log_path, resource_name_list):
-        self.resource_name_list = resource_name_list
-        self.used_resource = JsonTiedList(resource_log_path)
-        self.available_resource = list([t for t in self.resource_name_list if t not in self.used_resource])
-        self.lock = threading.Lock()
-
-    def assign(self):
-        resource_name = None
-        self.lock.acquire()
-        if self.available_resource:
-            resource_name = self.available_resource[0]
-            self.available_resource.remove(resource_name)
-            self.used_resource.add(resource_name)
-        self.lock.release()
-        return resource_name
-
-    def release(self, resource_name):
-        self.lock.acquire()
-        self.available_resource.append(resource_name)
-        self.used_resource.remove(resource_name)
-        self.lock.release()
-
-
-class TaskList:
-    def __init__(self, tied_json_path, task_info_dir):
-        self.task_info_dir = task_info_dir
-        self.task_id_list = JsonTiedList(tied_json_path)
-        self.task_id_to_obj = {}
-        for task_id in self.task_id_list.list:
-            self.task_id_to_obj[task_id] = self.load_task(task_id)
-        self.lock = threading.Lock()
-
-    def __iter__(self):
-        for task_id in self.task_id_list.list:
-            yield self.task_id_to_obj[task_id]
-
-    def remove(self, task_obj:Task):
-        self.lock.acquire()
-        self.task_id_list.list.remove(task_obj.task_id)
-        self.task_id_list.save()
-        self.lock.release()
-
-
-    def add(self, task_obj):
-        self.lock.acquire()
-        self.task_id_to_obj[task_obj.task_id] = task_obj
-        self.task_id_list.list.append(task_obj.task_id)
-        self.task_id_list.save()
-        self.lock.release()
-
-    def load_task(self, task_id):
-        info_path = self._get_task_info_path(task_id)
-        return QueuedTask.from_task(Task.from_json_file(info_path), info_path)
-
-    def _get_task_info_path(self, task_id):
-        return os.path.join(self.task_info_dir, "{}.json".format(task_id))
-
-
-class QueuedTask(Task):
-    def __init__(self, save_path):
-        super(QueuedTask, self).__init__()
-        self.save_path = save_path
-
-    @classmethod
-    def from_task(cls, task_obj, save_path):
-        obj = QueuedTask(save_path)
-        for key, value in task_obj.__dict__.items():
-            obj.__dict__[key] = value
-        return obj
-
-    def _write_task(self):
-        with open(self.save_path, "w") as f:
-            f.write(self.to_json_string())
-
-    def set_status(self, status):
-        self.status = status
-        self._write_task()
-
-
-class Executer:
+class ActiveProcList:
     def __init__(self):
-        print("AAA")
-        logger.debug("Executer init")
-        # save/log current jobs, so that it can restart.
-        self.task_info_dir = os.path.join(root_dir, "task_info")
-        self.root_info_dir = os.path.join(root_dir, "root_info")
-        exist_or_mkdir(self.task_info_dir)
-        exist_or_mkdir(self.root_info_dir)
+        self.proc_handles = []
 
-        # load task info for all active / queued task
-        self.active_task_list = TaskList(os.path.join(self.root_info_dir, "active_task.json"),
-                                         self.task_info_dir
-                                         )
-        self.queued_task_list = TaskList(os.path.join(self.root_info_dir, "queued_task.json"),
-                                         self.task_info_dir)
-        self.info_dict = JsonTiedDict(os.path.join(self.root_info_dir, "info.json"))
+    def add(self, proc):
+        self.proc_handles.append(proc)
 
-        tpu_info_path = os.path.join(self.root_info_dir, "tpu_info.json")
-        self.tpu_resource = ResourceList(tpu_info_path, ["v2-tf2", "v2-tf2-2"])
-        self.current_task_handles = {} # task_id -> process object
-        # task_id being in current_task_handle does NOT imply the task is active, we don't delete handles
-        self.task_cache = {} # task_id -> TaskObj
-        self._init_info()
-
-    def _get_new_task_id(self):
-        new_task_id = self.info_dict.last_task_id + 1
-        self.info_dict.set("last_task_id", new_task_id)
-        return new_task_id
-
-    def _get_task_info_path(self, task_id):
-        return os.path.join(self.task_info_dir, "{}.json".format(task_id))
-
-    def run(self):
-        # start _thread
-        t = threading.Thread(target=self._thread)
-        t.daemon = True
-        t.start()
-
-    def add_task_to_schedule(self, task):
-        task.task_id = self._get_new_task_id()
-        logger.debug("add_task_to_schedule() task_id={} proc_name={}".format(task.task_id, task.process_name))
-        new_task = QueuedTask.from_task(task, self._get_task_info_path(task.task_id))
-        new_task.set_status(STATUS_WAIT)
-        self.queued_task_list.add(new_task)
-
-    def remove_task(self, task_name):
-        # Kill task if it is active
-        task_obj = self._remove_task_from_active_list(task_name)
-
-        # Remove from the list if not active
-        if task_obj is None:
-            task_obj = self._remove_task_from_queued_list(task_name)
-        return task_obj
-
-    def _remove_task_from_active_list(self, task_name):
-        deleted_task_obj = None
-        for task_obj in self.active_task_list:
-            if task_obj.task_name == task_name:
-                self._kill_task(task_obj)
-                task_obj.set_status(STATUS_CANCELLED)
-                deleted_task_obj = task_obj
-                break
-        self.active_task_list.remove(deleted_task_obj)
-        return deleted_task_obj
-
-    def _remove_task_from_queued_list(self, task_name):
-        deleted_task_obj = -1
-        for task_obj in self.queued_task_list:
-            if task_obj.task_name == task_name:
-                task_obj.set_status(STATUS_CANCELLED)
-                deleted_task_obj = task_obj
-                break
-
-        self.queued_task_list.remove(deleted_task_obj)
-        return deleted_task_obj
-
-    def _kill_task(self, task_obj):
-        task_id = task_obj.task_id
-        p = self.current_task_handles[task_id]
-        p.kill()
-
-    def _init_info(self):
-        print("Init Info")
-        logger.info("Init_info")
-        logger2.info("Init Info")
-
-        # Init self.current_task_handles
+    def update_alive(self):
+        print("check_active_tasks")
         task_to_mark_complete = []
-        for task_obj in self.active_task_list:
-            print("ActiveTask : ", task_obj.task_id)
-            try:
-                print("Acquiring Handle")
-
-                logger.debug("Acquiring Handle {}".format(task_obj.task_id))
-                self.current_task_handles[task_obj.task_id] = psutil.Process(task_obj.pid)
-                logger.debug("Find task, task_id={} pid={}".format(task_obj.task_id, task_obj.pid))
-            except psutil.NoSuchProcess as e:
-                task_to_mark_complete.append(task_obj)
-
-        self._clean_up_completed_list(task_to_mark_complete)
-
-    # tpu_name should be already acquired before this function
-    # TODO handle std_output redirection
-    def _execute(self, task: Task, tpu_name=None):
-        if tpu_name is not None:
-            task.update_argument({"tpu_name":tpu_name})
-        p = psutil.Popen([task.process_name, task.get_param_str()], env=task.env, shell=True,
-                         )
-        task.pid = p.pid
-        return p
-
-    def _task_sanity_check(self, task: Task):
-        # TODO : Check if related gs files are available
-        #   TODO : Cache information about gs file information
-        # TODO : Check if necessary parameters are set
-        return True
-
-    def _thread(self):
-        #  1. Poll Current Task status : By handle
-        # 3. If resource is available, execute next task
-        logger.info("_thread")
-        while True:
-            self._check_active_tasks()
-            self._launch_task_if_possible()
-            time.sleep(1)
-
-    def _check_active_tasks(self):
-        logger.info("check_active_tasks")
-        task_to_mark_complete = []
-        for task_obj in self.active_task_list:
-            task_process: psutil.Process = self.current_task_handles[task_obj.task_id]
+        for task_process in self.proc_handles:
             try:
                 status = task_process.status()
-                logger.info("Task {} active".format(task_obj.task_id))
             except psutil.NoSuchProcess as e:
                 status = "dead"
-                logger.info("Task {} dead".format(task_obj.task_id))
 
             if status == "running":
                 pass
             elif status == "dead":
-                task_to_mark_complete.append(task_obj)
-        # TODO
-        #  2. Check stdout/stderr to see if process crashed
+                task_to_mark_complete.append(task_process)
 
-        self._clean_up_completed_list(task_to_mark_complete)
-
-    def _launch_task_if_possible(self):
-        task_that_just_got_executed = []
-        for task_obj in self.queued_task_list:
-            is_ready = True
-            tpu_name = None
-            if task_obj.use_tpu:
-                tpu_name = self.tpu_resource.assign()
-                if tpu_name is None:
-                    is_ready = False
-
-            if not self._task_sanity_check(task_obj):
-                is_ready = False
-
-            if is_ready:
-                p = self._execute(task_obj, tpu_name)
-                task_obj.pid = p.pid
-                self.current_task_handles[task_obj.task_id] = p
-                task_that_just_got_executed.append(task_obj)
-            else:
-                # return resource
-                if tpu_name is not None:
-                    self.tpu_resource.release(tpu_name)
-        for task_obj in task_that_just_got_executed:
-            logger.debug("execute() task_id={} proc_name={}".format(task_obj.task_id, task_obj.process_name))
-            assert task_obj.pid is not None
-            self.queued_task_list.remove(task_obj)
-            self.active_task_list.add(task_obj)
-            task_obj.set_status(STATUS_RUNNING)
-
-    def _clean_up_completed_list(self, task_to_mark_complete):
-        for task_obj in task_to_mark_complete:
-            self.active_task_list.remove(task_obj)
-            self._clean_up_completed(task_obj)
-
-    def _clean_up_completed(self, task):
-        logger.debug("_clean_up_completed() task_id={} ".format(task.task_id))
-        task.set_status(STATUS_COMPLETED)
-        if task.use_tpu:
-            self.tpu_resource.release(task.tpu_name)
-
-class ServerListener:
-    def __init__(self):
-        NotImplemented
+        for proc in task_to_mark_complete:
+            self.proc_handles.remove(proc)
+        return len(self.proc_handles)
 
 
 
-    def _thread(self):
-        NotImplemented
+def get_sh_path_for_job_id(job_id):
+    return os.path.join(sh_path, "{}.sh".format(job_id))
+
+
+def get_log_path(job_id):
+    return os.path.join(log_path, "{}.log".format(job_id))
+
+
+def get_last_mark():
+    init_id = max(task_info.last_task_id, 0)
+    id_idx = init_id
+    while os.path.exists(os.path.join(mark_path, str(id_idx))):
+        id_idx += 1
+
+    return id_idx - 1
+
+
+def get_new_job_id():
+    init_id = task_info.last_task_id
+    id_idx = init_id
+    while os.path.exists(get_sh_path_for_job_id(id_idx)):
+        id_idx += 1
+
+    return id_idx
+
+
+def get_next_sh_path():
+    return get_sh_path_for_job_id(get_new_job_id())
+
+
+def get_next_sh_path_and_job_id():
+    job_id = get_new_job_id()
+    return get_sh_path_for_job_id(job_id), job_id
+
+
+max_task = 30
+
+def check_wait_tasks(active_proc_list):
+    num_tas = active_proc_list.update_alive()
+    print("Number of active task : ", num_tas)
+
+    while num_tas > max_task:
+        print("Waiting for tasks to be done")
+        time.sleep(60)
+        num_tas = active_proc_list.update_alive()
+
+
+def loop():
+    last_mask = get_last_mark()
+    print("Last mark : ", last_mask)
+    task_manager_proxy = get_task_manager_proxy()
+
+    machine_name = get_local_machine_name()
+
+    def is_machine_busy():
+        active_jobs = task_manager_proxy.get_num_active_jobs(machine_name)
+        pending_jobs = task_manager_proxy.get_num_pending_jobs(machine_name)
+        print("{} active {} pending".format(active_jobs, pending_jobs))
+        return active_jobs + pending_jobs > 30
+
+
+    while True:
+        # check if there is additional job to run
+        job_id = last_mask + 1
+        next_sh_path = get_sh_path_for_job_id(job_id)
+        if os.path.exists(next_sh_path):
+            while is_machine_busy():
+                print("Sleeping for jobs to be done")
+                time.sleep(10)
+            execute(job_id)
+            task_info.set("last_task_id ", task_info.last_task_id + 1)
+            mark(job_id)
+            last_mask += 1
+            time.sleep(2)
+        else:
+            time.sleep(10)
+
+
+def mark(job_id):
+    open(os.path.join(mark_path, str(job_id)), "w").close()
+
+
+
+def execute(job_id):
+    out = open(get_log_path(job_id), "w")
+    p = psutil.Popen(["/bin/sh", get_sh_path_for_job_id(job_id)],
+                     stdout=out,
+                     stderr=out,
+                     preexec_fn=preexec_function
+                     )
+    print("Executed job {} .  pid={}".format(job_id, p.pid))
+    return p
+
+
+if __name__ == "__main__":
+    loop()

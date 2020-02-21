@@ -1,4 +1,4 @@
-import tensorflow as tf
+from my_tf import tf
 
 
 def extract_stream(fn):

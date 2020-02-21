@@ -1,7 +1,6 @@
 import tensorflow as tf
 
 from taskman_client.wrapper import report_run
-from tf_util.tf_logging import tf_logging
 from tlm.model_cnfig import JsonConfig
 from tlm.tlm.lm_nli_shared_model_fn import model_fn_nli_lm, SimpleSharingModel
 from tlm.training import flags_wrapper
@@ -13,7 +12,6 @@ from trainer.tpu_estimator import run_estimator
 
 @report_run
 def main(_):
-    tf_logging.info("Train nli_lm_shared")
     config = JsonConfig.from_json_file(FLAGS.model_config_file)
     train_config = LMTrainConfig.from_flags(FLAGS)
 

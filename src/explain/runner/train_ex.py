@@ -1,51 +1,84 @@
 import os
+import pickle
 import sys
 from functools import partial
 
 import numpy as np
 import tensorflow as tf
 
+import cpath
 from attribution.eval import eval_explain
 from data_generator.NLI import nli
 from data_generator.NLI.nli import get_modified_data_loader
 from data_generator.common import get_tokenizer
 from data_generator.shared_setting import BertNLI
-from explain.explain_trainer import ExplainTrainerM
+from explain.ex_train_modules import NLIExTrainConfig, get_informative_fn_by_name
+from explain.explain_trainer import ExplainTrainerM, CrossEntropyModeling, CorrelationModeling
 from explain.nli_common import train_classification_factory, save_fn_factory, valid_fn_factory
+from explain.runner.nli_ex_param import ex_arg_parser
 from explain.train_nli import get_nli_data
 from models.transformer import hyperparams
 from models.transformer.nli_base import transformer_nli_pooled
 from tf_util.tf_logging import tf_logging, set_level_debug
-from trainer.model_saver import setup_summary_writer, load_model_with_blacklist
+from trainer.model_saver import setup_summary_writer, load_model_with_blacklist, load_model, load_model_w_scope
+from trainer.multi_gpu_support import get_multiple_models, get_avg_loss, \
+    get_avg_tensors_from_models, get_train_op, get_batch2feed_dict_for_multi_gpu, get_concat_tensors_from_models, \
+    get_other_train_op_multi_gpu, get_concat_tensors_list_from_models
 from trainer.np_modules import get_batches_ex
 from trainer.tf_module import step_runner
-from trainer.tf_train_module import init_session, get_train_op2
+from trainer.tf_train_module import init_session, get_train_op2, get_train_op_wo_gstep_update2
 
 
-def tag_informative(explain_tag, before_prob, after_prob, action):
-    num_tag = np.count_nonzero(action)
-    penalty = (num_tag - 3) * 0.1 if num_tag > 3 else 0
-    if explain_tag == 'conflict':
-        score = (before_prob[2] - before_prob[0]) - (after_prob[2] - after_prob[0])
-    elif explain_tag == 'match':
-        # Increase of neutral
-        score = (before_prob[2] + before_prob[0]) - (after_prob[2] + after_prob[0])
-        # ( 1 - before_prob[1] ) - (1 - after_prob[1]) = after_prob[1] - before_prob[1] = increase of neutral
-    elif explain_tag == 'mismatch':
-        score = before_prob[1] - after_prob[1]
-    else:
-        assert False
-    score = score - penalty
-    return score
-
-
-def train_nli_ex(hparam, nli_setting, save_dir, max_steps, data, data_loader, model_path, tags, modeling_option):
+def train_nli_ex_from_payload(hparam, train_config, save_dir,
+                 data, data_loader,
+                 tags, modeling_option, init_fn,
+                 ):
     print("train_nli_ex")
-    train_batches, dev_batches = data
+    max_steps = train_config.max_steps
+    num_gpu = train_config.num_gpu
+    base_step = 61358
 
-    task = transformer_nli_pooled(hparam, nli_setting.vocab_size)
-    with tf.variable_scope("optimizer"):
-        train_cls = get_train_op2(task.loss, hparam.lr, "adam", max_steps)
+    def load_payload(step_i):
+        save_path = os.path.join(cpath.data_path, "nli_payload_1", str(step_i))
+        return pickle.load(open(save_path, "rb"))
+
+    ex_modeling_class = {
+        'ce': CrossEntropyModeling,
+        'co': CorrelationModeling
+    }[modeling_option]
+    lr_factor = 0.3
+    def build_model():
+        main_model = transformer_nli_pooled(hparam, train_config.vocab_size)
+        ex_model = ex_modeling_class(main_model.model.sequence_output, hparam.seq_max, len(tags),
+                                     main_model.batch2feed_dict)
+        return main_model, ex_model
+
+    if num_gpu == 1:
+        print("Using single GPU")
+        main_model, ex_model = build_model()
+        batch2feed_dict = main_model.batch2feed_dict
+
+        ex_score_tensor = ex_model.get_scores()
+        ex_loss_tensor = ex_model.get_loss()
+        ex_per_tag_loss = ex_model.get_losses()
+        ex_batch_feed2dict = ex_model.batch2feed_dict
+        with tf.variable_scope("explain_optimizer"):
+            train_ex_op = get_train_op2(ex_loss_tensor, hparam.lr * lr_factor, "adam2", max_steps)
+    else:
+        main_models, ex_models = zip(*get_multiple_models(build_model, num_gpu))
+        batch2feed_dict = get_batch2feed_dict_for_multi_gpu(main_models)
+        def get_loss_tensor(model):
+            t = tf.expand_dims(tf.stack(model.get_losses()), 0)
+            return t
+        ex_per_tag_loss = tf.reduce_mean(get_concat_tensors_from_models(ex_models, get_loss_tensor), axis=0)
+
+        ex_score_tensor = get_concat_tensors_list_from_models(ex_models, lambda model:model.get_scores())
+        print(ex_score_tensor)
+        ex_loss_tensor = get_avg_tensors_from_models(ex_models, ex_modeling_class.get_loss)
+        ex_batch_feed2dict = get_batch2feed_dict_for_multi_gpu(ex_models)
+        with tf.variable_scope("explain_optimizer"):
+            train_ex_op = get_train_op(([m.get_loss() for m in ex_models]), hparam.lr * lr_factor, max_steps)
+
     global_step = tf.train.get_or_create_global_step()
 
     explain_dev_data_list = {tag: data_loader.get_dev_explain(tag) for tag in tags}
@@ -53,87 +86,229 @@ def train_nli_ex(hparam, nli_setting, save_dir, max_steps, data, data_loader, mo
     run_name = os.path.basename(save_dir)
     train_writer, test_writer = setup_summary_writer(run_name)
 
-    information_fn_list = list([partial(tag_informative, t) for t in tags])
-
-    def batch2feed_dict(batch):
-        if len(batch) == 3:
-            x0, x1, x2 = batch
-            feed_dict = {
-                task.x_list[0]: x0,
-                task.x_list[1]: x1,
-                task.x_list[2]: x2,
-            }
-        else:
-            x0, x1, x2, y = batch
-            feed_dict = {
-                task.x_list[0]: x0,
-                task.x_list[1]: x1,
-                task.x_list[2]: x2,
-                task.y: y,
-            }
-        return feed_dict
-
-    explain_trainer = ExplainTrainerM(information_fn_list,
-                                      task.logits,
-                                      task.model.get_sequence_output(),
-                                      len(tags),
-                                      batch2feed_dict,
-                                      hparam,
-                                      modeling_option,
-                                      )
-
     sess = init_session()
     sess.run(tf.global_variables_initializer())
-    if model_path is not None:
-        load_model_with_blacklist(sess, model_path, ["explain"])
+    init_fn(sess)
 
     def eval_tag():
         print("Eval")
         for label_idx, tag in enumerate(tags):
+            print(tag)
             enc_explain_dev, explain_dev = explain_dev_data_list[tag]
             batches = get_batches_ex(enc_explain_dev, hparam.batch_size, 3)
+            try:
+                ex_logit_list = []
+                for batch in batches:
+                    ex_logits,  = sess.run([ex_score_tensor[label_idx],], feed_dict=batch2feed_dict(batch))
+                    print(ex_logits.shape)
+                    ex_logit_list.append(ex_logits)
 
-            ex_logit_list = []
-            for batch in batches:
-                x0, x1, x2 = batch
-                ex_logits,  = sess.run([explain_trainer.get_ex_scores(label_idx)],
-                                                   feed_dict={
-                                                       task.x_list[0]: x0,
-                                                       task.x_list[1]: x1,
-                                                       task.x_list[2]: x2,
-                                                   })
-                ex_logit_list.append(ex_logits)
-            ex_logit_list = np.concatenate(ex_logit_list)
-            assert len(ex_logit_list) == len(explain_dev)
-            print(ex_logit_list.shape)
-            scores = eval_explain(ex_logit_list, data_loader, tag)
+                ex_logit_list = np.concatenate(ex_logit_list, axis=0)
+                print(ex_logit_list.shape)
+                assert len(ex_logit_list) == len(explain_dev)
 
-            for metric in scores.keys():
-                print("{}\t{}".format(metric, scores[metric]))
+                scores = eval_explain(ex_logit_list, data_loader, tag)
 
-            p_at_1, MAP_score = scores["P@1"], scores["MAP"]
-            summary = tf.Summary()
-            summary.value.add(tag='{}_P@1'.format(tag), simple_value=p_at_1)
-            summary.value.add(tag='{}_MAP'.format(tag), simple_value=MAP_score)
-            train_writer.add_summary(summary, fetch_global_step())
-            train_writer.flush()
+                for metric in scores.keys():
+                    print("{}\t{}".format(metric, scores[metric]))
+
+                p_at_1, MAP_score = scores["P@1"], scores["MAP"]
+                summary = tf.Summary()
+                summary.value.add(tag='{}_P@1'.format(tag), simple_value=p_at_1)
+                summary.value.add(tag='{}_MAP'.format(tag), simple_value=MAP_score)
+                train_writer.add_summary(summary, fetch_global_step())
+                train_writer.flush()
+            except ValueError as e:
+                print(e)
+                for ex_logits in ex_logit_list:
+                    print(ex_logits.shape)
+
+    # make explain train_op does not increase global step
+
+    def train_explain(step_i):
+        def commit_ex_train(batch):
+            fd = ex_batch_feed2dict(batch)
+            ex_loss, _ =  sess.run([ex_per_tag_loss, train_ex_op], feed_dict=fd)
+            return ex_loss
+
+        batch = load_payload(step_i)
+        commit_ex_train(batch)
+
+    def fetch_global_step():
+        step, = sess.run([global_step])
+        return step
+
+    save_fn = partial(save_fn_factory, sess, save_dir, global_step)
+
+    sess.run([global_step.assign(base_step)])
+    g_step_check, = sess.run([global_step])
+    print("Initialize step to {}".format(g_step_check))
+
+    def train_fn(step_i):
+        step_before_cls = fetch_global_step()
+        train_explain(step_i)
+        step_after_ex = fetch_global_step()
+        assert step_after_ex == step_before_cls + 1
+        return 0, 0
+
+    def valid_fn():
+        eval_tag()
+
+    valid_freq = 1000
+    save_interval = 5000
+    step_i = 61358
+    while step_i < max_steps:
+        print(step_i)
+        step_i += 1
+        train_fn(step_i)
+        if valid_fn is not None:
+            if step_i % valid_freq == 0:
+                valid_fn()
+
+    return save_fn()
+
+
+def train_nli_ex(hparam, train_config, save_dir,
+                 data, data_loader,
+                 tags, modeling_option, init_fn, tag_informative_fn,
+                 ):
+    print("train_nli_ex")
+    max_steps = train_config.max_steps
+    num_gpu = train_config.num_gpu
+    train_batches, dev_batches = data
+    def save_payload(payload, step_i):
+        save_path = os.path.join(cpath.data_path, "nli_payload_1", str(step_i))
+        pickle.dump(payload, open(save_path, "wb"))
+
+    ex_modeling_class = {
+        'ce': CrossEntropyModeling,
+        'co': CorrelationModeling
+    }[modeling_option]
+    lr_factor = 0.3
+    def build_model():
+        main_model = transformer_nli_pooled(hparam, train_config.vocab_size)
+        ex_model = ex_modeling_class(main_model.model.sequence_output, hparam.seq_max, len(tags),
+                                     main_model.batch2feed_dict)
+        return main_model, ex_model
+
+    if num_gpu == 1:
+        print("Using single GPU")
+        main_model, ex_model = build_model()
+        loss_tensor = main_model.loss
+        acc_tensor = main_model.acc
+        with tf.variable_scope("optimizer"):
+            train_cls = get_train_op2(main_model.loss, hparam.lr, "adam", max_steps)
+        batch2feed_dict = main_model.batch2feed_dict
+        logits = main_model.logits
+
+        ex_score_tensor = ex_model.get_scores()
+        ex_loss_tensor = ex_model.get_loss()
+        ex_per_tag_loss = ex_model.get_losses()
+        ex_batch_feed2dict = ex_model.batch2feed_dict
+        with tf.variable_scope("explain_optimizer"):
+            train_ex_op = get_train_op_wo_gstep_update2(ex_loss_tensor, hparam.lr * lr_factor, "adam2", max_steps)
+    else:
+        main_models, ex_models = zip(*get_multiple_models(build_model, num_gpu))
+        loss_tensor = get_avg_loss(main_models)
+        acc_tensor = get_avg_tensors_from_models(main_models, lambda model: model.acc)
+        with tf.variable_scope("optimizer"):
+            train_cls = get_train_op([m.loss for m in main_models], hparam.lr, max_steps)
+        batch2feed_dict = get_batch2feed_dict_for_multi_gpu(main_models)
+        logits = get_concat_tensors_from_models(main_models, lambda model:model.logits)
+        def get_loss_tensor(model):
+            t = tf.expand_dims(tf.stack(model.get_losses()), 0)
+            return t
+        ex_per_tag_loss = tf.reduce_mean(get_concat_tensors_from_models(ex_models, get_loss_tensor), axis=0)
+
+        ex_score_tensor = get_concat_tensors_list_from_models(ex_models, lambda model:model.get_scores())
+        print(ex_score_tensor)
+        ex_loss_tensor = get_avg_tensors_from_models(ex_models, ex_modeling_class.get_loss)
+        ex_batch_feed2dict = get_batch2feed_dict_for_multi_gpu(ex_models)
+        with tf.variable_scope("explain_optimizer"):
+            train_ex_op = get_other_train_op_multi_gpu(([m.get_loss() for m in ex_models]), hparam.lr * lr_factor, max_steps)
+
+    global_step = tf.train.get_or_create_global_step()
+
+    explain_dev_data_list = {tag: data_loader.get_dev_explain(tag) for tag in tags}
+
+    run_name = os.path.basename(save_dir)
+    train_writer, test_writer = setup_summary_writer(run_name)
+
+    information_fn_list = list([partial(tag_informative_fn, t) for t in tags])
+
+    def forward_run(batch):
+        result, = sess.run([logits], feed_dict=batch2feed_dict(batch))
+        return result
+
+    explain_trainer = ExplainTrainerM(information_fn_list,
+                                      len(tags),
+                                      action_to_label=ex_modeling_class.action_to_label,
+                                      get_null_label=ex_modeling_class.get_null_label,
+                                      forward_run=forward_run,
+                                      batch_size=hparam.batch_size,
+                                      num_deletion=train_config.num_deletion,
+                                      g_val=train_config.g_val,
+                                      drop_thres=train_config.drop_thres
+                                      )
+
+    sess = init_session()
+    sess.run(tf.global_variables_initializer())
+    init_fn(sess)
+
+    def eval_tag():
+        print("Eval")
+        for label_idx, tag in enumerate(tags):
+            print(tag)
+            enc_explain_dev, explain_dev = explain_dev_data_list[tag]
+            batches = get_batches_ex(enc_explain_dev, hparam.batch_size, 3)
+            try:
+                ex_logit_list = []
+                for batch in batches:
+                    ex_logits,  = sess.run([ex_score_tensor[label_idx],], feed_dict=batch2feed_dict(batch))
+                    print(ex_logits.shape)
+                    ex_logit_list.append(ex_logits)
+
+                ex_logit_list = np.concatenate(ex_logit_list, axis=0)
+                print(ex_logit_list.shape)
+                assert len(ex_logit_list) == len(explain_dev)
+
+                scores = eval_explain(ex_logit_list, data_loader, tag)
+
+                for metric in scores.keys():
+                    print("{}\t{}".format(metric, scores[metric]))
+
+                p_at_1, MAP_score = scores["P@1"], scores["MAP"]
+                summary = tf.Summary()
+                summary.value.add(tag='{}_P@1'.format(tag), simple_value=p_at_1)
+                summary.value.add(tag='{}_MAP'.format(tag), simple_value=MAP_score)
+                train_writer.add_summary(summary, fetch_global_step())
+                train_writer.flush()
+            except ValueError as e:
+                print(e)
+                for ex_logits in ex_logit_list:
+                    print(ex_logits.shape)
 
     # make explain train_op does not increase global step
 
     def train_explain(batch, step_i):
-        summary = explain_trainer.train_batch(batch, sess)
+        def commit_ex_train(batch):
+            if train_config.save_train_payload:
+                save_payload(batch, step_i)
+            fd = ex_batch_feed2dict(batch)
+            ex_loss, _ =  sess.run([ex_per_tag_loss, train_ex_op], feed_dict=fd)
+            return ex_loss
+        summary = explain_trainer.train_batch(batch, commit_ex_train)
         train_writer.add_summary(summary, fetch_global_step())
 
     def fetch_global_step():
         step, = sess.run([global_step])
         return step
 
-    train_classification = partial(train_classification_factory, sess, task.loss, task.acc, train_cls, batch2feed_dict)
-    eval_acc = partial(valid_fn_factory, sess, dev_batches[:20], task.loss, task.acc, global_step, batch2feed_dict)
+    train_classification = partial(train_classification_factory, sess, loss_tensor, acc_tensor, train_cls, batch2feed_dict)
+    eval_acc = partial(valid_fn_factory, sess, dev_batches[:20], loss_tensor, acc_tensor, global_step, batch2feed_dict)
 
     save_fn = partial(save_fn_factory, sess, save_dir, global_step)
     init_step,  = sess.run([global_step])
-
     def train_fn(batch, step_i):
         step_before_cls = fetch_global_step()
         loss_val, acc = train_classification(batch, step_i)
@@ -154,7 +329,6 @@ def train_nli_ex(hparam, nli_setting, save_dir, max_steps, data, data_loader, mo
     def valid_fn():
         eval_acc()
         eval_tag()
-    eval_tag()
     print("Initialize step to {}".format(init_step))
     print("{} train batches".format(len(train_batches)))
     valid_freq = 1000
@@ -165,21 +339,66 @@ def train_nli_ex(hparam, nli_setting, save_dir, max_steps, data, data_loader, mo
     return save_fn()
 
 
-def train_from(start_model_path, save_dir, modeling_option):
+def train_from(start_model_path, start_type, save_dir,
+               modeling_option, tags, info_fn_name, num_deletion,
+               g_val=0.5,
+               drop_thres=0.3,
+               num_gpu=1):
+
+    num_deletion = int(num_deletion)
+    num_gpu = int(num_gpu)
     tf_logging.info("train_from : nli_ex")
+    data, data_loader, hp, informative_fn, init_fn, train_config\
+        = get_params(start_model_path, start_type, info_fn_name, num_gpu)
+
+    train_config.num_deletion = num_deletion
+    train_config.g_val = float(g_val)
+    train_config.drop_thres = float(drop_thres)
+
+    train_nli_ex(hp, train_config, save_dir,
+                 data, data_loader, tags, modeling_option,
+                 init_fn, informative_fn)
+
+
+def get_params(start_model_path, start_type, info_fn_name, num_gpu):
     hp = hyperparams.HPSENLI3()
     nli_setting = BertNLI()
-    max_steps = 73630
     set_level_debug()
+    train_config = NLIExTrainConfig()
+    train_config.num_gpu = num_gpu
+    train_config.save_train_payload = True
 
     tokenizer = get_tokenizer()
     tf_logging.info("Intializing dataloader")
     data_loader = get_modified_data_loader(tokenizer, hp.seq_max, nli_setting.vocab_filename)
     tf_logging.info("loading batches")
     data = get_nli_data(hp, nli_setting)
-    tags = nli.tags
-    train_nli_ex(hp, nli_setting, save_dir, max_steps, data, data_loader, start_model_path, tags, modeling_option)
+
+    def init_fn(sess):
+        if start_type == "nli":
+            load_model_with_blacklist(sess, start_model_path, ["explain", "explain_optimizer"])
+        elif start_type == "nli_ex":
+            load_model(sess, start_model_path)
+        elif start_type == "bert":
+            load_model_w_scope(sess, start_model_path, ["bert"])
+        elif start_type == "cold":
+            pass
+        else:
+            assert False
+
+    informative_fn = get_informative_fn_by_name(info_fn_name)
+    return data, data_loader, hp, informative_fn, init_fn, train_config
 
 
 if __name__  == "__main__":
-    train_from(sys.argv[1], sys.argv[2], sys.argv[3])
+    args = ex_arg_parser.parse_args(sys.argv[1:])
+    train_from(args.start_model_path,
+               args.start_type,
+               args.save_dir,
+               args.modeling_option,
+               nli.tags,
+               args.info_fn,
+               args.num_deletion,
+               args.g_val,
+               args.drop_thres,
+               args.num_gpu)

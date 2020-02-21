@@ -1,10 +1,9 @@
-from lime import lime_base, lime_text
-from sklearn.pipeline import make_pipeline
-from functools import partial
-from misc_lib import *
-from data_generator.text_encoder import OOV_ID
-
 import numpy as np
+from lime import lime_text
+
+from attribution.baselines import informative_fn_eq1
+from data_generator.text_encoder import OOV_ID
+from misc_lib import *
 
 
 def explain_by_lime(data, target_tag, forward_run):
@@ -18,14 +17,7 @@ def explain_by_lime(data, target_tag, forward_run):
     explainer = lime_text.LimeTextExplainer(split_expression=split, bow=False)
     def signal_f(x):
         logits_list = forward_run(x)
-        if target_tag == 'conflict':
-            logit_attrib_list = logits_list[:, 2] - logits_list[:, 0]
-        elif target_tag == 'match':
-            logit_attrib_list = logits_list[:, 2] + logits_list[:, 0] - logits_list[:, 1]
-        elif target_tag == 'mismatch':
-            logit_attrib_list = logits_list[:, 1]
-        else:
-            assert False
+        logit_attrib_list = informative_fn_eq1(target_tag, logits_list)
         return np.reshape(logit_attrib_list, [-1, 1])
 
     token_map ={}

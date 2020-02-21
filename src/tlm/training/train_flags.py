@@ -109,6 +109,9 @@ flags.DEFINE_integer("save_checkpoints_steps", 5000,
 flags.DEFINE_integer("keep_checkpoint_every_n_hours", 1,
                      "Number of hours between each checkpoint to be saved.")
 
+flags.DEFINE_integer("keep_checkpoint_max", 5,
+                     "Maximum number of checkpoint to keep.")
+
 flags.DEFINE_integer("iterations_per_loop", 1000,
                      "How many steps to make in each estimator call.")
 
@@ -165,6 +168,8 @@ flags.DEFINE_bool("repeat_data", True, "Whether to repeat data.")
 
 flags.DEFINE_bool("is_bert_checkpoint", True, "init_checkpoint is from BERT")
 
+flags.DEFINE_string("special_flags", "", "special_flags, separated by comma ,")
+
 flags.DEFINE_integer("num_classes", 3, "Number of classes (in case of classification task.")
 
 flags.DEFINE_integer("gradient_accumulation", 1, "How many batch to accumulate for gradient update.")
@@ -177,11 +182,17 @@ flags.DEFINE_integer("inner_batch_size", 60, "Number of classes (in case of clas
 
 flags.DEFINE_integer("def_per_batch", 180, "Number of classes (in case of classification task.")
 
+flags.DEFINE_integer("job_id", -1, "Job number assigned by executor")
+
 flags.DEFINE_integer("random_seed", None, "Number of classes (in case of classification task.")
 
 flags.DEFINE_bool("use_ab_mapping_mask", False, "Whether to use ab_mapping_mask.")
 
 flags.DEFINE_bool("use_cache", False, "Whether to use cached data.")
+
+flags.DEFINE_bool("initialize_to_predict", False, ".")
+
+flags.DEFINE_bool("no_lr_decay", False, ".")
 
 flags.DEFINE_bool("use_old_logits", True,
                   "Whether to use older version of logistic regression for classification_model_fn.")

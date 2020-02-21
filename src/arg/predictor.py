@@ -1,7 +1,9 @@
-from models.transformer.tranformer_nli import transformer_nli
+import cpath
+from data_generator.argmining.ukp import BertDataLoader
 from models.transformer import hyperparams
 from models.transformer.tranformer_nli import transformer_nli
 from trainer.tf_module import *
+from trainer.tf_train_module import init_session
 
 
 class Predictor:

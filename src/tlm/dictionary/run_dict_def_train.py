@@ -1,4 +1,4 @@
-import tensorflow as tf
+from my_tf import tf
 
 from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging, logging

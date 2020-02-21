@@ -5,7 +5,7 @@ from multiprocessing import Process, Queue
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 from xmlrpc.server import SimpleXMLRPCServer
 
-from adhoc.bm25 import get_bm25
+from adhoc.bm25_ex import get_bm25
 from config.input_path import train_data_dir
 from data_generator.adhoc.ws import load_marco_queries
 from data_generator.data_parser.trec import *

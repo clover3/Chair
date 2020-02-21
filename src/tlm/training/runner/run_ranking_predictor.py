@@ -1,4 +1,4 @@
-import tensorflow as tf
+from my_tf import tf
 
 from taskman_client.wrapper import report_run
 from tlm.training.flags_wrapper import get_input_files_from_flags, show_input_files

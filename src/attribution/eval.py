@@ -1,8 +1,10 @@
-from evaluation import *
 import numpy as np
+
 from attribution.deleter_trsfmr import token_delete_with_indice
-from data_generator.NLI.enlidef import get_target_class
 from data_generator.NLI import nli
+from data_generator.NLI.enlidef import get_target_class
+from evaluation import *
+
 
 def eval_explain(conf_score, data_loader, tag):
     if tag == 'conflict':
@@ -218,20 +220,15 @@ def eval_explain_0(conf_score, data_loader):
     }
     return scores
 
+
 # contrib_score = numpy array
 def eval_fidelity(contrib_score, input_data, forward_run, target_tag):
-    if target_tag == 'conflict':
-        target_class = 0
-    elif target_tag == 'match':
-        target_class = 1
-    elif target_tag == 'mismatch':
-        target_class = 0
-
     target_class = get_target_class(target_tag)
     sorted_arg = np.flip(np.argsort(contrib_score, axis=1), axis=1)
     num_inst = len(input_data)
 
     def accuracy(logit_list):
+        t = np.argmax(logit_list, axis=1) == target_class
         return np.count_nonzero(np.argmax(logit_list, axis=1) == target_class) / num_inst
 
 

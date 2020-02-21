@@ -533,7 +533,7 @@ def do_fetch_value():
 
 if __name__ == '__main__':
     begin = time.time()
-    action = "do_fetch_param"
+    action = "lr_kl"
     locals()[action]()
 
     elapsed = time.time() - begin

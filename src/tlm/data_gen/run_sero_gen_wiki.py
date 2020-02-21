@@ -4,7 +4,7 @@ import time
 from collections import Counter
 
 from data_generator.job_runner import sydney_working_dir, JobRunner
-from misc_lib import flatten, average
+from misc_lib import flatten, average, lmap
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tf_util.tf_logging import tf_logging
 from tlm.data_gen.base import LMTrainGen, get_basic_input_feature
@@ -15,7 +15,7 @@ class WikiWorker:
     def __init__(self, out_path):
         self.out_dir = out_path
         target_seq_len = (128 - 2) * 24
-        self.gen = WikiGen(target_seq_len, True)
+        self.gen = SeroGen(target_seq_len, True)
 
     def work(self, job_id):
         doc_id = job_id
@@ -42,12 +42,14 @@ class WikiWorker:
         self.gen.write_instances(inst_list, output_file)
 
 
-class WikiGen(LMTrainGen):
+class SeroGen(LMTrainGen):
     def __init__(self, target_seq_length, drop_short=True):
-        super(WikiGen, self).__init__()
+        super(SeroGen, self).__init__()
         self.rng = random.Random(time.time())
         self.target_seq_length = target_seq_length
         self.drop_short = drop_short
+        self.short_doc_cnt = 0
+        self.all_doc_cnt = 0
 
     def pool_tokens(self, sent_list, target_seq_length, skip=False):
         results = []
@@ -70,6 +72,13 @@ class WikiGen(LMTrainGen):
                 if skip:
                     i = i + self.rng.randint(0, 3)
             i += 1
+
+        self.all_doc_cnt += 1
+        if len(results) == 1:
+            if len(results[0]) < target_seq_length * 0.5 :
+                self.short_doc_cnt += 1
+
+
         return results
 
     def create_instances_from_document(self, doc):
@@ -82,7 +91,11 @@ class WikiGen(LMTrainGen):
             segment_ids = [1] * l
             yield tokens, segment_ids
 
+    def create_instances_from_documents(self, docs):
+        return flatten(lmap(self.create_instances_from_document, docs))
+
     def write_instances(self, new_inst_list, outfile):
+        tf_logging.info("Short doc count : {} of {}".format(self.short_doc_cnt, self.all_doc_cnt))
         writer = RecordWriterWrap(outfile)
         example_numbers = []
 

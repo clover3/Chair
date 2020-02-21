@@ -50,6 +50,9 @@ def input_fn_builder_pairwise(max_seq_length, flags):
                 "input_mask2": tf.io.FixedLenFeature([max_seq_length], tf.int64),
                 "segment_ids2": tf.io.FixedLenFeature([max_seq_length], tf.int64),
         }
+        if flags.modeling == "multi_label_hinge":
+            name_to_features["label_ids1"] = tf.io.FixedLenFeature([1], tf.int64)
+            name_to_features["label_ids2"] = tf.io.FixedLenFeature([1], tf.int64)
         return format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
 
     return input_fn
@@ -164,6 +167,22 @@ def input_fn_builder_masked(input_files, flags, is_training, num_cpu_threads=4):
         return format_dataset(selected_features, batch_size, is_training, flags, input_files, num_cpu_threads)
     return input_fn
 
+
+def input_fn_builder_masked2(input_files, flags, is_training, num_cpu_threads=4):
+    def input_fn(params):
+        """The actual input function."""
+        batch_size = params["batch_size"]
+        all_features = {}
+        all_features.update(get_lm_basic_features(flags))
+        all_features.update(get_lm_mask_features(flags))
+
+        active_feature = ["input_ids", "input_mask", "segment_ids",
+                          "next_sentence_labels",
+                          "masked_lm_positions", "masked_lm_ids"
+                          ]
+        selected_features = {k: all_features[k] for k in active_feature}
+        return format_dataset(selected_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+    return input_fn
 
 def input_fn_builder_blc(input_files,
                               flags,

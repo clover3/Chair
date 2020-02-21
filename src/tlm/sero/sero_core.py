@@ -403,6 +403,7 @@ class SeroEpsilon(base.BertModelInterface):
             ut.layer_idx_base = i
             self.upper_module_list.append(ut)
         self.pooling = config.pooling
+        self.upper_module_inputs = []
 
 
     def network_stacked(self, stacked_input_ids, stacked_input_mask,
@@ -424,6 +425,7 @@ class SeroEpsilon(base.BertModelInterface):
                                 [[0, 0], [0, added_tokens], [0, added_tokens]], 'CONSTANT', constant_values=1)
         with tf.compat.v1.variable_scope("upper"):
             for upper_module in self.upper_module_list:
+                self.upper_module_inputs.append(input_to_upper)
                 upper_module.call(input_to_upper, attention_mask)
                 middle_output = upper_module.get_last_layer_output()
                 input_to_upper = exchange_return_context(batch_size, middle_output, self.window_size,
@@ -442,6 +444,8 @@ class SeroEpsilon(base.BertModelInterface):
             self.pooled_output = self.head_pooling()
         elif self.pooling == "all":
             self.pooled_output = self.all_pooling()
+        elif self.pooling == "none":
+            pass
 
         return self.sequence_output
 

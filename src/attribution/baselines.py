@@ -1,13 +1,35 @@
-import numpy as np
-from .deleter_trsfmr import *
-from trainer.tf_module import *
 from collections import Counter
+
+from trainer.tf_module import *
+from .deleter_trsfmr import *
+
 
 def get_real_len(x1, seq_len):
     for i in range(seq_len):
         if x1[i] == 0:
             return i
     return seq_len
+
+
+def informative_fn_eq2(target_tag, logits_list):
+    if target_tag == 'conflict':
+        logit_attrib_list = logits_list[:, 2] - logits_list[:, 0]
+    elif target_tag == 'match':
+        logit_attrib_list = logits_list[:, 2] + logits_list[:, 0] - logits_list[:, 1]
+    elif target_tag == 'mismatch':
+        logit_attrib_list = logits_list[:, 1]
+    return logit_attrib_list
+
+
+def informative_fn_eq1(target_tag, logits_list):
+    if target_tag == 'conflict':
+        logit_attrib_list = logits_list[:, 2]
+    elif target_tag == 'match':
+        logit_attrib_list = logits_list[:, 0]
+    elif target_tag == 'mismatch':
+        logit_attrib_list = logits_list[:, 1]
+    return logit_attrib_list
+
 
 # forward_run :
 #  input : list of [x0,x1,x2]
@@ -45,13 +67,7 @@ def explain_by_deletion(data, target_tag, forward_run):
             inputs_info.append(info)
 
     logits_list = forward_run(inputs)
-    if target_tag == 'conflict':
-        logit_attrib_list = logits_list[:, 2] - logits_list[:, 0]
-    elif target_tag == 'match':
-        logit_attrib_list = logits_list[:, 2] + logits_list[:, 0] - logits_list[:, 1]
-    elif target_tag == 'mismatch':
-        logit_attrib_list = logits_list[:, 1]
-
+    logit_attrib_list = informative_fn_eq1(target_tag, logits_list)
     assert len(logits_list) == len(inputs)
 
     explains = []
@@ -133,12 +149,7 @@ def explain_by_seq_deletion(data, target_tag, forward_run):
 
     print("Run per inst : ",len(inputs) / len(data))
     logits_list = forward_run(inputs)
-    if target_tag == 'conflict':
-        logit_attrib_list = logits_list[:, 2] - logits_list[:, 0]
-    elif target_tag == 'match':
-        logit_attrib_list = logits_list[:, 2] + logits_list[:, 0] - logits_list[:, 1]
-    elif target_tag == 'mismatch':
-        logit_attrib_list = logits_list[:, 1]
+    logit_attrib_list = informative_fn_eq1(target_tag, logits_list)
 
     assert len(logits_list) == len(inputs)
 

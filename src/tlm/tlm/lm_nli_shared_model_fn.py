@@ -4,7 +4,7 @@ from data_generator.special_tokens import MASK_ID
 from models.transformer import optimization_v2 as optimization
 from models.transformer.bert_common_v2 import get_shape_list2, dropout, create_attention_mask_from_input_mask2
 from tf_util.tf_logging import tf_logging
-from tlm.model import base
+from tlm.model import base, get_hidden_v2
 from tlm.model.base import BertModel, mimic_pooling
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
@@ -46,16 +46,37 @@ class ClassificationIgnore12:
         return eval_metrics
 
 
-def shared_gradient(loss, y2):
-    tvars = tf.compat.v1.trainable_variables()
-
-    grads_1 = tf.gradients(ys=loss, xs=tvars)
-    grads_2 = tf.gradients(ys=y2, xs=tvars)
+def shared_gradient_inner(vars, loss, y2):
+    grads_1 = tf.gradients(ys=loss, xs=vars)
+    grads_2 = tf.gradients(ys=y2, xs=vars)
     acc = 0
     for g1, g2 in zip(grads_1, grads_2):
         if g1 is not None and g2 is not None:
             acc += tf.reduce_sum(tf.abs(g1 * g2))
     return acc
+
+
+def shared_gradient(loss, y2):
+    return shared_gradient_inner(tf.compat.v1.trainable_variables(), loss, y2)
+
+def shared_gradient_fine_grained(losses, y2, n_predictions):
+    tvars = tf.compat.v1.trainable_variables()
+    grads_2 = tf.gradients(ys=y2, xs=tvars)
+
+    l = []
+    for i in range(n_predictions):
+        def inner(loss):
+            grads_1 = tf.gradients(ys=loss, xs=tvars)
+
+            acc = 0
+            for g1, g2 in zip(grads_1, grads_2):
+                if g1 is not None and g2 is not None:
+                    acc += tf.reduce_sum(tf.abs(g1 * g2))
+            return acc
+        l.append(inner(losses[i]))
+
+    return tf.stack(l)
+
 
 
 class SimpleSharingModel:
@@ -86,6 +107,40 @@ class SimpleSharingModel:
     def get_tt_feature(self):
         return self.model.get_pooled_output()[self.batch_size:]
 
+
+class SharingFetchGradModel:
+    def __init__(self, config, use_one_hot_embeddings, is_training,
+                 masked_input_ids, input_mask, segment_ids,
+                 nli_input_ids, nli_input_mask, nli_segment_ids,
+                 ):
+
+        all_input_ids = tf.concat([masked_input_ids, nli_input_ids], axis=0)
+        all_input_mask = tf.concat([input_mask, nli_input_mask], axis=0)
+        all_segment_ids = tf.concat([segment_ids, nli_segment_ids], axis=0)
+        self.batch_size, _ = get_shape_list2(masked_input_ids)
+        self.model = get_hidden_v2.BertModel(
+            config,
+            is_training,
+            all_input_ids,
+            all_input_mask,
+            all_segment_ids,
+            use_one_hot_embeddings
+        )
+
+    def lm_sequence_output(self):
+        return self.model.get_sequence_output()[:self.batch_size]
+
+    def get_lm_hidden_layers(self):
+        layers = []
+        for l in self.model.all_layer_outputs:
+            layers.append(l)
+        return layers
+
+    def get_embedding_table(self):
+        return self.model.get_embedding_table()
+
+    def get_tt_feature(self):
+        return self.model.get_pooled_output()[self.batch_size:]
 
 class AddLayerSharingModel:
     def __init__(self, config, use_one_hot_embeddings, is_training,
@@ -217,11 +272,14 @@ def model_fn_nli_lm(config, train_config, sharing_model_factory, combine_loss_fn
             = get_masked_lm_output(config, sequence_output_lm, sharing_model.get_embedding_table(),
                                      masked_lm_positions, masked_lm_ids, masked_lm_weights)
 
+        masked_lm_log_probs = tf.reshape(masked_lm_log_probs, [batch_size, -1])
+
+        top_guess = masked_lm_log_probs
+
         task = Classification(3, features, nli_feature, is_training)
         nli_loss = task.loss
 
-        overlap_score = shared_gradient(masked_lm_loss, task.logits)
-        overlap_score = tf.tile([overlap_score], [input_ids.shape[0]])
+        overlap_score = shared_gradient_fine_grained(masked_lm_example_loss, task.logits, train_config.max_predictions_per_seq )
         loss = combine_loss_fn(masked_lm_loss, nli_loss)
         tvars = tf.compat.v1.trainable_variables()
         assignment_fn = get_bert_assignment_map
@@ -256,7 +314,132 @@ def model_fn_nli_lm(config, train_config, sharing_model_factory, combine_loss_fn
                     "masked_lm_ids": masked_lm_ids,
                     "masked_lm_example_loss": masked_lm_example_loss,
                     "masked_lm_positions": masked_lm_positions,
-                    "overlap_score":overlap_score
+                    "masked_lm_log_probs": masked_lm_log_probs,
+                    "overlap_score": overlap_score,
+                    "top_guess": top_guess,
+            }
+            output_spec = TPUEstimatorSpec(
+                    mode=mode,
+                    predictions=predictions,
+                    scaffold_fn=scaffold_fn)
+
+        return output_spec
+    return model_fn
+
+
+
+def model_fn_share_fetch_grad(config, train_config, sharing_model_factory, combine_loss_fn=const_combine):
+    def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
+        tf_logging.info("model_fn_nli_lm")
+        """The `model_fn` for TPUEstimator."""
+        log_features(features)
+
+        input_ids = features["input_ids"] # [batch_size, seq_length]
+        input_mask = features["input_mask"]
+        segment_ids = features["segment_ids"]
+        batch_size, seq_max = get_shape_list2(input_ids)
+        if "nli_input_ids" in features:
+            nli_input_ids = features["nli_input_ids"] # [batch_size, seq_length]
+            nli_input_mask = features["nli_input_mask"]
+            nli_segment_ids = features["nli_segment_ids"]
+        else:
+            nli_input_ids = input_ids
+            nli_input_mask = input_mask
+            nli_segment_ids = segment_ids
+            features["label_ids"] = tf.ones([batch_size], tf.int32)
+
+        if mode == tf.estimator.ModeKeys.PREDICT:
+            tf.random.set_seed(0)
+            seed = 0
+        else:
+            seed = None
+
+        is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+        tf_logging.info("Doing dynamic masking (random)")
+
+        masked_input_ids, masked_lm_positions, masked_lm_ids, masked_lm_weights \
+            = random_masking(input_ids, input_mask,
+                             train_config.max_predictions_per_seq, MASK_ID, seed)
+
+        sharing_model = sharing_model_factory(
+            config,
+            train_config.use_one_hot_embeddings,
+            is_training,
+            masked_input_ids,
+            input_mask,
+            segment_ids,
+            nli_input_ids,
+            nli_input_mask,
+            nli_segment_ids
+        )
+
+        sequence_output_lm = sharing_model.lm_sequence_output()
+        nli_feature = sharing_model.get_tt_feature()
+
+        masked_lm_loss, masked_lm_example_loss, masked_lm_log_probs \
+            = get_masked_lm_output(config, sequence_output_lm, sharing_model.get_embedding_table(),
+                                     masked_lm_positions, masked_lm_ids, masked_lm_weights)
+
+        masked_lm_log_probs = tf.reshape(masked_lm_log_probs, [batch_size, -1])
+
+        masked_lm_per_inst_loss = tf.reshape(masked_lm_example_loss, [batch_size, -1])
+
+
+
+        task = Classification(3, features, nli_feature, is_training)
+        nli_loss = task.loss
+
+        task_prob = tf.nn.softmax(task.logits, axis=-1)
+        arg_like = task_prob[:, 1] + task_prob[:, 2]
+
+        vars = sharing_model.model.all_layer_outputs
+        grads_1 = tf.gradients(ys=masked_lm_loss, xs=vars) # List[ batch_szie,
+        grads_2 = tf.gradients(ys=arg_like, xs=vars)
+        l = []
+        for g1, g2 in zip(grads_1, grads_2):
+            if g1 is not None and g2 is not None:
+                a = tf.reshape(g1, [batch_size*2, seq_max, -1]) [:batch_size]
+                a = a / masked_lm_per_inst_loss
+                b = tf.reshape(g2, [batch_size * 2, seq_max, -1])[batch_size:]
+                l.append(tf.abs(a * b))
+        h_overlap = tf.stack(l, axis=1)
+
+        loss = combine_loss_fn(masked_lm_loss, nli_loss)
+        tvars = tf.compat.v1.trainable_variables()
+        assignment_fn = get_bert_assignment_map
+        initialized_variable_names, init_fn = align_checkpoint(tvars, train_config.init_checkpoint, assignment_fn)
+        scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
+        log_var_assignments(tvars, initialized_variable_names)
+
+        TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
+        if mode == tf.estimator.ModeKeys.TRAIN:
+            train_op = optimization.create_optimizer_from_config(loss, train_config)
+            output_spec = TPUEstimatorSpec(
+                    mode=mode,
+                    loss=loss,
+                    train_op=train_op,
+                    scaffold_fn=scaffold_fn)
+        elif mode == tf.estimator.ModeKeys.EVAL:
+            eval_metrics = (metric_fn_lm, [
+                    masked_lm_example_loss,
+                    masked_lm_log_probs,
+                    masked_lm_ids,
+                    masked_lm_weights,
+            ])
+            output_spec = TPUEstimatorSpec(
+                    mode=mode,
+                    loss=loss,
+                    eval_metrics=eval_metrics,
+                    scaffold_fn=scaffold_fn)
+        else:
+            predictions = {
+                    "input_ids": input_ids,
+                    "masked_input_ids": masked_input_ids,
+                    "masked_lm_ids": masked_lm_ids,
+                    "masked_lm_example_loss": masked_lm_example_loss,
+                    "masked_lm_positions": masked_lm_positions,
+                    "masked_lm_log_probs": masked_lm_log_probs,
+                    "h_overlap":h_overlap,
             }
             output_spec = TPUEstimatorSpec(
                     mode=mode,

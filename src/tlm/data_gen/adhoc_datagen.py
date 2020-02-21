@@ -7,10 +7,10 @@ from data_generator.common import get_tokenizer
 from data_generator.data_parser.robust import load_robust04_query
 from data_generator.data_parser.robust2 import load_qrel, load_bm25_best
 from data_generator.job_runner import sydney_working_dir
-from misc_lib import pick1
 from tf_util.record_writer_wrap import RecordWriterWrap
-from tlm.data_gen.base import get_basic_input_feature, get_basic_input_feature_as_list
+from tlm.data_gen.base import get_basic_input_feature
 from tlm.data_gen.bert_data_gen import create_int_feature
+from tlm.data_gen.pairwise_common import generate_pairwise_combinations
 
 robust_chunk_num = 32
 
@@ -103,14 +103,13 @@ class RobustTrainGen:
 
     def generate(self, query_list):
         all_insts = []
-        cnt = 0
         for query_id in query_list:
             if query_id not in self.judgement:
                 continue
+
             judgement = self.judgement[query_id]
             query = self.queries[query_id]
             query_tokens = self.tokenizer.tokenize(query)
-
             pos_inst = []
             neg_inst = []
             for doc_id, score in judgement.items():
@@ -120,51 +119,15 @@ class RobustTrainGen:
                     pos_inst.extend(insts)
                 else:
                     neg_inst.extend(insts)
-            print("pos_insts", len(pos_inst))
-            print("neg_insts", len(neg_inst))
+            inst_per_query = generate_pairwise_combinations(neg_inst, pos_inst)
 
-            if len(pos_inst) > len(neg_inst):
-                major_inst = pos_inst
-                minor_inst = neg_inst
-                pos_idx = 0
-            else:
-                major_inst = neg_inst
-                minor_inst = pos_inst
-                pos_idx = 1
-
-            for idx, entry in enumerate(major_inst):
-                entry2 = pick1(minor_inst)
-
-                pos_entry = [entry, entry2][pos_idx]
-                neg_entry = [entry, entry2][1-pos_idx]
-
-                if cnt < 10:
-                    cnt += 1
-                    print(pos_entry)
-                    print(neg_entry)
-                all_insts.append((pos_entry, neg_entry))
+            all_insts.extend(inst_per_query)
 
         return all_insts
 
     def write(self, insts, out_path):
-        writer = RecordWriterWrap(out_path)
-        for inst in insts:
-            (tokens, segment_ids), (tokens2, segment_ids2) = inst
+        self.write_pairwise_record(self.tokenizer, self.max_seq_length, insts, out_path)
 
-            input_ids, input_mask, segment_ids = get_basic_input_feature_as_list(self.tokenizer, self.max_seq_length,
-                                                                                 tokens, segment_ids)
-            features = collections.OrderedDict()
-            features["input_ids1"] = create_int_feature(input_ids)
-            features["input_mask1"] = create_int_feature(input_mask)
-            features["segment_ids1"] = create_int_feature(segment_ids)
-            input_ids, input_mask, segment_ids = get_basic_input_feature_as_list(self.tokenizer, self.max_seq_length,
-                                                                                 tokens2, segment_ids2)
-            features["input_ids2"] = create_int_feature(input_ids)
-            features["input_mask2"] = create_int_feature(input_mask)
-            features["segment_ids2"] = create_int_feature(segment_ids)
-
-            writer.write_feature(features)
-        writer.close()
 
 
 class RobustPredictGen:

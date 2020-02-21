@@ -26,13 +26,19 @@ def report_number(r):
 
 def report_run(func):
     def func_wrapper(*args):
-        if FLAGS.use_tpu and FLAGS.tpu_name is None:
-            FLAGS.tpu_name = assign_tpu()
-
         task_proxy = get_task_proxy(FLAGS.tpu_name)
         run_name = flag_to_run_name(FLAGS)
         flags_str = get_hp_str_from_flag(FLAGS)
-        task_proxy.task_start(run_name, flags_str)
+
+        if FLAGS.use_tpu and FLAGS.tpu_name is None:
+            task_proxy.task_pending(run_name, flags_str)
+            FLAGS.tpu_name = assign_tpu()
+            task_proxy.tpu_name = FLAGS.tpu_name
+
+        flags_str = get_hp_str_from_flag(FLAGS)
+
+        job_id = FLAGS.job_id if FLAGS.job_id >= 0 else None
+        task_proxy.task_start(run_name, flags_str, job_id)
         try:
             r = func(*args)
             print("Run completed")

@@ -68,6 +68,21 @@ def p_at_s_list(explains, golds):
     return average(score_list_p + score_list_h)
 
 
+def AP_from_binary(is_correct_list, num_gold):
+    tp = 0
+    sum = 0
+    for idx, is_correct in enumerate(is_correct_list):
+        n_pred_pos = idx + 1
+        if is_correct:
+            tp += 1
+            prec = (tp / n_pred_pos)
+            assert prec <= 1
+            sum += prec
+    assert sum <= num_gold
+    return sum / num_gold
+
+
+
 def MAP(explains, golds):
     def AP(pred, gold):
         n_pred_pos = 0

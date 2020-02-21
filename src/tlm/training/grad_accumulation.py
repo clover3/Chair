@@ -1,13 +1,18 @@
-import tensorflow as tf
-from models.transformer import optimization_v2 as optimization
 import numpy as np
+import tensorflow as tf
+
+from models.transformer import optimization_v2 as optimization
 
 
 def get_accumulated_optimizer_from_config(loss, train_config, tvars, gradient_accmulation_multiplier):
+    max_train_step = train_config.num_train_steps
+    if train_config.no_lr_decay:
+      max_train_step = 100000 * 100000
+
     train_op = get_accumulated_optimizer(
         loss,
         train_config.learning_rate,
-        train_config.num_train_steps,
+        max_train_step,
         train_config.num_warmup_steps,
         train_config.use_tpu,
         tvars,
@@ -29,6 +34,8 @@ def get_accumulated_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, 
         exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"])
     if use_tpu:
         optimizer = tf.compat.v1.tpu.CrossShardOptimizer(optimizer)
+    if tvars is None:
+        tvars = tf.compat.v1.trainable_variables()
 
     # compute batch gradient
     grads = tf.gradients(loss, tvars)

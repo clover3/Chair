@@ -6,7 +6,7 @@ from tlm.training.train_config import LMTrainConfig
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-import tensorflow as tf
+from my_tf import tf
 
 import tlm.model.base as modeling
 from taskman_client.wrapper import report_run

@@ -50,23 +50,37 @@ def eval_nli(hparam, nli_setting, run_name, dev_batches, model_path, load_fn):
     return valid_fn()
 
 
-def eval_accuracy(model_path, load_type):
-    hp = hyperparams.HPSENLI3()
+def eval_accuracy(model_path, load_type, data_type="mnli"):
+    dev_batches, hp, load_fn, nli_setting, run_name = get_eval_params(load_type, model_path, data_type)
+
+    acc = eval_nli(hp, nli_setting, run_name, dev_batches, model_path, load_fn)
+    print("Accuracy : ", acc)
+    # proxy = get_task_manager_proxy()
+    # proxy.report_number(run_name, acc, "")
+
+
+def get_eval_params(load_type, model_path, data_type):
+    hp = hyperparams.HPSENLI3_eval()
     hp.batch_size = 128
     nli_setting = NLI()
     nli_setting.vocab_size = 30522
     nli_setting.vocab_filename = "bert_voca.txt"
-    data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
-    run_name = os.path.split(model_path)[-1]
-    dev_batches = get_batches_ex(data_loader.get_dev_data(), hp.batch_size, 4)
+    if data_type == "mnli":
+        data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    elif data_type == "snli":
+        data_loader = nli.SNLIDataLoader(hp.seq_max, nli_setting.vocab_filename, True)
+    else:
+        assert False
 
+    dir_path, file_name = os.path.split(model_path)
+    run_name = os.path.split(dir_path)[1] + "/" + file_name
+    dev_batches = get_batches_ex(data_loader.get_dev_data(), hp.batch_size, 4)
     if load_type == "v2":
         load_fn = load_bert_v2
     else:
         load_fn = load_model
+    return dev_batches, hp, load_fn, nli_setting, run_name
 
-    acc = eval_nli(hp, nli_setting, run_name, dev_batches, model_path, load_fn)
-    print(run_name, acc)
 
 if __name__  == "__main__":
     eval_accuracy(sys.argv[1], sys.argv[2])

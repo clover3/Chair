@@ -15,6 +15,17 @@ def entry_to_feature_dict(e):
     return features
 
 
+def pairwise_entry_to_feature_dict(pair):
+    features = collections.OrderedDict()
+    for idx, e in enumerate(pair):
+        input_ids, input_mask, segment_ids, label = e
+        features["input_ids"+str(idx+1)] = create_int_feature(input_ids)
+        features["input_mask"+str(idx+1)] = create_int_feature(input_mask)
+        features["segment_ids"+str(idx+1)] = create_int_feature(segment_ids)
+        features["label_ids"+str(idx+1)] = create_int_feature([label])
+    return features
+
+
 def modify_data_loader(data_loader):
     tokenizer = get_tokenizer()
     CLS_ID = tokenizer.convert_tokens_to_ids(["[CLS]"])[0]

@@ -45,6 +45,14 @@ def is_mask(token):
         return 0
 
 
+def cells_from_scores(scores, hightlight=True):
+    cells = []
+    for i, score in enumerate(scores):
+        h_score = score if hightlight else 0
+        cells.append(Cell(float_aware_strize(score), h_score))
+    return cells
+
+
 def cells_from_tokens(tokens, scores=None, stop_at_pad=True):
     cells = []
     for i, token in enumerate(tokens):
@@ -76,3 +84,18 @@ def cells_from_tokens(tokens, scores=None, stop_at_pad=True):
 
 def is_dependent(token):
     return len(token) == 1 and not token[0].isalnum()
+
+
+def float_aware_strize(obj):
+    try:
+        i = int(obj)
+        v = float(obj)
+
+        if abs(i-v) < 0.0001: # This is int
+            return str(obj)
+        else:
+            return "{:04.2f}".format(obj)
+    except:
+        return str(obj)
+
+    return str(v)

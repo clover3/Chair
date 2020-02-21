@@ -258,6 +258,12 @@ def get_dir_files(dir_path):
 
     return path_list
 
+def get_dir_files2(dir_path):
+    r = []
+    for item in os.scandir(dir_path):
+        r.append(os.path.join(dir_path, item.name))
+
+    return r
 
 def get_dir_files_sorted_by_mtime(dir_path):
     path_list = get_dir_files(dir_path)
@@ -338,3 +344,13 @@ class BinAverage:
 class IntBinAverage(BinAverage):
     def __init__(self):
         super(IntBinAverage, self).__init__(lambda x: int(x))
+
+
+def k_th_score(arr, k, reverse):
+    return sorted(arr, reverse=reverse)[k]
+
+
+def apply_threshold(arr, t):
+    return [v  if v > t else 0 for v in arr]
+
+

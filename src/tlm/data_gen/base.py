@@ -14,7 +14,7 @@ from misc_lib import flatten
 from misc_lib import pick1
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tf_util.tf_logging import tf_logging
-from tlm.estimator_prediction_viewer import float_aware_strize
+from tlm.token_utils import float_aware_strize
 
 
 class IfCaseCounter:
@@ -55,7 +55,14 @@ def truncate_seq(tokens_a, max_num_tokens, rng):
 
 
 def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
+    cnt = 0
     while True:
+        cnt += 1
+        if cnt > 512 and cnt % 100 == 0:
+            print("Infinited loop :")
+            print(tokens_a)
+            print(tokens_b)
+            print(max_num_tokens)
         total_length = len(tokens_a) + len(tokens_b)
         if total_length <= max_num_tokens:
             break
@@ -199,6 +206,8 @@ class LMTrainBase:
             i = i + self.rng.randint(0,3)
         while i < len(document):
             segment = document[i]
+            if len(segment) > self.max_seq_length:
+                segment = segment[:self.max_seq_length]
             current_chunk.append(segment)
             current_length += len(segment)
             if i == len(document) - 1 or current_length >= target_seq_length:
@@ -529,6 +538,7 @@ class UnmaskedPairedDataGen(LMTrainBase):
         super(UnmaskedPairedDataGen, self).__init__()
 
     def create_instances_from_documents(self, documents):
+        documents = [doc for doc in documents if doc]
         max_num_tokens = self.max_seq_length - 3
         target_seq_length = max_num_tokens
 

@@ -84,6 +84,23 @@ class transformer_nli_pooled:
         self.logits = task.logits
         self.acc = task.acc
 
+    def batch2feed_dict(self, batch):
+        if len(batch) == 3:
+            x0, x1, x2 = batch
+            feed_dict = {
+                self.x_list[0]: x0,
+                self.x_list[1]: x1,
+                self.x_list[2]: x2,
+            }
+        else:
+            x0, x1, x2, y = batch
+            feed_dict = {
+                self.x_list[0]: x0,
+                self.x_list[1]: x1,
+                self.x_list[2]: x2,
+                self.y: y,
+            }
+        return feed_dict
 
 class transformer_nli_pooled_embedding_in:
     def __init__(self, hp, voca_size, is_training):

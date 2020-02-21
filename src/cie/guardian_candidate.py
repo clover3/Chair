@@ -1,11 +1,11 @@
-from crawl.rerank_guardian import load_all_articles, load_ranking
-import pickle
-from adhoc.bm25 import stem_tokenize, BM25_2
-import nltk
-from cie.candidate import get_verb_nouns, get_entities
-from misc_lib import *
 from collections import Counter
 from random import shuffle
+
+import nltk
+
+from cie.candidate import get_verb_nouns, get_entities
+from crawl.rerank_guardian import load_all_articles, load_ranking
+from misc_lib import *
 
 
 def get_top_ids(score_list, top_k):

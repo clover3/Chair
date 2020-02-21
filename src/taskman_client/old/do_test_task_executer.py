@@ -1,9 +1,9 @@
 import logging
 import time
 
-from taskman_client.task import Task
-from taskman_client.task_executer import Executer
-from taskman_client.task_executer import logger
+from taskman_client.old.task import Task
+from taskman_client.old.task_executer import Executer
+from taskman_client.old.task_executer import logger
 
 
 def test1():

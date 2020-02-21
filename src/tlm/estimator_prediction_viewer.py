@@ -6,7 +6,7 @@ import numpy as np
 
 from cpath import output_path
 from data_generator.common import get_tokenizer
-from tlm.token_utils import cells_from_tokens
+from tlm.token_utils import cells_from_tokens, float_aware_strize, cells_from_scores
 from visualize.html_visual import Cell
 
 
@@ -81,11 +81,7 @@ class EstimatorPredictionViewer:
         return cells
 
     def cells_from_scores(self, scores, hightlight=True):
-        cells = []
-        for i, score in enumerate(scores):
-            h_score = scores if hightlight else 0
-            cells.append(Cell(float_aware_strize(score), h_score))
-        return cells
+        return cells_from_scores(scores, hightlight)
 
     @staticmethod
     def estimator_prediction_loader(p):
@@ -102,20 +98,7 @@ class EstimatorPredictionViewer:
 class EstimatorPredictionViewerGosford(EstimatorPredictionViewer):
     def __init__(self, filename):
         p = os.path.join(output_path, filename)
-        super(EstimatorPredictionViewerGosford, self).__init__()
+        super(EstimatorPredictionViewerGosford, self).__init__(p)
 
 
 
-def float_aware_strize(obj):
-    try:
-        i = int(obj)
-        v = float(obj)
-
-        if abs(i-v) < 0.0001: # This is int
-            return str(obj)
-        else:
-            return "{:04.2f}".format(obj)
-    except:
-        return str(obj)
-
-    return str(v)

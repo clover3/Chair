@@ -102,7 +102,6 @@ def tune_cut(pred_list, gold_list):
         n_total = len(score_list)
         all_p = sum(right(score_list))
         all_n = n_total - all_p
-        print(n_total, all_p, all_n)
         best_acc = -1
         best_cut = 0
         score_list.sort(key=lambda x :x[0], reverse=True)

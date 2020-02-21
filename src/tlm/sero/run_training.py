@@ -1,4 +1,4 @@
-import tensorflow as tf
+from my_tf import tf
 
 from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging
@@ -29,9 +29,9 @@ def main(_):
     else:
         assert False
 
-    model_fn = model_fn_sero_lm(config, train_config, FLAGS.modeling)
+    model_fn = model_fn_sero_lm(config, train_config, FLAGS.modeling, FLAGS.prediction_op)
 
-    run_estimator(model_fn, input_fn)
+    return run_estimator(model_fn, input_fn)
 
 if __name__ == "__main__":
     flags.mark_flag_as_required("model_config_file")

@@ -149,6 +149,64 @@ def get_train_op_from_grads_and_tvars(grads, tvars, lr, name='Adam', num_train_s
 
     return train_op
 
+
+def get_train_op_from_cliped_grads_and_tvars(cliped_grads, tvars, lr, name='Adam', num_train_steps=0):
+    global_step = tf.train.get_or_create_global_step()
+    learning_rate = get_learning_rate_w_warmup(global_step, lr, num_train_steps, 10000)
+
+    optimizer = AdamWeightDecayOptimizer(
+        learning_rate=learning_rate,
+        weight_decay_rate=0.02,
+        beta_1=0.9,
+        beta_2=0.999,
+        epsilon=1e-6,
+        exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"])
+
+    # This is how the model was pre-trained.
+    grads, _ = cliped_grads
+
+    train_op = optimizer.apply_gradients(
+        zip(grads, tvars), global_step=global_step)
+
+    # Normally the global step update is done inside of `apply_gradients`.
+    # However, `AdamWeightDecayOptimizer` doesn't do this. But if you use
+    # a different optimizer, you should probably take this line out.
+    new_global_step = global_step + 1
+    train_op = tf.group(train_op, [global_step.assign(new_global_step)])
+
+    return train_op
+
+
+
+def get_train_op_wo_gstep_update2(loss, lr, name, num_train_steps):
+    tvars = tf.trainable_variables()
+    grads = tf.gradients(ys=loss, xs=tvars)
+    return get_train_op_wo_gstep_update(grads, tvars, lr, name, num_train_steps)
+
+
+# This function does not update global_step
+def get_train_op_wo_gstep_update(grads, tvars, lr, name, num_train_steps):
+    global_step = tf.train.get_or_create_global_step()
+    learning_rate = get_learning_rate_w_warmup(global_step, lr, num_train_steps, 10000)
+
+    optimizer = AdamWeightDecayOptimizer(
+        learning_rate=learning_rate,
+        weight_decay_rate=0.02,
+        beta_1=0.9,
+        beta_2=0.999,
+        epsilon=1e-6,
+        exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"],
+        name=name
+    )
+    # This is how the model was pre-trained.
+    (grads, _) = tf.clip_by_global_norm(grads, clip_norm=1.0)
+
+    train_op = optimizer.apply_gradients(
+        zip(grads, tvars), global_step=global_step)
+
+    return global_step, train_op
+
+
 def get_learning_rate(global_step, lr, num_train_steps):
     if num_train_steps:
         learning_rate = tf.constant(value=lr, shape=[], dtype=tf.float32)

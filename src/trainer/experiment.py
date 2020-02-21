@@ -1,6 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor
 
-from explain.train_ex import ExplainTrainer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC
@@ -8,11 +7,12 @@ from sklearn.svm import LinearSVC
 import cache
 import data_generator.NLI.enlidef as ENLIDef
 import data_generator.adhoc.score_loader as score_loader
-from adhoc.bm25 import get_bm25
+from adhoc.bm25_ex import get_bm25
 from attribution.baselines import *
 from attribution.eval import eval_explain, eval_pairing, predict_translate
 from attribution.eval import eval_fidelity
 from attribution.lime import *
+from cpath import get_model_full_path
 from data_generator import shared_setting
 from data_generator.adhoc.ws import *
 from data_generator.argmining import ukp
@@ -26,6 +26,7 @@ from data_generator.stance import stance_detection
 from data_generator.ubuntu import ubuntu
 from evaluation import *
 from explain import visualize
+from explain.explain_trainer import ExplainTrainer
 from log import log
 from models import word2vec
 from models.baselines import svm

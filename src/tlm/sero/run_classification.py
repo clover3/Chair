@@ -31,7 +31,7 @@ def main(_):
         max_seq_length=FLAGS.max_seq_length,
         is_training=is_training)
 
-    model_fn = model_fn_sero_classification(config, train_config, FLAGS.modeling)
+    model_fn = model_fn_sero_classification(config, train_config, FLAGS.modeling, FLAGS.special_flags)
     return run_estimator(model_fn, input_fn)
 
 if __name__ == "__main__":

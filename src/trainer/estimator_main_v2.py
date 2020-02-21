@@ -23,10 +23,12 @@ def main_inner(model_class=None):
     if model_class is None:
         model_class = BertModel
 
+    special_flags = FLAGS.special_flags.split(",")
     model_fn = model_fn_classification(
         bert_config=bert_config,
         train_config=train_config,
         model_class=model_class,
+        special_flags=special_flags,
     )
 
     input_fn = input_fn_from_flags(input_fn_builder, FLAGS)

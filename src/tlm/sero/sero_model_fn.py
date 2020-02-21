@@ -13,9 +13,11 @@ from tlm.sero.sero_core import split_and_append_sep, SeroDelta, SeroEpsilon
 from tlm.training import assignment_map, grad_accumulation
 from tlm.training.input_fn_common import format_dataset
 from tlm.training.model_fn_common import log_features, get_tpu_scaffold_or_init, log_var_assignments, align_checkpoint, \
-    Classification
-from tlm.training.ranking_model_fn import combine_paired_input_features, checkpoint_init, \
-    ranking_estimator_spec, rank_predict_estimator_spec, get_prediction_structure, apply_loss_modeling
+    Classification, reweight_zero
+from tlm.training.ranking_model_common import combine_paired_input_features, get_prediction_structure, \
+    apply_loss_modeling
+from tlm.training.ranking_model_fn import checkpoint_init, \
+    ranking_estimator_spec, rank_predict_estimator_spec
 from trainer.tf_train_module_v2 import OomReportingHook
 
 
@@ -36,7 +38,7 @@ def get_assignment_map_from_checkpoint_type(checkpoint_type, num_lower_layers):
 
     return assignment_fn
 
-def model_fn_sero_lm(config, train_config, modeling):
+def model_fn_sero_lm(config, train_config, modeling, prediction_op=None):
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
         tf_logging.info("model_fn_sero_lm")
         """The `model_fn` for TPUEstimator."""
@@ -109,6 +111,19 @@ def model_fn_sero_lm(config, train_config, modeling):
             = get_masked_lm_output(config, sequence_output_3d, model.get_embedding_table(),
                                      masked_lm_positions_2d, masked_lm_ids_2d, masked_lm_weights_2d)
 
+        predictions = None
+        if prediction_op == "gradient_to_long_context":
+            predictions = {}
+            for idx, input_tensor in enumerate(model.upper_module_inputs):
+                g = tf.abs(tf.gradients(ys=masked_lm_loss, xs=input_tensor)[0])
+                main_g = g[:, :config.window_size, :]
+                context_g = g[:, config.window_size:, :]
+                main_g = tf.reduce_mean(tf.reduce_mean(main_g, axis=2), axis=1)
+                context_g = tf.reduce_mean(tf.reduce_mean(context_g, axis=2), axis=1)
+                predictions['main_g_{}'.format(idx)] = main_g
+                predictions['context_g_{}'.format(idx)] = context_g
+
+
         loss = masked_lm_loss  #+ bert_task.masked_lm_loss
         tvars = tf.compat.v1.trainable_variables()
         if train_config.init_checkpoint:
@@ -132,13 +147,14 @@ def model_fn_sero_lm(config, train_config, modeling):
             output_spec = TPUEstimatorSpec(mode=model, loss=loss, eval_metrics=None,
                                            scaffold_fn=scaffold_fn)
         else:
-            predictions = {
-                    "input_ids": input_ids,
-                    "masked_input_ids": masked_input_ids,
-                    "masked_lm_ids": masked_lm_ids_2d,
-                    "masked_lm_example_loss": masked_lm_example_loss,
-                    "masked_lm_positions": masked_lm_positions_2d,
-            }
+            if predictions is None:
+                predictions = {
+                        "input_ids": input_ids,
+                        "masked_input_ids": masked_input_ids,
+                        "masked_lm_ids": masked_lm_ids_2d,
+                        "masked_lm_example_loss": masked_lm_example_loss,
+                        "masked_lm_positions": masked_lm_positions_2d,
+                }
             output_spec = TPUEstimatorSpec(
                     mode=mode,
                     loss=loss,
@@ -178,7 +194,7 @@ def model_fn_sero_ranking_train(config, train_config, model_class):
         if is_training:
             pooled_output = dropout(pooled_output, 0.1)
 
-        loss, losses, y_pred = apply_loss_modeling(config.loss, pooled_output)
+        loss, losses, y_pred = apply_loss_modeling(config.loss, pooled_output, features)
 
         assignment_fn = get_assignment_map_from_checkpoint_type(train_config.checkpoint_type, config.lower_layers)
         scaffold_fn = checkpoint_init(assignment_fn, train_config)
@@ -242,7 +258,7 @@ def model_fn_sero_ranking_predict(config, train_config, model_class):
     return model_fn
 
 
-def model_fn_sero_classification(config, train_config, modeling):
+def model_fn_sero_classification(config, train_config, modeling, special_flags=[]):
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
         tf_logging.info("model_fn_sero_classification")
         """The `model_fn` for TPUEstimator."""
@@ -282,7 +298,13 @@ def model_fn_sero_classification(config, train_config, modeling):
                                                activation=tf.keras.activations.tanh,
                                                kernel_initializer=create_initializer(config.initializer_range))(
             first_token_tensor)
-        task = Classification(3, features, pooled_output, is_training)
+
+        if "bias_loss" in special_flags:
+            loss_weighting = reweight_zero
+        else:
+            loss_weighting = None
+
+        task = Classification(3, features, pooled_output, is_training, loss_weighting)
         loss = task.loss
 
         tvars = tf.compat.v1.trainable_variables()
@@ -301,7 +323,11 @@ def model_fn_sero_classification(config, train_config, modeling):
             output_spec = TPUEstimatorSpec(mode=model, loss=loss, eval_metrics=task.eval_metrics(),
                                            scaffold_fn=scaffold_fn)
         elif mode == tf.estimator.ModeKeys.PREDICT:
-            output_spec = TPUEstimatorSpec(mode=model, loss=loss, predictions={"loss": task.loss_arr},
+            predictions = {
+                "input_ids": input_ids,
+                "logits": task.logits
+            }
+            output_spec = TPUEstimatorSpec(mode=model, loss=loss, predictions=predictions,
                                            scaffold_fn=scaffold_fn)
         return output_spec
     return model_fn

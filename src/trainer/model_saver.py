@@ -167,6 +167,8 @@ def load_model_with_blacklist(sess, path, exclude_namespace, verbose=True):
             return True
         return False
 
+    print("Model path : ", path)
+
     variables = tf.contrib.slim.get_variables_to_restore()
     variables_to_restore = [v for v in variables if not exclude(v)]
     if verbose:

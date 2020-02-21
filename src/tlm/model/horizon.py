@@ -39,6 +39,7 @@ class Tensor2D:
     def get_3d(self):
         return tf.reshape(self.matrix, [self.batch_size, self.seq_length, -1])
 
+
 def attention_layer(from_tensor: Tensor2D,
                     to_tensor_list: List[Tensor2D],
                     query_ff,

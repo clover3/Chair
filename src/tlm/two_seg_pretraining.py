@@ -22,7 +22,7 @@ import collections
 import random
 
 from data_generator import tokenizer_b as tokenization
-import tensorflow as tf
+from my_tf import tf
 
 flags = tf.flags
 

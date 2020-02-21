@@ -68,6 +68,7 @@ def lm_pretrain(input_files):
       model_dir=FLAGS.output_dir,
       save_checkpoints_steps=FLAGS.save_checkpoints_steps,
       keep_checkpoint_every_n_hours =FLAGS.keep_checkpoint_every_n_hours,
+      keep_checkpoint_max=FLAGS.keep_checkpoint_max,
       session_config=config,
       tf_random_seed=seed,
       tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(

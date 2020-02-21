@@ -1,5 +1,5 @@
 from trainer.tf_module import *
-from .baselines import get_real_len
+from .baselines import get_real_len, informative_fn_eq1
 from .deepexplain.tensorflow import methods
 
 def explain_by_gradient(data, method_name, label_type, sess, de, feed_end_input, emb_outputs, emb_input, softmax_output):
@@ -49,18 +49,7 @@ def explain_by_gradient(data, method_name, label_type, sess, de, feed_end_input,
     print("Average runs:", methods.total_runs/len(emb2logit))
     assert len(emb2logit.shape) == 4
     assert emb2logit.shape[0] == len(data)
-    emb2logit_ce = emb2logit[:, 2] - emb2logit[:, 0]
-    emb2logit_ec_n = emb2logit[:, 2] + emb2logit[:, 0] - emb2logit[:, 1]
-    emb2logit_n = emb2logit[:, 1]
-
-    if label_type == "conflict":
-        attrib = emb2logit_ce
-    elif label_type == 'match':
-        attrib = emb2logit_ec_n
-    elif label_type == 'mismatch':
-        attrib = emb2logit_n
-    else:
-        raise NotImplementedError
+    attrib = informative_fn_eq1(label_type, emb2logit)
 
     num_case = len(data)
     explains = []

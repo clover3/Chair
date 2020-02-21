@@ -41,6 +41,7 @@ def max_future(futures):
     return max([f.get() for f in futures])
 
 
+# get from all element futures in the list
 def list_future(futures):
     return list([f.get() for f in futures])
 

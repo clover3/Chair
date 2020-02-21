@@ -60,6 +60,22 @@ def list_batch_grouping(data, batch_size):
     return new_data
 
 
+def flatten_from_batches(data):
+    data_len = None
+    result = []
+    for e in data:
+        if data_len is None:
+            data_len = len(e)
+        batch_len = len(e[0])
+        for i in range(batch_len):
+            new_line = []
+            for j in range(data_len):
+                new_line.append(e[j][i])
+            result.append(new_line)
+
+    return result
+
+
 def numpy_print(arr):
     return "".join(["{0:.3f} ".format(v) for v in arr])
 

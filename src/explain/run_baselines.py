@@ -18,12 +18,12 @@ from trainer.model_saver import load_model
 from trainer.np_modules import get_batches_ex
 from trainer.tf_train_module import init_session
 
-parser = argparse.ArgumentParser(description='')
-parser.add_argument("--tag", help="Your input file.")
-parser.add_argument("--model_path", help="Your model path.")
-parser.add_argument("--method_name", )
-parser.add_argument("--data_id")
-parser.add_argument("--sub_range")
+nli_ex_prediction_parser = argparse.ArgumentParser(description='')
+nli_ex_prediction_parser.add_argument("--tag", help="Your input file.")
+nli_ex_prediction_parser.add_argument("--model_path", help="Your model path.")
+nli_ex_prediction_parser.add_argument("--method_name", )
+nli_ex_prediction_parser.add_argument("--data_id")
+nli_ex_prediction_parser.add_argument("--sub_range")
 
 load_nli_data = NotImplemented
 
@@ -101,5 +101,5 @@ def run(args):
                          )
 
 if __name__ == "__main__":
-    args = parser.parse_args(sys.argv[1:])
+    args = nli_ex_prediction_parser.parse_args(sys.argv[1:])
     run(args)

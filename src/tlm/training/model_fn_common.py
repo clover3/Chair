@@ -18,9 +18,7 @@ def get_tpu_scaffold_or_init(init_fn, use_tpu):
         init_fn()
         return None
 
-
-def log_var_assignments(tvars, initialized_variable_names, initialized_variable_names2=None):
-    tf_logging.info("**** Trainable Variables ****")
+def log_var_assignments_one_by_one(tvars, initialized_variable_names, initialized_variable_names2=None):
     for var in tvars:
         init_string = ""
         if var.name in initialized_variable_names:
@@ -30,10 +28,25 @@ def log_var_assignments(tvars, initialized_variable_names, initialized_variable_
                 init_string = ", *INIT_FROM_CKPT2*"
         if init_string:
             tf_logging.debug("    name = %s, shape = %s%s", var.name, var.shape,
-                     init_string)
+                             init_string)
         else:
             tf_logging.info("    name = %s, shape = %s%s", var.name, var.shape,
-                             " - Not Initialized")
+                            " - Not Initialized")
+
+
+def log_var_assignments(tvars, initialized_variable_names, initialized_variable_names2=None):
+    tf_logging.info("**** Trainable Variables ****")
+
+    num_init_vars = len(initialized_variable_names)
+    if initialized_variable_names2 is not None:
+        num_init_vars += len(initialized_variable_names2)
+
+    if num_init_vars == len(tvars):
+        tf_logging.info("All variables initialized")
+    elif num_init_vars == 0:
+        tf_logging.info("No variables initialized")
+    else:
+        log_var_assignments_one_by_one(tvars, initialized_variable_names, initialized_variable_names2)
     tf_logging.info("Total parameters : %d" % get_param_num())
 
 
@@ -81,8 +94,15 @@ def get_training_spec(loss, mode, train_config, scaffold_fn):
     return output_spec
 
 
+def reweight_zero(label_ids, loss_arr):
+    is_zero = tf.cast(tf.equal(label_ids, 0), tf.float32)
+    weight = tf.ones_like(loss_arr) - is_zero * 0.75
+    loss_arr = loss_arr * weight * 3
+    return loss_arr
+
+
 class Classification:
-    def __init__(self, num_classes, features, rep, is_training):
+    def __init__(self, num_classes, features, rep, is_training, loss_weighting=None):
         self.num_classes = num_classes
         self.label_ids = features["label_ids"]
         self.label_ids = tf.reshape(self.label_ids, [-1])
@@ -100,6 +120,10 @@ class Classification:
         self.loss_arr = tf.nn.sparse_softmax_cross_entropy_with_logits(
             logits=logits,
             labels=self.label_ids)
+        if loss_weighting is not None:
+            print("Special flags : ", "bias_loss")
+            self.loss_arr = loss_weighting(self.label_ids, self.loss_arr)
+
         self.loss = tf.reduce_mean(input_tensor=self.loss_arr)
         self.preds = tf.cast(tf.argmax(logits, axis=-1), dtype=tf.int32)
 
@@ -108,6 +132,7 @@ class Classification:
             self.logits, self.label_ids, self.is_real_example
         ])
         return eval_metrics
+
 
 def log_features(features):
     tf_logging.info("*** Features ***")

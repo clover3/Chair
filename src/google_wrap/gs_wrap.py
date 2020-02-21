@@ -42,6 +42,16 @@ def get_last_model_path(model_dir_path):
     return drop_after_step_str(latest.name)
 
 
+def check_gs_exists(path):
+    prefix = "gs://clovertpu/"
+    if path.startswith(prefix):
+        path = path[len(prefix):]
+    client = storage.Client()
+    bucket = client.get_bucket('clovertpu')
+    blob = bucket.get_blob(path + ".meta")
+    return blob is not None
+
+
 def download_model_last(gs_model_dir, local_dir):
     print("Downloading model from :", gs_model_dir)
     client = storage.Client()

@@ -20,7 +20,7 @@ def get_bert_assignment_map(tvars, lm_checkpoint):
         targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
         targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
         lm_assignment_candidate[targ_name] = var
-        tf_logging.info("Init from lm_checkpoint : %s" % name)
+        tf_logging.debug("Init from lm_checkpoint : %s" % name)
         real_name_map[targ_name] = name
 
     assignment_map = {}

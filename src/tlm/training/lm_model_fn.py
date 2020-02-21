@@ -1,9 +1,8 @@
-import tensorflow as tf
-
 from data_generator.special_tokens import MASK_ID, PAD_ID
 from models.transformer import bert_common_v2 as bert_common
 from models.transformer import hyperparams
 from models.transformer import optimization_v2 as optimization
+from my_tf import tf
 from tf_util.tf_logging import tf_logging
 from tlm.model.lm_objective import get_masked_lm_output, get_next_sentence_output
 from tlm.model.masking import random_masking, biased_masking
@@ -128,8 +127,10 @@ def print_all_tensor():
         for t in tensors:
             print(t.name, t.shape)
 
+
+
 def model_fn_lm(model_config, train_config, model_class,
-                get_masked_lm_output_fn=get_masked_lm_output):
+                get_masked_lm_output_fn=get_masked_lm_output, feed_feature=False):
     """Returns `model_fn` closure for TPUEstimator."""
     def model_fn(features, labels, mode, params):    # pylint: disable=unused-argument
         """The `model_fn` for TPUEstimator."""
@@ -165,14 +166,25 @@ def model_fn_lm(model_config, train_config, model_class,
 
         is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
-        model = model_class(
+        if not feed_feature:
+            model = model_class(
+                    config=model_config,
+                    is_training=is_training,
+                    input_ids=masked_input_ids,
+                    input_mask=input_mask,
+                    token_type_ids=segment_ids,
+                    use_one_hot_embeddings=train_config.use_one_hot_embeddings,
+            )
+        else:
+            model = model_class(
                 config=model_config,
                 is_training=is_training,
                 input_ids=masked_input_ids,
                 input_mask=input_mask,
                 token_type_ids=segment_ids,
                 use_one_hot_embeddings=train_config.use_one_hot_embeddings,
-        )
+                features=features,
+            )
 
         (masked_lm_loss,
          masked_lm_example_loss, masked_lm_log_probs) = get_masked_lm_output_fn(

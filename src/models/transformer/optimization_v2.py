@@ -19,7 +19,10 @@ from __future__ import division
 from __future__ import print_function
 
 import re
+
 import tensorflow as tf
+
+from tlm.training.grad_accumulation import get_accumulated_optimizer_from_config
 
 
 def create_optimizer_different(loss, name_d, factor, init_lr, num_train_steps, num_warmup_steps, use_tpu):
@@ -98,14 +101,24 @@ def create_optimizer_different(loss, name_d, factor, init_lr, num_train_steps, n
   return train_op
 
 def create_optimizer_from_config(loss, train_config, tvars=None):
-  train_op = create_optimizer(
+
+  if train_config.gradient_accumulation == 1:
+    max_train_step = train_config.num_train_steps
+    if train_config.no_lr_decay:
+      max_train_step = 100000 * 100000
+
+    train_op = create_optimizer(
     loss,
     train_config.learning_rate,
-    train_config.num_train_steps,
+    max_train_step,
     train_config.num_warmup_steps,
     train_config.use_tpu,
     tvars
   )
+  else:
+    train_op = get_accumulated_optimizer_from_config(loss, train_config,
+                                                   tvars, train_config.gradient_accumulation)
+
   return train_op
 
 
@@ -200,6 +213,32 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu, 
   new_global_step = global_step + 1
   train_op = tf.group(train_op, [global_step.assign(new_global_step)])
   return train_op
+
+
+
+def create_simple_optimizer(loss, init_lr, use_tpu, tvars=None):
+  """Creates an optimizer training op."""
+  global_step = tf.compat.v1.train.get_or_create_global_step()
+
+  # It is recommended that you use this optimizer for fine tuning, since this
+  # is how the model was trained (note that the Adam m/v variables are NOT
+  # loaded from init_checkpoint.)
+  optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=init_lr, beta1=0.9, beta2=0.98, epsilon=1e-8,
+                                               )
+
+  if use_tpu:
+    optimizer = tf.compat.v1.tpu.CrossShardOptimizer(optimizer)
+
+  if tvars is None:
+    tvars = tf.compat.v1.trainable_variables()
+
+  grads = tf.gradients(ys=loss, xs=tvars)
+
+  train_op = optimizer.apply_gradients(
+      zip(grads, tvars), global_step=global_step)
+
+  return train_op
+
 
 class AdamWeightDecayOptimizer(tf.compat.v1.train.Optimizer):
   """A basic Adam optimizer that includes "correct" L2 weight decay."""

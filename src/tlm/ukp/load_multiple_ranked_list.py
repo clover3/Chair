@@ -4,6 +4,7 @@ from adhoc.galago import load_galago_ranked_list
 from data_generator.argmining import ukp
 from misc_lib import get_dir_files, group_by, flatten, right
 
+non_cont_topics = ["hydroponics", "weather", "restaurant", "wildlife_extinction", "james_allan"]
 
 def ukp_ranked_list_name_to_group_key(file_name):
     for topic in ukp.all_topics:
@@ -11,6 +12,13 @@ def ukp_ranked_list_name_to_group_key(file_name):
             return topic
 
     raise Exception("Not matched" + file_name)
+
+def nc_ranked_list_name_to_group_key(file_name):
+    for topic in non_cont_topics:
+        if topic.replace(" ", "_")in file_name:
+            return topic
+    raise Exception("Not matched" + file_name)
+
 
 
 def load_multiple_ranked_list(dir_path, get_key_from_name):
@@ -36,10 +44,5 @@ def load_multiple_ranked_list(dir_path, get_key_from_name):
         new_d[key] = merge(ranked_list)
 
     return new_d
-
-
-def sydney_get_ukp_ranked_list():
-    path = "/home/youngwookim/work/ukp/relevant_docs/clueweb12"
-    return load_multiple_ranked_list(path, ukp_ranked_list_name_to_group_key)
 
 

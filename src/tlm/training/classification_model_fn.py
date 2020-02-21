@@ -1,17 +1,19 @@
-import tensorflow as tf
-
 import tlm.training.assignment_map
 from models.transformer import optimization_v2 as optimization
 from models.transformer.bert_common_v2 import dropout
+from models.transformer.optimization_v2 import create_simple_optimizer
+from my_tf import tf
 from tf_util.tf_logging import tf_logging
-from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments, classification_metric_fn
+from tlm.model.base import mimic_pooling
+from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments, classification_metric_fn, \
+    reweight_zero
 
 
 def shift(v):
     return tf.math.floormod(v+2, 3)
 
 
-def model_fn_classification(bert_config, train_config, model_class):
+def model_fn_classification(bert_config, train_config, model_class, special_flags=[]):
   """Returns `model_fn` closure for TPUEstimator."""
 
   def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -36,16 +38,30 @@ def model_fn_classification(bert_config, train_config, model_class):
 
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
-    model = model_class(
-        config=bert_config,
-        is_training=is_training,
-        input_ids=input_ids,
-        input_mask=input_mask,
-        token_type_ids=segment_ids,
-        use_one_hot_embeddings=train_config.use_one_hot_embeddings,
-    )
+    if "feed_features" in special_flags:
+        model = model_class(
+            config=bert_config,
+            is_training=is_training,
+            input_ids=input_ids,
+            input_mask=input_mask,
+            token_type_ids=segment_ids,
+            use_one_hot_embeddings=train_config.use_one_hot_embeddings,
+            features=features,
+        )
+    else:
+        model = model_class(
+            config=bert_config,
+            is_training=is_training,
+            input_ids=input_ids,
+            input_mask=input_mask,
+            token_type_ids=segment_ids,
+            use_one_hot_embeddings=train_config.use_one_hot_embeddings,
+        )
+    if "new_pooling" in special_flags:
+        pooled = mimic_pooling(model.get_sequence_output(), bert_config.hidden_size, bert_config.initializer_range)
+    else:
+        pooled = model.get_pooled_output()
 
-    pooled = model.get_pooled_output()
     if train_config.checkpoint_type != "bert_nli" and train_config.use_old_logits:
         tf_logging.info("Use old version of logistic regression")
         logits = tf.keras.layers.Dense(train_config.num_classes, name="cls_dense")(pooled)
@@ -67,11 +83,14 @@ def model_fn_classification(bert_config, train_config, model_class):
         logits = tf.matmul(pooled, output_weights, transpose_b=True)
         logits = tf.nn.bias_add(logits, output_bias)
 
-    print('label_ids', label_ids.shape)
-
     loss_arr = tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits=logits,
         labels=label_ids)
+
+    if "bias_loss" in special_flags:
+        tf_logging.info("Using special_flags : bias_loss")
+        loss_arr = reweight_zero(label_ids, loss_arr)
+
     loss = tf.reduce_mean(input_tensor=loss_arr)
     tvars = tf.compat.v1.trainable_variables()
 
@@ -109,7 +128,11 @@ def model_fn_classification(bert_config, train_config, model_class):
     TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
     output_spec = None
     if mode == tf.estimator.ModeKeys.TRAIN:
-        train_op = optimization.create_optimizer_from_config(loss, train_config)
+        if "simple_optimizer" in special_flags:
+            tf_logging.info("using simple optimizer")
+            train_op = create_simple_optimizer(loss, train_config.learning_rate, train_config.use_tpu)
+        else:
+            train_op = optimization.create_optimizer_from_config(loss, train_config)
         output_spec = TPUEstimatorSpec(mode=mode, loss=loss, train_op=train_op, scaffold_fn=scaffold_fn)
 
     elif mode == tf.estimator.ModeKeys.EVAL:
@@ -120,7 +143,7 @@ def model_fn_classification(bert_config, train_config, model_class):
     else:
         predictions = {
                 "input_ids": input_ids,
-                "logits":logits
+                "logits": logits
         }
         output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
                 mode=mode,

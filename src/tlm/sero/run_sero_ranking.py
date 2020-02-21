@@ -1,5 +1,5 @@
 
-import tensorflow as tf
+from my_tf import tf
 
 from taskman_client.wrapper import report_run
 from tlm.model_cnfig import JsonConfig

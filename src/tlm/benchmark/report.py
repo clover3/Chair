@@ -19,11 +19,17 @@ def save_report(task, run_name, flags, avg_acc):
 
 
 def get_hp_str_from_flag(flags):
-    log_flags = ["init_checkpoint", "input_file", "output_dir",
+    log_key_flags = ["init_checkpoint", "input_file", "output_dir",
                  "max_seq_length", "learning_rate", "train_batch_size"]
     s = ""
-    for key in log_flags:
+    for key in log_key_flags:
         value = getattr(flags, key)
         s += "{}:\t{}\n".format(key, value)
+
+    log_binary_flags = ["do_train", "do_predict", "do_eval"]
+    for key in log_binary_flags:
+        value = getattr(flags, key)
+        if value:
+            s += "{}\n".format(key,)
 
     return s

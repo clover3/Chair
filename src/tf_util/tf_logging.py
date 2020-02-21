@@ -1,10 +1,13 @@
 import logging
 import os
+import sys
 import time
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from absl import logging as ab_logging
 
-logging.root.addHandler(logging.StreamHandler())
+#logging.root.addHandler(logging.StreamHandler())
 
 if "TF_FILE_LOG" in os.environ:
     logging.root.addHandler(logging.FileHandler(os.environ["TF_FILE_LOG"]))
@@ -18,6 +21,13 @@ if tf_logging.handlers:
 def set_level_debug():
     tf_logging.setLevel(logging.DEBUG)
 
+# def check(point_name):
+#     print()
+#     print(point_name)
+#     tf_logging.info(point_name)
+#     print("root logger handler : ", logging.root.handlers)
+#     print("logging.getLogger().handlers", logging.getLogger().handlers)
+#     print("tf_logging.handler", tf_logging.handlers)
 
 class MyFormatter(logging.Formatter):
     def prefix(self, record):
@@ -51,7 +61,11 @@ class MyFormatter(logging.Formatter):
 class TFFilter(logging.Filter):
     excludes = ["Outfeed finished for iteration",
                 "TPUPollingThread found TPU",
+                "Found small feature",
+                "Could not load dynamic library",
+                "Cannot dlopen some TensorRT libraries",
                 "is deprecated"]
+
     def filter(self, record):
         for e in self.excludes:
             if e in record.msg:
@@ -59,8 +73,14 @@ class TFFilter(logging.Filter):
         return True
 
 
+
 h = ab_logging.get_absl_handler()
 h.setFormatter(MyFormatter())
+s_handler = logging.StreamHandler(sys.stderr)
+logging.getLogger().addHandler(s_handler)
+
+
+
 
 logging.getLogger('oauth2client.transport').setLevel(logging.WARNING)
 tf_logging.addFilter(TFFilter())

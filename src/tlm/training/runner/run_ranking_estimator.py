@@ -1,6 +1,4 @@
-
-import tensorflow as tf
-
+from my_tf import tf
 from taskman_client.wrapper import report_run
 from tlm.training.input_fn import input_fn_builder_pairwise
 from tlm.training.ranking_model_fn import model_fn_ranking

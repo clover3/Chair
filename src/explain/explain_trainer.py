@@ -172,19 +172,12 @@ class ExplainTrainer:
         summary.value.add(tag='RL_Loss', simple_value=window_rl_loss)
 
 
-def get_other_train_op(loss, lr, name):
-    global_step = tf.Variable(0, name=name + '_global_step', trainable=False)
-    optimizer = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.9, beta2=0.98, epsilon=1e-8,
-                                       name="adam")
-    train_op = optimizer.minimize(loss, global_step=global_step)
-    return train_op, global_step
-
 
 class ExplainPredictor:
     def __init__(self, num_tags, sequence_output, modeling_option="default"):
         self.num_tags = num_tags
         self.sequence_output = sequence_output
-        if modeling_option == "correlation":
+        if modeling_option == "co":
             self.modeling_co()
         else:
             self.modeling_ce()
@@ -210,177 +203,180 @@ class ExplainPredictor:
             for tag_idx in range(self.num_tags):
                 with tf.variable_scope("ex_{}".format(tag_idx)):
                     ex_logits = tf.layers.dense(self.sequence_output, 1, name="ex_{}".format(tag_idx))
-
+                    ex_logits = tf.squeeze(ex_logits)
                 self.ex_logits.append(ex_logits)
                 self.ex_probs.append(ex_logits)
 
     def get_score(self):
         return self.ex_probs
 
+class ExplainModelingInterface(abc.ABC):
+    @abc.abstractmethod
+    def get_losses(self):
+        pass
+
+    @abc.abstractmethod
+    def get_per_inst_losses(self):
+        pass
+
+    @abc.abstractmethod
+    def batch2feed_dict(self, labels):
+        pass
+
+    @abc.abstractmethod
+    def get_scores(self):
+        pass
+
+    @staticmethod
+    @abc.abstractmethod
+    def action_to_label(good_action):
+        pass
+
+
+class ExplainModeling(ExplainModelingInterface):
+    def __init__(self, sequence_output, seq_max, num_tags, origin_batch2feed_dict):
+        self.tag_info = []
+        with tf.variable_scope("explain"):
+            for tag_idx in range(num_tags):
+                self.tag_info.append(self.model_tag(sequence_output, seq_max, "ex_{}".format(tag_idx)))
+        self.origin_batch2feed_dict = origin_batch2feed_dict
+
+    @abc.abstractmethod
+    def model_tag(self, sequence_output, seq_max, var_name):
+        pass
+
+    def feed_ex_batch(self, labels):
+        feed_dict = {}
+        for tag_idx, info in enumerate(self.tag_info):
+            feed_dict[info['labels']] = labels[tag_idx * 2]
+            feed_dict[info['mask']] = labels[tag_idx * 2 + 1]
+        return feed_dict
+
+    def get_losses(self):
+        return [info['loss'] for info in self.tag_info]
+
+    # return : List[ [300], [300], [300] ]
+    def get_scores(self):
+        return [info['score'] for info in self.tag_info]
+
+    def get_per_inst_losses(self):
+        return [info['losses'] for info in self.tag_info]
+        pass
+
+    def get_loss(self):
+        return tf.reduce_mean(self.get_losses())
+
+    def batch2feed_dict(self, batch):
+        x0, x1, x2, y = batch[:4]
+        labels = batch[4:]
+        feed_dict = self.origin_batch2feed_dict((x0, x1, x2, y))
+        feed_dict.update(self.feed_ex_batch(labels))
+        return feed_dict
+
+    def get_ex_scores(self, label_idx):
+        return self.get_scores()[label_idx]
+
+
+class CorrelationModeling(ExplainModeling):
+    def __init__(self, sequence_output, seq_max, num_tags, origin_batch2feed_dict):
+        super(CorrelationModeling, self).__init__(sequence_output, seq_max, num_tags, origin_batch2feed_dict)
+
+    def model_tag(self, sequence_output, seq_max, var_name):
+        ex_labels = placeholder(tf.float32, [None, seq_max])
+        valid_mask = placeholder(tf.float32, [None, 1])
+        with tf.variable_scope(var_name):
+            ex_logits = tf.layers.dense(sequence_output, 1, name=var_name)
+            ex_logits = tf.reshape(ex_logits, [-1, seq_max])
+            labels_ = tf.cast(tf.greater(ex_labels, 0), tf.float32)
+            losses = tf_module.correlation_coefficient_loss(ex_logits, -labels_)
+            losses = valid_mask * losses
+        loss = tf.reduce_mean(losses)
+        score = ex_logits
+
+        return {
+            'labels': ex_labels,
+            'mask':valid_mask,
+            'ex_logits': ex_logits,
+            'score': score,
+            'losses':losses,
+            'loss': loss
+        }
+
+    @staticmethod
+    def action_to_label(good_action):
+        pos_reward_indice = np.int_(good_action)
+        loss_mask = -pos_reward_indice + np.ones_like(pos_reward_indice) * 0.1
+        return loss_mask, [1]
+
+    @staticmethod
+    def get_null_label(any_action):
+        return np.int_(any_action) , [0]
+
+
+
+class CrossEntropyModeling(ExplainModeling):
+    def __init__(self, sequence_output, seq_max, num_tags, origin_batch2feed_dict):
+        super(CrossEntropyModeling, self).__init__(sequence_output, seq_max, num_tags, origin_batch2feed_dict)
+
+    def model_tag(self, sequence_output, seq_max, var_name):
+        ex_label = placeholder(tf.int32, [None, seq_max])
+        valid_mask = placeholder(tf.float32, [None, 1])
+        with tf.variable_scope(var_name):
+            ex_logits = tf.layers.dense(sequence_output, 2, name=var_name)
+            ex_prob = tf.nn.softmax(ex_logits)[:, :, 1]
+            losses = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(ex_label, 2), logits=ex_logits)
+            losses = valid_mask * losses
+            loss = tf.reduce_mean(losses)
+
+        return {
+            'labels': ex_label,
+            'mask': valid_mask,
+            'ex_logits': ex_logits,
+            'score': ex_prob,
+            'losses': losses,
+            'loss': loss
+        }
+
+    @staticmethod
+    def action_to_label(good_action):
+        pos_reward_indice = np.int_(good_action)
+        loss_mask = pos_reward_indice
+        return loss_mask, [1]
+
+    @staticmethod
+    def get_null_label(any_action):
+        return np.int_(any_action) , [0]
 
 class ExplainTrainerM:
     def __init__(self,
                  informative_score_fn_list, #
-                 logits,
-                 sequence_output,
                  num_tags,
-                 batch2feed_dict,
-                 hparam,
-                 modeling_option="ce"
+                 action_to_label,
+                 get_null_label,
+                 forward_run,
+                 batch_size,
+                 num_deletion,
+                 g_val,
+                 drop_thres,
                  ):
-        self.sequence_output = sequence_output
         self.num_tags = num_tags
 
         self.informative_score_fn_list = informative_score_fn_list
-        self.compare_deletion_num = 20
-        self.commit_input_len = 4 + num_tags
+        self.compare_deletion_num = num_deletion
+        self.commit_input_len = 4 + num_tags * 2
 
         # Model Information
+        self.drop_thres = drop_thres
+        self.g_val = g_val
+        self.batch_size = batch_size
+        self.forward_run = forward_run
+        print("Using num_deletion : ", num_deletion)
 
-        self.logits = logits
-        self.prob_pred = tf.nn.softmax(logits)
+        self.loss_window = list([MovingWindow(self.batch_size) for _ in range(self.num_tags)])
+        self.sample_deleter = get_seq_deleter(self.g_val)
 
-        self.batch2feed_dict = batch2feed_dict
-        self.hparam = hparam
-        self.lr = self.hparam.lr * 0.1
-
-        self.logit2tag = over_zero
-
-        self.loss_window = list([MovingWindow(self.hparam.batch_size) for _ in range(self.num_tags)])
-        self.sample_deleter = get_seq_deleter(self.hparam.g_val)
-
-        self.modeling_option = modeling_option
-        if modeling_option == "ce":
-            self.modeling_ce()
-        elif modeling_option == "co":
-            self.modeling_co()
-
-
-    def loss_combine(self, losses):
-        return tf.reduce_mean(losses)
-
-    class ExplainModeling(abc.ABC):
-        @abc.abstractmethod
-        def get_losses(self):
-            pass
-
-        @abc.abstractmethod
-        def feed_ex_labels(self, labels):
-            pass
-
-        @abc.abstractmethod
-        def get_scores(self):
-            pass
-
-    class CorrelationModeling(ExplainModeling):
-        def __init__(self, sequence_output, seq_max, num_tags):
-            self.tag_info = []
-            with tf.variable_scope("explain"):
-                for tag_idx in range(num_tags):
-                    self.tag_info.append(self.model_tag(sequence_output, seq_max, "ex_{}".format(tag_idx)))
-
-        def model_tag(self, sequence_output, seq_max, var_name):
-            ex_labels = placeholder(tf.float32, [None, seq_max])
-            with tf.variable_scope(var_name):
-                ex_logits = tf.layers.dense(sequence_output, 1, name=var_name)
-                ex_logits = tf.reshape(ex_logits, [-1, seq_max])
-                labels_ = tf.cast(tf.greater(ex_labels, 0), tf.float32)
-                losses = tf_module.correlation_coefficient_loss(ex_logits, -labels_)
-            loss = tf.reduce_mean(losses)
-            score = ex_logits
-
-            return {
-                'labels': ex_labels,
-                'ex_logits': ex_logits,
-                'score': score,
-                'loss': loss
-            }
-
-        def feed_ex_labels(self, labels):
-            feed_dict = {}
-            for tag_idx, info in enumerate(self.tag_info):
-                feed_dict[info['labels']] = labels[tag_idx]
-            return feed_dict
-
-        def get_losses(self):
-            return [info['loss'] for info in self.tag_info]
-
-        def get_scores(self):
-            return [info['score'] for info in self.tag_info]
-
-    def modeling_co(self):
-        self.ex_labels = []
-        self.ex_scores = []
-        self.ex_losses = []
-        self.ex_logits = []
-
-        with tf.variable_scope("explain"):
-            for tag_idx in range(self.num_tags):
-                ex_labels = placeholder(tf.float32, [None, self.hparam.seq_max])
-                with tf.variable_scope("ex_{}".format(tag_idx)):
-                    ex_logits = tf.layers.dense(self.sequence_output, 1, name="ex_{}".format(tag_idx))
-                    ex_logits = tf.reshape(ex_logits, [-1, self.hparam.seq_max])
-                    labels_ = tf.cast(tf.greater(ex_labels, 0), tf.float32)
-                    losses = tf_module.correlation_coefficient_loss(ex_logits, -labels_)
-                    loss = tf.reduce_mean(losses)
-
-                self.ex_labels.append(ex_labels)
-                self.ex_losses.append(loss)
-                self.ex_logits.append(ex_logits)
-                self.ex_scores.append(ex_logits)
-
-            self.loss = self.loss_combine(self.ex_losses)
-            self.train_op = get_other_train_op(self.loss, self.lr, name="train_ex")
-        self.action_to_label = self.get_co_label
-
-    def feed_ex_batch(self, batch):
-        x0, x1, x2, y = batch[:4]
-        labels = batch[4:]
-        feed_dict = self.batch2feed_dict((x0, x1, x2, y))
-        for tag_idx in range(self.num_tags):
-            label = labels[tag_idx]
-            feed_dict[self.ex_labels[tag_idx]] = label
-
-    def modeling_ce(self):
-        self.ex_labels = []
-        self.ex_scores = []
-        self.ex_losses = []
-        self.ex_logits = []
-
-        with tf.variable_scope("explain"):
-            for tag_idx in range(self.num_tags):
-                ex_label = placeholder(tf.int32, [None, self.hparam.seq_max])
-                with tf.variable_scope("ex_{}".format(tag_idx)):
-                    ex_logits = tf.layers.dense(self.sequence_output, 2, name="ex_{}".format(tag_idx))
-                    ex_prob = tf.nn.softmax(ex_logits)
-                    losses = tf.losses.softmax_cross_entropy(onehot_labels=tf.one_hot(ex_label, 2), logits=ex_logits)
-                    loss = tf.reduce_mean(losses)
-
-                self.ex_labels.append(ex_label)
-                self.ex_logits.append(ex_logits)
-                self.ex_scores.append(ex_prob[:, :, 1])
-                self.ex_losses.append(loss)
-
-            self.loss = self.loss_combine(self.ex_losses)
-            self.train_op = get_other_train_op(self.loss, self.lr, name="train_ex")
-
-        self.action_to_label = self.get_ce_label
-
-    def get_ex_scores(self, label_idx):
-        return self.ex_scores[label_idx]
-
-
-    @staticmethod
-    def get_co_label(good_action):
-        pos_reward_indice = np.int_(good_action)
-        loss_mask = -pos_reward_indice + np.ones_like(pos_reward_indice) * 0.1
-        return loss_mask
-
-    @staticmethod
-    def get_ce_label(good_action):
-        pos_reward_indice = np.int_(good_action)
-        loss_mask = pos_reward_indice
-        return loss_mask
+        self.action_to_label = action_to_label
+        self.get_null_label = get_null_label
 
     @staticmethod
     def get_best_deletion(informative_score_fn, init_output, alt_logits, deleted_mask_list):
@@ -392,8 +388,7 @@ class ExplainTrainerM:
                 best_score = alt_score
                 good_action = deleted_indices
 
-        assert good_action is not None
-        return good_action
+        return good_action, best_score
 
     def calc_reward(self,
                     all_alt_logits,
@@ -410,10 +405,13 @@ class ExplainTrainerM:
             for tag_idx, informative_score_fn in enumerate(self.informative_score_fn_list):
                 alt_logits = [all_alt_logits[i] for i in info['indice_delete_random']]
                 deleted_mask_list = [all_deleted_mask_list[i] for i in info['indice_delete_random']]
-                good_action = self.get_best_deletion(informative_score_fn, init_output, alt_logits, deleted_mask_list)
-                assert good_action is not None
-                label = self.action_to_label(good_action)
-                label_list.append(label)
+                good_action, best_score = self.get_best_deletion(informative_score_fn, init_output, alt_logits, deleted_mask_list)
+
+                if best_score > self.drop_thres:
+                    label = self.action_to_label(good_action)
+                else:
+                    label = self.get_null_label(good_action)
+                label_list += label
 
             x0, x1, x2, y = input_x
             reward_payload = [x0, x1, x2, y] + label_list
@@ -425,7 +423,8 @@ class ExplainTrainerM:
         summary.value.add(tag='Score', simple_value=avg_score)
         return reinforce_payload_list, summary
 
-    def train_batch(self, batch, sess):
+    # train_fn : (batch) -> train_op execute, and loss return
+    def train_batch(self, batch, train_fn):
         def sample_size():
             prob = [(1, 0.8), (2, 0.2)]
             v = random.random()
@@ -434,23 +433,23 @@ class ExplainTrainerM:
                 if v < 0:
                     return n
             return 1
-
-        def forward_run(batch):
-            logits, = sess.run([self.logits], feed_dict=self.batch2feed_dict(batch))
-            return logits
+        #
+        # def forward_run(batch):
+        #     logits, = sess.run([self.logits], feed_dict=self.batch2feed_dict(batch))
+        #     return logits
 
         def forward_runs(insts):
-            batches = get_batches_ex(insts, self.hparam.batch_size, 3)
+            batches = get_batches_ex(insts, self.batch_size, 3)
             alt_logits = []
             for b in batches:
-                t = forward_run(b)
+                t = self.forward_run(b)
                 alt_logits.append(t)
             alt_logits = np.concatenate(alt_logits)
             return alt_logits
 
         # Step 1) Prepare deletion RUNS
         def generate_alt_runs(batch):
-            logits = forward_run(batch)
+            logits = self.forward_run(batch)
             x0, x1, x2, y = batch
             instance_infos = []
             new_insts = []
@@ -482,12 +481,10 @@ class ExplainTrainerM:
 
         # Step 3) Calc reward
         def commit_reward(reinforce_payload):
-            batches = get_batches_ex(reinforce_payload, self.hparam.batch_size, self.commit_input_len)
+            batches = get_batches_ex(reinforce_payload, self.batch_size, self.commit_input_len)
             ex_loss_list = []
             for batch in batches:
-                feed_dict = self.feed_ex_batch(batch)
-                _, ex_losses, = sess.run([self.train_op, self.ex_losses], feed_dict=feed_dict)
-
+                ex_losses = train_fn(batch)
                 x0 = batch[0]
                 ex_loss_list.append((ex_losses, len(x0)))
             return ex_loss_list
@@ -496,6 +493,7 @@ class ExplainTrainerM:
         ## Step 4) Update gradient
         ex_loss_list = commit_reward(reinforce_payload)
         for ex_losses, num_insts in ex_loss_list:
+            # ex_losses [num_tags]
             for tag_idx, loss_val in enumerate(ex_losses):
                 self.loss_window[tag_idx].append(loss_val, num_insts)
 
