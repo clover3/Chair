@@ -50,7 +50,7 @@ def log_var_assignments(tvars, initialized_variable_names, initialized_variable_
     tf_logging.info("Total parameters : %d" % get_param_num())
 
 
-def align_checkpoint(tvars, init_checkpoint, assignment_fn):
+def get_init_fn(tvars, init_checkpoint, assignment_fn):
     if init_checkpoint:
         assignment_map, initialized_variable_names = assignment_fn(tvars, init_checkpoint)
 

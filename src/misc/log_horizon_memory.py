@@ -11,13 +11,13 @@ from tlm.model.horizon import HorizontalAlpha
 from tlm.model.lm_objective import get_masked_lm_output_albert
 from tlm.model.masking import random_masking
 from tlm.model_cnfig import JsonConfig
-from tlm.training.train_config import LMTrainConfig
+from tlm.training.train_config import TrainConfigEx
 from tlm.training.train_flags import *
 from trainer.tf_train_module_v2 import init_session
 
 
 def define_graph(input_ids, input_mask, segment_ids):
-    train_config = LMTrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
     config = JsonConfig.from_json_file(FLAGS.model_config_file)
     model = HorizontalAlpha(config, True, False)
     model.call(input_ids, input_mask, segment_ids)

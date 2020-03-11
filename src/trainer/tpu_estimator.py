@@ -94,15 +94,19 @@ def run_estimator(model_fn, input_fn, host_call=None):
             writer.write("%s = %s\n" % (key, str(result[key])))
         return result
     if FLAGS.do_predict:
-        tf_logging.info("***** Running evaluation *****")
+        tf_logging.info("***** Running prediction *****")
         tf_logging.info("  Batch size = %d", FLAGS.eval_batch_size)
-
 
         if not FLAGS.initialize_to_predict:
             verify_checkpoint(estimator.model_dir)
+            checkpoint=None
             time.sleep(1)
+        else:
+            checkpoint = FLAGS.init_checkpoint
 
-        result = estimator.predict(input_fn=input_fn, yield_single_examples=False)
+        result = estimator.predict(input_fn=input_fn,
+                                   checkpoint_path=checkpoint,
+                                    yield_single_examples=False)
         pickle.dump(list(result), open(FLAGS.out_file, "wb"))
         tf_logging.info("Prediction saved at {}".format(FLAGS.out_file))
 

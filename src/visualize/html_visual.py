@@ -144,3 +144,14 @@ class HtmlVisualizer(VisualizerCommon):
         r = 0x2B + int(r)
         bg_color = "2B2B" + ("%02x" % r)
         return bg_color
+
+
+def normalize(scores):
+    max_score = max(scores)
+    min_score = min(scores)
+
+    gap = max_score - min_score
+    if gap < 0.001:
+        gap = 1
+
+    return [(s - min_score) / gap * 100 for s in scores]

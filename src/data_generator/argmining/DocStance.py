@@ -1,14 +1,20 @@
-
-import tensorflow as tf
-from misc_lib import *
 from models.PSF import get_relevant_docs
 from nltk import sent_tokenize
-from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair, _truncate_second
-from data_generator.text_encoder import SubwordTextEncoder, SEP_ID, CLS_ID
-from data_generator.argmining.ukp import  all_topics
+from data_generator.tokenizer_b import _truncate_seq_pair, _truncate_second
+from data_generator.text_encoder import SEP_ID, CLS_ID
 from data_generator.common import get_encoder
 from cache import load_from_pickle
 from collections import Counter
+from collections import Counter
+
+from nltk import sent_tokenize
+
+from cache import load_from_pickle
+from data_generator.common import get_encoder
+from data_generator.text_encoder import SEP_ID, CLS_ID
+from data_generator.tokenizer_b import _truncate_seq_pair, _truncate_second
+from models.PSF import get_relevant_docs
+
 
 def get_stance_label(topic):
     return load_from_pickle("stance_{}_rel.pickle".format(topic))

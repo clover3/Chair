@@ -6,10 +6,10 @@ from models.transformer.optimization_v2 import create_optimizer_from_config
 from tf_util.tf_logging import tf_logging
 from tlm.model.base import BertModel
 from tlm.training import assignment_map
-from tlm.training.model_fn_common import log_features, align_checkpoint, get_tpu_scaffold_or_init, log_var_assignments
+from tlm.training.model_fn_common import log_features, get_init_fn, get_tpu_scaffold_or_init, log_var_assignments
 from tlm.training.ranking_model_common import combine_paired_input_features, get_prediction_structure, \
     apply_loss_modeling
-from tlm.training.train_config import TrainConfig
+from tlm.training.train_config import TrainConfigEx
 
 
 class PairWise:
@@ -18,7 +18,7 @@ class PairWise:
 
 def checkpoint_init(assignment_fn, train_config):
     tvars = tf.compat.v1.trainable_variables()
-    initialized_variable_names, init_fn = align_checkpoint(tvars, train_config.init_checkpoint, assignment_fn)
+    initialized_variable_names, init_fn = get_init_fn(tvars, train_config.init_checkpoint, assignment_fn)
     scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
     log_var_assignments(tvars, initialized_variable_names)
     return scaffold_fn
@@ -49,7 +49,7 @@ def ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_fa
 
 def model_fn_ranking(FLAGS):
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
-    train_config = TrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
     modeling_opt = FLAGS.modeling
 
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -104,7 +104,7 @@ def rank_predict_estimator_spec(logits, mode, scaffold_fn, predictions=None):
 
 
 def model_fn_rank_pred(FLAGS):
-    train_config = TrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
     modeling_opt = FLAGS.modeling
 
@@ -135,7 +135,7 @@ def model_fn_rank_pred(FLAGS):
 
         tvars = tf.compat.v1.trainable_variables()
         assignment_fn = assignment_map.get_bert_assignment_map
-        initialized_variable_names, init_fn = align_checkpoint(tvars, train_config.init_checkpoint, assignment_fn)
+        initialized_variable_names, init_fn = get_init_fn(tvars, train_config.init_checkpoint, assignment_fn)
         scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
         log_var_assignments(tvars, initialized_variable_names)
 

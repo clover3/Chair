@@ -1,13 +1,13 @@
 import os
 
-from adhoc.galago import load_galago_ranked_list
-from data_generator.argmining import ukp
+import data_generator.argmining.ukp_header
+from galagos.basic import load_galago_ranked_list
 from misc_lib import get_dir_files, group_by, flatten, right
 
 non_cont_topics = ["hydroponics", "weather", "restaurant", "wildlife_extinction", "james_allan"]
 
 def ukp_ranked_list_name_to_group_key(file_name):
-    for topic in ukp.all_topics:
+    for topic in data_generator.argmining.ukp_header.all_topics:
         if topic.replace(" ", "_")in file_name:
             return topic
 

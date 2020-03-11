@@ -1,13 +1,6 @@
-from trainer.arg_experiment import ArgExperiment
-from models.transformer import hyperparams
-from trainer.experiment import Experiment
-from trainer.ExperimentConfig import ExperimentConfig
-
-from data_generator.argmining import ukp
-from data_generator.argmining.ukp import BertDataLoader, PairedDataLoader, FeedbackData, NLIAsStance, SingleTopicLoader, StreamExplainer
-from data_generator.argmining import NextSentPred, DocStance
+import data_generator.argmining.ukp_header
 from arg.ukp_train_test import *
-import sys
+from data_generator.argmining.ukp import StreamExplainer
 from misc_lib import *
 
 
@@ -31,7 +24,7 @@ def run_ukp_ex(file_path, topic_idx):
     print(file_path)
     #explain_tag = 'relevance'
 
-    topic = ukp.all_topics[topic_idx]
+    topic = data_generator.argmining.ukp_header.all_topics[topic_idx]
     print("Blind : ", topic)
     e = Experiment(hp)
     e_config.name = "pred_arg_exp_{}_{}".format(topic, explain_tag)

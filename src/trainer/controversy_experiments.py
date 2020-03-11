@@ -1,14 +1,10 @@
-import os
 import pickle
-import random
-from collections import Counter
 
 from krovetzstemmer import Stemmer
 
-import adhoc.galago
 import cpath
+import galagos.basic
 from evaluation import compute_auc, compute_pr_auc, AP
-from misc_lib import left
 from models.classic.lm_ex import LMClassifierEx
 from models.controversy import *
 from summarization.text_rank import TextRank
@@ -151,7 +147,7 @@ class ControversyExperiment:
         c2.build2(x_list, y_list)
         n_docs = 3000
         cont_docs = controversy.load_dir_docs(dir_path)[:n_docs]
-        bg_ctf, bg_tf = adhoc.galago.load_tf(tf_path)
+        bg_ctf, bg_tf = galagos.basic.load_tf(tf_path)
         print("Using {} docs".format(len(cont_docs)))
         assert cont_docs[0][0] == 1
 
@@ -250,7 +246,7 @@ class ControversyExperiment:
 
         crime_docs = controversy.load_dir_docs(dir_crime)[:1000]
         crime_docs = list([x[2] for x in crime_docs])
-        bg_ctf, bg_tf = adhoc.galago.load_tf(tf_path)
+        bg_ctf, bg_tf = galagos.basic.load_tf(tf_path)
         print("Using {} docs".format(len(protest_docs)))
 
         classifier = LMClassifierEx(tokenizer, stemmer)

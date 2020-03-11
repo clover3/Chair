@@ -1,13 +1,12 @@
 from cache import *
+from data_generator.argmining.ukp_header import all_topics
 from data_generator.data_parser import ukp
 from data_generator.text_encoder import CLS_ID, SEP_ID
-from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
+from data_generator.tokenizer_wo_tf import FullTokenizerWarpper, _truncate_seq_pair
 from misc_lib import *
 from models.classic.stopword import load_stopwords
 from trainer.tf_module import get_batches_ex
 
-all_topics = ["abortion", "cloning", "death_penalty", "gun_control",
-                       "marijuana_legalization", "minimum_wage", "nuclear_energy", "school_uniforms"]
 
 class LazyDict(dict):
     def __init__(self, init_fn):
@@ -51,6 +50,15 @@ class DataLoader:
                 return 0
             else:
                 return 1
+
+    def get_topic_train_data(self, topic):
+        train_data = []
+        for entry in self.all_data[topic]:
+            if entry['set'] == "train":
+                x = entry['sentence']
+                y = self.annotation2label(entry['annotation'])
+                train_data.append((x, y))
+        return train_data
 
     def get_train_data(self):
         train_data = []

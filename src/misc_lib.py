@@ -126,14 +126,18 @@ def get_textrizer_plain(word2idx):
         return " ".join(text)
     return textrize
 
+
 def reverse(l):
     return list(reversed(l))
+
 
 def flatten(z):
     return [y for x in z for y in x]
 
+
 def left(pairs):
     return list([a for a,b in pairs])
+
 
 def right(pairs):
     return list([b for a,b in pairs])
@@ -145,8 +149,14 @@ def increment_circular(j, max_len):
         j = 0
     return j
 
+
 def pick1(l):
     return l[random.randrange(len(l))]
+
+
+def pick2(l):
+    return random.sample(l, 2)
+
 
 def pair_shuffle(l):
     new_l = []
@@ -195,8 +205,14 @@ class OpTime:
         begin = time.time()
         ret = fn()
 
+
 def lmap(func, iterable_something):
     return list([func(e) for e in iterable_something])
+
+
+def foreach(func, iterable_something):
+    for e in iterable_something:
+        func(e)
 
 
 def flat_apply_stack(list_fn, list_of_list, verbose=True):
@@ -311,6 +327,16 @@ def group_by(interable, key_fn):
     return grouped
 
 
+def assign_list_if_not_exists(dict_like, key):
+    if key not in dict_like:
+        dict_like[key] = list()
+
+
+def assign_default_if_not_exists(dict_like, key, default):
+    if key not in dict_like:
+        dict_like[key] = default()
+
+
 class BinHistogram:
     def __init__(self, bin_fn):
         self.counter = Counter()
@@ -341,6 +367,25 @@ class BinAverage:
         return output
 
 
+class DictValueAverage:
+    def __init__(self):
+        self.acc_dict = Counter()
+        self.cnt_dict = Counter()
+
+    def add(self, k, v):
+        self.cnt_dict[k] += 1
+        self.acc_dict[k] += v
+
+    def avg(self, k):
+        return self.acc_dict[k] / self.cnt_dict[k]
+
+    def all_average(self):
+        output = {}
+        for k, v in self.cnt_dict.items():
+            output[k] = self.avg(k)
+        return output
+
+
 class IntBinAverage(BinAverage):
     def __init__(self):
         super(IntBinAverage, self).__init__(lambda x: int(x))
@@ -354,3 +399,8 @@ def apply_threshold(arr, t):
     return [v  if v > t else 0 for v in arr]
 
 
+def get_f1(prec, recall):
+    if prec + recall != 0 :
+        return (2 * prec * recall) / (prec + recall)
+    else:
+        return 0

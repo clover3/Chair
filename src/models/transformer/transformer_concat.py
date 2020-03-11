@@ -1,7 +1,8 @@
-from task.transformer_est import Transformer, Classification
-from models.transformer import bert
 import tensorflow as tf
-from data_generator.NLI import nli
+
+import data_generator.NLI.nli_info
+from models.transformer import bert
+from task.transformer_est import Classification
 
 
 class transformer_concat:
@@ -16,7 +17,7 @@ class transformer_concat:
 
         seq_length = hp.seq_max
         use_tpu = False
-        task = Classification(nli.num_classes)
+        task = Classification(data_generator.NLI.nli_info.num_classes)
 
         input_ids = tf.placeholder(tf.int64, [None, seq_length])
         input_mask = tf.placeholder(tf.int64, [None, seq_length])

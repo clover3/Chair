@@ -1,7 +1,8 @@
-from adhoc import galago
-from misc_lib import *
-from cache import *
 import re
+
+from cache import *
+from galagos import galago
+from misc_lib import *
 
 scope_dir = os.path.join(data_path, "controversy")
 clueweb_dir = os.path.join(scope_dir, "clueweb")

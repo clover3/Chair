@@ -5,6 +5,8 @@ from models.transformer.optimization_v2 import create_simple_optimizer
 from my_tf import tf
 from tf_util.tf_logging import tf_logging
 from tlm.model.base import mimic_pooling
+from tlm.model.dual_model_common import dual_model_prefix1, dual_model_prefix2
+from tlm.tlm.model_fn_try_all_loss import get_init_fn_for_two_checkpoints
 from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments, classification_metric_fn, \
     reweight_zero
 
@@ -96,32 +98,9 @@ def model_fn_classification(bert_config, train_config, model_class, special_flag
 
     initialized_variable_names = {}
 
-    if train_config.checkpoint_type == "bert":
-        assignment_fn = tlm.training.assignment_map.get_bert_assignment_map
-    elif train_config.checkpoint_type == "v2":
-        assignment_fn = tlm.training.assignment_map.assignment_map_v2_to_v2
-    elif train_config.checkpoint_type == "bert_nli":
-        assignment_fn = tlm.training.assignment_map.get_bert_nli_assignment_map
-    elif train_config.checkpoint_type == "attention_bert":
-        assignment_fn = tlm.training.assignment_map.bert_assignment_only_attention
-    elif train_config.checkpoint_type == "attention_bert_v2":
-        assignment_fn = tlm.training.assignment_map.assignment_map_v2_to_v2_only_attention
-    elif train_config.checkpoint_type == "wo_attention_bert":
-        assignment_fn = tlm.training.assignment_map.bert_assignment_wo_attention
-    elif train_config.checkpoint_type == "as_is":
-        assignment_fn = tlm.training.assignment_map.get_assignment_map_as_is
-    else:
-        if not train_config.init_checkpoint:
-            pass
-        else:
-            raise Exception("init_checkpoint exists, but checkpoint_type is not specified")
-
     scaffold_fn = None
     if train_config.init_checkpoint:
-      assignment_map, initialized_variable_names = assignment_fn(tvars, train_config.init_checkpoint)
-
-      def init_fn():
-        tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
+      initialized_variable_names, init_fn = get_init_fn(train_config, tvars)
       scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
     log_var_assignments(tvars, initialized_variable_names)
 
@@ -150,10 +129,61 @@ def model_fn_classification(bert_config, train_config, model_class, special_flag
                 predictions=predictions,
                 scaffold_fn=scaffold_fn)
 
-
     return output_spec
-
   return model_fn
+
+
+def get_init_fn(train_config, tvars):
+    num_checkpoint = 1
+    if train_config.checkpoint_type == "two_checkpoints":
+        num_checkpoint = 2
+
+    if num_checkpoint == 1:
+        assignment_fn = get_assignment_fn_from_checkpoint_type(train_config.checkpoint_type,
+                                                               train_config.init_checkpoint)
+        assignment_map, initialized_variable_names = assignment_fn(tvars, train_config.init_checkpoint)
+
+        def init_fn():
+            tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
+        return initialized_variable_names, init_fn
+    elif num_checkpoint == 2:
+        return get_init_fn_for_two_checkpoints(train_config,
+                                               tvars,
+                                               train_config.init_checkpoint,
+                                               dual_model_prefix1,
+                                               train_config.second_init_checkpoint,
+                                               dual_model_prefix2)
+    else:
+        raise Exception("Unexpected num_checkpoint={}".format(num_checkpoint))
+
+
+def get_assignment_fn_from_checkpoint_type(checkpoint_type, init_checkpoint):
+    if checkpoint_type == "bert":
+        assignment_fn = tlm.training.assignment_map.get_bert_assignment_map
+    elif checkpoint_type == "v2":
+        assignment_fn = tlm.training.assignment_map.assignment_map_v2_to_v2
+    elif checkpoint_type == "bert_nli":
+        assignment_fn = tlm.training.assignment_map.get_bert_nli_assignment_map
+    elif checkpoint_type == "attention_bert":
+        assignment_fn = tlm.training.assignment_map.bert_assignment_only_attention
+    elif checkpoint_type == "attention_bert_v2":
+        assignment_fn = tlm.training.assignment_map.assignment_map_v2_to_v2_only_attention
+    elif checkpoint_type == "wo_attention_bert":
+        assignment_fn = tlm.training.assignment_map.bert_assignment_wo_attention
+    elif checkpoint_type == "as_is":
+        assignment_fn = tlm.training.assignment_map.get_assignment_map_as_is
+    elif checkpoint_type == "model_has_it":
+        pass
+    else:
+
+        if not init_checkpoint:
+            assignment_fn = None
+        elif not checkpoint_type:
+            raise Exception("init_checkpoint exists, but checkpoint_type is not specified")
+        else:
+            raise Exception("Unknown checkpoint_type : {}".format(checkpoint_type))
+    return assignment_fn
+
 
 
 

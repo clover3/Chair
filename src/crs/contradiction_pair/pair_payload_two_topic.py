@@ -1,8 +1,8 @@
 import os
 
+import data_generator.argmining.ukp_header
 from crs.contradiction_pair.pair_payload import PairEncoder
 from data_generator import job_runner
-from data_generator.argmining import ukp
 from data_generator.job_runner import sydney_working_dir, JobRunner
 from misc_lib import exist_or_mkdir
 from tlm.ukp.sydney_data import ukp_load_tokens_for_topic, sydney_get_ukp_ranked_list, non_cont_load_tokens_for_topic, \
@@ -42,7 +42,7 @@ class PairPayloadWorker(job_runner.WorkerInterface):
         topic_selector = int(job_id / self.n_repeat)
         topic1_idx = int(topic_selector / n_topic2)
         topic2_idx = topic_selector % n_topic2
-        topic1 = ukp.all_topics[topic1_idx]
+        topic1 = data_generator.argmining.ukp_header.all_topics[topic1_idx]
         topic2 = non_cont_topics[topic2_idx]
         docs = self.get_cont_docs(topic1)
         docs += self.get_non_cont_docs(topic2)

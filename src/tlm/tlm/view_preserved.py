@@ -25,12 +25,11 @@ def per_doc_score():
         tokens = entry.get_tokens("input_ids")
         cells = data.cells_from_tokens(tokens)
         valid_parst = count_preserved[:len(cells)]
-        print(count_preserved.shape)
-        return
         avg = np.average(count_preserved)
         row = []
         row2 = []
-        f_print = avg > 20
+        #f_print = avg > 20
+        f_print = True
         print(avg)
         if f_print:
             html_writer.write_paragraph("Skipped {} articles".format(n_skip))

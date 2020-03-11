@@ -6,7 +6,7 @@ from tf_util.tf_logging import tf_logging
 from tlm.model.base import BertModel
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
-from tlm.tlm.model_fn_try_all_loss import get_init_fn
+from tlm.tlm.model_fn_try_all_loss import get_init_fn_for_two_checkpoints
 from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments
 
 
@@ -72,12 +72,12 @@ def model_fn_preserved_dim(bert_config, train_config):
 
         tvars = tf.compat.v1.trainable_variables()
 
-        initialized_variable_names, init_fn = get_init_fn(train_config,
-                                                          tvars,
-                                                          train_config.init_checkpoint,
-                                                          prefix1,
-                                                          train_config.second_init_checkpoint,
-                                                          prefix2)
+        initialized_variable_names, init_fn = get_init_fn_for_two_checkpoints(train_config,
+                                                                              tvars,
+                                                                              train_config.init_checkpoint,
+                                                                              prefix1,
+                                                                              train_config.second_init_checkpoint,
+                                                                              prefix2)
         scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
 
         log_var_assignments(tvars, initialized_variable_names)
@@ -85,8 +85,8 @@ def model_fn_preserved_dim(bert_config, train_config):
         output_spec = None
         if mode == tf.estimator.ModeKeys.PREDICT:
             predictions = {
-                "input_ids":input_ids,
-                "layer_count":layer_1_count
+                "input_ids": input_ids,
+                "layer_count": layer_1_count
             }
             output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
                     mode=mode,

@@ -112,12 +112,12 @@ def model_fn_try_all_loss(bert_config, train_config, logging):
         tvars = tf.compat.v1.trainable_variables()
 
         scaffold_fn = None
-        initialized_variable_names, init_fn = get_init_fn(train_config,
-                                                          tvars,
-                                                          train_config.init_checkpoint,
-                                                          prefix1,
-                                                          train_config.second_init_checkpoint,
-                                                          prefix2)
+        initialized_variable_names, init_fn = get_init_fn_for_two_checkpoints(train_config,
+                                                                              tvars,
+                                                                              train_config.init_checkpoint,
+                                                                              prefix1,
+                                                                              train_config.second_init_checkpoint,
+                                                                              prefix2)
         if train_config.use_tpu:
             def tpu_scaffold():
                 init_fn()
@@ -152,16 +152,20 @@ def model_fn_try_all_loss(bert_config, train_config, logging):
 
 # init_checkpoint : BERT (v1)
 # second_init_checkpoint : v2
-def get_init_fn(train_config, tvars, init_checkpoint, remap_prefix, second_init_checkpoint, remap_prefix2):
+def get_init_fn_for_two_checkpoints(train_config, tvars, init_checkpoint, remap_prefix, second_init_checkpoint, remap_prefix2):
     if train_config.checkpoint_type == "v2":
         assignment_fn1 = get_assignment_map_remap_from_v2
     else:
         assignment_fn1 = get_assignment_map_remap_from_v1
+    assignment_fn2 = get_assignment_map_remap_from_v2
+
 
     assignment_map, initialized_variable_names \
         = assignment_fn1(tvars, remap_prefix, init_checkpoint)
+
+
     assignment_map2, initialized_variable_names2 \
-        = get_assignment_map_remap_from_v2(tvars, remap_prefix2, second_init_checkpoint)
+        = assignment_fn2(tvars, remap_prefix2, second_init_checkpoint)
     for k, v in initialized_variable_names2.items():
         initialized_variable_names[k] = v
 

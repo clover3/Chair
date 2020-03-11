@@ -6,7 +6,7 @@ from tlm.model.base import BertModel
 from tlm.model_cnfig import JsonConfig
 from tlm.training.input_fn import input_fn_builder_masked2
 from tlm.training.lm_model_fn import model_fn_lm
-from tlm.training.train_config import LMTrainConfig
+from tlm.training.train_config import TrainConfigEx
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
 
@@ -15,7 +15,7 @@ from trainer.tpu_estimator import run_estimator
 def main(_):
     tf_logging.info("Train MLM")
     config = JsonConfig.from_json_file(FLAGS.model_config_file)
-    train_config = LMTrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
 
     is_training = FLAGS.do_train
     input_files = []

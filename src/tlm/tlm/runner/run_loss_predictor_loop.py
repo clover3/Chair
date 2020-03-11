@@ -13,7 +13,7 @@ from tlm.model_cnfig import JsonConfig
 from tlm.tlm.loss_diff_prediction_model import loss_diff_predict_only_model_fn
 from tlm.tlm.runner.run_predict_both_loss import CounterFilter
 from tlm.training.input_fn import input_fn_builder_unmasked
-from tlm.training.train_config import TrainConfig
+from tlm.training.train_config import TrainConfigEx
 from tlm.training.train_flags import *
 
 
@@ -22,7 +22,7 @@ class Worker:
         self.output_dir = out_dir
         self.input_gs_dir = input_gs_dir
         bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
-        train_config = TrainConfig.from_flags(FLAGS)
+        train_config = TrainConfigEx.from_flags(FLAGS)
         model_config = JsonConfig.from_json_file(FLAGS.model_config_file)
         tf_logging.addFilter(CounterFilter())
 
@@ -105,7 +105,7 @@ def old_main():
     input_files = []
     for input_pattern in FLAGS.input_file.split(","):
         input_files.extend(tf.io.gfile.glob(input_pattern))
-    train_config = TrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
     model_config = JsonConfig.from_json_file(FLAGS.model_config_file)
     tf_logging.addFilter(CounterFilter())
 

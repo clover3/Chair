@@ -3,9 +3,10 @@ import sys
 import tensorflow as tf
 
 from cache import save_to_pickle
-from data_generator.NLI.nli import get_modified_data_loader2, tags
+from data_generator.NLI.nli import get_modified_data_loader2
+from data_generator.NLI.nli_info import tags
 from data_generator.shared_setting import BertNLI
-from explain.explain_trainer import ExplainPredictor
+from explain.explain_model import ExplainPredictor
 from explain.runner.predict_params import parser
 from models.transformer import hyperparams
 from models.transformer.nli_base import transformer_nli_pooled

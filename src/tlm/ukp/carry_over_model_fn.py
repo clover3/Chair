@@ -79,8 +79,6 @@ def model_fn_lm(model_config, train_config, model_class):
 
         tvars = tf.compat.v1.trainable_variables()
 
-        def is_multiple_checkpoint(checkpoint_type):
-            return checkpoint_type in ["v2_and_bert" , "nli_and_bert"]
         use_multiple_checkpoint = is_multiple_checkpoint(train_config.checkpoint_type)
         initialized_variable_names, initialized_variable_names2, init_fn\
             = align_checkpoint_for_lm(tvars,

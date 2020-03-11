@@ -1,8 +1,8 @@
 import os
 import pickle
 
+import data_generator.argmining.ukp_header
 from data_generator import job_runner
-from data_generator.argmining import ukp
 from data_generator.job_runner import JobRunner, sydney_working_dir
 from misc_lib import get_dir_files
 from tlm.data_gen.base import UnmaskedPairedDataGen
@@ -30,7 +30,7 @@ class UkpWorker(job_runner.WorkerInterface):
         return d
 
     def work(self, job_id):
-        topic = ukp.all_topics[job_id]
+        topic = data_generator.argmining.ukp_header.all_topics[job_id]
         ranked_list = sydney_get_ukp_ranked_list()[topic]
         print("Ranked list contains {} docs, selecting top-{}".format(len(ranked_list), self.top_k))
         if self.drop_head:
@@ -47,7 +47,7 @@ class UkpWorker(job_runner.WorkerInterface):
 if __name__ == "__main__":
     drop_head = 10000
     top_k = 150000
-    num_jobs = len(ukp.all_topics) - 1
+    num_jobs = len(data_generator.argmining.ukp_header.all_topics) - 1
     generator = UnmaskedPairedDataGen()
     JobRunner(sydney_working_dir, num_jobs, "ukp_150K_wo_10K", lambda x: UkpWorker(x, top_k, generator, drop_head)).start()
 

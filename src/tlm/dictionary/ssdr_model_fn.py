@@ -14,7 +14,7 @@ from tlm.model.masking import random_masking
 from tlm.training.assignment_map import get_assignment_map_as_is
 from tlm.training.grad_accumulation import get_accumulated_optimizer_from_config
 from tlm.training.lm_model_fn import metric_fn_lm
-from tlm.training.model_fn_common import log_var_assignments, get_tpu_scaffold_or_init, align_checkpoint, \
+from tlm.training.model_fn_common import log_var_assignments, get_tpu_scaffold_or_init, get_init_fn, \
     Classification, log_features, align_checkpoint_twice
 from trainer.get_param_num import get_param_num
 from trainer.tf_module import split_tvars
@@ -93,7 +93,7 @@ def model_fn_apr_classification(bert_config, ssdr_config, train_config, dict_run
 
         tvars = tf.compat.v1.trainable_variables()
         assignment_fn = tlm.training.assignment_map.get_assignment_map_as_is
-        initialized_variable_names, init_fn = align_checkpoint(tvars, train_config.init_checkpoint, assignment_fn)
+        initialized_variable_names, init_fn = get_init_fn(tvars, train_config.init_checkpoint, assignment_fn)
         scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
         log_var_assignments(tvars, initialized_variable_names)
         output_spec = None

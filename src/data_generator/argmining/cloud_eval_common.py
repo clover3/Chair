@@ -52,10 +52,20 @@ def get_ranking_metrics(tfrecord_path, prediction_path):
 
         k_list = [1, 5, 10, 100]
         print("P at {}".format(k_list), end="\t")
-        for k in k_list:
-            p_at_k = sum(correctness_list[:k]) / k
-            print(p_at_k, end="\t")
-        print("")
+        show_all_p_at_k(correctness_list, label_and_prediction)
 
     MAP = average(ap_list)
     return {"MAP": MAP}
+
+
+def show_all_p_at_k(correctness_list, label_and_prediction):
+    prev_c = -1
+    ed = len(correctness_list)
+    for k in range(1, ed):
+        c = sum(correctness_list[:k])
+        if c != prev_c:
+            print(c)
+            p_at_k = c / k
+            print("{}/{}\t{} - {}".format(c, k, p_at_k, label_and_prediction[k]))
+        prev_c = c
+    print("")

@@ -6,7 +6,7 @@ from tlm.tlm.lm_nli_shared_model_fn import SharingFetchGradModel, \
     model_fn_share_fetch_grad
 from tlm.training import flags_wrapper
 from tlm.training.input_fn import input_fn_builder_unmasked
-from tlm.training.train_config import LMTrainConfig
+from tlm.training.train_config import TrainConfigEx
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
 
@@ -14,7 +14,7 @@ from trainer.tpu_estimator import run_estimator
 @report_run
 def main(_):
     config = JsonConfig.from_json_file(FLAGS.model_config_file)
-    train_config = LMTrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
 
     input_files = flags_wrapper.get_input_files()
 

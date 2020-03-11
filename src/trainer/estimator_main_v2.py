@@ -12,13 +12,13 @@ from tlm.training.classification_model_fn import model_fn_classification
 from tlm.training.input_fn import input_fn_builder_classification as input_fn_builder
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
-from tlm.training.train_config import TrainConfig
+from tlm.training.train_config import TrainConfigEx
 
 
 @report_run
 def main_inner(model_class=None):
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
-    train_config = TrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
 
     if model_class is None:
         model_class = BertModel

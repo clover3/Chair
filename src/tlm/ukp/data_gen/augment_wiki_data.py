@@ -1,27 +1,16 @@
-import collections
 import os
 import sys
 
 from misc_lib import get_dir_files, exist_or_mkdir
-from tf_util.enum_features import load_record
+from tf_util.enum_features import load_record, feature_to_ordered_dict
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.data_gen.bert_data_gen import create_int_feature
-from tlm.dictionary.feature_to_text import take
 
 
-def feature_to_ordered_dict(feature):
-    new_features = collections.OrderedDict()
-
-    for key in feature:
-
-        new_features[key] = create_int_feature(take(feature[key]))
-
-    return new_features
-
-
-def augment(short_records, long_records, target_len, save_dir):
+def augment(short_records, long_records, target_len, save_dir, start_record_idx=0):
     exist_or_mkdir(save_dir)
-    record_idx = 0
+    record_idx = start_record_idx
+    print("record_idx", record_idx)
 
     def get_next_writer():
         return RecordWriterWrap(os.path.join(save_dir, str(record_idx)))
@@ -47,7 +36,6 @@ def augment(short_records, long_records, target_len, save_dir):
             writer.close()
             writer = get_next_writer()
 
-
     return
 
 
@@ -61,10 +49,18 @@ def enum_dir_records(dir_path):
                 yield item
 
 
-def run(dir_path1, dir_path2, num_data, save_dir):
-    augment(enum_dir_records(dir_path1), enum_dir_records(dir_path2), num_data, save_dir)
+def run(dir_path1, dir_path2, num_data, save_dir, start_record_idx=""):
+    if start_record_idx:
+        start_record_idx = int(start_record_idx)
+    else:
+        start_record_idx = 0
+
+    augment(enum_dir_records(dir_path1), enum_dir_records(dir_path2), num_data, save_dir, start_record_idx)
 
 
 if __name__ == '__main__':
-    run(sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4])
+    if len(sys.argv) == 6:
+        run(sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4], sys.argv[5])
+    else:
+        run(sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4])
 

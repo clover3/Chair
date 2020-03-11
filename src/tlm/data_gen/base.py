@@ -58,7 +58,7 @@ def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
     cnt = 0
     while True:
         cnt += 1
-        if cnt > 512 and cnt % 100 == 0:
+        if cnt > 912 and cnt % 100 == 0:
             print("Infinited loop :")
             print(tokens_a)
             print(tokens_b)
@@ -219,6 +219,17 @@ class LMTrainBase:
             i += 1
         return results
 
+    def pool_chunks_from_docs(self, documents, target_seq_length):
+        target_inst_num = 0
+        docs_as_chunks = []
+        for doc in documents:
+            chunks = self.pool_chunks(doc, target_seq_length)
+            docs_as_chunks.append(chunks)
+            target_inst_num += len(chunks)
+        docs_as_chunks = list([d for d in docs_as_chunks if d])
+        return docs_as_chunks, target_inst_num
+
+
 class LMTrainGen(LMTrainBase):
     def __init__(self):
         super(LMTrainGen, self).__init__()
@@ -288,7 +299,7 @@ class LMTrainGen(LMTrainBase):
 
 
 class SegmentInstance(object):
-    def __init__(self, tokens, segment_ids):
+    def __init__(self, tokens: object, segment_ids: object) -> object:
         self.tokens = tokens
         self.segment_ids = segment_ids
         self.is_random_next = False
@@ -456,17 +467,10 @@ class UnmaskedPairGen(UnmaskedGen):
     def create_instances_from_document(self, document):
         raise Exception()
 
-
     def create_instances_from_documents(self, documents):
         max_num_tokens = self.max_seq_length - 3
         target_seq_length = max_num_tokens
-
-        target_inst_num = 0
-        docs_as_chunks = []
-        for doc in documents:
-            chunks = self.pool_chunks(doc, target_seq_length)
-            docs_as_chunks.append(chunks)
-            target_inst_num += len(chunks)
+        docs_as_chunks, target_inst_num = self.pool_chunks_from_docs(documents, target_seq_length)
 
         instances = []
         for _ in range(target_inst_num):
@@ -542,12 +546,8 @@ class UnmaskedPairedDataGen(LMTrainBase):
         max_num_tokens = self.max_seq_length - 3
         target_seq_length = max_num_tokens
 
-        target_inst_num = 0
-        docs_as_chunks = []
-        for doc in documents:
-            chunks = self.pool_chunks(doc, target_seq_length)
-            docs_as_chunks.append(chunks)
-            target_inst_num += len(chunks)
+        docs_as_chunks, target_inst_num = self.pool_chunks_from_docs(documents, target_seq_length)
+
 
         instances = []
         for _ in range(target_inst_num):
@@ -590,4 +590,5 @@ class UnmaskedPairedDataGen(LMTrainBase):
         tf_logging.info("Wrote %d total instances", writer.total_written)
 
         return example_numbers
+
 

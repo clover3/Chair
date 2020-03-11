@@ -83,7 +83,6 @@ def view_grad_overlap_hidden():
 
         std = np.std(h_overlap, axis=2)
         mean = np.mean(h_overlap, axis=2)
-
         h_overlap = np.sum(h_overlap, axis=2)
 
         highlight = lmap(is_mask, tokens)
@@ -102,12 +101,12 @@ def view_grad_overlap_hidden():
         print(entry.get_vector("masked_lm_example_loss"))
         html_writer.multirow_print_from_cells_list(rows, 40)
 
+
 def view_grad_overlap():
     filename = "gradient_overlap_4K.pickle"
 
     out_name = filename.split(".")[0] + ".html"
     html_writer = HtmlVisualizer(out_name, dark_mode=False)
-
 
     data = EstimatorPredictionViewerGosford(filename)
     iba = IntBinAverage()
@@ -131,11 +130,9 @@ def view_grad_overlap():
         if len(values) == 1:
             std_dict[key] = 999
 
-
-
-
     def unlikeliness(value, mean, std):
         return abs(value - mean) / std
+
     data = EstimatorPredictionViewerGosford(filename)
     print("num record : ", data.data_len)
     cnt = 0

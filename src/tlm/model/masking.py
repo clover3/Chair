@@ -10,6 +10,7 @@ def pad_as_shape(value, shape_like, dims):
     value = tf.ones_like(shape_like) * value
     return value
 
+
 def scatter_with_batch(input_ids, indice, mask_token):
     batch_size = get_shape_list2(input_ids)[0]
     seq_length = get_shape_list2(input_ids)[1]

@@ -12,7 +12,7 @@ from tlm.model.masking import random_masking
 from tlm.sero.sero_core import split_and_append_sep, SeroDelta, SeroEpsilon
 from tlm.training import assignment_map, grad_accumulation
 from tlm.training.input_fn_common import format_dataset
-from tlm.training.model_fn_common import log_features, get_tpu_scaffold_or_init, log_var_assignments, align_checkpoint, \
+from tlm.training.model_fn_common import log_features, get_tpu_scaffold_or_init, log_var_assignments, get_init_fn, \
     Classification, reweight_zero
 from tlm.training.ranking_model_common import combine_paired_input_features, get_prediction_structure, \
     apply_loss_modeling
@@ -130,7 +130,7 @@ def model_fn_sero_lm(config, train_config, modeling, prediction_op=None):
             assignment_fn = get_assignment_map_from_checkpoint_type(train_config.checkpoint_type, config.lower_layers)
         else:
             assignment_fn = None
-        initialized_variable_names, init_fn = align_checkpoint(tvars, train_config.init_checkpoint, assignment_fn)
+        initialized_variable_names, init_fn = get_init_fn(tvars, train_config.init_checkpoint, assignment_fn)
         log_var_assignments(tvars, initialized_variable_names)
         scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
 
@@ -248,7 +248,7 @@ def model_fn_sero_ranking_predict(config, train_config, model_class):
         tvars = tf.compat.v1.trainable_variables()
         assignment_fn = assignment_map.assignment_map_v2_to_v2
 
-        initialized_variable_names, init_fn = align_checkpoint(tvars, train_config.init_checkpoint, assignment_fn)
+        initialized_variable_names, init_fn = get_init_fn(tvars, train_config.init_checkpoint, assignment_fn)
         scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
         log_var_assignments(tvars, initialized_variable_names)
         output_spec = rank_predict_estimator_spec(logits, mode, scaffold_fn)
@@ -297,7 +297,7 @@ def model_fn_sero_classification(config, train_config, modeling, special_flags=[
         pooled_output = tf.keras.layers.Dense(config.hidden_size,
                                                activation=tf.keras.activations.tanh,
                                                kernel_initializer=create_initializer(config.initializer_range))(
-            first_token_tensor)
+                                                first_token_tensor)
 
         if "bias_loss" in special_flags:
             loss_weighting = reweight_zero
@@ -309,8 +309,7 @@ def model_fn_sero_classification(config, train_config, modeling, special_flags=[
 
         tvars = tf.compat.v1.trainable_variables()
         assignment_fn = assignment_map.assignment_map_v2_to_v2
-
-        initialized_variable_names, init_fn = align_checkpoint(tvars, train_config.init_checkpoint, assignment_fn)
+        initialized_variable_names, init_fn = get_init_fn(tvars, train_config.init_checkpoint, assignment_fn)
         scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
         log_var_assignments(tvars, initialized_variable_names)
 

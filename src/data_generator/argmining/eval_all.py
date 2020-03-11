@@ -1,7 +1,7 @@
 import pickle
 import sys
 
-from data_generator.argmining import ukp
+import data_generator.argmining.ukp_header
 from data_generator.argmining.eval import get_f1_score
 from misc_lib import average
 from taskman_client.task_proxy import get_task_manager_proxy
@@ -11,7 +11,7 @@ def main(base_name):
     path_prefix = "./output/ukp/" + base_name
     run_name = base_name
     all_res = {}
-    for topic in ukp.all_topics:
+    for topic in data_generator.argmining.ukp_header.all_topics:
         prediction_path = path_prefix + "_" + topic
         tfrecord_path = "./data/ukp_tfrecord/dev_" + topic
         res = get_f1_score(tfrecord_path, prediction_path)

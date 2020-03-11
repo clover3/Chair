@@ -3,6 +3,7 @@ from dispute.adreaction import FLAGS
 from dispute.guardian import save_local_pickle, load_local_pickle
 from models.cnn import CNN
 from trainer.tf_module import *
+from trainer.tf_train_module import init_session
 
 
 def get_predictor():

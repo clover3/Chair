@@ -1,9 +1,9 @@
 import collections
 import os
 
+import data_generator.argmining.ukp_header
 from cpath import data_path
 from data_generator import job_runner
-from data_generator.argmining import ukp
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
 from data_generator.common import get_tokenizer
 from data_generator.job_runner import JobRunner, sydney_working_dir
@@ -14,7 +14,7 @@ from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.data_gen.base import get_basic_input_feature_as_list, \
     log_print_feature
 from tlm.data_gen.bert_data_gen import create_int_feature
-from tlm.dictionary.feature_to_text import take
+from tlm.data_gen.feature_to_text import take
 from tlm.tlm.relevance_on_bert_tokens import Ranker
 from tlm.ukp.data_gen.add_topic_ids_cls import token_ids_to_topic
 from tlm.ukp.data_gen.run_ukp_gen2 import load_tokens_for_topic
@@ -69,7 +69,7 @@ def filter_overlap(ranked_list):
             yield ranked_list[i]
 
 
-n_topics = len(ukp.all_topics)
+n_topics = len(data_generator.argmining.ukp_header.all_topics)
 
 def get_tf_record_path_from_topic(split, topic):
     return os.path.join(data_path, "ukp_tfrecord", "{}_{}".format(split, topic))
@@ -89,8 +89,8 @@ class ContextGenWorker(job_runner.WorkerInterface):
         idx1 = int(job_id / n_topics)
         idx2 = job_id % n_topics
 
-        heldout_topic = ukp.all_topics[idx1]
-        target_topic = ukp.all_topics[idx2]
+        heldout_topic = data_generator.argmining.ukp_header.all_topics[idx1]
+        target_topic = data_generator.argmining.ukp_header.all_topics[idx2]
         input_path = get_tf_record_path_from_topic(self.split, heldout_topic)
         instances = self.create_instances(input_path, target_topic, self.max_seq_length)
         out_name = "{}_{}_{}".format(self.split, heldout_topic, target_topic)

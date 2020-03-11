@@ -17,7 +17,7 @@ from tlm.tlm.tlm2_network import tlm2, tlm_prefer_hard
 from tlm.training.dict_model_fn import model_fn_dict_reader, DictRunConfig, input_fn_builder_dict
 from tlm.training.input_fn import input_fn_builder_unmasked, input_fn_builder_masked, input_fn_builder_blc
 from tlm.training.lm_model_fn import model_fn_lm, model_fn_target_masking, get_nli_ex_model_segmented
-from tlm.training.train_config import LMTrainConfig
+from tlm.training.train_config import TrainConfigEx
 from tlm.training.train_flags import *
 
 
@@ -89,7 +89,7 @@ def lm_pretrain(input_files):
     elif FLAGS.dict_lm_vbatch:
         task = TASK_DICT_LM_VBATCH
 
-    train_config = LMTrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
     if task == TASK_LM:
         tf_logging.info("Running LM")
         if FLAGS.fixed_mask:

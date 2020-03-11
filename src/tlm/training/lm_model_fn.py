@@ -76,8 +76,11 @@ def align_checkpoint_for_lm(tvars,
                             checkpoint_type,
                             init_checkpoint,
                             second_init_checkpoint=None,
-                            use_multiple_checkpoint=False):
+                            ):
     tf_logging.debug("align_checkpoint_for_lm")
+
+    use_multiple_checkpoint = checkpoint_type in ["v2_and_bert", "nli_and_bert"]
+
     initialized_variable_names2 = {}
     if init_checkpoint:
         if not use_multiple_checkpoint:
@@ -199,15 +202,12 @@ def model_fn_lm(model_config, train_config, model_class,
 
         tvars = tf.compat.v1.trainable_variables()
 
-        def is_multiple_checkpoint(checkpoint_type):
-            return checkpoint_type in ["v2_and_bert" , "nli_and_bert"]
-        use_multiple_checkpoint = is_multiple_checkpoint(train_config.checkpoint_type)
         initialized_variable_names, initialized_variable_names2, init_fn\
             = align_checkpoint_for_lm(tvars,
                                       train_config.checkpoint_type,
                                       train_config.init_checkpoint,
                                       train_config.second_init_checkpoint,
-                                      use_multiple_checkpoint)
+                                      )
 
         scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
 

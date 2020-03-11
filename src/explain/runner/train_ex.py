@@ -7,13 +7,14 @@ import numpy as np
 import tensorflow as tf
 
 import cpath
+import data_generator.NLI.nli_info
 from attribution.eval import eval_explain
-from data_generator.NLI import nli
 from data_generator.NLI.nli import get_modified_data_loader
 from data_generator.common import get_tokenizer
 from data_generator.shared_setting import BertNLI
 from explain.ex_train_modules import NLIExTrainConfig, get_informative_fn_by_name
-from explain.explain_trainer import ExplainTrainerM, CrossEntropyModeling, CorrelationModeling
+from explain.explain_model import CorrelationModeling, CrossEntropyModeling
+from explain.explain_trainer import ExplainTrainerM
 from explain.nli_common import train_classification_factory, save_fn_factory, valid_fn_factory
 from explain.runner.nli_ex_param import ex_arg_parser
 from explain.train_nli import get_nli_data
@@ -396,7 +397,7 @@ if __name__  == "__main__":
                args.start_type,
                args.save_dir,
                args.modeling_option,
-               nli.tags,
+               data_generator.NLI.nli_info.tags,
                args.info_fn,
                args.num_deletion,
                args.g_val,

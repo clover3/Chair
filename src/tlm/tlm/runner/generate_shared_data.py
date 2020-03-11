@@ -8,7 +8,7 @@ from misc_lib import get_dir_files
 from tf_util.enum_features import load_record_v2
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.data_gen.bert_data_gen import create_int_feature
-from tlm.dictionary.feature_to_text import take
+from tlm.data_gen.feature_to_text import take
 
 
 def get_dir_all_itr(dir_path):

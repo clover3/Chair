@@ -2,7 +2,7 @@ import json
 from collections import Counter
 
 
-def parse_line(line):
+def galago_judgement_parse_line(line):
     first_space = line.find(' ')
     second_space = line.find(' ', first_space+1)
 
@@ -20,7 +20,7 @@ def load_galago_judgement2(path):
 # Sample Format : 475287 Q0 LA053190-0016_1274 1 15.07645119 galago
     q_group = dict()
     for line in open(path, "r"):
-        q_id, doc_id, rank, score = parse_line(line)
+        q_id, doc_id, rank, score = galago_judgement_parse_line(line)
         if q_id not in q_group:
             q_group[q_id] = list()
         q_group[q_id].append((doc_id, int(rank), float(score)))
@@ -81,3 +81,12 @@ def write_query_json(queries, out_path):
     fout = open(out_path, "w")
     fout.write(json.dumps(data, indent=True))
     fout.close()
+
+
+def parse_doc_jsonl_line(line):
+    j = json.loads(line, strict=False)
+    html = j['content']
+    doc_id = j['id']
+    return doc_id, html
+
+

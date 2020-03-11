@@ -2,6 +2,7 @@ from collections import Counter
 
 import math
 
+from arg.claim_building.count_ngram import merge_subword
 from cache import save_to_pickle, load_from_pickle
 from models.classic.stopword import load_stopwords
 from tlm.ukp.sydney_data import ukp_load_tokens_for_topic
@@ -27,7 +28,7 @@ def get_all_term_odd(tf_c, tf_nc, smoothing=0.9):
     return odd_dict
 
 
-def build_lm_from_tokens_list(doc) -> Counter:
+def build_uni_lm_from_tokens_list(doc) -> Counter:
     tf = Counter()
     for segment in doc:
         tf.update(segment)
@@ -39,19 +40,19 @@ def work():
     c_tf, nc_tf = count_controversy(topic)
 
     save_to_pickle((c_tf, nc_tf), "abortion_clm")
-    display(c_tf, nc_tf)
+    display(c_tf, nc_tf, "controversial", "non-controversial")
 
 def start_from_pickle():
     c_tf, nc_tf = load_from_pickle("abortion_clm")
-    display(c_tf, nc_tf)
+    display(c_tf, nc_tf, "controversial", "non-controversial")
 
 
-def display(c_tf, nc_tf):
-    odd_dict = get_all_term_odd(c_tf, nc_tf, 0.95)
+def display(tf1, tf2, label_name1="pos", label_name2="neg"):
+    odd_dict = get_all_term_odd(tf1, tf2, 0.95)
 
     def contrib(e):
         key, value = e
-        return (c_tf[key] + nc_tf[key]) * value
+        return (tf1[key] + tf2[key]) * value
 
     odd_list = list(odd_dict.items())
     odd_list.sort(key=contrib, reverse=True)
@@ -59,23 +60,25 @@ def display(c_tf, nc_tf):
 
     def valid(e):
         key, value = e
-        return key not in stopword and c_tf[key] > 10 and nc_tf[key] > 10
+        return key not in stopword and tf1[key] > 10 and tf2[key] > 10
 
     acc = 0
     for key, value in odd_list:
-        acc += value * (c_tf[key] + nc_tf[key])
+        acc += value * (tf1[key] + tf2[key])
 
-    ctf = sum(c_tf.values())+sum(nc_tf.values())
+    ctf = sum(tf1.values()) + sum(tf2.values())
     print(acc, acc/ctf)
 
+    k = 50
+
     odd_list = list(filter(valid, odd_list))
-    print("Top Controversial ")
-    for key, value in odd_list[:30]:
-        print(key, c_tf[key], nc_tf[key], odd_dict[key])
-    print("Least Controversial ")
-    for idx in range(len(odd_list) - 1, len(odd_list) - 1 - 20, -1):
+    print("Top {} ".format(label_name1))
+    for key, value in odd_list[:k]:
+        print(key, tf1[key], tf2[key], odd_dict[key])
+    print("Top {} ".format(label_name2))
+    for idx in range(len(odd_list) - 1, len(odd_list) - 1 - k, -1):
         key, value = odd_list[idx]
-        print(key, contrib(odd_list[idx]), c_tf[key], nc_tf[key], odd_dict[key])
+        print(key, contrib(odd_list[idx]), tf1[key], tf2[key], odd_dict[key])
 
 
 def count_controversy(topic):
@@ -91,7 +94,8 @@ def count_controversy(topic):
     c_tf = Counter()
     nc_tf = Counter()
     for doc_id, doc in tokens_dict.items():
-        tf = build_lm_from_tokens_list(doc)
+        doc = [merge_subword(s) for s in doc]
+        tf = build_uni_lm_from_tokens_list(doc)
         if contain_controversy(tf):
             c_tf.update(tf)
         else:
@@ -100,4 +104,4 @@ def count_controversy(topic):
 
 
 if __name__ == "__main__":
-    start_from_pickle()
+    work()

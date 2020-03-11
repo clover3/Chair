@@ -1,12 +1,13 @@
-from models.transformer import hyperparams
-from trainer.experiment import Experiment
-from trainer.ExperimentConfig import ExperimentConfig
-from data_generator.argmining import ukp
-from data_generator.argmining.ukp import BertDataLoader, PairedDataLoader, FeedbackData, NLIAsStance
+import data_generator.argmining.ukp_header
 from data_generator.NLI import nli
+from data_generator.argmining.ukp import BertDataLoader
 from data_generator.shared_data import SharedFeeder
-from misc_lib import *
 from data_generator.shared_setting import NLI
+from misc_lib import *
+from models.transformer import hyperparams
+from trainer.ExperimentConfig import ExperimentConfig
+from trainer.experiment import Experiment
+
 
 def ukp_train_test(load_id, exp_name):
     hp = hyperparams.HPBert()
@@ -19,7 +20,7 @@ def ukp_train_test(load_id, exp_name):
 
     print(load_id)
     f1_list = []
-    for topic in ukp.all_topics:
+    for topic in data_generator.argmining.ukp_header.all_topics:
         e = Experiment(hp)
         print(exp_name)
         e_config.name = "arg_{}_{}_{}".format(exp_name, topic, encode_opt)
@@ -33,7 +34,6 @@ def ukp_train_test(load_id, exp_name):
     print(f1_list)
     for key, score in f1_list:
         print("{0}\t{1:.03f}".format(key,score))
-
 
 
 def ukp_train_test_repeat(load_id, exp_name, topic, n_repeat):
@@ -63,7 +63,6 @@ def ukp_train_test_repeat(load_id, exp_name, topic, n_repeat):
     print("Avg\n{0:.03f}".format(average(scores)))
 
 
-
 def train_ukp_with_nli(load_id, exp_name):
     step_per_epoch = 24544 + 970
 
@@ -81,7 +80,7 @@ def train_ukp_with_nli(load_id, exp_name):
     nli_setting.vocab_filename = "bert_voca.txt"
     num_class_list = [3, 3]
     f1_list = []
-    for topic in ukp.all_topics:
+    for topic in data_generator.argmining.ukp_header.all_topics:
         e = Experiment(hp)
         print(exp_name)
         e_config.name = "argmix_{}_{}_{}".format(exp_name, topic, encode_opt)
@@ -118,7 +117,7 @@ def eval_ukp_with_nli(exp_name):
     num_class_list = [3, 3]
     f1_list = []
     save_path = "/mnt/scratch/youngwookim/Chair/output/model/runs/argmix_AN_B_40000_abortion_is_good/model-21306"
-    for topic in ukp.all_topics[:1]:
+    for topic in data_generator.argmining.ukp_header.all_topics[:1]:
         e = Experiment(hp)
         print(exp_name)
         e_config.name = "argmix_{}_{}_{}".format(exp_name, topic, encode_opt)

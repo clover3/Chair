@@ -1,16 +1,17 @@
-import tensorflow as tf
-import os
 import itertools
-from data_generator.stance import stance_detection
-from data_generator.mask_lm import enwiki
-from data_generator.generator_utils import get_or_generate_vocab_inner
-from data_generator.text_encoder import TokenTextEncoder
+import os
+
+import tensorflow as tf
+
+import data_generator.NLI.nli_info
 from data_generator.common import data_path
-from data_generator.data_parser import tweet_reader
-from data_generator.shared_setting import Tweets2Stance, TopicTweets2Stance, SimpleTokner
-from data_generator.tokenizer import encode
+from data_generator.generator_utils import get_or_generate_vocab_inner
+from data_generator.mask_lm import enwiki
+from data_generator.shared_setting import TopicTweets2Stance, SimpleTokner
+from data_generator.stance import stance_detection
+from data_generator.text_encoder import TokenTextEncoder
 from misc_lib import flatten
-from data_generator.NLI import nli
+
 
 def file_sampler(filepath, file_byte_budget=1e6):
     with tf.gfile.GFile(filepath, mode="r") as source_file:
@@ -94,7 +95,7 @@ def init_token_voca():
 
 def init_voca_nli():
     vocab_size = 32000
-    train_file = os.path.join(nli.corpus_dir, "train.tsv")
+    train_file = os.path.join(data_generator.NLI.nli_info.corpus_dir, "train.tsv")
 
     def file_reader(filename):
         for idx, line in enumerate(tf.gfile.Open(filename, "rb")):

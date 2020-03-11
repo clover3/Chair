@@ -8,6 +8,7 @@ import numpy as np
 import tlm.data_gen.base as datagen_base
 import tlm.data_gen.bert_data_gen as btd
 from data_generator import tokenizer_wo_tf as tokenization
+from data_generator.tokenizer_wo_tf import is_continuation
 from misc_lib import pick1, TimeEstimator, average
 from models.classic.stopword import load_stopwords
 from tf_util.record_writer_wrap import RecordWriterWrap
@@ -81,10 +82,6 @@ class RandomEntryDictionary(DictionaryInterface):
 
     def __contains__(self, word):
         return word in self.parsed_dictionary
-
-
-def is_continuation(subword):
-    return len(subword) > 2 and subword[:2] == "##"
 
 
 def get_word_tokens(tokens):

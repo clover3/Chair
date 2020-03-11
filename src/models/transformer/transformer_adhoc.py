@@ -1,8 +1,9 @@
-from task.transformer_est import Transformer, Classification
-from models.transformer import bert
 import tensorflow as tf
-from data_generator.NLI import nli
-from trainer import tf_module
+
+import data_generator.NLI.nli_info
+from models.transformer import bert
+from task.transformer_est import Classification
+
 
 class transformer_adhoc:
     def __init__(self, hp, voca_size, mode = 1):
@@ -16,7 +17,7 @@ class transformer_adhoc:
 
         seq_length = hp.seq_max
         use_tpu = False
-        task = Classification(nli.num_classes)
+        task = Classification(data_generator.NLI.nli_info.num_classes)
 
         input_ids = tf.placeholder(tf.int64, [None, seq_length])
         input_mask = tf.placeholder(tf.int64, [None, seq_length])
@@ -173,7 +174,7 @@ class transformer_adhoc_ex:
 
         seq_length = hp.seq_max
         use_tpu = False
-        task = Classification(nli.num_classes)
+        task = Classification(data_generator.NLI.nli_info.num_classes)
 
         input_ids = tf.placeholder(tf.int64, [None, seq_length])
         input_mask = tf.placeholder(tf.int64, [None, seq_length])

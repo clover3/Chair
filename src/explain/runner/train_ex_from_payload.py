@@ -1,6 +1,6 @@
 import sys
 
-from data_generator.NLI import nli
+import data_generator.NLI.nli_info
 from explain.runner.nli_ex_param import ex_arg_parser
 from explain.runner.train_ex import get_params, train_nli_ex_from_payload
 
@@ -21,6 +21,6 @@ if __name__  == "__main__":
                args.start_type,
                args.save_dir,
                args.modeling_option,
-               nli.tags,
+               data_generator.NLI.nli_info.tags,
                args.info_fn,
                int(args.num_gpu))

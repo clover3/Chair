@@ -22,7 +22,7 @@ def input_fn_from_flags(input_fn_builder, flags):
     input_files = get_input_files_from_flags(flags)
     show_input_files(input_files)
 
-    return input_fn_builder(input_files, flags.max_seq_length, flags.do_train)
+    return input_fn_builder(input_files, flags.max_seq_length, flags.do_train, flags)
 
 
 def show_input_files(input_files):

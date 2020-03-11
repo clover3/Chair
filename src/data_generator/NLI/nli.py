@@ -4,16 +4,13 @@ import unicodedata
 
 from cache import *
 from data_generator.NLI.enlidef import *
+from data_generator.NLI.nli_info import corpus_dir
 from data_generator.data_parser.esnli import load_split
 from data_generator.text_encoder import SubwordTextEncoder, CLS_ID, SEP_ID
 from data_generator.tf_gfile_support import tf_gfile
 from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
 from data_generator.tokenizer_wo_tf import FullTokenizer
 from evaluation import *
-
-num_classes = 3
-corpus_dir = os.path.join(data_path, "nli")
-tags = ["conflict", "match", "mismatch"]
 
 
 def get_modified_data_loader2(hp, nli_setting):

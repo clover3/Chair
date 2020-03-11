@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+import data_generator.NLI.nli_info
 from data_generator.NLI import nli
 from data_generator.shared_setting import NLI
 from log import log as log_module
@@ -56,7 +57,7 @@ class transformer_nli:
 
         seq_length = hp.seq_max
         use_tpu = False
-        task = Classification(nli.num_classes)
+        task = Classification(data_generator.NLI.nli_info.num_classes)
 
         input_ids = placeholder(tf.int64, [None, seq_length])
         input_mask = placeholder(tf.int64, [None, seq_length])

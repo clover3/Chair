@@ -10,6 +10,7 @@ from data_generator.tokenizer_b import BasicTokenizer
 
 class StemmerCache:
     def __init__(self, cache = None):
+        from krovetzstemmer import Stemmer
         self.stemmer = Stemmer()
         if cache is not None:
             self.cache = cache

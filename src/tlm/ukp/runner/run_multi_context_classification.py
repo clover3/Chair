@@ -5,7 +5,7 @@ from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging
 from tlm.model_cnfig import JsonConfig
 from tlm.training.classification_model_fn import model_fn_classification
-from tlm.training.train_config import TrainConfig
+from tlm.training.train_config import TrainConfigEx
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
 
@@ -14,7 +14,7 @@ from trainer.tpu_estimator import run_estimator
 def main(_):
     tf_logging.info("Train multi context classification")
     config = JsonConfig.from_json_file(FLAGS.model_config_file)
-    train_config = TrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
     input_fn = input_fn_builder_multi_context_classification(FLAGS.max_seq_length,
                                                              config.max_context,
                                                              config.max_context_length,

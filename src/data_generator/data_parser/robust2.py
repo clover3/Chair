@@ -1,7 +1,7 @@
 import os
 
 import cpath
-from adhoc.galago import load_galago_ranked_list
+from galagos.basic import load_galago_ranked_list
 
 
 def load_2k_rank():

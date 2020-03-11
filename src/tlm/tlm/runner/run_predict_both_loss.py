@@ -5,7 +5,7 @@ from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging, logging
 from tlm.tlm.model_fn_try_all_loss import model_fn_try_all_loss
 from tlm.training import flags_wrapper
-from tlm.training.train_config import LMTrainConfig
+from tlm.training.train_config import TrainConfigEx
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 import tensorflow as tf
@@ -32,7 +32,7 @@ def main(_):
     tf_logging.addFilter(CounterFilter())
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
     input_files = flags_wrapper.get_input_files()
-    train_config = LMTrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
 
     show_input_files(input_files)
 

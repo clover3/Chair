@@ -1,3 +1,4 @@
+
 import cpath
 from misc_lib import *
 
@@ -23,6 +24,3 @@ def download_model(dir_path, model_step, save_name):
     gsutil_cp(src_path, save_dir)
 
     return save_name, model_name
-
-
-

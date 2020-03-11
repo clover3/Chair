@@ -6,10 +6,10 @@ from functools import partial
 import tensorflow as tf
 
 import cpath
-from adhoc.galago import load_galago_ranked_list
-from data_generator.argmining import ukp
+import data_generator.argmining.ukp_header
 from data_generator.common import get_tokenizer
 from data_generator.tokenizer_wo_tf import EncoderUnit
+from galagos.basic import load_galago_ranked_list
 from models.transformer import hyperparams
 from models.transformer.tranformer_nli import transformer_nli
 from trainer.model_saver import load_model_w_scope
@@ -72,7 +72,7 @@ def batch_iter_from_entry_iter(batch_size, entry_iter):
 
 
 def get_topic_from_path(path):
-    for topic in ukp.all_topics:
+    for topic in data_generator.argmining.ukp_header.all_topics:
         if topic in path:
             return topic
     raise Exception()

@@ -2,8 +2,8 @@
 
 import tensorflow as tf
 
+import data_generator.NLI.nli_info
 import tlm.model.base as bert
-from data_generator.NLI import nli
 from trainer import tf_module
 
 
@@ -54,7 +54,7 @@ class transformer_nli:
 
         seq_length = hp.seq_max
         use_tpu = False
-        task = Classification(nli.num_classes)
+        task = Classification(data_generator.NLI.nli_info.num_classes)
 
         label_ids = tf.compat.v1.placeholder(tf.int64, [None])
         if method in [0,1,3,4,5,6]:

@@ -3,6 +3,7 @@ import sys
 
 import tensorflow as tf
 
+import data_generator.argmining.ukp_header
 from arg.ukp_train_test import *
 from cpath import get_model_full_path, output_path, get_bert_full_path
 from data_generator.argmining import NextSentPred, DocStance
@@ -61,7 +62,7 @@ def train_bert():
 
     print(load_id)
     f1_list = []
-    for topic in ukp.all_topics:
+    for topic in data_generator.argmining.ukp_header.all_topics:
         e = Experiment(hp)
         print(exp_purpose)
         e_config.name = "arg_ukp_rel_{}_{}".format(topic, encode_opt)
@@ -79,6 +80,22 @@ def train_bert():
 
 
 
+def eval_one():
+    hp = hyperparams.HPBert()
+    e_config = ExperimentConfig()
+    e_config.num_epoch = 2
+    e_config.save_interval = 100 * 60  # 30 minutes
+    e_config.voca_size = 30522
+    e_config.load_names = ['bert']
+    encode_opt = "is_good"
+    save_path = sys.argv[1]
+    e = Experiment(hp)
+    topic = "abortion"
+    data_loader = BertDataLoader(topic, True, hp.seq_max, "bert_voca.txt", option=encode_opt)
+    f1_last = e.eval_ukp(e_config, data_loader, save_path)
+    print(f1_last)
+
+
 
 def train_doc_stance():
     hp = hyperparams.HPBert()
@@ -92,7 +109,7 @@ def train_doc_stance():
 
     exp_purpose = "doc_stance_abortion"
     input_type = "topic"
-    all_topics = ukp.all_topics
+    all_topics = data_generator.argmining.ukp_header.all_topics
 
     target_topics = all_topics[:1] # [all_topics[i] for i in [0,1,7]]
     val_loss_d = {}
@@ -123,7 +140,7 @@ def test_model():
     encode_opt = "is_good"
 
     f1_list = []
-    for topic in ukp.all_topics:
+    for topic in data_generator.argmining.ukp_header.all_topics:
         e = Experiment(hp)
         print(exp_purpose)
         e_config.name = "arg_nli_{}_{}".format(topic, encode_opt)
@@ -155,7 +172,7 @@ def train_ukp_ex():
     explain_tag = 'polarity'
     #explain_tag = 'relevance'
 
-    for topic in ukp.all_topics[5:]:
+    for topic in data_generator.argmining.ukp_header.all_topics[5:]:
         e = Experiment(hp)
         print(exp_purpose)
         e_config.name = "arg_exp_{}_{}".format(topic, explain_tag)
@@ -184,7 +201,7 @@ def run_ukp_ex():
     print(file_path)
     #explain_tag = 'relevance'
 
-    topic = ukp.all_topics[topic_idx]
+    topic = data_generator.argmining.ukp_header.all_topics[topic_idx]
     e = Experiment(hp)
     print(exp_purpose)
     e_config.name = "pred_arg_exp_{}_{}".format(topic, explain_tag)
@@ -209,7 +226,7 @@ def train_weighted():
     exp_purpose = "Weighted 0.0 (2 epoch)"
     print(load_id)
     f1_list = []
-    for topic in ukp.all_topics:
+    for topic in data_generator.argmining.ukp_header.all_topics:
         e = Experiment(hp)
         print(exp_purpose)
         e_config.name = "arg_weight_{}".format(topic)
@@ -238,7 +255,7 @@ def train_next_pred():
     #load_id = ("causal", 'model.ckpt-1000')
     exp_purpose = "Next pred"
 
-    for topic in ukp.all_topics[2:3]:
+    for topic in data_generator.argmining.ukp_header.all_topics[2:3]:
         e = Experiment(hp)
         print(exp_purpose)
         print(topic)
@@ -261,7 +278,7 @@ def train_concat():
     load_id2 = ("causal", 'model.ckpt-1000')
 
     f1_list = []
-    for topic in ukp.all_topics:
+    for topic in data_generator.argmining.ukp_header.all_topics:
         e = Experiment(hp)
         print("train_concat")
         e_config.name = "arg_concat_{}".format(topic)
@@ -287,7 +304,7 @@ def train_paired():
     load_id = ("NLI_Only_B", 'model-0')
 
     f1_list = []
-    for topic in ukp.all_topics:
+    for topic in data_generator.argmining.ukp_header.all_topics:
         e = Experiment(hp)
         print(load_id[0])
         e_config.name = "arg_paired_{}".format(topic)
@@ -303,7 +320,7 @@ def train_paired():
 
 
 def failure_analysis():
-    for topic in ukp.all_topics:
+    for topic in data_generator.argmining.ukp_header.all_topics:
         hp = hyperparams.HPBert()
         e = Experiment(hp)
         e_config = ExperimentConfig()
@@ -316,7 +333,7 @@ def failure_analysis():
 
 
 def train_psf():
-    for topic in ukp.all_topics[:1]:
+    for topic in data_generator.argmining.ukp_header.all_topics[:1]:
         hp = hyperparams.HPBert()
         hp.lr = 1e-5
         e = Experiment(hp)
@@ -331,7 +348,7 @@ def train_psf():
         e.pseudo_stance_ukp(e_config, topic, feedback_data)
 
 def train_psf_vector():
-    for topic in ukp.all_topics[:1]:
+    for topic in data_generator.argmining.ukp_header.all_topics[:1]:
         hp = hyperparams.HPUKPVector()
         hp.lr = 1e-5
         hp.use_reorder = True
@@ -349,7 +366,7 @@ def train_psf_vector():
 
 
 def train_topic_vector():
-    for topic in ukp.all_topics[:1]:
+    for topic in data_generator.argmining.ukp_header.all_topics[:1]:
         hp = hyperparams.HPUKPVector()
         hp.lr = 1e-5
         e = Experiment(hp)
@@ -364,7 +381,7 @@ def train_topic_vector():
 
 
 def test_nli_as_stance():
-    for topic in ukp.all_topics[:1]:
+    for topic in data_generator.argmining.ukp_header.all_topics[:1]:
         hp = hyperparams.HPUKPVector()
         e = Experiment(hp)
         e_config = ExperimentConfig()
@@ -380,7 +397,7 @@ def test_nli_as_stance():
 
 
 def query_expansion():
-    for topic in ukp.all_topics:
+    for topic in data_generator.argmining.ukp_header.all_topics:
         hp = hyperparams.HPBert()
         e = Experiment(hp)
         e_config = ExperimentConfig()
@@ -414,7 +431,7 @@ def psf_train_test():
     encode_opt = "is_good"
 
     f1_list = []
-    for topic in ukp.all_topics:
+    for topic in data_generator.argmining.ukp_header.all_topics:
         e = Experiment(hp)
         print(exp_purpose)
         load_run_name = "doc_stance_abortion_enc_topic_blind_{}".format(topic)
@@ -436,7 +453,7 @@ def psf_train_test():
 
 def train_test_repeat():
     step = 20000
-    topic = ukp.all_topics[7]
+    topic = data_generator.argmining.ukp_header.all_topics[7]
     load_id = ("{}_{}".format(topic, step), 'model.ckpt-{}'.format(step))
     #load_id = ("Abortion_B", 'model.ckpt-{}'.format(step))
     ukp_train_test_repeat(load_id, "{}_{}".format(topic, step), topic, 10)
@@ -444,7 +461,7 @@ def train_test_repeat():
 
 
 def hp_tune():
-    topic = ukp.all_topics[0]
+    topic = data_generator.argmining.ukp_header.all_topics[0]
     hp = hyperparams.HPBert()
     e_config = ExperimentConfig()
     e_config.num_epoch = 10
@@ -533,7 +550,7 @@ def do_fetch_value():
 
 if __name__ == '__main__':
     begin = time.time()
-    action = "lr_kl"
+    action = "eval_one"
     locals()[action]()
 
     elapsed = time.time() - begin

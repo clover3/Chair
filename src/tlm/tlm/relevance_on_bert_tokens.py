@@ -4,8 +4,8 @@ import math
 
 from adhoc.bm25 import BM25_3
 from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import is_continuation
 from models.classic.stopword import load_stopwords
-from tlm.dictionary.data_gen import is_continuation
 
 
 def get_name(sb_indice):

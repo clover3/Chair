@@ -6,7 +6,7 @@ from tlm.model.base import BertModel
 from tlm.tlm.loss_diff_prediction_model import loss_diff_prediction_model_online
 from tlm.training.flags_wrapper import get_input_files_from_flags, show_input_files
 from tlm.training.input_fn import input_fn_builder_unmasked
-from tlm.training.train_config import LMTrainConfig
+from tlm.training.train_config import TrainConfigEx
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
 
@@ -15,7 +15,7 @@ from trainer.tpu_estimator import run_estimator
 def main(_):
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
     input_files = get_input_files_from_flags(FLAGS)
-    train_config = LMTrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
 
     show_input_files(input_files)
 

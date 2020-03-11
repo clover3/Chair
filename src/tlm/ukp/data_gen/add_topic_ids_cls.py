@@ -1,7 +1,7 @@
 import os
 import sys
 
-from data_generator.argmining import ukp
+import data_generator.argmining.ukp_header
 from misc_lib import exist_or_mkdir
 from tf_util.enum_features import load_record
 from tf_util.record_writer_wrap import RecordWriterWrap
@@ -28,7 +28,7 @@ def augment_topic_ids(records, save_path):
         input_ids = first_inst["input_ids"].int64_list.value
         token_ids = input_ids[1]
         topic = token_ids_to_topic[token_ids]
-        topic_id = ukp.all_topics.index(topic)
+        topic_id = data_generator.argmining.ukp_header.all_topics.index(topic)
         first_inst["topic_ids"] = create_int_feature([topic_id])
         writer.write_feature(first_inst)
 
@@ -39,7 +39,7 @@ def augment_topic_ids(records, save_path):
 def run(dir_path, save_dir):
     exist_or_mkdir(save_dir)
     for split in ["train", "dev"]:
-        for idx, topic in enumerate(ukp.all_topics):
+        for idx, topic in enumerate(data_generator.argmining.ukp_header.all_topics):
             file_name = "{}_{}".format(split, topic)
             file_path = os.path.join(dir_path, file_name)
             save_path = os.path.join(save_dir, file_name)

@@ -45,8 +45,14 @@ class StreamPickler:
 
     def add(self, inst):
         self.current_chunk.append(inst)
-        if len(self.current_chunk) == self.save_per :
+        if len(self.current_chunk) == self.save_per:
             self.flush()
+
+
+class StreamPickler2(StreamPickler):
+    def __init__(self, name, save_per):
+        super(StreamPickler2, self).__init__(name, save_per)
+        self.save_prefix = os.path.join(data_path, "stream_pickled", name, "data_")
 
 
 class StreamPickleReader:

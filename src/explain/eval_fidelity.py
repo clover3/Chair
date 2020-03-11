@@ -8,8 +8,8 @@ from attribution.eval import eval_fidelity
 from attribution.lime import explain_by_lime
 from data_generator.NLI import enlidef
 from data_generator.shared_setting import BertNLI
+from explain.nli_ex_predictor import NLIExPredictor
 from explain.run_baselines import nli_ex_prediction_parser
-from explain.runner.run_predict import NLIExPredictor
 from explain.train_nli import get_nli_data
 from models.transformer import hyperparams
 from models.transformer.nli_base import transformer_nli_pooled_embedding_in, transformer_nli_pooled

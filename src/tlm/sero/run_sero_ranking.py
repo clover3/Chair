@@ -6,7 +6,7 @@ from tlm.model_cnfig import JsonConfig
 from tlm.sero.sero_core import SeroEpsilon, SeroZeta
 from tlm.sero.sero_model_fn import model_fn_sero_ranking_train
 from tlm.training.input_fn import input_fn_builder_pairwise
-from tlm.training.train_config import LMTrainConfig
+from tlm.training.train_config import TrainConfigEx
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
 
@@ -14,7 +14,7 @@ from trainer.tpu_estimator import run_estimator
 @report_run
 def main(_):
     config = JsonConfig.from_json_file(FLAGS.model_config_file)
-    train_config = LMTrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
     input_fn = input_fn_builder_pairwise(config.total_sequence_length, FLAGS)
 
     if FLAGS.modeling == "epsilon":

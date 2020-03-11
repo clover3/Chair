@@ -46,7 +46,7 @@ def get_lm_mask_features(flags):
     }
 
 
-def format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads):
+def format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads, repeat_for_eval=False):
     if is_training:
         d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
         if flags.repeat_data:
@@ -66,6 +66,9 @@ def format_dataset(name_to_features, batch_size, is_training, flags, input_files
         d = d.shuffle(buffer_size=1000 * 1000)
     else:
         d = tf.data.TFRecordDataset(input_files)
+
+        if repeat_for_eval:
+            d = d.repeat()
 
         if flags.max_pred_steps:
             n_predict = flags.eval_batch_size * flags.max_pred_steps

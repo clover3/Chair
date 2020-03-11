@@ -1,6 +1,5 @@
 import os
 import pickle
-import random
 from collections import Counter, defaultdict
 
 import math
@@ -46,7 +45,7 @@ def work():
         tokens = tokenizer.convert_ids_to_tokens(masked_input_ids[inst_idx])
         ans_tokens = tokenizer.convert_ids_to_tokens(input_ids[inst_idx])
 
-        loss_at_loc = {p:l for l, p in zip(masked_lm_example_loss[inst_idx], masked_lm_positions[inst_idx])}
+        loss_at_loc = {p: l for l, p in zip(masked_lm_example_loss[inst_idx], masked_lm_positions[inst_idx])}
 
 
         cells = []
@@ -341,6 +340,13 @@ def pred_loss_view():
             html_writer.write_headline("Low Drop")
 
 
+def combine(t1, t2):
+    if t2.startswith("##"):
+        return t1+t2
+    else:
+        return t1 + "_" + t2
+
+
 def loss_drop_tendency():
     tokenizer = get_tokenizer()
     filename = "ukp_all_loss_1.pickle"
@@ -361,7 +367,6 @@ def loss_drop_tendency():
     for key in keys:
         vectors[key] = np.concatenate(vectors[key], axis=0)
 
-
     n_instance = len(vectors['input_ids'])
     print("n_instance ", n_instance )
     token_cnt = Counter()
@@ -372,16 +377,9 @@ def loss_drop_tendency():
     prev_word = defaultdict(list)
     context = defaultdict(list)
 
-    def combine(t1,t2):
-        if t2.startswith("##"):
-            return t1+t2
-        else:
-            return t1 + "_" + t2
-
 
     def bin_fn(v):
         return int(v / 0.05)
-
 
     bin_avg_builder = BinAverage(bin_fn)
 
@@ -396,14 +394,16 @@ def loss_drop_tendency():
                 loss1 = vectors["grouped_loss1"][i][t_i][p_i]
                 loss2 = vectors["grouped_loss2"][i][t_i][p_i]
 
+                # get the term at the target location
                 t = combine(tokens[loc-1], tokens[loc])
-                prev_word[t].append(tokens[loc-1])
 
                 ctx = pretty_tokens(tokens[loc-5:loc+4], drop_sharp=False)
-                context[t].append(ctx)
 
                 prob_before = math.exp(-loss1)
                 prob_after = math.exp(-loss2)
+
+                prev_word[t].append(tokens[loc-1])
+                context[t].append(ctx)
                 token_cnt[t] += 1
                 acc_prob_before[t] += prob_before
                 acc_prob_after[t] += prob_after
@@ -420,15 +420,16 @@ def loss_drop_tendency():
         infos.append(e)
 
 
-    infos = list([e for e in infos if e[4] > 10])
+    infos = list([e for e in infos if e[4] > 30])
     info_d = {e[0]:e for e in infos}
     relation_extraction_keywords = ["founded_by", "located_in" , "died_of", "such_as",
                       "or_other", "and_other", "is_buried", "was_born"]
 
-    ukp_keywords = ["be_legal", "do_you", "poll_shows", "the_dangers", "to_risk", "an_increase", "may_not" ]
+    ukp_keywords = ["do_you", "the_above", "once_the", "would_save", "therefore_,", "they_viewed", "lead_to",
+                    "an_increase", "may_not" , "was_common", "the_number"]
 
-    things_to_test = ukp_keywords
-    random_things = random.choices(list(info_d.keys()), k=8)
+    group_A = relation_extraction_keywords
+    group_B = ukp_keywords
     def get_avg_drop_nli(score):
         mapping = [0.00592526, 0.046476, 0.06966591, 0.0852695, 0.0819463, 0.11604176
             , 0.13313128, 0.14524656, 0.17160586, 0.18507012, 0.19524361, 0.23223796
@@ -445,7 +446,7 @@ def loss_drop_tendency():
         bin_id = bin_fn(v)
         return bin_avg[bin_id]
 
-    for t in things_to_test + random_things:
+    for t in group_A + group_B:
         if t not in info_d:
             print("Does not exists: ", t)
         else:

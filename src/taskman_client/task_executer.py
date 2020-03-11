@@ -19,8 +19,10 @@ exist_or_mkdir(log_path)
 info_path = os.path.join("task", "info.json")
 task_info = JsonTiedDict(info_path)
 
+
 def preexec_function():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
+
 
 class ActiveProcList:
     def __init__(self):
@@ -46,7 +48,6 @@ class ActiveProcList:
         for proc in task_to_mark_complete:
             self.proc_handles.remove(proc)
         return len(self.proc_handles)
-
 
 
 def get_sh_path_for_job_id(job_id):
@@ -86,6 +87,7 @@ def get_next_sh_path_and_job_id():
 
 max_task = 30
 
+
 def check_wait_tasks(active_proc_list):
     num_tas = active_proc_list.update_alive()
     print("Number of active task : ", num_tas)
@@ -115,8 +117,10 @@ def loop():
         job_id = last_mask + 1
         next_sh_path = get_sh_path_for_job_id(job_id)
         if os.path.exists(next_sh_path):
+            last_scheduled_job_id = get_new_job_id() - 1
+            remaining_jobs = last_scheduled_job_id - job_id
             while is_machine_busy():
-                print("Sleeping for jobs to be done")
+                print("Sleeping for jobs to be done. Remaining jobs : {}".format(remaining_jobs))
                 time.sleep(10)
             execute(job_id)
             task_info.set("last_task_id ", task_info.last_task_id + 1)

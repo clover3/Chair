@@ -1,25 +1,14 @@
 import numpy as np
 
+import data_generator.NLI.nli_info
 from cache import load_from_pickle
-from data_generator.NLI import nli
 from data_generator.NLI.nli import get_modified_data_loader2
 from data_generator.common import get_tokenizer
 from explain.ex_train_modules import NLIExTrainConfig
 from models.transformer.hyperparams import HPSENLI3
 from tlm.token_utils import cells_from_tokens
-from visualize.html_visual import HtmlVisualizer, Cell, set_cells_color
+from visualize.html_visual import HtmlVisualizer, Cell, set_cells_color, normalize
 from visualize.tex_visualizer import TexNLIVisualizer, TexTableNLIVisualizer
-
-
-def normalize(scores):
-    max_score = max(scores)
-    min_score = min(scores)
-
-    gap = max_score - min_score
-    if gap < 0.001:
-        gap = 1
-
-    return [(s - min_score) / gap * 100 for s in scores]
 
 
 def binarize(arr, t, true_val, false_val=0):
@@ -58,7 +47,7 @@ def show_all(run_name, data_id):
         p_score_list = []
         h_score_list = []
         for j in range(num_tags):
-            tag_name = nli.tags[j]
+            tag_name = data_generator.NLI.nli_info.tags[j]
             p_score, h_score = data_loader.split_p_h_with_input_ids(scores[j], input_ids)
             normalize_fn = normalize
 
@@ -163,8 +152,8 @@ def show_simple(run_name, data_id, tex_visulizer):
 
         target_tag = ["match", "mismatch", "conflict"][pred]
 
-        tag_idx = nli.tags.index(target_tag)
-        tag_name = nli.tags[tag_idx]
+        tag_idx = data_generator.NLI.nli_info.tags.index(target_tag)
+        tag_name = data_generator.NLI.nli_info.tags[tag_idx]
         p_score, h_score = data_loader.split_p_h_with_input_ids(scores[tag_idx], input_ids)
         normalize_fn = normalize
         p_score = normalize_fn(p_score)

@@ -12,7 +12,7 @@ from tlm.model.units import ForwardLayer
 from tlm.training.assignment_map import get_bert_assignment_map
 from tlm.training.input_fn_common import format_dataset
 from tlm.training.lm_model_fn import metric_fn_lm
-from tlm.training.model_fn_common import log_features, align_checkpoint, get_tpu_scaffold_or_init, log_var_assignments, \
+from tlm.training.model_fn_common import log_features, get_init_fn, get_tpu_scaffold_or_init, log_var_assignments, \
     classification_metric_fn, Classification
 
 
@@ -59,6 +59,7 @@ def shared_gradient_inner(vars, loss, y2):
 def shared_gradient(loss, y2):
     return shared_gradient_inner(tf.compat.v1.trainable_variables(), loss, y2)
 
+
 def shared_gradient_fine_grained(losses, y2, n_predictions):
     tvars = tf.compat.v1.trainable_variables()
     grads_2 = tf.gradients(ys=y2, xs=tvars)
@@ -76,7 +77,6 @@ def shared_gradient_fine_grained(losses, y2, n_predictions):
         l.append(inner(losses[i]))
 
     return tf.stack(l)
-
 
 
 class SimpleSharingModel:
@@ -220,6 +220,7 @@ def decay_combine(loss1, loss2):
     loss = loss1 + loss2 * combine_factor
     return loss
 
+
 def model_fn_nli_lm(config, train_config, sharing_model_factory, combine_loss_fn=const_combine):
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
         tf_logging.info("model_fn_nli_lm")
@@ -283,7 +284,7 @@ def model_fn_nli_lm(config, train_config, sharing_model_factory, combine_loss_fn
         loss = combine_loss_fn(masked_lm_loss, nli_loss)
         tvars = tf.compat.v1.trainable_variables()
         assignment_fn = get_bert_assignment_map
-        initialized_variable_names, init_fn = align_checkpoint(tvars, train_config.init_checkpoint, assignment_fn)
+        initialized_variable_names, init_fn = get_init_fn(tvars, train_config.init_checkpoint, assignment_fn)
         scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
         log_var_assignments(tvars, initialized_variable_names)
 
@@ -403,11 +404,12 @@ def model_fn_share_fetch_grad(config, train_config, sharing_model_factory, combi
                 b = tf.reshape(g2, [batch_size * 2, seq_max, -1])[batch_size:]
                 l.append(tf.abs(a * b))
         h_overlap = tf.stack(l, axis=1)
+        h_overlap = tf.reduce_sum(h_overlap, axis=2)
 
         loss = combine_loss_fn(masked_lm_loss, nli_loss)
         tvars = tf.compat.v1.trainable_variables()
         assignment_fn = get_bert_assignment_map
-        initialized_variable_names, init_fn = align_checkpoint(tvars, train_config.init_checkpoint, assignment_fn)
+        initialized_variable_names, init_fn = get_init_fn(tvars, train_config.init_checkpoint, assignment_fn)
         scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
         log_var_assignments(tvars, initialized_variable_names)
 

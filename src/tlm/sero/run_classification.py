@@ -5,7 +5,7 @@ from tf_util.tf_logging import tf_logging, logging
 from tlm.model_cnfig import JsonConfig
 from tlm.sero.sero_model_fn import model_fn_sero_classification
 from tlm.training.input_fn import input_fn_builder_classification as input_fn_builder
-from tlm.training.train_config import LMTrainConfig
+from tlm.training.train_config import TrainConfigEx
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
 
@@ -19,7 +19,7 @@ def main(_):
     tf.io.gfile.makedirs(FLAGS.output_dir)
     tf_logging.info("Train Sero Cls")
     config = JsonConfig.from_json_file(FLAGS.model_config_file)
-    train_config = LMTrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
 
     is_training = FLAGS.do_train
     input_files = []

@@ -9,7 +9,7 @@ from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
 from tlm.training.input_fn_common import format_dataset
 from tlm.training.lm_model_fn import metric_fn_lm
-from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments, log_features, align_checkpoint
+from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments, log_features, get_init_fn
 
 
 def mask_lm_as_seq2seq(config, train_config):
@@ -58,7 +58,7 @@ def mask_lm_as_seq2seq(config, train_config):
         loss = masked_lm_loss
         tvars = tf.compat.v1.trainable_variables()
         assignment_fn = tlm.training.assignment_map.get_bert_assignment_map
-        initialized_variable_names, init_fn = align_checkpoint(tvars, train_config.init_checkpoint, assignment_fn)
+        initialized_variable_names, init_fn = get_init_fn(tvars, train_config.init_checkpoint, assignment_fn)
         scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
         log_var_assignments(tvars, initialized_variable_names)
 

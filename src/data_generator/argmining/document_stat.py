@@ -2,7 +2,7 @@ import os
 from collections import defaultdict, Counter
 
 import cpath
-from data_generator.argmining.ukp import all_topics
+from data_generator.argmining.ukp_header import all_topics
 from data_generator.data_parser.ukp import load
 from misc_lib import average
 

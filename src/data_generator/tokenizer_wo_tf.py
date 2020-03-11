@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import collections
 import unicodedata
+
 import six
 
 PAD = "<pad>"
@@ -432,6 +433,8 @@ class EncoderUnit:
     def __init__(self, max_sequence, voca_path):
         self.encoder = FullTokenizerWarpper(voca_path)
         self.max_seq = max_sequence
+        self.CLS_ID = CLS_ID
+        self.SEP_ID = SEP_ID
 
     def encode_long_text(self, query, text):
         tokens_a = self.encoder.encode(query)
@@ -463,6 +466,11 @@ class EncoderUnit:
         sub_tokens_a = tokens_a[:max_a_len]
         return self.encode_inner(sub_tokens_a, [])
 
+    def encode_token_pairs(self, tokens_a, tokens_b):
+        ids_1 = self.encoder.ft.convert_tokens_to_ids(tokens_a)
+        ids_2 = self.encoder.ft.convert_tokens_to_ids(tokens_b)
+        return self.encode_inner(ids_1, ids_2)
+
     def encode_inner(self, tokens_a, tokens_b):
         # Modifies `tokens_a` and `tokens_b` in place so that the total
         # length is less than the specified length.
@@ -489,19 +497,19 @@ class EncoderUnit:
         # the entire model is fine-tuned.
         tokens = []
         segment_ids = []
-        tokens.append(CLS_ID)
+        tokens.append(self.CLS_ID)
         segment_ids.append(0)
         for token in tokens_a:
             tokens.append(token)
             segment_ids.append(0)
-        tokens.append(SEP_ID)
+        tokens.append(self.SEP_ID)
         segment_ids.append(0)
 
         if tokens_b:
             for token in tokens_b:
                 tokens.append(token)
                 segment_ids.append(1)
-            tokens.append(SEP_ID)
+            tokens.append(self.SEP_ID)
             segment_ids.append(1)
 
         input_ids = tokens
@@ -531,3 +539,6 @@ class EncoderUnit:
         tokens_b = self.encoder.encode(text2)
         return self.encode_inner(tokens_a, tokens_b)
 
+
+def is_continuation(subword):
+    return len(subword) > 2 and subword[:2] == "##"

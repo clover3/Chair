@@ -5,7 +5,7 @@ from tf_util.tf_logging import tf_logging
 from tlm.model_cnfig import JsonConfig
 from tlm.tlm.lm_nli_shared_model_fn import model_fn_nli_lm, input_fn_builder, SimpleSharingModel
 from tlm.training import flags_wrapper
-from tlm.training.train_config import LMTrainConfig
+from tlm.training.train_config import TrainConfigEx
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
 
@@ -14,7 +14,7 @@ from trainer.tpu_estimator import run_estimator
 def main(_):
     tf_logging.info("Train nli_lm_shared")
     config = JsonConfig.from_json_file(FLAGS.model_config_file)
-    train_config = LMTrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
 
     is_training = FLAGS.do_train
     input_files = flags_wrapper.get_input_files()

@@ -10,3 +10,16 @@ def load_stopwords():
     for line in f:
         s.add(line.strip())
     return s
+
+
+loaded_stopword = None
+
+
+def is_stopword(word):
+    global loaded_stopword
+    if loaded_stopword is None:
+        loaded_stopword = load_stopwords()
+
+    return word in loaded_stopword
+
+

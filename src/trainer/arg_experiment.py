@@ -5,6 +5,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 
+import data_generator.argmining.ukp_header
 from cie.arg import kl
 from data_generator.argmining import ukp
 from misc_lib import flatten, average, tprint
@@ -20,7 +21,7 @@ class ArgExperiment:
 
 
     def train_lr_3way(self):
-        topic = ukp.all_topics[0]
+        topic = data_generator.argmining.ukp_header.all_topics[0]
 
         data_loader = ukp.DataLoader(topic)
         idx_for = data_loader.labels.index("Argument_for")
@@ -60,7 +61,7 @@ class ArgExperiment:
         print_eval(dev_pred, dev_y)
 
     def train_lr_2way(self):
-        topic = ukp.all_topics[0]
+        topic = data_generator.argmining.ukp_header.all_topics[0]
 
         data_loader = ukp.DataLoader(topic, False)
         idx_arg = 1
@@ -103,14 +104,14 @@ class ArgExperiment:
         print_eval(dev_kl_pred, dev_y)
 
     def tf_stat(self):
-        topic = ukp.all_topics[0]
+        topic = data_generator.argmining.ukp_header.all_topics[0]
         data_loader = ukp.DataLoader(topic)
         stopwords = load_stopwords()
 
         def tokenize(x):
             return tokenizer.tokenize(x, stopwords)
 
-        for topic in ukp.all_topics:
+        for topic in data_generator.argmining.ukp_header.all_topics:
             print("-----------")
             print(topic)
             entries = data_loader.all_data[topic]
@@ -121,7 +122,7 @@ class ArgExperiment:
 
     def divergence(self):
         # Compare Arg vs Non-Arg
-        topic = ukp.all_topics[0]
+        topic = data_generator.argmining.ukp_header.all_topics[0]
         data_loader = ukp.DataLoader(topic)
         stopwords = load_stopwords()
 
@@ -132,7 +133,7 @@ class ArgExperiment:
         def is_argument(entry):
             return entry['annotation'] == "Argument_for" or entry['annotation'] == "Argument_against"
 
-        for topic in ukp.all_topics:
+        for topic in data_generator.argmining.ukp_header.all_topics:
             print("-----------")
             print(topic)
             entries = data_loader.all_data[topic]
@@ -158,7 +159,7 @@ class ArgExperiment:
 
     def divergence_lr(self):
         f1_list = []
-        for dev_topic in ukp.all_topics:
+        for dev_topic in data_generator.argmining.ukp_header.all_topics:
             print(dev_topic)
             data_loader = ukp.DataLoader(dev_topic)
             idx_for = data_loader.labels.index("Argument_for")
@@ -177,7 +178,7 @@ class ArgExperiment:
                 return tokenizer.tokenize(x, stopwords)
 
             data_idx = 0
-            for topic in ukp.all_topics:
+            for topic in data_generator.argmining.ukp_header.all_topics:
                 if topic == dev_topic:
                     continue
                 entries = data_loader.all_data[topic]
@@ -238,7 +239,7 @@ class ArgExperiment:
 
 
     def summarize(self):
-        topic = ukp.all_topics[0]
+        topic = data_generator.argmining.ukp_header.all_topics[0]
         data_loader = ukp.DataLoader(topic)
         stopwords = load_stopwords()
 
@@ -258,7 +259,7 @@ class ArgExperiment:
         def is_argument(entry):
             return entry['annotation'] == "Argument_for" or entry['annotation'] == "Argument_against"
 
-        for topic in ukp.all_topics:
+        for topic in data_generator.argmining.ukp_header.all_topics:
             entries = data_loader.all_data[topic]
             raw_sents = list([e['sentence'] for e in entries if e['set'] == 'train'])
             token_sents = list(map(tokenize, raw_sents))

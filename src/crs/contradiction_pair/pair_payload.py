@@ -2,10 +2,10 @@ import os
 import random
 import time
 
+import data_generator.argmining.ukp_header
 import data_generator.tokenizer_wo_tf as tokenization
 from cpath import data_path
 from data_generator import job_runner
-from data_generator.argmining import ukp
 from data_generator.job_runner import JobRunner, sydney_working_dir
 from misc_lib import flatten, pick1
 from tf_util.record_writer_wrap import RecordWriterWrap
@@ -78,7 +78,7 @@ class PairPayloadWorker(job_runner.WorkerInterface):
 
 
     def work(self, job_id):
-        topic = ukp.all_topics[0]
+        topic = data_generator.argmining.ukp_header.all_topics[0]
         ranked_list = sydney_get_ukp_ranked_list()[topic]
         print("Ranked list contains {} docs, selecting top-{}".format(len(ranked_list), self.top_k))
         if self.drop_head:

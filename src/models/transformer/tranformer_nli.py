@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from data_generator.NLI import nli
+import data_generator.NLI.nli_info
 from models.transformer import bert
 from models.transformer import bert_get_hidden
 from task.transformer_est import Classification
@@ -22,7 +22,7 @@ class transformer_nli:
 
         seq_length = hp.seq_max
         use_tpu = False
-        task = Classification(nli.num_classes)
+        task = Classification(data_generator.NLI.nli_info.num_classes)
 
         input_ids = placeholder(tf.int64, [None, seq_length])
         input_mask = placeholder(tf.int64, [None, seq_length])
@@ -151,7 +151,7 @@ class transformer_nli_hidden:
 
         seq_length = hp.seq_max
         use_tpu = False
-        task = Classification(nli.num_classes)
+        task = Classification(data_generator.NLI.nli_info.num_classes)
 
         input_ids = tf.placeholder(tf.int64, [None, seq_length])
         input_mask = tf.placeholder(tf.int64, [None, seq_length])
@@ -197,7 +197,7 @@ class transformer_nli_grad:
 
         seq_length = hp.seq_max
         use_tpu = False
-        task = Classification(nli.num_classes)
+        task = Classification(data_generator.NLI.nli_info.num_classes)
 
         input_ids = tf.placeholder(tf.int64, [None, seq_length])
         input_mask = tf.placeholder(tf.int64, [None, seq_length])
@@ -249,7 +249,7 @@ class transformer_nli_embedding_in:
 
         seq_length = hp.seq_max
         use_tpu = False
-        task = Classification(nli.num_classes)
+        task = Classification(data_generator.NLI.nli_info.num_classes)
 
         input_ids = tf.placeholder(tf.int64, [None, seq_length])
         input_mask = tf.placeholder(tf.int64, [None, seq_length])
@@ -380,13 +380,13 @@ class transformer_nli_vector:
 
         def predict_ex(enc, Y, mode):
             feature_loc = 0
-            logits_raw = tf.layers.dense(enc[:, feature_loc, :], nli.num_classes, name="cls_dense")
+            logits_raw = tf.layers.dense(enc[:, feature_loc, :], data_generator.NLI.nli_info.num_classes, name="cls_dense")
             if hp.use_reorder :
                 logits_reorder = [logits_raw[:,1], logits_raw[:,0], logits_raw[:,2]]
                 logits_candidate = tf.stack(logits_reorder, axis=1)  # [-1, 3]
             else:
                 logits_candidate = logits_raw
-            logits_candidate = tf.reshape(logits_candidate, [-1, hp.num_v, nli.num_classes])
+            logits_candidate = tf.reshape(logits_candidate, [-1, hp.num_v, data_generator.NLI.nli_info.num_classes])
             soft_candidate = tf.nn.softmax(logits_candidate)
             active_arg = tf.cast(tf.argmin(soft_candidate[:,:,0], axis=1), dtype=tf.int32) # [batch]
             indice = tf.stack([tf.range(batch_dyn), active_arg], axis=1)
@@ -395,7 +395,7 @@ class transformer_nli_vector:
             print(logits_candidate.shape)
             print(logits.shape)
 
-            labels = tf.one_hot(Y, nli.num_classes)
+            labels = tf.one_hot(Y, data_generator.NLI.nli_info.num_classes)
             preds = tf.to_int32(tf.argmax(logits, axis=-1))
             self.acc = tf_module.accuracy(logits, Y)
             self.logits = logits
@@ -481,8 +481,8 @@ class transformer_nli_e:
 
         pooled = self.model.get_pooled_output()
         pooled = tf.nn.dropout(pooled, hp.dropout_rate)
-        logits = tf.layers.dense(pooled, nli.num_classes, name="cls_dense")
-        labels = tf.one_hot(label_ids, nli.num_classes)
+        logits = tf.layers.dense(pooled, data_generator.NLI.nli_info.num_classes, name="cls_dense")
+        labels = tf.one_hot(label_ids, data_generator.NLI.nli_info.num_classes)
         self.acc = tf_module.accuracy(logits, label_ids)
         self.logits = logits
         tf.summary.scalar("acc", self.acc)

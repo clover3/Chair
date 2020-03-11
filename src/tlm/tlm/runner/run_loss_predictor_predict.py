@@ -7,7 +7,7 @@ from tlm.model_cnfig import JsonConfig
 from tlm.tlm.loss_diff_prediction_model import loss_diff_predict_only_model_fn
 from tlm.training.flags_wrapper import show_input_files
 from tlm.training.input_fn import input_fn_builder_unmasked
-from tlm.training.train_config import TrainConfig
+from tlm.training.train_config import TrainConfigEx
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
 
@@ -20,7 +20,7 @@ def main(_):
     input_files = []
     for input_pattern in FLAGS.input_file.split(","):
         input_files.extend(tf.io.gfile.glob(input_pattern))
-    train_config = TrainConfig.from_flags(FLAGS)
+    train_config = TrainConfigEx.from_flags(FLAGS)
     model_config = JsonConfig.from_json_file(FLAGS.model_config_file)
 
     show_input_files(input_files)

@@ -36,6 +36,9 @@ def compare(tfrecord, predictions):
     for record, pred in zip(tfrecord, predictions):
         input_ids_r, label_ids = record
         input_ids_p, logits = pred
+        if not np.all(input_ids_r == input_ids_p):
+            print(input_ids_r)
+            print(input_ids_p)
         assert np.all(input_ids_r == input_ids_p)
         pred_label = np.argmax(logits)
         yield label_ids, pred_label

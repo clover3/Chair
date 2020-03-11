@@ -7,7 +7,7 @@ from tlm.model.base import BertModel
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
 from tlm.tlm.loss_diff_common import IndependentLossModel, get_diff_loss, recover_mask, get_gold_diff
-from tlm.tlm.model_fn_try_all_loss import get_init_fn
+from tlm.tlm.model_fn_try_all_loss import get_init_fn_for_two_checkpoints
 from tlm.training.assignment_map import get_bert_assignment_map
 from tlm.training.input_fn_common import get_lm_basic_features, get_lm_mask_features, format_dataset
 from tlm.training.model_fn_common import log_features, get_tpu_scaffold_or_init, log_var_assignments
@@ -133,12 +133,12 @@ def loss_diff_prediction_model_online(bert_config, train_config, model_class):
 
         checkpoint2_1 , checkpoint2_2 = train_config.second_init_checkpoint.split(",")
         tvars = tf.compat.v1.trainable_variables()
-        initialized_variable_names_1, init_fn_1 = get_init_fn(train_config,
-                                                              tvars,
-                                                              checkpoint2_1 ,
-                                                              prefix1,
-                                                              checkpoint2_2,
-                                                              prefix2)
+        initialized_variable_names_1, init_fn_1 = get_init_fn_for_two_checkpoints(train_config,
+                                                                                  tvars,
+                                                                                  checkpoint2_1,
+                                                                                  prefix1,
+                                                                                  checkpoint2_2,
+                                                                                  prefix2)
         assignment_fn = get_bert_assignment_map
         assignment_map2, initialized_variable_names_2 = assignment_fn(tvars, train_config.init_checkpoint)
 
