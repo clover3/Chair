@@ -1,8 +1,8 @@
 import os
 
 import data_generator.argmining.ukp_header
-from galagos.basic import load_galago_ranked_list
-from misc_lib import get_dir_files, group_by, flatten, right
+from galagos.basic import load_galago_ranked_list, merge_ranked_list_list
+from misc_lib import get_dir_files, group_by, right
 
 non_cont_topics = ["hydroponics", "weather", "restaurant", "wildlife_extinction", "james_allan"]
 
@@ -20,7 +20,6 @@ def nc_ranked_list_name_to_group_key(file_name):
     raise Exception("Not matched" + file_name)
 
 
-
 def load_multiple_ranked_list(dir_path, get_key_from_name):
     files = get_dir_files(dir_path)
 
@@ -31,17 +30,11 @@ def load_multiple_ranked_list(dir_path, get_key_from_name):
         for query, ranked_list in ranked_list_d.items():
             data.append((name, ranked_list))
 
-    def merge(ranked_list_lst):
-        ranked_list = flatten(ranked_list_lst)
-        assert len(ranked_list[0]) == 3
-        ranked_list.sort(key=lambda x: x[2], reverse=True)
-        return ranked_list
-
     new_d = {}
     key_fn = lambda x: get_key_from_name(x[0])
     for key, sub_data in group_by(data, key_fn).items():
         ranked_list = right(sub_data)
-        new_d[key] = merge(ranked_list)
+        new_d[key] = merge_ranked_list_list(ranked_list)
 
     return new_d
 

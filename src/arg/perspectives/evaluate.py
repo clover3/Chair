@@ -4,12 +4,12 @@
 # Gold : List[(Claim, List[set(perspectives)]] in Ids
 #    get_claim_perspective_dict()
 
-from arg.perspectives.load import get_claim_perspective_id_dict, get_perspective_dict, get_claims_from_ids, claims_to_dict, \
-    load_train_claim_ids
+from arg.perspectives.load import get_claim_perspective_id_dict, get_perspective_dict
 from misc_lib import average, get_f1
 
 perspective = None
 claims_d = None
+
 
 def perspective_getter(pid):
     global perspective
@@ -18,16 +18,7 @@ def perspective_getter(pid):
     return perspective[pid]
 
 
-def claim_getter(cid):
-    global claims_d
-    if claims_d is None:
-        d_ids = list(load_train_claim_ids())
-        claims_d = get_claims_from_ids(d_ids)
-        claims_d = claims_to_dict(claims_d)
-    return claims_d[cid]
-
-
-def get_prec_recll(p_Id_list, gold_pids):
+def get_prec_recll(predicted_perspectives, gold_pids):
     ## In this metrics, it is possible to get precision > 1, as some clusters shares same perspective
     tp = 0
     print(gold_pids)
@@ -35,7 +26,8 @@ def get_prec_recll(p_Id_list, gold_pids):
         print("-")
         for pid in cluster:
             print(pid, perspective_getter(pid))
-    for pid in p_Id_list:
+    for prediction in predicted_perspectives:
+        pid = prediction['pid']
         valid = False
         for cluster in gold_pids:
             if pid in cluster:
@@ -43,20 +35,21 @@ def get_prec_recll(p_Id_list, gold_pids):
                 valid = True
                 break
         if not valid:
-            print("N", pid, perspective_getter(pid))
+            print("N", pid, prediction['perspective_text'], prediction['rationale'])
         else:
-            print("Y", pid, perspective_getter(pid))
+            print("Y", pid, prediction['perspective_text'], prediction['rationale'])
     # r_tp = 0
     # for cluster in gold_pids:
     #     for pid in p_Id_list:
     #         if pid in cluster:
     #             r_tp += 1
     #             break
-    prec = tp / len(p_Id_list) if len(p_Id_list) > 0 else 1
+    prec = tp / len(predicted_perspectives) if len(predicted_perspectives) > 0 else 1
     # I believe correcct : recall = r_tp / len(gold_pids) if len(gold_pids) > 0 else 1
     recall = tp / len(gold_pids) if len(gold_pids) > 0 else 1
 
     return prec, recall
+
 
 
 def evaluate2(predictions):
@@ -99,10 +92,11 @@ def evaluate(predictions):
     gold = get_claim_perspective_id_dict()
     prec_list = []
     recall_list = []
-    for c_Id, p_Id_list in predictions:
-        print("Claim: ", claim_getter(c_Id))
+    for c_Id, prediction_list in predictions:
         gold_pids = gold[c_Id]
-        prec, recall = get_prec_recll(p_Id_list, gold_pids)
+        claim_text = prediction_list[0]['claim_text']
+        print("Claim: ", claim_text)
+        prec, recall = get_prec_recll(prediction_list, gold_pids)
         prec_list.append(prec)
         recall_list.append(recall)
 

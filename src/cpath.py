@@ -5,6 +5,7 @@ from misc_lib import exist_or_mkdir
 
 project_root = os.path.abspath(dirname(dirname((os.path.abspath(__file__)))))
 data_path = os.path.join(project_root, 'data')
+src_path = os.path.join(project_root, 'src')
 exist_or_mkdir(data_path)
 cache_path = os.path.join(data_path, 'cache')
 exist_or_mkdir(cache_path)

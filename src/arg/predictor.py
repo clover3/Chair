@@ -58,7 +58,6 @@ class Predictor:
         pred = np.argmax(logits, axis=1)
         return pred
 
-
     def load_model_white(self, name, include_namespace, verbose=True):
         run_dir = os.path.join(self.model_dir, 'runs')
         save_dir = os.path.join(run_dir, name)

@@ -1,15 +1,9 @@
-import os
-
 import nltk
 
 from arg.perspectives import es_helper
-from arg.perspectives.evaluate import evaluate
-from arg.perspectives.load import get_claim_perspective_id_dict, get_perspective_dict, get_claims_from_ids, \
-    load_claim_perspective_pair, load_train_claim_ids
+from arg.perspectives.load import get_claim_perspective_id_dict, get_perspective_dict, load_claim_perspective_pair
 from cie.msc.tf_idf import sublinear_term_frequency, cosine_similarity, inverse_document_frequencies
-from cpath import output_path
 from misc_lib import flatten
-from tlm.retrieve_lm.galago_query_maker import get_query_entry_bm25_anseri, save_queries_to_file, clean_query
 
 
 def get_candidates(claims, is_train=True):
@@ -56,7 +50,6 @@ class MyIdf:
         for pid, text in perspective.items():
             all_sents.append(text)
 
-
         print("tokenizing {} docs".format(len(all_sents)))
         token_docs = []
         for s in all_sents:
@@ -95,6 +88,8 @@ def trivial_similarity(t1, t2):
         return False
 
 
+# input : claims, top_k
+# output : List(cid, List[dict])
 def predict_by_elastic_search(claims, top_k):
     prediction = []
     for c in claims:
@@ -102,13 +97,20 @@ def predict_by_elastic_search(claims, top_k):
         claim_text = c["text"]
         lucene_results = es_helper.get_perspective_from_pool(claim_text, 50)
 
-        pid_set = []
+        prediction_list = []
         for _text, _pid, _score in lucene_results:
-            pid_set.append(_pid)
+            p_entry = {
+                'cid': cid,
+                'pid': _pid,
+                'claim_text': claim_text,
+                'perspective_text': _text,
+                'rationale': "es score={}".format(_score)
+            }
+            prediction_list.append(p_entry)
 
-        pid_set = pid_set[:top_k]
+        prediction_list = prediction_list[:top_k]
 
-        prediction.append((cid, pid_set))
+        prediction.append((cid, prediction_list))
     return prediction
 
 
@@ -125,29 +127,4 @@ def test_es():
                 es_helper.get_perspective_from_pool(query, 50)
 
 
-def run_baseline():
-    d_ids = list(load_train_claim_ids())
-    claims = get_claims_from_ids(d_ids)
-    pred = predict_by_elastic_search(claims, 30)
-    print(evaluate(pred))
 
-
-def write_claim_as_query():
-    d_ids = list(load_train_claim_ids())
-    claims = get_claims_from_ids(d_ids)
-    queries = []
-    for c in claims:
-        cid = c["cId"]
-        claim_text = c["text"]
-        tokens = claim_text.split()
-        query_text = clean_query(tokens)
-        print(query_text)
-        q_entry = get_query_entry_bm25_anseri(cid, query_text)
-        queries.append(q_entry)
-
-    out_path = os.path.join(output_path, "perspective_dev_claim_query.json")
-    save_queries_to_file(queries, out_path)
-
-
-if __name__ == "__main__":
-    run_baseline()

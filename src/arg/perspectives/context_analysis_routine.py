@@ -34,12 +34,11 @@ def count_term_stat(doc_list, unigrams):
     clueweb_ctf = sum(clueweb_tf.values())
     clueweb_cdf = max(clueweb_df.values()) + 100
 
+
+
     def get_tf(doc, t):
-        s = 0
-        for token in doc['tokens']:
-            if token == t:
-                s += 1
-        return s
+        return doc['tf_d'][t]
+
 
     def contain_controversy(doc):
         return 'controversy' in doc['tokens_set'] or 'controversial' in doc['tokens_set']
@@ -59,12 +58,35 @@ def count_term_stat(doc_list, unigrams):
                     df_ncont[t] += 1
 
         if current_doc_contain_controversy:
-            ctf_cont += len(doc['tokens'])
+            ctf_cont += doc['dl']
             cdf_cont += 1
         else:
-            ctf_ncont += len(doc['tokens'])
+            ctf_ncont += doc['dl']
             cdf_ncont += 1
     return cdf_cont, cdf_ncont, clueweb_cdf, clueweb_ctf, clueweb_df, clueweb_tf, ctf_cont, ctf_ncont, df_cont, df_ncont, tf_cont, tf_ncont
+
+
+def feature_extraction(cdf_cont, cdf_ncont, clueweb_cdf, clueweb_ctf, clueweb_df, clueweb_tf, ctf_cont,
+                     ctf_ncont, df_cont, df_ncont, tf_cont, tf_ncont, unigrams):
+    term_feature = {}
+    for t in unigrams:
+        if t not in df_cont and t not in df_ncont:
+            continue
+        # Hypothesis 1 : P(t|controversy,R) > P(t| !controversy,R)
+        # Hypothesis 2 : P(t|R) > P(t|BG)
+
+        p1 = df_cont[t] / cdf_cont
+        p2 = df_ncont[t] / cdf_ncont
+        feature = [(p1, p2)]
+
+        if t not in clueweb_df:
+            continue
+
+        p1 = (df_cont[t] + df_ncont[t]) / (cdf_cont + cdf_ncont)
+        p2 = clueweb_df[t] / clueweb_cdf
+        feature.append((p1, p2))
+        term_feature[t] = feature
+    return term_feature
 
 
 def check_hypothesis(all_voca, cdf_cont, cdf_ncont, clueweb_cdf, clueweb_ctf, clueweb_df, clueweb_tf, ctf_cont,
@@ -73,9 +95,10 @@ def check_hypothesis(all_voca, cdf_cont, cdf_ncont, clueweb_cdf, clueweb_ctf, cl
     hypo1_1 = []
     hypo2_1 = []
     hypo2_2 = []
+    not_observed_in_relevant_docs = set()
     for t in unigrams:
         if t not in all_voca:
-            print("Warning {} is never observed".format(t))
+            not_observed_in_relevant_docs.add(t)
             continue
 
         # Hypothesis 1 : P(t|controversy,R) > P(t| !controversy,R)
@@ -104,12 +127,15 @@ def check_hypothesis(all_voca, cdf_cont, cdf_ncont, clueweb_cdf, clueweb_ctf, cl
             (hypo2_1, "Hypothesis 2 : P(t|R) > P(t|BG)"),
             (hypo2_2, "Hypothesis 2 : P(t|R) > P(t|BG) by binary model"),
             ]
+
+    print("not_observed_in_relevant_docs : {} ".format(not_observed_in_relevant_docs))
     for hypo, desc in todo:
         print(desc)
         terms, pairs = zip(*hypo)
         p1_list, p2_list = zip(*pairs)
-        _, p = stats.ttest_rel(p1_list, p2_list)
-        print(p)
+        diff, p = stats.ttest_rel(p1_list, p2_list)
+        print(diff, p)
         for term, pair in hypo:
             p1, p2 = pair
-            print(term, "{0:.4f} {1:.4f}".format(p1, p2))
+            print(term, "tf_cont:{} tf_ncont:{} df_cont:{}".format(tf_cont[term], tf_ncont[term], df_cont[term]),
+                  "{0:.4f} {1:.4f}".format(p1, p2))
