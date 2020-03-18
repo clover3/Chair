@@ -8,7 +8,8 @@ from sklearn.neural_network import MLPClassifier
 import data_generator.argmining.ukp_header
 from cie.arg import kl
 from data_generator.argmining import ukp
-from misc_lib import flatten, average, tprint
+from list_lib import flatten
+from misc_lib import average, tprint
 from models.classic.stopword import load_stopwords
 from summarization import tokenizer
 from summarization.text_rank import TextRank

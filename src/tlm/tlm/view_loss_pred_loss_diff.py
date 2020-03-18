@@ -7,7 +7,7 @@ import scipy.special
 
 from cpath import output_path
 from data_generator.common import get_tokenizer
-from misc_lib import lmap
+from list_lib import lmap
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewerGosford
 from visualize.html_visual import HtmlVisualizer, Cell
 

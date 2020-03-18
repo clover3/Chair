@@ -6,7 +6,7 @@ import numpy as np
 from scipy.stats import stats
 
 from data_generator.argmining.eval import load_tfrecord, load_preditions, compare
-from misc_lib import lmap, flatten
+from list_lib import lmap, flatten
 
 
 def prediction_path(run_name):

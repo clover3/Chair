@@ -1,9 +1,9 @@
-from elastic.insert_comment import load_guardian_uk_comments
+from cie.claim_gen import generate
 from crawl.guardian_uk import load_commented_articles_opinion
+from elastic.insert_comment import load_guardian_uk_comments
+from list_lib import flatten
 from summarization.text_rank import TextRank
 from summarization.tokenizer import tokenize
-from misc_lib import flatten
-from cie.claim_gen import generate
 
 
 def syntactic_parsing_method(article, comments):

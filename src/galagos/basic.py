@@ -1,7 +1,8 @@
 import json
 from collections import Counter
 
-from misc_lib import group_by, right, flatten
+from list_lib import flatten, right
+from misc_lib import group_by
 
 
 def galago_judgement_parse_line(line):

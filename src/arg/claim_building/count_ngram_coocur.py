@@ -8,7 +8,8 @@ from nltk import ngrams
 from arg.claim_building.count_ngram import load_n_gram_from_pickle
 from cpath import output_path
 from data_generator.job_runner import JobRunner, sydney_working_dir
-from misc_lib import TimeEstimator, left
+from list_lib import left
+from misc_lib import TimeEstimator
 from tlm.ukp.sydney_data import ukp_load_tokens_for_topic
 
 CO_OCCUR = "co_occur"

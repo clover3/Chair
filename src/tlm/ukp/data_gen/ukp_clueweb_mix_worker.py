@@ -4,7 +4,8 @@ import data_generator.argmining
 from data_generator import job_runner
 from data_generator.argmining.ukp import DataLoader
 from data_generator.common import get_tokenizer
-from misc_lib import lmap, pick1, flatten
+from list_lib import lmap, flatten
+from misc_lib import pick1
 from tlm.data_gen.base import UnmaskedPairedDataGen, truncate_seq_pair, SegmentInstance
 from tlm.data_gen.label_as_token_encoder import encode_label_and_token_pair
 from tlm.ukp.sydney_data import sydney_get_ukp_ranked_list, load_tokens_for_topic

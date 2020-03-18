@@ -3,7 +3,8 @@ import os
 from arg.perspectives.basic_analysis import get_candidates
 from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids
 from cpath import output_path
-from misc_lib import lmap, exist_or_mkdir
+from list_lib import lmap
+from misc_lib import exist_or_mkdir
 from tlm.retrieve_lm.galago_query_maker import clean_query, get_query_entry_bm25_anseri, save_queries_to_file
 
 
@@ -24,17 +25,22 @@ def write_claim_as_query():
     save_queries_to_file(queries, out_path)
 
 
+def get_query(q_id, query, k):
+    return {"number": str(q_id), "text": "#combine(#bm25:K={}:b=0.4({}))".format(k, " ".join(query))}
+
+
 def write_claim_perspective_pair_as_query():
     d_ids = list(load_train_claim_ids())
     claims = get_claims_from_ids(d_ids)
     all_data_points = get_candidates(claims)
+    k = 0.3
 
     def get_query_entry_from_data_point(data_point):
         label, cid, pid, claim_text, p_text = data_point
         tokens = claim_text.split() + p_text.split()
         query_text = clean_query(tokens)
         qid = cid + "_" + pid
-        return get_query_entry_bm25_anseri(qid, query_text)
+        return get_query(qid, query_text, k)
 
     queries = lmap(get_query_entry_from_data_point, all_data_points)
 

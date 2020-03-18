@@ -9,6 +9,7 @@ from cache import save_to_pickle
 from cpath import output_path, get_bert_full_path, get_latest_model_path_from_dir_path
 from data_generator.NLI import nli
 from data_generator.common import get_tokenizer
+from list_lib import lmap
 from log import log as log_module
 from misc_lib import *
 from tf_util.tf_logging import tf_logging

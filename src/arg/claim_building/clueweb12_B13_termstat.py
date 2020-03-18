@@ -42,6 +42,8 @@ if __name__ == "__main__":
     print("tf[hi]", tf['hi'])
     print("df[hi]", df['hi'])
 
+    print("max df : ", max(df.values()))
+
     tf = translate_word_tf_to_subword_tf(tf)
     df = translate_word_tf_to_subword_tf(df)
 

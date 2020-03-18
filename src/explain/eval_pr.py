@@ -1,5 +1,4 @@
-from misc_lib import *
-
+from list_lib import right
 
 data_idx = 0
 

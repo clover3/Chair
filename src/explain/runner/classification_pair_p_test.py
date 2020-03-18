@@ -5,7 +5,7 @@ import numpy as np
 from scipy.stats import stats
 
 import cpath
-from misc_lib import lmap
+from list_lib import lmap
 
 
 def load(name):

@@ -3,6 +3,7 @@ from adhoc.bm25 import BM25_3, BM25_3_q_weight
 from cache import *
 from data_generator import tokenizer_wo_tf as tokenization
 from galagos.basic import load_galago_ranked_list
+from list_lib import left
 from misc_lib import *
 from models.classic.stopword import load_stopwords
 from sydney_manager import MarkedTaskManager

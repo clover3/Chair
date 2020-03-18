@@ -3,6 +3,7 @@ import collections
 import cpath
 from cache import *
 from data_generator import tokenizer_wo_tf as tokenization
+from list_lib import lmap
 from misc_lib import *
 from rpc.disk_dump import DumpAccess
 from tlm.retrieve_lm.segment_ranker_0 import PassageRanker, get_visible

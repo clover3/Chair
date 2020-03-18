@@ -2,7 +2,7 @@ from collections import Counter
 
 import math
 
-from misc_lib import flatten
+from list_lib import flatten
 from models.classic.stopword import load_stopwords
 from summarization import tokenizer
 

@@ -1,4 +1,4 @@
-from misc_lib import foreach
+from list_lib import foreach
 
 
 def get_label_token(label):

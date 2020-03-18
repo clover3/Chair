@@ -5,7 +5,8 @@ import sys
 from cache import *
 from data_generator.common import get_tokenizer
 from dictionary.reader import DictionaryReader, DictionaryParser, all_pos_list
-from misc_lib import TimeEstimator, lmap
+from list_lib import lmap
+from misc_lib import TimeEstimator
 from misc_lib import exist_or_mkdir
 from sydney_manager import MarkedTaskManager
 from tf_util.tf_logging import tf_logging

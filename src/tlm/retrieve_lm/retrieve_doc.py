@@ -3,7 +3,7 @@ import pickle
 from collections import Counter
 
 from adhoc.bm25 import BM25_3, BM25_3_q_weight
-from misc_lib import left
+from list_lib import left
 from misc_lib import tprint
 from rpc.text_reader import TextReaderClient
 

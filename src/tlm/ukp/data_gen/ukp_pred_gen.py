@@ -1,5 +1,5 @@
 from data_generator.common import get_tokenizer
-from misc_lib import flatten
+from list_lib import flatten
 from tlm.data_gen.base import UnmaskedGen, truncate_seq_pair, format_tokens_pair_n_segid, SegmentInstance
 
 

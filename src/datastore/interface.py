@@ -32,6 +32,9 @@ def save_wo_flush(table_name, key, value):
     check_init_db()
     table_class = table_class_by_name[table_name]
     byte_arr = pickle.dumps(value)
+    if len(byte_arr) > 500 * 1024 * 1024:
+        print("Skip large data : ", len(byte_arr))
+        return
 
     new_record = table_class(key=key, value=byte_arr)
     session.add(new_record)
@@ -54,7 +57,6 @@ def load(table_name, key):
         pass
     else:
         assert False
-    print(table_name, key, 'not in preload')
     table_class = table_class_by_name[table_name]
     try:
         q_res = session.query(table_class).filter(table_class.key == key).one()
@@ -87,6 +89,20 @@ def load_multiple(table_name, keys):
     except NoResultFound as e:
         raise KeyError()
     return out_d
+
+
+def get_existing_keys(table_name, keys):
+    check_init_db()
+    table_class = table_class_by_name[table_name]
+    try:
+        q_res = session.query(table_class.key).filter(table_class.key.in_(keys)).all()
+        out = list([row.key for row in q_res])
+
+    except MultipleResultsFound as e:
+        raise KeyError()
+    except NoResultFound as e:
+        raise KeyError()
+    return out
 
 
 def has_key(table_name, key):
@@ -165,7 +181,6 @@ class PreloadMan:
         elif table_name in self.data_d and key in self.not_found_d[table_name]:
             return NOT_IN_DB
         else:
-            print("not found", table_name, key)
             return NOT_FOUND
 
     def get(self, table_name, key):

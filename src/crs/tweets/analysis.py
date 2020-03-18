@@ -1,5 +1,8 @@
-from misc_lib import *
 import os
+
+from list_lib import flatten
+from misc_lib import *
+
 
 def load_all(dir_path):
     data = {}

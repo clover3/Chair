@@ -2,8 +2,9 @@ import os
 
 import data_generator
 from data_generator import job_runner
-from data_generator.argmining.ukp import DataLoader, lmap
+from data_generator.argmining.ukp import DataLoader
 from data_generator.common import get_tokenizer
+from list_lib import lmap
 from tlm.data_gen.base import UnmaskedPairedDataGen, truncate_seq_pair, SegmentInstance
 from tlm.data_gen.label_as_token_encoder import encode_label_and_token_pair
 

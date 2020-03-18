@@ -2,10 +2,11 @@ import os
 import random
 
 from cpath import data_path
-from data_generator.argmining.ukp import BertDataLoader, lmap
+from data_generator.argmining.ukp import BertDataLoader
 from data_generator.argmining.ukp_header import all_topics
 from data_generator.tfrecord_gen import modify_data_loader, entry_to_feature_dict, write_features_to_file, \
     pairwise_entry_to_feature_dict
+from list_lib import lmap
 from misc_lib import exist_or_mkdir
 from tlm.data_gen.pairwise_common import generate_pairwise_combinations
 

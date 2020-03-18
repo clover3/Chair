@@ -1,9 +1,10 @@
 import nltk
 
 from arg.perspectives import es_helper
-from arg.perspectives.load import get_claim_perspective_id_dict, get_perspective_dict, load_claim_perspective_pair
+from arg.perspectives.load import get_claim_perspective_id_dict, get_perspective_dict, load_claim_perspective_pair, \
+    load_train_claim_ids, get_claims_from_ids
 from cie.msc.tf_idf import sublinear_term_frequency, cosine_similarity, inverse_document_frequencies
-from misc_lib import flatten
+from list_lib import flatten
 
 
 def get_candidates(claims, is_train=True):
@@ -127,4 +128,8 @@ def test_es():
                 es_helper.get_perspective_from_pool(query, 50)
 
 
-
+def load_train_data_point():
+    d_ids = list(load_train_claim_ids())
+    claims = get_claims_from_ids(d_ids)
+    all_data_points = get_candidates(claims)
+    return all_data_points

@@ -26,7 +26,9 @@ from arg.perspectives.context_analysis_routine import count_term_stat, feature_e
 from arg.perspectives.load import load_dev_claim_ids, get_claims_from_ids, get_claim_perspective_id_dict
 from cache import load_from_pickle
 from datastore.interface import flush
-from misc_lib import lmap, foreach, tprint, average
+from list_lib import lmap, foreach
+from misc_lib import tprint, average
+from models.classic.lm_counter_io import LMClassifier
 
 
 def get_perspective(claim, candidate_k):
@@ -41,30 +43,6 @@ def get_perspective(claim, candidate_k):
 
 def lower_all(token_list):
     return list([t.lower() for t in token_list])
-
-
-class LMClassifier:
-    def __init__(self, P_w_C_dict, P_w_NC_dict):
-        self.P_w_C_dict = P_w_C_dict
-        self.P_w_NC_dict = P_w_NC_dict
-        self.smoothing = 0.9
-
-
-    def per_token_odd(self, token):
-        smoothing = self.smoothing
-        if token not in self.P_w_C_dict:
-            return 0
-
-        P_w_C = self.P_w_C_dict[token]
-        P_w_NC = self.P_w_NC_dict[token]
-
-        try:
-            logC = math.log(P_w_C * smoothing + P_w_NC * (1 - smoothing))
-            logNC = math.log(P_w_NC * smoothing + P_w_C * (1 - smoothing))
-        except ValueError as e:
-            print(P_w_C, P_w_NC)
-            raise e
-        return logC - logNC
 
 
 class UnaryLM:

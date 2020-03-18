@@ -2,7 +2,8 @@ import pickle
 import sys
 
 from data_generator.common import get_tokenizer
-from misc_lib import get_dir_files, lmap
+from list_lib import lmap
+from misc_lib import get_dir_files
 from tlm.token_utils import mask_resolve_1, cells_from_tokens, is_mask
 from visualize.html_visual import HtmlVisualizer
 

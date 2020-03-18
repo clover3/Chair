@@ -1,10 +1,10 @@
-from collections import Counter
 from random import shuffle
 
 import nltk
 
 from cie.candidate import get_verb_nouns, get_entities
 from crawl.rerank_guardian import load_all_articles, load_ranking
+from list_lib import left
 from misc_lib import *
 
 

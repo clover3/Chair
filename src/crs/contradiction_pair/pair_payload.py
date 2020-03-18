@@ -7,7 +7,8 @@ import data_generator.tokenizer_wo_tf as tokenization
 from cpath import data_path
 from data_generator import job_runner
 from data_generator.job_runner import JobRunner, sydney_working_dir
-from misc_lib import flatten, pick1
+from list_lib import flatten
+from misc_lib import pick1
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.data_gen.base import truncate_seq_pair, format_tokens_pair_n_segid, SegmentInstance, \
     get_basic_input_feature, log_print_inst

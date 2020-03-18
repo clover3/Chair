@@ -5,7 +5,7 @@ import nltk
 
 from arg.claim_building.extract_sentences_from_ngram import get_compression_input_path
 from cie.msc import takahe
-from misc_lib import lmap
+from list_lib import lmap
 from models.classic.stopword import load_stopwords
 
 

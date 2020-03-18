@@ -1,11 +1,11 @@
 import json
 import pickle
-from collections import Counter
 
 import numpy as np
 from nltk.tokenize import wordpunct_tokenize
 
 from cpath import data_path
+from list_lib import lmap
 from misc_lib import *
 
 scope_dir = os.path.join(data_path, "guardian")

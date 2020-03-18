@@ -1,4 +1,4 @@
-from datastore.interface import save, flush, has_key
+from datastore.interface import save, flush, has_key, save_wo_flush
 
 
 class BufferedSaver:
@@ -29,11 +29,38 @@ class PayloadSaver:
 
 
 def commit_buffer_to_db(buffer):
+    cnt = 0
+    skipped_keys = 0
     for e in buffer:
         table_name, key, value = e
         if has_key(table_name, key):
+            skipped_keys += 1
             pass
         else:
+            print("Skipped {} existing keys".format(skipped_keys))
+            skipped_keys = 0
+            cnt += 1
+            print("add payload")
             save(table_name, key, value)
-    flush()
+
+        if cnt > 100:
+            flush()
+
+
+def commit_buffer_to_db2(buffer):
+    cnt = 0
+    print(buffer[0][0])
+    for e in buffer:
+        table_name, key, value = e
+        try:
+            cnt += 1
+
+            save_wo_flush(table_name, key, value)
+
+            if cnt > 100:
+                print("Flush")
+                flush()
+        except Exception as e:
+            print(e)
+            pass
 

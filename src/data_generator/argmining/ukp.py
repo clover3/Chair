@@ -3,6 +3,7 @@ from data_generator.argmining.ukp_header import all_topics
 from data_generator.data_parser import ukp
 from data_generator.text_encoder import CLS_ID, SEP_ID
 from data_generator.tokenizer_wo_tf import FullTokenizerWarpper, _truncate_seq_pair
+from list_lib import flatten
 from misc_lib import *
 from models.classic.stopword import load_stopwords
 from trainer.tf_module import get_batches_ex

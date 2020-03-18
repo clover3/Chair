@@ -7,7 +7,8 @@ from scipy.special import softmax
 from arg.claim_building.count_ngram import build_ngram_lm_from_tokens_list, merge_subword
 from arg.stance_build import build_uni_lm_from_tokens_list, display
 from cache import save_to_pickle, load_from_pickle
-from misc_lib import get_dir_files, lmap
+from list_lib import lmap
+from misc_lib import get_dir_files
 from tlm.ukp.data_gen.ukp_gen_selective import load_ranked_list
 from tlm.ukp.sydney_data import ukp_load_tokens_for_topic
 

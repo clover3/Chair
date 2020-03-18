@@ -7,7 +7,8 @@ from nltk.util import ngrams
 
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import is_continuation
-from misc_lib import TimeEstimator, left
+from list_lib import left
+from misc_lib import TimeEstimator
 from models.classic.stopword import is_stopword
 from tlm.ukp.sydney_data import ukp_load_tokens_for_topic, dev_pretend_ukp_load_tokens_for_topic
 

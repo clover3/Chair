@@ -7,7 +7,8 @@ from cache import load_pickle_from
 from data_generator.common import get_tokenizer
 from data_generator.data_parser.robust2 import load_robust_qrel, robust_path
 from evals.adhoc import p_at_k, dcg_at_k
-from misc_lib import left, average
+from list_lib import left
+from misc_lib import average
 from taskman_client.task_proxy import get_task_manager_proxy
 from tlm.estimator_prediction_viewer import flatten_batches
 

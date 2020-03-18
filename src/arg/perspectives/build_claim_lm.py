@@ -4,7 +4,7 @@ from arg.perspectives.contextual_hint_analysis import get_perspective, get_relev
 from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids
 from cache import save_to_pickle
 from data_generator.job_runner import WorkerInterface, JobRunner, sydney_working_dir
-from misc_lib import lmap
+from list_lib import lmap
 
 
 def build_single_claim_lm(all_ranked_list, claim):

@@ -1,7 +1,7 @@
 import os
 
 from data_generator.job_runner import sydney_working_dir
-from misc_lib import lmap
+from list_lib import lmap
 from tlm.data_gen.gen_from_txt import GenFromTxt
 
 

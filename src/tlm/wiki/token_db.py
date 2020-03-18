@@ -4,7 +4,8 @@ import sys
 import cpath
 from cache import DumpPickle, DumpPickleLoader
 from data_generator import tokenizer_wo_tf as tokenization
-from misc_lib import TimeEstimator, lmap, flatten
+from list_lib import lmap, flatten
+from misc_lib import TimeEstimator
 from tlm.wiki.sample_segments import EndofDocument
 
 

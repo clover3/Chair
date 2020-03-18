@@ -1,7 +1,8 @@
 import numpy as np
 import scipy.special
 
-from misc_lib import lmap, average
+from list_lib import lmap
+from misc_lib import average
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewerGosford
 from visualize.html_visual import HtmlVisualizer
 

@@ -3,7 +3,7 @@ import numpy as np
 from gensim.models import KeyedVectors
 
 from icd.common import lmap, load_description
-from misc_lib import flatten
+from list_lib import flatten
 
 
 def tokenize(input2):

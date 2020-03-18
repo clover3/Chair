@@ -11,7 +11,8 @@ from collections import Counter
 import cpath
 from data_generator import tokenizer_b as tokenization
 from galagos.basic import load_galago_ranked_list
-from misc_lib import TimeEstimator, left, tprint, CodeTiming
+from list_lib import left
+from misc_lib import TimeEstimator, tprint, CodeTiming
 from models.classic.stopword import load_stopwords
 from sydney_manager import MarkedTaskManager, ReadyMarkTaskManager
 from tlm.feature2 import FeatureExtractor

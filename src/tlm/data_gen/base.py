@@ -10,7 +10,7 @@ import tensorflow as tf
 import tlm.data_gen.bert_data_gen as btd
 from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
-from misc_lib import flatten
+from list_lib import flatten
 from misc_lib import pick1
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tf_util.tf_logging import tf_logging

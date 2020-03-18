@@ -2,7 +2,8 @@ from functools import partial
 
 from data_generator.argmining.eval import load_tfrecord, load_preditions, compare
 from evaluation import AP_from_binary
-from misc_lib import left, average
+from list_lib import left
+from misc_lib import average
 from task.metrics import eval_3label
 
 

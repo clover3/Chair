@@ -1,4 +1,7 @@
 import os
+
+from list_lib import lmap
+
 run_id = 3
 os.environ["CUDA_VISIBLE_DEVICES"] = str(run_id)
 

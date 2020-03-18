@@ -5,7 +5,7 @@ import numpy as np
 
 from cpath import output_path, data_path
 from data_generator import tokenizer_wo_tf
-from misc_lib import right
+from list_lib import right
 from visualize.html_visual import get_color, Cell, HtmlVisualizer
 
 

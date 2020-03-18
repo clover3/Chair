@@ -6,8 +6,8 @@ from cache import *
 from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
 from galagos.basic import load_df, write_query_json
-from misc_lib import flatten
-from misc_lib import left, TimeEstimator
+from list_lib import flatten, left
+from misc_lib import TimeEstimator
 from models.classic.stopword import load_stopwords
 from sydney_manager import ReadyMarkTaskManager
 from tlm.retrieve_lm.galago_query_maker import clean_query

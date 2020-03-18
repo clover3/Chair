@@ -1,6 +1,7 @@
 from cpath import data_path
 from data_generator.data_parser import amsterdam
 from data_generator.tokenizer_b import EncoderUnit
+from list_lib import lmap
 from misc_lib import *
 
 

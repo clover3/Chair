@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from cpath import data_path
+from list_lib import flatten
 from misc_lib import *
 
 scope_path = os.path.join(data_path, "arg", "extend")

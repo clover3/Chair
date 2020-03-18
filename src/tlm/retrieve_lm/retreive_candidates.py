@@ -1,6 +1,7 @@
 import cpath
 from cache import *
 from data_generator import tokenizer_b as tokenization
+from list_lib import left
 from misc_lib import *
 from models.classic.stopword import load_stopwords
 from tlm.retrieve_lm.retrieve_doc import RobustCollection

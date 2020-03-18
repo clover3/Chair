@@ -1,6 +1,7 @@
 from data_generator.tokenizer_b import FullTokenizerWarpper, EncoderUnit
 
-from evaluation import *
+from list_lib import left
+
 num_classes = 3
 import random
 from data_generator.data_parser.trec import *

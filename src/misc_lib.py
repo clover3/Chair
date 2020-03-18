@@ -127,22 +127,6 @@ def get_textrizer_plain(word2idx):
     return textrize
 
 
-def reverse(l):
-    return list(reversed(l))
-
-
-def flatten(z):
-    return [y for x in z for y in x]
-
-
-def left(pairs):
-    return list([a for a,b in pairs])
-
-
-def right(pairs):
-    return list([b for a,b in pairs])
-
-
 def increment_circular(j, max_len):
     j += 1
     if j == max_len:
@@ -206,27 +190,10 @@ class OpTime:
         ret = fn()
 
 
-def lmap(func, iterable_something):
-    return list([func(e) for e in iterable_something])
-
-
 # returns dictionary where key is the element in the iterable and the value is the func(key)
-def l_to_map(func, iterable_something):
-    return {k: func(k) for k in iterable_something}
 
 
 # returns dictionary where value is the func(value) of input dictionary
-def dict_map(func, dict_like):
-    return {k: func(v) for k,v in dict_like.items()}
-
-
-def lfilter(func, iterable_something):
-    return list(filter(func, iterable_something))
-
-
-def foreach(func, iterable_something):
-    for e in iterable_something:
-        func(e)
 
 
 def flat_apply_stack(list_fn, list_of_list, verbose=True):

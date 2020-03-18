@@ -8,7 +8,7 @@ from data_generator.bert_input_splitter import split_p_h_with_input_ids
 from data_generator.common import get_tokenizer
 from data_generator.job_runner import JobRunner, sydney_working_dir
 from data_generator.tokenizer_wo_tf import pretty_tokens
-from misc_lib import flatten, lmap
+from list_lib import lmap, flatten
 from tf_util.enum_features import load_record
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.data_gen.base import get_basic_input_feature_as_list, \

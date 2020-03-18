@@ -10,7 +10,8 @@ from sklearn.metrics import classification_report
 
 from cpath import data_path, output_path
 from data_generator.tokenizer_wo_tf import FullTokenizerWarpper, pretty_tokens
-from misc_lib import average, flatten
+from list_lib import flatten
+from misc_lib import average
 
 
 def plot_data(summary_list):

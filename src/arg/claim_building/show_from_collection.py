@@ -5,7 +5,7 @@ from arg.claim_building.count_ngram import merge_subword
 from arg.claim_building.count_stance_prediction import enum_docs_and_stance
 from arg.stance_build import get_all_term_odd
 from cache import load_from_pickle
-from misc_lib import left
+from list_lib import left
 from models.classic.stopword import load_stopwords
 
 

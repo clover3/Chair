@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import sys
+from collections import Counter
 
 from boilerpipe.extract import Extractor
 from nltk import tokenize
@@ -63,6 +64,9 @@ def process_jsonl(line_itr, tokenize_fn):
 
             tokens = tokenize.word_tokenize(core_text)
             buffered_saver.save(TokenizedCluewebDoc, doc_id, tokens)
+
+            tf = Counter(tokens)
+            buffered_saver.save(CluewebDocTF, doc_id, tf)
         except Exception as e:
             print(e)
 

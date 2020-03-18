@@ -2,7 +2,8 @@ import os
 
 from cpath import src_path, project_root
 from galagos.basic import load_galago_ranked_list, load_queries
-from misc_lib import exist_or_mkdir, lmap
+from list_lib import lmap
+from misc_lib import exist_or_mkdir
 from sydney_clueweb import clue_path
 
 threaded_search_sh_path = os.path.join(src_path, "sh_script", "threaded_search.sh")
@@ -60,7 +61,25 @@ def verify_ranked_list(out_path, queries):
             print("Not found: ", queries_d[query_id])
 
 
+def get_rm_terms(queries, disk_name, out_root, base_head, base_tail, sh_out_path):
+    index_path = os.path.join(clue_path.index_dir, disk_name)
 
+    new_content = open(base_head, "r").read()
+    base_tail = open(base_tail, "r").read()
+
+    for query in queries:
+        query_id = query['number']
+        file_name = "{}_{}".format(disk_name, query_id)
+        out_path = os.path.join(out_root, file_name + ".txt")
+        arg = {
+            '${index_path}': index_path,
+            '${query}': query['text'],
+            '${outpath}': out_path,
+        }
+        new_content += insert_argument(base_tail, arg)
+    open(sh_out_path, "w").write(new_content)
+    sh_cmd = "sbatch " + sh_out_path
+    os.system(sh_cmd)
 
 
 def verify_result(list_query_files, disk_list, out_root):

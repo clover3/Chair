@@ -1,16 +1,16 @@
-from data_generator.data_parser import controversy, load_protest
+from multiprocessing import Pool
+
+import math
+from krovetzstemmer import Stemmer
+
 from data_generator.data_parser import amsterdam
-from summarization.tokenizer import *
+from data_generator.data_parser import controversy
+from list_lib import lmap, left
+from misc_lib import *
 from models.classic.lm_classifier import LMClassifer
 from models.classic.stopword import load_stopwords
+from summarization.tokenizer import *
 
-
-
-from multiprocessing import Pool
-from collections import Counter
-from krovetzstemmer import Stemmer
-import math
-from misc_lib import *
 
 def get_dbpedia_contrv_lm():
     print("Building LM from DBPedia's controversy ranked docs")

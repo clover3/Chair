@@ -13,7 +13,8 @@ import pickle
 import data_generator.argmining.ukp_header
 from data_generator import job_runner
 from data_generator.job_runner import JobRunner, sydney_working_dir
-from misc_lib import flatten, lmap, get_dir_files
+from list_lib import lmap, flatten
+from misc_lib import get_dir_files
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tf_util.tf_logging import tf_logging
 from tlm.data_gen.base import LMTrainBase, format_tokens_pair_n_segid, truncate_seq_pair, get_basic_input_feature, \

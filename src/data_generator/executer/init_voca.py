@@ -10,7 +10,7 @@ from data_generator.mask_lm import enwiki
 from data_generator.shared_setting import TopicTweets2Stance, SimpleTokner
 from data_generator.stance import stance_detection
 from data_generator.text_encoder import TokenTextEncoder
-from misc_lib import flatten
+from list_lib import flatten
 
 
 def file_sampler(filepath, file_byte_budget=1e6):

@@ -2,7 +2,8 @@ import os
 
 import data_generator.argmining.ukp_header
 from galagos.basic import load_galago_ranked_list, merge_ranked_list_list
-from misc_lib import get_dir_files, group_by, right
+from list_lib import right
+from misc_lib import get_dir_files, group_by
 
 non_cont_topics = ["hydroponics", "weather", "restaurant", "wildlife_extinction", "james_allan"]
 

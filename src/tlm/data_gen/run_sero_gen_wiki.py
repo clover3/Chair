@@ -4,7 +4,8 @@ import time
 from collections import Counter
 
 from data_generator.job_runner import sydney_working_dir, JobRunner
-from misc_lib import flatten, average, lmap
+from list_lib import lmap, flatten
+from misc_lib import average
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tf_util.tf_logging import tf_logging
 from tlm.data_gen.base import LMTrainGen, get_basic_input_feature

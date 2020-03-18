@@ -6,6 +6,7 @@ from cpath import data_path
 from data_generator.common import get_encoder
 from data_generator.text_encoder import SEP_ID
 from data_generator.tokenizer_b import _truncate_seq_pair
+from list_lib import lmap
 from misc_lib import *
 from models.PSF import get_relevant_docs
 

@@ -1,10 +1,14 @@
-import math
-from misc_lib import average, flatten
-from cie import dependency
-from collections import Counter, defaultdict
 import random
-import nltk.stem
+from collections import Counter
 from itertools import permutations
+
+import math
+import nltk.stem
+
+from cie import dependency
+from list_lib import flatten
+from misc_lib import average
+
 stemmer = nltk.stem.PorterStemmer()
 
 
