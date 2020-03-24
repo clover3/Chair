@@ -1,34 +1,7 @@
-import json
-import string
+from galagos.basic import clean_query, get_query_entry, save_queries_to_file
 
 import cpath
 from cache import *
-
-
-def clean_query(query):
-    q_term = []
-    spe_chars = set([t for t in string.printable if not t.isalnum()])
-    for t in query:
-        if t in spe_chars:
-            continue
-        else:
-            q_term.append(t)
-    return q_term
-
-
-def get_query_entry(q_id, query):
-    return {"number": str(q_id), "text": "#combine({})".format(" ".join(query))}
-
-
-def get_query_entry_bm25_anseri(q_id, query):
-    return {"number": str(q_id), "text": "#combine(bm25:K=0.9:b=0.4({}))".format(" ".join(query))}
-
-
-def save_queries_to_file(queries, out_path):
-    data = {"queries": queries}
-    fout = open(out_path, "w")
-    fout.write(json.dumps(data, indent=True))
-    fout.close()
 
 
 def main():

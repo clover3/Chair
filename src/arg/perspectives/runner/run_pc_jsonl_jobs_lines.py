@@ -1,5 +1,6 @@
 import os
 
+import datastore.tool
 from cache import save_to_pickle
 from cpath import data_path
 from data_generator.job_runner import JobRunner, sydney_working_dir
@@ -23,9 +24,10 @@ class JsonlWorker:
         st = job_id * block
         ed = (job_id + 1) * block
         line_itr = file_iterator_interval(f, st, ed)
-        payload_saver = process_jsonl(line_itr, self.tokenize_fn)
+        buffered_saver = datastore.tool.PayloadSaver()
+        payload_saver = process_jsonl(line_itr, self.tokenize_fn, buffered_saver)
         save_name = os.path.basename(jsonl_path) + "_{}".format(job_id)
-        save_to_pickle(payload_saver, save_name)
+        save_to_pickle(payload_saver, save_name, )
 
 
 if __name__ == "__main__":

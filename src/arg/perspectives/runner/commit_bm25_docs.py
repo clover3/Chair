@@ -3,7 +3,7 @@ from datastore.tool import commit_buffer_to_db
 
 
 def run():
-    for i in range(6, 50):
+    for i in range(0, 50):
         try:##
             print(i)
             save_name = "bm25_res_docs.jsonl_{}".format(i)

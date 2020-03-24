@@ -1,8 +1,9 @@
 import os
 
+from galagos.basic import load_galago_ranked_list
+
 from datastore.interface import load, save, load_multiple, preload_man
 from datastore.table_names import TokenizedCluewebDoc, CluewebDocTF
-from galagos.basic import load_galago_ranked_list
 
 
 # Ranked list from Clueweb with respect to each of claims

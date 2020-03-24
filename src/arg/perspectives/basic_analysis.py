@@ -1,3 +1,5 @@
+from typing import NamedTuple
+
 import nltk
 
 from arg.perspectives import es_helper
@@ -5,6 +7,14 @@ from arg.perspectives.load import get_claim_perspective_id_dict, get_perspective
     load_train_claim_ids, get_claims_from_ids
 from cie.msc.tf_idf import sublinear_term_frequency, cosine_similarity, inverse_document_frequencies
 from list_lib import flatten
+
+
+class PerspectiveCandidate(NamedTuple):
+    label: str
+    cid: str
+    pid: str
+    claim_text: str
+    p_text: str
 
 
 def get_candidates(claims, is_train=True):
@@ -25,13 +35,15 @@ def get_candidates(claims, is_train=True):
         for pid in pid_set:
             p_text = p_map[pid]
             label = 1 if pid in rp else 0
-            data_point = [str(label), str(cid), str(pid), claim_text, p_text]
+            data_point = PerspectiveCandidate(label=str(label), cid=cid, pid=pid,
+                                 claim_text=claim_text, p_text=p_text)
+            #data_point = [str(label), str(cid), str(pid), claim_text, p_text]
             data_point_list.append(data_point)
 
         # If training, we balance positive and negative examples.
         if is_train:
-            pos_insts = list([e for e in data_point_list if e[0] == "1"])
-            neg_insts = list([e for e in data_point_list if e[0] == "0"])
+            pos_insts = list([e for e in data_point_list if e.label == "1"])
+            neg_insts = list([e for e in data_point_list if e.label == "0"])
             neg_insts = neg_insts[:len(pos_insts)]
             data_point_list = pos_insts + neg_insts
         all_data_points.extend(data_point_list)

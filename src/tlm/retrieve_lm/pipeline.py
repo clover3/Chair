@@ -8,9 +8,10 @@ import random
 import sys
 from collections import Counter
 
+from galagos.basic import load_galago_ranked_list, clean_query
+
 import cpath
 from data_generator import tokenizer_b as tokenization
-from galagos.basic import load_galago_ranked_list
 from list_lib import left
 from misc_lib import TimeEstimator, tprint, CodeTiming
 from models.classic.stopword import load_stopwords
@@ -18,7 +19,6 @@ from sydney_manager import MarkedTaskManager, ReadyMarkTaskManager
 from tlm.feature2 import FeatureExtractor
 from tlm.feature_extractor import libsvm_str
 from tlm.retrieve_lm import per_doc_posting_server
-from tlm.retrieve_lm.galago_query_maker import clean_query
 from tlm.retrieve_lm.retreive_candidates import translate_mask2token_level, remove
 from tlm.retrieve_lm.sample_segments import get_doc_sent, extend
 from tlm.retrieve_lm.segment2problem import generate_mask

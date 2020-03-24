@@ -1,22 +1,29 @@
 import string
+from collections import Counter
+from typing import List
 
 import math
 import nltk
 
+from adhoc.bm25 import compute_K
 from arg.claim_building.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from arg.perspectives.basic_analysis import get_candidates
-from arg.perspectives.collection_based_classifier import CollectionInterface, re_tokenize
+from arg.perspectives.build_feature import re_tokenize
+from arg.perspectives.clueweb_db import load_doc
 from arg.perspectives.load import get_claims_from_ids, load_train_claim_ids
+from arg.perspectives.ranked_list_interface import PassageRankedListInterface, Q_CONFIG_ID_BM25, make_passage_query
+from galagos.parse import GalagoRankEntry
 from list_lib import lmap, idx_where, lfilter
 from visualize.html_visual import HtmlVisualizer, Cell
 
 
 def binary_feature_demo(datapoint_list):
-    ci = CollectionInterface()
+    ci = PassageRankedListInterface(make_passage_query, Q_CONFIG_ID_BM25)
     not_found_set = set()
     _, clue12_13_df = load_clueweb12_B13_termstat()
     cdf = 50 * 1000 * 1000
     html = HtmlVisualizer("pc_binary_feature.html")
+
     def idf_scorer(doc, claim_text, perspective_text):
         cp_tokens = nltk.word_tokenize(claim_text) + nltk.word_tokenize(perspective_text)
         cp_tokens = lmap(lambda x: x.lower(), cp_tokens)
@@ -39,43 +46,71 @@ def binary_feature_demo(datapoint_list):
         # print(score, max_score)
         return score, max_score, mentioned_terms
 
+    def bm25_estimator(doc: Counter,
+                       claim_text: str,
+                       perspective_text: str):
+        cp_tokens = nltk.word_tokenize(claim_text) + nltk.word_tokenize(perspective_text)
+        cp_tokens = lmap(lambda x: x.lower(), cp_tokens)
+        k1 = 0
+
+        def BM25_3(f, qf, df, N, dl, avdl) -> float:
+            K = compute_K(dl, avdl)
+            first = math.log((N - df + 0.5) / (df + 0.5))
+            second = ((k1 + 1) * f) / (K + f)
+            return first * second
+
+        dl = sum(doc.values())
+        info = []
+        for q_term in set(cp_tokens):
+            if q_term in doc:
+                score = BM25_3(doc[q_term], 0, clue12_13_df[q_term], cdf, dl, 1200)
+                info.append((q_term, doc[q_term], clue12_13_df[q_term], score))
+        return info
+
 
     print_cnt = 0
-    for dp_idx, data_point in enumerate(datapoint_list):
-        label, cid, pid, claim_text, p_text = data_point
-        query_id = "{}_{}".format(cid, pid)
-        ranked_docs = ci.get_ranked_documents_tf(cid, pid, True)
-        ranked_list = ci.get_ranked_list(query_id)
-        html.write_paragraph(claim_text)
-        html.write_paragraph(p_text)
-        html.write_paragraph("{}".format(label))
+    for dp_idx, x in enumerate(datapoint_list):
+        ranked_list: List[GalagoRankEntry] = ci.query_passage(x.cid, x.pid, x.claim_text, x.p_text)
+        html.write_paragraph(x.claim_text)
+        html.write_paragraph(x.p_text)
+        html.write_paragraph("{}".format(x.label))
 
         local_print_cnt = 0
         lines = []
-        for ranked_entry, doc in zip(ranked_list, ranked_docs):
-            doc_id, orig_rank, galago_score = ranked_entry
-            if doc is not None:
-                score, max_score, mentioned_terms = idf_scorer(doc, claim_text, p_text)
-                matched = score > max_score * 0.75
-            else:
-                matched = "Unk"
-                score = "Unk"
-                max_score = "Unk"
-            def get_cell(token):
-                if token in mentioned_terms:
-                    return Cell(token, highlight_score=50)
+        for ranked_entry in ranked_list:
+            try:
+                doc_id = ranked_entry.doc_id
+                galago_score = ranked_entry.score
+
+                tokens = load_doc(doc_id)
+                doc_tf = Counter(tokens)
+                if doc_tf is not None:
+                    score, max_score, mentioned_terms = idf_scorer(doc_tf, x.claim_text, x.p_text)
+                    matched = score > max_score * 0.75
                 else:
-                    return Cell(token)
+                    matched = "Unk"
+                    score = "Unk"
+                    max_score = "Unk"
 
-            line = [doc_id, galago_score, matched, score, max_score]
-            lines.append(line)
-
-                #html.write_paragraph("{0} / {1:.2f}".format(doc_id, galago_score))
-                #html.write_paragraph("{}/{}".format(score, max_score))
-                #html.multirow_print(lmap(get_cell, tokens))
-                # local_print_cnt += 1
-                # if local_print_cnt > 10:
-                #     break
+                def get_cell(token):
+                    if token in mentioned_terms:
+                        return Cell(token, highlight_score=50)
+                    else:
+                        return Cell(token)
+                line = [doc_id, galago_score, matched, score, max_score]
+                lines.append(line)
+                html.write_paragraph("{0} / {1:.2f}".format(doc_id, galago_score))
+                html.write_paragraph("{}/{}".format(score, max_score))
+                bm25_info = bm25_estimator(doc_tf, x.claim_text, x.p_text)
+                bm25_score = sum(lmap(lambda x:x[3], bm25_info))
+                html.write_paragraph("bm25 re-estimate : {}".format(bm25_score))
+                html.write_paragraph("{}".format(bm25_info))
+                html.multirow_print(lmap(get_cell, tokens))
+                local_print_cnt += 1
+                if local_print_cnt > 10:
+                    break
+            except KeyError:
+                pass
 
         matched_idx = idx_where(lambda x: x[2], lines)
         if not matched_idx:
@@ -86,7 +121,7 @@ def binary_feature_demo(datapoint_list):
             rows = lmap(lambda line: lmap(Cell, line), lines)
             html.write_table(rows)
 
-        if dp_idx > 50:
+        if dp_idx > 10:
             break
 
 
@@ -94,6 +129,7 @@ def work():
     d_ids = list(load_train_claim_ids())
     claims = get_claims_from_ids(d_ids)
     all_data_points = get_candidates(claims)
+    all_data_points = all_data_points[:10]
     binary_feature_demo(all_data_points)
 
 

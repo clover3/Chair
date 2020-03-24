@@ -1,7 +1,7 @@
 import os
 
 from cpath import src_path, project_root
-from galagos.basic import load_galago_ranked_list, load_queries
+from galagos.parse import load_galago_ranked_list, load_queries
 from list_lib import lmap
 from misc_lib import exist_or_mkdir
 from sydney_clueweb import clue_path

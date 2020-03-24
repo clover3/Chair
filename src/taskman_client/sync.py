@@ -41,6 +41,9 @@ class JsonTiedDict:
         for key, value in dict.items():
             self.__dict__[key] = value
 
+    def last_id(self):
+        return self.__dict__['last_task_id']
+
     def save(self):
         with open(self.file_path, "w") as f:
             json.dump(self.to_dict(), f)

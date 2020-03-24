@@ -1,11 +1,13 @@
 import os
+from typing import Dict
 
-from arg.perspectives.basic_analysis import get_candidates
+from galagos.basic import clean_query, get_query_entry_bm25_anseri, save_queries_to_file
+
+from arg.perspectives.basic_analysis import get_candidates, PerspectiveCandidate
 from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids
 from cpath import output_path
 from list_lib import lmap
 from misc_lib import exist_or_mkdir
-from tlm.retrieve_lm.galago_query_maker import clean_query, get_query_entry_bm25_anseri, save_queries_to_file
 
 
 def write_claim_as_query():
@@ -33,18 +35,17 @@ def write_claim_perspective_pair_as_query():
     d_ids = list(load_train_claim_ids())
     claims = get_claims_from_ids(d_ids)
     all_data_points = get_candidates(claims)
-    k = 0.3
+    k = 0
 
-    def get_query_entry_from_data_point(data_point):
-        label, cid, pid, claim_text, p_text = data_point
-        tokens = claim_text.split() + p_text.split()
+    def get_query_entry_from_data_point(x : PerspectiveCandidate) -> Dict:
+        tokens = x.claim_text.split() + x.p_text.split()
         query_text = clean_query(tokens)
-        qid = cid + "_" + pid
+        qid = x.cid + "_" + x.pid
         return get_query(qid, query_text, k)
 
     queries = lmap(get_query_entry_from_data_point, all_data_points)
 
-    out_dir = os.path.join(output_path, "perspective_train_claim_perspective_query")
+    out_dir = os.path.join(output_path, "perspective_train_claim_perspective_query_k0")
     exist_or_mkdir(out_dir)
     n_query_per_file = 50
 

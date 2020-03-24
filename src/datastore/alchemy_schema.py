@@ -17,6 +17,11 @@ class KeyValueBase(object):
     value = Column('value', LONGBLOB)
 
 
+class KeyOnlyTable(object):
+    key = Column('key', String(256), primary_key=True, index=True)
+
+
+
 class TestTable(Base, KeyValueBase):
     __tablename__ = "test_table"
 
@@ -41,6 +46,10 @@ class CluewebDocTFTable(Base, KeyValueBase):
     __tablename__ = CluewebDocTF
 
 
+class QueryResultTable(Base, KeyValueBase):
+    __tablename__ = QueryResult
+
+
 from sqlalchemy import create_engine
 
 engine = create_engine(sydney_mysql_path)
@@ -56,6 +65,7 @@ all_tables = [TestTable,
               BertTokenizedCluewebDocTable,
               TokenizedCluewebDocTable,
               CluewebDocTFTable,
+              QueryResultTable,
               ]
 
 

@@ -1,3 +1,4 @@
+import os
 
 index_name_list = [ "ClueWeb12-Disk1_00.idx",
     "ClueWeb12-Disk1_01.idx",
@@ -17,3 +18,8 @@ index_name_list = [ "ClueWeb12-Disk1_00.idx",
     "ClueWeb12-Disk4_19.idx"]
 
 index_dir = '/mnt/lustre/godzilla/harding/ClueWeb12/idx'
+
+
+def get_first_disk():
+    return os.path.join(index_dir, index_name_list[0])
+

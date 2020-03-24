@@ -2,7 +2,10 @@ import os
 
 from list_lib import lmap
 
-ranked_list_save_root = '/mnt/nfs/work3/youngwookim/data/perspective/train_claim_perspective/all_query_results'
+subproject_hub = '/mnt/nfs/work3/youngwookim/data/perspective/train_claim_perspective/'
+
+ranked_list_save_root = os.path.join(subproject_hub, 'all_query_results')
+ranked_list_dir_bm25_0 = os.path.join(subproject_hub, 'bm25_k0_q_res')
 query_dir = "/mnt/nfs/work3/youngwookim/code/Chair/output/perspective_train_claim_perspective_query"
 
 

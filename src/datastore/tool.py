@@ -37,10 +37,10 @@ def commit_buffer_to_db(buffer):
             skipped_keys += 1
             pass
         else:
-            print("Skipped {} existing keys".format(skipped_keys))
-            skipped_keys = 0
+            if skipped_keys:
+                print("Skipped {} existing keys".format(skipped_keys))
+                skipped_keys = 0
             cnt += 1
-            print("add payload")
             save(table_name, key, value)
 
         if cnt > 100:

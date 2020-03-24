@@ -22,6 +22,8 @@ class TimeEstimator:
         self.time_analyzed = None
         self.time_count = 0
         self.total_repeat = total_repeat
+        if sample_size == 10 and self.total_repeat > 10000:
+            sample_size = 100
         self.name = name
         self.base = 3
         self.sample_size = sample_size
@@ -385,3 +387,11 @@ def get_f1(prec, recall):
         return (2 * prec * recall) / (prec + recall)
     else:
         return 0
+
+
+def split_7_3(list_like):
+    split = int(0.7 * len(list_like))
+
+    train = list_like[:split]
+    val = list_like[split:]
+    return train, val

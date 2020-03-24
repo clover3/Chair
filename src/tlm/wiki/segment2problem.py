@@ -1,16 +1,16 @@
 import random
 from collections import Counter
 
+from galagos.basic import load_df, write_query_json, clean_query
+
 from adhoc.bm25 import BM25_3_q_weight
 from cache import *
 from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
-from galagos.basic import load_df, write_query_json
 from list_lib import flatten, left
 from misc_lib import TimeEstimator
 from models.classic.stopword import load_stopwords
 from sydney_manager import ReadyMarkTaskManager
-from tlm.retrieve_lm.galago_query_maker import clean_query
 from tlm.retrieve_lm.retreive_candidates import get_visible
 from tlm.retrieve_lm.stem import CacheStemmer
 

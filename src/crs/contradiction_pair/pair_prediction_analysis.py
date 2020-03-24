@@ -1,3 +1,4 @@
+import csv
 import os
 import pickle
 from collections import Counter
@@ -7,6 +8,7 @@ import numpy as np
 from scipy.special import softmax
 from scipy.stats import pearsonr
 
+from cache import save_to_pickle
 from cpath import output_path
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
 from data_generator.tokenizer_wo_tf import pretty_tokens
@@ -78,7 +80,9 @@ def load_data(data_name):
         print("total of {} data".format(data.data_len))
         pickle_path = os.path.join(output_path, "abortion_nli_prediction_analysis2")
     else:
-        assert False
+        data = EstimatorPredictionViewer(os.path.join(output_path, data_name))
+        print("total of {} data".format(data.data_len))
+        pickle_path = os.path.join(output_path, data_name + "_analysis")
     return data, pickle_path
 
 
@@ -112,6 +116,7 @@ def combine_prediction_list(path_list):
 def counter_acc(src, target):
     for key, value in src.items():
         target[key] += value
+
 
 def merge_summary(dir_name, name_format):
     cont_acc = Counter()
@@ -155,6 +160,62 @@ def analyze(cont, high_count, n_cont, pred_count):
     output.sort(key=lambda x: x[1])
     return output
 
+def valid_condition(p, h):
+    if len(p) + len(h) > 100:
+        return False
+    if len(p) < 4 or len(h)< 3:
+        return False
+    common = set(p) & set(h)
+    if len(common) < 2:
+        return False
+    return True
+
+
+
+def save_contradiction(data):
+    f = open(os.path.join(output_path, "cont_annot.csv"), "w", encoding="utf-8", newline="")
+    writer = csv.writer(f)
+    rows = []
+    rows.append(("premise", "hypothesis"))
+    input_ids_list = []
+    for entry in data:
+        logits = entry.get_vector("logits")
+        input_ids = entry.get_vector("input_ids")
+        tokens = entry.get_tokens("input_ids")
+
+        probs = softmax(logits)
+        pred = np.argmax(probs)
+        if probs[2] > 0.5:
+            p, h = split_p_h_with_input_ids(tokens, input_ids)
+            if valid_condition(p, h):
+                e = (pretty_tokens(p, True), pretty_tokens(h, True))
+                rows.append(e)
+                input_ids_list.append(input_ids)
+        if len(input_ids_list) == 100:
+            break
+    writer.writerows(rows)
+
+    save_to_pickle(input_ids_list, "cont_annot_input_ids")
+
+
+def save_contradiction_pred(data):
+    entries = []
+    for entry in data:
+        logits = entry.get_vector("logits")
+        input_ids = entry.get_vector("input_ids")
+        tokens = entry.get_tokens("input_ids")
+
+        probs = softmax(logits)
+        if probs[2] > 0.5:
+            p, h = split_p_h_with_input_ids(tokens, input_ids)
+            if valid_condition(p, h):
+                entries.append(probs[2])
+        if len(entries) == 100:
+            break
+
+    save_to_pickle(entries, "cont_model_0")
+
+
 
 def count_contradiction(data):
     cont = Counter()
@@ -171,13 +232,14 @@ def count_contradiction(data):
         pred = np.argmax(probs)
         pred_count[pred] += 1
         if probs[2] > 0.5:
-            high_count += 1
             counter = cont
-            if high_count < 10:
+            if high_count < 100:
                 p, h = split_p_h_with_input_ids(tokens, input_ids)
-                print("P:" + pretty_tokens(p, True))
-                print("H:" + pretty_tokens(h, True))
-                print()
+                if valid_condition(p, h):
+                    high_count += 1
+                    print(probs[2])
+                    print("P:" + pretty_tokens(p, True))
+                    print("H:" + pretty_tokens(h, True))
 
         else:
             counter = n_cont
@@ -238,6 +300,13 @@ def see_rerun_abortion_10000():
     view(output, [""])
 
 
+def abortion_cont3():
+    data_name = "abortion_contradiction_3"
+    data, pickle_path = load_data(data_name)
+    #save_contradiction(data)
+    save_contradiction_pred(data)
+
+
 def see_weather():
     output = work("weather")
     view(output, ["weather"])
@@ -250,8 +319,10 @@ def see_hydroponics():
 
 
 if __name__ == "__main__":
-    view_entailment("rerun_abortion")
+    #view_entailment("rerun_abortion")
     #see_rerun_abortion_10000()
+    #abortion_cont3()
+    abortion_cont3()
     #see_clueweb12_13B()
     #see_hydroponics()
     #see_weather()
