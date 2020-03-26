@@ -101,7 +101,7 @@ def work_multithread(warc_extracted_dir, url_to_doc_id, tokenize_fn):
         txt_path = os.path.join(warc_extracted_dir, "{}.txt".format(idx))
         ticker.tick()
         try:
-            text = open(txt_path).read()
+            text = open(txt_path, encoding="utf-8", errors="ignore").read()
             todo_list.append((doc_id, text))
             work_size += len(text)
         except FileNotFoundError:
