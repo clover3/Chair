@@ -243,6 +243,9 @@ class BasicTokenizer(object):
     output_tokens = whitespace_tokenize(" ".join(split_tokens))
     return output_tokens
 
+  def run_strip_accents(self, text):
+      return self._run_strip_accents(text)
+
   def _run_strip_accents(self, text):
     """Strips accents from a piece of text."""
     text = unicodedata.normalize("NFD", text)
@@ -321,6 +324,9 @@ class BasicTokenizer(object):
       else:
         output.append(char)
     return "".join(output)
+
+  def clean_text(self, text):
+      return self._clean_text(text)
 
 
 class WordpieceTokenizer(object):

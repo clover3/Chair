@@ -8,7 +8,8 @@ from arg.claim_building.clueweb12_B13_termstat import load_clueweb12_B13_termsta
 from arg.perspectives.basic_analysis import PerspectiveCandidate
 from arg.perspectives.build_feature import re_tokenize
 from arg.perspectives.ranked_list_interface import StaticRankedListInterface
-from data_generator.subword_translate import Subword, move_cursor
+from data_generator.common import get_tokenizer
+from data_generator.subword_translate import Subword
 from datastore.interface import preload_man, load
 from datastore.table_names import TokenizedCluewebDoc, BertTokenizedCluewebDoc
 from galagos.parse import GalagoDocRankEntry
@@ -32,13 +33,21 @@ class ParagraphClaimPersFeature(NamedTuple):
     claim_pers: PerspectiveCandidate
     feature: List[ScoreParagraph]
 
-move_cursor_call = 0
 
 def select_paragraph_dp_list(ci: StaticRankedListInterface,
                              datapoint_list: List[PerspectiveCandidate]) -> List[ParagraphClaimPersFeature]:
     not_found_set = set()
     print("Load term stat")
     _, clue12_13_df = load_clueweb12_B13_termstat()
+    tokenizer = get_tokenizer()
+
+    def subword_tokenize(word: str) -> List[Subword]:
+        word = tokenizer.clean_text(word)
+        word = word.lower()
+        word = tokenizer.run_strip_accents(word)
+        subwords = tokenizer.wordpiece_tokenizer.tokenize(word)
+        return subwords
+
     cdf = 50 * 1000 * 1000
 
     ONE_PARA_PER_DOC = 1
@@ -64,38 +73,35 @@ def select_paragraph_dp_list(ci: StaticRankedListInterface,
     def enum_paragraph(doc: GalagoDocRankEntry) -> Iterable[Paragraph]:
         # load tokens and BERT subword tokens
         tokens = load(TokenizedCluewebDoc, doc.doc_id)
-        subword_tokens_chunk: List[List[Subword]] = load(BertTokenizedCluewebDoc, doc.doc_id)
-        subword_tokens: List[Subword] = list(flatten(subword_tokens_chunk))
+        subword_tokens: List[List[Subword]] = lmap(subword_tokenize, tokens)
         step_size = 100
         subword_len = 350
-        subword_st = 0
-        word_st = 0
+        cursor = 0
 
-        debug_cnt = 0
-        try:
-            while True:
-                global move_cursor_call
-                move_cursor_call += 1
-                # Move sliding window based on subword tokens
-                subword_ed, word_ed = move_cursor(subword_st, subword_tokens, word_st, tokens, subword_len)
+        # return maximum index where number of subword tokens in subword_tokens[start:index] does not exist max_len
+        def move_cursor(subword_tokens: List[List[Subword]], start: int, max_len: int):
+            cursor_ed = start
+            num_subword = 0
 
-                if word_ed > word_st:
-                    yield Paragraph(doc_id=doc.doc_id, doc_rank=doc.rank, doc_score=doc.score,
-                                    subword_tokens=subword_tokens[subword_st:subword_ed],
-                                    tokens=tokens[word_st:word_ed]
-                                    )
+            def can_add_subwords():
+                if cursor_ed < len(subword_tokens):
+                    return num_subword + len(subword_tokens[cursor_ed]) <= max_len
                 else:
-                    break
+                    return False
 
-                next_subword_st, next_word_st = move_cursor(subword_st, subword_tokens, word_st, tokens, step_size)
-                subword_st = next_subword_st
-                word_st = next_word_st
+            while can_add_subwords():
+                num_subword += len(subword_tokens[cursor_ed])
+                cursor_ed += 1
 
-                debug_cnt += 1
-                assert debug_cnt < len(subword_tokens)
-        except IndexError:
-            print("Parse fail")
-            print(move_cursor_call)
+            return cursor_ed
+
+        while cursor < len(subword_tokens):
+            cursor_ed = move_cursor(subword_tokens, cursor, subword_len)
+            yield Paragraph(doc_id=doc.doc_id, doc_rank=doc.rank, doc_score=doc.score,
+                            subword_tokens=list(flatten(subword_tokens[cursor:cursor_ed])),
+                            tokens=tokens[cursor:cursor_ed])
+            cursor += step_size
+
     def select_paragraph_from_datapoint(x: PerspectiveCandidate) -> ParagraphClaimPersFeature:
         ranked_docs: List[GalagoDocRankEntry] = ci.fetch(x.cid, x.pid)
         ranked_docs = ranked_docs[:100]
