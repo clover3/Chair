@@ -4,11 +4,9 @@ from typing import List, Iterable, Set, NamedTuple
 import math
 import nltk
 
-from arg.claim_building.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from arg.perspectives.basic_analysis import PerspectiveCandidate
 from arg.perspectives.build_feature import re_tokenize
 from arg.perspectives.ranked_list_interface import StaticRankedListInterface
-from data_generator.common import get_tokenizer
 from data_generator.subword_translate import Subword
 from datastore.interface import preload_man, load
 from datastore.table_names import TokenizedCluewebDoc, BertTokenizedCluewebDoc
@@ -35,16 +33,16 @@ class ParagraphClaimPersFeature(NamedTuple):
 
 
 def select_paragraph_dp_list(ci: StaticRankedListInterface,
+                             clue12_13_df,
+                             tokenizer,
                              datapoint_list: List[PerspectiveCandidate]) -> List[ParagraphClaimPersFeature]:
     not_found_set = set()
     print("Load term stat")
-    _, clue12_13_df = load_clueweb12_B13_termstat()
-    tokenizer = get_tokenizer()
 
     def subword_tokenize(word: str) -> List[Subword]:
-        word = tokenizer.clean_text(word)
+        word = tokenizer.basic_tokenizer.clean_text(word)
         word = word.lower()
-        word = tokenizer.run_strip_accents(word)
+        word = tokenizer.basic_tokenizer.run_strip_accents(word)
         subwords = tokenizer.wordpiece_tokenizer.tokenize(word)
         return subwords
 
@@ -101,6 +99,7 @@ def select_paragraph_dp_list(ci: StaticRankedListInterface,
                             subword_tokens=list(flatten(subword_tokens[cursor:cursor_ed])),
                             tokens=tokens[cursor:cursor_ed])
             cursor += step_size
+
 
     def select_paragraph_from_datapoint(x: PerspectiveCandidate) -> ParagraphClaimPersFeature:
         ranked_docs: List[GalagoDocRankEntry] = ci.fetch(x.cid, x.pid)

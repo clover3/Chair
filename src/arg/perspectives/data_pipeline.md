@@ -10,3 +10,8 @@
 * Ranked_list --> fetch_doc_list.py --> doc_id_list
 * doc_id_list --> galago get-doc-jsonl --> jsonl
 * jsonl --(run_pc_jsonl_jobs.py)--> DB
+
+
+* DB -> run_select_paragraph.py : -> features
+
+*  

@@ -36,7 +36,7 @@ def get_candidates(claims, is_train=True):
             p_text = p_map[pid]
             label = 1 if pid in rp else 0
             data_point = PerspectiveCandidate(label=str(label), cid=cid, pid=pid,
-                                 claim_text=claim_text, p_text=p_text)
+                                              claim_text=claim_text, p_text=p_text)
             #data_point = [str(label), str(cid), str(pid), claim_text, p_text]
             data_point_list.append(data_point)
 
