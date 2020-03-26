@@ -4,7 +4,7 @@ from typing import List, Dict
 
 from arg.perspectives.basic_analysis import load_train_data_point
 from arg.perspectives.dp_query_routines import dp_to_qid, db_not_contains, datapoint_to_doc_query
-from arg.perspectives.ranked_list_interface import Q_CONFIG_ID_BM25_10000, RankedListInterface, make_doc_query
+from arg.perspectives.ranked_list_interface import Q_CONFIG_ID_BM25_10000, DynRankedListInterface, make_doc_query
 from datastore.interface import has_key, save, flush
 from datastore.table_names import QueryResult
 from galagos.interface import DocQuery, send_doc_queries
@@ -18,7 +18,7 @@ def work(st, ed):
     st = int(st)
     ed = int(ed)
     q_config_id = Q_CONFIG_ID_BM25_10000
-    ci = RankedListInterface(make_doc_query, q_config_id)
+    ci = DynRankedListInterface(make_doc_query, q_config_id)
     all_data_points = load_train_data_point()
 
     print("Running {}~{} of {}".format(st, ed, len(all_data_points)))

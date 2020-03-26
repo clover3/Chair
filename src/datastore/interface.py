@@ -40,6 +40,22 @@ def save_wo_flush(table_name, key, value):
     session.add(new_record)
 
 
+def bulk_save(table_name, key_and_value_list):
+    check_init_db()
+    table_class = table_class_by_name[table_name]
+    save_payload = []
+    for key, value in key_and_value_list:
+        byte_arr = pickle.dumps(value)
+        if len(byte_arr) > 500 * 1024 * 1024:
+            print("Skip large data : ", len(byte_arr))
+            return
+        new_record = table_class(key=key, value=byte_arr)
+        save_payload.append(new_record)
+
+    session.bulk_save_objects(save_payload)
+    session.commit()
+
+
 def flush():
     if session is not None:
         session.flush()
@@ -76,14 +92,17 @@ def load_all(table_name):
         yield pickle.loads(byte_arr)
 
 
-def load_multiple(table_name, keys):
+def load_multiple(table_name, keys, unpickle=False):
     check_init_db()
     table_class = table_class_by_name[table_name]
     out_d = {}
     try:
         q_res = session.query(table_class).filter(table_class.key.in_(keys)).all()
         for row in q_res:
-            out_d[row.key] = row.value
+            if unpickle:
+                out_d[row.key] = pickle.loads(row.value)
+            else:
+                out_d[row.key] = row.value
     except MultipleResultsFound as e:
         raise KeyError()
     except NoResultFound as e:

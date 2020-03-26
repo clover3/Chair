@@ -1064,3 +1064,10 @@ def attention_layer3(from_tensor,
             [batch_size, from_seq_length, num_attention_heads * size_per_head])
 
     return context_layer
+
+
+def get_batch_and_seq_length(input_ids, expected_rank):
+    input_shape = bc.get_shape_list(input_ids, expected_rank=expected_rank)
+    batch_size = input_shape[0]
+    seq_length = input_shape[1]
+    return batch_size, seq_length

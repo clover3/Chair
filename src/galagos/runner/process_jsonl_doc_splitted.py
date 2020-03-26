@@ -6,16 +6,7 @@ import datastore.interface
 import datastore.tool
 from data_generator.tokenizer_wo_tf import FullTokenizer
 from galagos.doc_processor import process_jsonl
-
-
-def file_iterator_interval(f, st, ed):
-    for idx, line in enumerate(f):
-        if idx < st:
-            pass
-        elif idx < ed:
-            yield line
-        else:
-            break
+from misc_lib import file_iterator_interval
 
 
 def all_pipeline(jsonl_path, tokenize_fn, task_idx):

@@ -1,3 +1,5 @@
+from typing import List, Dict, Tuple
+
 import numpy as np
 from numpy import std, median
 
@@ -24,7 +26,7 @@ def learn_lm(feature_label_list):
 
     classifier = LMClassifier(pos_lm, neg_lm)
 
-    xy = lmap(lambda x: (get_tf_from_datapoint(x), int(x[1])), feature_label_list)
+    xy = lmap(lambda x: (get_tf_from_datapoint(x), int(x['label'])), feature_label_list)
     classifier.tune_alpha(xy)
     return classifier
 
@@ -112,9 +114,9 @@ def send_bm25_query(query_id, tokens, K = 0):
     return send_doc_queries(get_first_disk(), 100, [query])[query_id]
 
 
-def load_feature_and_split():
+def load_feature_and_split() -> Tuple[List[Dict], List[Dict]]:
     print("Loading data")
-    train_data = load_from_pickle("pc_train_features_binary")
+    train_data: Tuple[List[Dict], List[Dict]] = load_from_pickle("pc_train_features_binary")
     return split_7_3(train_data)
 
 

@@ -1,11 +1,11 @@
 import copy
 import csv
-import unicodedata
 
 from cache import *
 from data_generator.NLI.enlidef import *
 from data_generator.NLI.nli_info import corpus_dir
 from data_generator.data_parser.esnli import load_split
+from data_generator.subword_translate import normalize_pt
 from data_generator.text_encoder import SubwordTextEncoder, CLS_ID, SEP_ID
 from data_generator.tf_gfile_support import tf_gfile
 from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
@@ -482,17 +482,6 @@ class SNLIDataLoader(DataLoader):
         return encoded_data, plain_entry
 
 
-def _run_strip_accents(text):
-    """Strips accents from a piece of text."""
-    text = unicodedata.normalize("NFD", text)
-    output = []
-    for char in text:
-        cat = unicodedata.category(char)
-        if cat == "Mn":
-            continue
-        output.append(char)
-    return "".join(output)
-
 # Output : Find indice of subword_tokens that covers indice of parse_tokens
 # Lowercase must be processed
 # indice is for parse_tokens
@@ -505,16 +494,6 @@ def translate_index(parse_tokens, subword_tokens, indice):
         
     try:
         sep_char = "#"
-        def normalize_pt(text):
-            r = text.replace("``", "\"").replace("''", "\"").replace("`", "'").replace("”", "\"").replace("“", "\"")  \
-                .replace("-lrb-", "(").replace("-rrb-", ")")\
-                .replace("-lsb-", "[").replace("-rsb-", "]")\
-                .replace("…", "...")\
-                .replace("«", "\"")
-            if "#" == r:
-                r = "shop;"
-            #    .replace("&", "&amp;")
-            return _run_strip_accents(r)
 
         def normalize_pt_str(s):
             if "&" in s and "&amp;" not in s and "& amp" not in s:

@@ -395,3 +395,13 @@ def split_7_3(list_like):
     train = list_like[:split]
     val = list_like[split:]
     return train, val
+
+
+def file_iterator_interval(f, st, ed):
+    for idx, line in enumerate(f):
+        if idx < st:
+            pass
+        elif idx < ed:
+            yield line
+        else:
+            break

@@ -36,6 +36,7 @@ class DocGetter:
     def get_db_item_or_make(self, table_name, doc_id):
         if has_key(table_name, doc_id):
             return load(table_name, doc_id)
+        print("doc_id not found:",  doc_id)
         self.launch_doc_processor(doc_id)
         return load(table_name, doc_id)
 

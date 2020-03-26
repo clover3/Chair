@@ -1,4 +1,4 @@
-from datastore.interface import save, flush, has_key, save_wo_flush
+from datastore.interface import save, flush, has_key, save_wo_flush, get_existing_keys, bulk_save
 
 
 class BufferedSaver:
@@ -45,6 +45,37 @@ def commit_buffer_to_db(buffer):
 
         if cnt > 100:
             flush()
+
+
+def commit_buffer_to_db_batch(buffer):
+    buffer.sort(key=lambda x:x[0])
+    def block_iterator():
+        last_table_name = ""
+        key_values = []
+        for e in buffer:
+            table_name, key, value = e
+            if table_name == last_table_name:
+                key_values.append((key, value))
+            else:
+                if key_values:
+                    yield last_table_name, key_values
+                key_values = [(key, value)]
+                last_table_name = table_name
+
+        if key_values:
+            yield last_table_name, key_values
+
+    for table_name, block in block_iterator():
+        keys, values= zip(*block)
+        exist_keys = get_existing_keys(table_name, keys)
+        exist_keys = set(exist_keys)
+        key_values_to_insert = [(key, value) for key , value in block if key not in exist_keys]
+
+        if exist_keys:
+            print("Skipped {} existing keys".format(len(exist_keys)))
+        bulk_save(table_name, key_values_to_insert)
+
+        flush()
 
 
 def commit_buffer_to_db2(buffer):

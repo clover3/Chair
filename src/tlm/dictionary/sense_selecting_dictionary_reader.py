@@ -6,7 +6,7 @@ import tensorflow as tf
 import models.transformer.bert_common_v2 as bc
 import tlm.model.base as base
 from misc.categorical_gradient import gather, categorical_sampling
-from models.transformer.bert_common_v2 import gather_index2d
+from models.transformer.bert_common_v2 import gather_index2d, get_batch_and_seq_length
 from tlm.model.masking import remove_special_mask
 
 
@@ -70,13 +70,6 @@ class SSDR(base.BertModelInterface):
             self.pooled_output = get_pooler(self.sequence_output, config)
             self.embedding_output = self.main_transformer.embedding_output
             self.embedding_table = self.main_transformer.embedding_table
-
-
-def get_batch_and_seq_length(input_ids, expected_rank):
-    input_shape = bc.get_shape_list(input_ids, expected_rank=expected_rank)
-    batch_size = input_shape[0]
-    seq_length = input_shape[1]
-    return batch_size, seq_length
 
 
 def get_pooler(sequence_output, config):
@@ -218,8 +211,6 @@ class MainTransformer(TransformerBase):
             return value_add_at_layer
 
         with tf.compat.v1.variable_scope("encoder"):
-            n_remaining_layers = self.config.num_hidden_layers - self.layers_before_key_pooling
-
             # location : [batch_size, max_locations)
             offset = tf.expand_dims(tf.range(self.batch_size, dtype=tf.int32) * self.seq_length, 1)
             flat_location = tf.cast(locations, tf.int32) + offset
@@ -272,6 +263,7 @@ class MainTransformer(TransformerBase):
             layer_output = bc.layer_norm(layer_output + attention_output)
             prev_output = layer_output
         return intermediate_output, layer_output
+
 
 def self_attention_with_add(layer_input,
                             attention_mask,

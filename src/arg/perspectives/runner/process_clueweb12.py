@@ -2,8 +2,9 @@ import os
 import pickle
 import time
 
-from data_generator.common import get_tokenizer
+from cpath import data_path
 from data_generator.job_runner import sydney_working_dir, JobRunner
+from data_generator.tokenizer_wo_tf import FullTokenizer
 from datastore.tool import PayloadSaver, commit_buffer_to_db
 from galagos.tokenize_doc_and_save import tokenize_doc_and_save
 from list_lib import lmap
@@ -119,7 +120,8 @@ class JsonlWorker:
     def __init__(self, out_path_not_used):
         self.jsonl_path_format = "/mnt/nfs/work3/youngwookim/data/perspective/train_claim_perspective/doc_jsonl/{}.jsonl"
         self.dir_path_list = get_dir_name_list()
-        self.tokenize_fn = get_tokenizer().tokenize
+        voca_path = os.path.join(data_path, "bert_voca.txt")
+        self.tokenize_fn = FullTokenizer(voca_path).tokenize
 
     def work(self, job_id):
         dir_path = self.dir_path_list[job_id]

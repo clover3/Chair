@@ -140,10 +140,11 @@ def get_y_lookup_from_location_ids(location_ids, seq_length):
     z = tf.cast(tf.not_equal(z, 0), tf.int64) # There should be nothing larger than 1, but just make sure
     return z
 
+
 # Word Sense Selecting Dictionary Reader
-class WSSDRWrapper(DictReaderCommon):
-    def __init__(self, num_classes, ssdr_config, seq_length, is_training):
-        super(WSSDRWrapper, self).__init__()
+class WSSDRWrapperInterface(DictReaderCommon):
+    def __init__(self, num_classes, ssdr_config, core_model, seq_length, is_training):
+        super(WSSDRWrapperInterface, self).__init__()
         placeholder = tf.compat.v1.placeholder
         bert_config = BertConfig.from_json_file(os.path.join(data_path, "bert_config.json"))
         def_max_length = FLAGS.max_def_length
@@ -172,7 +173,7 @@ class WSSDRWrapper(DictReaderCommon):
 
         self.y_cls = placeholder(tf.int64, [None])
 
-        self.network = SSDR(
+        self.network = core_model(
                 config=bert_config,
                 ssdr_config=ssdr_config,
                 is_training=is_training,
@@ -244,6 +245,12 @@ class WSSDRWrapper(DictReaderCommon):
 
     def get_p_at_1(self):
         return self.lookup_p_at_1
+
+
+class WSSDRWrapper(WSSDRWrapperInterface):
+    def __init__(self, num_classes, ssdr_config, seq_length, is_training):
+        super(WSSDRWrapper, self).__init__(num_classes, ssdr_config, SSDR, seq_length, is_training)
+
 
 
 # Word Sense Selecting Dictionary Reader

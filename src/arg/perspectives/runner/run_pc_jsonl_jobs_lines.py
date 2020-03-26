@@ -5,17 +5,16 @@ from cache import save_to_pickle
 from cpath import data_path
 from data_generator.job_runner import JobRunner, sydney_working_dir
 from data_generator.tokenizer_wo_tf import FullTokenizer
-from galagos.doc_processor import process_jsonl, file_iterator_interval
-
-
+from galagos.doc_processor import process_jsonl
 ###
+from misc_lib import file_iterator_interval
 
 
 class JsonlWorker:
     def __init__(self, out_path_not_used):
         voca_path = os.path.join(data_path, "bert_voca.txt")
         self.tokenize_fn = FullTokenizer(voca_path, True).tokenize
-        self.jsonl_path = "/mnt/nfs/work3/youngwookim/data/perspective/train_claim_perspective/bm25_res_docs.jsonl"
+        self.jsonl_path = "/mnt/nfs/work3/youngwookim/data/perspective/train_claim_perspective/docs_BM25_100.jsonl"
 
     def work(self, job_id):
         jsonl_path = self.jsonl_path
@@ -31,7 +30,7 @@ class JsonlWorker:
 
 
 if __name__ == "__main__":
-    runner = JobRunner(sydney_working_dir, 50, "pc_disk_pickle_1_bm25_redo", JsonlWorker)
+    runner = JobRunner(sydney_working_dir, 215, "pc_q_9_100", JsonlWorker)
     runner.start()
 
 

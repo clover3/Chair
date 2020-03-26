@@ -7,10 +7,11 @@ import nltk
 
 from arg.claim_building.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from arg.perspectives.basic_analysis import PerspectiveCandidate
-from arg.perspectives.clueweb_galago_db import DocGetter
 from arg.perspectives.collection_interface import CollectionInterface
-from arg.perspectives.ranked_list_interface import PassageRankedListInterface
-from galagos.parse import GalagoPassageRankEntry
+from arg.perspectives.ranked_list_interface import DynRankedListInterface
+from datastore.interface import load_multiple
+from datastore.table_names import CluewebDocTF
+from galagos.parse import GalagoDocRankEntry
 from list_lib import lmap, dict_value_map, lfilter, lmap_w_exception
 
 
@@ -91,15 +92,15 @@ def re_tokenize(tokens):
     return set(out)
 
 
-def build_binary_feature(ci: PassageRankedListInterface,
-                         doc_getter: DocGetter,
+def build_binary_feature(ci: DynRankedListInterface,
                          datapoint_list: List[PerspectiveCandidate]
                          ) -> List[Dict]:
     not_found_set = set()
+    print("Load term stat")
     _, clue12_13_df = load_clueweb12_B13_termstat()
     cdf = 50 * 1000 * 1000
 
-    def idf_scorer(doc: List[str], claim_text: str, perspective_text: str) -> bool:
+    def idf_scorer(doc: Counter, claim_text: str, perspective_text: str) -> bool:
         cp_tokens = nltk.word_tokenize(claim_text) + nltk.word_tokenize(perspective_text)
         cp_tokens = lmap(lambda x: x.lower(), cp_tokens)
         cp_tokens = set(cp_tokens)
@@ -120,17 +121,18 @@ def build_binary_feature(ci: PassageRankedListInterface,
 
     def data_point_to_feature(x: PerspectiveCandidate) -> Dict:
         e = get_feature_binary_model(x.cid, x.pid, x.claim_text, x.p_text,
-                                     ci, doc_getter, idf_scorer)
+                                     ci, idf_scorer)
         feature: Counter = e[0]
         num_metion: int = e[1]
         return {
             'feature': feature,
             'cid': x.cid,
             'pid': x.pid,
+            'num_mention': num_metion,
             'label': x.label
             }
 
-    r = lmap_w_exception(data_point_to_feature, datapoint_list, KeyError)
+    r = lmap(data_point_to_feature, datapoint_list)
     return r
 
 
@@ -144,24 +146,42 @@ def build_weighted_feature(datapoint_list):
     return lmap_w_exception(data_point_to_feature, datapoint_list, KeyError)
 
 
+def get_doc_id(x):
+    try:
+        return x.doc_id
+    except AttributeError:
+        return x[0]
+
 def get_feature_binary_model(claim_id,
                              perspective_id,
                              claim_text,
                              perspective_text,
-                             ci: PassageRankedListInterface,
-                             doc_getter: DocGetter,
-                             is_mention_fn: Callable[[List[str], str, str], bool],
+                             ci: DynRankedListInterface,
+                             is_mention_fn: Callable[[Counter[str], str, str], bool],
                              ) -> Tuple[Counter, int]:
 
-    def is_mention(doc):
+    def is_mention(doc: Counter) -> bool:
         return is_mention_fn(doc, claim_text, perspective_text)
 
-    ranked_docs: List[GalagoPassageRankEntry] = ci.query_passage(claim_id, perspective_id, claim_text, perspective_text)
-    ranked_docs_tf: List[Counter] = lmap(lambda x: doc_getter.get_doc_tf(x.doc_id), ranked_docs)
+    print(claim_id, perspective_id)
+    ranked_docs: List[GalagoDocRankEntry] = ci.query(claim_id, perspective_id, claim_text, perspective_text)
+    ranked_docs = ranked_docs[:100]
+    print("{} docs in ranked list".format(len(ranked_docs)))
+
+    doc_id_list: List[str] = lmap(get_doc_id, ranked_docs)
+
+    tf_d = load_multiple(CluewebDocTF, doc_id_list, True)
+    not_found = []
+    for idx, doc_id in enumerate(doc_id_list):
+        if doc_id not in tf_d:
+            not_found.append(idx)
+
+    ranked_docs_tf = tf_d.values()
     mentioned_docs: List[Counter] = lfilter(is_mention, ranked_docs_tf)
+    print("Found doc", len(tf_d), "mentioned doc", len(mentioned_docs))
 
     docs_rel_freq: List[Counter] = lmap(div_by_doc_len, mentioned_docs)
-    num_doc: int = len(mentioned_docs)
+    num_doc: int = len(docs_rel_freq)
     p_w_m: Counter = average_tf_over_docs(docs_rel_freq, num_doc)
 
     return p_w_m, num_doc

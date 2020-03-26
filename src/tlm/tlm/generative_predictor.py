@@ -1,9 +1,8 @@
 from data_generator.special_tokens import MASK_ID
 from models.transformer import optimization_v2 as optimization
-from models.transformer.bert_common_v2 import gather_index2d
+from models.transformer.bert_common_v2 import gather_index2d, get_batch_and_seq_length
 from my_tf import tf
 from tf_util.tf_logging import tf_logging
-from tlm.dictionary.sense_selecting_dictionary_reader import get_batch_and_seq_length
 from tlm.model.bert_with_label import BertModelWithLabelInner
 from tlm.model.lm_objective import get_masked_lm_output, get_next_sentence_output
 from tlm.model.masking import remove_special_mask, scatter_with_batch

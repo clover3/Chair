@@ -1,4 +1,5 @@
 from collections import Counter
+from typing import Dict, List
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -23,45 +24,53 @@ def test_generative_model():
     classifier = learn_lm(train)
     stopwords = load_stopwords()
 
-    def fileter_fn(data_point):
-        remove_stopword_and_punct(stopwords, data_point[0][0])
+    def fileter_fn(data_point: Dict):
+        remove_stopword_and_punct(stopwords, data_point['feature'])
 
     foreach(fileter_fn, train)
 
-    def is_correct(elem):
-        x, y = elem
-        x = x[0]
+    def is_correct(data_point: Dict):
+        x = data_point['feature']
+        y = int(data_point['label'])
         return classifier.predict(x) == int(y)
 
     correctness = lmap(is_correct, val)
 
     print("val acc: ", average(correctness))
 
+
 def test_logistic_regression():
-    train, val = load_feature_and_split()
-    valid_datapoint_list = train + val
+    train_and_val = load_feature_and_split()
+    train: List[Dict] = train_and_val[0]
+    val: List[Dict] = train_and_val[1]
+    valid_datapoint_list: List[Dict] = train + val
+    stopwords = load_stopwords()
 
-    def get_voca_from_datapoint(data_point):
-        (tf, num), y = data_point
-        return tf.keys()
+    def fileter_fn(data_point: Dict):
+        remove_stopword_and_punct(stopwords, data_point['feature'])
+    foreach(fileter_fn, train)
+    foreach(fileter_fn, val)
 
-    tf_list = left(left(valid_datapoint_list))
+    tf_list = lmap(lambda dp: dp['feature'], valid_datapoint_list)
     tf_acc = Counter()
     for tf in tf_list:
         tf_acc.update(tf)
 
-    voca = left(tf_acc.most_common(10000))
+    voca: List[str] = left(tf_acc.most_common(10000))
     #voca = set(flatten(lmap(get_voca_from_datapoint, valid_datapoint_list)))
-    voca2idx = dict(zip(list(voca), range(len(voca))))
-    idx2voca = {v: k for k, v in voca2idx.items()}
-    print(len(voca))
+    voca2idx: Dict[str, int] = dict(zip(list(voca), range(len(voca))))
+    idx2voca: Dict[int, str] = {v: k for k, v in voca2idx.items()}
+    print("Num voca:", len(voca))
+    feature_size = len(voca) + 1
 
-    def featurize(datapoint):
-        (tf, num), y = datapoint
-        v = np.zeros([len(voca)])
+    def featurize(datapoint: Dict):
+        tf = datapoint['feature']
+        y = int(datapoint['label'])
+        v = np.zeros([feature_size])
         for t, prob in tf.items():
             if t in voca2idx:
                 v[voca2idx[t]] = prob
+        v[-1] = datapoint['num_mention']
         return v, int(y)
 
     x, y = zip(*lmap(featurize, train))
@@ -81,22 +90,29 @@ def test_logistic_regression():
     print("train acc", acc(y, pred_y))
     print("val acc", acc(val_y, model.predict(val_x)))
     t = np.multiply(avg_x, model.coef_)
-    print(t.shape)
     contrib = t[0]
-    print(contrib.shape)
     ranked_idx = np.argsort(contrib)
-    print(ranked_idx.shape)
+    def print_feature_at(idx):
+        if idx == feature_size -1 :
+            print("[NUM_MENTION]", contrib[idx])
+        else:
+            print(idx2voca[idx], contrib[idx])
+
+    print("Top k features (POS)")
     for i in range(30):
         idx = ranked_idx[i]
-        print(idx2voca[idx], contrib[idx])
+        print_feature_at(idx)
 
+    print("Top k features (NEG)")
     for i in range(30):
         j = len(voca) -1 -i
         idx = ranked_idx[j]
-        print(idx2voca[idx], contrib[idx])
+        print_feature_at(idx)
 
-    for i in range(30):
-        terms = left(train[i][0][0].most_common(50))
+    print("In training data")
+    print("pred\tgold\tterms")
+    for i in range(100):
+        terms = left(train[i]['feature'].most_common(50))
         terms = list(terms[25:])
         print(pred_y[i], y[i], terms) #
 
@@ -131,4 +147,4 @@ def mention_num_based():
 
 
 if __name__ =="__main__" :
-    mention_num_based()
+    test_logistic_regression()

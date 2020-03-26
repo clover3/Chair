@@ -8,9 +8,9 @@ from misc_lib import group_by
 
 
 class GalagoDocRankEntry(NamedTuple):
-    doc_id : str
+    doc_id: str
     rank: int
-    score:float
+    score: float
 
 
 class GalagoPassageRankEntry(NamedTuple):

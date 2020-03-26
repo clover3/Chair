@@ -8,12 +8,12 @@ def split_pos_neg(train):
 
 
 def get_num_mention(data_point):
-    tf, num = data_point['feature']
+    num = data_point['num_mention']
     return num
 
 
 def get_tf_from_datapoint(data_point):
-    tf, num = data_point['feature']
+    tf = data_point['feature']
     return tf
 
 
