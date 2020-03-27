@@ -1,6 +1,7 @@
 from functools import partial
 
-from data_generator.argmining.eval import load_tfrecord, load_preditions, compare
+from data_generator.argmining.eval import load_preditions, compare
+from evals.tfrecord import load_tfrecord
 from evaluation import AP_from_binary
 from list_lib import left
 from misc_lib import average

@@ -2,11 +2,10 @@ import os
 from functools import partial
 from typing import Iterable, Counter
 
-from galagos.basic import merge_ranked_list_list, load_galago_ranked_list
-
 from arg.perspectives.clueweb_db import preload_tf, load_tf
 from arg.perspectives.pc_run_path import train_query_indices
 from cache import load_from_pickle
+from galagos.parse import merge_ranked_list_list, load_galago_ranked_list
 from list_lib import l_to_map, lmap
 from sydney_clueweb.clue_path import index_name_list
 

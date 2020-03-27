@@ -5,7 +5,8 @@ from functools import partial
 import numpy as np
 from scipy.stats import stats
 
-from data_generator.argmining.eval import load_tfrecord, load_preditions, compare
+from data_generator.argmining.eval import load_preditions, compare
+from evals.tfrecord import load_tfrecord
 from list_lib import lmap, flatten
 
 

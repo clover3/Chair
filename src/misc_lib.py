@@ -4,8 +4,10 @@ import shutil
 import time
 from collections import Counter
 from time import gmtime, strftime
+from typing import Iterable, TypeVar, Callable, Dict, List
 
-
+A = TypeVar('A')
+B = TypeVar('B')
 
 def average(l):
     if len(l) == 0:
@@ -67,6 +69,27 @@ class CodeTiming:
             print(key, self.acc[key])
 
 
+class SuccessCounter:
+    def __init__(self):
+        self.n_suc = 0
+        self.n_total = 0
+
+    def reset(self):
+        self.n_suc = 0
+        self.n_total = 0
+
+    def suc(self):
+        self.n_suc += 1
+        self.n_total += 1
+
+    def fail(self):
+        self.n_total += 1
+
+    def get_suc(self):
+        return self.n_suc
+
+    def get_total(self):
+        return self.n_total
 
 
 def exist_or_mkdir(dir_path):
@@ -299,7 +322,7 @@ def list_print(l, width):
     print()
 
 
-def group_by(interable, key_fn):
+def group_by(interable: Iterable[A], key_fn: Callable[[A], B]) -> Dict[B, List[A]]:
     grouped = {}
     for elem in interable:
         key = key_fn(elem)

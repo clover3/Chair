@@ -14,14 +14,15 @@
 # TODO
 # TODO
 from collections import Counter
+from typing import List, Tuple
 
 import math
 import nltk
+from arg.perspectives.clueweb_helper import ClaimRankedList, load_doc, load_tf, save_tf, preload_tf, \
+    preload_docs
 from scipy.stats import ttest_ind
 
 from arg.perspectives import es_helper
-from arg.perspectives.clueweb_helper import ClaimRankedList, load_doc, load_tf, save_tf, preload_tf, \
-    preload_docs
 from arg.perspectives.context_analysis_routine import count_term_stat, feature_extraction
 from arg.perspectives.load import load_dev_claim_ids, get_claims_from_ids, get_claim_perspective_id_dict
 from cache import load_from_pickle
@@ -207,7 +208,7 @@ def get_lm_for_claim(all_ranked_list, cid, unigrams):
 
 # input : claims, top_k
 # output : List(cid, List[dict])
-def predict_with_lm(claims, top_k):
+def predict_with_lm(claims, top_k) -> List[Tuple[str, List[dict]]]:
     all_ranked_list = ClaimRankedList()
 
     def predict_each(claim):

@@ -10,7 +10,7 @@ from arg.perspectives.collection_based.datapoint_strct import split_pos_neg, get
 from cache import load_from_pickle
 from galagos.interface import send_doc_queries, format_query_bm25
 from list_lib import lmap
-from misc_lib import average, split_7_3
+from misc_lib import average, split_7_3, SuccessCounter
 from models.classic.lm_counter_io import LMClassifier
 from sydney_clueweb.clue_path import get_first_disk
 
@@ -67,46 +67,57 @@ def get_adjusted_score(data_point):
     return diff / 5
 
 
-def predict_by_mention_num(claims, top_k):
-    data_points = load_from_pickle("pc_train_features_binary")
-
-    def get_key_from_feature(feature):
-        return "{}_{}".format(feature['cid'], feature['pid'])
-
-    datapoint_d = {get_key_from_feature(f):f for f in data_points}
-
-    prediction = []
-
-    found_n = 0
-    for c in claims:
+def predict_interface(claims, top_k, scorer):
+    def get_claim_prediction(c: Dict) -> Tuple[str, List[Dict]]:
         cid = c["cId"]
         claim_text = c["text"]
         lucene_results = es_helper.get_perspective_from_pool(claim_text, 50)
 
         prediction_list = []
         for _text, _pid, _score in lucene_results:
+            query_id = "{}_{}".format(cid, _pid)
             p_entry = {
                 'cid': cid,
                 'pid': _pid,
                 'claim_text': claim_text,
                 'perspective_text': _text,
                 'rationale': "es score={}".format(_score),
-                'score': _score
+                'score': scorer(_score, query_id)
             }
-            query_id = "{}_{}".format(cid, _pid)
-            if query_id in datapoint_d:
-                score_adjust = get_adjusted_score(datapoint_d[query_id])
-                print(_score, score_adjust)
-                p_entry['score'] += score_adjust
-                found_n += 1
             prediction_list.append(p_entry)
 
-        prediction_list.sort(key=lambda x:x['score'], reverse=True)
+        prediction_list.sort(key=lambda x: x['score'], reverse=True)
         prediction_list = prediction_list[:top_k]
+        return cid, prediction_list
 
-        prediction.append((cid, prediction_list))
-    print("{} found of {}".format(found_n, 50*len(claims)))
+    prediction = lmap(get_claim_prediction, claims)
     return prediction
+
+
+def predict_by_mention_num(claims, top_k) -> List[Tuple[str, List[Dict]]]:
+    data_points = load_from_pickle("pc_train_features_binary")
+
+    def get_key_from_feature(feature):
+        return "{}_{}".format(feature['cid'], feature['pid'])
+
+    datapoint_d = {get_key_from_feature(f): f for f in data_points}
+    suc_count = SuccessCounter()
+    suc_count.reset()
+
+    def scorer(lucene_score, query_id):
+        if query_id in datapoint_d:
+            score_adjust = get_adjusted_score(datapoint_d[query_id])
+            score = lucene_score + score_adjust
+            suc_count.suc()
+        else:
+            score = lucene_score
+            suc_count.fail()
+        return score
+
+    print()
+    r = predict_interface(claims, top_k, scorer)
+    print("{} found of {}".format(suc_count.suc(), suc_count.fail()))
+    return r
 
 
 def send_bm25_query(query_id, tokens, K = 0):

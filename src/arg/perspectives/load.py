@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Iterable
 
 from cpath import data_path
 
@@ -37,19 +38,19 @@ def load_claim_perspective_pair():
     return load_json_by_name("perspectrum_with_answers_v1.0.json")
 
 
-def load_train_claim_ids():
+def load_train_claim_ids() -> Iterable[int]:
     return load_claim_ids_for_split('train')
 
 
-def load_dev_claim_ids():
+def load_dev_claim_ids() -> Iterable[int]:
     return load_claim_ids_for_split('dev')
 
 
-def load_test_claim_ids():
+def load_test_claim_ids() -> Iterable[int]:
     return load_claim_ids_for_split('test')
 
 
-def load_claim_ids_for_split(split):
+def load_claim_ids_for_split(split) -> Iterable[int]:
     d = load_data_set_split()
     for c_id in d:
         if d[c_id] == split:

@@ -1,7 +1,8 @@
 import sys
 from collections import Counter
 
-from data_generator.argmining.eval import load_tfrecord, load_preditions, compare
+from data_generator.argmining.eval import load_preditions, compare
+from evals.tfrecord import load_tfrecord
 from task.metrics import eval_3label
 
 

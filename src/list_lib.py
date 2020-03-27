@@ -1,3 +1,4 @@
+from functools import reduce
 from typing import Callable, TypeVar, Iterable, List, Dict, Tuple
 
 A = TypeVar('A')
@@ -45,6 +46,20 @@ def dict_key_map(func: Callable[[A], B], dict_like: Dict[A, C]) -> Dict[B, C]:
 
 def lfilter(func: Callable[[A], B], iterable_something: Iterable[A]) -> List[A]:
     return list(filter(func, iterable_something))
+
+
+def lreduce(initial_val: B, func: Callable[[A, B], B], iterable_something: Iterable[A]) -> List[B]:
+    return list(reduce(func, iterable_something, initial_val))
+
+
+def unique_from_sorted(l: Iterable[A]) -> List[A]:
+    def combine(prev_list, new_elem):
+        if not prev_list or prev_list[-1] != new_elem:
+            return prev_list + [new_elem]
+        else:
+            return prev_list
+
+    return lreduce([], combine, l)
 
 
 def foreach(func, iterable_something):

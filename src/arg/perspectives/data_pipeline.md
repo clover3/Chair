@@ -1,8 +1,8 @@
 
 
-* Claim+Perspective  --(query_gen.py) --> Query
+* query_gen.py : Claim+Perspective -> Query
   * dir: Chair/output/perspective_train_claim_perspective_query
-* Query --(run_pc_query.py) --> Disk #i -> Ranked_list
+* Query --(run_pc_query.py) -> Disk #i -> Ranked_list
   * slurm jobs are submitted
   * Ranked_list : work3_data/perspective/train_claim_perspective/all_query_results/
     * perspective_train_claim_perspective_query/10_diskname.txt
@@ -12,6 +12,19 @@
 * jsonl --(run_pc_jsonl_jobs.py)--> DB
 
 
-* DB -> run_select_paragraph.py : -> features
+* run_select_paragraph.py :
+  * runner : 0~605 
+  * input: ranked_list, docs(DB) 
+  * output: pickle file: List[ParagraphClaimPersFeature]
 
-*  
+*  run_encode_paragraph_tfrecord.py
+  * input: pickle file: List[ParagraphClaimPersFeature]
+  * output:  tfrecord
+  
+  
+* Resolute pid cid
+  * input: pickle file: List[ParagraphClaimPersFeature]
+  * output: Dict[key=subword of claim_perspective, value=cid_pid]
+  
+  
+   
