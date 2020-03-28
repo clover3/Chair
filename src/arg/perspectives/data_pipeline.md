@@ -9,7 +9,8 @@
     
 * Ranked_list --> fetch_doc_list.py --> doc_id_list
 * doc_id_list --> galago get-doc-jsonl --> jsonl
-* jsonl --(run_pc_jsonl_jobs.py)--> DB
+* jsonl --(run_pc_jsonl_jobs_lines.py)--> pickle payload
+* pickle --> commit_pickle_to_db.py 
 
 
 * run_select_paragraph.py :

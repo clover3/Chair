@@ -8,7 +8,7 @@ from data_generator.tokenizer_wo_tf import FullTokenizer
 from datastore.tool import PayloadSaver, commit_buffer_to_db
 from galagos.tokenize_doc_and_save import tokenize_doc_and_save
 from list_lib import lmap
-from misc_lib import TimeEstimator
+from misc_lib import TimeEstimator, tprint
 
 
 def get_dir_name_list():
@@ -72,18 +72,18 @@ def work_multithread(warc_extracted_dir, url_to_doc_id, tokenize_fn):
         return result_handle
 
     def launch_and_commit():
-        print("launching task")
+        tprint("launching task")
         results = launch_task()
 
         nonlocal last_payload
-        print("commit buffer to db")
+        tprint("commit buffer to db")
         commit_buffer_to_db(last_payload.buffer)
 
-        print("wait tasks to be done")
+        tprint("wait tasks to be done")
         while not results.ready():
             time.sleep(5)
 
-        print("combine payload")
+        tprint("combine payload")
         last_payload = combine_payload(results.get())
 
     def combine_payload(result_list_list):
@@ -92,7 +92,7 @@ def work_multithread(warc_extracted_dir, url_to_doc_id, tokenize_fn):
             comb_payload_saver.buffer.extend(ps.buffer)
         return comb_payload_saver
 
-    print("Reading docs")
+    tprint("Reading docs")
     for idx in idx_to_url:
         url = idx_to_url[idx]
         url = url.replace(",", "")
@@ -108,10 +108,24 @@ def work_multithread(warc_extracted_dir, url_to_doc_id, tokenize_fn):
             pass
 
         if work_size > max_job_size:
+            tprint("Loaded data size of {}".format(work_size))
             launch_and_commit()
-            print("Reading docs")
+            tprint("Reading docs")
             work_size = 0
             todo_list = []
+
+    # class Reader:
+    #     def __init__(self):
+    #         self.f_task_remain = True
+    #
+    #     def task_remain(self) -> bool:
+    #         return self.f_task_remain
+    #
+    #
+    # reader = Reader()
+    # while reader.task_remain():
+    #
+    #     reader.get_next_block()
 
     commit_buffer_to_db(last_payload.buffer)
 

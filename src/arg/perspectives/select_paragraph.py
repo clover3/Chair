@@ -100,7 +100,6 @@ def select_paragraph_dp_list(ci: StaticRankedListInterface,
                             tokens=tokens[cursor:cursor_ed])
             cursor += step_size
 
-
     def select_paragraph_from_datapoint(x: PerspectiveCandidate) -> ParagraphClaimPersFeature:
         ranked_docs: List[GalagoDocRankEntry] = ci.fetch(x.cid, x.pid)
         ranked_docs = ranked_docs[:100]

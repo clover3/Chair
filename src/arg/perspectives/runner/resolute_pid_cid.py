@@ -35,5 +35,6 @@ def pickle_resolute_dict(input_dir, st, ed):
     pickle.dump(tokens_to_cpid, open("resolute_dict_{}_{}".format(st, ed), "wb"))
     print("Done")
 
+
 if __name__ =="__main__":
     pickle_resolute_dict(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]))

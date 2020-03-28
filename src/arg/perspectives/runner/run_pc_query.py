@@ -1,20 +1,37 @@
-from arg.perspectives.pc_run_path import get_query_file
+import os
+from functools import partial
+
+from arg.perspectives.pc_run_path import get_query_file_for_split
 from galagos import query_to_all_clueweb_disk
 from list_lib import lmap
 from misc_lib import exist_or_mkdir
 from sydney_clueweb.clue_path import index_name_list
 
+
 # query is made from query_gen.py
 
-ranked_list_save_root = '/mnt/nfs/work3/youngwookim/data/perspective/train_claim_perspective/bm25_k0_q_res'
+
+def num_query_file_for_split(split: str) -> int:
+    return {
+        "train": 122,
+        "dev": 33,
+        "test": 0,
+    }[split]
 
 
 def work():
+    split = "dev"
+    save_parent = '/mnt/nfs/work3/youngwookim/data/perspective/{}_claim_perspective'.format(split)
+    exist_or_mkdir(save_parent)
+    ranked_list_save_root = os.path.join(save_parent, "bm25_k0_q_res")
     exist_or_mkdir(ranked_list_save_root)
-    query_files = lmap(get_query_file, range(0, 122))
+
+    get_query_file_fn = partial(get_query_file_for_split, split)
+    num_query_file: int = num_query_file_for_split(split)
+    query_files = lmap(get_query_file_fn, range(0, num_query_file))
     query_to_all_clueweb_disk.send(query_files,
-                                   index_name_list[1:],
-                                   "perspective_train_claim_perspective_query_k0",
+                                   index_name_list[:1],
+                                   "perspective_{}_claim_perspective_query_k0".format(split),
                                    ranked_list_save_root)
 
 

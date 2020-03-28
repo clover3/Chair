@@ -1,7 +1,7 @@
 import json
 import os
 
-from arg.perspectives.pc_run_path import get_query_file
+from arg.perspectives.pc_run_path import get_train_query_file
 from cpath import project_root
 from galagos.query_to_all_clueweb_disk import get_rm_terms
 from list_lib import lmap, flatten
@@ -12,7 +12,7 @@ from sydney_clueweb.clue_path import index_name_list
 
 
 def work():
-    query_files = lmap(get_query_file, range(0, 122))
+    query_files = lmap(get_train_query_file, range(0, 122))
 
     def read(query_file):
         j = json.load(open(query_file))
