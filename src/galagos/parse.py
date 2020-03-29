@@ -1,27 +1,12 @@
 import json
 import string
 from collections import Counter
-from typing import Iterator, Dict, List, TypeVar, NamedTuple
+from typing import Iterator
 
+from base_type import *
+from galagos.types import GalagoDocRankEntry, GalagoPassageRankEntry
 from list_lib import flatten, right
 from misc_lib import group_by
-
-
-class GalagoDocRankEntry(NamedTuple):
-    doc_id: str
-    rank: int
-    score: float
-
-
-class GalagoPassageRankEntry(NamedTuple):
-    doc_id : str
-    st: int
-    ed: int
-    rank: int
-    score: float
-
-
-GalagoRankEntry = TypeVar('GalagoRankEntry' , GalagoDocRankEntry, GalagoPassageRankEntry)
 
 
 def galago_judgement_parse_line(line):
@@ -50,7 +35,7 @@ def load_galago_judgement2(path):
     return q_group
 
 
-def load_galago_ranked_list(path):
+def load_galago_ranked_list(path: FilePath) -> Dict[str, List[GalagoDocRankEntry]]:
     # Sample Format : 475287 Q0 LA053190-0016_1274 1 15.07645119 galago
     line_itr = open(path, "r")
     return parse_galago_ranked_list(line_itr)

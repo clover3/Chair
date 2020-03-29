@@ -2,10 +2,11 @@ import os
 import pickle
 import sys
 
-from arg.perspectives.pc_eval import load_label_from_tfrecord
+from arg.perspectives.pc_para_eval import load_label_from_tfrecord
+from base_type import FilePath
 
 
-def summarize(tfrecord_dir, st, ed):
+def summarize(tfrecord_dir: FilePath, st, ed):
     d = {}
     for i in range(st, ed):
         tf_path = os.path.join(tfrecord_dir, str(i))

@@ -4,7 +4,7 @@ import nltk
 
 from arg.perspectives import es_helper
 from arg.perspectives.load import get_claim_perspective_id_dict, get_perspective_dict, load_claim_perspective_pair, \
-    load_train_claim_ids, get_claims_from_ids
+    get_claims_from_ids, load_claim_ids_for_split
 from cie.msc.tf_idf import sublinear_term_frequency, cosine_similarity, inverse_document_frequencies
 from list_lib import flatten
 
@@ -141,7 +141,11 @@ def test_es():
 
 
 def load_train_data_point():
-    d_ids = list(load_train_claim_ids())
+    return load_data_point('train')
+
+
+def load_data_point(split):
+    d_ids = list(load_claim_ids_for_split(split))
     claims = get_claims_from_ids(d_ids)
     all_data_points = get_candidates(claims)
     return all_data_points

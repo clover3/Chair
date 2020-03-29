@@ -9,9 +9,9 @@ from tlm.data_gen.base import get_basic_input_feature
 from tlm.data_gen.bert_data_gen import create_int_feature
 
 
-def format_feature(tokenizer: FullTokenizer,
-              max_seq_length: int,
-              claim_entry: ParagraphClaimPersFeature) -> List[OrderedDict]:
+def format_paragraph_features(tokenizer: FullTokenizer,
+                              max_seq_length: int,
+                              claim_entry: ParagraphClaimPersFeature) -> List[OrderedDict]:
     claim_text = claim_entry.claim_pers.claim_text
     claim_tokens = tokenizer.tokenize(claim_text)
     p_text = claim_entry.claim_pers.p_text

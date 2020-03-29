@@ -6,6 +6,8 @@ from collections import Counter
 from time import gmtime, strftime
 from typing import Iterable, TypeVar, Callable, Dict, List
 
+from base_type import FilePath
+
 A = TypeVar('A')
 B = TypeVar('B')
 
@@ -272,11 +274,11 @@ def dict_reverse(d):
     return inv_map
 
 
-def get_dir_files(dir_path):
+def get_dir_files(dir_path: FilePath) -> List[FilePath]:
     path_list = []
     for (dirpath, dirnames, filenames) in os.walk(dir_path):
         for filename in filenames:
-            path_list.append(os.path.join(dir_path, filename))
+            path_list.append(FilePath(os.path.join(dir_path, filename)))
 
     return path_list
 

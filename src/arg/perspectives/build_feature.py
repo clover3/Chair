@@ -11,7 +11,7 @@ from arg.perspectives.collection_interface import CollectionInterface
 from arg.perspectives.ranked_list_interface import DynRankedListInterface
 from datastore.interface import load_multiple
 from datastore.table_names import CluewebDocTF
-from galagos.parse import GalagoDocRankEntry
+from galagos.types import GalagoDocRankEntry
 from list_lib import lmap, dict_value_map, lfilter, lmap_w_exception
 
 

@@ -5,6 +5,7 @@ import numpy as np
 from scipy.special import softmax
 
 from arg.perspectives.cpid_def import CPID
+from base_type import FilePath
 from data_generator.common import get_tokenizer
 from data_generator.subword_translate import Subword
 from evals.tfrecord import load_tfrecord
@@ -79,11 +80,11 @@ def load_label_from_tfrecord(tfrecord_path):
     return label_d
 
 
-def load_label(label_path):
+def load_label(label_path: FilePath):
     return pickle.load(open(label_path, "rb"))
 
 
-def pc_eval(pred_path, label_path, option="avg"):
+def pc_eval(pred_path: FilePath, label_path: FilePath, option="avg"):
     keys, reduced_scores = get_scores(option, pred_path)
 
     predictions = zip(keys, reduced_scores)
@@ -92,12 +93,14 @@ def pc_eval(pred_path, label_path, option="avg"):
     label_list: List[int] = lmap(lambda x: labels_d[x], keys)
 
     pred = lmap(lambda x: int(x > 0.5), reduced_scores)
+    print(reduced_scores)
+    print(pred)
 
     num_correct = np.count_nonzero(np.equal(pred, label_list))
     print("Acc : ", num_correct / len(label_list))
 
 
-def get_scores(option, pred_path) -> Tuple[List[str], List[float]]:
+def get_scores(option, pred_path: FilePath) -> Tuple[List[str], List[float]]:
     raw_predictions: List[Tuple[str, List[float]]] = load_prediction(pred_path)
     if option == "avg":
         reducer: Callable[[List[Any]], float] = average
@@ -110,11 +113,11 @@ def get_scores(option, pred_path) -> Tuple[List[str], List[float]]:
     return keys, reduced_scores
 
 
-def get_cpid_score(pred_path: str,
+def get_cpid_score(pred_path: FilePath,
                    cpid_resolute_d: Dict[str, CPID],
                    option="avg") -> Dict[CPID, float]:
     keys, reduced_scores = get_scores(option, pred_path)
-    cpid_list = lmap(lambda x:cpid_resolute_d[x], keys)
+    cpid_list = lmap(lambda x: cpid_resolute_d[x], keys)
     return dict(zip(cpid_list, reduced_scores))
 
 

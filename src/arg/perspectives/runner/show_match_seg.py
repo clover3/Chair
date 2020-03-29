@@ -12,7 +12,7 @@ from arg.perspectives.build_feature import re_tokenize
 from arg.perspectives.clueweb_db import load_doc
 from arg.perspectives.load import get_claims_from_ids, load_train_claim_ids
 from arg.perspectives.ranked_list_interface import PassageRankedListInterface, Q_CONFIG_ID_BM25, make_passage_query
-from galagos.parse import GalagoRankEntry
+from galagos.types import GalagoRankEntry
 from list_lib import lmap, idx_where, lfilter
 from visualize.html_visual import HtmlVisualizer, Cell
 

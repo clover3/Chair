@@ -8,7 +8,7 @@ from arg.perspectives.ranked_list_interface import Q_CONFIG_ID_BM25_10000, DynRa
 from datastore.interface import has_key, save, flush
 from datastore.table_names import QueryResult
 from galagos.interface import DocQuery, send_doc_queries
-from galagos.parse import GalagoDocRankEntry
+from galagos.types import GalagoDocRankEntry
 from list_lib import foreach, lfilter, lmap
 
 

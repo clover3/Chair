@@ -1,16 +1,20 @@
+import os
+import pickle
 import string
 from typing import List, Iterable, Set, NamedTuple
 
 import math
 import nltk
 
-from arg.perspectives.basic_analysis import PerspectiveCandidate
+from arg.claim_building.clueweb12_B13_termstat import load_clueweb12_B13_termstat
+from arg.perspectives.basic_analysis import PerspectiveCandidate, load_data_point
 from arg.perspectives.build_feature import re_tokenize
-from arg.perspectives.ranked_list_interface import StaticRankedListInterface
+from arg.perspectives.ranked_list_interface import StaticRankedListInterface, Q_CONFIG_ID_BM25_10000
+from data_generator.common import get_tokenizer
 from data_generator.subword_translate import Subword
 from datastore.interface import preload_man, load
 from datastore.table_names import TokenizedCluewebDoc, BertTokenizedCluewebDoc
-from galagos.parse import GalagoDocRankEntry
+from galagos.types import GalagoDocRankEntry
 from list_lib import lmap, lfilter, flatten
 
 
@@ -37,7 +41,6 @@ def select_paragraph_dp_list(ci: StaticRankedListInterface,
                              tokenizer,
                              datapoint_list: List[PerspectiveCandidate]) -> List[ParagraphClaimPersFeature]:
     not_found_set = set()
-    print("Load term stat")
 
     def subword_tokenize(word: str) -> List[Subword]:
         word = tokenizer.basic_tokenizer.clean_text(word)
@@ -136,3 +139,33 @@ def select_paragraph_dp_list(ci: StaticRankedListInterface,
 
     r = lmap(select_paragraph_from_datapoint, datapoint_list)
     return r
+
+
+class SelectParagraphWorker:
+    def __init__(self, split, out_dir):
+        self.out_dir = out_dir
+        self.ci = StaticRankedListInterface(Q_CONFIG_ID_BM25_10000)
+        print("load__data_point")
+        self.all_data_points = load_data_point(split)
+        print("Load term stat")
+        _, clue12_13_df = load_clueweb12_B13_termstat()
+        self.clue12_13_df = clue12_13_df
+        self.tokenizer = get_tokenizer()
+
+    @classmethod
+    def constructor_train(cls, out_dir):
+        return SelectParagraphWorker('train', out_dir)
+
+    @classmethod
+    def constructor_dev(cls, out_dir):
+        return SelectParagraphWorker('dev', out_dir)
+
+    def work(self, job_id):
+        step = 10
+        st = job_id * step
+        ed = (job_id + 1) * step
+
+        print("select paragraph")
+        todo = self.all_data_points[st:ed]
+        features: List[ParagraphClaimPersFeature] = select_paragraph_dp_list(self.ci, self.clue12_13_df, self.tokenizer, todo)
+        pickle.dump(features, open(os.path.join(self.out_dir, str(job_id)), "wb"))

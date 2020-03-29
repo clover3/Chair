@@ -1,10 +1,13 @@
 import os
 import subprocess
-from typing import List
+from typing import List, Dict
 
+from base_type import FilePath
 from cpath import data_path
 from datastore.interface import has_key, load, save, flush
-from datastore.table_names import TokenizedCluewebDoc, RawCluewebDoc, CluewebDocTF
+from datastore.table_names import TokenizedCluewebDoc, RawCluewebDoc, CluewebDocTF, QueryResult
+from galagos.parse import load_galago_ranked_list
+from galagos.types import GalagoDocRankEntry, QueryResultID
 from sydney_clueweb.clue_path import get_first_disk
 
 
@@ -17,6 +20,12 @@ def load_from_db_or_from_galago(table_name, key, galago_fn):
         save(table_name, key, r)
         flush()
     return r
+
+
+def insert_ranked_list(q_res_id: QueryResultID,
+                       ranked_list: List[GalagoDocRankEntry]):
+    save(QueryResult, q_res_id, ranked_list)
+    flush()
 
 
 class DocGetter:
@@ -59,3 +68,11 @@ class DocGetter:
                              )
 
         print(p.communicate())
+
+
+def insert_ranked_list_from_path(file_path: FilePath, q_config_id: str):
+    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(file_path)
+
+    for query_id in ranked_list:
+        q_res_id: QueryResultID = QueryResultID("{}_{}".format(query_id, q_config_id))
+        insert_ranked_list(q_res_id, ranked_list[query_id])

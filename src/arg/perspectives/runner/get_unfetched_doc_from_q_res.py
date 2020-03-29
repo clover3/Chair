@@ -15,7 +15,7 @@ from cpath import output_path
 from datastore.alchemy_schema import KeyOnlyTable, Base, Session, RawCluewebDocTable, engine
 from datastore.interface import has_key, load
 from datastore.table_names import QueryResult
-from galagos.parse import GalagoDocRankEntry
+from galagos.types import GalagoDocRankEntry
 from list_lib import foreach, lmap
 from misc_lib import exist_or_mkdir, TimeEstimator
 

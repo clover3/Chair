@@ -1,7 +1,7 @@
 import os
 
 import data_generator.argmining.ukp_header
-from galagos.basic import load_galago_ranked_list, merge_ranked_list_list
+from galagos.parse import load_galago_ranked_list, merge_ranked_list_list
 from list_lib import right
 from misc_lib import get_dir_files, group_by
 

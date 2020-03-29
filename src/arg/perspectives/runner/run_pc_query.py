@@ -14,7 +14,7 @@ from sydney_clueweb.clue_path import index_name_list
 def num_query_file_for_split(split: str) -> int:
     return {
         "train": 122,
-        "dev": 33,
+        "dev": 34,
         "test": 0,
     }[split]
 

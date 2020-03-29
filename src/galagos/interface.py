@@ -8,8 +8,8 @@ from subprocess import PIPE
 from typing import List, Dict
 
 from cpath import output_path
-from galagos.parse import save_queries_to_file, parse_galago_ranked_list, parse_galago_passage_ranked_list, \
-    GalagoPassageRankEntry, GalagoDocRankEntry
+from galagos.parse import save_queries_to_file, parse_galago_ranked_list, parse_galago_passage_ranked_list
+from galagos.types import GalagoDocRankEntry, GalagoPassageRankEntry
 from misc_lib import exist_or_mkdir
 from taskman_client.sync import JsonTiedDict
 

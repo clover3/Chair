@@ -1,9 +1,11 @@
+from sqlalchemy.exc import IntegrityError
+
 from cache import load_from_pickle
 from datastore.tool import commit_buffer_to_db_batch
 
 
 def run():
-    for i in range(10, 238):
+    for i in range(157, 238):
         try:
             print(i)
             name = "docs.jsonl_{}".format(i)
@@ -11,6 +13,8 @@ def run():
             #payload_saver.commit_to_db()
             commit_buffer_to_db_batch(payload_saver.buffer)
         except FileNotFoundError as e:
+            print(e)
+        except IntegrityError as e:
             print(e)
 
 

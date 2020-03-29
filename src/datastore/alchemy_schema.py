@@ -48,6 +48,7 @@ class CluewebDocTFTable(Base, KeyValueBase):
 
 class QueryResultTable(Base, KeyValueBase):
     __tablename__ = QueryResult
+    #
 
 
 from sqlalchemy import create_engine
