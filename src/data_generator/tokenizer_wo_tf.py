@@ -153,7 +153,7 @@ def _truncate_second(tokens_a, tokens_b, max_length):
     tokens_b.pop()
 
 
-def pretty_tokens(tokens, drop_sharp=False):
+def pretty_tokens(tokens, drop_sharp=False) -> str:
     s = ""
     after_mask = False
     for t in tokens:

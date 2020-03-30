@@ -36,7 +36,6 @@ def pickle_resolute_dict(input_dir, st, ed):
     print("Done")
 
 
-
-# resolute_pid_cid.py 
+# resolute_pid_cid.py
 if __name__ =="__main__":
     pickle_resolute_dict(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]))
