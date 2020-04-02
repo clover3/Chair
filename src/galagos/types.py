@@ -1,4 +1,7 @@
+from typing import TypeVar
+
 from base_type import *
+
 
 class GalagoDocRankEntry(NamedTuple):
     doc_id: str

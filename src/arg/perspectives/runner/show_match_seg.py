@@ -6,12 +6,12 @@ import math
 import nltk
 
 from adhoc.bm25 import compute_K
-from arg.claim_building.clueweb12_B13_termstat import load_clueweb12_B13_termstat
+from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from arg.perspectives.basic_analysis import get_candidates
-from arg.perspectives.build_feature import re_tokenize
 from arg.perspectives.clueweb_db import load_doc
 from arg.perspectives.load import get_claims_from_ids, load_train_claim_ids
 from arg.perspectives.ranked_list_interface import PassageRankedListInterface, Q_CONFIG_ID_BM25, make_passage_query
+from arg.pf_common.text_processing import re_tokenize
 from galagos.types import GalagoRankEntry
 from list_lib import lmap, idx_where, lfilter
 from visualize.html_visual import HtmlVisualizer, Cell

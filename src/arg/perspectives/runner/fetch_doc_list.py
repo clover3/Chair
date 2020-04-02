@@ -3,8 +3,9 @@ from typing import List
 
 from arg.perspectives.basic_analysis import load_train_data_point, PerspectiveCandidate
 from arg.perspectives.build_feature import get_doc_id
-from arg.perspectives.ranked_list_interface import DynRankedListInterface, Q_CONFIG_ID_BM25_10000, make_doc_query
+from arg.perspectives.ranked_list_interface import DynRankedListInterface, make_doc_query
 from cpath import output_path
+from galagos.query_runs_ids import Q_CONFIG_ID_BM25_10000
 from galagos.types import GalagoDocRankEntry
 from list_lib import lmap, flatten
 

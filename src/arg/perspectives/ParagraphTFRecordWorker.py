@@ -4,7 +4,7 @@ from collections import OrderedDict
 from typing import List
 
 from arg.perspectives.encode_paragraph_feature_to_tfrecord import format_paragraph_features
-from arg.perspectives.select_paragraph import ParagraphClaimPersFeature
+from arg.perspectives.select_paragraph_perspective import ParagraphClaimPersFeature
 from data_generator.common import get_tokenizer
 from data_generator.job_runner import sydney_working_dir
 from list_lib import foreach

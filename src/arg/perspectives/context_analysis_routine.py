@@ -2,7 +2,7 @@ from collections import Counter
 
 from scipy.stats import stats
 
-from arg.claim_building.clueweb12_B13_termstat import load_clueweb12_B13_termstat
+from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 
 
 def analyze(all_voca, doc_list, unigrams):

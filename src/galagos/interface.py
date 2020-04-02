@@ -161,3 +161,13 @@ def format_passage_query(query_id: str,
         "passageSize": 200,
         "passageShift": 100,
     })
+
+
+def write_queries_to_files(n_query_per_file, out_dir, queries: List[DocQuery]):
+    i = 0
+    while i * n_query_per_file < len(queries):
+        st = i * n_query_per_file
+        ed = (i + 1) * n_query_per_file
+        out_path = os.path.join(out_dir, "{}.json".format(i))
+        save_queries_to_file(queries[st:ed], out_path)
+        i += 1

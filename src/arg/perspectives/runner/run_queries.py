@@ -4,10 +4,11 @@ from typing import List, Dict
 
 from arg.perspectives.basic_analysis import load_train_data_point
 from arg.perspectives.dp_query_routines import dp_to_qid, db_not_contains, datapoint_to_doc_query
-from arg.perspectives.ranked_list_interface import Q_CONFIG_ID_BM25_10000, DynRankedListInterface, make_doc_query
+from arg.perspectives.ranked_list_interface import DynRankedListInterface, make_doc_query
 from datastore.interface import has_key, save, flush
 from datastore.table_names import QueryResult
 from galagos.interface import DocQuery, send_doc_queries
+from galagos.query_runs_ids import Q_CONFIG_ID_BM25_10000
 from galagos.types import GalagoDocRankEntry
 from list_lib import foreach, lfilter, lmap
 

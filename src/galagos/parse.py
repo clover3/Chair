@@ -42,12 +42,12 @@ def load_galago_ranked_list(path: FilePath) -> Dict[str, List[GalagoDocRankEntry
 
 
 def parse_galago_ranked_list(line_itr: Iterator[str]) -> Dict[str, List[GalagoDocRankEntry]]:
-    q_group = dict()
+    q_group: Dict[str, List[GalagoDocRankEntry]] = dict()
     for line in line_itr:
         q_id, _, doc_id, rank, score, _ = line.split()
         if q_id not in q_group:
             q_group[q_id] = list()
-        e = str(doc_id), int(rank), float(score)
+        e = GalagoDocRankEntry(doc_id=str(doc_id), rank=int(rank), score=float(score))
         q_group[q_id].append(e)
     return q_group
 

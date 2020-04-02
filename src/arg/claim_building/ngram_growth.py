@@ -4,9 +4,9 @@ from collections import Counter
 
 import math
 
-from arg.claim_building.clueweb12_B13_termstat import load_subword_term_stat
 from arg.claim_building.count_ngram import load_n_gram_from_pickle
 from arg.claim_building.count_ngram_coocur import load_topic_something_from_pickle, CO_OCCUR
+from arg.clueweb12_B13_termstat import load_subword_term_stat
 from list_lib import left
 from misc_lib import assign_default_if_not_exists
 from models.classic.stopword import is_stopword

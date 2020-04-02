@@ -9,7 +9,7 @@ def load_from_pickle(name):
     return pickle.load(open(path, "rb"))
 
 
-def save_to_pickle(obj, name):
+def save_to_pickle(obj, name: str):
     assert type(name) == str
     pickle_name = "{}.pickle".format(name)
     path = os.path.join(cache_path, pickle_name)

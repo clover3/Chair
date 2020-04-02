@@ -430,3 +430,7 @@ def file_iterator_interval(f, st, ed):
             yield line
         else:
             break
+
+
+def ceil_divide(denom: int, nom: int) -> int:
+    return int((denom + (nom-1)) / nom)

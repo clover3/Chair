@@ -9,7 +9,8 @@ from sydney_manager import MarkedTaskManager
 # JobRunner is responsible for recording which job is done and assigning jobs
 # Worker is responsible for actually doing job
 
-sydney_working_dir: FilePath = "/mnt/nfs/work3/youngwookim/data/bert_tf"
+sydney_working_dir: FilePath = FilePath("/mnt/nfs/work3/youngwookim/data/bert_tf")
+
 class WorkerInterface(ABC):
     @abstractmethod
     def work(self, job_id):

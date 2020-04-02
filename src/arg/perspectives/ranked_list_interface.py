@@ -1,22 +1,14 @@
 from typing import Callable, List, Dict
 
 from arg.perspectives.clueweb_galago_db import load_from_db_or_from_galago
+from arg.pf_common.ranked_list_interface import RankedListInterface
 from cache import load_from_pickle
-from datastore.interface import load
 from datastore.table_names import QueryResult
 from galagos.interface import send_queries_passage, PassageQuery, format_passage_query, DocQuery, \
     format_query_bm25, send_doc_queries
 from galagos.tokenize_util import clean_tokenize_str_to_tokens
 from galagos.types import GalagoDocRankEntry, GalagoPassageRankEntry
-from list_lib import lmap
 from sydney_clueweb.clue_path import get_first_disk
-
-Q_CONFIG_ID_BM25_DEBUG1 = 4
-Q_CONFIG_ID_BM25_DEBUG2 = 5
-Q_CONFIG_ID_BM25_DEBUG3 = 6
-Q_CONFIG_ID_BM25_PASSAGE = 7
-Q_CONFIG_ID_BM25_10 = 8
-Q_CONFIG_ID_BM25_10000 = 9   # This description is not correct, its just a name
 
 
 def make_passage_query(claim_id, perspective_id, claim_text, p_text) -> PassageQuery:
@@ -110,12 +102,11 @@ class DynRankedListInterface:
             raise
 
 
-class StaticRankedListInterface:
+class StaticRankedListInterface(RankedListInterface):
     def __init__(self,
                  q_config_id: int):
         print("RankedListInterface __init__")
-        self.disk_path = get_first_disk()
-        self.collection_tf = load_from_pickle("collection_tf")
+        super(StaticRankedListInterface, self).__init__()
         self.num_request = 10
         self.q_config_id = q_config_id
 
@@ -123,29 +114,9 @@ class StaticRankedListInterface:
               claim_id: str,
               perspective_id: str
               ) -> List[GalagoDocRankEntry]:
-        def translate_structure(raw_data) -> List[GalagoDocRankEntry]:
-            try:
-                dummy = raw_data[0].doc_id
-                r = raw_data
-            except AttributeError:
-                def tuple_to_ranked_entry(tuple) -> GalagoDocRankEntry:
-                    doc_id, rank, score = tuple
-                    return GalagoDocRankEntry(doc_id=doc_id,
-                                              rank=rank,
-                                              score=score)
-
-                r = lmap(tuple_to_ranked_entry, raw_data)
-            return r
-
         query_id = "{}_{}".format(claim_id, perspective_id)
         q_res_id = "{}_{}".format(query_id, self.q_config_id)
-        try:
-            raw_data = load(QueryResult, q_res_id)
-            data = translate_structure(raw_data)
-            return data
-        except KeyError:
-            print(query_id)
-            raise
+        return self.fetch_from_q_res_id(q_res_id)
 
 
 

@@ -1,34 +1,24 @@
 import os
 import pickle
 import string
-from typing import List, Iterable, Set, NamedTuple
+from typing import NamedTuple, List, Set, Iterable, Callable
 
 import math
 import nltk
 
-from arg.claim_building.clueweb12_B13_termstat import load_clueweb12_B13_termstat
+from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from arg.perspectives.basic_analysis import PerspectiveCandidate, load_data_point
-from arg.perspectives.build_feature import re_tokenize
-from arg.perspectives.ranked_list_interface import StaticRankedListInterface, Q_CONFIG_ID_BM25_10000
+from arg.perspectives.ranked_list_interface import StaticRankedListInterface
+from arg.pf_common.base import Paragraph, ScoreParagraph
+from arg.pf_common.select_paragraph import subword_tokenize_functor, enum_paragraph
+from arg.pf_common.text_processing import re_tokenize
 from data_generator.common import get_tokenizer
 from data_generator.subword_translate import Subword
-from datastore.interface import preload_man, load
+from datastore.interface import preload_man
 from datastore.table_names import TokenizedCluewebDoc, BertTokenizedCluewebDoc
+from galagos.query_runs_ids import Q_CONFIG_ID_BM25_10000
 from galagos.types import GalagoDocRankEntry
-from list_lib import lmap, lfilter, flatten
-
-
-class Paragraph(NamedTuple):
-    doc_id: str
-    doc_rank: int
-    doc_score: float
-    tokens: List[str]
-    subword_tokens: List[Subword]
-
-
-class ScoreParagraph(NamedTuple):
-    paragraph: Paragraph
-    score: float
+from list_lib import lfilter, lmap, flatten
 
 
 class ParagraphClaimPersFeature(NamedTuple):
@@ -38,16 +28,9 @@ class ParagraphClaimPersFeature(NamedTuple):
 
 def select_paragraph_dp_list(ci: StaticRankedListInterface,
                              clue12_13_df,
-                             tokenizer,
+                             paragraph_iterator: Callable[[GalagoDocRankEntry], Iterable[Paragraph]],
                              datapoint_list: List[PerspectiveCandidate]) -> List[ParagraphClaimPersFeature]:
     not_found_set = set()
-
-    def subword_tokenize(word: str) -> List[Subword]:
-        word = tokenizer.basic_tokenizer.clean_text(word)
-        word = word.lower()
-        word = tokenizer.basic_tokenizer.run_strip_accents(word)
-        subwords = tokenizer.wordpiece_tokenizer.tokenize(word)
-        return subwords
 
     cdf = 50 * 1000 * 1000
 
@@ -71,38 +54,6 @@ def select_paragraph_dp_list(ci: StaticRankedListInterface,
         max_score = sum(lmap(idf, cp_tokens))
         return ScoreParagraph(paragraph=paragraph, score=score)
 
-    def enum_paragraph(doc: GalagoDocRankEntry) -> Iterable[Paragraph]:
-        # load tokens and BERT subword tokens
-        tokens = load(TokenizedCluewebDoc, doc.doc_id)
-        subword_tokens: List[List[Subword]] = lmap(subword_tokenize, tokens)
-        step_size = 100
-        subword_len = 350
-        cursor = 0
-
-        # return maximum index where number of subword tokens in subword_tokens[start:index] does not exist max_len
-        def move_cursor(subword_tokens: List[List[Subword]], start: int, max_len: int):
-            cursor_ed = start
-            num_subword = 0
-
-            def can_add_subwords():
-                if cursor_ed < len(subword_tokens):
-                    return num_subword + len(subword_tokens[cursor_ed]) <= max_len
-                else:
-                    return False
-
-            while can_add_subwords():
-                num_subword += len(subword_tokens[cursor_ed])
-                cursor_ed += 1
-
-            return cursor_ed
-
-        while cursor < len(subword_tokens):
-            cursor_ed = move_cursor(subword_tokens, cursor, subword_len)
-            yield Paragraph(doc_id=doc.doc_id, doc_rank=doc.rank, doc_score=doc.score,
-                            subword_tokens=list(flatten(subword_tokens[cursor:cursor_ed])),
-                            tokens=tokens[cursor:cursor_ed])
-            cursor += step_size
-
     def select_paragraph_from_datapoint(x: PerspectiveCandidate) -> ParagraphClaimPersFeature:
         ranked_docs: List[GalagoDocRankEntry] = ci.fetch(x.cid, x.pid)
         ranked_docs = ranked_docs[:100]
@@ -119,13 +70,13 @@ def select_paragraph_dp_list(ci: StaticRankedListInterface,
             return paragraph_scorer(p, cp_tokens)
 
         def get_best_paragraph_from_doc(doc: GalagoDocRankEntry) -> List[ScoreParagraph]:
-            paragraph_list = enum_paragraph(doc)
+            paragraph_list = paragraph_iterator(doc)
             score_paragraph = lmap(paragraph_scorer_local, paragraph_list)
             score_paragraph.sort(key=lambda p: p.score, reverse=True)
             return score_paragraph[:1]
 
         def get_all_paragraph_from_doc(doc: GalagoDocRankEntry) -> List[ScoreParagraph]:
-            paragraph_list = enum_paragraph(doc)
+            paragraph_list = paragraph_iterator(doc)
             score_paragraph = lmap(paragraph_scorer_local, paragraph_list)
             return score_paragraph
 
@@ -152,6 +103,13 @@ class SelectParagraphWorker:
         self.clue12_13_df = clue12_13_df
         self.tokenizer = get_tokenizer()
 
+    def paragraph_iterator(self, doc):
+        def subword_tokenize(w: str) -> List[Subword]:
+            return subword_tokenize_functor(self.tokenizer, w)
+        step_size = 100
+        subword_len = 350
+        return enum_paragraph(step_size, subword_len, subword_tokenize, doc)
+
     @classmethod
     def constructor_train(cls, out_dir):
         return SelectParagraphWorker('train', out_dir)
@@ -167,5 +125,10 @@ class SelectParagraphWorker:
 
         print("select paragraph")
         todo = self.all_data_points[st:ed]
-        features: List[ParagraphClaimPersFeature] = select_paragraph_dp_list(self.ci, self.clue12_13_df, self.tokenizer, todo)
+        features: List[ParagraphClaimPersFeature] = select_paragraph_dp_list(
+            self.ci,
+            self.clue12_13_df,
+            self.paragraph_iterator,
+            todo)
+
         pickle.dump(features, open(os.path.join(self.out_dir, str(job_id)), "wb"))

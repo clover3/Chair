@@ -5,10 +5,11 @@ from typing import List, Counter, Dict, Callable, Tuple
 import math
 import nltk
 
-from arg.claim_building.clueweb12_B13_termstat import load_clueweb12_B13_termstat
+from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from arg.perspectives.basic_analysis import PerspectiveCandidate
 from arg.perspectives.collection_interface import CollectionInterface
 from arg.perspectives.ranked_list_interface import DynRankedListInterface
+from arg.pf_common.text_processing import re_tokenize
 from datastore.interface import load_multiple
 from datastore.table_names import CluewebDocTF
 from galagos.types import GalagoDocRankEntry
@@ -79,17 +80,6 @@ def get_feature_weighted_model(claim_id,
     p_w_m = average_tf_over_docs(weighted_doc_tf, num_doc)
 
     return p_w_m, num_doc
-
-
-def re_tokenize(tokens):
-    out = []
-    for term in tokens:
-        spliter = "-"
-        if spliter in term and term.find(spliter) > 0:
-            out.extend(term.split(spliter))
-        else:
-            out.append(term)
-    return set(out)
 
 
 def build_binary_feature(ci: DynRankedListInterface,

@@ -1,4 +1,4 @@
-from arg.perspectives.select_paragraph import SelectParagraphWorker
+from arg.perspectives.select_paragraph_perspective import SelectParagraphWorker
 from data_generator.job_runner import JobRunner, sydney_working_dir
 
 if __name__ == "__main__":

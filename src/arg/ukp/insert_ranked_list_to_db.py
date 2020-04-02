@@ -1,13 +1,13 @@
 import sys
 
 from arg.perspectives.clueweb_galago_db import insert_ranked_list_from_path
-from galagos.query_runs_ids import Q_CONFIG_ID_BM25_10000
+from galagos.query_runs_ids import Q_CONFIG_ID_BM25_UKP
 from galagos.types import *
 from misc_lib import get_dir_files
 
 
 def work(dir_path: FilePath):
-    q_config_id = Q_CONFIG_ID_BM25_10000
+    q_config_id = Q_CONFIG_ID_BM25_UKP
     print(dir_path)
     for file_path in get_dir_files(dir_path):
         print(file_path)

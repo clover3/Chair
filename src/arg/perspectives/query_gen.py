@@ -1,11 +1,10 @@
 import os
-from typing import Dict
 
 from arg.perspectives.basic_analysis import get_candidates, PerspectiveCandidate
 from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids, load_dev_claim_ids, load_test_claim_ids
 from arg.perspectives.pc_run_path import query_dir_format
 from cpath import output_path
-from galagos.interface import format_query_bm25
+from galagos.interface import format_query_bm25, DocQuery, write_queries_to_files
 from galagos.parse import clean_query, get_query_entry_bm25_anseri, save_queries_to_file
 from galagos.tokenize_util import clean_tokenize_str_to_tokens
 from list_lib import lmap
@@ -43,7 +42,7 @@ def write_claim_perspective_pair_as_query():
     all_data_points = get_candidates(claims)
     k = 0
 
-    def get_query_entry_from_data_point(x : PerspectiveCandidate) -> Dict:
+    def get_query_entry_from_data_point(x : PerspectiveCandidate) -> DocQuery:
         tokens = clean_tokenize_str_to_tokens(x.claim_text + " " + x.p_text)
         qid = "{}_{}".format(x.cid, x.pid)
         return format_query_bm25(qid, tokens, k)
@@ -54,13 +53,7 @@ def write_claim_perspective_pair_as_query():
     exist_or_mkdir(out_dir)
     n_query_per_file = 50
 
-    i = 0
-    while i * n_query_per_file < len(queries):
-        st = i * n_query_per_file
-        ed = (i+1) * n_query_per_file
-        out_path = os.path.join(out_dir, "{}.json".format(i))
-        save_queries_to_file(queries[st:ed], out_path)
-        i += 1
+    write_queries_to_files(n_query_per_file, out_dir, queries)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,8 @@
 from collections import OrderedDict
 from typing import List
 
-from arg.perspectives.select_paragraph import ParagraphClaimPersFeature, ScoreParagraph
+from arg.perspectives.select_paragraph_perspective import ParagraphClaimPersFeature
+from arg.pf_common.base import ScoreParagraph
 from data_generator.subword_translate import Subword
 from data_generator.tokenizer_wo_tf import FullTokenizer
 from list_lib import lmap

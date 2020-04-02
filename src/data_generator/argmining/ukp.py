@@ -1,5 +1,5 @@
 from cache import *
-from data_generator.argmining.ukp_header import all_topics
+from data_generator.argmining.ukp_header import all_topics, label_names
 from data_generator.data_parser import ukp
 from data_generator.text_encoder import CLS_ID, SEP_ID
 from data_generator.tokenizer_wo_tf import FullTokenizerWarpper, _truncate_seq_pair
@@ -36,7 +36,7 @@ class DataLoader:
         self.test_topic = target_topic
         self.train_topics = list(set(all_topics) - {target_topic})
         self.all_data = LazyDict((ukp.load, all_topics))
-        self.labels = ["NoArgument", "Argument_for", "Argument_against"]
+        self.labels = label_names
         self.is_3way = is_3way
 
     def load_data(self):
@@ -68,7 +68,7 @@ class DataLoader:
                 if entry['set'] == "train" :
                     x = entry['sentence']
                     y = self.annotation2label(entry['annotation'])
-                    train_data.append((x,y))
+                    train_data.append((x, y))
         return train_data
 
     def get_dev_data(self):
@@ -77,7 +77,7 @@ class DataLoader:
             if entry['set'] == "val":
                 x = entry['sentence']
                 y = self.annotation2label(entry['annotation'])
-                dev_data.append((x,y))
+                dev_data.append((x, y))
         return dev_data
 
 

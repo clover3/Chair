@@ -3,7 +3,7 @@ from typing import List
 
 import nltk
 
-from arg.perspectives.select_paragraph import ParagraphClaimPersFeature
+from arg.perspectives.select_paragraph_perspective import ParagraphClaimPersFeature
 from base_type import FileName
 from cpath import pjoin, output_path
 from visualize.html_visual import HtmlVisualizer, Cell

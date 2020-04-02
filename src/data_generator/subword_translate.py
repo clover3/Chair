@@ -200,3 +200,4 @@ def _run_strip_accents(text):
             continue
         output.append(char)
     return "".join(output)
+

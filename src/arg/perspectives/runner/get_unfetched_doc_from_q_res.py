@@ -9,12 +9,12 @@ from typing import List
 
 from arg.perspectives.basic_analysis import load_train_data_point
 from arg.perspectives.dp_query_routines import dp_to_qid
-from arg.perspectives.ranked_list_interface import Q_CONFIG_ID_BM25_10000
 from cache import save_to_pickle
 from cpath import output_path
 from datastore.alchemy_schema import KeyOnlyTable, Base, Session, RawCluewebDocTable, engine
 from datastore.interface import has_key, load
 from datastore.table_names import QueryResult
+from galagos.query_runs_ids import Q_CONFIG_ID_BM25_10000
 from galagos.types import GalagoDocRankEntry
 from list_lib import foreach, lmap
 from misc_lib import exist_or_mkdir, TimeEstimator
