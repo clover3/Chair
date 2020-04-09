@@ -3,8 +3,8 @@ import pickle
 from collections import OrderedDict
 from typing import List
 
-from arg.perspectives.encode_paragraph_feature_to_tfrecord import format_paragraph_features
-from arg.perspectives.select_paragraph_perspective import ParagraphClaimPersFeature
+from arg.pf_common.base import ParagraphFeature
+from arg.pf_common.encode_paragraph_feature_to_tfrecord import format_paragraph_features
 from data_generator.common import get_tokenizer
 from data_generator.job_runner import sydney_working_dir
 from list_lib import foreach
@@ -21,8 +21,11 @@ class ParagraphTFRecordWorker:
         self.input_dir = os.path.join(sydney_working_dir, input_job_name)
 
     def work(self, job_id):
-        features: List[ParagraphClaimPersFeature] = pickle.load(open(os.path.join(self.input_dir, str(job_id)), "rb"))
+        features: List[ParagraphFeature] = pickle.load(open(os.path.join(self.input_dir, str(job_id)), "rb"))
 
+        self.write(features, job_id)
+
+    def write(self, features, job_id):
         writer = RecordWriterWrap(os.path.join(self.out_dir, str(job_id)))
         for f in features:
             encoded_list: List[OrderedDict] = format_paragraph_features(self.tokenizer, self.max_seq_length, f)

@@ -1,13 +1,14 @@
-from typing import NamedTuple, List
+from typing import NamedTuple, List, NewType
 
 from data_generator.subword_translate import Subword
 
+DPID = NewType('DPID', str)
 
 # Text Pair Data point
 class TPDataPoint(NamedTuple):
     text1: str
     text2: str
-    id: str
+    id: DPID
     label: int
 
 

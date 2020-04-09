@@ -3,7 +3,7 @@ import sys
 import numpy as np
 
 from evals.tfrecord import load_tfrecord
-from task.metrics import eval_3label
+from task.metrics import eval_3label, eval_2label
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 
 
@@ -15,13 +15,19 @@ def load_preditions(path):
         yield input_ids, logits
 
 
-def get_f1_score(tfrecord_path, prediction_path):
+def get_f1_score(tfrecord_path, prediction_path, n_label=3):
     tfrecord = list(load_tfrecord(tfrecord_path))
     predictions = list(load_preditions(prediction_path))
     golds, preds = zip(*compare(tfrecord, predictions))
     golds = golds[:len(preds)]
-    all_result = eval_3label(preds, golds)
-    f1 = sum([result['f1'] for result in all_result]) / 3
+    if n_label == 3:
+        all_result = eval_3label(preds, golds)
+    elif n_label == 2:
+        all_result = eval_2label(preds, golds)
+    else:
+        assert False
+
+    f1 = sum([result['f1'] for result in all_result]) / n_label
     return {"f1": f1}
 
 

@@ -144,6 +144,8 @@ class BertDataLoader(DataLoader):
         self.load_data()
         train_data = []
         data_name = "ukp_train_{}_{}_{}".format(self.test_topic, self.option, self.max_seq)
+        if not self.is_3way:
+            data_name += "_2way"
         cached = load_cache(data_name)
         if cached is not None:
             return cached
@@ -174,6 +176,8 @@ class BertDataLoader(DataLoader):
     def get_dev_data(self):
         dev_data = []
         data_name = "ukp_dev_{}_{}_{}".format(self.test_topic, self.option, self.max_seq)
+        if not self.is_3way:
+            data_name += "_2way"
         cached = load_cache(data_name)
         if cached is not None:
             return cached

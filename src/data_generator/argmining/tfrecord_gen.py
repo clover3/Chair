@@ -12,11 +12,12 @@ from tlm.data_gen.pairwise_common import generate_pairwise_combinations
 
 
 def gen_tfrecord():
-    max_sequence = 512
-    dir_path = os.path.join(data_path, "ukp_{}".format(max_sequence))
+    max_sequence = 300
+    is_3way = False
+    dir_path = os.path.join(data_path, "ukp_{}_2way".format(max_sequence))
     exist_or_mkdir(dir_path)
     for topic in all_topics:
-        data_loader = modify_data_loader(BertDataLoader(topic, True, max_sequence, "bert_voca.txt", "only_topic_word"))
+        data_loader = modify_data_loader(BertDataLoader(topic, is_3way, max_sequence, "bert_voca.txt", "only_topic_word"))
         todo = [("train", data_loader.get_train_data()), ("dev", data_loader.get_dev_data())]
 
         for name, data in todo[::-1]:
@@ -77,4 +78,4 @@ def gen_tfrecord_w_tdev():
 
 
 if __name__ == "__main__":
-    gen_pairwise()
+    gen_tfrecord()

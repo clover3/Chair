@@ -1,8 +1,7 @@
 from collections import OrderedDict
 from typing import List
 
-from arg.perspectives.select_paragraph_perspective import ParagraphClaimPersFeature
-from arg.pf_common.base import ScoreParagraph
+from arg.pf_common.base import ScoreParagraph, ParagraphFeature
 from data_generator.subword_translate import Subword
 from data_generator.tokenizer_wo_tf import FullTokenizer
 from list_lib import lmap
@@ -12,18 +11,18 @@ from tlm.data_gen.bert_data_gen import create_int_feature
 
 def format_paragraph_features(tokenizer: FullTokenizer,
                               max_seq_length: int,
-                              claim_entry: ParagraphClaimPersFeature) -> List[OrderedDict]:
-    claim_text = claim_entry.claim_pers.claim_text
-    claim_tokens = tokenizer.tokenize(claim_text)
-    p_text = claim_entry.claim_pers.p_text
-    p_tokens = tokenizer.tokenize(p_text)
-    label: int = int(claim_entry.claim_pers.label)
+                              para_feature: ParagraphFeature) -> List[OrderedDict]:
+    text1 = para_feature.datapoint.text1
+    tokens1 = tokenizer.tokenize(text1)
+    text2 = para_feature.datapoint.text2
+    tokens2 = tokenizer.tokenize(text2)
+    label: int = int(para_feature.datapoint.label)
 
     def encode(score_paragraph: ScoreParagraph) -> OrderedDict:
         para_tokens: List[Subword] = score_paragraph.paragraph.subword_tokens
 
-        tokens = claim_tokens + ["[SEP]"] + p_tokens + ["[SEP]"] + para_tokens + ["[SEP]"]
-        segment_ids = [0] * (len(claim_tokens) + 1) + [1] * (len(p_tokens) + 1) + [2] * (len(para_tokens)+1)
+        tokens = tokens1 + ["[SEP]"] + tokens2 + ["[SEP]"] + para_tokens + ["[SEP]"]
+        segment_ids = [0] * (len(tokens1) + 1) + [1] * (len(tokens2) + 1) + [2] * (len(para_tokens)+1)
         tokens = tokens[:max_seq_length]
         segment_ids = segment_ids[:max_seq_length]
         features = get_basic_input_feature(tokenizer,
@@ -33,7 +32,7 @@ def format_paragraph_features(tokenizer: FullTokenizer,
         features['label_ids'] = create_int_feature([label])
         return features
 
-    features: List[OrderedDict] = lmap(encode, claim_entry.feature)
+    features: List[OrderedDict] = lmap(encode, para_feature.feature)
     return features
 
 

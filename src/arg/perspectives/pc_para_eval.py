@@ -1,39 +1,17 @@
 import pickle
-from typing import List, Tuple, NewType, Dict, Callable, Any
+from typing import List, Tuple, Dict, Callable, Any
 
 import numpy as np
 from scipy.special import softmax
 
 from arg.perspectives.cpid_def import CPID
+from arg.pf_common.para_eval import Segment, input_tokens_to_key
 from base_type import FilePath
 from data_generator.common import get_tokenizer
-from data_generator.subword_translate import Subword
 from evals.tfrecord import load_tfrecord
 from list_lib import lmap, left, unique_from_sorted, right
 from misc_lib import group_by, average
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
-
-Segment = NewType('Segment', List[Subword])
-
-
-def split_3segments(input_tokens: Segment) -> Tuple[Segment, Segment, Segment]:
-    try:
-        idx1 = input_tokens.index("[SEP]")
-        idx2 = input_tokens.index("[SEP]", idx1+1)
-        idx3 = input_tokens.index("[SEP]", idx2+1)
-    except:
-        print("Parse fail")
-        raise Exception
-
-    return input_tokens[1:idx1], input_tokens[idx1+1:idx2], input_tokens[idx2+1:idx3]
-
-
-def input_tokens_to_key(input_tokens):
-    claim, pers, _ = split_3segments(input_tokens)
-    claim_text = " ".join(claim)
-    p_text = " ".join(pers)
-    key = claim_text + "_" + p_text
-    return key
 
 
 def load_prediction(pred_path) -> List[Tuple[str, List[float]]]:
@@ -103,7 +81,16 @@ def pc_eval(pred_path: FilePath, label_path: FilePath, option="avg"):
 def get_scores(option, pred_path: FilePath) -> Tuple[List[str], List[float]]:
     raw_predictions: List[Tuple[str, List[float]]] = load_prediction(pred_path)
     if option == "avg":
-        reducer: Callable[[List[Any]], float] = average
+        def avg_fn(l):
+            r = average(l)
+            cnt = 0
+            for t in l:
+                if abs(t-r) > 0.5:
+                    cnt += 1
+            if cnt > 0:
+                print(l)
+            return average(l)
+        reducer: Callable[[List[Any]], float] = avg_fn
     elif option == "max":
         reducer: Callable[[List[Any]], float] = max
     else:

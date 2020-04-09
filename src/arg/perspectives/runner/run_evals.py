@@ -1,5 +1,6 @@
 from typing import Dict, List, Set
 
+from arg.perspectives.basic_analysis import predict_by_elastic_search
 from arg.perspectives.cpid_def import CPID
 from arg.perspectives.evaluate import evaluate
 from arg.perspectives.load import get_claims_from_ids, load_train_claim_ids
@@ -16,21 +17,33 @@ def filter_avail(claims):
     return lfilter(lambda x: x['cId'] in cid_list, claims)
 
 
-def run_baseline():
+def train_split():
     d_ids: List[int] = list(load_train_claim_ids())
     claims = get_claims_from_ids(d_ids)
     train, val = split_7_3(claims)
+    return claims, val
+
+
+def run_para_scorer():
+    claims, val = train_split()
     top_k = 5
 
     target = filter_avail(val)
     print("targets", len(target))
-    #pred = predict_by_elastic_search(claims, top_k)
-    #pred = predict_by_mention_num(target, top_k)
     score_pred_file: FileName = FileName("pc_para_D_pred")
     cpid_resolute_file: FileName = FileName("resolute_dict_580_606")
     pred = predict_by_para_scorer(score_pred_file, cpid_resolute_file,
                                   target, top_k)
-    #pred = predict_with_lm(val, top_k)
+    print(evaluate(pred))
+
+
+def run_baseline():
+    claims, val = train_split()
+    top_k = 5
+
+    target = filter_avail(val)
+    print("targets", len(target))
+    pred = predict_by_elastic_search(claims, top_k)
     print(evaluate(pred))
 
 

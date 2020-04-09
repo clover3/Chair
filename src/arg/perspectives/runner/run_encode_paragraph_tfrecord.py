@@ -1,4 +1,4 @@
-from arg.perspectives.ParagraphTFRecordWorker import ParagraphTFRecordWorker
+from arg.pf_common.ParagraphTFRecordWorker import ParagraphTFRecordWorker
 from data_generator.job_runner import JobRunner, sydney_working_dir
 
 if __name__ == "__main__":

@@ -2,13 +2,13 @@ import os
 import pickle
 import string
 from collections import Counter
-from typing import List, Iterable, Callable
+from typing import List, Iterable, Callable, NamedTuple
 
 import math
 import nltk
 
 from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
-from arg.pf_common.base import TPDataPoint, ParagraphFeature, Paragraph, ScoreParagraph
+from arg.pf_common.base import TPDataPoint, ParagraphFeature, Paragraph, ScoreParagraph, DPID
 from arg.pf_common.ranked_list_interface import RankedListInterface
 from arg.pf_common.select_paragraph import subword_tokenize_functor, enum_paragraph
 from arg.pf_common.text_processing import re_tokenize
@@ -26,8 +26,30 @@ from misc_lib import ceil_divide
 
 def ukp_datapoint_to_tp_datapoint(x: UkpDataPoint) -> TPDataPoint:
     label = label_names.index(x.label)
-    return TPDataPoint(id=str(x.id), text1=x.topic, text2=x.sentence, label=label)
+    return TPDataPoint(id=DPID(str(x.id)), text1=x.topic, text2=x.sentence, label=label)
 
+
+def remove_duplicate(candidate_paragraph: List[ScoreParagraph]) -> List[ScoreParagraph]:
+    r = []
+
+    def list_equal(a: List[str], b: List[str]) -> bool:
+        if len(a) != len(b):
+            return False
+        for a_e, b_e in zip(a,b):
+            if a_e != b_e :
+                return False
+        return True
+
+    for i, para in enumerate(candidate_paragraph):
+        if r:
+            prev_para: ScoreParagraph = r[-1]
+            if list_equal(para.paragraph.tokens, prev_para.paragraph.tokens):
+                pass
+            else:
+                r.append(para)
+        else:
+            r.append(para)
+    return r
 
 def paragraph_scorer_factory_factory(clue12_13_df: Counter):
     def paragraph_scorer_factory(x: TPDataPoint) -> Callable[[Paragraph], ScoreParagraph]:
@@ -58,18 +80,28 @@ def paragraph_scorer_factory_factory(clue12_13_df: Counter):
     return paragraph_scorer_factory
 
 
+ONE_PARA_PER_DOC = 1
+ANY_PARA_PER_DOC = 2
+
+class Option(NamedTuple):
+    para_per_doc: int
+
 def select_paragraph_dp_list(ci: RankedListInterface,
                              dp_id_to_q_res_id_fn: Callable[[str], str],
                              paragraph_scorer_factory: Callable[[TPDataPoint], Callable[[Paragraph], ScoreParagraph]],
                              paragraph_iterator: Callable[[GalagoDocRankEntry], Iterable[Paragraph]],
-                             datapoint_list: List[TPDataPoint]) -> List[ParagraphFeature]:
+                             datapoint_list: List[TPDataPoint],
+                             option: Option,
+                             ) -> List[ParagraphFeature]:
 
-    ONE_PARA_PER_DOC = 1
-    option = ONE_PARA_PER_DOC
+    n_passages = 20
 
     def select_paragraph_from_datapoint(x: TPDataPoint) -> ParagraphFeature:
-        ranked_docs: List[GalagoDocRankEntry] = ci.fetch_from_q_res_id(dp_id_to_q_res_id_fn(x.id))
-        ranked_docs = ranked_docs[:100]
+        try:
+            ranked_docs: List[GalagoDocRankEntry] = ci.fetch_from_q_res_id(dp_id_to_q_res_id_fn(x.id))
+            ranked_docs = ranked_docs[:100]
+        except KeyError:
+            ranked_docs = []
 
         paragraph_scorer_local: Callable[[Paragraph], ScoreParagraph] = paragraph_scorer_factory(x)
         #  prefetch tokens and bert tokens
@@ -88,13 +120,17 @@ def select_paragraph_dp_list(ci: RankedListInterface,
             score_paragraph = lmap(paragraph_scorer_local, paragraph_list)
             return score_paragraph
 
-        if option:
+        if option.para_per_doc == ONE_PARA_PER_DOC:
             get_paragraphs = get_best_paragraph_from_doc
         else:
             get_paragraphs = get_all_paragraph_from_doc
 
-        candidate_paragraph: Iterable[ScoreParagraph] = flatten(lmap(get_paragraphs, ranked_docs))
-        return ParagraphFeature(datapoint=x, feature=list(candidate_paragraph))
+        candidate_paragraph: List[ScoreParagraph] = list(flatten(lmap(get_paragraphs, ranked_docs)))
+        candidate_paragraph.sort(key=lambda x: x.score, reverse=True)
+        candidate_paragraph = remove_duplicate(candidate_paragraph)
+
+        return ParagraphFeature(datapoint=x,
+                                feature=candidate_paragraph[:n_passages])
 
     r = lmap(select_paragraph_from_datapoint, datapoint_list)
     return r
@@ -110,7 +146,7 @@ def build_dp_id_to_q_res_id_fn():
 
 
 class SelectParagraphWorker:
-    def __init__(self, out_dir):
+    def __init__(self, option, out_dir):
         self.out_dir = out_dir
         self.ci = RankedListInterface()
         print("load__data_point")
@@ -124,6 +160,7 @@ class SelectParagraphWorker:
         self.clue12_13_df = clue12_13_df
         self.dp_id_to_q_res_id_fn = build_dp_id_to_q_res_id_fn()
         self.tokenizer = get_tokenizer()
+        self.option = option
 
     def paragraph_iterator(self, doc):
         def subword_tokenize(w: str) -> List[Subword]:
@@ -145,6 +182,7 @@ class SelectParagraphWorker:
             build_dp_id_to_q_res_id_fn(),
             local_factory,
             self.paragraph_iterator,
-            todo)
+            todo,
+            self.option)
 
         pickle.dump(features, open(os.path.join(self.out_dir, str(job_id)), "wb"))
