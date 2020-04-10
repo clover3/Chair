@@ -131,7 +131,6 @@ def print_all_tensor():
             print(t.name, t.shape)
 
 
-
 def model_fn_lm(model_config, train_config, model_class,
                 get_masked_lm_output_fn=get_masked_lm_output, feed_feature=False):
     """Returns `model_fn` closure for TPUEstimator."""
