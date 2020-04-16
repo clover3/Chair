@@ -26,7 +26,7 @@ def train_split():
 
 def run_para_scorer():
     claims, val = train_split()
-    top_k = 5
+    top_k = 6
 
     target = filter_avail(val)
     print("targets", len(target))
@@ -48,4 +48,4 @@ def run_baseline():
 
 
 if __name__ == "__main__":
-    run_baseline()
+    run_para_scorer()

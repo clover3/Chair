@@ -4,7 +4,7 @@ from base_type import FileName
 from cpath import pjoin
 from data_generator.job_runner import sydney_working_dir
 from misc_lib import exist_or_mkdir, get_dir_files
-from tlm.data_gen.convert_3way_to_2way import convert
+from tlm.data_gen.convert_3way_to_2way import convert_to_2way
 
 
 def run():
@@ -25,7 +25,7 @@ def run_dir(in_dir_name: FileName, out_dir_name: FileName):
     for file_path in get_dir_files(in_dir):
         name = FileName(os.path.basename(file_path))
         out_path = pjoin(out_dir, name)
-        convert(file_path, out_path)
+        convert_to_2way(file_path, out_path)
 
 
 if __name__ == '__main__':

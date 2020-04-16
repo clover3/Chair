@@ -4,7 +4,7 @@ from collections import OrderedDict
 from typing import List
 
 from arg.perspectives.select_paragraph_perspective import ParagraphClaimPersFeature
-from arg.pf_common.base import ParagraphFeature, TPDataPoint
+from arg.pf_common.base import ParagraphFeature, TPDataPoint, DPID
 from arg.pf_common.encode_paragraph_feature_to_tfrecord import format_paragraph_features
 from data_generator.common import get_tokenizer
 from data_generator.job_runner import sydney_working_dir
@@ -18,7 +18,7 @@ def to_paragraph_feature(f: ParagraphClaimPersFeature) -> ParagraphFeature:
                           datapoint=TPDataPoint(
                               text1=f.claim_pers.claim_text,
                               text2=f.claim_pers.p_text,
-                              id="{}_{}".format(f.claim_pers.cid, f.claim_pers.pid),
+                              id=DPID("{}_{}".format(f.claim_pers.cid, f.claim_pers.pid)),
                               label=int(f.claim_pers.label)
                             )
                          )

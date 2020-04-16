@@ -214,7 +214,7 @@ def model_fn_lm(model_config, train_config, model_class,
 
         output_spec = None
         if mode == tf.estimator.ModeKeys.TRAIN:
-            train_op = optimization.create_optimizer_from_config(total_loss, train_config)
+            train_op = optimization.create_optimizer_from_config(total_loss, train_config, tvars)
             output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
                     mode=mode,
                     loss=total_loss,
@@ -234,11 +234,11 @@ def model_fn_lm(model_config, train_config, model_class,
                     scaffold_fn=scaffold_fn)
         else:
             predictions = {
-                    "input_ids":input_ids,
-                    "masked_input_ids":masked_input_ids,
-                    "masked_lm_ids":masked_lm_ids,
-                    "masked_lm_example_loss":masked_lm_example_loss,
-                    "masked_lm_positions":masked_lm_positions,
+                    "input_ids": input_ids,
+                    "masked_input_ids": masked_input_ids,
+                    "masked_lm_ids": masked_lm_ids,
+                    "masked_lm_example_loss": masked_lm_example_loss,
+                    "masked_lm_positions": masked_lm_positions,
             }
             output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
                     mode=mode,

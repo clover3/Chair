@@ -14,7 +14,7 @@ from sydney_clueweb.clue_path import index_name_list
 def num_query_file_for_split(split: str) -> int:
     return {
         "train": 122,
-        "dev": 34,
+        "dev": 139,
         "test": 0,
     }[split]
 
@@ -23,7 +23,7 @@ def work():
     split = "dev"
     save_parent = '/mnt/nfs/work3/youngwookim/data/perspective/{}_claim_perspective'.format(split)
     exist_or_mkdir(save_parent)
-    ranked_list_save_root = os.path.join(save_parent, "bm25_k0_q_res")
+    ranked_list_save_root = os.path.join(save_parent, "q_res_11")
     exist_or_mkdir(ranked_list_save_root)
 
     get_query_file_fn = partial(get_query_file_for_split, split)
@@ -31,7 +31,7 @@ def work():
     query_files = lmap(get_query_file_fn, range(0, num_query_file))
     query_to_all_clueweb_disk.send(query_files,
                                    index_name_list[:1],
-                                   "perspective_{}_claim_perspective_query_k0".format(split),
+                                   "perspective_{}_claim_perspective_11".format(split),
                                    ranked_list_save_root)
 
 

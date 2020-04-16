@@ -16,7 +16,6 @@ from data_generator.common import get_tokenizer
 from data_generator.subword_translate import Subword
 from datastore.interface import preload_man
 from datastore.table_names import TokenizedCluewebDoc, BertTokenizedCluewebDoc
-from galagos.query_runs_ids import Q_CONFIG_ID_BM25_10000
 from galagos.types import GalagoDocRankEntry
 from list_lib import lfilter, lmap, flatten
 
@@ -88,14 +87,23 @@ def select_paragraph_dp_list(ci: StaticRankedListInterface,
         candidate_paragraph: Iterable[ScoreParagraph] = flatten(lmap(get_paragraphs, ranked_docs))
         return ParagraphClaimPersFeature(claim_pers=x, feature=list(candidate_paragraph))
 
-    r = lmap(select_paragraph_from_datapoint, datapoint_list)
+    def select_paragraph_from_datapoint_wrap(x: PerspectiveCandidate):
+        try:
+            return select_paragraph_from_datapoint(x)
+        except KeyError as e:
+            print(e)
+        return None
+
+    r = lmap(select_paragraph_from_datapoint_wrap, datapoint_list)
+
+    r = list([e for e in r if e is not None])
     return r
 
 
 class SelectParagraphWorker:
-    def __init__(self, split, out_dir):
+    def __init__(self, split, q_config_id, out_dir):
         self.out_dir = out_dir
-        self.ci = StaticRankedListInterface(Q_CONFIG_ID_BM25_10000)
+        self.ci = StaticRankedListInterface(q_config_id)
         print("load__data_point")
         self.all_data_points = load_data_point(split)
         print("Load term stat")
@@ -110,14 +118,6 @@ class SelectParagraphWorker:
         subword_len = 350
         return enum_paragraph(step_size, subword_len, subword_tokenize, doc)
 
-    @classmethod
-    def constructor_train(cls, out_dir):
-        return SelectParagraphWorker('train', out_dir)
-
-    @classmethod
-    def constructor_dev(cls, out_dir):
-        return SelectParagraphWorker('dev', out_dir)
-
     def work(self, job_id):
         step = 10
         st = job_id * step
@@ -130,5 +130,10 @@ class SelectParagraphWorker:
             self.clue12_13_df,
             self.paragraph_iterator,
             todo)
+
+        n_suc = len(features)
+        n_all = len(todo)
+        if n_all > n_suc:
+            print("{} of {} succeed".format(n_suc, n_all))
 
         pickle.dump(features, open(os.path.join(self.out_dir, str(job_id)), "wb"))

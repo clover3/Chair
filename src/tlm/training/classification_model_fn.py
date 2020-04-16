@@ -111,7 +111,11 @@ def model_fn_classification(bert_config, train_config, model_class, special_flag
             tf_logging.info("using simple optimizer")
             train_op = create_simple_optimizer(loss, train_config.learning_rate, train_config.use_tpu)
         else:
-            train_op = optimization.create_optimizer_from_config(loss, train_config)
+            if "ask_tvar" in special_flags:
+                tvars = model.get_trainable_vars()
+            else:
+                tvars = None
+            train_op = optimization.create_optimizer_from_config(loss, train_config, tvars)
         output_spec = TPUEstimatorSpec(mode=mode, loss=loss, train_op=train_op, scaffold_fn=scaffold_fn)
 
     elif mode == tf.estimator.ModeKeys.EVAL:

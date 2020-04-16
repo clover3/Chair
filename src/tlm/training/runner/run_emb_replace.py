@@ -1,14 +1,13 @@
 
 from my_tf import tf
-
 from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging
+from tlm.alt_emb.alt_emb_lm_model_fn import model_fn_lm
 from tlm.model.embedding_replacer import EmbeddingReplacer
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model_cnfig import JsonConfig
 from tlm.training.flags_wrapper import get_input_files_from_flags
 from tlm.training.input_fn import input_fn_builder_unmasked_alt_emb
-from tlm.training.lm_model_fn import model_fn_lm
 from tlm.training.train_config import TrainConfigEx
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator

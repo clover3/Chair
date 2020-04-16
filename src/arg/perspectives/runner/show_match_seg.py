@@ -128,7 +128,8 @@ def binary_feature_demo(datapoint_list):
 def work():
     d_ids = list(load_train_claim_ids())
     claims = get_claims_from_ids(d_ids)
-    all_data_points = get_candidates(claims)
+    is_train = True
+    all_data_points = get_candidates(claims, is_train)
     all_data_points = all_data_points[:10]
     binary_feature_demo(all_data_points)
 

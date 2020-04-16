@@ -57,3 +57,26 @@ def convert_alt_emb(source_path, output_path, seq_set: List[List[int]]):
             return None
 
     return tfrecord_convertor_with_none(source_path, output_path, feature_transformer)
+
+
+def verify_alt_emb(source_path, seq_set: List[List[int]]):
+    all_tokens: Set[int] = set(flatten(seq_set))
+
+    def check_feature(feature):
+        feature_d = {}
+        for key in feature:
+            v = take(feature[key])
+            feature_d[key] = v
+
+        input_ids = feature_d["input_ids"]
+        alt_emb_mask = feature_d["alt_emb_mask"]
+
+        for i in range(len(input_ids)):
+            if alt_emb_mask[i] and input_ids[i] not in all_tokens:
+                print(i, input_ids[i])
+
+    feature_itr = load_record_v2(source_path)
+    for feature in feature_itr:
+        check_feature(feature)
+
+

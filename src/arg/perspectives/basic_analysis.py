@@ -17,7 +17,7 @@ class PerspectiveCandidate(NamedTuple):
     p_text: str
 
 
-def get_candidates(claims, is_train=True):
+def get_candidates(claims, is_train):
     related_p_map = get_claim_perspective_id_dict()
     related_p_map = {key: flatten(value) for key, value in related_p_map.items()}
     p_map = get_perspective_dict()
@@ -30,7 +30,7 @@ def get_candidates(claims, is_train=True):
 
         rp = related_p_map[cid]
 
-        pid_set = [_pid for _text, _pid, _score in lucene_results]
+        pid_set = list([_pid for _text, _pid, _score in lucene_results])
         data_point_list = []
         for pid in pid_set:
             p_text = p_map[pid]
@@ -117,6 +117,7 @@ def predict_by_elastic_search(claims, top_k):
                 'pid': _pid,
                 'claim_text': claim_text,
                 'perspective_text': _text,
+                'score': _score,
                 'rationale': "es score={}".format(_score)
             }
             prediction_list.append(p_entry)
@@ -147,5 +148,6 @@ def load_train_data_point():
 def load_data_point(split):
     d_ids = list(load_claim_ids_for_split(split))
     claims = get_claims_from_ids(d_ids)
-    all_data_points = get_candidates(claims)
+    is_train = split == "train"
+    all_data_points = get_candidates(claims, is_train)
     return all_data_points

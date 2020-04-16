@@ -11,8 +11,10 @@ def run_baseline():
     claims = get_claims_from_ids(d_ids)
     print("targets", len(claims))
     top_k = 5
-    score_pred_file: FileName = FileName("pc_para_D_pred_dev")
-    cpid_resolute_file: FileName = FileName("resolute_dict_dev")
+    score_pred_file: FileName = FileName("pc_para_D_pred_dev_11")
+    cpid_resolute_file: FileName = FileName("resolute_dict_dev_11")
+    # score_pred_file: FileName = FileName("pc_para_D_pred_dev")
+    # cpid_resolute_file: FileName = FileName("resolute_dict_dev")
     pred = predict_by_para_scorer(score_pred_file,
                                   cpid_resolute_file,
                                   claims,

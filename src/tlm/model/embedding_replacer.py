@@ -7,10 +7,12 @@ from tlm.model.base import BertModelInterface, transformer_model
 
 # embedding_output_1 : float Tensor of shape [batch_size, seq_length, embedding_size].
 def combine_embedding_replace(embedding_output_1, embedding_output_2, alt_emb_mask):
+    print("alt_emb_mask", alt_emb_mask.shape)
     mask = tf.cast(tf.expand_dims(alt_emb_mask, 2), tf.float32)
+    print("mask", mask.shape)
     mask_neg = tf.cast(1 - tf.expand_dims(alt_emb_mask, 2), tf.float32)
 
-    r = embedding_output_1 * mask_neg + embedding_output_2 + mask
+    r = embedding_output_1 * mask_neg + embedding_output_2 * mask
     return r
 
 
@@ -59,6 +61,7 @@ class EmbeddingReplacer(BertModelInterface):
         with tf.compat.v1.variable_scope(None, default_name="bert"):
             with tf.compat.v1.variable_scope("embeddings"):
                 # Perform embedding lookup on the word ids.
+
                 (embedding_output_1, embedding_table_1) = embedding_lookup(
                     input_ids=input_ids,
                     vocab_size=config.vocab_size,
@@ -66,6 +69,7 @@ class EmbeddingReplacer(BertModelInterface):
                     initializer_range=config.initializer_range,
                     word_embedding_name="word_embeddings",
                     use_one_hot_embeddings=use_one_hot_embeddings)
+                self.embedding_table_1 = embedding_table_1
                 self.embedding_table = embedding_table_1
                 (embedding_output_2, embedding_table_2) = embedding_lookup(
                     input_ids=input_ids,
@@ -74,6 +78,7 @@ class EmbeddingReplacer(BertModelInterface):
                     initializer_range=config.initializer_range,
                     word_embedding_name="word_embeddings_alt",
                     use_one_hot_embeddings=use_one_hot_embeddings)
+                self.embedding_table_2 = embedding_table_2
 
                 self.embedding_output = combine_embedding(embedding_output_1, embedding_output_2, alt_emb_mask)
 
@@ -118,3 +123,6 @@ class EmbeddingReplacer(BertModelInterface):
                                                            kernel_initializer=create_initializer(
                                                                config.initializer_range))(
                     first_token_tensor)
+
+    def get_trainable_vars(self):
+        return [self.embedding_table_2]

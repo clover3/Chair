@@ -1,4 +1,4 @@
-from typing import TypeVar
+from typing import TypeVar, NamedTuple
 
 from base_type import *
 

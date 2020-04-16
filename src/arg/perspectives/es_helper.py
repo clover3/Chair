@@ -1,8 +1,12 @@
 from elasticsearch import Elasticsearch
 
-server = "gosford.cs.umass.edu"
+from elastic.elastic_info import auth_info
 
-es = Elasticsearch(server)
+server = "gosford.cs.umass.edu:9200"
+
+es = Elasticsearch(server,
+                   http_auth=auth_info
+                   )
 
 
 def get_perspective_from_pool(text, size):

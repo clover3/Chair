@@ -3,7 +3,7 @@ from typing import List
 
 from data_generator.common import get_tokenizer
 from data_generator.job_runner import JobRunner, sydney_working_dir
-from tlm.data_gen.add_alt_emb import convert_alt_emb
+from tlm.alt_emb.add_alt_emb import convert_alt_emb
 
 
 class Worker:

@@ -74,14 +74,14 @@ def predict_interface(claims, top_k, scorer):
         lucene_results = es_helper.get_perspective_from_pool(claim_text, 50)
 
         prediction_list = []
-        for _text, _pid, _score in lucene_results:
+        for rank, (_text, _pid, _score) in enumerate(lucene_results):
             query_id = "{}_{}".format(cid, _pid)
             p_entry = {
                 'cid': cid,
                 'pid': _pid,
                 'claim_text': claim_text,
                 'perspective_text': _text,
-                'rationale': "es score={}".format(_score),
+                'rationale': "es_rank={} , es_score={}".format(rank, _score),
                 'score': scorer(_score, query_id)
             }
             prediction_list.append(p_entry)

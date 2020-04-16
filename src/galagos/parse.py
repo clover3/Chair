@@ -1,7 +1,7 @@
 import json
 import string
 from collections import Counter
-from typing import Iterator
+from typing import Iterator, Dict, List
 
 from base_type import *
 from galagos.types import GalagoDocRankEntry, GalagoPassageRankEntry

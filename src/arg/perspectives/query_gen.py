@@ -39,7 +39,8 @@ def write_claim_perspective_pair_as_query():
     }[split])
     claims = get_claims_from_ids(d_ids)
     print(len(claims), " claims")
-    all_data_points = get_candidates(claims)
+    is_train = split == "train"
+    all_data_points = get_candidates(claims, is_train)
     k = 0
 
     def get_query_entry_from_data_point(x : PerspectiveCandidate) -> DocQuery:

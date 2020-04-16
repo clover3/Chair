@@ -37,7 +37,6 @@ def fetch_hidden_vector(hparam, vocab_size, run_name, data_loader, model_path):
     return pred_fn()
 
 
-
 def fetch_params(hparam, vocab_size, run_name, data_loader, model_path):
     print("fetch_hidden_vector:", run_name)
     task = transformer_nli_hidden(hparam, vocab_size, 0, False)
@@ -50,10 +49,6 @@ def fetch_params(hparam, vocab_size, run_name, data_loader, model_path):
 
     vars_out, = sess.run([vars])
     return names, vars_out
-
-
-
-
 
 
 def fetch_grad(hparam, vocab_size, run_name, data_loader, model_path):

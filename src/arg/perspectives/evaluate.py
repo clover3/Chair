@@ -35,9 +35,10 @@ def get_prec_recll(predicted_perspectives, gold_pids):
                 valid = True
                 break
         if not valid:
-            print("N", pid, prediction['perspective_text'], prediction['rationale'])
+            correct_str = "N"
         else:
-            print("Y", pid, prediction['perspective_text'], prediction['rationale'])
+            correct_str = "Y"
+        print(correct_str, prediction['score'], prediction['rationale'], pid, prediction['perspective_text'])
     # r_tp = 0
     # for cluster in gold_pids:
     #     for pid in p_Id_list:

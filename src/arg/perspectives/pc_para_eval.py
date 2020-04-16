@@ -87,8 +87,6 @@ def get_scores(option, pred_path: FilePath) -> Tuple[List[str], List[float]]:
             for t in l:
                 if abs(t-r) > 0.5:
                     cnt += 1
-            if cnt > 0:
-                print(l)
             return average(l)
         reducer: Callable[[List[Any]], float] = avg_fn
     elif option == "max":
