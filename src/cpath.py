@@ -1,7 +1,7 @@
 import os
 from os.path import dirname
 
-from base_type import FilePath, FileName
+from base_type import FilePath
 from misc_lib import exist_or_mkdir
 
 project_root = FilePath(os.path.abspath(dirname(dirname((os.path.abspath(__file__))))))
@@ -17,7 +17,7 @@ model_path = FilePath(os.path.join(output_path, 'model'))
 prediction_dir = FilePath(os.path.join(output_path, "prediction"))
 
 
-def pjoin(file_path: FilePath, file_name: FileName) -> FilePath:
+def pjoin(file_path: FilePath, file_name) -> FilePath:
     return FilePath(os.path.join(file_path, file_name))
 
 

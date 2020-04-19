@@ -41,6 +41,25 @@ def gen_tf_recored():
         print("Wrote %d total instances" % writer.total_written)
 
 
+def gen_mismatched():
+    sequence_length = 300
+    data_loader = get_modified_nli_data_loader(sequence_length)
+    dir_path = os.path.join(output_path, "nli_tfrecord_cls_{}".format(sequence_length))
+    name = "dev_mis"
+    output_file = os.path.join(dir_path, name)
+    batch_size = 32
+    writer = RecordWriterWrap(output_file)
+    for e in data_loader.example_generator(data_loader.dev_file2):
+        f = entry_to_feature_dict(e)
+        f["is_real_example"] = create_int_feature([1])
+        writer.write_feature(f)
+    while writer.total_written % batch_size != 0:
+        f["is_real_example"] = create_int_feature([0])
+        writer.write_feature(f)
+    writer.close()
+    print("Wrote %d total instances" % writer.total_written)
+
+
 def split_train_to_tdev():
     sequence_length = 300
     data_loader = get_modified_nli_data_loader(sequence_length)
@@ -95,4 +114,4 @@ def gen_tf_record_per_genre():
 
 
 if __name__ == "__main__":
-    gen_tf_recored()
+    gen_mismatched()

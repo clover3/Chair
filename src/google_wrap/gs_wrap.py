@@ -92,6 +92,9 @@ def download_model_last_auto(run_name):
 def is_full_checkpoint_path(init_checkpoint):
     if init_checkpoint.endswith("bert_model.ckpt"):
         return True
+    elif init_checkpoint.endswith("something"):
+        return True
+
     try:
         last_token = init_checkpoint.split("-")[-1]
         if int(last_token) > 0:
