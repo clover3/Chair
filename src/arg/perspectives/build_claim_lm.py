@@ -1,4 +1,4 @@
-from arg.perspectives.clueweb_helper import preload_tf, preload_docs, ClaimRankedList
+from arg.perspectives.clueweb_db import preload_tf, preload_docs, ClaimRankedList
 from arg.perspectives.contextual_hint_analysis import get_perspective, get_relevant_unigrams, load_and_format_doc, \
     build_lm
 from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids

@@ -7,7 +7,7 @@ from base_type import FileName
 from cache import save_to_pickle, load_from_pickle
 from cpath import output_path, pjoin
 from data_generator.common import get_tokenizer
-from list_lib import left
+from list_lib import left, lmap
 from tlm.alt_emb.add_alt_emb import MatchTree, MatchNode
 from tlm.alt_emb.select_words import get_continuation_token_ids, build_word_tf
 
@@ -48,7 +48,44 @@ def select_words():
         tokens = list([tokenizer.inv_vocab[t] for t in token_ids])
         selected_words.append((token_ids, tokens))
 
+    print(list(tf_dev_new.most_common(100))[-1])
     save_to_pickle(selected_words, "nli_selected_words")
+
+
+def select_word_from_dev():
+    tokenizer = get_tokenizer()
+    selected_words = []
+
+    tf_dev = load_from_pickle("nli_tf_dev_mis")
+    for word, cnt in tf_dev.most_common(100):
+        token_ids = list([int(t) for t in word.split()])
+        tokens = list([tokenizer.inv_vocab[t] for t in token_ids])
+        selected_words.append((token_ids, tokens))
+
+    print(list(tf_dev.most_common(100))[-1])
+
+    save_to_pickle(selected_words, "nli_dev_selected_words")
+
+
+
+
+def show_common_words():
+    tf_train = load_from_pickle("nli_tf_train")
+
+    def decode_word(word):
+        tokens = [tokenizer.inv_vocab[int(t)] for t in word.split()]
+        return "".join(tokens)
+
+    tokenizer = get_tokenizer()
+
+    commons = list(tf_train.most_common(1000))
+    common_terms = left(commons)
+    common_terms = lmap(decode_word, common_terms)
+    for st in [0, 100, 200, 300, 400]:
+        print(commons[st])
+        print(common_terms[st: st + 100])
+
+
 
 
 def build_match_tree():
@@ -84,4 +121,4 @@ def show_match_tree():
 
 
 if __name__ == "__main__":
-    build_debug_match_tree()
+    select_words()

@@ -7,6 +7,7 @@ from cache import load_pickle_from
 from data_generator.common import get_tokenizer
 from data_generator.data_parser.robust2 import load_robust_qrel, robust_path
 from evals.adhoc import p_at_k, dcg_at_k
+from galagos.parse import write_ranked_list
 from list_lib import left
 from misc_lib import average
 from taskman_client.task_proxy import get_task_manager_proxy
@@ -42,16 +43,6 @@ def generate_ranked_list(tf_prediction_data, payload_info, k):
     return all_ranked_list
 
 
-def write_ranked_list(q_id_list, all_ranked_list, out_path):
-    assert len(q_id_list) == len(all_ranked_list)
-
-    f = open(out_path, "w")
-    for q_id, ranked_list in zip(q_id_list, all_ranked_list):
-        for doc_id, rank, score in ranked_list:
-            line = "{} Q0 {} {} {} galago\n".format(q_id, doc_id, rank, score)
-            f.write(line)
-    f.close()
-
 def parse_prediction_and_eval(prediction_path, payload_type, data_id, k=100):
     payload_info = get_payload_info(payload_type, data_id)
     tf_prediction_data = load_pickle_from(prediction_path)
@@ -59,7 +50,7 @@ def parse_prediction_and_eval(prediction_path, payload_type, data_id, k=100):
 
     text_output_path = prediction_path + ".txt"
     st = int(data_id)
-    write_ranked_list(range(st, st+50), all_ranked_list, text_output_path)
+    write_ranked_list(range(st, st + 50), all_ranked_list, text_output_path)
     pred_list = []
     for ranked_list in all_ranked_list:
         pred = [x[0] for x in ranked_list]

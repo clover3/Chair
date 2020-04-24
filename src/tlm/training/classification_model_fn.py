@@ -70,12 +70,12 @@ def model_fn_classification(bert_config, train_config, model_class, special_flag
     else:
         tf_logging.info("Use fixed version of logistic regression")
         output_weights = tf.compat.v1.get_variable(
-            "output_weights", [3, bert_config.hidden_size],
+            "output_weights", [train_config.num_classes, bert_config.hidden_size],
             initializer=tf.compat.v1.truncated_normal_initializer(stddev=0.02)
         )
 
         output_bias = tf.compat.v1.get_variable(
-            "output_bias", [3],
+            "output_bias", [train_config.num_classes],
             initializer=tf.compat.v1.zeros_initializer()
         )
 
@@ -128,6 +128,8 @@ def model_fn_classification(bert_config, train_config, model_class, special_flag
                 "input_ids": input_ids,
                 "logits": logits
         }
+        if "data_id" in features:
+            predictions['data_id'] = features['data_id']
         output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
                 mode=mode,
                 predictions=predictions,

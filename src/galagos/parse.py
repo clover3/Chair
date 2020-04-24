@@ -1,10 +1,10 @@
 import json
 import string
 from collections import Counter
-from typing import Iterator, Dict, List
+from typing import Iterator, Dict, List, Tuple
 
 from base_type import *
-from galagos.types import GalagoDocRankEntry, GalagoPassageRankEntry
+from galagos.types import GalagoDocRankEntry, GalagoPassageRankEntry, Query, RankedListDict
 from list_lib import flatten, right
 from misc_lib import group_by
 
@@ -33,6 +33,33 @@ def load_galago_judgement2(path):
             q_group[q_id] = list()
         q_group[q_id].append((doc_id, int(rank), float(score)))
     return q_group
+
+
+def load_qrels(path) -> Dict[str, List[Tuple[str, int]]]:
+    # 101001 0 clueweb12-0001wb-40-32733 0
+
+    q_group = dict()
+    for line in open(path, "r"):
+        q_id, _, doc_id, score = line.split()
+        score = int(score)
+        if q_id not in q_group:
+            q_group[q_id] = list()
+
+        q_group[q_id].append((doc_id, int(score)))
+    return q_group
+
+
+def write_qrels(qrels: Dict[str, List[Tuple[str, int]]],
+                path):
+
+    f = open(path, "w")
+    for qid, values in qrels.items():
+        for doc_id, score in values:
+            line = "{} 0 {} {}".format(qid, doc_id, score)
+
+            f.write(line + "\n")
+    f.close()
+    # 101001 0 clueweb12-0001wb-40-32733 0
 
 
 def load_galago_ranked_list(path: FilePath) -> Dict[str, List[GalagoDocRankEntry]]:
@@ -166,6 +193,10 @@ def get_query_entry(q_id, query):
     return {"number": str(q_id), "text": "#combine({})".format(" ".join(query))}
 
 
+def get_query_unit(query: Query) -> Dict:
+    return {"number": query.qid, "text": "#combine({})".format(query.text)}
+
+
 def get_query_entry_bm25_anseri(q_id, query):
     return {"number": str(q_id), "text": "#combine(bm25:K=0.9:b=0.4({}))".format(" ".join(query))}
 
@@ -175,3 +206,32 @@ def save_queries_to_file(queries, out_path):
     fout = open(out_path, "w")
     fout.write(json.dumps(data, indent=True))
     fout.close()
+
+
+def write_ranked_list(q_id_list, all_ranked_list, out_path):
+    assert len(q_id_list) == len(all_ranked_list)
+
+    f = open(out_path, "w")
+    for q_id, ranked_list in zip(q_id_list, all_ranked_list):
+        for doc_id, rank, score in ranked_list:
+            line = "{} Q0 {} {} {} galago\n".format(q_id, doc_id, rank, score)
+            f.write(line)
+    f.close()
+
+
+def write_ranked_list_from_d(ranked_list_dict, out_path):
+    f = open(out_path, "w")
+    for q_id, ranked_list in ranked_list_dict.items():
+        for doc_id, rank, score in ranked_list:
+            line = "{} Q0 {} {} {} galago\n".format(q_id, doc_id, rank, score)
+            f.write(line)
+    f.close()
+
+
+def write_ranked_list_from_s(ranked_list_dict: RankedListDict, out_path):
+    f = open(out_path, "w")
+    for q_id, ranked_list in ranked_list_dict.items():
+        for entry in ranked_list:
+            line = "{} Q0 {} {} {} galago\n".format(q_id, entry.doc_id, entry.rank, entry.score)
+            f.write(line)
+    f.close()

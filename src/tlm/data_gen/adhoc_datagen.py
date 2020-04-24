@@ -2,6 +2,7 @@ import collections
 import os
 import pickle
 from abc import ABC, abstractmethod
+from typing import List, Tuple
 
 from data_generator.common import get_tokenizer
 from data_generator.data_parser.robust import load_robust04_query
@@ -64,7 +65,7 @@ class AllSegmentAsDoc(EncoderInterface):
         super(AllSegmentAsDoc, self).__init__(max_seq_length)
         self.max_seq_length = max_seq_length
 
-    def encode(self, query_tokens, tokens):
+    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
         content_len = self.max_seq_length - 3 - len(query_tokens)
         cursor = 0
         insts = []

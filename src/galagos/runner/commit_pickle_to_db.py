@@ -3,10 +3,10 @@ from datastore.tool import commit_buffer_to_db_batch
 
 
 def run():
-    for i in range(577, 767):
+    for i in range(0, 11):
         try:
             print(i)
-            name = "docs_11.jsonl_{}".format(i)
+            name = "docs.jsonl_{}".format(i)
             payload_saver = load_from_pickle(name)
             commit_buffer_to_db_batch(payload_saver.buffer)
         except FileNotFoundError as e:

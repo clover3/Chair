@@ -43,11 +43,19 @@ def get_last_model_path(model_dir_path):
 
 
 def check_gs_exists(path):
-    prefix = "gs://clovertpu/"
-    if path.startswith(prefix):
-        path = path[len(prefix):]
+    prefix1 = "gs://clovertpu/"
+    prefix2 = "gs://clover_eu4/"
+    if path.startswith(prefix1):
+        path = path[len(prefix1):]
+        bucket_name = "clovertpu"
+    elif path.startswith(prefix2):
+        path = path[len(prefix2):]
+        bucket_name = 'clover_eu4'
+    else:
+        bucket_name = "clovertpu"
+
     client = storage.Client()
-    bucket = client.get_bucket('clovertpu')
+    bucket = client.get_bucket(bucket_name)
     blob = bucket.get_blob(path + ".meta")
     return blob is not None
 
@@ -94,7 +102,6 @@ def is_full_checkpoint_path(init_checkpoint):
         return True
     elif init_checkpoint.endswith("something"):
         return True
-
     try:
         last_token = init_checkpoint.split("-")[-1]
         if int(last_token) > 0:
