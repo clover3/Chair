@@ -101,8 +101,7 @@ def model_fn_lm(model_config, train_config, model_class,
                     loss=total_loss,
                     train_op=train_op,
                     training_hooks=[OomReportingHook()],
-
-                scaffold_fn=scaffold_fn)
+                    scaffold_fn=scaffold_fn)
         elif mode == tf.estimator.ModeKeys.EVAL:
             eval_metrics = (metric_fn_lm, [
                     masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,

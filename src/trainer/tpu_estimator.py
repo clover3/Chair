@@ -50,6 +50,7 @@ def run_estimator(model_fn, input_fn, host_call=None):
 
     if FLAGS.random_seed is not None:
         tf_logging.info("Using random seed : {}".format(FLAGS.random_seed))
+        tf.random.set_seed(FLAGS.random_seed)
 
     # If TPU is not available, this will fall back to normal Estimator on CPU
     # or GPU.

@@ -3,7 +3,8 @@ from typing import List, Dict
 
 from nltk import word_tokenize
 
-from galagos.parse import save_queries_to_file, clean_query, get_query_entry_bm25_anseri
+from galagos.interface import format_query_bm25
+from galagos.parse import save_queries_to_file, clean_query
 from galagos.types import Query
 from list_lib import lmap
 
@@ -31,7 +32,7 @@ def xml_query_to_json(xml_path, json_path):
     def transform(q: Query) -> Dict:
         tokens = word_tokenize(q.text)
         tokens = clean_query(tokens)
-        return get_query_entry_bm25_anseri(q.qid, tokens)
+        return format_query_bm25(q.qid, tokens)
 
     queries_dict_list: List[Dict] = lmap(transform, queries)
     save_queries_to_file(queries_dict_list, json_path)

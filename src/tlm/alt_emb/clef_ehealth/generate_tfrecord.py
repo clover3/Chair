@@ -1,4 +1,4 @@
-
+import os
 from typing import List, Dict, Tuple
 
 from base_type import FilePath
@@ -68,7 +68,7 @@ def main():
     exist_or_mkdir(out_dir)
     train_save_path = pjoin(out_dir, "tfrecord_train")
     test_save_path = pjoin(out_dir, "tfrecord_test")
-    ranked_list_path = FilePath("/mnt/nfs/work3/youngwookim/data/CLEF_eHealth_working/ranked_list_filtered")
+    ranked_list_path = FilePath(os.path.join(output_path, "eHealth", "bm25_filtered.list"))
     ranked_list: RankedListDict = load_galago_ranked_list(ranked_list_path)
     qrels = load_clef_qrels()
 

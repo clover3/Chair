@@ -6,7 +6,8 @@ import os
 
 from base_type import FilePath
 from cpath import output_path, pjoin
-from galagos.parse import load_galago_ranked_list, write_ranked_list_from_d
+from galagos.parse import load_galago_ranked_list
+from galagos.parse_base import write_ranked_list_from_d
 from galagos.types import RankedListDict
 from misc_lib import exist_or_mkdir
 from tlm.alt_emb.clef_ehealth.qrel import load_clef_qrels

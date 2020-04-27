@@ -1,6 +1,8 @@
+import os
 from typing import Set, Dict, List
 
 from clueweb.sydney_path import get_clueweb12_B13_doc_ids
+from cpath import output_path
 from galagos.parse import load_galago_ranked_list, FilePath, write_ranked_list_from_s
 from galagos.types import GalagoDocRankEntry, RankedListDict
 from misc_lib import tprint
@@ -21,8 +23,8 @@ def filter_by_doc_id(ranked_list_d: RankedListDict,
 
 
 def main():
-    ranked_list_path = FilePath("/mnt/nfs/work3/youngwookim/data/CLEF_eHealth_working/clef_ehealth")
-    save_path = FilePath("/mnt/nfs/work3/youngwookim/data/CLEF_eHealth_working/ranked_list_filtered")
+    ranked_list_path = FilePath(os.path.join(output_path, "eHealth", "bm25.list"))
+    save_path = os.path.join(output_path, "eHealth", "bm25_filtered.list")
     tprint("loading ranked list")
     ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(ranked_list_path)
 

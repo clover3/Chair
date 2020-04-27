@@ -4,7 +4,7 @@ from scipy.special import softmax
 
 from cache import load_from_pickle
 from cpath import pjoin, output_path
-from galagos.parse import write_ranked_list_from_d
+from galagos.parse_base import write_ranked_list_from_d
 from list_lib import dict_value_map
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 

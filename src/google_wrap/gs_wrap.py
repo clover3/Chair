@@ -43,6 +43,15 @@ def get_last_model_path(model_dir_path):
 
 
 def check_gs_exists(path):
+    bucket_name, path = parse_gs_path(path)
+
+    client = storage.Client()
+    bucket = client.get_bucket(bucket_name)
+    blob = bucket.get_blob(path + ".meta")
+    return blob is not None
+
+
+def parse_gs_path(path):
     prefix1 = "gs://clovertpu/"
     prefix2 = "gs://clover_eu4/"
     if path.startswith(prefix1):
@@ -53,11 +62,7 @@ def check_gs_exists(path):
         bucket_name = 'clover_eu4'
     else:
         bucket_name = "clovertpu"
-
-    client = storage.Client()
-    bucket = client.get_bucket(bucket_name)
-    blob = bucket.get_blob(path + ".meta")
-    return blob is not None
+    return bucket_name, path
 
 
 def download_model_last(gs_model_dir, local_dir):

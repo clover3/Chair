@@ -1,5 +1,5 @@
 
-from my_tf import tf
+import tensorflow as tf
 
 from taskman_client.wrapper import report_run
 from tlm.model.base import BertConfig

@@ -24,7 +24,8 @@ def validate_data(fn):
             if length_d[key] == len(v):
                 pass
             else:
-                print("Error at {}".format(fn))
+
+                print("Error at {} ({}): {} != {}".format(fn, key, length_d[key], len(v)))
     print(keys)
 
 def validate_dir(dir_path, idx_range):

@@ -16,18 +16,12 @@ class Worker:
         convert_alt_emb2(input_path, output_file, self.match_tree)
 
 
-
-# This dataset is for
-# language model training
-# on Clueweb12_13B
-# for the words from NLI dev
-
 if __name__ == "__main__":
     def worker_gen(out_dir):
         match_tree = load_from_pickle("match_tree_nli_dev")
         return Worker(match_tree, out_dir)
 
-    runner = JobRunner(sydney_working_dir, 4000, "alt_emb_nli_dev_clueweb12_13", worker_gen)
+    runner = JobRunner(sydney_working_dir, 1000, "alt_emb_13", worker_gen)
     runner.start()
 
 

@@ -1,7 +1,6 @@
 
 
 # Select words from dev_nli that appears often in the dev set but does not appear in training set.
-from collections import Counter
 
 from base_type import FileName
 from cache import save_to_pickle, load_from_pickle
@@ -9,7 +8,7 @@ from cpath import output_path, pjoin
 from data_generator.common import get_tokenizer
 from list_lib import left, lmap
 from tlm.alt_emb.add_alt_emb import MatchTree, MatchNode
-from tlm.alt_emb.select_words import get_continuation_token_ids, build_word_tf
+from tlm.alt_emb.select_words import get_continuation_token_ids, build_word_tf, select_new_words, select_common
 
 
 def count_tf():
@@ -28,45 +27,19 @@ def select_words():
     tf_dev = load_from_pickle("nli_tf_dev_mis")
     tf_train = load_from_pickle("nli_tf_train")
 
-    print("train #words: ", len(tf_train))
-    print("dev #words: ", len(tf_dev))
-
-    tf_dev_new = Counter()
-    for key in tf_dev:
-        if key not in tf_train:
-            tf_dev_new[key] = tf_dev[key]
-
-    tokenizer = get_tokenizer()
-    print("dev-train #words: ", len(tf_dev_new))
-    for word, cnt in tf_dev_new.most_common(100):
-        tokens = [tokenizer.inv_vocab[int(t)] for t in word.split()]
-        print(tokens, cnt)
-
-    selected_words = []
-    for word, cnt in tf_dev_new.most_common(100):
-        token_ids = list([int(t) for t in word.split()])
-        tokens = list([tokenizer.inv_vocab[t] for t in token_ids])
-        selected_words.append((token_ids, tokens))
-
-    print(list(tf_dev_new.most_common(100))[-1])
+    selected_words = select_new_words(tf_dev, tf_train)
     save_to_pickle(selected_words, "nli_selected_words")
 
 
 def select_word_from_dev():
     tokenizer = get_tokenizer()
-    selected_words = []
 
     tf_dev = load_from_pickle("nli_tf_dev_mis")
-    for word, cnt in tf_dev.most_common(100):
-        token_ids = list([int(t) for t in word.split()])
-        tokens = list([tokenizer.inv_vocab[t] for t in token_ids])
-        selected_words.append((token_ids, tokens))
+    selected_words = select_common(tf_dev, tokenizer)
 
     print(list(tf_dev.most_common(100))[-1])
 
     save_to_pickle(selected_words, "nli_dev_selected_words")
-
-
 
 
 def show_common_words():
@@ -89,7 +62,7 @@ def show_common_words():
 
 
 def build_match_tree():
-    selected_words = load_from_pickle("nli_selected_words")
+    selected_words = load_from_pickle("nli_dev_selected_words")
 
     seq_set = left(selected_words)
 
@@ -97,7 +70,7 @@ def build_match_tree():
     for seq in seq_set:
         match_tree.add_seq(seq)
 
-    save_to_pickle(match_tree, "match_tree_nli")
+    save_to_pickle(match_tree, "match_tree_nli_dev")
 
 
 def build_debug_match_tree():
@@ -107,7 +80,7 @@ def build_debug_match_tree():
 
 
 def show_match_tree():
-    match_tree:MatchTree = load_from_pickle("match_tree_nli")
+    match_tree:MatchTree = load_from_pickle("match_tree_nli_dev")
 
     def travel(node: MatchNode):
         print("tokens: ", node.token)
@@ -121,4 +94,4 @@ def show_match_tree():
 
 
 if __name__ == "__main__":
-    select_words()
+    show_match_tree()

@@ -24,10 +24,10 @@ class Worker:
 
 if __name__ == "__main__":
     def worker_gen(out_dir):
-        match_tree = load_from_pickle("match_tree_nli_dev")
+        match_tree = load_from_pickle("match_tree_clef1_test")
         return Worker(match_tree, out_dir)
 
-    runner = JobRunner(sydney_working_dir, 4000, "alt_emb_nli_dev_clueweb12_13", worker_gen)
+    runner = JobRunner(sydney_working_dir, 1000, "alt_emb_clef1", worker_gen)
     runner.start()
 
 

@@ -23,10 +23,6 @@ def tfrecord_convertor_with_none(source_path: FilePath,
     writer.close()
 
 
-
-
-
-
 def convert_alt_emb(source_path, output_path, seq_set: List[List[int]]):
     all_tokens: Set[int] = set(flatten(seq_set))
     min_overlap = min([len(set(tokens)) for tokens in seq_set])
@@ -128,7 +124,7 @@ def convert_alt_emb2(source_path, output_path, match_tree: MatchTree, include_no
                     any_success = True
                     prev_match = []
                 elif cur_node.is_end and len(cur_node.child_keys) > 0:
-                    prev_match = cur_node.new_ids
+                    prev_match = list(cur_node.new_ids)
                     prev_success = True
 
             else:
@@ -141,8 +137,12 @@ def convert_alt_emb2(source_path, output_path, match_tree: MatchTree, include_no
                         alt_emb_mask.extend([0] * len(prev_match))
                     prev_success = False
                     prev_match = []
+
+
                 alt_input_ids.append(input_ids[i])
                 alt_emb_mask.append(0)
+
+                assert len(alt_input_ids) == i+1
                 cur_node = match_tree.root
         assert len(alt_emb_mask) == len(alt_input_ids)
 

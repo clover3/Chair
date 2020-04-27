@@ -7,9 +7,7 @@ from tlm.model.base import BertModelInterface, transformer_model
 
 # embedding_output_1 : float Tensor of shape [batch_size, seq_length, embedding_size].
 def combine_embedding_replace(embedding_output_1, embedding_output_2, alt_emb_mask):
-    print("alt_emb_mask", alt_emb_mask.shape)
     mask = tf.cast(tf.expand_dims(alt_emb_mask, 2), tf.float32)
-    print("mask", mask.shape)
     mask_neg = tf.cast(1 - tf.expand_dims(alt_emb_mask, 2), tf.float32)
 
     r = embedding_output_1 * mask_neg + embedding_output_2 * mask
