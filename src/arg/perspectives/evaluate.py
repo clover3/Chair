@@ -22,10 +22,10 @@ def get_prec_recll(predicted_perspectives, gold_pids):
     ## In this metrics, it is possible to get precision > 1, as some clusters shares same perspective
     tp = 0
     print(gold_pids)
-    for cluster in gold_pids:
-        print("-")
-        for pid in cluster:
-            print(pid, perspective_getter(pid))
+    # for cluster in gold_pids:
+    #     print("-")
+    #     for pid in cluster:
+    #         print(pid, perspective_getter(pid))
     for prediction in predicted_perspectives:
         pid = prediction['pid']
         valid = False
@@ -110,7 +110,3 @@ def evaluate(predictions):
         'f1': get_f1(avg_prec, avg_recall)
     }
 
-
-
-def my():
-    pass

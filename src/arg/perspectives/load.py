@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Iterable
+from typing import Iterable, List, Dict
 
 from cpath import data_path
 
@@ -65,7 +65,7 @@ def claims_to_dict(claims):
 
 
 # get claim_per
-def get_claim_perspective_id_dict():
+def get_claim_perspective_id_dict() -> Dict[int, List]:
     claim_and_perspective = load_claim_perspective_pair()
     d = {}
     for e in claim_and_perspective:

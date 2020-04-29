@@ -67,7 +67,7 @@ def get_adjusted_score(data_point):
     return diff / 5
 
 
-def predict_interface(claims, top_k, scorer):
+def predict_interface(claims, top_k, scorer, get_rationale=None):
     def get_claim_prediction(c: Dict) -> Tuple[str, List[Dict]]:
         cid = c["cId"]
         claim_text = c["text"]
@@ -76,13 +76,17 @@ def predict_interface(claims, top_k, scorer):
         prediction_list = []
         for rank, (_text, _pid, _score) in enumerate(lucene_results):
             query_id = "{}_{}".format(cid, _pid)
+            score = scorer(_score, query_id)
+            rationale = "es_rank={} , es_score={}".format(rank, _score)
+            if get_rationale is not None:
+                rationale += " " + get_rationale(query_id)
             p_entry = {
                 'cid': cid,
                 'pid': _pid,
                 'claim_text': claim_text,
                 'perspective_text': _text,
-                'rationale': "es_rank={} , es_score={}".format(rank, _score),
-                'score': scorer(_score, query_id)
+                'rationale': rationale,
+                'score': score,
             }
             prediction_list.append(p_entry)
 
