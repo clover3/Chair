@@ -434,3 +434,20 @@ def file_iterator_interval(f, st, ed):
 
 def ceil_divide(denom: int, nom: int) -> int:
     return int((denom + (nom-1)) / nom)
+
+
+class DataIDGen:
+    def __init__(self, start_num=0):
+        self.cur_num = start_num
+
+    def new_id(self):
+        r = self.cur_num
+        self.cur_num += 1
+        return r
+
+
+def merge_dict_list(dict_list: List[Dict]) -> Dict:
+    all_d = {}
+    for d in dict_list:
+        all_d.update(d)
+    return all_d

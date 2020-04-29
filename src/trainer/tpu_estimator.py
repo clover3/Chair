@@ -4,8 +4,6 @@ import pickle
 import time
 import warnings
 
-from google_wrap.gs_wrap import check_gs_exists
-
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import tensorflow as tf
@@ -39,7 +37,7 @@ def run_estimator(model_fn, input_fn, host_call=None):
       master=FLAGS.master,
       model_dir=FLAGS.output_dir,
       save_checkpoints_steps=FLAGS.save_checkpoints_steps,
-      keep_checkpoint_every_n_hours =FLAGS.keep_checkpoint_every_n_hours,
+      keep_checkpoint_every_n_hours = FLAGS.keep_checkpoint_every_n_hours,
       keep_checkpoint_max=FLAGS.keep_checkpoint_max,
       session_config=config,
       tf_random_seed=FLAGS.random_seed,
@@ -66,10 +64,6 @@ def run_estimator(model_fn, input_fn, host_call=None):
     if FLAGS.do_train:
         tf_logging.info("***** Running training *****")
         tf_logging.info("  Batch size = %d", FLAGS.train_batch_size)
-        if FLAGS.init_checkpoint and FLAGS.init_checkpoint != bert_checkpoint_path :
-            if not check_gs_exists(FLAGS.init_checkpoint):
-                raise FileNotFoundError("FLAGS.init_checkpoint does not exist : {}".format(FLAGS.init_checkpoint))
-            time.sleep(1)
 
         estimator.train(input_fn=input_fn, max_steps=FLAGS.num_train_steps)
 

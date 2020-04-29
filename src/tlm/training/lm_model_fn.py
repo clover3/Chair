@@ -84,7 +84,7 @@ def align_checkpoint_for_lm(tvars,
     initialized_variable_names2 = {}
     if init_checkpoint:
         if not use_multiple_checkpoint:
-            if checkpoint_type == "":
+            if checkpoint_type == "" or checkpoint_type == "bert":
                 assignment_fn = get_bert_assignment_map
             elif checkpoint_type == "v2":
                 assignment_fn = assignment_map_v2_to_v2

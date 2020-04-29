@@ -3,6 +3,7 @@ from cpath import pjoin, output_path
 from tlm.alt_emb.select_words import get_continuation_token_ids, build_word_tf
 from tlm.alt_emb.select_words import select_new_words
 
+
 def count_tf():
     continuation_tokens = get_continuation_token_ids()
 
