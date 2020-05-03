@@ -1,16 +1,14 @@
-from typing import Dict, Tuple, List, NewType
+from typing import Dict, Tuple, List
 
 from scipy.special import softmax
 
 from arg.perspectives.load import get_claim_perspective_id_dict
 from arg.perspectives.pc_rel.collect_score import collect_pc_rel_score
+from arg.perspectives.types import CPIDPair, Logits
 from cache import load_from_pickle, save_to_pickle
 from cpath import pjoin, output_path
 from list_lib import flatten
 from misc_lib import tprint, TimeEstimator, average
-
-CPIDPair = NewType('CPIDPair', Tuple[int, int])
-Logits = NewType('Logits', List[float])
 
 
 class TwoStepDict:

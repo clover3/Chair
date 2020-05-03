@@ -34,5 +34,15 @@ def run_rel_based():
     print(evaluate(pred))
 
 
+def run_rel_filter_eval():
+    d_ids: List[int] = list(load_dev_claim_ids())
+    claims = get_claims_from_ids(d_ids)
+    print("targets", len(claims))
+    top_k = 5
+    pc_score_d = load_from_pickle("tf_rel_filter_B_dev_score")
+    pred = predict_from_dict(pc_score_d, claims, top_k)
+    print(evaluate(pred))
+
+
 if __name__ == "__main__":
-    run_rel_based()
+    run_rel_filter_eval()

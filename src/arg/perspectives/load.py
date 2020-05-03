@@ -1,8 +1,11 @@
 import json
 import os
+from collections import defaultdict
 from typing import Iterable, List, Dict
 
+from arg.perspectives.types import CPIDPair
 from cpath import data_path
+from list_lib import flatten
 
 dir_path = os.path.join(data_path, "perspective")
 
@@ -79,6 +82,16 @@ def get_claim_perspective_id_dict() -> Dict[int, List]:
         # if n_total_pers != n_unique_pers:
         #     print(n_total_pers, n_unique_pers)
         d[int(e['cId'])] = l
+    return d
+
+
+def get_claim_perspective_label_dict() -> Dict[CPIDPair, int]:
+    gold = get_claim_perspective_id_dict()
+    d = defaultdict(int)
+    for cid, pid_list_list in gold.items():
+        for pid in flatten(pid_list_list):
+            cpid_pair = CPIDPair((cid, pid))
+            d[cpid_pair] = 1
     return d
 
 

@@ -1,17 +1,17 @@
 
-from typing import Dict, Tuple, List, NewType
+from typing import Dict, Tuple, List
 
 from scipy.special import softmax
 
+from arg.perspectives.cpid_def import CPID
 from arg.perspectives.pc_rel.collect_score import collect_pc_rel_score
-from cache import load_from_pickle, save_to_pickle
-from cpath import pjoin, output_path
+from arg.perspectives.types import CPIDPair, Logits
+from cache import load_from_pickle
+from misc_lib import TimeEstimator
+from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 
-CPIDPair = NewType('CPIDPair', Tuple[int, int])
-Logits = NewType('Logits', List[float])
 
-
-def collect_save_relevance_score(prediction_path, pc_rel_info):
+def collect_save_relevance_score(prediction_path, pc_rel_info) -> Dict[str, int]:
     info_d = load_from_pickle(pc_rel_info)
     print('info_d',  len(info_d))
 
@@ -35,17 +35,33 @@ def collect_save_relevance_score(prediction_path, pc_rel_info):
     return output_score_dict
 
 
-def save_train():
-    prediction_path = pjoin(output_path, "pc_rel")
-    pc_rel_based_score = collect_save_relevance_score(prediction_path , "pc_rel_info_all")
-    save_to_pickle(pc_rel_based_score , "pc_rel_based_score_train")
+def collect_pipeline2_score(prediction_path, pc_rel_info) -> Dict[CPID, List[float]]:
+    info_d = load_from_pickle(pc_rel_info)
+    print('info_d',  len(info_d))
 
+    def get_cpid(data_id, info_d) -> CPID:
+        info_1 = info_d[data_id-1]
+        info_2 = info_d[data_id]
+        cid = info_1['cid']
+        pid = info_2['pid']
+        return CPID("{}_{}".format(cid, pid))
 
-def save_dev():
-    prediction_path = pjoin(output_path, "pc_rel_dev")
-    pc_rel_based_score = collect_save_relevance_score(prediction_path , "pc_rel_dev_info_all")
-    save_to_pickle(pc_rel_based_score, "pc_rel_based_score_dev")
+    data = EstimatorPredictionViewer(prediction_path)
 
+    print("Num data ", data.data_len)
+    ticker = TimeEstimator(data.data_len)
+    score_list_d : Dict[CPID, List] = {}
+    for entry in data:
+        ticker.tick()
+        logits = entry.get_vector("logits")
+        probs = softmax(logits)
+        score = probs[1]
+        data_id = entry.get_vector("data_id")[0]
 
-if __name__ == "__main__":
-    save_dev()
+        cpid: CPID = get_cpid(data_id, info_d)
+
+        if cpid not in score_list_d:
+            score_list_d[cpid] = []
+        score_list_d[cpid].append(score)
+
+    return score_list_d
