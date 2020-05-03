@@ -318,16 +318,18 @@ class SegmentInstance(object):
 
 def get_basic_input_feature_as_list(tokenizer, max_seq_length, input_tokens, segment_ids):
     input_ids = tokenizer.convert_tokens_to_ids(input_tokens)
+    return get_basic_input_feature_as_list_all_ids(input_ids, segment_ids, max_seq_length)
+
+
+def get_basic_input_feature_as_list_all_ids(input_ids, segment_ids, max_seq_length):
     input_mask = [1] * len(input_ids)
     segment_ids = list(segment_ids)
-
     max_seq_length = max_seq_length
     assert len(input_ids) <= max_seq_length
     while len(input_ids) < max_seq_length:
         input_ids.append(0)
         input_mask.append(0)
         segment_ids.append(0)
-
     assert len(input_ids) == max_seq_length
     assert len(input_mask) == max_seq_length
     assert len(segment_ids) == max_seq_length
@@ -336,12 +338,15 @@ def get_basic_input_feature_as_list(tokenizer, max_seq_length, input_tokens, seg
 
 def get_basic_input_feature(tokenizer, max_seq_length, input_tokens, segment_ids):
     input_ids, input_mask, segment_ids = get_basic_input_feature_as_list(tokenizer, max_seq_length, input_tokens, segment_ids)
+    return ordered_dict_from_input_segment_mask_ids(input_ids, input_mask, segment_ids)
+
+
+def ordered_dict_from_input_segment_mask_ids(input_ids, input_mask, segment_ids):
     features = collections.OrderedDict()
     features["input_ids"] = btd.create_int_feature(input_ids)
     features["input_mask"] = btd.create_int_feature(input_mask)
     features["segment_ids"] = btd.create_int_feature(segment_ids)
     return features
-
 
 
 def get_masked_lm_features_as_list(tokenizer, max_predictions_per_seq, masked_lm_positions, masked_lm_labels):

@@ -1,6 +1,7 @@
 from my_tf import tf
 
 from taskman_client.wrapper import report_run
+from tf_util.tf_logging import tf_logging, CounterFilter
 from tlm.model.base import BertConfig, BertModel
 from tlm.training.classification_model_fn import model_fn_classification
 from tlm.training.flags_wrapper import get_input_files_from_flags, show_input_files
@@ -23,6 +24,8 @@ def main(_):
         model_class=BertModel,
         special_flags=special_flags,
     )
+    if FLAGS.do_predict:
+        tf_logging.addFilter(CounterFilter())
 
     input_fn = input_fn_builder_classification_w_data_id(
         input_files=input_files,

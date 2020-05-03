@@ -6,12 +6,11 @@ import tensorflow as tf
 import tlm.model.base as modeling
 from sydney_manager import MarkedTaskManager
 from taskman_client.wrapper import report_run
-from tf_util.tf_logging import tf_logging
+from tf_util.tf_logging import tf_logging, CounterFilter
 from tlm.estimator_loop import run_estimator_loop
 from tlm.model.base import BertModel
 from tlm.model_cnfig import JsonConfig
 from tlm.tlm.loss_diff_prediction_model import loss_diff_predict_only_model_fn
-from tlm.tlm.runner.run_predict_both_loss import CounterFilter
 from tlm.training.input_fn import input_fn_builder_unmasked
 from tlm.training.train_config import TrainConfigEx
 from tlm.training.train_flags import *
