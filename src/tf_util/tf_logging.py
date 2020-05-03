@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import time
+from collections import Counter
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -84,3 +85,15 @@ logging.getLogger().addHandler(s_handler)
 
 logging.getLogger('oauth2client.transport').setLevel(logging.WARNING)
 tf_logging.addFilter(TFFilter())
+
+
+class CounterFilter(logging.Filter):
+    targets = ["Dequeue next", "Enqueue next"]
+    counter = Counter()
+    def filter(self, record):
+        for e in self.targets:
+            if e in record.msg:
+                self.counter[e] += 1
+                record.msg += " ({})".format(self.counter[e])
+                return True
+        return True

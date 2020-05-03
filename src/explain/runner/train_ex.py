@@ -169,11 +169,11 @@ def train_nli_ex_from_payload(hparam, train_config, save_dir,
     return save_fn()
 
 
-def train_nli_ex(hparam, train_config, save_dir,
-                 data, data_loader,
-                 tags, modeling_option, init_fn, tag_informative_fn,
-                 ):
-    print("train_nli_ex")
+def train_self_explain(hparam, train_config, save_dir,
+                       data, data_loader,
+                       tags, modeling_option, init_fn, tag_informative_fn,
+                       ):
+    print("train_self_explain")
     max_steps = train_config.max_steps
     num_gpu = train_config.num_gpu
     train_batches, dev_batches = data
@@ -356,9 +356,9 @@ def train_from(start_model_path, start_type, save_dir,
     train_config.g_val = float(g_val)
     train_config.drop_thres = float(drop_thres)
 
-    train_nli_ex(hp, train_config, save_dir,
-                 data, data_loader, tags, modeling_option,
-                 init_fn, informative_fn)
+    train_self_explain(hp, train_config, save_dir,
+                       data, data_loader, tags, modeling_option,
+                       init_fn, informative_fn)
 
 
 def get_params(start_model_path, start_type, info_fn_name, num_gpu):
