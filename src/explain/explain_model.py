@@ -1,5 +1,6 @@
 import abc
 
+import numpy as np
 import tensorflow as tf
 
 from tf_v2_support import placeholder

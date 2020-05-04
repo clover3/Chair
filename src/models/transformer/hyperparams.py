@@ -108,7 +108,7 @@ class HPSENLI2:
     intermediate_size = 3072
     type_vocab_size = 2
     g_val = 0.5
-
+    num_classes = 3
 
 class HPSENLI3:
     '''Hyperparameters'''
@@ -128,6 +128,7 @@ class HPSENLI3:
     sinusoid = False  # If True, use sinusoid. If false, positional embedding.
     intermediate_size = 3072
     type_vocab_size = 2
+    num_classes = 3
 
 class HPSENLI3_eval:
     '''Hyperparameters'''
@@ -148,7 +149,7 @@ class HPSENLI3_eval:
     intermediate_size = 3072
     type_vocab_size = 2
     g_val = 0.5
-
+    num_classes = 3
 
 class HPSENLI:
     '''Hyperparameters'''
@@ -172,7 +173,7 @@ class HPSENLI:
     intermediate_size = 3072
     type_vocab_size = 2
     g_val = 0.5
-
+    num_classes = 3
 
 class HPCausal:
     '''Hyperparameters'''

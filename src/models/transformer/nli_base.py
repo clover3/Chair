@@ -19,12 +19,12 @@ class ClassificationB:
         self.pooled_output = pooled_output
         #self.logits = tf.layers.dense(pooled_output, self.num_classes, name="cls_dense")
         output_weights = tf1.get_variable(
-            "output_weights", [3, self.hidden_size],
+            "output_weights", [self.num_classes, self.hidden_size],
             initializer=tf1.truncated_normal_initializer(stddev=0.02)
         )
 
         output_bias = tf1.get_variable(
-            "output_bias", [3],
+            "output_bias", [self.num_classes],
             initializer=tf1.zeros_initializer()
         )
 
@@ -101,6 +101,9 @@ class transformer_nli_pooled:
                 self.y: y,
             }
         return feed_dict
+
+
+
 
 class transformer_nli_pooled_embedding_in:
     def __init__(self, hp, voca_size, is_training):

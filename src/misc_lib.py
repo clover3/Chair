@@ -432,6 +432,16 @@ def file_iterator_interval(f, st, ed):
             break
 
 
+def slice_iterator(itr, st, ed):
+    for idx, item in enumerate(itr):
+        if idx < st:
+            pass
+        elif idx < ed:
+            yield item
+        else:
+            break
+
+
 def ceil_divide(denom: int, nom: int) -> int:
     return int((denom + (nom-1)) / nom)
 

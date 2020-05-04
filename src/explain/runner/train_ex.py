@@ -17,11 +17,13 @@ from explain.explain_model import CorrelationModeling, CrossEntropyModeling
 from explain.explain_trainer import ExplainTrainerM
 from explain.nli_common import train_classification_factory, save_fn_factory, valid_fn_factory
 from explain.runner.nli_ex_param import ex_arg_parser
+from explain.setups import init_fn_generic
 from explain.train_nli import get_nli_data
 from models.transformer import hyperparams
 from models.transformer.nli_base import transformer_nli_pooled
+from models.transformer.transformer_cls import transformer_pooled
 from tf_util.tf_logging import tf_logging, set_level_debug
-from trainer.model_saver import setup_summary_writer, load_model_with_blacklist, load_model, load_model_w_scope
+from trainer.model_saver import setup_summary_writer
 from trainer.multi_gpu_support import get_multiple_models, get_avg_loss, \
     get_avg_tensors_from_models, get_train_op, get_batch2feed_dict_for_multi_gpu, get_concat_tensors_from_models, \
     get_other_train_op_multi_gpu, get_concat_tensors_list_from_models
@@ -187,7 +189,7 @@ def train_self_explain(hparam, train_config, save_dir,
     }[modeling_option]
     lr_factor = 0.3
     def build_model():
-        main_model = transformer_nli_pooled(hparam, train_config.vocab_size)
+        main_model = transformer_pooled(hparam, train_config.vocab_size)
         ex_model = ex_modeling_class(main_model.model.sequence_output, hparam.seq_max, len(tags),
                                      main_model.batch2feed_dict)
         return main_model, ex_model
@@ -230,7 +232,8 @@ def train_self_explain(hparam, train_config, save_dir,
 
     global_step = tf.train.get_or_create_global_step()
 
-    explain_dev_data_list = {tag: data_loader.get_dev_explain(tag) for tag in tags}
+    if data_loader is not None:
+        explain_dev_data_list = {tag: data_loader.get_dev_explain(tag) for tag in tags}
 
     run_name = os.path.basename(save_dir)
     train_writer, test_writer = setup_summary_writer(run_name)
@@ -257,6 +260,8 @@ def train_self_explain(hparam, train_config, save_dir,
     init_fn(sess)
 
     def eval_tag():
+        if data_loader is None:
+            return
         print("Eval")
         for label_idx, tag in enumerate(tags):
             print(tag)
@@ -310,6 +315,7 @@ def train_self_explain(hparam, train_config, save_dir,
 
     save_fn = partial(save_fn_factory, sess, save_dir, global_step)
     init_step,  = sess.run([global_step])
+
     def train_fn(batch, step_i):
         step_before_cls = fetch_global_step()
         loss_val, acc = train_classification(batch, step_i)
@@ -318,6 +324,7 @@ def train_self_explain(hparam, train_config, save_dir,
         summary.value.add(tag='loss', simple_value=loss_val)
         train_writer.add_summary(summary, fetch_global_step())
         train_writer.flush()
+        tf_logging.debug("{}".format(step_i))
 
         step_after_cls = fetch_global_step()
 
@@ -376,16 +383,13 @@ def get_params(start_model_path, start_type, info_fn_name, num_gpu):
     data = get_nli_data(hp, nli_setting)
 
     def init_fn(sess):
-        if start_type == "nli":
-            load_model_with_blacklist(sess, start_model_path, ["explain", "explain_optimizer"])
-        elif start_type == "nli_ex":
-            load_model(sess, start_model_path)
-        elif start_type == "bert":
-            load_model_w_scope(sess, start_model_path, ["bert"])
-        elif start_type == "cold":
-            pass
-        else:
-            assert False
+        start_type_generic = {
+            'nli': 'cls',
+            'nli_ex': 'cls_ex',
+            'bert': 'bert',
+            'cold': 'cold'
+        }[start_type]
+        return init_fn_generic(sess, start_type_generic, start_model_path)
 
     informative_fn = get_informative_fn_by_name(info_fn_name)
     return data, data_loader, hp, informative_fn, init_fn, train_config
