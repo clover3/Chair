@@ -49,6 +49,16 @@ def run_rel_scorer():
     print(evaluate(pred))
 
 
+def run_bert_baseline():
+    claims, val = train_split()
+    top_k = 6
+    target = filter_avail(val)
+    print("targets", len(target))
+    pc_score_d = load_from_pickle("pc_bert_baseline_score_d_train")
+    pred = predict_from_dict(pc_score_d, target, top_k)
+    print(evaluate(pred))
+
+
 def run_baseline():
     claims, val = train_split()
     top_k = 5
@@ -60,4 +70,4 @@ def run_baseline():
 
 
 if __name__ == "__main__":
-    run_rel_scorer()
+    run_bert_baseline()

@@ -9,8 +9,8 @@ from models.transformer.optimization_v2 import create_optimizer_from_config
 from tf_util.tf_logging import tf_logging
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
-from tlm.sero.sero_core import split_and_append_sep, SeroDelta, SeroEpsilon
-from tlm.training import assignment_map, grad_accumulation
+from tlm.sero.sero_core import split_and_append_sep, SeroDelta, SeroEpsilon, split_and_append_sep2
+from tlm.training import assignment_map, grad_accumulation, classification_model_fn
 from tlm.training.input_fn_common import format_dataset
 from tlm.training.model_fn_common import log_features, get_tpu_scaffold_or_init, log_var_assignments, get_init_fn, \
     Classification, reweight_zero
@@ -210,6 +210,133 @@ def model_fn_sero_ranking_train(config, train_config, model_class):
         else:
             optimizer_factory = lambda x: create_optimizer_from_config(x, train_config)
         return ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_factory, prediction)
+
+    return model_fn
+
+
+def pooling_modeling(option_name, num_classes, pooled_outputs, sequence_output_3d):
+
+    def seq_max_pooling(sequence_output_3d):
+        single_rep = tf.reduce_max(sequence_output_3d, axis=2)
+        single_rep = tf.reduce_max(single_rep, axis=1)
+        return single_rep
+
+    def seq_avg_pooling(sequence_output_3d):
+        single_rep = tf.reduce_mean(sequence_output_3d, axis=2)
+        single_rep = tf.reduce_mean(single_rep, axis=1)
+        return single_rep
+
+    if option_name == "pooled_max":
+        single_rep = tf.reduce_max(pooled_outputs, axis=1)
+    elif option_name == "pooled_avg":
+        single_rep = tf.reduce_mean(pooled_outputs, axis=1)
+    elif option_name == "seq_max+1" or option_name == "seq_avg+1":
+        batch, num_seg, seq, hidden_dim = get_shape_list2(sequence_output_3d)
+        sequence_rep = tf.keras.layers.Dense(hidden_dim, name="cls_dense")(sequence_output_3d)
+        if option_name == "seq_max+1":
+            single_rep = seq_max_pooling(sequence_rep)
+        elif option_name == "seq_avg+1":
+            single_rep = seq_avg_pooling(sequence_rep)
+        else:
+            assert False
+    elif option_name == "seq_avg":
+        single_rep = seq_avg_pooling(sequence_output_3d)
+    elif option_name == "seq_max":
+        single_rep = seq_max_pooling(sequence_output_3d)
+    else:
+        assert False
+
+    logits = tf.keras.layers.Dense(num_classes, name="cls_dense")(single_rep)
+    return logits
+
+
+def model_fn_pooling_long_things(config, train_config, model_class, special_flags=[]):
+    def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
+        tf_logging.info("model_fn_pooling_long_things")
+        log_features(features)
+        input_ids = features["input_ids"] # [batch_size, seq_length]
+        input_mask = features["input_mask"]
+        segment_ids = features["segment_ids"]
+        label_ids = features["label_ids"]
+        label_ids = tf.reshape(label_ids, [-1])
+
+        batch_size, _ = get_shape_list(input_mask) # This is not real batch_size, 2 * real_batch_size
+        use_context = tf.ones([batch_size, 1], tf.int32)
+        total_sequence_length = config.total_sequence_length
+        print("total sequence length", total_sequence_length)
+        stacked_input_ids, stacked_input_mask, stacked_segment_ids, \
+            = split_and_append_sep2(input_ids[:, :total_sequence_length],
+                                    input_mask[:, :total_sequence_length],
+                                    segment_ids[:, :total_sequence_length],
+                                   total_sequence_length, config.window_size, CLS_ID, EOW_ID)
+
+        batch_size, num_seg, seq_len = get_shape_list2(stacked_input_ids)
+
+        input_ids_2d = r3to2(stacked_input_ids)
+        input_mask_2d = r3to2(stacked_input_mask)
+        segment_ids_2d = r3to2(stacked_segment_ids)
+
+        is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+
+        if "feed_features" in special_flags:
+            model = model_class(
+                config=config,
+                is_training=is_training,
+                input_ids=input_ids_2d,
+                input_mask=input_mask_2d,
+                token_type_ids=segment_ids_2d,
+                use_one_hot_embeddings=train_config.use_one_hot_embeddings,
+                features=features,
+            )
+        else:
+            model = model_class(
+                config=config,
+                is_training=is_training,
+                input_ids=input_ids_2d,
+                input_mask=input_mask_2d,
+                token_type_ids=segment_ids_2d,
+                use_one_hot_embeddings=train_config.use_one_hot_embeddings,
+            )
+
+        sequence_output_2d = model.get_sequence_output()
+        pooled_output = model.get_pooled_output()
+
+        if is_training:
+            pooled_output = dropout(pooled_output, 0.1)
+
+        pooled_output_3d = tf.reshape(pooled_output, [batch_size, num_seg, -1])
+        sequence_output_3d = tf.reshape(sequence_output_2d, [batch_size, num_seg, seq_len, -1])
+        logits = pooling_modeling(config.option_name,
+                                  train_config.num_classes,
+                                  pooled_output_3d ,
+                                  sequence_output_3d)
+
+        loss_arr = tf.nn.sparse_softmax_cross_entropy_with_logits(
+            logits=logits,
+            labels=label_ids)
+        loss = tf.reduce_mean(input_tensor=loss_arr)
+        tvars = tf.compat.v1.trainable_variables()
+        if train_config.init_checkpoint:
+            initialized_variable_names, init_fn = classification_model_fn.get_init_fn(train_config, tvars)
+            scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
+
+        TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
+        if mode == tf.estimator.ModeKeys.TRAIN:
+            train_op = optimization.create_optimizer_from_config(loss, train_config)
+            output_spec = TPUEstimatorSpec(mode=mode, loss=loss, train_op=train_op, scaffold_fn=scaffold_fn)
+        elif mode == tf.estimator.ModeKeys.EVAL:
+            output_spec = TPUEstimatorSpec(mode=model, loss=loss, eval_metrics=None,
+                                           scaffold_fn=scaffold_fn)
+        elif mode == tf.estimator.ModeKeys.PREDICT:
+            predictions = {
+                "input_ids": input_ids,
+                "logits": logits
+            }
+            if "data_id" in features:
+                predictions['data_id'] = features['data_id']
+            output_spec = TPUEstimatorSpec(mode=model, loss=loss, predictions=predictions,
+                                           scaffold_fn=scaffold_fn)
+        return output_spec
 
     return model_fn
 

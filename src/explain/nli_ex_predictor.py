@@ -1,29 +1,31 @@
 import numpy as np
 import tensorflow as tf
 
-from data_generator.NLI.nli_info import tags
+from data_generator.NLI import nli_info
 from explain.explain_model import ExplainPredictor
-from models.transformer.nli_base import transformer_nli_pooled
+from models.transformer.transformer_cls import transformer_pooled
 from trainer.model_saver import load_model
 from trainer.np_modules import get_batches_ex
 from trainer.tf_train_module import init_session
 
 
 class NLIExPredictor:
-    def __init__(self, hparam, nli_setting, model_path, modeling_option):
+    def __init__(self, hparam, nli_setting, model_path, modeling_option, tags_list=nli_info.tags):
+        self.num_tags = len(tags_list)
+        self.tags = tags_list
         self.define_graph(hparam, nli_setting, modeling_option)
         self.sess = init_session()
         self.sess.run(tf.global_variables_initializer())
         self.batch_size = hparam.batch_size
         load_model(self.sess, model_path)
 
-    def define_graph(self, hparam, nli_setting, modeling_option):
-        self.task = transformer_nli_pooled(hparam, nli_setting.vocab_size, False)
+    def define_graph(self, hparam, train_config, modeling_option):
+        self.task =  transformer_pooled(hparam, train_config.vocab_size, False)
         self.sout = tf.nn.softmax(self.task.logits, axis=-1)
-        self.explain_predictor = ExplainPredictor(len(tags), self.task.model.get_sequence_output(), modeling_option)
+        self.explain_predictor = ExplainPredictor(self.num_tags, self.task.model.get_sequence_output(), modeling_option)
 
     def predict_ex(self, explain_tag, batches):
-        tag_idx = tags.index(explain_tag)
+        tag_idx = self.tags.index(explain_tag)
         ex_logits_list = []
         for batch in batches:
             x0, x1, x2 = batch
@@ -38,7 +40,7 @@ class NLIExPredictor:
         return ex_logits
 
     def predict_both(self, explain_tag, batches):
-        tag_idx = tags.index(explain_tag)
+        tag_idx = self.tags.index(explain_tag)
         ex_logits_list = []
         sout_list = []
         for batch in batches:

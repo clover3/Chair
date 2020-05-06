@@ -1,7 +1,7 @@
 import sys
 
 from explain.runner.nli_ex_param import ex_arg_parser
-from explain.train_msmarco import train_from
+from explain.runner.train_msmarco import train_from
 
 if __name__  == "__main__":
     args = ex_arg_parser.parse_args(sys.argv[1:])

@@ -301,6 +301,29 @@ def input_fn_builder_alt_emb_data_id_classification(input_files,
     return input_fn
 
 
+def input_fn_builder_classification_w_focus_mask_data_id(input_files,
+                              flags,
+                              is_training,
+                              num_cpu_threads=4):
+
+    def input_fn(params):
+        """The actual input function."""
+        batch_size = params["batch_size"]
+        max_seq_length = flags.max_seq_length
+
+        name_to_features = {
+                "input_ids":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_mask": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "segment_ids": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "focus_mask": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "label_ids": tf.io.FixedLenFeature([1], tf.int64),
+                "data_id": tf.io.FixedLenFeature([1], tf.int64),
+        }
+        return format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+
+    return input_fn
+
+
 
 def input_fn_builder_classification_w_data_id(input_files,
                               flags,

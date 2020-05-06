@@ -26,6 +26,7 @@ def predict_from_dict(score_d: Dict[CPID, float],
         cls_score = get_score_by_d(claim_id, query_id)
 
         score = (cls_score > 4) * 1 + 0.1 * lucene_score / 20
+        score = cls_score
         r = "score={0:.2f} <- cls_score({1:.2f}) lucene_score({2:.2f}) /20".format(score, cls_score, lucene_score)
         rationale_d[query_id] = r
         return score

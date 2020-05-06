@@ -44,5 +44,15 @@ def run_rel_filter_eval():
     print(evaluate(pred))
 
 
+def run_bert_baseline():
+    d_ids: List[int] = list(load_dev_claim_ids())
+    claims = get_claims_from_ids(d_ids)
+    top_k = 5
+    print("targets", len(claims))
+    pc_score_d = load_from_pickle("pc_bert_baseline_score_d")
+    pred = predict_from_dict(pc_score_d, claims, top_k)
+    print(evaluate(pred))
+
+
 if __name__ == "__main__":
-    run_rel_filter_eval()
+    run_bert_baseline()

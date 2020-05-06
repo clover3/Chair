@@ -97,6 +97,7 @@ class UpperTransformer(tf.keras.layers.Layer):
     def get_last_layer_output(self):
         return self.all_layer_outputs[-1]
 
+
 def split_and_append_sep(input_ids,
                 input_mask,
                 segment_ids,
@@ -125,6 +126,41 @@ def split_and_append_sep(input_ids,
     batch_size, num_window, _ = bc.get_shape_list2(stacked_input_ids)
     edge_shape = [batch_size, num_window, 1]
     cls_arr = tf.ones(edge_shape, tf.int32) * 23
+    eow_arr = tf.ones(edge_shape, tf.int32) * EOW_ID
+
+    stacked_input_ids = tf.concat([cls_arr, stacked_input_ids, eow_arr], axis=2)
+
+    mask_edge = tf.ones(edge_shape, tf.int32)
+    stacked_input_mask = tf.concat([mask_edge, stacked_input_mask, mask_edge], axis=2)
+
+    edge1 = stacked_segment_ids[:, :, 0:1]
+    edge2 = stacked_segment_ids[:, :, -2:-1]
+    stacked_segment_ids = tf.concat([edge1, stacked_segment_ids, edge2], axis=2)
+
+    return stacked_input_ids, stacked_input_mask, stacked_segment_ids
+
+
+def split_and_append_sep2(input_ids,
+                input_mask,
+                segment_ids,
+               seq_length:int,
+               window_length:int,
+               CLS_ID,
+               EOW_ID):
+    special_tokens = 2  # CLS, SEP
+    src_window_length = window_length - special_tokens
+    num_window = int(seq_length / src_window_length)
+    batch_size, _ = bc.get_shape_list2(input_ids)
+    def r2to3(arr):
+        return tf.reshape(arr, [batch_size, num_window, -1])
+
+    stacked_input_ids = r2to3(input_ids) # [batch_size, num_window, src_window_length]
+    stacked_input_mask = r2to3(input_mask) # [batch_size, num_window, src_window_length]
+    stacked_segment_ids = r2to3(segment_ids) # [batch_size, num_window, src_window_length]
+
+
+    edge_shape = [batch_size, num_window, 1]
+    cls_arr = tf.ones(edge_shape, tf.int32) * CLS_ID
     eow_arr = tf.ones(edge_shape, tf.int32) * EOW_ID
 
     stacked_input_ids = tf.concat([cls_arr, stacked_input_ids, eow_arr], axis=2)
