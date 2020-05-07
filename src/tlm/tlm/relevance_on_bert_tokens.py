@@ -3,8 +3,7 @@ from collections import Counter
 import math
 
 from adhoc.bm25 import BM25_3
-from data_generator.common import get_tokenizer
-from data_generator.tokenizer_wo_tf import is_continuation
+from data_generator.tokenizer_wo_tf import is_continuation, get_tokenizer
 from models.classic.stopword import load_stopwords
 
 

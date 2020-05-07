@@ -5,9 +5,8 @@ import data_generator.argmining.ukp_header
 from cpath import data_path
 from data_generator import job_runner
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
-from data_generator.common import get_tokenizer
 from data_generator.job_runner import JobRunner, sydney_working_dir
-from data_generator.tokenizer_wo_tf import pretty_tokens
+from data_generator.tokenizer_wo_tf import pretty_tokens, get_tokenizer
 from list_lib import lmap, flatten
 from tf_util.enum_features import load_record
 from tf_util.record_writer_wrap import RecordWriterWrap

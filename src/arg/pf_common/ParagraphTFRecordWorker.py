@@ -5,8 +5,8 @@ from typing import List
 
 from arg.pf_common.base import ParagraphFeature
 from arg.pf_common.encode_paragraph_feature_to_tfrecord import format_paragraph_features
-from data_generator.common import get_tokenizer
 from data_generator.job_runner import sydney_working_dir
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import foreach
 from misc_lib import exist_or_mkdir
 from tf_util.record_writer_wrap import RecordWriterWrap

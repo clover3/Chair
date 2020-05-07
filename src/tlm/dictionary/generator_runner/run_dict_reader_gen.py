@@ -1,7 +1,7 @@
 import logging
 
 from cache import *
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from dictionary.reader import DictionaryReader
 from misc_lib import exist_or_mkdir
 from sydney_manager import MarkedTaskManager

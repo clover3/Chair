@@ -3,8 +3,8 @@ from typing import List
 
 from base_type import FileName
 from cpath import pjoin
-from data_generator.common import get_tokenizer
 from data_generator.job_runner import JobRunner, sydney_working_dir
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from tlm.alt_emb.add_alt_emb import verify_alt_emb
 
 

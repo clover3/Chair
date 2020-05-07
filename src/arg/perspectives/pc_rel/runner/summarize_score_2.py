@@ -14,8 +14,18 @@ def save_dev():
     save_to_pickle(reduced_score, "tf_rel_filter_B_dev_score")
 
 
+def save_concat_dev():
+#    prediction_path = pjoin(output_path, "pc_long_seq11")
+    prediction_path = pjoin(output_path, "pc_long_focus_1")
+    scores: Dict[CPID, List[float]] = collect_pipeline2_score(prediction_path, "pc_rel_dev_info_all")
+    reduced_score: Dict[CPID, float] = dict_value_map(sum, scores)
+    save_to_pickle(reduced_score, "pc_concat_dev_score")
+
+
+
 def main():
-    save_dev()
+    save_concat_dev()
+
 
 if __name__ == "__main__":
     main()

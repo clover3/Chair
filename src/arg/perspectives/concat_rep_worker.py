@@ -5,14 +5,15 @@ from arg.perspectives.load import get_claim_perspective_label_dict
 from arg.perspectives.pc_rel.all_passage import collect_passages
 from arg.perspectives.types import CPIDPair, Logits, DataID
 from cache import load_from_pickle, load_pickle_from
-from data_generator.common import get_tokenizer
 from data_generator.job_runner import sydney_working_dir
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from tf_util.enum_features import load_record
 from tf_util.record_writer_wrap import RecordWriterWrap
 
 
 class PCConcatRepWorker:
     def __init__(self, input_job_name, pc_rel_info_pickle_name, num_max_para, out_dir):
+
         self.out_dir = out_dir
         self.tokenizer = get_tokenizer()
         self.input_dir = os.path.join(sydney_working_dir, input_job_name)
@@ -55,3 +56,4 @@ class PCConcatFocusWorker(PCConcatRepWorker):
                                   rel_score):
             writer.write_feature(f)
         writer.close()
+

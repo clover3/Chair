@@ -2,8 +2,8 @@ import sys
 
 from cache import load_cache, save_to_pickle
 from data_generator.NLI import nli
-from data_generator.common import get_tokenizer
 from data_generator.shared_setting import BertNLI
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from explain.train_nli import train_nli_multi_gpu
 from models.transformer import hyperparams
 from tf_util.tf_logging import set_level_debug

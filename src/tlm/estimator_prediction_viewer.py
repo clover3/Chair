@@ -5,7 +5,7 @@ from functools import partial
 import numpy as np
 
 from cpath import output_path
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from tlm.token_utils import cells_from_tokens, float_aware_strize, cells_from_scores
 from visualize.html_visual import Cell
 

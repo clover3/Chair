@@ -1,8 +1,7 @@
 import sys
 
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
-from data_generator.common import get_tokenizer
-from data_generator.tokenizer_wo_tf import pretty_tokens
+from data_generator.tokenizer_wo_tf import pretty_tokens, get_tokenizer
 from tf_util.enum_features import load_record
 from tlm.data_gen.feature_to_text import take
 from visualize.html_visual import HtmlVisualizer

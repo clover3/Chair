@@ -29,6 +29,7 @@ def get_bert_assignment_map(tvars, lm_checkpoint):
         for x in tf.train.list_variables(lm_checkpoint):
             (name, var) = (x[0], x[1])
             if name not in lm_assignment_candidate:
+                print(name, "not found")
                 continue
             assignment_map[name] = lm_assignment_candidate[name]
 

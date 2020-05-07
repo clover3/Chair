@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import tensorflow as tf
 
-from tf_util.tf_logging import tf_logging
+from tf_util.tf_logging import tf_logging, CounterFilter
 from tlm.training.train_flags import FLAGS
 bert_checkpoint_path = "gs://clovertpu/training/bert_model/bert_model.ckpt"
 
@@ -25,6 +25,8 @@ def run_estimator(model_fn, input_fn, host_call=None):
         tf_logging.setLevel(logging.DEBUG)
     #FLAGS.init_checkpoint = auto_resolve_init_checkpoint(FLAGS.init_checkpoint)
     tf.io.gfile.makedirs(FLAGS.output_dir)
+    if FLAGS.do_predict:
+        tf_logging.addFilter(CounterFilter())
 
     tpu_cluster_resolver = None
     if FLAGS.use_tpu and FLAGS.tpu_name:

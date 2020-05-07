@@ -7,15 +7,16 @@ from scipy.special import softmax
 from arg.perspectives.cpid_def import CPID
 from arg.pf_common.para_eval import Segment, input_tokens_to_key
 from base_type import FilePath
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from evals.tfrecord import load_tfrecord
 from list_lib import lmap, left, unique_from_sorted, right
 from misc_lib import group_by, average
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 
 
-def load_prediction(pred_path) -> List[Tuple[str, List[float]]]:
-    data = EstimatorPredictionViewer(pred_path)
+def load_prediction(data: EstimatorPredictionViewer) -> List[Tuple[str, List[float]]]:
+
+    print("prediction has {} entry".format(data.data_len))
 
     def parse_entry(entry) -> Tuple[str, float]:
         input_tokens: Segment = entry.get_tokens('input_ids')
@@ -63,7 +64,9 @@ def load_label(label_path: FilePath):
 
 
 def pc_eval(pred_path: FilePath, label_path: FilePath, option="avg"):
-    keys, reduced_scores = get_scores(option, pred_path)
+    data = EstimatorPredictionViewer(pred_path)
+    raw_predictions: List[Tuple[str, List[float]]] = load_prediction(data)
+    keys, reduced_scores = reduce_score(raw_predictions, option)
 
     predictions = zip(keys, reduced_scores)
     labels_d: Dict[str, int] = load_label(label_path)
@@ -78,8 +81,8 @@ def pc_eval(pred_path: FilePath, label_path: FilePath, option="avg"):
     print("Acc : ", num_correct / len(label_list))
 
 
-def get_scores(option, pred_path: FilePath) -> Tuple[List[str], List[float]]:
-    raw_predictions: List[Tuple[str, List[float]]] = load_prediction(pred_path)
+def reduce_score(raw_predictions: List[Tuple[str, List[float]]],
+                 option) -> Tuple[List[str], List[float]]:
     if option == "avg":
         def avg_fn(l):
             r = average(l)
@@ -87,6 +90,7 @@ def get_scores(option, pred_path: FilePath) -> Tuple[List[str], List[float]]:
             for t in l:
                 if abs(t-r) > 0.5:
                     cnt += 1
+            print(l)
             return average(l)
         reducer: Callable[[List[Any]], float] = avg_fn
     elif option == "max":
@@ -101,8 +105,23 @@ def get_scores(option, pred_path: FilePath) -> Tuple[List[str], List[float]]:
 def get_cpid_score(pred_path: FilePath,
                    cpid_resolute_d: Dict[str, CPID],
                    option="avg") -> Dict[CPID, float]:
-    keys, reduced_scores = get_scores(option, pred_path)
-    cpid_list = lmap(lambda x: cpid_resolute_d[x], keys)
+
+    data = EstimatorPredictionViewer(pred_path)
+    raw_predictions: List[Tuple[str, List[float]]] = load_prediction(data)
+    keys, reduced_scores = reduce_score(raw_predictions, option)
+
+    cpid_list = []
+    n_not_found = 0
+    for x in keys:
+        try:
+            cpid_list.append(cpid_resolute_d[x])
+        except KeyError as e:
+            print("not found", x)
+            n_not_found += 1
+
+    if n_not_found:
+        print("{} missing from text -> cpid resolution".format(n_not_found))
+    # cpid_list = lmap(lambda x: cpid_resolute_d[x], keys)
     return dict(zip(cpid_list, reduced_scores))
 
 

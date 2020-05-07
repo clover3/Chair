@@ -12,8 +12,8 @@ from arg.perspectives.ranked_list_interface import StaticRankedListInterface
 from arg.pf_common.base import Paragraph, ScoreParagraph
 from arg.pf_common.select_paragraph import subword_tokenize_functor, enum_paragraph
 from arg.pf_common.text_processing import re_tokenize
-from data_generator.common import get_tokenizer
 from data_generator.subword_translate import Subword
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from datastore.interface import preload_man
 from datastore.table_names import TokenizedCluewebDoc, BertTokenizedCluewebDoc
 from galagos.types import GalagoDocRankEntry

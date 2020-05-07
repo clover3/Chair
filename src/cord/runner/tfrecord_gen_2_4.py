@@ -6,9 +6,9 @@ from cord.csv_to_galago_indexable import read_csv_as_dict, str_cord_uid, str_tit
 from cord.data_loader import load_queries
 from cord.path_info import cord_working_dir, meta_data_path
 from cpath import pjoin
-from data_generator.common import get_tokenizer
 from data_generator.create_feature import create_int_feature
 from data_generator.subword_translate import Subword
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from galagos.parse import load_galago_ranked_list
 from galagos.types import GalagoDocRankEntry
 from tf_util.record_writer_wrap import RecordWriterWrap

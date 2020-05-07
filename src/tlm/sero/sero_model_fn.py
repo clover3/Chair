@@ -263,12 +263,19 @@ def model_fn_pooling_long_things(config, train_config, model_class, special_flag
         batch_size, _ = get_shape_list(input_mask) # This is not real batch_size, 2 * real_batch_size
         use_context = tf.ones([batch_size, 1], tf.int32)
         total_sequence_length = config.total_sequence_length
-        print("total sequence length", total_sequence_length)
         stacked_input_ids, stacked_input_mask, stacked_segment_ids, \
             = split_and_append_sep2(input_ids[:, :total_sequence_length],
                                     input_mask[:, :total_sequence_length],
                                     segment_ids[:, :total_sequence_length],
                                    total_sequence_length, config.window_size, CLS_ID, EOW_ID)
+        if "focus_mask" in features:
+            focus_mask = features["focus_mask"]
+            _, stacked_focus_mask, _, \
+                = split_and_append_sep2(input_ids[:, :total_sequence_length],
+                                        focus_mask[:, :total_sequence_length],
+                                        segment_ids[:, :total_sequence_length],
+                                        total_sequence_length, config.window_size, CLS_ID, EOW_ID)
+            features["focus_mask"] = r3to2(stacked_focus_mask)
 
         batch_size, num_seg, seq_len = get_shape_list2(stacked_input_ids)
 

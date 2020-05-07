@@ -5,8 +5,8 @@ from typing import List, Dict
 
 from arg.perspectives.pc_rel.pc_rel_structure import to_retrieval_format
 from arg.perspectives.select_paragraph_perspective import ParagraphClaimPersFeature
-from data_generator.common import get_tokenizer
 from data_generator.job_runner import sydney_working_dir
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import foreach
 from misc_lib import exist_or_mkdir, DataIDGen
 from tf_util.record_writer_wrap import RecordWriterWrap

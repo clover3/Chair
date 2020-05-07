@@ -1,8 +1,7 @@
 import os
 import sys
 
-from data_generator.common import get_tokenizer
-from data_generator.tokenizer_wo_tf import pretty_tokens
+from data_generator.tokenizer_wo_tf import pretty_tokens, get_tokenizer
 from misc_lib import get_dir_files, exist_or_mkdir
 from tf_util.enum_features import load_record, feature_to_ordered_dict
 from tf_util.record_writer_wrap import RecordWriterWrap

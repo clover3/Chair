@@ -6,5 +6,5 @@ if __name__ == "__main__":
         input_job_name = "perspective_paragraph_feature_dev_11"
         return PerspectiveParagraphTFRecordWorker(input_job_name, out_dir)
 
-    runner = JobRunner(sydney_working_dir, 500, "pc_paragraph_tfrecord_dev_11", worker_gen)
+    runner = JobRunner(sydney_working_dir, 700, "pc_paragraph_tfrecord_dev_11", worker_gen)
     runner.start()

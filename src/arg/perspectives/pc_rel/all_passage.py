@@ -1,11 +1,11 @@
 from collections import OrderedDict
-from collections import OrderedDict
 from typing import Tuple, Dict, Iterator, List, NamedTuple
 
 from scipy.special import softmax
 
 from arg.perspectives.types import CPIDPair, Logits, DataID
 from list_lib import flatten
+from misc_lib import group_by
 from tlm.data_gen.base import ordered_dict_from_input_segment_mask_ids
 from tlm.data_gen.bert_data_gen import create_int_feature
 from tlm.data_gen.feature_to_text import take
@@ -125,6 +125,7 @@ def collect_passages(tfrecord_itr,
         else:
             p_arr.append(features)
 
+    print("number of (cpid, paragraph)", len(c_arr))
     assert len(c_arr) == len(p_arr)
     for i in range(len(c_arr)):
         c_features = c_arr[i]
@@ -162,10 +163,18 @@ def collect_passages(tfrecord_itr,
                            )
 
             cpid_paragraph.append(e)
-
     add_focus_mask = token_rel_score_info is not None
-    new_feature = build_new_feature(cpid_paragraph, label, c_data_id, num_max_para, window_size, add_focus_mask)
-    yield new_feature
+
+    for cpid, evidence_list in group_by(cpid_paragraph, lambda pc_evidence: pc_evidence.cpid).items():
+        if evidence_list:
+            first_item = evidence_list[0]
+            new_feature = build_new_feature(evidence_list,
+                                            first_item.label,
+                                            first_item.data_id,
+                                            num_max_para,
+                                            window_size,
+                                            add_focus_mask)
+            yield new_feature
 
 
 def build_new_feature(evidence_list: List[PCEvidence], label, data_id, num_max_para, window_size, add_focus_mask=False):

@@ -5,7 +5,7 @@
 from base_type import FileName
 from cache import save_to_pickle, load_from_pickle
 from cpath import output_path, pjoin
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import left, lmap
 from tlm.alt_emb.add_alt_emb import MatchTree, MatchNode
 from tlm.alt_emb.select_words import get_continuation_token_ids, build_word_tf, select_new_words, select_common

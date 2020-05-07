@@ -3,7 +3,7 @@ import os
 import data_generator.argmining
 from data_generator import job_runner
 from data_generator.argmining.ukp import DataLoader
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap, flatten
 from misc_lib import pick1
 from tlm.data_gen.base import UnmaskedPairedDataGen, truncate_seq_pair, SegmentInstance

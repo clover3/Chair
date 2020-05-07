@@ -70,7 +70,7 @@ def run(args):
         worker.load_model(hp, nli_setting, args.model_path, "co")
         return worker
 
-    runner = JobRunner(args.save_dir, 605, "pc_tfrecord_ex", worker_factory)
+    runner = JobRunner(args.save_dir, 696, "pc_tfrecord_ex", worker_factory)
     runner.auto_runner()
 
 

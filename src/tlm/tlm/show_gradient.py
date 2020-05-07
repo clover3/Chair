@@ -6,7 +6,9 @@ from visualize.html_visual import HtmlVisualizer
 
 
 def draw():
-    name = "pc_para_D_grad"
+    #name = "pc_para_D_grad"
+    name = "pc_para_I_grad"
+    #name = "pc_para_H_grad"
     data = EstimatorPredictionViewerGosford(name)
     html_writer = HtmlVisualizer(name + ".html", dark_mode=False)
 
@@ -18,7 +20,7 @@ def draw():
         cells = data.cells_from_tokens(tokens)
 
         for i, cell in enumerate(cells):
-            cells[i].highlight_score = min(abs(grad[i]) * 1e10, 255)
+            cells[i].highlight_score = min(abs(grad[i]) * 1e4, 255)
             cells[i].target_color = "B" if grad[i] > 0 else "R"
         print(grad)
         prob = softmax(entry.get_vector("logits"))

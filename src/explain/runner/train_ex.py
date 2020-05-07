@@ -10,8 +10,8 @@ import cpath
 import data_generator.NLI.nli_info
 from attribution.eval import eval_explain
 from data_generator.NLI.nli import get_modified_data_loader
-from data_generator.common import get_tokenizer
 from data_generator.shared_setting import BertNLI
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from explain.ex_train_modules import NLIExTrainConfig, get_informative_fn_by_name
 from explain.explain_model import CorrelationModeling, CrossEntropyModeling
 from explain.explain_trainer import ExplainTrainerM

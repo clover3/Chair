@@ -5,8 +5,7 @@ from collections import Counter
 import numpy as np
 
 from cpath import output_path
-from data_generator.common import get_tokenizer
-from data_generator.tokenizer_wo_tf import pretty_tokens
+from data_generator.tokenizer_wo_tf import pretty_tokens, get_tokenizer
 
 
 def do():

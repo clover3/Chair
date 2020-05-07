@@ -4,7 +4,7 @@ import numpy as np
 
 from cpath import output_path
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from tf_util.enum_features import load_record_v2
 from tlm.alt_emb.prediction_analysis import get_correctness
 from tlm.data_gen.feature_to_text import take

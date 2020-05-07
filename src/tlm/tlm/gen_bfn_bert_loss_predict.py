@@ -6,7 +6,7 @@ import sys
 import numpy as np
 
 from data_generator import tokenizer_wo_tf as tokenization
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import TimeEstimator
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tf_util.tf_logging import tf_logging, ab_logging

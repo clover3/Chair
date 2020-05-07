@@ -5,8 +5,8 @@ from arg.perspectives.load import get_claim_perspective_label_dict
 from arg.perspectives.pc_rel.rel_filtered import rel_filter
 from arg.perspectives.types import CPIDPair, Logits, DataID
 from cache import load_from_pickle
-from data_generator.common import get_tokenizer
 from data_generator.job_runner import sydney_working_dir
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from tf_util.enum_features import load_record
 from tf_util.record_writer_wrap import RecordWriterWrap
 

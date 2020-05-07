@@ -233,7 +233,7 @@ def perspective_lm_correlation():
 
         pos_list = []
         neg_list = []
-        print("Claim: ", claim_text)
+        print("Claim {}: ".format(c_Id), claim_text)
         for prediction in prediction_list:
             pid = prediction['pid']
             valid = False

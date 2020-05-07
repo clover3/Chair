@@ -7,7 +7,7 @@ from cpath import data_path
 from data_generator import text_encoder
 from data_generator import tokenizer
 from data_generator.tokenizer_b import FullTokenizerWarpper
-from data_generator.tokenizer_wo_tf import FullTokenizer, EncoderUnit
+from data_generator.tokenizer_wo_tf import EncoderUnit
 
 _EXAMPLES_FILE = 'examples.txt'
 
@@ -33,11 +33,6 @@ def _get_or_generate_vocab(tmp_dir, vocab_filename, vocab_size):
 def get_encoder():
     voca_path = os.path.join(data_path, "bert_voca.txt")
     return FullTokenizerWarpper(voca_path)
-
-
-def get_tokenizer():
-    voca_path = os.path.join(data_path, "bert_voca.txt")
-    return FullTokenizer(voca_path)
 
 
 def get_encoder_unit(seq_length, modified=True):

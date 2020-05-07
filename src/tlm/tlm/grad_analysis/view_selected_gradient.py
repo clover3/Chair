@@ -1,7 +1,7 @@
 import pickle
 import sys
 
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap
 from misc_lib import get_dir_files
 from tlm.token_utils import mask_resolve_1, cells_from_tokens, is_mask

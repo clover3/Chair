@@ -1,6 +1,6 @@
 from collections import Counter
 
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from tf_util.enum_features import load_record
 
 

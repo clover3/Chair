@@ -3,7 +3,7 @@ from collections import Counter
 
 from cache import save_to_pickle, load_from_pickle
 from cpath import data_path
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 
 
 def load_clueweb12_B13_termstat():

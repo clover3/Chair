@@ -102,6 +102,8 @@ def input_fn_builder_classification(input_files,
             d = tf.data.TFRecordDataset(input_files)
             # Since we evaluate for a fixed number of steps we don't want to encounter
             # out-of-range exceptions.
+            if flags.max_pred_steps > 0:
+                d = d.take(flags.max_pred_steps)
             #d = d.repeat()
 
         # We must `drop_remainder` on training because the TPU requires fixed
@@ -345,3 +347,28 @@ def input_fn_builder_classification_w_data_id(input_files,
         return format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
 
     return input_fn
+
+
+def input_fn_builder_convert_segment_ids(input_files,
+                              flags,
+                              is_training,
+                              num_cpu_threads=4):
+
+    def input_fn(params):
+        """The actual input function."""
+        batch_size = params["batch_size"]
+        max_seq_length = flags.max_seq_length
+
+        segment_ids = tf.cast(tf.io.FixedLenFeature([max_seq_length], tf.int64) / 2, tf.int6)
+        name_to_features = {
+                "input_ids":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_mask":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "segment_ids":segment_ids,
+                "label_ids": tf.io.FixedLenFeature([1], tf.int64),
+                "data_id": tf.io.FixedLenFeature([1], tf.int64),
+        }
+        return format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+
+    return input_fn
+
+

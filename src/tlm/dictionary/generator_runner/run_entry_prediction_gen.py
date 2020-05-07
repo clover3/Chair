@@ -3,7 +3,7 @@ import random
 import sys
 
 from cache import *
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from dictionary.reader import DictionaryReader, DictionaryParser, all_pos_list
 from list_lib import lmap
 from misc_lib import TimeEstimator

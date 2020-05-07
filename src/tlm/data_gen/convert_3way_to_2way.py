@@ -19,18 +19,6 @@ def tfrecord_convertor(source_path: FilePath,
     writer.close()
 
 
-def tfrecord_convertor(source_path: FilePath,
-                       output_path: FilePath,
-                       feature_transformer
-                       ):
-    writer = RecordWriterWrap(output_path)
-    feature_itr = load_record_v2(source_path)
-    for feature in feature_itr:
-        new_features = feature_transformer(feature)
-        writer.write_feature(new_features)
-    writer.close()
-
-
 
 def convert_to_2way(source_path, output_path):
     def feature_transformer(feature):

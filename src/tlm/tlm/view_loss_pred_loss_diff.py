@@ -6,7 +6,7 @@ import numpy as np
 import scipy.special
 
 from cpath import output_path
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewerGosford
 from visualize.html_visual import HtmlVisualizer, Cell

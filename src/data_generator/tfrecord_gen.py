@@ -1,7 +1,7 @@
 import collections
 
-from data_generator.common import get_tokenizer
 from data_generator.create_feature import create_int_feature
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from tf_util.record_writer_wrap import RecordWriterWrap
 
 

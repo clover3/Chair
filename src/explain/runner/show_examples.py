@@ -3,7 +3,7 @@ import numpy as np
 import data_generator.NLI.nli_info
 from cache import load_from_pickle
 from data_generator.NLI.nli import get_modified_data_loader2
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from explain.ex_train_modules import NLIExTrainConfig
 from models.transformer.hyperparams import HPSENLI3
 from tlm.token_utils import cells_from_tokens

@@ -54,12 +54,11 @@ class FocusMask(BertModelInterface):
                   initializer_range=config.initializer_range,
                   max_position_embeddings=config.max_position_embeddings,
                   dropout_prob=config.hidden_dropout_prob)
-
               self.embedding_output = embedding_postprocessor(
                   input_tensor=self.embedding_output,
                   use_token_type=True,
                   token_type_ids=focus_mask,
-                  token_type_vocab_size=num_labels,
+                  token_type_vocab_size=4,
                   token_type_embedding_name="focus_embedding",
                   use_position_embeddings=False,
                   position_embedding_name=None,

@@ -20,13 +20,14 @@ def save_for_dev():
     save_to_pickle(rel_info, "pc_rel_dev_with_cpid")
 
 
-def debug_it():
-    rel_info = load_from_pickle("pc_rel_with_cpid")
+def pc_rel_dev_with_cpid():
+    rel_info = load_from_pickle("pc_rel_dev_with_cpid")
     keys = list(rel_info.keys())
+    print("num keys", len(keys))
     keys.sort()
     print(keys[:100])
     print(0 in rel_info)
 
 
 if __name__ == "__main__":
-    save_for_dev()
+    pc_rel_dev_with_cpid()

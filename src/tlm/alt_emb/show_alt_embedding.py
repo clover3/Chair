@@ -2,7 +2,7 @@ import numpy as np
 
 from base_type import FileName
 from cpath import pjoin, output_path
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc.show_checkpoint_vars import load_checkpoint_vars
 
 

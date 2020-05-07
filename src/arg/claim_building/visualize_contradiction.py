@@ -1,6 +1,6 @@
 from cache import StreamPickleReader
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from tlm.token_utils import cells_from_tokens
 from visualize.html_visual import HtmlVisualizer, normalize, Cell
 

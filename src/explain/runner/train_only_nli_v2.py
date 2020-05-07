@@ -3,8 +3,8 @@ import sys
 
 from cache import load_cache, save_to_pickle
 from data_generator.NLI import nli
-from data_generator.common import get_tokenizer
 from data_generator.shared_setting import NLI
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from log import log as log_module
 from misc_lib import average
 from models.transformer import hyperparams

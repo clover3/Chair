@@ -4,8 +4,8 @@ from typing import List, Dict, Tuple
 from base_type import FilePath
 from cache import save_to_pickle
 from cpath import output_path, pjoin
-from data_generator.common import get_tokenizer
 from data_generator.create_feature import create_int_feature
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from datastore.interface import load, preload_man
 from datastore.table_names import BertTokenizedCluewebDoc
 from galagos.parse import load_galago_ranked_list

@@ -15,8 +15,8 @@ from arg.pf_common.text_processing import re_tokenize
 from arg.ukp.data_loader import UkpDataPoint, load_all_data_flat
 from cache import load_from_pickle
 from data_generator.argmining.ukp_header import label_names
-from data_generator.common import get_tokenizer
 from data_generator.subword_translate import Subword
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from datastore.interface import preload_man
 from datastore.table_names import TokenizedCluewebDoc, BertTokenizedCluewebDoc
 from galagos.types import GalagoDocRankEntry

@@ -35,15 +35,23 @@ def collect_save_relevance_score(prediction_path, pc_rel_info) -> Dict[str, int]
     return output_score_dict
 
 
+# pipeline2 means the dataset which is filtered by msmarco score
 def collect_pipeline2_score(prediction_path, pc_rel_info) -> Dict[CPID, List[float]]:
     info_d = load_from_pickle(pc_rel_info)
     print('info_d',  len(info_d))
 
     def get_cpid(data_id, info_d) -> CPID:
-        info_1 = info_d[data_id-1]
-        info_2 = info_d[data_id]
-        cid = info_1['cid']
-        pid = info_2['pid']
+        try:
+            info_1 = info_d[data_id - 1]
+            info_2 = info_d[data_id]
+            cid = info_1['cid']
+            pid = info_2['pid']
+        except KeyError:
+            info_1 = info_d[data_id]
+            info_2 = info_d[data_id+1]
+            cid = info_1['cid']
+            pid = info_2['pid']
+
         return CPID("{}_{}".format(cid, pid))
 
     data = EstimatorPredictionViewer(prediction_path)

@@ -19,9 +19,12 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
+import os
 import unicodedata
 
 import six
+
+from cpath import data_path
 
 PAD = "<pad>"
 EOS = "<EOS>"
@@ -548,3 +551,8 @@ class EncoderUnit:
 
 def is_continuation(subword):
     return len(subword) > 2 and subword[:2] == "##"
+
+
+def get_tokenizer():
+    voca_path = os.path.join(data_path, "bert_voca.txt")
+    return FullTokenizer(voca_path)

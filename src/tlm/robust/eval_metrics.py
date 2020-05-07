@@ -4,8 +4,8 @@ import sys
 import numpy as np
 
 from cache import load_pickle_from
-from data_generator.common import get_tokenizer
 from data_generator.data_parser.robust2 import load_robust_qrel, robust_path
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from evals.adhoc import p_at_k, dcg_at_k
 from galagos.parse import write_ranked_list
 from list_lib import left

@@ -4,12 +4,11 @@ import sys
 from functools import partial
 
 import tensorflow as tf
+from galagos.basic import load_galago_ranked_list
 
 import cpath
 import data_generator.argmining.ukp_header
-from data_generator.common import get_tokenizer
-from data_generator.tokenizer_wo_tf import EncoderUnit
-from galagos.basic import load_galago_ranked_list
+from data_generator.tokenizer_wo_tf import EncoderUnit, get_tokenizer
 from models.transformer import hyperparams
 from models.transformer.tranformer_nli import transformer_nli
 from trainer.model_saver import load_model_w_scope

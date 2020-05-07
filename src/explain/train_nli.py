@@ -4,8 +4,8 @@ import tensorflow as tf
 
 from cache import load_cache, save_to_pickle
 from data_generator.NLI import nli
-from data_generator.common import get_tokenizer
 from data_generator.shared_setting import BertNLI
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from explain.nli_common import train_classification_factory, valid_fn_factory, save_fn_factory
 from models.transformer import hyperparams
 from models.transformer.nli_base import transformer_nli_pooled

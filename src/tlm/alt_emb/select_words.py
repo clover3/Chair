@@ -8,7 +8,7 @@
 from collections import Counter
 from typing import Set
 
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from tf_util.enum_features import load_record_v2
 from tlm.data_gen.feature_to_text import take
 

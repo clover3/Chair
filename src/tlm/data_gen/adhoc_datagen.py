@@ -4,10 +4,10 @@ import pickle
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from data_generator.common import get_tokenizer
 from data_generator.data_parser.robust import load_robust04_query
 from data_generator.data_parser.robust2 import load_qrel, load_bm25_best
 from data_generator.job_runner import sydney_working_dir
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.data_gen.base import get_basic_input_feature
 from tlm.data_gen.bert_data_gen import create_int_feature

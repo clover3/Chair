@@ -2,8 +2,7 @@ import sys
 
 import tensorflow as tf
 
-from data_generator.common import get_tokenizer
-from data_generator.tokenizer_wo_tf import pretty_tokens
+from data_generator.tokenizer_wo_tf import pretty_tokens, get_tokenizer
 
 
 def file_show(fn):

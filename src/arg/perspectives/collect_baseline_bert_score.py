@@ -31,15 +31,15 @@ def collect(input_file, feature_data: List[PerspectiveCandidate]):
 def main():
     split = "dev"
     data: List[PerspectiveCandidate] = load_data_point(split)
-    pred_path = os.path.join(output_path, "pc_bert_baseline")
+    pred_path = os.path.join(output_path, "pc_bert_baseline2")
     score_d = collect(pred_path, data)
-    save_to_pickle(score_d, "pc_bert_baseline_score_d")
+    save_to_pickle(score_d, "pc_bert_baseline_score_d2")
 
-    split = "train"
-    data: List[PerspectiveCandidate] = load_data_point(split)
-    pred_path = os.path.join(output_path, "pc_bert_baseline_train")
-    score_d = collect(pred_path, data)
-    save_to_pickle(score_d, "pc_bert_baseline_score_d_train")
+    # split = "train"
+    # data: List[PerspectiveCandidate] = load_data_point(split)
+    # pred_path = os.path.join(output_path, "pc_bert_baseline_train")
+    # score_d = collect(pred_path, data)
+    # save_to_pickle(score_d, "pc_bert_baseline_score_d_train")
 
 
 if __name__ == "__main__":

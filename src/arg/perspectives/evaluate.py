@@ -18,10 +18,11 @@ def perspective_getter(pid):
     return perspective[pid]
 
 
-def get_prec_recll(predicted_perspectives, gold_pids):
+def get_prec_recll(predicted_perspectives, gold_pids, debug):
     ## In this metrics, it is possible to get precision > 1, as some clusters shares same perspective
     tp = 0
-    print(gold_pids)
+    if debug:
+        print(gold_pids)
     # for cluster in gold_pids:
     #     print("-")
     #     for pid in cluster:
@@ -38,7 +39,8 @@ def get_prec_recll(predicted_perspectives, gold_pids):
             correct_str = "N"
         else:
             correct_str = "Y"
-        print(correct_str, prediction['score'], prediction['rationale'], pid, prediction['perspective_text'])
+        if debug:
+            print(correct_str, prediction['score'], prediction['rationale'], pid, prediction['perspective_text'])
     # r_tp = 0
     # for cluster in gold_pids:
     #     for pid in p_Id_list:
@@ -89,15 +91,16 @@ def evaluate2(predictions):
     }
 
 
-def evaluate(predictions):
+def evaluate(predictions, debug=True):
     gold = get_claim_perspective_id_dict()
     prec_list = []
     recall_list = []
     for c_Id, prediction_list in predictions:
         gold_pids = gold[c_Id]
         claim_text = prediction_list[0]['claim_text']
-        print("Claim: ", claim_text)
-        prec, recall = get_prec_recll(prediction_list, gold_pids)
+        if debug:
+            print("Claim {}: ".format(c_Id), claim_text)
+        prec, recall = get_prec_recll(prediction_list, gold_pids, debug)
         prec_list.append(prec)
         recall_list.append(recall)
 
@@ -105,8 +108,8 @@ def evaluate(predictions):
     avg_recall = average(recall_list)
 
     return {
-        'precision':avg_prec,
-        'recall':avg_recall,
+        'precision': avg_prec,
+        'recall' :avg_recall,
         'f1': get_f1(avg_prec, avg_recall)
     }
 

@@ -1,5 +1,5 @@
 from cache import *
-from data_generator.common import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from dictionary.reader import DictionaryReader
 from tlm.dictionary.data_gen import dictionary_encoder
 
