@@ -5,7 +5,7 @@ from functools import partial
 from typing import List, Dict, Tuple
 
 from arg.perspectives.cpid_def import CPID
-from arg.perspectives.select_paragraph_perspective import ParagraphClaimPersFeature
+from arg.perspectives.declaration import ParagraphClaimPersFeature
 from data_generator.tokenizer_wo_tf import FullTokenizer, get_tokenizer
 from list_lib import lmap
 

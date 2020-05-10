@@ -60,7 +60,7 @@ def load_claim_ids_for_split(split) -> Iterable[int]:
             yield int(c_id)
 
 
-def claims_to_dict(claims):
+def claims_to_dict(claims) -> Dict[int, str]:
     d = {}
     for e in claims:
         d[e['cId']] = e['text']

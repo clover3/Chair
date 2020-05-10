@@ -6,8 +6,8 @@ import math
 import nltk
 
 from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
-from arg.perspectives.basic_analysis import PerspectiveCandidate
 from arg.perspectives.collection_interface import CollectionInterface
+from arg.perspectives.declaration import PerspectiveCandidate
 from arg.perspectives.ranked_list_interface import DynRankedListInterface
 from arg.pf_common.text_processing import re_tokenize
 from datastore.interface import load_multiple

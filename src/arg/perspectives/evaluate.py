@@ -23,10 +23,10 @@ def get_prec_recll(predicted_perspectives, gold_pids, debug):
     tp = 0
     if debug:
         print(gold_pids)
-    # for cluster in gold_pids:
-    #     print("-")
-    #     for pid in cluster:
-    #         print(pid, perspective_getter(pid))
+    for cluster in gold_pids:
+        print("-")
+        for pid in cluster:
+            print(pid, perspective_getter(pid))
     for prediction in predicted_perspectives:
         pid = prediction['pid']
         valid = False

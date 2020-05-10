@@ -4,10 +4,12 @@ from typing import List, Dict
 
 from base_type import FilePath
 from cpath import data_path
+from datastore.alchemy_schema import Base, KeyOnlyTable, engine, Session, RawCluewebDocTable
 from datastore.interface import has_key, load, save, flush
 from datastore.table_names import TokenizedCluewebDoc, RawCluewebDoc, CluewebDocTF, QueryResult
 from galagos.parse import load_galago_ranked_list
 from galagos.types import GalagoDocRankEntry, QueryResultID
+from misc_lib import TimeEstimator
 from sydney_clueweb.clue_path import get_first_disk
 
 
@@ -76,3 +78,38 @@ def insert_ranked_list_from_path(file_path: FilePath, q_config_id: str):
     for query_id in ranked_list:
         q_res_id: QueryResultID = QueryResultID("{}_{}".format(query_id, q_config_id))
         insert_ranked_list(q_res_id, ranked_list[query_id])
+
+
+def add_doc_list_to_table(doc_list, save_name):
+    class DocIdTable(Base, KeyOnlyTable):
+        __tablename__ = save_name
+
+    Base.metadata.create_all(engine)
+    print("Writing doc list to table : ", len(doc_list))
+    ticker = TimeEstimator(len(doc_list))
+
+    session = Session()
+    cnt = 0
+
+    payload = []
+    for key in doc_list:
+        ticker.tick()
+        new_record = DocIdTable(key=key)
+        payload.append(new_record)
+        cnt += 1
+    session.bulk_save_objects(payload)
+    session.flush()
+    session.commit()
+
+
+def get_docs_in_db(save_name):
+    class DocIdTable(Base, KeyOnlyTable):
+        __tablename__ = save_name
+
+    session = Session()
+    print("execute join")
+    j = session.query(DocIdTable).join(RawCluewebDocTable, DocIdTable.key == RawCluewebDocTable.key)
+    doc_id_in_db = set()
+    for entry in j.all():
+        doc_id_in_db.add(entry)
+    return doc_id_in_db

@@ -24,6 +24,5 @@ def alt_from_clueweb12_13A():
     combine(nli_checkpoint, alt_emb_checkpoint, save_path)
 
 
-
 if __name__ == "__main__":
     alt_from_clueweb12_13A_100K()

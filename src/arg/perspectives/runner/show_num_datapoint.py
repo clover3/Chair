@@ -1,6 +1,7 @@
 from typing import List
 
-from arg.perspectives.basic_analysis import load_data_point, PerspectiveCandidate
+from arg.perspectives.basic_analysis import load_data_point
+from arg.perspectives.declaration import PerspectiveCandidate
 
 
 def show():

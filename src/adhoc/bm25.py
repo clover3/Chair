@@ -27,6 +27,14 @@ def BM25_3(f, qf, df, N, dl, avdl):
     return first * second * third
 
 
+def BM25_verbose(f, qf, df, N, dl, avdl, b, my_k1, my_k2):
+    K = my_k1 * ((1-b) + b * (float(dl)/float(avdl)))
+    first = log((N-df+0.5)/(df + 0.5))
+    second = ((my_k1 + 1) * f) / (K + f)
+    third = ((my_k2+1) * qf) / (my_k2 + qf)
+    return first * second * third
+
+
 def BM25_3_q_weight(qf, df, N):
     first = log((N-df+0.5)/(df + 0.5))
     third = ((k2+1) * qf) / (k2 + qf)

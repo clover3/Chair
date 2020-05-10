@@ -1,6 +1,7 @@
 from typing import List
 
-from arg.perspectives.basic_analysis import load_data_point, PerspectiveCandidate
+from arg.perspectives.basic_analysis import load_data_point
+from arg.perspectives.declaration import PerspectiveCandidate
 from arg.perspectives.ranked_list_interface import StaticRankedListInterface
 from galagos.query_runs_ids import Q_CONFIG_ID_BM25_10000
 

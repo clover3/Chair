@@ -1,20 +1,11 @@
-from typing import NamedTuple
-
 import nltk
 
 from arg.perspectives import es_helper
+from arg.perspectives.declaration import PerspectiveCandidate
 from arg.perspectives.load import get_claim_perspective_id_dict, get_perspective_dict, load_claim_perspective_pair, \
     get_claims_from_ids, load_claim_ids_for_split
 from cie.msc.tf_idf import sublinear_term_frequency, cosine_similarity, inverse_document_frequencies
 from list_lib import flatten
-
-
-class PerspectiveCandidate(NamedTuple):
-    label: str
-    cid: str
-    pid: str
-    claim_text: str
-    p_text: str
 
 
 def get_candidates(claims, is_train):

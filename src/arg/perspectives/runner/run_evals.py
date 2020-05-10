@@ -1,6 +1,7 @@
 from typing import Dict, List, Set
 
 from arg.perspectives.basic_analysis import predict_by_elastic_search
+from arg.perspectives.bm25_predict import predict_by_bm25, get_bm25_module
 from arg.perspectives.cpid_def import CPID
 from arg.perspectives.evaluate import evaluate
 from arg.perspectives.load import get_claims_from_ids, load_train_claim_ids
@@ -61,13 +62,17 @@ def run_bert_baseline():
 
 def run_baseline():
     claims, val = train_split()
-    top_k = 5
-
-    target = filter_avail(val)
-    print("targets", len(target))
+    top_k = 20
     pred = predict_by_elastic_search(claims, top_k)
     print(evaluate(pred))
 
 
+def run_bm25():
+    claims, val = train_split()
+    top_k = 20
+    pred = predict_by_bm25(get_bm25_module(), claims, top_k)
+    print(evaluate(pred))
+
+
 if __name__ == "__main__":
-    run_bert_baseline()
+    run_bm25()

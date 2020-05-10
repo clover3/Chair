@@ -117,6 +117,8 @@ def test_logistic_regression():
         print(pred_y[i], y[i], terms) #
 
 
+
+
 def lm_contribution():
     train, val = load_feature_and_split()
     print("Training lm")

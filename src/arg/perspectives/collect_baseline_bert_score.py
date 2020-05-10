@@ -3,8 +3,9 @@ from typing import List, Dict
 
 from scipy.special import softmax
 
-from arg.perspectives.basic_analysis import PerspectiveCandidate, load_data_point
+from arg.perspectives.basic_analysis import load_data_point
 from arg.perspectives.cpid_def import CPID
+from arg.perspectives.declaration import PerspectiveCandidate
 from cache import save_to_pickle
 from cpath import output_path
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer

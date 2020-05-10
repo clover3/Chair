@@ -2,7 +2,7 @@ from collections import OrderedDict
 from typing import List
 from typing import Tuple, Dict
 
-from arg.perspectives.select_paragraph_perspective import ParagraphClaimPersFeature
+from arg.perspectives.declaration import ParagraphClaimPersFeature
 from data_generator.tokenizer_wo_tf import FullTokenizer
 from misc_lib import DataIDGen
 from tlm.data_gen.base import get_basic_input_feature

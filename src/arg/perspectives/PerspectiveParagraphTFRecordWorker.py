@@ -3,7 +3,7 @@ import pickle
 from collections import OrderedDict
 from typing import List
 
-from arg.perspectives.select_paragraph_perspective import ParagraphClaimPersFeature
+from arg.perspectives.declaration import ParagraphClaimPersFeature
 from arg.pf_common.base import ParagraphFeature, TPDataPoint, DPID
 from arg.pf_common.encode_paragraph_feature_to_tfrecord import format_paragraph_features
 from data_generator.job_runner import sydney_working_dir

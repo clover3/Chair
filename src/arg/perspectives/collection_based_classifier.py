@@ -67,6 +67,15 @@ def get_adjusted_score(data_point):
     return diff / 5
 
 
+class NamedNumber(float):
+    def __new__(self, value, name):
+        return float.__new__(self, value)
+
+    def __init__(self, value, extra):
+        float.__init__(value)
+        self.name = extra
+
+
 def predict_interface(claims, top_k, scorer, get_rationale=None):
     def get_claim_prediction(c: Dict) -> Tuple[str, List[Dict]]:
         cid = c["cId"]
@@ -80,6 +89,10 @@ def predict_interface(claims, top_k, scorer, get_rationale=None):
             rationale = "es_rank={} , es_score={}".format(rank, _score)
             if get_rationale is not None:
                 rationale += " " + get_rationale(query_id)
+            try:
+                rationale += " " + score.name
+            except:
+                pass
             p_entry = {
                 'cid': cid,
                 'pid': _pid,
@@ -89,7 +102,6 @@ def predict_interface(claims, top_k, scorer, get_rationale=None):
                 'score': score,
             }
             prediction_list.append(p_entry)
-
         prediction_list.sort(key=lambda x: x['score'], reverse=True)
         prediction_list = prediction_list[:top_k]
         return cid, prediction_list

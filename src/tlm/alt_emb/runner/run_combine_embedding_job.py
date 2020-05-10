@@ -60,6 +60,17 @@ def do_nli():
     upload_to_gs(save_path, upload_gs_dir)
 
 
+def ukp():
+    model_1_path = "gs://clovertpu/training/model/ukp_runs/ukp_8_bert_/model.ckpt-1939"
+    model_2_path = 'gs://clover_eu4/model/alt_emb_O_ukp/model.ckpt-20000'
+    save_dir = os.path.join(output_path, "ukp_from_alt_emb_O")
+    exist_or_mkdir(save_dir)
+    save_path = os.path.join(save_dir, "model.ckpt-0")
+    download_and_combine(model_1_path, model_2_path, save_path)
+    upload_gs_dir = "gs://clovertpu/training/model/ukp_from_alt_emb_O"
+    upload_to_gs(save_path, upload_gs_dir)
+
+
 if __name__ == "__main__":
-    ehealth_M_80K()
+    ukp()
 

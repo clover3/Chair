@@ -8,10 +8,10 @@ import sys
 from typing import List
 
 from arg.perspectives.basic_analysis import load_train_data_point
+from arg.perspectives.clueweb_galago_db import get_docs_in_db
 from arg.perspectives.dp_query_routines import dp_to_qid
 from cache import save_to_pickle
 from cpath import output_path
-from datastore.alchemy_schema import KeyOnlyTable, Base, Session, RawCluewebDocTable, engine
 from datastore.interface import has_key, load
 from datastore.table_names import QueryResult
 from galagos.query_runs_ids import Q_CONFIG_ID_BM25_10000
@@ -50,43 +50,8 @@ def read_doc_list(st, ed):
     return doc_list
 
 
-def add_doc_list_to_table(doc_list, save_name):
-    class DocIdTable(Base, KeyOnlyTable):
-        __tablename__ = save_name
-
-    Base.metadata.create_all(engine)
-    print("Writing doc list to table : ", len(doc_list))
-    ticker = TimeEstimator(len(doc_list))
-
-    session = Session()
-    cnt = 0
-    def add_to_table(key):
-        ticker.tick()
-        new_record = DocIdTable(key=key)
-        session.add(new_record)
-        nonlocal cnt
-        cnt += 1
-        if cnt > 1000:
-            session.flush()
-            cnt = 0
-
-    foreach(add_to_table, doc_list)
-    session.flush()
-    session.commit()
-
-
 def do_join_and_write(doc_list, save_name):
-    class DocIdTable(Base, KeyOnlyTable):
-        __tablename__ = save_name
-
-    session = Session()
-    print("execute join")
-    j = session.query(DocIdTable).join(RawCluewebDocTable, DocIdTable.key == RawCluewebDocTable.key)
-
-    doc_id_in_db = set()
-    for entry in j.all():
-        doc_id_in_db.add(entry)
-
+    doc_id_in_db = get_docs_in_db(save_name)
     doc_list_to_fetch = doc_list - doc_id_in_db
     exist_or_mkdir(os.path.join(output_path, "doc_list"))
     save_path = os.path.join(output_path, "doc_list", save_name)

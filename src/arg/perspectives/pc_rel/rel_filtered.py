@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from collections import OrderedDict
 from typing import Tuple, Dict, Iterator
 
 from scipy.special import softmax
@@ -38,6 +37,21 @@ def combine_segment(features_c, features_p) -> OrderedDict:
     return ordered_dict_from_input_segment_mask_ids(input_ids, input_mask, segment_ids)
 
 
+def get_paragraph(features_c, features_p) -> Iterator[int]:
+    # input_ids does not contain CLS, SEP
+    c_seg_id = list(take(features_c['segment_ids']))
+    max_seq_len = len(c_seg_id)
+
+    st = c_seg_id.index(1)
+    input_mask = list(take(features_c['input_mask']))
+
+    ed = input_mask.index(0)
+
+    feature_c_input_ids = take(features_c['input_ids'])
+    paragraph = feature_c_input_ids[st:ed]
+    return paragraph
+
+
 def rel_filter(tfrecord_itr,
                relevance_scores: Dict[DataID, Tuple[CPIDPair, Logits, Logits]],
                cpid_to_label: Dict[CPIDPair, int]) -> Iterator[OrderedDict]:
@@ -67,3 +81,35 @@ def rel_filter(tfrecord_itr,
             new_feature['data_id'] = create_int_feature([data_id])
             yield new_feature
         last_feature = None
+
+
+def rel_filter_to_para(tfrecord_itr,
+               relevance_scores: Dict[DataID, Tuple[CPIDPair, Logits, Logits]],
+               cpid_to_label: Dict[CPIDPair, int]) -> Iterator[Tuple]:
+
+    last_feature = None
+    for features in tfrecord_itr:
+        if last_feature is None:
+            last_feature = features
+            continue
+
+        data_id = take(features["data_id"])[0]
+        t = relevance_scores[data_id]
+        cpid: CPIDPair = t[0]
+        c_logits = t[1]
+        p_logits = t[2]
+
+        c_score = softmax(c_logits)[1]
+        p_score = softmax(p_logits)[1]
+
+        weight = c_score * p_score
+        label: int = cpid_to_label[cpid]
+
+        if weight > 0.5:
+            paragraph = get_paragraph(last_feature, features)
+        else:
+            paragraph = []
+
+        output_entry = cpid, label, paragraph, c_score, p_score
+        yield output_entry
+

@@ -3,8 +3,8 @@ import pickle
 from collections import OrderedDict
 from typing import List, Dict
 
+from arg.perspectives.declaration import ParagraphClaimPersFeature
 from arg.perspectives.pc_rel.pc_rel_structure import to_retrieval_format
-from arg.perspectives.select_paragraph_perspective import ParagraphClaimPersFeature
 from data_generator.job_runner import sydney_working_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import foreach

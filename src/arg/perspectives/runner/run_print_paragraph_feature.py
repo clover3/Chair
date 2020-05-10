@@ -3,7 +3,7 @@ import pickle
 from typing import List
 
 from arg.perspectives.PerspectiveParagraphTFRecordWorker import to_paragraph_feature
-from arg.perspectives.select_paragraph_perspective import ParagraphClaimPersFeature
+from arg.perspectives.declaration import ParagraphClaimPersFeature
 from arg.pf_common.base import ParagraphFeature
 from arg.pf_common.print_paragraph_feature import print_paragraph_feature
 from base_type import FileName

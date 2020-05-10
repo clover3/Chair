@@ -7,7 +7,7 @@ from cache import save_to_pickle, load_from_pickle
 from cpath import output_path, pjoin
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import left, lmap
-from tlm.alt_emb.add_alt_emb import MatchTree
+from tlm.alt_emb.add_alt_emb import selected_terms_to_match_tree
 from tlm.alt_emb.select_words import get_continuation_token_ids, build_word_tf, select_common
 
 def count_tf():
@@ -52,13 +52,7 @@ def select_word_from_test():
 
 def build_match_tree():
     selected_words = load_from_pickle("clef1_tf_test")
-
-    seq_set = left(selected_words)
-
-    match_tree = MatchTree()
-    for seq in seq_set:
-        match_tree.add_seq(seq)
-
+    match_tree = selected_terms_to_match_tree(selected_words)
     save_to_pickle(match_tree, "match_tree_clef1_test")
 
 

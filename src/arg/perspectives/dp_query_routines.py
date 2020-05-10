@@ -1,4 +1,4 @@
-from arg.perspectives.basic_analysis import PerspectiveCandidate
+from arg.perspectives.declaration import PerspectiveCandidate
 from arg.perspectives.ranked_list_interface import make_passage_query, make_doc_query
 from datastore.interface import has_key
 from datastore.table_names import QueryResult

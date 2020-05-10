@@ -1,8 +1,9 @@
 import os
 from typing import List
 
-from arg.perspectives.basic_analysis import load_train_data_point, PerspectiveCandidate
+from arg.perspectives.basic_analysis import load_train_data_point
 from arg.perspectives.build_feature import get_doc_id
+from arg.perspectives.declaration import PerspectiveCandidate
 from arg.perspectives.ranked_list_interface import DynRankedListInterface, make_doc_query
 from cpath import output_path
 from galagos.query_runs_ids import Q_CONFIG_ID_BM25_10000

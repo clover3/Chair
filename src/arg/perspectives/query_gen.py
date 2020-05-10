@@ -1,14 +1,17 @@
 import os
+from typing import List
 
-from arg.perspectives.basic_analysis import get_candidates, PerspectiveCandidate
+from arg.perspectives.basic_analysis import get_candidates
+from arg.perspectives.declaration import PerspectiveCandidate
 from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids, load_dev_claim_ids, load_test_claim_ids
 from arg.perspectives.pc_run_path import query_dir_format
-from cpath import output_path
+from cpath import output_path, pjoin
 from galagos.interface import format_query_bm25, DocQuery, write_queries_to_files
 from galagos.parse import clean_query, get_query_entry_bm25_anseri, save_queries_to_file
 from galagos.tokenize_util import clean_tokenize_str_to_tokens
 from list_lib import lmap
 from misc_lib import exist_or_mkdir
+from models.classic.stopword import load_stopwords
 
 
 def write_claim_as_query():
@@ -26,6 +29,57 @@ def write_claim_as_query():
 
     out_path = os.path.join(output_path, "perspective_dev_claim_query.json")
     save_queries_to_file(queries, out_path)
+
+
+def get_claims_as_plain_query(claims):
+    q_str_list = []
+    for query in get_claims_query(claims):
+        q_str = query['text']
+        q_str_list.append(q_str)
+    return q_str_list
+
+
+def get_claims_query(claims, drop_stopwords=False):
+    if drop_stopwords:
+        stopword = load_stopwords()
+
+    queries = []
+    for c in claims:
+        cid = str(c["cId"])
+        claim_text = c["text"]
+        q_terms: List[str] = clean_tokenize_str_to_tokens(claim_text)
+        print(q_terms)
+        if drop_stopwords:
+            q_terms = list([t for t in q_terms if t not in stopword])
+        print(q_terms)
+
+        q_entry = format_query_bm25(cid, q_terms)
+        queries.append(q_entry)
+    return queries
+
+
+def run_write_claims_as_plain_query():
+    for claim_ids, out_name in [(load_train_claim_ids(), "train_claim_query_raw.txt"),
+                                (load_dev_claim_ids(), "dev_claim_query_raw.txt")]:
+        claims = get_claims_from_ids(claim_ids)
+        q_str_list = get_claims_as_plain_query(claims)
+        f = open(pjoin(output_path, out_name), "w")
+        for s in q_str_list:
+            f.write(s + "\n")
+
+
+def write_claim_queries_k0():
+    def write(claim_ids, split_name):
+        claims = get_claims_from_ids(claim_ids)
+        queries = get_claims_query(claims, True)
+        out_path = os.path.join(output_path, "perspective_{}_claim_query_k0.json".format(split_name))
+        save_queries_to_file(queries, out_path)
+
+    claim_ids, split_name = (load_train_claim_ids(), "train")
+
+    write(claim_ids, split_name)
+    claim_ids, split_name = (load_dev_claim_ids(), "dev")
+    write(claim_ids, split_name)
 
 
 def write_claim_perspective_pair_as_query():
@@ -58,5 +112,5 @@ def write_claim_perspective_pair_as_query():
 
 
 if __name__ == "__main__":
-    write_claim_perspective_pair_as_query()
+    write_claim_queries_k0()
 

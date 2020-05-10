@@ -2,7 +2,7 @@ import collections
 from typing import List, Set
 
 from base_type import FilePath
-from list_lib import flatten
+from list_lib import flatten, left
 from tf_util.enum_features import load_record_v2
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.data_gen.bert_data_gen import create_int_feature
@@ -194,3 +194,9 @@ def verify_alt_emb(source_path, seq_set: List[List[int]]):
         check_feature(feature)
 
 
+def selected_terms_to_match_tree(selected_words):
+    seq_set = left(selected_words)
+    match_tree = MatchTree()
+    for seq in seq_set:
+        match_tree.add_seq(seq)
+    return match_tree

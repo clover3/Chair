@@ -1,7 +1,8 @@
 from collections import OrderedDict
 from typing import List
 
-from arg.perspectives.basic_analysis import load_data_point, PerspectiveCandidate
+from arg.perspectives.basic_analysis import load_data_point
+from arg.perspectives.declaration import PerspectiveCandidate
 from data_generator.create_feature import create_int_feature
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from tf_util.record_writer_wrap import RecordWriterWrap

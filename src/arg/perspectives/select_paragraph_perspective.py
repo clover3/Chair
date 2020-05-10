@@ -1,13 +1,14 @@
 import os
 import pickle
 import string
-from typing import NamedTuple, List, Set, Iterable, Callable
+from typing import List, Set, Iterable, Callable
 
 import math
 import nltk
 
 from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
-from arg.perspectives.basic_analysis import PerspectiveCandidate, load_data_point
+from arg.perspectives.basic_analysis import load_data_point
+from arg.perspectives.declaration import ParagraphClaimPersFeature, PerspectiveCandidate
 from arg.perspectives.ranked_list_interface import StaticRankedListInterface
 from arg.pf_common.base import Paragraph, ScoreParagraph
 from arg.pf_common.select_paragraph import subword_tokenize_functor, enum_paragraph
@@ -18,11 +19,6 @@ from datastore.interface import preload_man
 from datastore.table_names import TokenizedCluewebDoc, BertTokenizedCluewebDoc
 from galagos.types import GalagoDocRankEntry
 from list_lib import lfilter, lmap, flatten
-
-
-class ParagraphClaimPersFeature(NamedTuple):
-    claim_pers: PerspectiveCandidate
-    feature: List[ScoreParagraph]
 
 
 def select_paragraph_dp_list(ci: StaticRankedListInterface,

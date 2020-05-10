@@ -6,6 +6,8 @@ from cpath import data_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
 
 
+# modified
+
 def load_clueweb12_B13_termstat():
     f = open(os.path.join(data_path, "clueweb12_B13_termstat.txt"), "r")
     tf = Counter()

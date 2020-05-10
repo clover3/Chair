@@ -1,5 +1,6 @@
 from typing import List
 
+from arg.perspectives.bm25_predict import predict_by_bm25, get_bm25_module, predict_by_bm25_rm
 from arg.perspectives.evaluate import evaluate
 from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids
 from arg.perspectives.pc_para_predictor import predict_by_para_scorer
@@ -47,6 +48,23 @@ def run_eval_with_two_dict():
     print(evaluate(pred))
 
 
+def run_bm25():
+    d_ids: List[int] = list(load_dev_claim_ids())
+    claims = get_claims_from_ids(d_ids)
+    top_k = 7
+    pred = predict_by_bm25(get_bm25_module(), claims, top_k)
+    print(evaluate(pred))
+
+
+def run_bm25_rm():
+    d_ids: List[int] = list(load_dev_claim_ids())
+    claims = get_claims_from_ids(d_ids)
+    rm_info = load_from_pickle("perspective_dev_claim_rm")
+    top_k = 7
+    pred = predict_by_bm25_rm(get_bm25_module(), rm_info, claims, top_k)
+    print(evaluate(pred))
+
+
 def run_rel_based():
     run_eval_with_dict("pc_rel_based_score_dev")
 
@@ -70,5 +88,9 @@ def run_bert_baseline2():
     run_eval_with_dict("pc_bert_baseline_score_d2")
 
 
+def run_logit_baseline():
+    run_eval_with_dict("pc_ngram_logits")
+
+
 if __name__ == "__main__":
-    run_bert_baseline()
+    run_bm25_rm()
