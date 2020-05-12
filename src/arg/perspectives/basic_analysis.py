@@ -1,3 +1,5 @@
+from typing import List
+
 import nltk
 
 from arg.perspectives import es_helper
@@ -8,7 +10,7 @@ from cie.msc.tf_idf import sublinear_term_frequency, cosine_similarity, inverse_
 from list_lib import flatten
 
 
-def get_candidates(claims, is_train):
+def get_candidates(claims, balance) -> List[PerspectiveCandidate]:
     related_p_map = get_claim_perspective_id_dict()
     related_p_map = {key: flatten(value) for key, value in related_p_map.items()}
     p_map = get_perspective_dict()
@@ -32,7 +34,7 @@ def get_candidates(claims, is_train):
             data_point_list.append(data_point)
 
         # If training, we balance positive and negative examples.
-        if is_train:
+        if balance:
             pos_insts = list([e for e in data_point_list if e.label == "1"])
             neg_insts = list([e for e in data_point_list if e.label == "0"])
             neg_insts = neg_insts[:len(pos_insts)]

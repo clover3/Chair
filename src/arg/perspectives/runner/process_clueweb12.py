@@ -21,7 +21,6 @@ def get_dir_name_list():
     return dir_path_list
 
 
-
 def work(warc_extracted_dir, url_to_doc_id, tokenize_fn):
     f = open(os.path.join(warc_extracted_dir, "idx_to_url"), "rb")
     idx_to_url = pickle.load(f)

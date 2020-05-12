@@ -18,7 +18,7 @@ class PCTokenizer:
             try:
                 stemmed_tokens.append(self.stemmer.stem(t))
             except:
-                print(t)
+                pass
 
         return stemmed_tokens
 

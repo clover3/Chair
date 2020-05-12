@@ -11,7 +11,6 @@ class PerspectiveCandidate(NamedTuple):
     p_text: str
 
 
-
 class ParagraphClaimPersFeature(NamedTuple):
     claim_pers: PerspectiveCandidate
     feature: List[ScoreParagraph]

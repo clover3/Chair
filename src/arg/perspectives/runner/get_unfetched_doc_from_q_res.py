@@ -5,7 +5,7 @@
 
 import os
 import sys
-from typing import List
+from typing import List, Set, Iterable
 
 from arg.perspectives.basic_analysis import load_train_data_point
 from arg.perspectives.clueweb_galago_db import get_docs_in_db
@@ -50,10 +50,14 @@ def read_doc_list(st, ed):
     return doc_list
 
 
-def do_join_and_write(doc_list, save_name):
-    doc_id_in_db = get_docs_in_db(save_name)
-    doc_list_to_fetch = doc_list - doc_id_in_db
+def do_join_and_write(doc_list: Iterable, save_name):
+    doc_id_in_db: Set = get_docs_in_db(save_name)
+    print("doc_list", len(doc_list))
+    print("Num doc in db", len(doc_id_in_db))
+    doc_list_to_fetch = set(doc_list) - doc_id_in_db
+    print("doc_list_to_fetch", len(doc_list_to_fetch))
     exist_or_mkdir(os.path.join(output_path, "doc_list"))
+
     save_path = os.path.join(output_path, "doc_list", save_name)
     f = open(save_path, "w")
     write = lambda doc_id: f.write("{}\n".format(doc_id))

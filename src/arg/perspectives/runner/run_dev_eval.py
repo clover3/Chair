@@ -4,6 +4,7 @@ from arg.perspectives.bm25_predict import predict_by_bm25, get_bm25_module, pred
 from arg.perspectives.evaluate import evaluate
 from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids
 from arg.perspectives.pc_para_predictor import predict_by_para_scorer
+from arg.perspectives.random_walk.pc_predict import pc_predict_from_vector_query
 from arg.perspectives.relevance_based_predictor import predict_from_dict, predict_from_two_dict
 from arg.perspectives.runner.eval_cmd import eval_from_score_d
 from base_type import FileName
@@ -24,7 +25,6 @@ def run_baseline():
                                   claims,
                                   top_k)
     print(evaluate(pred))
-
 
 
 def run_eval_with_dict(pickle_name):
@@ -65,6 +65,18 @@ def run_bm25_rm():
     print(evaluate(pred))
 
 
+
+def run_random_walk_score():
+    d_ids: List[int] = list(load_dev_claim_ids())
+    claims = get_claims_from_ids(d_ids)
+    top_k = 7
+    #q_tf_replace = dict(load_from_pickle("random_walk_score_100"))
+    q_tf_replace = dict(load_from_pickle("pc_dev_par_tf"))
+    #q_tf_replace = dict(load_from_pickle("bias_random_walk_dev_plus_all"))
+    pred = pc_predict_from_vector_query(get_bm25_module(), q_tf_replace, claims, top_k)
+    print(evaluate(pred))
+
+
 def run_rel_based():
     run_eval_with_dict("pc_rel_based_score_dev")
 
@@ -93,4 +105,4 @@ def run_logit_baseline():
 
 
 if __name__ == "__main__":
-    run_bm25_rm()
+    run_random_walk_score()

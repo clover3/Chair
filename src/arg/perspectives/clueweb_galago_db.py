@@ -1,10 +1,10 @@
 import os
 import subprocess
-from typing import List, Dict
+from typing import List, Dict, Set
 
 from base_type import FilePath
 from cpath import data_path
-from datastore.alchemy_schema import Base, KeyOnlyTable, engine, Session, RawCluewebDocTable
+from datastore.alchemy_schema import Base, KeyOnlyTable, engine, Session, TokenizedCluewebDocTable
 from datastore.interface import has_key, load, save, flush
 from datastore.table_names import TokenizedCluewebDoc, RawCluewebDoc, CluewebDocTF, QueryResult
 from galagos.parse import load_galago_ranked_list
@@ -83,7 +83,7 @@ def insert_ranked_list_from_path(file_path: FilePath, q_config_id: str):
 def add_doc_list_to_table(doc_list, save_name):
     class DocIdTable(Base, KeyOnlyTable):
         __tablename__ = save_name
-
+        extend_existing = True
     Base.metadata.create_all(engine)
     print("Writing doc list to table : ", len(doc_list))
     ticker = TimeEstimator(len(doc_list))
@@ -102,14 +102,22 @@ def add_doc_list_to_table(doc_list, save_name):
     session.commit()
 
 
-def get_docs_in_db(save_name):
+import logging
+logging.basicConfig()
+logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+
+
+def get_docs_in_db(save_name) -> Set:
     class DocIdTable(Base, KeyOnlyTable):
         __tablename__ = save_name
 
     session = Session()
     print("execute join")
-    j = session.query(DocIdTable).join(RawCluewebDocTable, DocIdTable.key == RawCluewebDocTable.key)
+    j = session.query(DocIdTable.key).join(TokenizedCluewebDocTable,
+                                           DocIdTable.key == TokenizedCluewebDocTable.key)
+    print("issued now getting")
+
     doc_id_in_db = set()
     for entry in j.all():
-        doc_id_in_db.add(entry)
+        doc_id_in_db.add(entry.key)
     return doc_id_in_db

@@ -11,7 +11,7 @@ from xmlrpc.server import SimpleXMLRPCServer
 from cpath import data_path
 from data_generator.data_parser.trec import load_trec
 from data_generator.tokenizer_b import EncoderUnit
-from galagos.basic import load_galago_ranked_list
+from galagos.parse import load_galago_ranked_list
 from misc_lib import pick1
 
 

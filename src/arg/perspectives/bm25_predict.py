@@ -1,5 +1,4 @@
 from collections import Counter
-from collections import Counter
 from typing import Dict, List, Tuple
 
 from adhoc.bm25 import BM25_verbose
@@ -33,7 +32,6 @@ class BM25:
         q_tf = Counter(q_terms)
         t_tf = Counter(t_terms)
         return self.score_inner(q_tf, t_tf)
-
 
 
     def score_inner(self, q_tf, t_tf) -> NamedNumber:
@@ -75,10 +73,14 @@ class BM25:
         return NamedNumber(score_sum, info_log)
 
 
-
-
 def get_bm25_module():
     df = load_from_pickle("pc_df")
+    return BM25(df, avdl=11.7, num_doc=541+400, k1=0.00001, k2=100, b=0.5)
+
+
+
+def get_bm25_module_no_idf():
+    df = Counter()
     return BM25(df, avdl=11.7, num_doc=541+400, k1=0.00001, k2=100, b=0.5)
 
 
