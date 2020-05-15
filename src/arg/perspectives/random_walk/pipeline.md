@@ -7,3 +7,8 @@
 4. merge_pickled_results.py 
 
 
+---
+
+Get Pos/Neg from train claim/pers
+
+1. RandomWalk(Neg, Passages) -> Get neg indicators

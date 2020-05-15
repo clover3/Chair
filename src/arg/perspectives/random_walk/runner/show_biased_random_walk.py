@@ -2,7 +2,7 @@ from collections import Counter
 from typing import List
 
 from arg.perspectives.load import get_claims_from_ids, claims_to_dict, load_train_claim_ids
-from cache import load_from_pickle, save_to_pickle
+from cache import load_from_pickle
 from models.classic.stopword import load_stopwords
 
 
@@ -15,12 +15,12 @@ def normalize_counter_to_sum1(c: Counter) -> Counter:
     return out_c
 
 
-def show_random_walk_score():
+def sum_random_walk_score(name_class):
     d_ids: List[int] = list(load_train_claim_ids())
     claims = get_claims_from_ids(d_ids)
     claim_d = claims_to_dict(claims)
 
-    prob_score_d = load_from_pickle("pc_pos_word_prob_train")
+    prob_score_d = load_from_pickle("pc_{}_word_prob_train".format(name_class))
     stopwords = load_stopwords()
     acc_counter_prob_init = Counter()
     for claim_id, prob_scores in prob_score_d.items():
@@ -28,7 +28,7 @@ def show_random_walk_score():
             if k not in stopwords:
                 acc_counter_prob_init[k] += v
 
-    rw_score = dict(load_from_pickle("bias_random_walk_train_all"))
+    rw_score = dict(load_from_pickle("bias_random_walk_train_{}".format(name_class)))
     acc_counter = Counter()
     for claim_id, qtf in rw_score.items():
         for k, v in qtf.items():
@@ -43,8 +43,21 @@ def show_random_walk_score():
             new_v = v - acc_counter_prob_init[k]
             new_counter[k] = new_v
 
-    save_to_pickle(new_counter, "bias_plus_words")
+    return new_counter
+
+def work():
+    new_counter_pos = sum_random_walk_score("pos")
+    new_counter_neg = sum_random_walk_score("neg")
+    diff_counter = Counter()
+    for k, v_pos in new_counter_pos.most_common(1000):
+        v_neg = new_counter_neg[k]
+        v_diff = v_pos - v_neg
+        diff_counter[k] = v_diff
+
+    for k, v in diff_counter.most_common(100):
+        print(k, v)
+    #save_to_pickle(new_counter, "bias_plus_words")
 
 
 if __name__ == "__main__":
-    show_random_walk_score()
+    work()

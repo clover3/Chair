@@ -75,9 +75,21 @@ def flatten(z: Iterable[Iterable[A]]) -> Iterable[A]:
     return [y for x in z for y in x]
 
 
+
 def left(pairs: Iterable[Tuple[A, B]]) -> List[A]:
     return list([a for a, b in pairs])
 
 
 def right(pairs: Iterable[Tuple[A, B]]) -> List[B]:
     return list([b for a, b in pairs])
+
+
+def max_idx(l) -> int:
+    cur_max = l[0]
+    cur_max_idx = 0
+    for idx, item in enumerate(l):
+        if item > cur_max:
+            cur_max = item
+            cur_max_idx = idx
+
+    return cur_max_idx

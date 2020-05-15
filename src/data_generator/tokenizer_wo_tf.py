@@ -549,6 +549,20 @@ class EncoderUnit:
         return self.encode_inner(tokens_a, tokens_b)
 
 
+class EncoderUnitPlain(EncoderUnit):
+    def __init__(self, max_sequence, voca_path):
+        super(EncoderUnitPlain, self).__init__(max_sequence, voca_path)
+        CLS_ID = self.encoder.ft.convert_tokens_to_ids(["[CLS]"])[0]
+        SEP_ID = self.encoder.ft.convert_tokens_to_ids(["[SEP]"])[0]
+
+        self.CLS_ID = CLS_ID
+        self.SEP_ID = SEP_ID
+
+    def encode_pair(self, text1, text2):
+        d = super(EncoderUnitPlain, self).encode_pair(text1, text2)
+        return d["input_ids"], d["input_mask"], d["segment_ids"]
+
+
 def is_continuation(subword):
     return len(subword) > 2 and subword[:2] == "##"
 

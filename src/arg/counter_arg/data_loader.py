@@ -2,10 +2,11 @@
 import csv
 import os
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, List
 from zipfile import ZipFile
 
-from arg.counter_arg.header import ArguDatapoint, Passage
+from arg.counter_arg import header
+from arg.counter_arg.header import ArguDataPoint, Passage, ArguDataID
 from base_type import FilePath
 from cpath import data_path, pjoin
 
@@ -26,8 +27,8 @@ def extract_zip_file_at(zip_file_path, dir_path):
 
 def load_tsv_or_from_zip(dir_path, file_name) -> Iterator:
     file_path = pjoin(dir_path, file_name)
-    print(file_path)
     if not os.path.exists(file_path):
+        print("extracting from zip...")
         zip_file_path = file_path + ".zip"
         extract_zip_file_at(zip_file_path, dir_path)
 
@@ -38,8 +39,9 @@ def load_tsv_or_from_zip(dir_path, file_name) -> Iterator:
         yield row
 
 
-def load_label(split, topic):
+def load_label(split, topic) -> Iterator:
     split_dir = pjoin(pair_best_counter, split)
+
     topic_dir = pjoin(split_dir, topic)
 
     file_list = [
@@ -54,18 +56,35 @@ def load_label(split, topic):
     return load_tsv_or_from_zip(topic_dir, file_list[4])
 
 
-def load_labeled_data(split, topic) -> Iterator:
-    def load_passage_from_rel_path(rel_path) -> Passage:
-        tokens = rel_path.split("/")
+def load_labeled_data_per_topic(split, topic) -> List[ArguDataPoint]:
+    def load_passage_from_rel_path(rel_path: ArguDataID) -> Passage:
+        tokens = rel_path.id.split("/")
         tokens = [t if t != "con" else "_con" for t in tokens]
         conv_rel_path = Path(os.sep.join(tokens))
         file_path = os.path.join(extracted_arguments, conv_rel_path)
         text = open(file_path, "r", encoding="utf-8").read()
         return Passage(text=text, id=rel_path)
 
+    r = []
     for row in load_label(split, topic):
-        text1 = load_passage_from_rel_path(row[0])
-        text2 = load_passage_from_rel_path(row[1])
-
         annotations = row[2:]
-        yield ArguDatapoint(text1, text2, annotations)
+        if annotations[0] == "true":
+            pass
+        else:
+            continue
+
+        text1 = load_passage_from_rel_path(ArguDataID.from_name(row[0]))
+        text2 = load_passage_from_rel_path(ArguDataID.from_name(row[1]))
+
+        e = ArguDataPoint(text1, text2, annotations)
+        r.append(e)
+    return r
+
+
+def load_labeled_data(split) -> List[ArguDataPoint]:
+    r = []
+    for topic in header.topics:
+        itr = load_labeled_data_per_topic(split, topic)
+        for item in itr:
+            r.append(item)
+    return r

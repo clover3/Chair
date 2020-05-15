@@ -70,8 +70,8 @@ def run_random_walk_score():
     d_ids: List[int] = list(load_dev_claim_ids())
     claims = get_claims_from_ids(d_ids)
     top_k = 7
-    #q_tf_replace = dict(load_from_pickle("random_walk_score_100"))
-    q_tf_replace = dict(load_from_pickle("pc_dev_par_tf"))
+    q_tf_replace = dict(load_from_pickle("random_walk_score_100"))
+    #q_tf_replace = dict(load_from_pickle("pc_dev_par_tf"))
     #q_tf_replace = dict(load_from_pickle("bias_random_walk_dev_plus_all"))
     pred = pc_predict_from_vector_query(get_bm25_module(), q_tf_replace, claims, top_k)
     print(evaluate(pred))
@@ -105,4 +105,4 @@ def run_logit_baseline():
 
 
 if __name__ == "__main__":
-    run_random_walk_score()
+    run_bert_baseline()

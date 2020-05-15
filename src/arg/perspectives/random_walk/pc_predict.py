@@ -1,11 +1,11 @@
 from collections import Counter
 from typing import Dict, List, Tuple
 
-from arg.perspectives.bm25_predict import BM25
 from arg.perspectives.collection_based_classifier import predict_interface, NamedNumber
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import claims_to_dict
 from list_lib import dict_value_map
+from models.classic.bm25 import BM25
 
 
 def normalize_counter(c: Counter) -> Counter:
