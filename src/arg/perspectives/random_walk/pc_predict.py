@@ -52,3 +52,4 @@ def pc_predict_from_vector_query(bm25_module: BM25,
     r = predict_interface(claims, top_k, scorer)
     print("{} of {} found".format(len(found_claim), len(claims)))
     return r
+

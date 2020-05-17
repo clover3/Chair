@@ -1,5 +1,7 @@
 
 
+# First Approach
+
 * query_gen.py : Claim+Perspective -> Query
   * dir: Chair/output/perspective_train_claim_perspective_query
 * Query --(run_pc_query.py) -> Disk #i -> Ranked_list

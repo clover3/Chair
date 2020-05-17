@@ -1,5 +1,7 @@
 from collections import Counter
 
+from math import log
+
 from adhoc.bm25 import BM25_verbose
 from arg.perspectives.collection_based_classifier import NamedNumber
 from arg.perspectives.pc_tokenizer import PCTokenizer
@@ -21,6 +23,11 @@ class BM25:
         q_tf = Counter(q_terms)
         t_tf = Counter(t_terms)
         return self.score_inner(q_tf, t_tf)
+
+    def term_idf_factor(self, term):
+        N = self.N
+        df = self.df[term]
+        return log((N - df + 0.5) / (df + 0.5))
 
     def score_inner(self, q_tf, t_tf) -> NamedNumber:
         dl = sum(t_tf.values())

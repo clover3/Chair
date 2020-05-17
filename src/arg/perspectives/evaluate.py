@@ -5,7 +5,7 @@
 #    get_claim_perspective_dict()
 
 from arg.perspectives.load import get_claim_perspective_id_dict, get_perspective_dict
-from misc_lib import average, get_f1
+from misc_lib import average, get_f1, SuccessCounter
 
 perspective = None
 claims_d = None
@@ -21,8 +21,8 @@ def perspective_getter(pid):
 def get_prec_recll(predicted_perspectives, gold_pids, debug):
     ## In this metrics, it is possible to get precision > 1, as some clusters shares same perspective
     tp = 0
-    if debug:
-        print(gold_pids)
+    # if debug:
+    #     print(gold_pids)
     for cluster in gold_pids:
         print("-")
         for pid in cluster:
@@ -113,3 +113,30 @@ def evaluate(predictions, debug=True):
         'f1': get_f1(avg_prec, avg_recall)
     }
 
+
+def inspect(predictions):
+    gold = get_claim_perspective_id_dict()
+
+    suc_counter = SuccessCounter()
+    for c_Id, prediction_list in predictions:
+        gold_pids = gold[c_Id]
+
+        def is_valid(pid):
+            for cluster in gold_pids:
+                if pid in cluster:
+                    return True
+            return False
+
+        top_pred = prediction_list[0]
+
+        if is_valid(top_pred['pid']):
+            suc_counter.suc()
+        else:
+            suc_counter.fail()
+            prediction = prediction_list[0]
+            claim_text = prediction['claim_text']
+            print("Claim {}: ".format(c_Id), claim_text)
+            print("{0:.2f} {1} {2}".format(prediction['score'], prediction['rationale'], prediction['perspective_text']))
+            print()
+
+    print("P@1", suc_counter.get_suc_prob())

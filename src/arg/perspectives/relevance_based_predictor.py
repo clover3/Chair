@@ -86,7 +86,7 @@ def predict_from_two_dict(score_d: Dict[CPID, float],
         cls_score = get_score_by_d(claim_id, query_id)
         cls_score2 = get_score_by_d2(claim_id, query_id)
 
-        score = cls_score #+ cls_score2 * 0.3 #+ 0.1 * lucene_score / 20
+        score = cls_score * 100 + cls_score2
         r = "score={0:.2f} <- cls_score({1:.2f}/{2:.2f}) lucene_score({3:.2f}) /20".format(score,
                                                                                            cls_score,
                                                                                            cls_score2,
@@ -140,3 +140,22 @@ def predict_from_two_dict(score_d: Dict[CPID, float],
 
     print("{} found of {}".format(suc_count.get_suc(), suc_count.get_total()))
     return r
+
+
+def prediction_to_dict(prediction: List[Tuple[str, List[Dict]]]) -> Dict[CPID, float]:
+    output: Dict[CPID,float] = {}
+    for claim_id, preds in prediction:
+
+        for pred in preds:
+            cpid = CPID("{}_{}".format(claim_id, pred['pid']))
+            score = pred['score']
+            output[cpid] = float(score)
+
+    return output
+
+
+
+
+
+
+

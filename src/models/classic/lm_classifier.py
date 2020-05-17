@@ -1,9 +1,12 @@
-import numpy as np
-from nltk.tokenize import wordpunct_tokenize
-import math
 import collections
 from collections import Counter
+
+import math
+import numpy as np
+from nltk.tokenize import wordpunct_tokenize
+
 from models.classic.stopword import load_stopwords
+
 
 class LMClassifer:
     def __init__(self, tokenizer=wordpunct_tokenize, stemmer=None, fulltext=False):
@@ -20,18 +23,31 @@ class LMClassifer:
         self.supervised = False
         print("LM using ", "full text" if self.fulltext else "top 10 keyword")
 
-    def build(self, c_docs, bg_tf, bg_ctf):
-        stopwords = load_stopwords()
+    def build(self, c_docs, bg_tf: Counter, bg_ctf: int):
+        c_tf = collections.Counter()
+        for idx, s in enumerate(c_docs):
+            tokens = self.tokenizer(s)
+            for token in tokens:
+                if token in bg_tf:
+                    c_tf[token] += 1
+        self.build4(c_tf, bg_tf, bg_ctf)
 
-        def transform(counter):
+    def build4(self, c_tf, bg_tf, bg_ctf):
+        stopwords = load_stopwords()
+        self.stopword = stopwords
+
+        def transform(counter: Counter):
             if self.stemmer is None:
                 new_tf = counter
             else:
                 new_tf = Counter()
                 for key in counter:
                     source = key
-                    target = self.stemmer(key)
-                    new_tf[target] += counter[source]
+                    try:
+                        target = self.stemmer(key)
+                        new_tf[target] += counter[source]
+                    except:
+                        pass
 
             counter = new_tf
             new_tf = Counter()
@@ -53,15 +69,6 @@ class LMClassifer:
 
         self.BG = transform(bg_tf)
         self.BG_ctf = bg_ctf
-        self.stopword = stopwords
-
-        c_tf = collections.Counter()
-        for idx, s in enumerate(c_docs):
-            tokens = self.tokenizer(s)
-            for token in tokens:
-                if token in bg_tf:
-                    c_tf[token] += 1
-
         self.C = transform(c_tf)
         self.C_ctf = sum(self.C.values())
 
