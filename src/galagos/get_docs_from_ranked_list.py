@@ -40,6 +40,12 @@ def get_docs_from_q_res_path(file_path) -> Dict[str, List[List[str]]]:
     return get_docs_from_q_res(ranked_list_d)
 
 
+def get_docs_from_q_res_path_top_k(file_path, top_k) -> Dict[str, List[List[str]]]:
+    ranked_list_d: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(file_path)
+    ranked_list_d = dict_value_map(lambda x:x[:top_k], ranked_list_d)
+    return get_docs_from_q_res(ranked_list_d)
+
+
 def get_docs_from_q_res(ranked_list_d: Dict[str, List[GalagoDocRankEntry]]) -> Dict[str, List[List[str]]]:
     print(len(ranked_list_d))
     return dict_value_map(get_docs_from_ranked_list, ranked_list_d)

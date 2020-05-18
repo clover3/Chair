@@ -2,6 +2,7 @@ from typing import List
 
 from arg.perspectives.bm25_predict import predict_by_bm25, get_bm25_module, predict_by_bm25_rm
 from arg.perspectives.evaluate import evaluate
+from arg.perspectives.inspect import predict_see_candidate
 from arg.perspectives.lm_predict import predict_by_lm, load_collection_tf
 from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids
 from arg.perspectives.pc_para_predictor import predict_by_para_scorer
@@ -10,6 +11,7 @@ from arg.perspectives.relevance_based_predictor import predict_from_dict, predic
 from arg.perspectives.runner.eval_cmd import eval_from_score_d
 from base_type import FileName
 from cache import load_from_pickle, save_to_pickle
+from list_lib import dict_key_map
 
 
 def run_baseline():
@@ -67,6 +69,13 @@ def run_bm25():
     pred = predict_by_bm25(get_bm25_module(), claims, top_k)
     print(evaluate(pred))
 
+def run_bm25_ex_pers():
+    d_ids: List[int] = list(load_dev_claim_ids())
+    claims = get_claims_from_ids(d_ids)
+    top_k = 7
+    pred = predict_see_candidate(get_bm25_module(), claims, top_k)
+    print(evaluate(pred))
+
 
 def run_bm25_rm():
     d_ids: List[int] = list(load_dev_claim_ids())
@@ -83,6 +92,8 @@ def run_random_walk_score():
     claims = get_claims_from_ids(d_ids)
     top_k = 7
     q_tf_replace = dict(load_from_pickle("random_walk_score_100"))
+    q_tf_replace = dict(load_from_pickle("dev_claim_random_walk_debug2"))
+    q_tf_replace = dict_key_map(lambda x: int(x), q_tf_replace)
     #q_tf_replace = dict(load_from_pickle("pc_dev_par_tf"))
     #q_tf_replace = dict(load_from_pickle("bias_random_walk_dev_plus_all"))
     bm25 = get_bm25_module()
@@ -130,4 +141,4 @@ def run_logit_baseline():
 
 
 if __name__ == "__main__":
-    run_eval_with_two_dict()
+    run_bm25_ex_pers()

@@ -11,6 +11,11 @@ def lmap(func: Callable[[A], B],
     return list([func(e) for e in iterable_something])
 
 
+def lmap_pairing(func: Callable[[A], B],
+         iterable_something: Iterable[A]) -> List[Tuple[A, B]]:
+    return list([(e, func(e)) for e in iterable_something])
+
+
 def lmap_w_exception(func: Callable[[A], B],
                      iterable_something: Iterable[A],
                      exception) -> List[B]:

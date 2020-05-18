@@ -19,13 +19,17 @@ def build_co_occur_from_pc_feature(data: Dict[str, List[List[str]]]) \
     return r
 
 
-def main():
+def do_doc_levl():
     r = build_co_occur_from_pc_feature(load_from_pickle("dev_claim_docs"))
     save_to_pickle(r, "dev_claim_graph")
     r = build_co_occur_from_pc_feature(load_from_pickle("train_claim_docs"))
     save_to_pickle(r, "train_claim_graph")
 
+def para_level():
+    r = build_co_occur_from_pc_feature(dict(load_from_pickle("dev_claim_paras")))
+    save_to_pickle(r, "dev_claim_graph")
+
 
 if __name__ == "__main__":
-    main()
+    para_level()
 
