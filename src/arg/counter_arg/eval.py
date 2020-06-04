@@ -1,5 +1,5 @@
 import enum
-from collections import Iterable
+from collections import Iterable, Counter
 from typing import Callable
 from typing import List
 
@@ -8,6 +8,8 @@ from arg.counter_arg.data_loader import load_labeled_data
 from arg.counter_arg.enum_all_argument import enum_all_argument
 from arg.counter_arg.header import ArguDataPoint
 from arg.counter_arg.header import Passage, ArguDataID
+from arg.perspectives.collection_based_classifier import NamedNumber
+from cache import load_cache, save_to_pickle
 from distrib.parallel import parallel_run
 from list_lib import lmap, max_idx
 from misc_lib import average
@@ -80,20 +82,75 @@ def retrieve_candidate(p: Passage, split, condition: EvalCondition) -> List[Argu
     return r
 
 
+def prepare_eval_data(split):
+    problem_cache_name = "argu_problem_{}".format(split)
+    problems: List[ArguDataPoint] = load_cache(problem_cache_name)
+    if problems is None:
+        problems: List[ArguDataPoint] = list(load_labeled_data(split))
+        save_to_pickle(problems, problem_cache_name)
+    else:
+        print("Using cache for problems")
+    candidate_cache_name = "argu_candidate_{}".format(split)
+    candidate_d = load_cache(candidate_cache_name)
+    if candidate_d is None:
+        all_candidate = list(enum_all_argument(split))
+        candidate_d = {c.id: c for c in all_candidate}
+        save_to_pickle(candidate_d, candidate_cache_name)
+    else:
+        print("using cache for candidate")
+
+    return problems, candidate_d
+
+
+# 0 : success
+# 1 : Same topic, is counter, valid stance, but not direct one
+# 2 : Same topic, is counter, wrong stance
+# 3 : Same topic, is point, stance is valid
+# 4 : Same topic, is point, stance is not valid
+# 5 : Same topic, not opposing stance
+# 6 : not same topic
+
+def failure_type(gold_id, pred_id):
+    if gold_id == pred_id:
+        return 0
+
+    tokens1 = gold_id.split("/")
+    tokens2 = pred_id.split("/")
+
+    if "/".join(tokens1[:-2]) == "/".join(tokens2[:-2]):
+        stance1 = tokens1[-2]
+        stance2 = tokens2[-2]
+
+        is_counter = "counter" in tokens2[-1]
+        if is_counter:
+            if stance1 == stance2:
+                return 1
+            else:
+                return 2
+        else:
+            if stance1 != stance2: # Stance is valid when different, because this is point
+                return 3
+            else:
+                return 4
+    else:
+        return 6
+
+
+
 def run_eval(split,
-            scorer: Callable[[Passage, List[Passage]], float],
+            scorer: Callable[[Passage, List[Passage]], List[NamedNumber]],
              condition: EvalCondition):
-    all_candidate = list(enum_all_argument(split))
-    candidate_d = {c.id: c for c in all_candidate}
-    problems: List[ArguDataPoint] = list(load_labeled_data(split))
-    problems = problems[:30]
+    problems, candidate_d = prepare_eval_data(split)
+
+    problems = problems[:100]
     payload: List[Passage] = get_eval_payload_from_dp(problems)
     correctness = []
+    fail_type_count = Counter()
     for query, problem in zip(payload, problems):
         p = problem
         candidate_ids: List[ArguDataID] = retrieve_candidate(query, split, condition)
         candidate = list([candidate_d[x] for x in candidate_ids])
-        scores = scorer(query, candidate)
+        scores: List[NamedNumber] = scorer(query, candidate)
         best_idx = max_idx(scores)
         pred_item: Passage = candidate[best_idx]
         gold_id = p.text2.id
@@ -101,18 +158,29 @@ def run_eval(split,
         correct = gold_id == pred_id
         content_equal = (p.text2.text == pred_item.text)
         correct = correct or content_equal
-        #
-        print("-------------------", correct, content_equal)
-        print("query:", p.text1.id)
-        # print(p.text1.text)
-        print("gold:", p.text2.id)
-        # print(p.text2.text)
-        print("pred:", pred_item.id)
-        # print(scores[best_idx].name)
-        # print(pred_item.text)
+        gold_idx_l = list([idx for idx, c in enumerate(candidate) if c.id == gold_id])
+        gold_idx = gold_idx_l[0] if gold_idx_l else None
+        gold_score = scores[gold_idx] if gold_idx_l else None
+
+        if not correct :
+            print("-------------------", correct, content_equal)
+            print("QUERY:", p.text1.id)
+            print(p.text1.text)
+            print("GOLD:", p.text2.id)
+            print(p.text2.text)
+            print("PRED:", pred_item.id)
+            # print(scores[best_idx].name)
+            print(pred_item.text)
+            print("RATIONALE: ", scores[best_idx].__float__(), scores[best_idx].name)
+            if gold_score is not None:
+                print("GOLD RATIONALE:", gold_score.__float__(), gold_score.name)
+
+            t = failure_type(p.text2.id.id, pred_item.id.id)
+            fail_type_count[t] += 1
 
         correctness.append(correct)
     avg_p_at_1 = average(correctness)
+    print(fail_type_count)
     return avg_p_at_1
 
 
@@ -129,7 +197,6 @@ def eval_thread(param):
         pred = predictor(query_p, candidate)
         return pred
     return lmap(pred_inst, payload)
-
 
 
 def run_eval_threaded(split, predictor_getter):

@@ -5,9 +5,11 @@ from arg.perspectives.evaluate import evaluate
 from arg.perspectives.inspect import predict_see_candidate
 from arg.perspectives.lm_predict import predict_by_lm, load_collection_tf
 from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids
+from arg.perspectives.next_sent_predictor import pc_predict_by_bert_next_sent
 from arg.perspectives.pc_para_predictor import predict_by_para_scorer
-from arg.perspectives.random_walk.pc_predict import pc_predict_from_vector_query
+from arg.perspectives.random_walk.pc_predict import pc_predict_from_vector_query, pc_predict_vector_query_and_reweight
 from arg.perspectives.relevance_based_predictor import predict_from_dict, predict_from_two_dict, prediction_to_dict
+from arg.perspectives.reweight_predict import predict_by_reweighter
 from arg.perspectives.runner.eval_cmd import eval_from_score_d
 from base_type import FileName
 from cache import load_from_pickle, save_to_pickle
@@ -69,6 +71,16 @@ def run_bm25():
     pred = predict_by_bm25(get_bm25_module(), claims, top_k)
     print(evaluate(pred))
 
+
+def run_reweight():
+    d_ids: List[int] = list(load_dev_claim_ids())
+    claims = get_claims_from_ids(d_ids)
+    top_k = 7
+    param = {'k1': 0.5}
+    pred = predict_by_reweighter(get_bm25_module(), claims, top_k, param)
+    print(evaluate(pred))
+
+
 def run_bm25_ex_pers():
     d_ids: List[int] = list(load_dev_claim_ids())
     claims = get_claims_from_ids(d_ids)
@@ -92,12 +104,23 @@ def run_random_walk_score():
     claims = get_claims_from_ids(d_ids)
     top_k = 7
     q_tf_replace = dict(load_from_pickle("random_walk_score_100"))
-    q_tf_replace = dict(load_from_pickle("dev_claim_random_walk_debug2"))
     q_tf_replace = dict_key_map(lambda x: int(x), q_tf_replace)
     #q_tf_replace = dict(load_from_pickle("pc_dev_par_tf"))
     #q_tf_replace = dict(load_from_pickle("bias_random_walk_dev_plus_all"))
     bm25 = get_bm25_module()
     pred = pc_predict_from_vector_query(bm25, q_tf_replace, claims, top_k)
+    print(evaluate(pred))
+
+
+def run_random_walk_score_with_weight():
+    d_ids: List[int] = list(load_dev_claim_ids())
+    claims = get_claims_from_ids(d_ids)
+    top_k = 7
+    q_tf_replace = dict(load_from_pickle("random_walk_score_100"))
+    q_tf_replace = dict_key_map(lambda x: int(x), q_tf_replace)
+    bm25 = get_bm25_module()
+    pred = pc_predict_vector_query_and_reweight(bm25, q_tf_replace, claims, top_k,
+                                                {'k1': 0.5})
     print(evaluate(pred))
 
 
@@ -110,6 +133,14 @@ def run_lm():
     bm25 = get_bm25_module()
     ctf = load_collection_tf()
     pred = predict_by_lm(q_tf_replace, ctf, bm25, claims, top_k)
+    print(evaluate(pred))
+
+
+def run_next_sent():
+    d_ids: List[int] = list(load_dev_claim_ids())
+    claims = get_claims_from_ids(d_ids)[:10]
+    top_k = 7
+    pred = pc_predict_by_bert_next_sent(get_bm25_module(), claims, top_k)
     print(evaluate(pred))
 
 
@@ -141,4 +172,4 @@ def run_logit_baseline():
 
 
 if __name__ == "__main__":
-    run_bm25_ex_pers()
+    run_bm25()

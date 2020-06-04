@@ -7,6 +7,7 @@ from arg.perspectives.evaluate import evaluate
 from arg.perspectives.load import get_claims_from_ids, load_train_claim_ids
 from arg.perspectives.pc_para_predictor import load_cpid_resolute, predict_by_para_scorer
 from arg.perspectives.relevance_based_predictor import predict_from_dict
+from arg.perspectives.reweight_predict import predict_by_reweighter
 from base_type import FileName
 from cache import load_from_pickle
 from list_lib import lmap, lfilter
@@ -74,5 +75,15 @@ def run_bm25():
     print(evaluate(pred))
 
 
+def run_reweight():
+    top_k = 7
+    claims, val = train_split()
+    param = {'k1': 1}
+    target = claims[:50]
+    pred = predict_by_reweighter(get_bm25_module(), target, top_k, param)
+    print(param)
+    print(evaluate(pred))
+
+
 if __name__ == "__main__":
-    run_bm25()
+    run_reweight()

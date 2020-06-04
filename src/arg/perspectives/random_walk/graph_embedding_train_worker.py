@@ -14,7 +14,7 @@ class GraphEmbeddingTrainWorker(job_runner.WorkerInterface):
                  train_fn: GraphEmbeddingTrainer,
                  ):
         self.out_dir = out_path
-        self.corpus_d: Dict[str, List[List[str]]] = load_pickle_from(input_file)
+        self.corpus_d: Dict[int, List[List[str]]] = load_pickle_from(input_file)
         self.key_list = list(self.corpus_d.keys())
         self.key_list.sort()
         self.train_fn: GraphEmbeddingTrainer = train_fn

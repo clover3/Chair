@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import List, Iterable, Dict
+from typing import List, Iterable, Dict, Callable, Any
 
 from arg.counter_arg import header
 from arg.counter_arg.enum_all_argument import enum_all_argument
@@ -11,32 +11,59 @@ from list_lib import lmap
 from models.classic.bm25 import BM25
 
 
-def get_scorer(split):
+def counter_sum(counter1: Dict[Any, float], weight1: float,
+                counter2: Dict[Any, float], weight2: float) -> Counter:
+
+    new_counter = Counter()
+    for k, v in counter1.items():
+        new_counter[k] += v * weight1
+
+    for k, v in counter2.items():
+        new_counter[k] += v * weight2
+    return new_counter
+
+
+def get_scorer(split) -> Callable[[Passage, List[Passage]], List[float]]:
     bm25_module = get_bm25_module(split)
     return get_scorer_from_bm25_module(bm25_module)
 
 
-def get_scorer_from_bm25_module(bm25_module):
-    tf_cache: Dict[ArguDataID, Counter] = {}
+def remove_space_chars(d: Dict[str, float]) -> Counter:
+    out_d = Counter()
+    for k, v in d.items():
+        if k.strip():
+            out_d[k] = v
 
-    tf_cache: Dict[ArguDataID, Counter] = {}
+    return out_d
 
-    def get_tf(p: Passage) -> Counter:
-        if p.id in tf_cache:
-            return tf_cache[p.id]
 
-        tokens = bm25_module.tokenizer.tokenize_stem(p.text)
+class BasicTF:
+    def __init__(self, tokenize_stem):
+        self.tokenize_stem = tokenize_stem
+        self.tf_cache: Dict[ArguDataID, Counter] = {}
+
+    def get_tf(self, p: Passage) -> Counter:
+        if p.id in self.tf_cache:
+            return self.tf_cache[p.id]
+
+        text = p.text
+        tokens = self.tokenize_stem(text)
         tf = Counter(tokens)
-        tf_cache[p.id] = tf
+        tf = remove_space_chars(tf)
+        self.tf_cache[p.id] = tf
         return tf
 
+
+def get_scorer_from_bm25_module(bm25_module):
+    basic_tf = BasicTF(bm25_module.tokenizer.tokenize_stem)
+
     def scorer(query_p: Passage, candidate: List[Passage]) -> List[NamedNumber]:
-        q_tf = get_tf(query_p)
+        q_tf = basic_tf.get_tf(query_p)
 
         def do_score(candidate_p: Passage) -> NamedNumber:
             if candidate_p.text == query_p.text:
                 return NamedNumber(-99, "equal")
-            p_tf = get_tf(candidate_p)
+            p_tf = basic_tf.get_tf(candidate_p)
             return bm25_module.score_inner(q_tf, p_tf)
 
         scores = lmap(do_score, candidate)
@@ -52,7 +79,7 @@ def get_bm25_module(split):
          'validation': 4074,
          'test': 4074,
          }[split]
-    return BM25(df, avdl=160, num_doc=N * 4, k1=1.2, k2=100, b=0.5)
+    return BM25(df, avdl=160, num_doc=N * 2, k1=1.2, k2=100, b=0.5)
 
 
 def count_df(passages: Iterable[Passage]) -> Counter:
