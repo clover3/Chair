@@ -1,19 +1,21 @@
 import cpath
 from models.transformer import hyperparams
-from models.transformer.transfomer_logit import transformer_logit
+from models.transformer.transformer_logit_v2 import transformer_logit
 from trainer.tf_module import *
-from trainer.tf_train_module import init_session
+from trainer.tf_train_module_v2 import init_session
 
 
 class Predictor:
-    def __init__(self, model_path, num_classes):
+    def __init__(self, model_path, num_classes, seq_len=None):
         self.voca_size = 30522
         load_names = ['bert', "output_bias", "output_weights"]
         self.hp = hyperparams.HPFAD()
+        if seq_len is not None:
+            self.hp.seq_max = seq_len
         self.model_dir = cpath.model_path
         self.task = transformer_logit(self.hp, num_classes, self.voca_size, False)
         self.sess = init_session()
-        self.sess.run(tf.global_variables_initializer())
+        self.sess.run(tf.compat.v1.global_variables_initializer())
         self.load_model_white(model_path, load_names)
         self.batch_size = 64
 
@@ -56,16 +58,5 @@ class Predictor:
         id = get_last_id(save_dir)
         path = os.path.join(save_dir, "{}".format(id))
 
-        def condition(v):
-            if v.name.split('/')[0] in include_namespace:
-                return True
-            return False
-
-        variables = tf.contrib.slim.get_variables_to_restore()
-        variables_to_restore = variables
-        if verbose:
-            for v in variables_to_restore:
-                print(v)
-
-        self.loader = tf.train.Saver(variables_to_restore, max_to_keep=1)
+        self.loader = tf.compat.v1.train.Saver(max_to_keep=1)
         self.loader.restore(self.sess, path)

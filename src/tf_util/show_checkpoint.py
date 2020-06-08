@@ -1,4 +1,7 @@
+import sys
+
 import tensorflow as tf
+
 
 def show_checkpoint(lm_checkpoint):
     for x in tf.train.list_variables(lm_checkpoint):
@@ -7,3 +10,5 @@ def show_checkpoint(lm_checkpoint):
 
 
 
+if __name__ == "__main__":
+    show_checkpoint(sys.argv[1])

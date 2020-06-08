@@ -7,9 +7,9 @@ from cpath import data_path
 
 
 class BERTClient:
-    def __init__(self, server_addr, port):
+    def __init__(self, server_addr, port, seq_len=512):
         voca_path = os.path.join(data_path, "bert_voca.txt")
-        self.encoder = EncoderUnit(512, voca_path)
+        self.encoder = EncoderUnit(seq_len, voca_path)
         self.proxy = xmlrpc.client.ServerProxy('{}:{}'.format(server_addr, port))
 
     def request_single(self, text1, text2):
