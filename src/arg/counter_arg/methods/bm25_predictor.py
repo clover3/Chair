@@ -23,7 +23,7 @@ def counter_sum(counter1: Dict[Any, float], weight1: float,
     return new_counter
 
 
-def get_scorer(split) -> Callable[[Passage, List[Passage]], List[float]]:
+def get_scorer(split) -> Callable[[Passage, List[Passage]], List[NamedNumber]]:
     bm25_module = get_bm25_module(split)
     return get_scorer_from_bm25_module(bm25_module)
 

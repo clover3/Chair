@@ -184,6 +184,36 @@ def run_eval(split,
     return avg_p_at_1
 
 
+
+def collect_failure(split,
+            scorer: Callable[[Passage, List[Passage]], List[NamedNumber]],
+             condition: EvalCondition):
+    problems, candidate_d = prepare_eval_data(split)
+
+    problems = problems[:100]
+    payload: List[Passage] = get_eval_payload_from_dp(problems)
+    for query, problem in zip(payload, problems):
+        p = problem
+        candidate_ids: List[ArguDataID] = retrieve_candidate(query, split, condition)
+        candidate = list([candidate_d[x] for x in candidate_ids])
+        scores: List[NamedNumber] = scorer(query, candidate)
+        best_idx = max_idx(scores)
+        pred_item: Passage = candidate[best_idx]
+        gold_id = p.text2.id
+        pred_id = pred_item.id
+        correct = gold_id == pred_id
+        content_equal = (p.text2.text == pred_item.text)
+        correct = correct or content_equal
+        gold_idx_l = list([idx for idx, c in enumerate(candidate) if c.id == gold_id])
+        gold_idx = gold_idx_l[0] if gold_idx_l else None
+        gold_score = scores[gold_idx] if gold_idx_l else None
+        if not correct :
+            e = p.text1.text, p.text2.text, pred_item.text
+            yield e
+
+
+
+
 def eval_thread(param):
     payload: List[Passage] = param[0]
     split, predictor_getter = param[1]

@@ -20,7 +20,6 @@ def main():
         group_by_text_1[entry.text1.id].append((entry.text2, label_A, label_B))
         text1_dict[entry.text1.id] = entry.text1.text
 
-
     for text_id in group_by_text_1:
         def print_items(condition):
             for item in group_by_text_1[text_id]:
