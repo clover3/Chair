@@ -463,3 +463,8 @@ def merge_dict_list(dict_list: List[Dict]) -> Dict:
     for d in dict_list:
         all_d.update(d)
     return all_d
+
+
+def print_dict_tab(d):
+    for key, value in d.items():
+        print("{}\t{}".format(key, value))

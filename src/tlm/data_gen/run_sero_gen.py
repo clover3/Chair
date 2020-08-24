@@ -1,16 +1,54 @@
 import os
-import pickle
 import random
 import time
+from typing import List, NewType, Any
 
 from data_generator.job_runner import JobRunner, sydney_working_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import flatten
-from misc_lib import average
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tf_util.tf_logging import tf_logging
+from tlm.bookcorpus.load_tokens import load_doc_seg
 from tlm.data_gen.base import get_basic_input_feature
 from tlm.data_gen.bert_data_gen import create_int_feature
+
+Token = NewType('Token', Any)
+
+
+def pool_tokens(rng, sent_list: List[List[Token]], target_seq_length, skip=False) -> List[List[Token]]:
+    results: List[List[Token]] = []
+    current_chunk = []
+    current_length = 0
+    i = 0
+    if skip:
+        i = i + rng.randint(0, 3)
+
+    def is_new_doc(segment):
+        return 'isbn' in segment
+
+    num_real_doc = 1
+    while i < len(sent_list):
+        segment: List[Token] = sent_list[i]
+        if is_new_doc(segment):
+            num_real_doc += 1
+            tokens_a: List[Token] = list(flatten(current_chunk))
+            tokens_a = tokens_a[:target_seq_length]
+            results.append(tokens_a)
+            current_chunk: List[List[Token]] = []
+            current_length = 0
+
+        current_chunk.append(segment)
+        current_length += len(segment)
+        if i == len(sent_list) - 1 or current_length >= target_seq_length:
+            tokens_a = list(flatten(current_chunk))
+            tokens_a = tokens_a[:target_seq_length]
+            results.append(tokens_a)
+            current_chunk = []
+            current_length = 0
+            if skip:
+                i = i + rng.randint(0, 3)
+        i += 1
+    return results
 
 
 class BookCorpusGen:
@@ -20,52 +58,11 @@ class BookCorpusGen:
         self.target_seq_length = target_seq_length
 
     def pool_tokens(self, sent_list, target_seq_length, skip=False):
-        results = []
-        current_chunk = []
-        current_length = 0
-        i = 0
-        if skip:
-            i = i + self.rng.randint(0, 3)
+        return pool_tokens(self.rng, sent_list, target_seq_length, skip)
 
-        def is_new_doc(segment):
-            return 'isbn' in segment
-
-        num_real_doc = 1
-        while i < len(sent_list):
-            segment = sent_list[i]
-            if is_new_doc(segment):
-                num_real_doc += 1
-                tokens_a = flatten(current_chunk)
-                tokens_a = tokens_a[:target_seq_length]
-                results.append(tokens_a)
-                current_chunk = []
-                current_length = 0
-
-            current_chunk.append(segment)
-            current_length += len(segment)
-            if i == len(sent_list) - 1 or current_length >= target_seq_length:
-                tokens_a = flatten(current_chunk)
-                tokens_a = tokens_a[:target_seq_length]
-                results.append(tokens_a)
-                current_chunk = []
-                current_length = 0
-                if skip:
-                    i = i + self.rng.randint(0, 3)
-            i += 1
-
-        avg_len = average([len(t) for t in results])
-        print("{} docs, {} chunks, avg_Len={}".format(num_real_doc, len(results), avg_len))
-        return results
 
     def load_doc_seg(self, doc_id):
-        if doc_id < 40:
-            file_path = "/mnt/nfs/work3/youngwookim/data/bert_tf/bookcorpus_tokens/1_{}".format(doc_id)
-        else:
-            doc_id = doc_id-40
-            file_path = "/mnt/nfs/work3/youngwookim/data/bert_tf/bookcorpus_tokens2/2_{}".format(doc_id)
-
-        f = open(file_path, "rb")
-        return pickle.load(f)
+        return load_doc_seg(doc_id)
 
     def create_instances_from_text_piece(self, doc):
         for tokens in self.pool_tokens(doc, self.target_seq_length, True):

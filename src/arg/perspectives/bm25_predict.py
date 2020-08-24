@@ -7,7 +7,7 @@ from arg.perspectives.load import claims_to_dict
 from arg.perspectives.pc_tokenizer import PCTokenizer
 # num_doc = 541
 # avdl = 11.74
-from cache import load_from_pickle
+from cache import load_from_pickle, save_to_pickle
 from list_lib import dict_value_map, lmap
 # num_doc = 541
 # avdl = 11.74
@@ -96,5 +96,37 @@ def predict_by_bm25_rm(bm25_module: BM25,
     r = predict_interface(claims, top_k, scorer)
     print(not_found)
     return r
+
+
+def kernel(norm_max, val):
+    if val > 0.52 * norm_max:
+        return 1
+    else:
+        return 0
+
+
+def get_classifier(param):
+    bm25 = get_bm25_module()
+    verbose = param['verbose']
+
+    def classify(c_text, p_text):
+        score_ideal = bm25.score(c_text, c_text)
+        cur_score = bm25.score(c_text, p_text)
+        return kernel(score_ideal, cur_score)
+
+    return classify
+
+
+
+def tune_kernel_save(r):
+    bm25 = get_bm25_module()
+    data: List[Tuple[float, float, int]] = []
+    for c_text, p_text, y in r:
+        score_ideal = bm25.score(c_text, c_text)
+        cur_score = bm25.score(c_text, p_text)
+        data.append((float(score_ideal), float(cur_score), y))
+
+    save_to_pickle(data, "bm25_tune_kernel")
+
 
 

@@ -16,7 +16,7 @@ def run(k1, k2, b):
     modify(bm25, k1, k2, b)
     scorer = bm25_predictor.get_scorer_from_bm25_module(bm25)
     acc = run_eval(split, scorer, EvalCondition.EntirePortalArguments)
-    print(k1, k2, b, acc)
+    print(f"k1 {k1}, k2 {k2}, b {b}, acc {acc}")
 
 
 def grid_search_b():
@@ -50,4 +50,4 @@ if __name__ == "__main__":
     # run(float(sys.argv[1]),
     #     float(sys.argv[2]),
     #     float(sys.argv[3]))
-    grid_search_k2()
+    grid_search_b()

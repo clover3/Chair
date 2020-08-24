@@ -79,7 +79,7 @@ def get_bm25_module(split):
          'validation': 4074,
          'test': 4074,
          }[split]
-    return BM25(df, avdl=160, num_doc=N * 2, k1=1.2, k2=100, b=0.5)
+    return BM25(df, avdl=160, num_doc=N * 2, k1=0.1, k2=100, b=0.9)
 
 
 def count_df(passages: Iterable[Passage]) -> Counter:

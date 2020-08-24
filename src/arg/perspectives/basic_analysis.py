@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Dict, Tuple
 
 import nltk
 
 from arg.perspectives import es_helper
+from arg.perspectives.collection_based_classifier import NamedNumber, predict_interface
 from arg.perspectives.declaration import PerspectiveCandidate
 from arg.perspectives.load import get_claim_perspective_id_dict, get_perspective_dict, load_claim_perspective_pair, \
     get_claims_from_ids, load_claim_ids_for_split
@@ -121,6 +122,25 @@ def predict_by_elastic_search(claims, top_k):
     return prediction
 
 
+def predict_by_oracle_on_candidate(
+                  claims,
+                  top_k) -> List[Tuple[str, List[Dict]]]:
+    gold: Dict[int, List[List[int]]] = get_claim_perspective_id_dict()
+
+    def scorer(lucene_score, query_id) -> NamedNumber:
+        claim_id, p_id = query_id.split("_")
+        gold_pids = gold[int(claim_id)]
+        score = 0
+        for p_ids in gold_pids:
+            if int(p_id) in p_ids:
+                score = 1
+
+        return NamedNumber(score, "")
+
+    r = predict_interface(claims, top_k, scorer)
+    return r
+
+
 def test_es():
     claim_and_perspective = load_claim_perspective_pair()
     perspective = get_perspective_dict()
@@ -143,4 +163,11 @@ def load_data_point(split):
     claims = get_claims_from_ids(d_ids)
     is_train = split == "train"
     all_data_points = get_candidates(claims, is_train)
+    return all_data_points
+
+
+def load_data_point_50(split):
+    d_ids = list(load_claim_ids_for_split(split))
+    claims = get_claims_from_ids(d_ids)
+    all_data_points = get_candidates(claims, False)
     return all_data_points

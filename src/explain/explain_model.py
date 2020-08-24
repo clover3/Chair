@@ -37,7 +37,7 @@ class ExplainPredictor:
             for tag_idx in range(self.num_tags):
                 with tf.variable_scope("ex_{}".format(tag_idx)):
                     ex_logits = tf.layers.dense(self.sequence_output, 1, name="ex_{}".format(tag_idx))
-                    ex_logits = tf.squeeze(ex_logits)
+                    ex_logits = tf.squeeze(ex_logits, axis=2)
                 self.ex_logits.append(ex_logits)
                 self.ex_probs.append(ex_logits)
 

@@ -9,6 +9,7 @@ from list_lib import flatten
 
 dir_path = os.path.join(data_path, "perspective")
 
+splits = ["train", "dev", "test"]
 
 def load_json_by_name(name):
     return json.load(open(os.path.join(dir_path, name),"r"))
@@ -68,13 +69,13 @@ def claims_to_dict(claims) -> Dict[int, str]:
 
 
 # get claim_per
-def get_claim_perspective_id_dict() -> Dict[int, List]:
+def get_claim_perspective_id_dict() -> Dict[int, List[List[int]]]:
     claim_and_perspective = load_claim_perspective_pair()
     d = {}
     for e in claim_and_perspective:
-        l = []
+        l: List[List[int]] = []
         for perspective_cluster in e['perspectives']:
-            pids = perspective_cluster['pids']
+            pids: List[int] = perspective_cluster['pids']
             l.append(pids)
 
         # n_unique_pers = len(set(flatten(l)))
@@ -95,7 +96,7 @@ def get_claim_perspective_label_dict() -> Dict[CPIDPair, int]:
     return d
 
 
-def get_claims_from_ids(claim_ids):
+def     get_claims_from_ids(claim_ids) -> List[Dict]:
     claim_ids_set = set(claim_ids)
     claim_and_perspective = load_claim_perspective_pair()
     output = []

@@ -1,3 +1,4 @@
+import re
 from collections import Counter
 from typing import List, Tuple
 
@@ -12,22 +13,41 @@ from list_lib import lmap, flatten, lmap_pairing, left
 from models.classic.bm25 import BM25
 
 
-def get_stance_check_candidate(text: str, bm25_module: BM25):
+def sent_tokenize_newline(text):
     sents = sent_tokenize(text)
+    r = []
+    for s in sents:
+        for new_sent in s.split("\n"):
+            r.append(new_sent)
+    return r
+
+
+def get_stance_check_candidate(text: str, bm25_module: BM25):
+    sents = sent_tokenize_newline(text)
     tokens = flatten([bm25_module.tokenizer.tokenize_stem(s) for s in sents])
     q_tf = Counter(tokens)
     term_importance = Counter()
     for term, tf in q_tf.items():
         term_importance[term] += bm25_module.term_idf_factor(term) * tf
 
+    def is_heading_num(s):
+        return re.match(r'^\[(\d{1,3}|i{1,5})\]', s) is not None
+
     r = []
     for sent in sents:
+        if not sent.strip():
+            continue
+
+        if is_heading_num(sent.strip()):
+            continue
         tokens = nltk.tokenize.word_tokenize(sent)
         tokens = set(tokens)
-        def get_score(t):
+
+        def per_token_score(t):
             s = bm25_module.tokenizer.stemmer.stem(t)
             return term_importance[s]
-        scores: List[Tuple[str, float]] = lmap_pairing(get_score, tokens)
+
+        scores: List[Tuple[str, float]] = lmap_pairing(per_token_score, tokens)
         scores.sort(key=lambda x: x[1], reverse=True)
         terms = left(scores[:5])
 

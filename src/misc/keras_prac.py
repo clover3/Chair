@@ -5,7 +5,7 @@ from models.transformer.bert_common_v2 import get_shape_list
 
 class MyModel:
     def __init__(self):
-
+        pass
 
     def build(self):
         vocab_size = 40000

@@ -1,17 +1,18 @@
 from typing import Dict, List, Set
 
-from arg.perspectives.basic_analysis import predict_by_elastic_search
+from arg.perspectives.basic_analysis import predict_by_elastic_search, predict_by_oracle_on_candidate
 from arg.perspectives.bm25_predict import predict_by_bm25, get_bm25_module
+from arg.perspectives.claim_lm.lm_predict import predict_by_lm
 from arg.perspectives.cpid_def import CPID
-from arg.perspectives.evaluate import evaluate
-from arg.perspectives.load import get_claims_from_ids, load_train_claim_ids
+from arg.perspectives.evaluate import evaluate, evaluate_map
 from arg.perspectives.pc_para_predictor import load_cpid_resolute, predict_by_para_scorer
 from arg.perspectives.relevance_based_predictor import predict_from_dict
 from arg.perspectives.reweight_predict import predict_by_reweighter
+from arg.perspectives.runner_uni.build_topic_lm import build_claim_lm_trian
+from arg.perspectives.split_helper import train_split
 from base_type import FileName
 from cache import load_from_pickle
 from list_lib import lmap, lfilter
-from misc_lib import split_7_3
 
 
 def filter_avail(claims):
@@ -19,13 +20,6 @@ def filter_avail(claims):
     cid_list: List[int] = lmap(lambda x: int(x.split("_")[0]), cpid_resolute.values())
     cid_list: Set[int] = set(cid_list)
     return lfilter(lambda x: x['cId'] in cid_list, claims)
-
-
-def train_split():
-    d_ids: List[int] = list(load_train_claim_ids())
-    claims = get_claims_from_ids(d_ids)
-    train, val = split_7_3(claims)
-    return claims, val
 
 
 def run_para_scorer():
@@ -63,9 +57,22 @@ def run_bert_baseline():
 
 def run_baseline():
     claims, val = train_split()
-    top_k = 20
+    top_k = 50
     pred = predict_by_elastic_search(claims, top_k)
     print(evaluate(pred))
+
+
+def run_oracle_on_candiate():
+    claims, val = train_split()
+    top_k = 5
+    pred = predict_by_oracle_on_candidate(claims, top_k)
+    print(evaluate(pred))
+
+def run_oracle_on_candiate_map():
+    claims, val = train_split()
+    top_k = 50
+    pred = predict_by_oracle_on_candidate(claims, top_k)
+    print(evaluate_map(pred))
 
 
 def run_bm25():
@@ -73,6 +80,33 @@ def run_bm25():
     top_k = 20
     pred = predict_by_bm25(get_bm25_module(), claims, top_k)
     print(evaluate(pred))
+
+
+def run_gold_lm():
+    claims, val = train_split()
+    top_k = 5
+    print("Building lms")
+    claim_lms = build_claim_lm_trian()
+    print("Predicting")
+    pred = predict_by_lm(claim_lms, claims, top_k)
+    print(evaluate(pred))
+
+
+def run_bm25_map():
+    claims, val = train_split()
+    top_k = 50
+    pred = predict_by_bm25(get_bm25_module(), claims, top_k)
+    print(evaluate_map(pred))
+
+
+def run_gold_lm_ap():
+    claims, val = train_split()
+    top_k = 50
+    print("Building lms")
+    claim_lms = build_claim_lm_trian()
+    print("Predicting")
+    pred = predict_by_lm(claim_lms, claims, top_k)
+    print(evaluate_map(pred))
 
 
 def run_reweight():
@@ -86,4 +120,4 @@ def run_reweight():
 
 
 if __name__ == "__main__":
-    run_reweight()
+    run_gold_lm_ap()

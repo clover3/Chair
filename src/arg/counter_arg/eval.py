@@ -136,7 +136,6 @@ def failure_type(gold_id, pred_id):
         return 6
 
 
-
 def run_eval(split,
             scorer: Callable[[Passage, List[Passage]], List[NamedNumber]],
              condition: EvalCondition):
@@ -162,7 +161,7 @@ def run_eval(split,
         gold_idx = gold_idx_l[0] if gold_idx_l else None
         gold_score = scores[gold_idx] if gold_idx_l else None
 
-        if not correct :
+        if not correct and True:
             print("-------------------", correct, content_equal)
             print("QUERY:", p.text1.id)
             print(p.text1.text)
@@ -180,7 +179,7 @@ def run_eval(split,
 
         correctness.append(correct)
     avg_p_at_1 = average(correctness)
-    print(fail_type_count)
+    #print(fail_type_count)
     return avg_p_at_1
 
 

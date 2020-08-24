@@ -1,8 +1,8 @@
 from typing import List
 
 from arg.perspectives.bm25_predict import predict_by_bm25, get_bm25_module, predict_by_bm25_rm
-from arg.perspectives.evaluate import evaluate
-from arg.perspectives.inspect import predict_see_candidate
+from arg.perspectives.evaluate import evaluate, evaluate_map
+from arg.perspectives.inspect_data import predict_see_candidate
 from arg.perspectives.lm_predict import predict_by_lm, load_collection_tf
 from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids
 from arg.perspectives.next_sent_predictor import pc_predict_by_bert_next_sent
@@ -42,6 +42,16 @@ def run_eval_with_dict(pickle_name):
     print(evaluate(pred))
 
 
+def map_eval_with_dict(pickle_name):
+    d_ids: List[int] = list(load_dev_claim_ids())
+    claims = get_claims_from_ids(d_ids)
+    print("targets", len(claims))
+    top_k = 50
+    pc_score_d = load_from_pickle(pickle_name)
+    pred = predict_from_dict(pc_score_d, claims, top_k)
+    print(evaluate_map(pred))
+
+
 def run_eval_with_two_dict():
     d_ids: List[int] = list(load_dev_claim_ids())
     claims = get_claims_from_ids(d_ids)
@@ -70,6 +80,16 @@ def run_bm25():
     top_k = 7
     pred = predict_by_bm25(get_bm25_module(), claims, top_k)
     print(evaluate(pred))
+
+
+def run_bm25_map():
+    d_ids: List[int] = list(load_dev_claim_ids())
+    claims = get_claims_from_ids(d_ids)
+    top_k = 50
+    pred = predict_by_bm25(get_bm25_module(), claims, top_k)
+    print(evaluate_map(pred))
+
+
 
 
 def run_reweight():
@@ -160,6 +180,10 @@ def run_bert_baseline():
     run_eval_with_dict("pc_bert_baseline_score_d")
 
 
+def run_bert_baseline_map():
+    map_eval_with_dict("pc_bert_baseline_score_d")
+
+
 def run_bert_baseline2():
     score_d = load_from_pickle("pc_bert_baseline_score_d2")
     print(eval_from_score_d(score_d, 5))
@@ -172,4 +196,4 @@ def run_logit_baseline():
 
 
 if __name__ == "__main__":
-    run_bm25()
+    run_bm25_map()

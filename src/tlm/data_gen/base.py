@@ -475,7 +475,10 @@ class UnmaskedPairGen(UnmaskedGen):
     def create_instances_from_documents(self, documents):
         max_num_tokens = self.max_seq_length - 3
         target_seq_length = max_num_tokens
+        print("pooling chunks")
         docs_as_chunks, target_inst_num = self.pool_chunks_from_docs(documents, target_seq_length)
+        print("num chunks : ", len(docs_as_chunks), target_inst_num)
+
 
         instances = []
         for _ in range(target_inst_num):

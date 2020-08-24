@@ -1,4 +1,5 @@
-from typing import List, Callable
+import itertools
+from typing import List, Callable, NamedTuple
 
 import numpy as np
 
@@ -9,18 +10,26 @@ from arg.counter_arg.methods import bm25_predictor
 from arg.counter_arg.methods.bm25_predictor import get_bm25_module
 from arg.counter_arg.methods.stance_query import get_stance_check_candidate
 from arg.perspectives.collection_based_classifier import NamedNumber
+from cache import save_to_pickle, load_from_pickle
 
 
-def work():
-    query = "A presidential position enable the democratic selection of a head-of-state The alternative to the monarch is obvious. Many states around the world have Presidential systems, either like the United States where the President fulfils both the role of the Head of State and the Head of Government combining the two roles. Or as in Italy or Germany where there is both a head of state (usually president) and a head of government (usually Prime Minister, although Germany’s is Chancellor) where the head of state is respected but is mostly a ceremonial role. Finally there may be both a head of state and head of government where both are powerful as in France. Therefore the head of state can still be in whatever role the state requires. Most importantly in all these cases the head of state is elected rather than simply gaining the position on account of birth."
-    gold = "The head of government will already be elected. There is no need to create a competing centre of power that has the same popular legitimacy. Just as there are worries that an elected house of lords would want more powers due to its new found legitimacy an elected head of state could demand the same. Such a change would be disruptive and is not necessary."
-    pred = "That’s equally an argument against international criminal law as head of state immunity. While there may be instances where the head of state or government has to take decisions that might be criminal for the greater good – for example ordering the abduction or assassination of a terrorist – these instances are rare and most of the time the courts will take into account the good as well as the bad. However there are equally times where it is good that someone fears prosecution, if they do it is a sign that what they are doing is wrong. Bombing of Germany could have ended when all military targets had been hit, it need not have involved incendiary bombing of civilian targets. In Japan there was a third option of accepting a conditional surrender – one that guaranteed the position of the Emperor, since the Allies ultimately agreed this anyway there would have been little loss."
+class AnalyzedCase(NamedTuple):
+    query: str
+    gold: str
+    pred: str
+    score_g: List
+    score_p: List
+
+
+
+def ask_contradiction(num):
     split = "training"
 
     scorer: Callable[[Passage, List[Passage]], List[NamedNumber]] = bm25_predictor.get_scorer(split)
 
     cont_requester = Request()
     bm25 = get_bm25_module("training")
+
     def pairwise(query, candidate):
         sent_term_list_q = get_stance_check_candidate(query, bm25)
         sent_term_list_c = get_stance_check_candidate(candidate, bm25)
@@ -29,46 +38,140 @@ def work():
         for sent_q, terms_q in sent_term_list_q:
             for sent_c, terms_c in sent_term_list_c:
                 r.append((sent_q, sent_c))
+                r.append((sent_c, sent_q))
         return r
 
-    def print_result_list(result_list):
-        for e in result_list:
-            sent1, sent2, scores = e
-            pred = np.argmax(scores)
-            if pred == 2:
+    itr = collect_failure(split, scorer, EvalCondition.EntirePortalCounters)
+    failure_cases = itertools.islice(itr, num)
+
+    def ask_inst(e):
+        query, gold, pred = e
+
+        def ask_cont(target):
+            payload = pairwise(query, target)
+            return cont_requester.request_multiple(payload)
+
+        r_gold = ask_cont(gold)
+        r_pred = ask_cont(pred)
+        return AnalyzedCase(
+            query=query,
+            gold=gold,
+            pred=pred,
+            score_g=r_gold,
+            score_p=r_pred
+        )
+
+    analyzed_failture_cases: List[AnalyzedCase] = []
+    for a in failure_cases:
+        try:
+            analyzed_failture_cases.append(ask_inst(a))
+        except Exception as e:
+            print(e)
+    return analyzed_failture_cases
+
+
+def manual_entry_ask():
+    r1 =(' Arts degrees limit opportunities for Universities to offer other courses.',
+         ' Despite Prop’s efforts to suggest that there are masses of homeless, would-be engineering students roaming around university campuses, the reality is that universities pack their bankable courses just fine and ensure that they have the capacity to do so.')
+    r2 = ('If the value of a degree is judged purely on the likely salary at the end of it, then society has a very real problem.',
+          'Of course the financial outcome of doing a degree is of paramount interest to both the student and wider society, suggesting otherwise is sophistry.')
+    r3 = (' Celebrities are respected by young people and this is a way in which they can act as a role model and set a positive example.',
+          ' It seems, frankly unfair to ask people to destroy their careers on the basis that it will encourage others to do something that the law already requires of them.')
+
+    def swap(pair):
+        return (pair[1], pair[0])
+
+    payload = [r1, r2, r3]
+    payload_2way = []
+    for r in payload:
+        payload_2way.append(r)
+        payload_2way.append(swap(r))
+
+    cont_requester = Request()
+
+    scores = cont_requester.request_multiple(payload_2way)
+
+    for s1, s2, score in scores:
+        print(s1)
+        print(s2)
+        print(score)
+
+
+
+def show_analyzed(analyzed_failture_cases: List[AnalyzedCase]):
+    def print_scored_sentences(scores):
+        for i, _ in enumerate(scores):
+            if i % 2 == 0:
+                sent1, sent2, score1 = scores[i]
+                _, _, score2 = scores[i+1]
+                # if is_cont(score1) and is_cont(score2):
                 print("Sent1: ", sent1)
                 print("Sent2: ", sent2)
-                print(scores)
+                print("{0:.2f}\t{1:.2f}".format(score1[2], score2[2]))
+
+    def print_analyzed_case(analyzed_case: AnalyzedCase):
+        def print_part(score):
+            cnt = count_cont(score)
+            print("{} of {}".format(cnt, len(score)))
+            print_scored_sentences(score)
+
+        print("Gold")
+        print_part(analyzed_case.score_g)
+        print("Pred")
+        print_part(analyzed_case.score_p)
+
+
+
+
+    def is_cont(scores):
+        return np.argmax(scores) == 2
+
+
+    def is_cont_strict(scores):
+        return scores[2] > 0.9
+
 
     def count_cont(result_list):
-        num_cont = sum([1 for _, _, scores in result_list if np.argmax(scores) == 2])
+        num_cont = sum([1 for _, _, scores in result_list if is_cont(scores)])
         return num_cont
 
-    c_g_list = []
-    c_p_list = []
-    for idx, e in enumerate(collect_failure(split, scorer, EvalCondition.EntirePortalCounters)):
-        if idx == 30:
-            break
-        try:
-            print(idx)
-            query, gold, pred = e
-            result_list = cont_requester.request_multiple(pairwise(query, gold))
-            cnt = count_cont(result_list)
-            print("Gold", cnt)
-            print_result_list(result_list)
-            c_g_list.append(cnt)
-            result_list = cont_requester.request_multiple(pairwise(query, pred))
-            cnt = count_cont(result_list)
-            print("Pred", cnt)
-            print_result_list(result_list)
-            c_p_list.append(cnt)
-        #print_result_list(result_list)
-        except Exception as e :
-            print(e)
+    def count_cont_stric(result_list):
+        num_cont = sum([1 for _, _, scores in result_list if is_cont(scores)])
+        return num_cont
+
+    def count_cont_pair(result_list):
+        cnt = 0
+        for i, _ in enumerate(result_list):
+            if i % 2 == 0:
+                s1 = result_list[i][2]
+                s2 = result_list[i+1][2]
+
+                if is_cont(s1) and is_cont(s2):
+                    cnt += 1
+        return cnt
+
+
+    c_g_list = list([count_cont(e.score_g) for e in analyzed_failture_cases])
+    c_p_list = list([count_cont(e.score_p) for e in analyzed_failture_cases])
+
+    for idx, dp in enumerate(analyzed_failture_cases):
+        print("Data point ", idx)
+        print("------------")
+        print_analyzed_case(dp)
 
     print(c_g_list)
     print(c_p_list)
 
 
+def work():
+    r = ask_contradiction(10)
+    save_to_pickle(r, "contradiction_analysis")
+
+
+def work2():
+    r = load_from_pickle("contradiction_analysis")
+    show_analyzed(r)
+
+
 if __name__ == "__main__":
-    work()
+    work2()

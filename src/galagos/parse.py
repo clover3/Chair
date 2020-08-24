@@ -3,7 +3,6 @@ import string
 from collections import Counter
 from typing import Iterator, Dict, List, Tuple
 
-from base_type import *
 from galagos.types import GalagoDocRankEntry, GalagoPassageRankEntry, Query, RankedListDict
 from list_lib import flatten, right
 from misc_lib import group_by
@@ -62,7 +61,7 @@ def write_qrels(qrels: Dict[str, List[Tuple[str, int]]],
     # 101001 0 clueweb12-0001wb-40-32733 0
 
 
-def load_galago_ranked_list(path: FilePath) -> Dict[str, List[GalagoDocRankEntry]]:
+def load_galago_ranked_list(path) -> Dict[str, List[GalagoDocRankEntry]]:
     # Sample Format : 475287 Q0 LA053190-0016_1274 1 15.07645119 galago
     line_itr = open(path, "r")
     return parse_galago_ranked_list(line_itr)

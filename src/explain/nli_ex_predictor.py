@@ -53,8 +53,8 @@ class NLIExPredictor:
                                   })
             ex_logits_list.append(ex_logits)
             sout_list.append(sout)
-        ex_logits = np.concatenate(ex_logits_list)
-        sout = np.concatenate(sout_list)
+        ex_logits = np.concatenate(ex_logits_list, axis=0)
+        sout = np.concatenate(sout_list, axis=0)
         return sout, ex_logits
 
     def predict_ex_from_insts(self, explain_tag, insts):
@@ -63,7 +63,8 @@ class NLIExPredictor:
 
     def predict_both_from_insts(self, explain_tag, insts):
         batches = get_batches_ex(insts, self.batch_size, 3)
-        return self.predict_both(explain_tag, batches)
+        r = self.predict_both(explain_tag, batches)
+        return r
 
     def forward_run(self, inputs):
         batches = get_batches_ex(inputs, self.batch_size, 3)

@@ -7,7 +7,7 @@ class PromiseKeeper:
 
     def do_duty(self):
         x_list = list([X.X for X in self.X_list])
-        print("Total of {} runs".format(len(x_list)))
+        #print("Total of {} runs".format(len(x_list)))
         y_list = self.list_fn(x_list)
         for X, y in zip(self.X_list, y_list):
             X.future().Y = y

@@ -23,10 +23,10 @@ def get_prec_recll(predicted_perspectives, gold_pids, debug):
     tp = 0
     # if debug:
     #     print(gold_pids)
-    for cluster in gold_pids:
-        print("-")
-        for pid in cluster:
-            print(pid, perspective_getter(pid))
+    # for cluster in gold_pids:
+    #     print("-")
+    #     for pid in cluster:
+    #         print(pid, perspective_getter(pid))
     for prediction in predicted_perspectives:
         pid = prediction['pid']
         valid = False
@@ -52,6 +52,40 @@ def get_prec_recll(predicted_perspectives, gold_pids, debug):
     recall = tp / len(gold_pids) if len(gold_pids) > 0 else 1
 
     return prec, recall
+
+
+def get_ap(predicted_perspectives, gold_pids, debug):
+    ## In this metrics, it is possible to get precision > 1, as some clusters shares same perspective
+    # if debug:
+    #     print(gold_pids)
+    # for cluster in gold_pids:
+    #     print("-")
+    #     for pid in cluster:
+    #         print(pid, perspective_getter(pid))
+    def is_correct(pid):
+        for cluster in gold_pids:
+            if pid in cluster:
+                return True
+        return False
+
+    tp = 0
+    precision_list = []
+    for idx, prediction in enumerate(predicted_perspectives):
+        pid = prediction['pid']
+        if is_correct(pid):
+            tp += 1
+            n_pred = idx + 1
+            prec = tp / n_pred
+            precision_list.append(prec)
+            correct_str = "Y"
+        else:
+            correct_str = "N"
+
+        if debug:
+            print(correct_str, prediction['score'], prediction['rationale'], pid, prediction['perspective_text'])
+    assert tp == len(precision_list)
+    ap = average(precision_list) if tp > 0 else 1
+    return ap
 
 
 
@@ -112,6 +146,21 @@ def evaluate(predictions, debug=True):
         'recall' :avg_recall,
         'f1': get_f1(avg_prec, avg_recall)
     }
+
+
+def evaluate_map(predictions, debug=True):
+    gold = get_claim_perspective_id_dict()
+    ap_list = []
+    for c_Id, prediction_list in predictions:
+        gold_pids = gold[c_Id]
+        claim_text = prediction_list[0]['claim_text']
+        if debug:
+            print("Claim {}: ".format(c_Id), claim_text)
+        ap = get_ap(prediction_list, gold_pids, debug)
+        ap_list.append(ap)
+
+    map = average(ap_list)
+    return {'map': map}
 
 
 def inspect(predictions):
