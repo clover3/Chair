@@ -198,6 +198,7 @@ def loss_diff_prediction_model_online(bert_config, train_config, model_class):
 
     return model_fn
 
+
 def loss_diff_prediction_model(bert_config, train_config, model_class, model_config):
     """Returns `model_fn` closure for TPUEstimator."""
 

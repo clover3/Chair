@@ -11,7 +11,7 @@ from arg.perspectives.split_helper import train_split
 from list_lib import lmap, foreach, dict_value_map, left
 
 
-def merge(counter_list):
+def merge_lms(counter_list):
     n = len(counter_list)
     output = Counter()
     for counter in counter_list:
@@ -20,18 +20,17 @@ def merge(counter_list):
     return output
 
 
-
 class ClaimLM(NamedTuple):
     cid: int
     claim: str
     LM: Counter
 
 
-def build_claim_lm_trian() -> List[ClaimLM]:
+def build_gold_claim_lm_train() -> List[ClaimLM]:
     # load claims and perspectives
     # Calculate term frequency for each terms.
     claims, val = train_split()
-    return build_lms(claims)
+    return build_gold_lms(claims)
 
 
 def tokens_to_freq(tokens):
@@ -44,25 +43,39 @@ def tokens_to_freq(tokens):
     return output
 
 
-def build_lms(claims):
+def build_gold_lms(claims):
     gold = get_claim_perspective_id_dict()
     tokenizer = PCTokenizer()
 
     def get_cluster_lm(cluster: List[int]):
         p_text_list: List[str] = lmap(perspective_getter, cluster)
-        tokens_list = lmap(tokenizer.tokenize_stem, p_text_list)
+        tokens_list: List[List[str]] = lmap(tokenizer.tokenize_stem, p_text_list)
         counter_list = lmap(tokens_to_freq, tokens_list)
-        counter = merge(counter_list)
+        counter = merge_lms(counter_list)
         return counter
 
     def get_claim_lm(claim):
         cid = claim["cId"]
         counter_list = lmap(get_cluster_lm, gold[cid])
-        counter = merge(counter_list)
+        counter = merge_lms(counter_list)
         return ClaimLM(cid, claim['text'], counter)
 
     claim_lms = lmap(get_claim_lm, claims)
     return claim_lms
+
+
+def build_baseline_lms(claims):
+    tokenizer = PCTokenizer()
+
+    def get_claim_lm(claim):
+        cid = claim["cId"]
+        counter = tokens_to_freq(tokenizer.tokenize_stem(claim['text']))
+        return ClaimLM(cid, claim['text'], counter)
+
+    claim_lms = lmap(get_claim_lm, claims)
+    return claim_lms
+
+
 
 
 def get_lm_log(lm: Counter) -> Counter:
@@ -90,6 +103,17 @@ def smooth(target_lm: Counter, bg_lm: Counter, alpha):
     return output
 
 
+def smooth_ex(target_lm: Counter, bg_lm: Counter, alpha):
+    output = Counter()
+    keys = set(bg_lm.keys())
+    keys.update(target_lm.keys())
+    for k in keys:
+        v = bg_lm[k]
+        output[k] = target_lm[k] * (1-alpha) + alpha * v
+
+    return output
+
+
 def get_log_odd(topic_lm, bg_lm, alpha):
     log_topic_lm = get_lm_log(smooth(topic_lm.LM, bg_lm, alpha))
     log_bg_lm = get_lm_log(bg_lm)
@@ -98,9 +122,9 @@ def get_log_odd(topic_lm, bg_lm, alpha):
 
 
 def build_and_show():
-    claim_lms = build_claim_lm_trian()
+    claim_lms = build_gold_claim_lm_train()
     alpha = 0.1
-    bg_lm = merge(lmap(lambda x: x.LM, claim_lms))
+    bg_lm = merge_lms(lmap(lambda x: x.LM, claim_lms))
 
     def show(claim_lm: ClaimLM):
         print('----')
@@ -108,6 +132,9 @@ def build_and_show():
         log_topic_lm = get_lm_log(smooth(claim_lm.LM, bg_lm, alpha))
         log_bg_lm = get_lm_log(bg_lm)
         log_odd: Counter = subtract(log_topic_lm, log_bg_lm)
+
+        for k, v in claim_lm.LM.most_common(50):
+            print(k, v)
 
         s = "\t".join(left(claim_lm.LM.most_common(10)))
         print("LM freq: ", s)

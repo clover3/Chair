@@ -75,7 +75,7 @@ class HtmlVisualizer(VisualizerCommon):
 
     def _write_header(self):
         self.f_html.write("<html><head>\n")
-
+        self.f_html.write("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>")
         if self.dark_mode:
             self.f_html.write("<style>body{color:#" + self.dark_foreground + ";}</style>")
 

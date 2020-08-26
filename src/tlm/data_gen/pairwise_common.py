@@ -11,26 +11,35 @@ def write_pairwise_record(tokenizer, max_seq_length, insts, out_path):
     for inst in insts:
         (tokens, segment_ids), (tokens2, segment_ids2) = inst
 
-        input_ids, input_mask, segment_ids = get_basic_input_feature_as_list(tokenizer, max_seq_length,
-                                                                             tokens, segment_ids)
-        features = collections.OrderedDict()
-        features["input_ids1"] = create_int_feature(input_ids)
-        features["input_mask1"] = create_int_feature(input_mask)
-        features["segment_ids1"] = create_int_feature(segment_ids)
-        input_ids, input_mask, segment_ids = get_basic_input_feature_as_list(tokenizer, max_seq_length,
-                                                                             tokens2, segment_ids2)
-        features["input_ids2"] = create_int_feature(input_ids)
-        features["input_mask2"] = create_int_feature(input_mask)
-        features["segment_ids2"] = create_int_feature(segment_ids)
+        features = combine_features(tokens, segment_ids, tokens2, segment_ids2, tokenizer, max_seq_length)
 
         writer.write_feature(features)
     writer.close()
 
 
-def generate_pairwise_combinations(neg_inst_list, pos_inst_list):
+def combine_features(tokens, segment_ids, tokens2, segment_ids2, tokenizer, max_seq_length) -> collections.OrderedDict:
+    input_ids, input_mask, segment_ids = get_basic_input_feature_as_list(tokenizer, max_seq_length,
+                                                                         tokens, segment_ids)
+    features = collections.OrderedDict()
+    features["input_ids1"] = create_int_feature(input_ids)
+    features["input_mask1"] = create_int_feature(input_mask)
+    features["segment_ids1"] = create_int_feature(segment_ids)
+    input_ids, input_mask, segment_ids = get_basic_input_feature_as_list(tokenizer, max_seq_length,
+                                                                         tokens2, segment_ids2)
+    features["input_ids2"] = create_int_feature(input_ids)
+    features["input_mask2"] = create_int_feature(input_mask)
+    features["segment_ids2"] = create_int_feature(segment_ids)
+    return features
+
+
+def generate_pairwise_combinations(neg_inst_list, pos_inst_list, verbose=False):
     insts = []
-    print("pos_insts", len(pos_inst_list))
-    print("neg_insts", len(neg_inst_list))
+    if verbose:
+        print("pos_insts", len(pos_inst_list))
+        print("neg_insts", len(neg_inst_list))
+
+    if not neg_inst_list or not pos_inst_list:
+        return insts
     if len(pos_inst_list) > len(neg_inst_list):
         major_inst = pos_inst_list
         minor_inst = neg_inst_list

@@ -468,3 +468,17 @@ def merge_dict_list(dict_list: List[Dict]) -> Dict:
 def print_dict_tab(d):
     for key, value in d.items():
         print("{}\t{}".format(key, value))
+
+
+def two_digit_float(f):
+    return "{0:.2f}".format(f)
+
+
+def timed_lmap(func: Callable[[A], B],
+         iterable_something: List[A]) -> List[B]:
+    r = []
+    ticker = TimeEstimator(len(iterable_something))
+    for e in iterable_something:
+        r.append(func(e))
+        ticker.tick()
+    return r
