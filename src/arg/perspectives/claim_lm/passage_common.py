@@ -1,3 +1,5 @@
+from typing import Tuple, List
+
 from arg.perspectives.clueweb_db import load_doc
 from arg.perspectives.select_paragraph_claim import remove_duplicate
 
@@ -20,3 +22,8 @@ def score_passages(q_res, top_n, get_passage_score):
             passages.append((p, score))
             idx += window_size
     return passages
+
+
+def score_over_zero(passage_and_score: Tuple[List[str], float]):
+    _, score = passage_and_score
+    return score > 0

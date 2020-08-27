@@ -11,6 +11,7 @@ from sydney_manager import MarkedTaskManager
 
 sydney_working_dir: FilePath = FilePath("/mnt/nfs/work3/youngwookim/data/bert_tf")
 
+
 class WorkerInterface(ABC):
     @abstractmethod
     def work(self, job_id):

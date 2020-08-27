@@ -2,8 +2,10 @@ import random
 from collections import OrderedDict
 from typing import NamedTuple, List, Dict, Tuple
 
+from arg.perspectives.claim_lm.passage_common import score_over_zero
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import get_claim_perspective_id_dict
+from arg.perspectives.ppnc.ppnc_decl import PPNCGeneratorInterface
 from data_generator.common import get_tokenizer
 from data_generator.create_feature import create_int_feature
 from list_lib import flatten_map, left, lfilter, lfilter_not, lmap, foreach
@@ -19,27 +21,29 @@ class PairedInstance(NamedTuple):
     strict_bad: int
 
 
-def generate_instances_functor(cid_to_passages: Dict[int, List[Tuple[List[str], float]]]):
-    all_cids = list(cid_to_passages.keys())
-    gold = get_claim_perspective_id_dict()
+class Generator(PPNCGeneratorInterface):
+    def __init__(self,
+                 cid_to_passages: Dict[int, List[Tuple[List[str], float]]],
+                 ):
+        self.cid_to_passages = cid_to_passages
 
-    def random_sample(exclude_cid) -> List[str]:
-        cid = random.choice(all_cids)
+        self.all_cids = list(cid_to_passages.keys())
+        self.gold = get_claim_perspective_id_dict()
+
+    def random_sample(self, exclude_cid) -> List[str]:
+        cid = random.choice(self.all_cids)
         while cid == exclude_cid:
-            cid = random.choice(all_cids)
-        p, score = random.choice(cid_to_passages[cid])
+            cid = random.choice(self.all_cids)
+        p, score = random.choice(self.cid_to_passages[cid])
         return p
 
-    def generate_instances(claim: Dict) -> List[PairedInstance]:
+    def generate_instances(self, claim: Dict, data_id_manager) -> List[PairedInstance]:
         cid = claim['cId']
-        perspective_clusters: List[List[int]] = gold[cid]
+        perspective_clusters: List[List[int]] = self.gold[cid]
 
-        passages = cid_to_passages[cid]
+        passages = self.cid_to_passages[cid]
         gold_candidate_texts: List[str] = flatten_map(perspective_getter, perspective_clusters)
 
-        def score_over_zero(passage_and_score):
-            _, score = passage_and_score
-            return score > 0
 
         good_passages: List[List[str]] = left(lfilter(score_over_zero, passages))
         not_good_passages: List[List[str]] = left(lfilter_not(score_over_zero, passages))
@@ -51,7 +55,7 @@ def generate_instances_functor(cid_to_passages: Dict[int, List[Tuple[List[str], 
         pair_list_g_ng: List[Tuple[List[str], List[str]]] = generate_pairwise_combinations(not_good_passages, good_passages, True)
         # make not_good vs random pairs
         # about 100 items
-        pair_list_ng_rand: List[Tuple[List[str], List[str]]] = list([(inst, random_sample(cid)) for inst in not_good_passages])
+        pair_list_ng_rand: List[Tuple[List[str], List[str]]] = list([(inst, self.random_sample(cid)) for inst in not_good_passages])
 
         # generate (candiate_texts) X (two pair_list), while limit maximum to 5  * len(two pair_list) = 1000
         max_insts = 100 * 2 * 5
@@ -81,7 +85,6 @@ def generate_instances_functor(cid_to_passages: Dict[int, List[Tuple[List[str], 
                 all_insts.append(insts)
         return all_insts
 
-    return generate_instances
 
 
 def write_records(records: List[PairedInstance],
