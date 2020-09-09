@@ -49,6 +49,7 @@ def run_eval_with_dict(pickle_name):
 def map_eval_with_dict(pickle_name):
     d_ids: List[int] = list(load_dev_claim_ids())
     claims = get_claims_from_ids(d_ids)
+
     print("targets", len(claims))
     top_k = 50
     pc_score_d = load_from_pickle(pickle_name)
@@ -213,4 +214,4 @@ def run_logit_baseline():
 
 
 if __name__ == "__main__":
-    run_lm2()
+    run_bert_baseline_map()

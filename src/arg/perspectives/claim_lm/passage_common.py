@@ -4,7 +4,7 @@ from arg.perspectives.clueweb_db import load_doc
 from arg.perspectives.select_paragraph_claim import remove_duplicate
 
 
-def score_passages(q_res, top_n, get_passage_score):
+def iterate_passages(q_res, top_n, get_passage_score):
     passages = []
     docs = []
     for i in range(top_n):

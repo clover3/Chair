@@ -3,8 +3,10 @@
 # predictions : List[(Claim, Perspective)] in Ids
 # Gold : List[(Claim, List[set(perspectives)]] in Ids
 #    get_claim_perspective_dict()
+from typing import Tuple, List
 
 from arg.perspectives.load import get_claim_perspective_id_dict, get_perspective_dict
+from list_lib import flatten
 from misc_lib import average, get_f1, SuccessCounter
 
 perspective = None
@@ -88,6 +90,37 @@ def get_ap(predicted_perspectives, gold_pids, debug):
     return ap
 
 
+def get_correctness(predicted_perspectives: List[Tuple[int, int, int]],
+                    gold_pids) -> List[int]:
+    def get_gold_labels(pid):
+        for cluster in gold_pids:
+            if pid in cluster:
+                return 1
+        return 0
+
+    def is_correct(pid, decision):
+        gold = get_gold_labels(pid)
+        return int(gold == decision)
+
+    correctness_list = list([is_correct(pid, decision) for cid, pid, decision in predicted_perspectives])
+    return correctness_list
+
+
+def get_correctness_list(predictions, debug) -> List[List[int]]:
+    gold = get_claim_perspective_id_dict()
+    all_correctness_list = []
+    for c_Id, prediction_list in predictions:
+        gold_pids = gold[c_Id]
+        correctness_list: List[int] = get_correctness(prediction_list, gold_pids)
+        all_correctness_list.append(correctness_list)
+    return all_correctness_list
+
+
+def get_acc(predictions, debug) -> float:
+    all_correctness_list = get_correctness_list(predictions, debug)
+    return average(flatten(all_correctness_list))
+
+
 
 def evaluate2(predictions):
     gold = get_claim_perspective_id_dict()
@@ -149,6 +182,12 @@ def evaluate(predictions, debug=True):
 
 
 def evaluate_map(predictions, debug=True):
+    ap_list = get_average_precision_list(predictions, debug)
+    map = average(ap_list)
+    return {'map': map}
+
+
+def get_average_precision_list(predictions, debug):
     gold = get_claim_perspective_id_dict()
     ap_list = []
     for c_Id, prediction_list in predictions:
@@ -158,9 +197,7 @@ def evaluate_map(predictions, debug=True):
             print("Claim {}: ".format(c_Id), claim_text)
         ap = get_ap(prediction_list, gold_pids, debug)
         ap_list.append(ap)
-
-    map = average(ap_list)
-    return {'map': map}
+    return ap_list
 
 
 def inspect(predictions):

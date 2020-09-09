@@ -150,8 +150,16 @@ def classification_metric_fn(log_probs, label, is_real_example):
     accuracy = tf.compat.v1.metrics.accuracy(
       labels=label, predictions=pred, weights=is_real_example)
 
+    precision = tf.compat.v1.metrics.precision(
+      labels=label, predictions=pred, weights=is_real_example)
+
+    recall = tf.compat.v1.metrics.recall(
+        labels=label, predictions=pred, weights=is_real_example)
+
     return {
       "accuracy": accuracy,
+        "precision": precision,
+        "recall": recall,
     }
 
 

@@ -16,6 +16,7 @@ class TrainConfigEx:
                  fixed_mask=False,
                  random_seed=None,
                  no_lr_decay=False,  # 15th
+                 third_init_checkpoint="",
                  ):
         self.init_checkpoint = init_checkpoint  # 0th
         self.learning_rate = learning_rate
@@ -33,6 +34,7 @@ class TrainConfigEx:
         self.fixed_mask = fixed_mask
         self.random_seed = random_seed
         self.no_lr_decay = no_lr_decay  # 15th
+        self.third_init_checkpoint = third_init_checkpoint
 
     @classmethod
     def from_flags(cls, flags):
@@ -52,5 +54,6 @@ class TrainConfigEx:
             flags.learning_rate2,
             flags.fixed_mask,
             flags.random_seed,
-            flags.no_lr_decay  # 15th
+            flags.no_lr_decay,  # 15th
+            flags.third_init_checkpoint
         )

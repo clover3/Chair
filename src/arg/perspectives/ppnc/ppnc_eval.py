@@ -1,37 +1,39 @@
 import os
-from typing import List, Dict, Tuple, Set
+from typing import Dict, Tuple
 
-from arg.perspectives.eval_helper import get_eval_candidates_from_pickle, predict_from_dict
-from arg.perspectives.evaluate import evaluate_map
+import scipy.special
+
+from arg.perspectives.eval_caches import eval_map
 from arg.perspectives.ppnc import collect_score
 from arg.perspectives.ppnc.collect_score import load_combine_info_jsons
 from arg.perspectives.types import DataID, CPIDPair
 from cpath import output_path
-from list_lib import right, left, lfilter
-from misc_lib import group_by
+from list_lib import right
+from misc_lib import group_by, average
+
+
+def top_k_average(items):
+    k = 3
+    items.sort(reverse=True)
+    return average(items[:k])
 
 
 def summarize_score(info_dir, prediction_file) -> Dict[CPIDPair, float]:
     info = load_combine_info_jsons(info_dir)
-    scores: Dict[DataID, Tuple[CPIDPair, float]] = collect_score.collect_scores(prediction_file, info)
+    def logit_to_score_reg(logit):
+        return logit[0]
+
+    def logit_to_score_softmax(logit):
+        return scipy.special.softmax(logit)[1]
+
+    scores: Dict[DataID, Tuple[CPIDPair, float]] = collect_score.collect_scores(prediction_file, info, logit_to_score_softmax)
     grouped = group_by(scores.values(), lambda x: x[0])
     print("Group size:", len(grouped))
     out_d = {}
     for cpid, items in grouped.items():
-        final_score = max(right(items))
+        final_score = top_k_average(right(items))
         out_d[cpid] = final_score
     return out_d
-
-
-def eval_map(split, score_d: Dict[CPIDPair, float]):
-    # load pre-computed perspectives
-    candidates: List[Tuple[int, List[Dict]]] = get_eval_candidates_from_pickle(split)
-    # only evalaute what's available
-    valid_cids: Set[int] = set(left(score_d.keys()))
-    sub_candidates: List[Tuple[int, List[Dict]]] = lfilter(lambda x: x[0] in valid_cids, candidates)
-    print("{} claims are evaluated".format(len(sub_candidates)))
-    predictions = predict_from_dict(score_d, sub_candidates, 50)
-    return evaluate_map(predictions, True)
 
 
 def main():

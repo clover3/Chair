@@ -96,7 +96,7 @@ def get_claim_perspective_label_dict() -> Dict[CPIDPair, int]:
     return d
 
 
-def     get_claims_from_ids(claim_ids) -> List[Dict]:
+def get_claims_from_ids(claim_ids) -> List[Dict]:
     claim_ids_set = set(claim_ids)
     claim_and_perspective = load_claim_perspective_pair()
     output = []

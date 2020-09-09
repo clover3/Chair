@@ -4,7 +4,7 @@ from typing import List, Dict, Tuple, NamedTuple
 from arg.perspectives.claim_lm.passage_common import score_over_zero
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import get_claim_perspective_id_dict
-from arg.perspectives.ppnc.ppnc_decl import PPNCGeneratorInterface
+from arg.perspectives.ppnc.ppnc_decl import CPPNCGeneratorInterface
 from data_generator.create_feature import create_int_feature
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lfilter, left, lmap, foreach
@@ -19,19 +19,7 @@ class Payload(NamedTuple):
     is_correct: int
 
 
-class DataIDManager:
-    def __init__(self, base=0):
-        self.id_to_info = {}
-        self.id_idx = base
-
-    def assign(self, info):
-        idx = self.id_idx
-        self.id_to_info[idx] = info
-        self.id_idx += 1
-        return idx
-
-
-class Generator(PPNCGeneratorInterface):
+class Generator(CPPNCGeneratorInterface):
     def __init__(self,
                  cid_to_passages: Dict[int, List[Tuple[List[str], float]]],
                  candidate_perspective: Dict[int, List[int]],

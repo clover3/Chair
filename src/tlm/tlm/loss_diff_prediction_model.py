@@ -7,8 +7,7 @@ from tlm.model.base import BertModel
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
 from tlm.tlm.loss_diff_common import IndependentLossModel, get_diff_loss, recover_mask, get_gold_diff
-from tlm.tlm.model_fn_try_all_loss import get_init_fn_for_two_checkpoints
-from tlm.training.assignment_map import get_bert_assignment_map
+from tlm.training.assignment_map import get_bert_assignment_map, get_init_fn_for_two_checkpoints
 from tlm.training.input_fn_common import get_lm_basic_features, get_lm_mask_features, format_dataset
 from tlm.training.model_fn_common import log_features, get_tpu_scaffold_or_init, log_var_assignments
 

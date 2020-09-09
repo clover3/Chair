@@ -5,8 +5,7 @@ from data_generator.special_tokens import MASK_ID
 from tlm.model.base import BertModel, gather_index2d
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import remove_special_mask, scatter_with_batch
-from tlm.training.assignment_map import get_assignment_map_remap_from_v1, \
-    get_assignment_map_remap_from_v2
+from tlm.training.assignment_map import get_init_fn_for_two_checkpoints
 from tlm.training.model_fn_common import log_var_assignments
 
 
@@ -148,30 +147,4 @@ def model_fn_try_all_loss(bert_config, train_config, logging):
         return output_spec
 
     return model_fn
-
-
-# init_checkpoint : BERT (v1)
-# second_init_checkpoint : v2
-def get_init_fn_for_two_checkpoints(train_config, tvars, init_checkpoint, remap_prefix, second_init_checkpoint, remap_prefix2):
-    if train_config.checkpoint_type == "v2":
-        assignment_fn1 = get_assignment_map_remap_from_v2
-    else:
-        assignment_fn1 = get_assignment_map_remap_from_v1
-    assignment_fn2 = get_assignment_map_remap_from_v2
-
-
-    assignment_map, initialized_variable_names \
-        = assignment_fn1(tvars, remap_prefix, init_checkpoint)
-
-
-    assignment_map2, initialized_variable_names2 \
-        = assignment_fn2(tvars, remap_prefix2, second_init_checkpoint)
-    for k, v in initialized_variable_names2.items():
-        initialized_variable_names[k] = v
-
-    def init_fn():
-        tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
-        tf.compat.v1.train.init_from_checkpoint(second_init_checkpoint, assignment_map2)
-
-    return initialized_variable_names, init_fn
 

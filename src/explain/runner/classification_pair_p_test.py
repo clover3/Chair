@@ -2,7 +2,6 @@ import os
 import pickle
 
 import numpy as np
-from scipy.stats import stats
 
 import cpath
 from list_lib import lmap
@@ -30,7 +29,7 @@ def pair_compare(run_A, run_B):
     print(acc(binary_A))
     print(acc(binary_B))
 
-    return stats.ttest_rel(binary_A, binary_B)
+    return `
 
 
 

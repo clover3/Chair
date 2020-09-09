@@ -482,3 +482,15 @@ def timed_lmap(func: Callable[[A], B],
         r.append(func(e))
         ticker.tick()
     return r
+
+
+class DataIDManager:
+    def __init__(self, base=0):
+        self.id_to_info = {}
+        self.id_idx = base
+
+    def assign(self, info):
+        idx = self.id_idx
+        self.id_to_info[idx] = info
+        self.id_idx += 1
+        return idx

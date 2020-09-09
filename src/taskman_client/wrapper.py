@@ -19,7 +19,7 @@ def report_number(r):
             condition = FLAGS.report_condition
 
         proxy = get_task_manager_proxy()
-        proxy.report_number(FLAGS.run_name, value, condition)
+        proxy.report_number(FLAGS.run_name, value, condition, FLAGS.report_field)
     except Exception as e:
         print(e)
 

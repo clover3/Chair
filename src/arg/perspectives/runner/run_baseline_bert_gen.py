@@ -3,7 +3,8 @@ from collections import Counter
 
 import tensorflow as tf
 
-from arg.perspectives.baseline_bert_gen import baseline_bert_gen, baseline_bert_gen_unbal
+from arg.perspectives.baseline_bert_gen import baseline_bert_gen, baseline_bert_gen_unbal, \
+    baseline_bert_gen_unbal_resplit
 from cpath import data_path
 from misc_lib import exist_or_mkdir
 
@@ -20,6 +21,15 @@ def make_train_unbal():
     exist_or_mkdir(dir_path)
     baseline_bert_gen_unbal(os.path.join(dir_path, "train"), "train")
     baseline_bert_gen_unbal(os.path.join(dir_path, "dev"), "dev")
+
+
+
+def make_train_unbal_resplit():
+    dir_path = os.path.join(data_path, "perspective_bert_tfrecord_resplit")
+    exist_or_mkdir(dir_path)
+    baseline_bert_gen_unbal_resplit(os.path.join(dir_path, "train"), "train")
+    baseline_bert_gen_unbal_resplit(os.path.join(dir_path, "val"), "val")
+
 
 
 def show_distribution():
@@ -46,4 +56,4 @@ def show_distribution():
 
 
 if __name__ == "__main__":
-    show_distribution()
+    make_train_unbal_resplit()

@@ -9,6 +9,7 @@ from arg.perspectives.load import get_claim_perspective_id_dict, get_perspective
     get_claims_from_ids, load_claim_ids_for_split
 from cie.msc.tf_idf import sublinear_term_frequency, cosine_similarity, inverse_document_frequencies
 from list_lib import flatten
+from misc_lib import split_7_3
 
 
 def get_candidates(claims, balance) -> List[PerspectiveCandidate]:
@@ -169,5 +170,22 @@ def load_data_point(split):
 def load_data_point_50(split):
     d_ids = list(load_claim_ids_for_split(split))
     claims = get_claims_from_ids(d_ids)
+    all_data_points = get_candidates(claims, False)
+    return all_data_points
+
+
+def load_data_point_50_train_val(split):
+    d_ids = list(load_claim_ids_for_split("train"))
+    train_ids, val_ids = split_7_3(d_ids)
+    print(len(d_ids), len(train_ids), len(val_ids))
+    if split == "train":
+        sel_ids = train_ids
+    elif split == "val":
+        sel_ids = val_ids
+    else:
+        sel_ids = d_ids
+        print("Taking all claims in {}".format(split))
+
+    claims = get_claims_from_ids(sel_ids)
     all_data_points = get_candidates(claims, False)
     return all_data_points

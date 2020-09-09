@@ -6,7 +6,7 @@ from tf_util.tf_logging import tf_logging
 from tlm.model.base import BertModel
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
-from tlm.tlm.model_fn_try_all_loss import get_init_fn_for_two_checkpoints
+from tlm.training.assignment_map import get_init_fn_for_two_checkpoints
 from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments
 
 

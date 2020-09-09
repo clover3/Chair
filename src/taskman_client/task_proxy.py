@@ -38,11 +38,12 @@ class TaskManagerProxy(RESTProxy):
         update_type = "ABNORMAL_TERMINATE"
         return self.task_update(run_name, uuid_var, tpu_name, machine, update_type, msg)
 
-    def report_number(self, name, value, condition):
+    def report_number(self, name, value, condition, field):
         data = {
             'name': name,
             "number": value,
             "condition": condition,
+            "field": field,
         }
         return self.post("/experiment/update", data)
 

@@ -39,12 +39,12 @@ def cast_float_multiply(a, b):
 
 def pairwise_model(pooled_output, strict_good, strict_bad):
     logits = tf.keras.layers.Dense(1, name="cls_dense")(pooled_output)
-    pair_logits = tf.reshape(logits, [2, -1])
-    y_pred = pair_logits[0, :] - pair_logits[1, :]
+    pair_logits = tf.transpose(tf.reshape(logits, [2, -1]), [1, 0])
+    y_pred = pair_logits[:, 0] - pair_logits[:, 1]
 
     hinge_losses = tf.maximum(1.0 - y_pred, 0)
-    raw_good_losses = tf.maximum(1.0 - pair_logits[0, :], 0)
-    raw_bad_losses = tf.maximum(1.0 + pair_logits[1, :], 0)
+    raw_good_losses = tf.maximum(1.0 - pair_logits[:, 0], 0)
+    raw_bad_losses = tf.maximum(1.0 + pair_logits[:, 1], 0)
 
     good_losses = raw_good_losses * tf.cast(strict_good, tf.float32)
     bad_losses = raw_bad_losses * tf.cast(strict_bad, tf.float32)
@@ -53,7 +53,24 @@ def pairwise_model(pooled_output, strict_good, strict_bad):
     return losses, logits, pair_logits
 
 
-def ppnc_pairwise_model(bert_config, train_config, model_class, model_config):
+def strict_good_only(pooled_output, strict_good, strict_bad):
+    logits = tf.keras.layers.Dense(1, name="cls_dense")(pooled_output)
+    pair_logits = tf.transpose(tf.reshape(logits, [2, -1]), [1, 0])
+    y_pred = pair_logits[:, 0] - pair_logits[:, 1]
+
+    left_good_losses = tf.maximum(1.0 - pair_logits[:, 0], 0)
+    raw_left_bad_losses = tf.maximum(1.0 + pair_logits[:, 0], 0)
+    right_bad_losses = tf.maximum(1.0 + pair_logits[:, 1], 0)
+
+    good_losses = left_good_losses * tf.cast(strict_good, tf.float32)
+    left_bad_losses = raw_left_bad_losses * tf.cast(tf.logical_not(strict_good), tf.float32)
+
+    losses = good_losses + left_bad_losses + right_bad_losses
+    return losses, logits, pair_logits
+
+
+
+def text_pair_ranking_pairwise_model(bert_config, train_config, model_class, model_config):
     """Returns `model_fn` closure for TPUEstimator."""
 
     def model_fn(features, labels, mode, params):    # pylint: disable=unused-argument
@@ -110,12 +127,12 @@ def ppnc_pairwise_model(bert_config, train_config, model_class, model_config):
                     scaffold_fn=scaffold_fn)
         elif mode == tf.estimator.ModeKeys.EVAL:
             def metric_fn(pair_logits, strict_good, strict_bad):
-                diff = pair_logits[0, :] - pair_logits[1, :]
+                diff = pair_logits[:, 0] - pair_logits[:, 1]
                 pairwise_correct = tf.less(0.0, diff)
 
-                strict_good_correct_raw = tf.reshape(tf.less(1.0, pair_logits[0, :]), [-1, 1])
+                strict_good_correct_raw = tf.reshape(tf.less(1.0, pair_logits[:, 0]), [-1, 1])
                 strict_good_correct = cast_float_multiply(strict_good_correct_raw, strict_good)
-                strict_bad_correct_raw = tf.reshape(tf.less(pair_logits[1, :], -1.0), [-1, 1])
+                strict_bad_correct_raw = tf.reshape(tf.less(pair_logits[:, 1], -1.0), [-1, 1])
                 strict_bad_correct = cast_float_multiply(strict_bad_correct_raw, strict_bad)
 
                 pairwise_acc_raw = tf.cast(pairwise_correct, tf.float32)

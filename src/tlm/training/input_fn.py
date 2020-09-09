@@ -58,6 +58,60 @@ def input_fn_builder_pairwise(max_seq_length, flags):
     return input_fn
 
 
+def input_fn_builder_two_inputs_w_data_id(flags):
+    input_files = get_input_files_from_flags(flags)
+    show_input_files(input_files)
+    is_training = flags.do_train
+    num_cpu_threads = 4
+    max_seq_length=flags.max_seq_length
+
+    def input_fn(params):
+        """The actual input function."""
+        batch_size = params["batch_size"]
+
+        name_to_features = dict({
+                "input_ids":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_mask":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "segment_ids":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_ids2": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_mask2": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "segment_ids2": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+        })
+        name_to_features["label_ids"] = tf.io.FixedLenFeature([1], tf.int64)
+        name_to_features["data_id"] = tf.io.FixedLenFeature([1], tf.int64)
+        return format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+
+    return input_fn
+
+
+def input_fn_builder_cppnc_triple(flags):
+    input_files = get_input_files_from_flags(flags)
+    show_input_files(input_files)
+    is_training = flags.do_train
+    num_cpu_threads = 4
+    max_seq_length=flags.max_seq_length
+
+    def input_fn(params):
+        """The actual input function."""
+        batch_size = params["batch_size"]
+
+        name_to_features = dict({
+                "input_ids":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_mask":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "segment_ids":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_ids2": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_mask2": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "segment_ids2": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_ids3": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_mask3": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "segment_ids3": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+        })
+        name_to_features["label_ids"] = tf.io.FixedLenFeature([1], tf.int64)
+        name_to_features["data_id"] = tf.io.FixedLenFeature([1], tf.int64)
+        return format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+
+    return input_fn
+
 
 def input_fn_builder_classification(input_files,
                                          max_seq_length,

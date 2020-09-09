@@ -4,6 +4,8 @@ import re
 import tensorflow as tf
 
 from tf_util.tf_logging import tf_logging
+from tlm.model.dual_model_common import triple_model_prefix2, dual_model_prefix1, triple_model_prefix3, \
+    dual_model_prefix2
 
 
 def get_bert_assignment_map(tvars, lm_checkpoint):
@@ -570,3 +572,157 @@ def bert_assignment_wo_attention(tvars, lm_checkpoint):
 
     return (assignment_map, initialized_variable_names)
 
+
+def get_init_fn_for_two_checkpoints(train_config, tvars, init_checkpoint, remap_prefix, second_init_checkpoint, remap_prefix2):
+    # if train_config.checkpoint_type == "v2":
+    assignment_fn1 = get_assignment_map_remap_from_v2
+    # else:
+    #     assignment_fn1 = get_assignment_map_remap_from_v1
+    assignment_fn2 = get_assignment_map_remap_from_v2
+
+    assignment_map, initialized_variable_names \
+        = assignment_fn1(tvars, remap_prefix, init_checkpoint)
+
+    assignment_map2, initialized_variable_names2 \
+        = assignment_fn2(tvars, remap_prefix2, second_init_checkpoint)
+    for k, v in initialized_variable_names2.items():
+        initialized_variable_names[k] = v
+
+    def init_fn():
+        tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+        tf.compat.v1.train.init_from_checkpoint(second_init_checkpoint, assignment_map2)
+
+    return initialized_variable_names, init_fn
+
+
+def get_init_fn_for_two_checkpoints_ex(first_from_v1, second_from_v1,
+                                          tvars, init_checkpoint,
+                                          remap_prefix, second_init_checkpoint, remap_prefix2):
+    assignment_fn1 = get_assignment_map_remap_from_v1 if first_from_v1 else get_assignment_map_remap_from_v2
+    assignment_fn2 = get_assignment_map_remap_from_v1 if second_from_v1 else get_assignment_map_remap_from_v2
+
+    assignment_map, initialized_variable_names \
+        = assignment_fn1(tvars, remap_prefix, init_checkpoint)
+
+    assignment_map2, initialized_variable_names2 \
+        = assignment_fn2(tvars, remap_prefix2, second_init_checkpoint)
+    for k, v in initialized_variable_names2.items():
+        initialized_variable_names[k] = v
+
+    def init_fn():
+        tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+        tf.compat.v1.train.init_from_checkpoint(second_init_checkpoint, assignment_map2)
+
+    return initialized_variable_names, init_fn
+
+
+
+def get_init_fn_for_three_checkpoints(train_config,
+                                      tvars,
+                                      init_checkpoint,
+                                      remap_prefix,
+                                      second_init_checkpoint,
+                                      remap_prefix2,
+                                      third_init_checkpoint,
+                                      remap_prefix3
+                                      ):
+    # if train_config.checkpoint_type == "v2":
+    assignment_fn1 = get_assignment_map_remap_from_v2
+    # else:
+    #     assignment_fn1 = get_assignment_map_remap_from_v1
+    assignment_fn2 = get_assignment_map_remap_from_v2
+    assignment_fn3 = get_assignment_map_remap_from_v2
+
+
+    assignment_map, initialized_variable_names \
+        = assignment_fn1(tvars, remap_prefix, init_checkpoint)
+
+    assignment_map2, initialized_variable_names2 \
+        = assignment_fn2(tvars, remap_prefix2, second_init_checkpoint)
+
+    assignment_map3, initialized_variable_names3 \
+        = assignment_fn3(tvars, remap_prefix3, third_init_checkpoint)
+
+    for k, v in initialized_variable_names2.items():
+        initialized_variable_names[k] = v
+    for k, v in initialized_variable_names3.items():
+        initialized_variable_names[k] = v
+
+    def init_fn():
+        tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+        tf.compat.v1.train.init_from_checkpoint(second_init_checkpoint, assignment_map2)
+        tf.compat.v1.train.init_from_checkpoint(third_init_checkpoint, assignment_map3)
+
+    return initialized_variable_names, init_fn
+
+
+def cppnc_assignment_remap2(tvars, lm_checkpoint):
+    tf_logging.debug("get_assignment_map_remap_from_v2")
+    """Compute the union of the current variables and checkpoint variables."""
+    initialized_variable_names = {}
+    real_name_map = {}
+
+    assignment_candidate = {}
+    for var in tvars:
+        name = var.name
+        m = re.match("^(.*):\\d+$", name)
+        if m is not None:
+            name = m.group(1)
+
+        tokens = name.split("/")
+        top_scope = tokens[0]
+        if triple_model_prefix2 == top_scope:
+            targ_name = get_name_key(dual_model_prefix1, tokens)
+            assignment_candidate[targ_name] = var
+            tf_logging.info("Init from v2 : %s" % name)
+            real_name_map[targ_name] = name
+        elif triple_model_prefix3 == top_scope:
+            targ_name = get_name_key(dual_model_prefix2, tokens)
+            assignment_candidate[targ_name] = var
+            tf_logging.info("Init from v2 : %s" % name)
+            real_name_map[targ_name] = name
+
+    assignment_map = collections.OrderedDict()
+    if lm_checkpoint:
+        for x in tf.train.list_variables(lm_checkpoint):
+            (name, var) = (x[0], x[1])
+            simple_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
+            simple_name = re.sub("dense[_]?\d*", "dense", simple_name)
+            tf_logging.debug("Vars in TT : %s" % name)
+            tf_logging.debug("map to -> : %s" % simple_name)
+
+            if simple_name not in assignment_candidate:
+                continue
+            assignment_map[name] = assignment_candidate[simple_name]
+            tf_logging.debug("Matched variables : %s" % name)
+
+            real_name = real_name_map[simple_name]
+            initialized_variable_names[real_name] = 1
+            initialized_variable_names[real_name + ":0"] = 1
+
+    return assignment_map, initialized_variable_names
+
+
+def get_name_key(head_scope, tokens):
+    inner_name = "/".join([head_scope] + tokens[1:])
+    targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", inner_name)
+    targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
+    return targ_name
+
+
+def get_init_fn_for_cppnc_start(train_config, tvars, init_checkpoint, remap_prefix, second_init_checkpoint, remap_prefix2):
+    assignment_fn1 = get_assignment_map_remap_from_v2
+
+    assignment_map, initialized_variable_names \
+        = assignment_fn1(tvars, remap_prefix, init_checkpoint)
+
+    assignment_map2, initialized_variable_names2 \
+        = cppnc_assignment_remap2(tvars, second_init_checkpoint)
+    for k, v in initialized_variable_names2.items():
+        initialized_variable_names[k] = v
+
+    def init_fn():
+        tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+        tf.compat.v1.train.init_from_checkpoint(second_init_checkpoint, assignment_map2)
+
+    return initialized_variable_names, init_fn

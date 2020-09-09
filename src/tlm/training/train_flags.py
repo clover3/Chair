@@ -36,6 +36,11 @@ flags.DEFINE_string(
     "target_task_checkpoint", None,
     "Checkpoint for target task.")
 
+## Other parameters
+flags.DEFINE_string(
+    "third_init_checkpoint", None,
+    "Initial checkpoint (usually from a pre-trained BERT model).")
+
 flags.DEFINE_integer(
     "max_seq_length", 128,
     "The maximum total input sequence length after WordPiece tokenization. "

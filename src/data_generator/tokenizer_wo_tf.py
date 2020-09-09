@@ -21,6 +21,7 @@ from __future__ import print_function
 import collections
 import os
 import unicodedata
+from typing import List
 
 import six
 
@@ -570,3 +571,11 @@ def is_continuation(subword):
 def get_tokenizer():
     voca_path = os.path.join(data_path, "bert_voca.txt")
     return FullTokenizer(voca_path)
+
+
+def tokenize_from_tokens(tokenizer, tokens: List[str]) -> List[str]:
+    output = []
+    for t in tokens:
+        ts = tokenizer.tokenize(t)
+        output.extend(ts)
+    return output

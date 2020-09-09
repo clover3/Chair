@@ -4,7 +4,7 @@ import tensorflow as tf
 from models.transformer import optimization_v2 as optimization
 from tlm.explain_payload_gen import candidate_gen
 from tlm.model.base import BertModel, get_shape_list2
-from tlm.tlm.model_fn_try_all_loss import get_init_fn_for_two_checkpoints
+from tlm.training.assignment_map import get_init_fn_for_two_checkpoints
 from tlm.training.model_fn_common import log_var_assignments
 from trainer.tf_module import correlation_coefficient_loss
 

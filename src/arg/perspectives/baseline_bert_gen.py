@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from typing import List
 
-from arg.perspectives.basic_analysis import load_data_point, load_data_point_50
+from arg.perspectives.basic_analysis import load_data_point, load_data_point_50, load_data_point_50_train_val
 from arg.perspectives.declaration import PerspectiveCandidate
 from data_generator.create_feature import create_int_feature
 from data_generator.tokenizer_wo_tf import get_tokenizer
@@ -35,6 +35,17 @@ def baseline_bert_gen(outpath, split):
 def baseline_bert_gen_unbal(outpath, split):
     tokenizer = get_tokenizer()
     data: List[PerspectiveCandidate] = load_data_point_50(split)
+    max_seq_length = 512
+
+    writer = RecordWriterWrap(outpath)
+    for entry in data:
+        writer.write_feature(enc_to_feature(tokenizer, max_seq_length, entry))
+    writer.close()
+
+
+def baseline_bert_gen_unbal_resplit(outpath, split):
+    tokenizer = get_tokenizer()
+    data: List[PerspectiveCandidate] = load_data_point_50_train_val(split)
     max_seq_length = 512
 
     writer = RecordWriterWrap(outpath)

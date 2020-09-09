@@ -90,10 +90,25 @@ tf_logging.addFilter(TFFilter())
 class CounterFilter(logging.Filter):
     targets = ["Dequeue next", "Enqueue next"]
     counter = Counter()
+
     def filter(self, record):
         for e in self.targets:
             if e in record.msg:
                 self.counter[e] += 1
                 record.msg += " ({})".format(self.counter[e])
+                return True
+        return True
+
+
+class MuteEnqueueFilter(logging.Filter):
+    targets = ["Dequeue next", "Enqueue next"]
+    seen = set()
+
+    def filter(self, record):
+        for pattern in self.targets:
+            if pattern in record.msg:
+                if pattern in self.seen:
+                    return False
+                self.seen.add(pattern)
                 return True
         return True

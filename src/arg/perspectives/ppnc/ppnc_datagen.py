@@ -5,7 +5,7 @@ from typing import NamedTuple, List, Dict, Tuple
 from arg.perspectives.claim_lm.passage_common import score_over_zero
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import get_claim_perspective_id_dict
-from arg.perspectives.ppnc.ppnc_decl import PPNCGeneratorInterface
+from arg.perspectives.ppnc.ppnc_decl import CPPNCGeneratorInterface
 from data_generator.common import get_tokenizer
 from data_generator.create_feature import create_int_feature
 from list_lib import flatten_map, left, lfilter, lfilter_not, lmap, foreach
@@ -21,7 +21,7 @@ class PairedInstance(NamedTuple):
     strict_bad: int
 
 
-class Generator(PPNCGeneratorInterface):
+class Generator(CPPNCGeneratorInterface):
     def __init__(self,
                  cid_to_passages: Dict[int, List[Tuple[List[str], float]]],
                  ):

@@ -2,7 +2,7 @@ import random
 from collections import Counter
 from typing import List, Dict, Set
 
-from arg.perspectives.claim_lm.passage_common import score_passages
+from arg.perspectives.claim_lm.passage_common import iterate_passages
 from arg.perspectives.clueweb_db import load_doc
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids, get_claim_perspective_id_dict
@@ -251,7 +251,7 @@ def doc_lm_scoring():
         def get_passage_score(p):
             return sum([log_odd[tokenizer.stemmer.stem(t)] for t in p]) / len(p) if len(p) > 0 else 0
 
-        passages = score_passages(q_res, top_n, get_passage_score)
+        passages = iterate_passages(q_res, top_n, get_passage_score)
 
         passages.sort(key=lambda x: x[1], reverse=True)
         html_visualizer.write_paragraph("Threshold {}".format(threshold))
@@ -338,7 +338,7 @@ def a_relevant():
 
             return sum([get_score(t) for t in p]) / len(p) if len(p) > 0 else 0
 
-        passages = score_passages(q_res, top_n, get_passage_score)
+        passages = iterate_passages(q_res, top_n, get_passage_score)
 
         all_passages.extend(passages)
         a_rel_passages = lfilter(lambda x: x[1] > 0, passages)
