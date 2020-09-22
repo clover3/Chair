@@ -1,9 +1,7 @@
-import json
-import os
 from typing import Dict, Tuple
 
 from arg.perspectives.types import DataID, CPIDPair
-from misc_lib import get_dir_files
+from arg.qck.prediction_reader import parse_info_inner, qck_convert_map
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 
 
@@ -18,8 +16,14 @@ def collect_scores(prediction_file, info: Dict, logit_to_score) \
         data_id = entry.get_vector("data_id")[0]
         try:
             cur_info = info[str(data_id)]
-            cid = cur_info['cid']
-            pid = cur_info['pid']
+
+            if 'query' in cur_info:
+                parse_info_inner(cur_info, qck_convert_map, True)
+                cid = int(cur_info['query'].query_id)
+                pid = int(cur_info['candidate'].id)
+            else:
+                cid = cur_info['cid']
+                pid = cur_info['pid']
             cpid = CPIDPair((cid, pid))
             out_d[data_id] = (cpid, score )
         except KeyError as e:
@@ -29,13 +33,3 @@ def collect_scores(prediction_file, info: Dict, logit_to_score) \
     return out_d
 
 
-def load_combine_info_jsons(dir_path) -> Dict:
-    if os.path.isdir(dir_path):
-        d = {}
-        for file_path in get_dir_files(dir_path):
-            if file_path.endswith(".info"):
-                j = json.load(open(file_path, "r", encoding="utf-8"))
-                d.update(j)
-    else:
-        d = json.load(open(dir_path, "r"))
-    return d

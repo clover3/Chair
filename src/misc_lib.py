@@ -494,3 +494,7 @@ class DataIDManager:
         self.id_to_info[idx] = info
         self.id_idx += 1
         return idx
+
+
+def bool_to_yn(label):
+    return "Y" if label else "N"

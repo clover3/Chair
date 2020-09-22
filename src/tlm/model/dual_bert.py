@@ -47,3 +47,4 @@ class DualBertModel(BertModelInterface):
                                               kernel_initializer=create_initializer(config.initializer_range))
         pooled_output = dense_layer(rep)
         self.pooled_output = pooled_output
+

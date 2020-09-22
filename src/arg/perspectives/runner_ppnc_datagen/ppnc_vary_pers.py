@@ -1,4 +1,4 @@
-from arg.perspectives.eval_helper import get_eval_candidate_as_pids
+from arg.perspectives.eval_caches import get_eval_candidate_as_pids
 from arg.perspectives.ppnc import ppnc_datagen_50_perspective
 from arg.perspectives.ppnc.ppnc_decl import CPPNCGeneratorInterface
 from arg.perspectives.ppnc.ppnc_worker import start_generate_jobs_for_train_val

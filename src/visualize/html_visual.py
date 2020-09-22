@@ -2,6 +2,7 @@ import abc
 import os
 from abc import ABC
 
+import cpath
 from cpath import output_path
 
 
@@ -35,9 +36,20 @@ class Cell:
         self.target_color = target_color
 
 
+def get_tooltip_cell(s, tooltip):
+    return Cell(get_tooltip_span(s, tooltip))
+
+
 def set_cells_color(cells, color):
     for c in cells:
         c.target_color = color
+
+
+def get_tooltip_span(span_text, tooltip_text):
+    tag = "<span class=\"tooltip\">{}\
+    <span class=\"tooltiptext\">{}</span>\
+    </span>".format(span_text, tooltip_text)
+    return tag
 
 
 class VisualizerCommon(ABC):
@@ -64,13 +76,18 @@ class VisualizerCommon(ABC):
             i += width
 
 
+def get_tooltip_style_text():
+    return open(os.path.join(cpath.data_path, "html", "tooltip")).read()
+
+
 class HtmlVisualizer(VisualizerCommon):
-    def __init__(self, filename, dark_mode=False):
+    def __init__(self, filename, dark_mode=False, use_tooltip=False):
         p = os.path.join(output_path, "visualize", filename)
         self.f_html = open(p, "w", encoding="utf-8")
         self.dark_mode = dark_mode
         self.dark_foreground = "A9B7C6"
         self.dark_background = "2B2B2B"
+        self.use_tooltip = use_tooltip
         self._write_header()
 
     def _write_header(self):
@@ -78,6 +95,10 @@ class HtmlVisualizer(VisualizerCommon):
         self.f_html.write("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>")
         if self.dark_mode:
             self.f_html.write("<style>body{color:#" + self.dark_foreground + ";}</style>")
+
+        if self.use_tooltip:
+            tooltip_style = get_tooltip_style_text()
+            self.f_html.write(tooltip_style)
 
         self.f_html.write("</head>\n")
 
@@ -144,6 +165,17 @@ class HtmlVisualizer(VisualizerCommon):
         r = 0x2B + int(r)
         bg_color = "2B2B" + ("%02x" % r)
         return bg_color
+
+
+    def write_span_line(self, span_and_tooltip_list):
+        if not self.use_tooltip:
+            print("WARNING toolip is not activated")
+        self.f_html.write("<div>")
+
+        for span_text, tooltip_text in span_and_tooltip_list:
+            self.f_html.write(get_tooltip_span(span_text, tooltip_text))
+        self.f_html.write("</div>")
+        self.f_html.write("<br>")
 
 
 def normalize(scores):

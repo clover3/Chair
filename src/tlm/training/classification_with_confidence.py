@@ -8,6 +8,18 @@ from tlm.training.classification_model_fn import get_init_fn
 from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments, classification_metric_fn
 
 
+def apply_weighted_loss(loss_arr, label_ids, alpha):
+    print('label_ids', label_ids.shape)
+    is_one = tf.cast(tf.equal(label_ids , 1), tf.float32)
+    is_zero = tf.cast(tf.equal(label_ids, 0), tf.float32)
+    print('is_one', is_one.shape)
+    print("loss_arr", loss_arr.shape)
+
+    postive_loss = alpha * is_one * loss_arr
+    negative_loss = is_zero * loss_arr
+    return postive_loss + negative_loss
+
+
 def model_fn_classification_with_confidence(model_config, train_config):
     """Returns `model_fn` closure for TPUEstimator."""
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -67,7 +79,10 @@ def model_fn_classification_with_confidence(model_config, train_config):
             labels=label_ids)
 
         k = model_config.k
+        alpha = model_config.alpha
         loss_arr = cls_loss * confidence + confidence_loss * k
+
+        loss_arr = apply_weighted_loss(loss_arr, label_ids, alpha)
 
         loss = tf.reduce_mean(input_tensor=loss_arr)
         tvars = tf.compat.v1.trainable_variables()

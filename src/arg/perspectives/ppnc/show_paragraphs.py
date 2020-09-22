@@ -5,9 +5,9 @@ from typing import Dict, Tuple, List
 
 import scipy.special
 
-from arg.perspectives.ppnc.collect_score import load_combine_info_jsons
 from arg.perspectives.types import CPIDPair
 from cpath import output_path
+from estimator_helper.output_reader import load_combine_info_jsons
 from misc_lib import exist_or_mkdir
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 from visualize.html_visual import HtmlVisualizer

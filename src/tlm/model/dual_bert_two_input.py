@@ -93,13 +93,15 @@ class DualBertTwoInputModelEx(BertModelInterface):
 
         model_1_first_token = model_1.get_sequence_output()[:, 0, :]
         model_2_first_token = model_2.get_sequence_output()[:, 0, :]
+        print('model_2_first_token', model_2_first_token)
         mask_scalar = {
             "0": 0.,
             "1": 1.,
             "random": tf.random.uniform(shape=[], minval=0., maxval=1.)
         }[modeling_option]
-
+        print("Mask_scalar:", mask_scalar)
         model_2_first_token = mask_scalar * model_2_first_token
+        print('model_2_first_token', model_2_first_token)
 
         rep = tf.concat([model_1_first_token, model_2_first_token], axis=1)
 
@@ -109,3 +111,17 @@ class DualBertTwoInputModelEx(BertModelInterface):
                                               kernel_initializer=create_initializer(config.initializer_range))
         pooled_output = dense_layer(rep)
         self.pooled_output = pooled_output
+
+
+class DualBertTwoInputFrozen(DualBertTwoInputModelEx):
+    def get_trainable_vars(self):
+        r = []
+        for v in tf.compat.v1.trainable_variables():
+            if v.name.startswith(dual_model_prefix1) or v.name.startswith(dual_model_prefix2):
+                print("Skip: ", v.name)
+            else:
+                print("Trainable:", v.name)
+                r.append(v)
+
+        return r
+

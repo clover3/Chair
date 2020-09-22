@@ -5,10 +5,10 @@ import scipy.special
 
 from arg.perspectives.eval_caches import eval_map
 from arg.perspectives.ppnc import collect_score
-from arg.perspectives.ppnc.collect_score import load_combine_info_jsons
 from arg.perspectives.types import DataID, CPIDPair
 from cpath import output_path
-from list_lib import right
+from estimator_helper.output_reader import load_combine_info_jsons
+from list_lib import right, lmap
 from misc_lib import group_by, average
 
 
@@ -31,8 +31,11 @@ def summarize_score(info_dir, prediction_file) -> Dict[CPIDPair, float]:
     print("Group size:", len(grouped))
     out_d = {}
     for cpid, items in grouped.items():
-        final_score = top_k_average(right(items))
+        final_score = sum(right(items))
         out_d[cpid] = final_score
+
+    num_items_per_group = average(lmap(len, grouped.values()))
+    print("Num items per group : ", num_items_per_group)
     return out_d
 
 

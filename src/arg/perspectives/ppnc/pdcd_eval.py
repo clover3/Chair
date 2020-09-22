@@ -1,12 +1,13 @@
 import os
+import sys
 from typing import Dict, Tuple
 
 import scipy.special
 
 from arg.perspectives.eval_caches import eval_map
-from arg.perspectives.ppnc.collect_score import load_combine_info_jsons
 from arg.perspectives.types import DataID, CPIDPair
 from cpath import output_path
+from estimator_helper.output_reader import load_combine_info_jsons
 from list_lib import lmap
 from misc_lib import group_by
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
@@ -16,7 +17,10 @@ def get_confidence_or_rel_score(entry):
     try:
         return entry.get_vector("confidence")
     except KeyError:
-        return entry.get_vector('rel_score')
+        try:
+            return entry.get_vector('rel_score')
+        except KeyError:
+            return "N/A"
 
 
 def collect_scores_and_confidence(prediction_file, info: Dict, logit_to_score) \
@@ -71,8 +75,8 @@ def summarize_score(info_dir, prediction_file) -> Dict[CPIDPair, float]:
 
 
 def main():
-    info_dir = "/mnt/nfs/work3/youngwookim/job_man/pdcd_val_info"
-    prediction_file = os.path.join(output_path, "pdcd5.score")
+    prediction_file = os.path.join(output_path, "cppnc", sys.argv[1] + ".score")
+    info_dir = os.path.join(output_path, "cppnc", sys.argv[2])
     score_d = summarize_score(info_dir, prediction_file)
     map_score = eval_map("train", score_d)
     print(map_score)

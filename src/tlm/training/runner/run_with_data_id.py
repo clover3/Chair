@@ -11,8 +11,7 @@ from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
 
 
-@report_run
-def main(_):
+def run_w_data_id():
     input_files = get_input_files_from_flags(FLAGS)
     bert_config = BertConfig.from_json_file(FLAGS.bert_config_file)
     train_config = TrainConfigEx.from_flags(FLAGS)
@@ -26,14 +25,17 @@ def main(_):
     )
     if FLAGS.do_predict:
         tf_logging.addFilter(CounterFilter())
-
     input_fn = input_fn_builder_classification_w_data_id(
         input_files=input_files,
         flags=FLAGS,
         is_training=FLAGS.do_train)
-
     result = run_estimator(model_fn, input_fn)
     return result
+
+
+@report_run
+def main(_):
+    return run_w_data_id()
 
 
 if __name__ == "__main__":

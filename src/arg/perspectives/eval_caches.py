@@ -48,6 +48,7 @@ def eval_map(split, score_d: Dict[CPIDPair, float], debug=False):
     valid_cids: Set[int] = set(left(score_d.keys()))
     sub_candidates: List[Tuple[int, List[Dict]]] = lfilter(lambda x: x[0] in valid_cids, candidates)
     print("{} claims are evaluated".format(len(sub_candidates)))
+    print(left(sub_candidates))
     predictions = predict_from_dict(score_d, sub_candidates, 50)
     return evaluate_map(predictions, debug)
 
@@ -104,3 +105,14 @@ def get_joined_correctness(score_d, split):
     cids = left(predictions)
     corr_list_list = get_correctness_list(predictions, False)
     return list(zip(cids, corr_list_list))
+
+
+def get_eval_candidate_as_pids(split) -> List[Tuple[int, List[int]]]:
+    full_data: List[Tuple[int, List[Dict]]] = load_from_pickle("pc_candidates_{}".format(split))
+
+    def convert(e) -> Tuple[int, List[int]]:
+        cid, p_list = e
+        return cid, lmap(lambda p: p['pid'], p_list)
+
+    out_data = lmap(convert, full_data)
+    return out_data

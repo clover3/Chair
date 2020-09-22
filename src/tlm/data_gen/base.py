@@ -600,3 +600,12 @@ class UnmaskedPairedDataGen(LMTrainBase):
         return example_numbers
 
 
+def combine_with_sep_cls(max_seq_length, tokens1, tokens2):
+    max_seg2_len = max_seq_length - 3 - len(tokens1)
+    tokens2 = tokens2[:max_seg2_len]
+    tokens = ["[CLS]"] + tokens1 + ["[SEP]"] + tokens2 + ["[SEP]"]
+    segment_ids = [0] * (len(tokens1) + 2) \
+                  + [1] * (len(tokens2) + 1)
+    tokens = tokens[:max_seq_length]
+    segment_ids = segment_ids[:max_seq_length]
+    return tokens, segment_ids

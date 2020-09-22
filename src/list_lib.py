@@ -53,6 +53,10 @@ def lfilter(func: Callable[[A], B], iterable_something: Iterable[A]) -> List[A]:
     return list(filter(func, iterable_something))
 
 
+def drop_none(iterable_something: Iterable[A]) -> List[A]:
+    return list(filter(lambda x: x is not None, iterable_something))
+
+
 def lfilter_not(func: Callable[[A], B], iterable_something: Iterable[A]) -> List[A]:
     return list(filter(lambda x: not func(x), iterable_something))
 
@@ -83,6 +87,10 @@ def reverse(l: Iterable[A]) -> List[A]:
 
 def flatten(z: Iterable[Iterable[A]]) -> Iterable[A]:
     return [y for x in z for y in x]
+
+
+def lflatten(z: Iterable[Iterable[A]]) -> List[A]:
+    return list([y for x in z for y in x])
 
 
 def flatten_map(func: Callable[[A], B], z: Iterable[Iterable[A]]) -> List[B]:

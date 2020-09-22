@@ -1,4 +1,4 @@
-from arg.perspectives.eval_helper import get_eval_candidate_as_pids
+from arg.perspectives.eval_caches import get_eval_candidate_as_pids
 from arg.perspectives.ppnc import cppnc_datagen
 from arg.perspectives.ppnc.ppnc_decl import CPPNCGeneratorInterface
 from arg.perspectives.ppnc.ppnc_worker import start_generate_jobs_for_train_val
@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     def functor(cid_to_passage) -> CPPNCGeneratorInterface:
         candidate_pers = dict(get_eval_candidate_as_pids("train"))
-        return cppnc_datagen.Generator(cid_to_passage, candidate_pers)
+        return cppnc_datagen.Generator(cid_to_passage, candidate_pers, False)
 
     start_generate_jobs_for_train_val(functor,
                                       cppnc_datagen.write_records,

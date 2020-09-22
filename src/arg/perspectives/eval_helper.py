@@ -3,7 +3,7 @@ from typing import List, Dict, Tuple
 from arg.perspectives import es_helper
 from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids, load_claim_ids_for_split, splits
 from arg.perspectives.pc_tokenizer import PCTokenizer
-from cache import save_to_pickle, load_from_pickle
+from cache import save_to_pickle
 from list_lib import lmap
 
 
@@ -64,17 +64,6 @@ def get_eval_candidates(split):
 
     candidates: List[Tuple[int, List[Dict]]] = lmap(get_candidates, claims)
     return candidates
-
-
-def get_eval_candidate_as_pids(split) -> List[Tuple[int, List[int]]]:
-    full_data: List[Tuple[int, List[Dict]]] = load_from_pickle("pc_candidates_{}".format(split))
-
-    def convert(e) -> Tuple[int, List[int]]:
-        cid, p_list = e
-        return cid, lmap(lambda p: p['pid'], p_list)
-
-    out_data = lmap(convert, full_data)
-    return out_data
 
 
 def precache():

@@ -29,6 +29,8 @@ def main():
     a_series = [r[1] for r in rows]
     b_series = [r[2] for r in rows]
 
+    assert len(a_series) == len(b_series)
+    print("{} items".format(len(a_series)))
     print(average(a_series))
     print(average(b_series))
     print(ttest_rel(a_series, b_series))

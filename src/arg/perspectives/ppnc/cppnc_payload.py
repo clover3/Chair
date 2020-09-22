@@ -18,13 +18,47 @@ def make_cppnc_problem(passage_score_path: FilePath,
                        config,
                        save_name: str,
                        encode_inner_fn
-                       ):
+                       ) -> None:
     output: List[Tuple[int, List[Dict]]] = collect_good_passages(data_id_to_info, passage_score_path, config)
     joined_payloads: List = list(join_perspective(output, candidate_perspectives))
     tokenizer = get_tokenizer()
     data_id_man = DataIDManager()
 
     payloads: Iterable[PayloadAsTokens] = put_texts(joined_payloads, claims, tokenizer, data_id_man)
+    max_seq_length = 512
+
+    def encode_fn(r: PayloadAsTokens):
+        return encode_inner_fn(max_seq_length, tokenizer, r)
+
+    out_dir = os.path.join(output_path, "cppnc")
+    exist_or_mkdir(out_dir)
+    save_path = os.path.join(out_dir, save_name + ".tfrecord")
+    write_records_w_encode_fn(save_path, encode_fn, payloads)
+    info_save_path = os.path.join(out_dir, save_name + ".info")
+    print("Payload size : ", len(data_id_man.id_to_info))
+
+    json.dump(data_id_man.id_to_info, open(info_save_path, "w"))
+    print("tfrecord saved at :", save_path)
+    print("info saved at :", info_save_path)
+
+
+def make_cppnc_dummy_problem(claims: List[Dict],
+                       candidate_perspectives,
+                       save_name: str,
+                       encode_inner_fn
+                       ) -> None:
+
+    empty_passage = {'passage': []}
+
+    def get_payload() -> Iterable[Tuple[int, int, List[Dict]]]:
+        for cid, candidates in candidate_perspectives.items():
+            for candi in candidates:
+                yield cid, candi['pid'], [empty_passage]
+
+    tokenizer = get_tokenizer()
+    data_id_man = DataIDManager()
+
+    payloads: Iterable[PayloadAsTokens] = put_texts(get_payload(), claims, tokenizer, data_id_man)
     max_seq_length = 512
 
     def encode_fn(r: PayloadAsTokens):

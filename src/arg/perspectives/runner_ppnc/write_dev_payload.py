@@ -1,7 +1,9 @@
 import os
 from typing import List
 
-from arg.perspectives.ppnc.cpnr_predict_datagen import get_encode_fn, generate_instances
+from arg.qck.QK_gen import get_encode_fn
+
+from arg.perspectives.ppnc.cpnr_predict_datagen import generate_instances
 from arg.perspectives.ppnc.decl import ClaimPassages
 from arg.perspectives.ppnc.kd_payload import load_dev_payload
 from cache import save_to_pickle

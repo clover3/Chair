@@ -6,6 +6,7 @@ from typing import Iterable, List, Dict
 from arg.perspectives.types import CPIDPair
 from cpath import data_path
 from list_lib import flatten
+from misc_lib import split_7_3
 
 dir_path = os.path.join(data_path, "perspective")
 
@@ -61,11 +62,38 @@ def load_claim_ids_for_split(split) -> Iterable[int]:
             yield int(c_id)
 
 
+def load_claims_for_sub_split(sub_split) -> List[Dict]:
+    if sub_split in ["train" , "val"]:
+        split = "train"
+        d_ids: List[int] = list(load_train_claim_ids())
+        claims = get_claims_from_ids(d_ids)
+        train, val = split_7_3(claims)
+        if sub_split == "train":
+            return train
+        elif sub_split == "val":
+            return val
+        else:
+            assert False
+
+    else:
+        split = sub_split
+        ids = load_claim_ids_for_split(split)
+        return get_claims_from_ids(ids)
+
+
+d_n_claims_per_split = {
+        'train': 378,
+        'val': 162,
+        'dev': 138
+    }
+
+
 def claims_to_dict(claims) -> Dict[int, str]:
     d = {}
     for e in claims:
         d[e['cId']] = e['text']
     return d
+
 
 
 # get claim_per

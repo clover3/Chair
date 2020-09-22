@@ -39,6 +39,7 @@ def read_passage_scores(prediction_file,
             pass
     return output
 
+
 def get_recover_subtokens():
     tokenizer = get_tokenizer()
 

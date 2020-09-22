@@ -106,7 +106,9 @@ def create_optimizer_from_config(loss, train_config, tvars=None):
     max_train_step = train_config.num_train_steps
     if train_config.no_lr_decay:
       max_train_step = 100000 * 100000
-
+    print("max_train_step", max_train_step)
+    print("train_config.learning_rate", train_config.learning_rate)
+    print("train_config.num_warmup_steps", train_config.num_warmup_steps)
     train_op = create_optimizer(
     loss,
     train_config.learning_rate,
@@ -120,6 +122,30 @@ def create_optimizer_from_config(loss, train_config, tvars=None):
                                                    tvars, train_config.gradient_accumulation)
 
   return train_op
+
+
+def create_optimizer_from_config_debug(loss, train_config, tvars=None):
+
+  if train_config.gradient_accumulation == 1:
+    max_train_step = train_config.num_train_steps
+    if train_config.no_lr_decay:
+      max_train_step = 100000 * 100000
+
+    train_op, learning_rate = create_optimizer_debug(
+    loss,
+    train_config.learning_rate,
+    max_train_step,
+    train_config.num_warmup_steps,
+    train_config.use_tpu,
+    tvars
+  )
+  else:
+    assert False
+    train_op = get_accumulated_optimizer_from_config(loss, train_config,
+                                                   tvars, train_config.gradient_accumulation)
+
+  return train_op, learning_rate
+
 
 
 def get_learning_rate(global_step, init_lr, num_train_steps, num_warmup_steps):
@@ -213,6 +239,69 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu, 
   new_global_step = global_step + 1
   train_op = tf.group(train_op, [global_step.assign(new_global_step)])
   return train_op
+
+
+def create_optimizer_debug(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu, tvars=None):
+  """Creates an optimizer training op."""
+  global_step = tf.compat.v1.train.get_or_create_global_step()
+
+  learning_rate_a = tf.constant(value=init_lr, shape=[], dtype=tf.float32)
+  # Implements linear decay of the learning rate.
+  learning_rate_b = tf.compat.v1.train.polynomial_decay(
+      learning_rate_a,
+      global_step,
+      num_train_steps,
+      end_learning_rate=0.0,
+      power=1.0,
+      cycle=False)
+
+  # Implements linear warmup. I.e., if global_step < num_warmup_steps, the
+  # learning rate will be `global_step/num_warmup_steps * init_lr`.
+  if num_warmup_steps:
+    global_steps_int = tf.cast(global_step, tf.int32)
+    warmup_steps_int = tf.constant(num_warmup_steps, dtype=tf.int32)
+    learning_rate_c = tf.constant(12345., dtype=tf.float32)
+    global_steps_float = tf.cast(global_steps_int, tf.float32)
+    warmup_steps_float = tf.cast(warmup_steps_int, tf.float32)
+
+    warmup_percent_done = global_steps_float / warmup_steps_float
+    warmup_learning_rate = init_lr * warmup_percent_done
+
+    is_warmup = tf.cast(global_steps_int < warmup_steps_int, tf.float32)
+    learning_rate_e = (
+        (1.0 - is_warmup) * learning_rate_c + is_warmup * warmup_learning_rate)
+
+  # It is recommended that you use this optimizer for fine tuning, since this
+  # is how the model was trained (note that the Adam m/v variables are NOT
+  # loaded from init_checkpoint.)
+  optimizer = AdamWeightDecayOptimizer(
+      learning_rate=learning_rate_e,
+      weight_decay_rate=0.01,
+      beta_1=0.9,
+      beta_2=0.999,
+      epsilon=1e-6,
+      exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"])
+
+  if use_tpu:
+    optimizer = tf.compat.v1.tpu.CrossShardOptimizer(optimizer)
+
+  if tvars is None:
+    tvars = tf.compat.v1.trainable_variables()
+
+  grads = tf.gradients(ys=loss, xs=tvars)
+
+  # This is how the model was pre-trained.
+  (grads, _) = tf.clip_by_global_norm(grads, clip_norm=1.0)
+
+  train_op = optimizer.apply_gradients(
+      zip(grads, tvars), global_step=global_step)
+
+  # Normally the global step update is done inside of `apply_gradients`.
+  # However, `AdamWeightDecayOptimizer` doesn't do this. But if you use
+  # a different optimizer, you should probably take this line out.
+  new_global_step = global_step + 1
+  train_op = tf.group(train_op, [global_step.assign(new_global_step)])
+  return train_op, learning_rate_e
 
 
 

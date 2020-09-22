@@ -60,7 +60,6 @@ class BookCorpusGen:
     def pool_tokens(self, sent_list, target_seq_length, skip=False):
         return pool_tokens(self.rng, sent_list, target_seq_length, skip)
 
-
     def load_doc_seg(self, doc_id):
         return load_doc_seg(doc_id)
 

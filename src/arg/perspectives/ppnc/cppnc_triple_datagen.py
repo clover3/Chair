@@ -7,7 +7,7 @@ from arg.perspectives.ppnc.ppnc_decl import PayloadAsTokens
 from data_generator.create_feature import create_int_feature
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from tf_util.record_writer_wrap import write_records_w_encode_fn
-from tlm.data_gen.base import get_basic_input_feature_as_list
+from tlm.data_gen.base import get_basic_input_feature_as_list, combine_with_sep_cls
 
 
 def encode_inner(max_seq_length, tokenizer, inst: PayloadAsTokens) -> OrderedDict:
@@ -16,14 +16,7 @@ def encode_inner(max_seq_length, tokenizer, inst: PayloadAsTokens) -> OrderedDic
     tokens_3: List[str] = inst.passage
 
     def combine(tokens1, tokens2):
-        max_seg2_len = max_seq_length - 3 - len(tokens1)
-        tokens2 = tokens2[:max_seg2_len]
-        tokens = ["[CLS]"] + tokens1 + ["[SEP]"] + tokens2 + ["[SEP]"]
-        segment_ids = [0] * (len(tokens1) + 2) \
-                      + [1] * (len(tokens2) + 1)
-        tokens = tokens[:max_seq_length]
-        segment_ids = segment_ids[:max_seq_length]
-        return tokens, segment_ids
+        return combine_with_sep_cls(max_seq_length, tokens1, tokens2)
 
     features = collections.OrderedDict()
     for tokens_a, tokens_b, postfix in [(tokens_1, tokens_2, ""),

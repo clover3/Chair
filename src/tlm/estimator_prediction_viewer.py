@@ -95,10 +95,10 @@ class EstimatorPredictionViewer:
 
         return vectors, keys, data_len
 
+
 class EstimatorPredictionViewerGosford(EstimatorPredictionViewer):
     def __init__(self, filename):
         p = os.path.join(output_path, filename)
         super(EstimatorPredictionViewerGosford, self).__init__(p)
-
 
 
