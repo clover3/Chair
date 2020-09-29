@@ -3,8 +3,9 @@ from typing import List, Dict, Tuple
 
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import get_claim_perspective_id_dict
-from arg.perspectives.ppnc.encode_common import encode_two_inputs
-from arg.perspectives.ppnc.ppnc_decl import CPPNCGeneratorInterface, PayloadAsTokens
+from arg.perspectives.ppnc.ppnc_decl import CPPNCGeneratorInterface
+from arg.qck.decl import PayloadAsTokens
+from arg.qck.encode_common import encode_two_inputs
 from data_generator.tokenizer_wo_tf import get_tokenizer, tokenize_from_tokens
 from list_lib import left
 from tf_util.record_writer_wrap import write_records_w_encode_fn

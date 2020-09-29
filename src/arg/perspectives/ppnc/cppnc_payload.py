@@ -3,7 +3,7 @@ import os
 from typing import Dict, List, Tuple, Iterable
 
 from arg.perspectives.ppnc.parse_cpnr_results import collect_good_passages, join_perspective, put_texts
-from arg.perspectives.ppnc.ppnc_decl import PayloadAsTokens
+from arg.qck.decl import PayloadAsTokens
 from base_type import FilePath
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import get_tokenizer

@@ -1,16 +1,27 @@
 from __future__ import absolute_import
 
+import time
 from collections import Counter
 
 from boilerpipe.extract import Extractor
-from galagos.basic import parse_doc_jsonl_line
 from nltk import tokenize
 
 import datastore.interface
 import datastore.tool
 from datastore.table_names import *
+from galagos.parse import parse_doc_jsonl_line
 from galagos.tokenize_doc_and_save import bert_tokenize
 from misc_lib import TimeEstimator
+
+
+def ask_key(doc_id):
+    st = time.time()
+    r = datastore.interface.has_key(RawCluewebDoc, doc_id)
+    ed = time.time()
+
+    if ed - st > 5:
+        print("Asking takes too long")
+    return r
 
 
 def process_jsonl(line_itr, tokenize_fn, buffered_saver, num_insts=0):
@@ -21,8 +32,6 @@ def process_jsonl(line_itr, tokenize_fn, buffered_saver, num_insts=0):
         doc_id, html = parse_doc_jsonl_line(line)
         if num_insts:
             ticker.tick()
-        if datastore.interface.has_key(RawCluewebDoc, doc_id):
-            continue
         try:
             # remove boilderplate
             parse_doc_and_save(buffered_saver, doc_id, html, tokenize_fn)

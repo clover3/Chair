@@ -8,9 +8,9 @@ import sys
 from typing import List, Set, Iterable
 
 from arg.perspectives.basic_analysis import load_train_data_point
-from arg.perspectives.clueweb_galago_db import get_docs_in_db
 from arg.perspectives.dp_query_routines import dp_to_qid
 from cache import save_to_pickle
+from clueweb.clueweb_galago_db import get_docs_in_db
 from cpath import output_path
 from datastore.interface import has_key, load
 from datastore.table_names import QueryResult

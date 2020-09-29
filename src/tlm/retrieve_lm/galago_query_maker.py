@@ -1,7 +1,6 @@
-from galagos.basic import clean_query, get_query_entry, save_queries_to_file
-
 import cpath
 from cache import *
+from galagos.parse import clean_query, get_query_entry, save_queries_to_file
 
 
 def main():

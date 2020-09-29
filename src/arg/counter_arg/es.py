@@ -1,6 +1,7 @@
 from elasticsearch import Elasticsearch
 
 from arg.counter_arg.enum_all_argument import enum_all_argument
+from arg.counter_arg.header import splits
 from elastic.elastic_info import auth_info
 
 server = "gosford.cs.umass.edu:9200"
@@ -50,4 +51,6 @@ def search_by_id(split, query):
 
 if __name__ == "__main__":
     #r = search("training", "hello world", 10)
-    insert("training")
+    #insert("training")
+    for split in splits[1:]:
+        insert(split)

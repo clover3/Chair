@@ -6,7 +6,7 @@ from typing import List, Dict
 from arg.perspectives.eval_caches import get_eval_candidates_from_pickle
 from arg.perspectives.load import load_dev_claim_ids, get_claims_from_ids
 from arg.perspectives.ppnc.cppnc_payload import make_cppnc_problem
-from arg.perspectives.ppnc.encode_common import encode_two_inputs
+from arg.qck.encode_common import encode_two_inputs
 from cache import load_from_pickle
 
 parser = argparse.ArgumentParser(description='File should be stored in ')

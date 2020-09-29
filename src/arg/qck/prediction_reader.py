@@ -39,14 +39,14 @@ def parse_info(j, convert_map, drop_kdp):
 
 def parse_info_inner(info, convert_map, drop_kdp):
     for key, class_ in convert_map.items():
-        if drop_kdp and key == "kdp":
+        if drop_kdp and key == "kdp" and len(info[key]) > 3:
             info[key][3] = []
         info[key] = class_(*info[key])
 
 
-def load_prediction_with_info(info_path, pred_path) -> List[Dict]:
+def load_prediction_with_info(info_path, pred_path, fetch_field_list=None) -> List[Dict]:
     info = load_combine_info_jsons(info_path, qck_convert_map)
-    return join_prediction_with_info(pred_path, info)
+    return join_prediction_with_info(pred_path, info, fetch_field_list)
 
 
 def group_by_qid_cid(predictions: List[Dict]) -> Dict[str, Dict[str, List[Dict]]]:

@@ -3,7 +3,7 @@ from collections import OrderedDict
 from typing import List
 
 from arg.perspectives.ppnc.cppnc_datagen import convert_sub_token, Payload
-from arg.perspectives.ppnc.ppnc_decl import PayloadAsTokens
+from arg.qck.decl import PayloadAsTokens
 from data_generator.create_feature import create_int_feature
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from tf_util.record_writer_wrap import write_records_w_encode_fn

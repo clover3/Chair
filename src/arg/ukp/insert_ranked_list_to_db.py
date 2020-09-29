@@ -1,6 +1,6 @@
 import sys
 
-from arg.perspectives.clueweb_galago_db import insert_ranked_list_from_path
+from clueweb.clueweb_galago_db import insert_ranked_list_from_path
 from galagos.query_runs_ids import Q_CONFIG_ID_BM25_UKP
 from galagos.types import *
 from misc_lib import get_dir_files

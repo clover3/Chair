@@ -3,10 +3,9 @@
 from collections import OrderedDict
 from typing import List, Iterable, Dict, Tuple
 
-from arg.perspectives.ppnc.encode_common import encode_two_inputs
-from arg.perspectives.ppnc.ppnc_decl import PayloadAsTokens
 from arg.qck.decl import QCKQuery, KDP, QKUnit, QCKInstance, \
-    QCKCandidate
+    QCKCandidate, PayloadAsTokens
+from arg.qck.encode_common import encode_two_inputs
 from arg.qck.qck_worker import InstanceGenerator
 from data_generator.tokenizer_wo_tf import get_tokenizer, tokenize_from_tokens
 from list_lib import flatten, lmap

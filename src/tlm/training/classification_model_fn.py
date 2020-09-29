@@ -133,8 +133,11 @@ def model_fn_classification(bert_config, train_config, model_class, special_flag
         }
         if override_prediction_fn is not None:
             predictions = override_prediction_fn(predictions, model)
-        if "data_id" in features:
-            predictions['data_id'] = features['data_id']
+
+        useful_inputs = ["data_id", "input_ids2"]
+        for input_name in useful_inputs:
+            if input_name in features:
+                predictions[input_name] = features[input_name]
         output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
                 mode=mode,
                 predictions=predictions,

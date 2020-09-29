@@ -485,14 +485,17 @@ def timed_lmap(func: Callable[[A], B],
 
 
 class DataIDManager:
-    def __init__(self, base=0):
+    def __init__(self, base=0, max_count=10000):
         self.id_to_info = {}
         self.id_idx = base
+        self.max_count = max_count
 
     def assign(self, info):
         idx = self.id_idx
         self.id_to_info[idx] = info
         self.id_idx += 1
+        if self.id_idx == self.max_count:
+            print("WARNING id idx over maximum", self.max_count)
         return idx
 
 

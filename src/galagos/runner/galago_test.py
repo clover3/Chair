@@ -1,4 +1,4 @@
-from arg.perspectives.clueweb_galago_db import DocGetter
+from clueweb.clueweb_galago_db import DocGetter
 from galagos.interface import send_doc_queries, get_doc
 from sydney_clueweb.clue_path import get_first_disk
 

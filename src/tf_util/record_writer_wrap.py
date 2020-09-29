@@ -30,6 +30,7 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
+
 def write_records_w_encode_fn(output_path,
                               encode: Callable[[A], OrderedDict],
                               records: Iterable[A],

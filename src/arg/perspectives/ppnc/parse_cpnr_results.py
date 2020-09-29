@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple, Iterable
 import scipy.special
 
 from arg.perspectives.evaluate import perspective_getter
-from arg.perspectives.ppnc.ppnc_decl import PayloadAsTokens
+from arg.qck.decl import PayloadAsTokens
 from base_type import FilePath
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
 from data_generator.tokenizer_wo_tf import get_tokenizer

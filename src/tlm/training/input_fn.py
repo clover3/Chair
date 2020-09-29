@@ -70,9 +70,9 @@ def input_fn_builder_two_inputs_w_data_id(flags):
         batch_size = params["batch_size"]
 
         name_to_features = dict({
-                "input_ids":tf.io.FixedLenFeature([max_seq_length], tf.int64),
-                "input_mask":tf.io.FixedLenFeature([max_seq_length], tf.int64),
-                "segment_ids":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_ids": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_mask": tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "segment_ids": tf.io.FixedLenFeature([max_seq_length], tf.int64),
                 "input_ids2": tf.io.FixedLenFeature([max_seq_length], tf.int64),
                 "input_mask2": tf.io.FixedLenFeature([max_seq_length], tf.int64),
                 "segment_ids2": tf.io.FixedLenFeature([max_seq_length], tf.int64),

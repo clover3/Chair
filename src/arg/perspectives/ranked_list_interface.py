@@ -1,8 +1,8 @@
 from typing import Callable, List, Dict
 
-from arg.perspectives.clueweb_galago_db import load_from_db_or_from_galago
 from arg.pf_common.ranked_list_interface import RankedListInterface
 from cache import load_from_pickle
+from clueweb.clueweb_galago_db import load_from_db_or_from_galago
 from datastore.table_names import QueryResult
 from galagos.interface import send_queries_passage, PassageQuery, format_passage_query, DocQuery, \
     format_query_bm25, send_doc_queries

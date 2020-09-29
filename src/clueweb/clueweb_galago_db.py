@@ -102,9 +102,9 @@ def add_doc_list_to_table(doc_list, save_name):
     session.commit()
 
 
-import logging
-logging.basicConfig()
-logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+#import logging
+#logging.basicConfig()
+#logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 
 def get_docs_in_db(save_name) -> Set:

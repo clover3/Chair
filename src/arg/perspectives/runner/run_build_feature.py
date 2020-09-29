@@ -2,9 +2,9 @@ from functools import partial
 
 from arg.perspectives.basic_analysis import load_train_data_point
 from arg.perspectives.build_feature import build_binary_feature, build_weighted_feature
-from arg.perspectives.clueweb_galago_db import DocGetter
 from arg.perspectives.ranked_list_interface import DynRankedListInterface, make_doc_query
 from cache import save_to_pickle
+from clueweb.clueweb_galago_db import DocGetter
 from galagos.query_runs_ids import Q_CONFIG_ID_BM25_10000
 from misc_lib import parallel_run
 

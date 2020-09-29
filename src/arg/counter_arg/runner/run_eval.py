@@ -12,9 +12,9 @@ def bm25_eval():
     scorer: Callable[[Passage, List[Passage]], List[float]] = bm25_predictor.get_scorer(split)
     # print(run_eval(split, scorer, EvalCondition.SameThemeCounters))
     # print(run_eval(split, scorer, EvalCondition.SameThemeArguments))
-    #print(run_eval(split, scorer, EvalCondition.EntirePortalCounters))
-    print(run_eval(split, scorer, EvalCondition.EntirePortalArguments))
-
+    print(run_eval(split, scorer, EvalCondition.EntirePortalCounters))
+    # print(run_eval(split, scorer, EvalCondition.EntirePortalArguments))
+#
 
 def bm25_structured_eval():
     split = "training"

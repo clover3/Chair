@@ -14,12 +14,12 @@ from misc_lib import exist_or_mkdir, group_by, average
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 
 
-def load_cppnc_score(save_name) -> Dict[str, Dict[str, List[Dict]]]:
+def load_cppnc_score(save_name, fetch_field_list=None) -> Dict[str, Dict[str, List[Dict]]]:
     out_dir = os.path.join(output_path, "cppnc")
     exist_or_mkdir(out_dir)
     info_file_path = os.path.join(out_dir, save_name + ".info")
     pred_file_path = os.path.join(out_dir, save_name + ".score")
-    predictions = load_prediction_with_info(info_file_path, pred_file_path)
+    predictions = load_prediction_with_info(info_file_path, pred_file_path, fetch_field_list)
     qid_grouped = group_by_qid_cid(predictions)
     return qid_grouped
 

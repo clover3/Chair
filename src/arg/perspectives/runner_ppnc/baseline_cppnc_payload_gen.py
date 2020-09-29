@@ -5,7 +5,7 @@ from typing import List, Dict
 from arg.perspectives.eval_caches import get_eval_candidates_from_pickle
 from arg.perspectives.load import get_claims_from_ids, load_train_claim_ids
 from arg.perspectives.ppnc.cppnc_payload import make_cppnc_dummy_problem
-from arg.perspectives.ppnc.encode_common import encode_two_inputs
+from arg.qck.encode_common import encode_two_inputs
 
 parser = argparse.ArgumentParser(description='File should be stored in ')
 parser.add_argument("--save_name")

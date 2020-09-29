@@ -41,6 +41,13 @@ class QKRegressionInstance(NamedTuple):
     score: float
 
 
+class QCInstance(NamedTuple):
+    query_text: str
+    candidate_text: str
+    data_id: int
+    is_correct: int
+
+
 class QCKInstance(NamedTuple):
     query_text: str
     candidate_text: str
@@ -65,3 +72,11 @@ class CKInstance(NamedTuple):
 
 
 QKUnit = Tuple[QCKQuery, List[KDP]]
+
+
+class PayloadAsTokens(NamedTuple):
+    passage: List[str]
+    text1: List[str]
+    text2: List[str]
+    data_id: int
+    is_correct: int

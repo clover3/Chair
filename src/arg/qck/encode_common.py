@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from typing import List
 
-from arg.perspectives.ppnc.ppnc_decl import PayloadAsTokens
+from arg.qck.decl import PayloadAsTokens
 from data_generator.create_feature import create_int_feature
 from tlm.data_gen.pairwise_common import combine_features_B
 
@@ -30,3 +30,4 @@ def encode_two_inputs(max_seq_length, tokenizer, inst: PayloadAsTokens) -> Order
     features['label_ids'] = create_int_feature([inst.is_correct])
     features['data_id'] = create_int_feature([inst.data_id])
     return features
+

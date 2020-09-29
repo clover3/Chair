@@ -67,3 +67,4 @@ class ArguDataPoint(NamedTuple):
     annotations: List
 
 
+num_problems = {'training': 4065, 'validation': 1287, 'test': 1401}

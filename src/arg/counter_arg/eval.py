@@ -1,7 +1,6 @@
 import enum
-from collections import Iterable, Counter
-from typing import Callable
-from typing import List
+from collections import Counter
+from typing import List, Iterable, Callable, Dict, Tuple
 
 from arg.counter_arg import es
 from arg.counter_arg.data_loader import load_labeled_data
@@ -50,7 +49,7 @@ def eval_correctness(predictions: List[ArguDataID], gold_labels: List[ArguDataPo
     return correctness
 
 
-def retrieve_candidate(p: Passage, split, condition: EvalCondition) -> List[ArguDataID]:
+def retrieve_candidate(p: Passage, split, condition: EvalCondition, top_k=100) -> List[ArguDataID]:
     r = []
 
     def is_valid_candidate(source_id, target_id):
@@ -76,13 +75,36 @@ def retrieve_candidate(p: Passage, split, condition: EvalCondition) -> List[Argu
             if "counter" not in sub_name2:
                 return False
         return True
-    for text, data_id, score in es.search(split, p.text, 100):
+
+    text = p.text
+    max_len = 3000
+    q_text = text[:max_len]
+    for text, data_id, score in es.search(split, q_text, top_k):
         if is_valid_candidate(p.id.id, data_id):
             r.append(ArguDataID(id=data_id))
     return r
 
 
-def prepare_eval_data(split):
+def prepare_eval_data(split) -> Tuple[List[ArguDataPoint], Dict[ArguDataID, Passage]]:
+    problems = load_problems(split)
+    candidate_d = load_candidate_d(split)
+
+    return problems, candidate_d
+
+
+def load_candidate_d(split):
+    candidate_cache_name = "argu_candidate_{}".format(split)
+    candidate_d: Dict[ArguDataID, Passage] = load_cache(candidate_cache_name)
+    if candidate_d is None:
+        all_candidate: Iterable[Passage] = list(enum_all_argument(split))
+        candidate_d = {c.id: c for c in all_candidate}
+        save_to_pickle(candidate_d, candidate_cache_name)
+    else:
+        print("using cache for candidate")
+    return candidate_d
+
+
+def load_problems(split) -> List[ArguDataPoint]:
     problem_cache_name = "argu_problem_{}".format(split)
     problems: List[ArguDataPoint] = load_cache(problem_cache_name)
     if problems is None:
@@ -90,16 +112,7 @@ def prepare_eval_data(split):
         save_to_pickle(problems, problem_cache_name)
     else:
         print("Using cache for problems")
-    candidate_cache_name = "argu_candidate_{}".format(split)
-    candidate_d = load_cache(candidate_cache_name)
-    if candidate_d is None:
-        all_candidate = list(enum_all_argument(split))
-        candidate_d = {c.id: c for c in all_candidate}
-        save_to_pickle(candidate_d, candidate_cache_name)
-    else:
-        print("using cache for candidate")
-
-    return problems, candidate_d
+    return problems
 
 
 # 0 : success
@@ -137,9 +150,10 @@ def failure_type(gold_id, pred_id):
 
 
 def run_eval(split,
-            scorer: Callable[[Passage, List[Passage]], List[NamedNumber]],
+             scorer: Callable[[Passage, List[Passage]], List[NamedNumber]],
              condition: EvalCondition):
     problems, candidate_d = prepare_eval_data(split)
+    debug = False
 
     problems = problems[:100]
     payload: List[Passage] = get_eval_payload_from_dp(problems)
@@ -161,7 +175,7 @@ def run_eval(split,
         gold_idx = gold_idx_l[0] if gold_idx_l else None
         gold_score = scores[gold_idx] if gold_idx_l else None
 
-        if not correct and True:
+        if not correct and debug:
             print("-------------------", correct, content_equal)
             print("QUERY:", p.text1.id)
             print(p.text1.text)
@@ -187,14 +201,14 @@ def run_eval(split,
 def collect_failure(split,
             scorer: Callable[[Passage, List[Passage]], List[NamedNumber]],
              condition: EvalCondition):
-    problems, candidate_d = prepare_eval_data(split)
+    problems, candidate_pool_d = prepare_eval_data(split)
 
     problems = problems[:100]
     payload: List[Passage] = get_eval_payload_from_dp(problems)
     for query, problem in zip(payload, problems):
         p = problem
         candidate_ids: List[ArguDataID] = retrieve_candidate(query, split, condition)
-        candidate = list([candidate_d[x] for x in candidate_ids])
+        candidate: List[Passage] = list([candidate_pool_d[x] for x in candidate_ids])
         scores: List[NamedNumber] = scorer(query, candidate)
         best_idx = max_idx(scores)
         pred_item: Passage = candidate[best_idx]
@@ -211,6 +225,38 @@ def collect_failure(split,
             yield e
 
 
+def is_correct(p: ArguDataPoint, c: Passage) -> bool:
+    gold_id = p.text2.id
+    correct: bool = gold_id == c.id
+    content_equal: bool = (p.text2.text == c.text)
+    correct = correct or content_equal
+    return correct
+
+
+def pairwise_candidate_gen(split,
+                           condition: EvalCondition,
+                           ) -> Iterable[Tuple[ArguDataPoint, Passage, bool]]:
+    problems, candidate_pool_d = prepare_eval_data(split)
+
+    debug = False
+    if debug:
+        problems = problems[:100]
+    payload: List[Passage] = get_eval_payload_from_dp(problems)
+    for query, problem in zip(payload, problems):
+        p = problem
+        candidate_ids: List[ArguDataID] = retrieve_candidate(query, split, condition)
+        candidate: List[Passage] = list([candidate_pool_d[x] for x in candidate_ids])
+        for c in candidate:
+            correct = argu_is_correct(p, c)
+            yield p, c, correct
+
+
+def argu_is_correct(p: ArguDataPoint, c: Passage):
+    gold_id = p.text2.id
+    correct: bool = gold_id == c.id
+    content_equal: bool = (p.text2.text == c.text)
+    correct = correct or content_equal
+    return correct
 
 
 def eval_thread(param):

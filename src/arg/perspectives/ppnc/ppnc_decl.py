@@ -1,6 +1,6 @@
 import abc
 from abc import ABC
-from typing import Dict, NamedTuple, List
+from typing import Dict
 
 
 class CPPNCGeneratorInterface(ABC):
@@ -9,9 +9,3 @@ class CPPNCGeneratorInterface(ABC):
         pass
 
 
-class PayloadAsTokens(NamedTuple):
-    passage: List[str]
-    text1: List[str]
-    text2: List[str]
-    data_id: int
-    is_correct: int

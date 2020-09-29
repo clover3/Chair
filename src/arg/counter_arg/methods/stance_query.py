@@ -1,34 +1,20 @@
 import re
-from collections import Counter
 from typing import List, Tuple
 
 import nltk
-from nltk import sent_tokenize
 
 from arg.counter_arg.header import Passage
 from arg.counter_arg.methods.bm25_predictor import BasicTF
+from arg.counter_arg.methods.tool import get_term_importance, sent_tokenize_newline
 from arg.perspectives.collection_based_classifier import NamedNumber
 from bert_api.client_lib import BERTClient
-from list_lib import lmap, flatten, lmap_pairing, left
+from list_lib import lmap, lmap_pairing, left
 from models.classic.bm25 import BM25
-
-
-def sent_tokenize_newline(text):
-    sents = sent_tokenize(text)
-    r = []
-    for s in sents:
-        for new_sent in s.split("\n"):
-            r.append(new_sent)
-    return r
 
 
 def get_stance_check_candidate(text: str, bm25_module: BM25):
     sents = sent_tokenize_newline(text)
-    tokens = flatten([bm25_module.tokenizer.tokenize_stem(s) for s in sents])
-    q_tf = Counter(tokens)
-    term_importance = Counter()
-    for term, tf in q_tf.items():
-        term_importance[term] += bm25_module.term_idf_factor(term) * tf
+    term_importance = get_term_importance(bm25_module, sents)
 
     def is_heading_num(s):
         return re.match(r'^\[(\d{1,3}|i{1,5})\]', s) is not None

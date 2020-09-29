@@ -26,13 +26,17 @@ def join_prediction_with_info(prediction_file,
         -> List[Dict]:
     if fetch_field_list is None:
         fetch_field_list = ["logits"]
+    print("Reading pickle...")
     data = EstimatorPredictionViewer(prediction_file)
     print("Num data ", data.data_len)
+    seen_data_id = set()
     out = []
     for entry in data:
         data_id = entry.get_vector("data_id")[0]
         try:
             cur_info = info[str(data_id)]
+            assert data_id not in seen_data_id
+            seen_data_id.add(data_id)
             new_entry = dict(cur_info)
             for field in fetch_field_list:
                 new_entry[field] = entry.get_vector(field)
