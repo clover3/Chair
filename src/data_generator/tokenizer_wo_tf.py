@@ -573,9 +573,22 @@ def get_tokenizer():
     return FullTokenizer(voca_path)
 
 
-def tokenize_from_tokens(tokenizer, tokens: List[str]) -> List[str]:
+def tokenize_from_tokens(tokenizer: FullTokenizer, tokens: List[str]) -> List[str]:
     output = []
     for t in tokens:
-        ts = tokenizer.tokenize(t)
+        ts = tokenizer.wordpiece_tokenizer.tokenize(t)
         output.extend(ts)
     return output
+
+
+class CachedTokenizer:
+    def __init__(self, tokenizer):
+        self.tokenizer = tokenizer
+        self.cache_tokenize = {}
+
+    def tokenize(self, text):
+        if text in self.cache_tokenize:
+            return self.cache_tokenize[text]
+        tokens = self.tokenizer.tokenize(text)
+        self.cache_tokenize[text] = tokens
+        return tokens

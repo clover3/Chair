@@ -80,7 +80,6 @@ def save_to_trec_format2():
 
 
 def save_to_common_path(run_name, score_d):
-
     ranked_list = scrore_d_to_trec_style_predictions(score_d, run_name)
     save_path = os.path.join(output_path, "perspective_ranked_list", run_name + ".txt")
     write_trec_ranked_list_entry(ranked_list, save_path)

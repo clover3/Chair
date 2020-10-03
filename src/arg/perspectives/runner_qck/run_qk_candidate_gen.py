@@ -1,11 +1,10 @@
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 
-from arg.perspectives.load import get_claims_from_ids, load_claim_ids_for_split
+from arg.perspectives.runner_qck.qck_common import get_qck_queries
 from arg.qck.decl import QCKQuery, KDP, QKUnit
 from arg.qck.kd_candidate_gen import qk_candidate_gen
 from base_type import FilePath
 from cache import save_to_pickle
-from list_lib import lmap
 
 
 def config1():
@@ -45,13 +44,7 @@ def dev_gen():
 
 
 def get_candidates(q_res_path, split, config) -> List[QKUnit]:
-    d_ids = list(load_claim_ids_for_split(split))
-    claims: List[Dict] = get_claims_from_ids(d_ids)
-
-    def claim_to_query(claim: Dict):
-        return QCKQuery(str(claim['cId']), claim['text'])
-
-    queries: List[QCKQuery] = lmap(claim_to_query, claims)
+    queries = get_qck_queries(split)
     top_n = 10
     candidate: List[Tuple[QCKQuery, List[KDP]]] = qk_candidate_gen(q_res_path, queries, top_n, config)
     return candidate

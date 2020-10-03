@@ -17,6 +17,10 @@ qk_convert_map = {
         'query': QCKQuery,
     }
 
+qc_convert_map = {
+        'query': QCKQuery,
+        'candidate': QCKCandidate,
+    }
 
 def load_combine_info_jsons(dir_path, convert_map, drop_kdp=True) -> Dict:
     if os.path.isdir(dir_path):
@@ -28,6 +32,7 @@ def load_combine_info_jsons(dir_path, convert_map, drop_kdp=True) -> Dict:
                 d.update(j)
     else:
         d = json.load(open(dir_path, "r"))
+        parse_info(d, convert_map, drop_kdp)
     return d
     # field
 

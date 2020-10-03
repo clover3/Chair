@@ -20,6 +20,7 @@ def read_passage_scores(prediction_file,
     data = EstimatorPredictionViewer(prediction_file)
     print("Num data ", data.data_len)
     output: Dict[int, List] = defaultdict(list)
+    fail_cnt =0
     for entry in data:
         logits = entry.get_vector("logits")
         data_id = entry.get_vector("data_id")[0]
@@ -36,6 +37,9 @@ def read_passage_scores(prediction_file,
         except KeyError as e:
             print("Key error")
             print("data_id", data_id)
+            fail_cnt += 1
+            if fail_cnt > 100:
+                raise Exception()
             pass
     return output
 

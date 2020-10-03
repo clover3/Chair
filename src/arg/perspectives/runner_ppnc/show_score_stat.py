@@ -11,8 +11,12 @@ from misc_lib import exist_or_mkdir, average, BinHistogram, bool_to_yn
 from tab_print import print_table
 
 
-def load_data():
+def load_cppnc_related_data():
     save_name = sys.argv[1]
+    return load_cppnc_score_and_baseline_and_group(save_name)
+
+
+def load_cppnc_score_and_baseline_and_group(save_name):
     out_dir = os.path.join(output_path, "cppnc")
     exist_or_mkdir(out_dir)
     info_file_path = os.path.join(out_dir, save_name + ".info")
@@ -29,7 +33,7 @@ def load_data():
 
 
 def main():
-    baseline_cid_grouped, cid_grouped, claim_d = load_data()
+    baseline_cid_grouped, cid_grouped, claim_d = load_cppnc_related_data()
     gold = get_claim_perspective_id_dict()
 
     bin_keys = ["< 0.05", "< 0.50", "< 0.95", "< 1"]

@@ -20,6 +20,8 @@ def top_k_average(items):
 
 def summarize_score(info_dir, prediction_file) -> Dict[CPIDPair, float]:
     info = load_combine_info_jsons(info_dir)
+    print("Info has {} entries".format(len(info)))
+    print(list(info.keys())[:20])
     def logit_to_score_reg(logit):
         return logit[0]
 

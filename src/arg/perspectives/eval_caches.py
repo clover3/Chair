@@ -2,6 +2,7 @@ from typing import List, Tuple, Dict, Set
 
 from arg.perspectives.evaluate import evaluate_map, get_average_precision_list, get_correctness_list
 from arg.perspectives.types import CPIDPair
+from arg.qck.decl import QCKCandidate
 from cache import load_from_pickle
 from list_lib import lmap, left, lfilter, flatten
 from misc_lib import SuccessCounter, average
@@ -116,3 +117,11 @@ def get_eval_candidate_as_pids(split) -> List[Tuple[int, List[int]]]:
 
     out_data = lmap(convert, full_data)
     return out_data
+
+
+def get_candidate_pickle_name(split):
+    return "pc_extended_candidate_{}".format(split)
+
+
+def get_extended_eval_candidate_as_qck(split) -> Dict[str, List[QCKCandidate]]:
+    return load_from_pickle(get_candidate_pickle_name(split))

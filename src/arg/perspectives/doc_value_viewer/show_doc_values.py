@@ -1,24 +1,27 @@
 import sys
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Iterator
 
 import scipy.special
 
 from arg.perspectives.load import get_claim_perspective_id_dict
-from arg.perspectives.ppnc.get_doc_value import doc_value
 from arg.perspectives.ppnc.parse_cpnr_results import get_recover_subtokens, read_passage_scores
-from arg.perspectives.runner_ppnc.show_score_stat import load_data
+from arg.perspectives.runner_ppnc.show_score_stat import load_cppnc_related_data
 from arg.perspectives.types import CPIDPair
+from arg.qck.doc_value_calculator import doc_value
 from cache import load_from_pickle
 from list_lib import lmap
 from misc_lib import average, bool_to_yn
 from tab_print import print_table
 
 
-def doc_score_predictions():
-    recover_subtokens = get_recover_subtokens()
+def doc_score_predictions() -> Iterator[Tuple[int, List[float]]]:
     passage_score_path = sys.argv[2]
-    data_id_to_info: Dict = load_from_pickle("pc_dev_passage_payload_info")
+    yield from load_doc_score_prediction(passage_score_path)
 
+
+def load_doc_score_prediction(passage_score_path) -> Iterator[Tuple[int, List[float]]]:
+    recover_subtokens = get_recover_subtokens()
+    data_id_to_info: Dict = load_from_pickle("pc_dev_passage_payload_info")
     grouped_scores: Dict[int, List[Dict]] = read_passage_scores(passage_score_path, data_id_to_info, recover_subtokens)
 
     def get_score_from_logit(logits):
@@ -28,8 +31,9 @@ def doc_score_predictions():
         scores: List[float] = lmap(lambda d: get_score_from_logit(d['logits']), passages)
         yield cid, scores
 
+
 def main():
-    baseline_cid_grouped, cid_grouped, claim_d = load_data()
+    baseline_cid_grouped, cid_grouped, claim_d = load_cppnc_related_data()
     gold = get_claim_perspective_id_dict()
     doc_scores = dict(doc_score_predictions())
 
@@ -77,8 +81,6 @@ def main():
             row = lmap(lambda x: "{0}".format(x), row_float)
             rows.append(row)
         print_table(rows)
-
-
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 from typing import Dict, Tuple
 
 from arg.perspectives.types import DataID, CPIDPair
-from arg.qck.prediction_reader import parse_info_inner, qck_convert_map
+from arg.qck.prediction_reader import parse_info_inner, qck_convert_map, qc_convert_map
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 
 
@@ -17,8 +17,12 @@ def collect_scores(prediction_file, info: Dict, logit_to_score) \
         try:
             cur_info = info[str(data_id)]
 
-            if 'query' in cur_info:
+            if 'kdp' in cur_info:
                 parse_info_inner(cur_info, qck_convert_map, True)
+                cid = int(cur_info['query'].query_id)
+                pid = int(cur_info['candidate'].id)
+            elif 'query' in cur_info:
+                parse_info_inner(cur_info, qc_convert_map, True)
                 cid = int(cur_info['query'].query_id)
                 pid = int(cur_info['candidate'].id)
             else:
@@ -27,7 +31,7 @@ def collect_scores(prediction_file, info: Dict, logit_to_score) \
             cpid = CPIDPair((cid, pid))
             out_d[data_id] = (cpid, score )
         except KeyError as e:
-            print("Key error")
+            print("Key error", e)
             print("data_id", data_id)
             pass
     return out_d

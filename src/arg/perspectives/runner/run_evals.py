@@ -95,6 +95,7 @@ def run_gold_lm():
 
 def run_baseline_lm():
     claims, val = train_split()
+    claims = val
     top_k = 50
     print("Building lms")
     claim_lms = build_baseline_lms(claims)

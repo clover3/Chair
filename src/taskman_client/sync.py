@@ -40,6 +40,7 @@ class JsonTiedDict:
             }
         for key, value in dict.items():
             self.__dict__[key] = value
+        self.save()
 
     def last_id(self):
         return self.__dict__['last_task_id']

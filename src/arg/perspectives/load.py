@@ -114,6 +114,20 @@ def get_claim_perspective_id_dict() -> Dict[int, List[List[int]]]:
     return d
 
 
+def get_claim_perspective_id_dict2() -> Dict[int, List[int]]:
+    claim_and_perspective = load_claim_perspective_pair()
+    d = {}
+    for e in claim_and_perspective:
+        l: List[int] = []
+        for perspective_cluster in e['perspectives']:
+            pids: List[int] = perspective_cluster['pids']
+            l.extend(pids)
+
+        d[int(e['cId'])] = l
+    return d
+
+
+
 def get_claim_perspective_label_dict() -> Dict[CPIDPair, int]:
     gold = get_claim_perspective_id_dict()
     d = defaultdict(int)

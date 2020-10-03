@@ -5130,7 +5130,6 @@ class Experiment:
                 all_data += train_insts
         save_to_pickle(all_data, "ubuntu_train")
 
-
     def test_valid_ubuntu(self, data_loader):
         dev_data = data_loader.get_dev_data()
         dev_runs, golds = data_loader.flatten_payload(dev_data)
@@ -5147,7 +5146,6 @@ class Experiment:
         assert len(preds) == len(golds)
         map_score = MAP_rank(preds, golds)
         print("random MAP : ", map_score)
-
 
     def train_ubuntu(self, exp_config, data_loader, preload_id):
         tprint("train_ubuntu")

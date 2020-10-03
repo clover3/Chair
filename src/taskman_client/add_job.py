@@ -16,8 +16,8 @@ def run_job(sh_format_path, arg_map):
 
 def ukp_add_task(model_name, step, iteration):
     d = {
-        "$1":model_name,
-        "$2":step,
-        "$3":iteration
+        "$1": model_name,
+        "$2": step,
+        "$3": iteration
     }
     run_job("ukp_generic_repeat.sh", d)

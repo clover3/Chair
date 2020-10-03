@@ -135,7 +135,6 @@ def mark(job_id):
     open(os.path.join(mark_path, str(job_id)), "w").close()
 
 
-
 def execute(job_id):
     out = open(get_log_path(job_id), "w")
     p = psutil.Popen(["/bin/sh", get_sh_path_for_job_id(job_id)],

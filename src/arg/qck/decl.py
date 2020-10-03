@@ -11,6 +11,18 @@ class QCKCandidate(NamedTuple):
     text: str
 
 
+class QCKQueryWToken(NamedTuple):
+    query_id: str
+    text: str
+    tokens: List[str]
+
+
+class QCKCandidateWToken(NamedTuple):
+    id: str
+    text: str
+    tokens: List[str]
+
+
 class KnowledgeDocument(NamedTuple):
     doc_id: str
     tokens: List[str]
@@ -21,6 +33,13 @@ class KnowledgeDocumentPart(NamedTuple):
     passage_idx: int
     start_location: int
     tokens: List[str]
+
+    def getstate(self):
+        return self.doc_id, self.passage_idx, self.start_location, self.tokens
+
+    @classmethod
+    def from_state(cls, state):
+        return KnowledgeDocumentPart(*state)
 
 
 KD = KnowledgeDocument

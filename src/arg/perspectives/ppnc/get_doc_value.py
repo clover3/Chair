@@ -6,6 +6,7 @@ import scipy.special
 from arg.perspectives.load import get_claim_perspective_id_dict
 from arg.perspectives.ppnc.pdcd_eval import get_confidence_or_rel_score
 from arg.perspectives.types import CPIDPair
+from arg.qck.doc_value_calculator import doc_value
 from arg.qck.prediction_reader import load_prediction_with_info, group_by_qid_cid
 from cpath import output_path
 from estimator_helper.output_reader import load_combine_info_jsons
@@ -137,8 +138,3 @@ def fetch_score(baseline_pid_entries):
     return baseline_score_d
 
 
-def doc_value(score_baseline, score, gold):
-    error_baseline = gold - score_baseline  # -1 ~ 1
-    error = gold - score
-    improvement = abs(error_baseline) - abs(error)
-    return improvement

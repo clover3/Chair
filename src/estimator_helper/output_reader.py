@@ -22,8 +22,8 @@ def load_combine_info_jsons(dir_path) -> Dict:
 def join_prediction_with_info(prediction_file,
                               info: Dict[str, Any],
                               fetch_field_list=None,
-                              ) \
-        -> List[Dict]:
+                              str_data_id=True
+                              ) -> List[Dict]:
     if fetch_field_list is None:
         fetch_field_list = ["logits"]
     print("Reading pickle...")
@@ -31,10 +31,16 @@ def join_prediction_with_info(prediction_file,
     print("Num data ", data.data_len)
     seen_data_id = set()
     out = []
+    not_found_cnt = 0
     for entry in data:
         data_id = entry.get_vector("data_id")[0]
         try:
-            cur_info = info[str(data_id)]
+            if str_data_id:
+                k_data_id = str(data_id)
+            else:
+                k_data_id = data_id
+
+            cur_info = info[k_data_id]
             assert data_id not in seen_data_id
             seen_data_id.add(data_id)
             new_entry = dict(cur_info)
@@ -45,6 +51,9 @@ def join_prediction_with_info(prediction_file,
             print(e)
             print("Key error", e.__str__())
             print("data_id", data_id)
+            not_found_cnt += 1
+            if not_found_cnt > 100:
+                raise ReferenceError()
             pass
     return out
 

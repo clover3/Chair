@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import List, Dict, Tuple
 
 from arg.perspectives.doc_value_viewer.show_doc_value2 import collect_score_per_doc, fetch_score_per_pid, \
-    get_score_from_entry, load_claim_d
+    get_score_from_entry, load_train_claim_d
 from arg.perspectives.load import get_claim_perspective_id_dict
 from arg.perspectives.ppnc.get_doc_value import load_baseline
 from arg.qck.prediction_reader import group_by_qid_cid, qck_convert_map, load_combine_info_jsons
@@ -123,7 +123,7 @@ def main():
     baseline_cid_grouped = load_baseline("train_baseline")
     gold = get_claim_perspective_id_dict()
     tokenizer = get_tokenizer()
-    claim_d = load_claim_d()
+    claim_d = load_train_claim_d()
 
     print("Start analyzing")
     html = HtmlVisualizer("cppnc_value_per_token_score.html")

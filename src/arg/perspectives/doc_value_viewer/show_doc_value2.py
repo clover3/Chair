@@ -5,7 +5,8 @@ import scipy.special
 from arg.perspectives.load import get_claims_from_ids, \
     get_claim_perspective_id_dict, \
     load_train_claim_ids
-from arg.perspectives.ppnc.get_doc_value import load_cppnc_score, load_baseline, doc_value
+from arg.perspectives.ppnc.get_doc_value import load_cppnc_score, load_baseline
+from arg.qck.doc_value_calculator import doc_value
 from arg.qck.prediction_reader import qk_convert_map, load_combine_info_jsons
 from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap, left
@@ -27,7 +28,7 @@ def doc_score_predictions():
         yield cid, scores
 
 
-def load_claim_d():
+def load_train_claim_d():
     d_ids = list(load_train_claim_ids())
     claims: List[Dict] = get_claims_from_ids(d_ids)
     claim_d = {c['cId']: c['text'] for c in claims}
@@ -39,55 +40,7 @@ def get_score_from_entry(entry):
     return scipy.special.softmax(logit)[1]
 
 
-def main():
-    print("Loading doc score")
-    doc_scores = dict(doc_score_predictions())
-    print("Loading cppnc scores")
-    save_name = "qcknc_val"
-    cid_grouped: Dict[str, Dict[str, List[Dict]]] = load_cppnc_score(save_name)
-    print(".")
-
-    gold = get_claim_perspective_id_dict()
-    baseline_cid_grouped: Dict[int, List] = load_baseline("train_baseline")
-    claim_d = load_claim_d()
-
-    for cid, pid_entries_d in cid_grouped.items():
-        pid_entries_d: Dict[str, List[Dict]] = pid_entries_d
-        baseline_pid_entries = baseline_cid_grouped[int(cid)]
-
-        baseline_score_d = fetch_score_per_pid(baseline_pid_entries)
-
-        gold_pids = gold[int(cid)]
-
-        def get_score_per_pid_entry(p_entries: Tuple[str, List[Dict]]):
-            _, entries = p_entries
-            return average(lmap(get_score_from_entry, entries))
-
-        pid_entries: List[Tuple[str, List[Dict]]] = list(pid_entries_d.items())
-        pid_entries.sort(key=get_score_per_pid_entry, reverse=True)
-
-        s = "{} : {}".format(cid, claim_d[int(cid)])
-        print(s)
-        doc_info_d, doc_value_arr, labels = collect_score_per_doc(baseline_score_d, get_score_from_entry, gold_pids,
-                                                                  pid_entries)
-
-        pids = left(pid_entries)
-        head1 = [""] * 4 + pids
-        head2 = ["avg", "doc_id", "passage_idx", "pknc_pred"] + lmap(bool_to_yn, labels)
-        rows = [head1, head2]
-        doc_score = doc_scores[cid]
-        assert len(doc_value_arr) == len(doc_score)
-
-        for doc_idx, (pred_score, doc_values) in enumerate(zip(doc_score, doc_value_arr)):
-            doc_id, passage_idx = doc_info_d[doc_idx]
-            avg = average(doc_values)
-            row_float = [avg, doc_id, passage_idx, pred_score] + doc_values
-            row = lmap(lambda x: "{0}".format(x), row_float)
-            rows.append(row)
-        print_table(rows)
-
-
-def fetch_score_per_pid(baseline_pid_entries):
+def fetch_score_per_pid(baseline_pid_entries) -> Dict[int, float]:
     baseline_score_d = {}
     for cpid, a_thing_array in baseline_pid_entries:
         _, pid = cpid
@@ -130,6 +83,54 @@ def collect_score_per_doc(baseline_score_d, get_score_from_entry, gold_pids, pid
                 print()
 
     return doc_info_d, doc_value_arr, labels
+
+
+def main():
+    print("Loading doc score")
+    doc_scores = dict(doc_score_predictions())
+    print("Loading cppnc scores")
+    save_name = "qcknc_val"
+    cid_grouped: Dict[str, Dict[str, List[Dict]]] = load_cppnc_score(save_name)
+    print(".")
+
+    gold = get_claim_perspective_id_dict()
+    baseline_cid_grouped: Dict[int, List] = load_baseline("train_baseline")
+    claim_d = load_train_claim_d()
+
+    for cid, pid_entries_d in cid_grouped.items():
+        pid_entries_d: Dict[str, List[Dict]] = pid_entries_d
+        baseline_pid_entries = baseline_cid_grouped[int(cid)]
+
+        baseline_score_d = fetch_score_per_pid(baseline_pid_entries)
+
+        gold_pids = gold[int(cid)]
+
+        def get_score_per_pid_entry(p_entries: Tuple[str, List[Dict]]):
+            _, entries = p_entries
+            return average(lmap(get_score_from_entry, entries))
+
+        pid_entries: List[Tuple[str, List[Dict]]] = list(pid_entries_d.items())
+        pid_entries.sort(key=get_score_per_pid_entry, reverse=True)
+
+        s = "{} : {}".format(cid, claim_d[int(cid)])
+        print(s)
+        doc_info_d, doc_value_arr, labels = collect_score_per_doc(baseline_score_d, get_score_from_entry, gold_pids,
+                                                                  pid_entries)
+
+        pids = left(pid_entries)
+        head1 = [""] * 4 + pids
+        head2 = ["avg", "doc_id", "passage_idx", "pknc_pred"] + lmap(bool_to_yn, labels)
+        rows = [head1, head2]
+        doc_score = doc_scores[cid]
+        assert len(doc_value_arr) == len(doc_score)
+
+        for doc_idx, (pred_score, doc_values) in enumerate(zip(doc_score, doc_value_arr)):
+            doc_id, passage_idx = doc_info_d[doc_idx]
+            avg = average(doc_values)
+            row_float = [avg, doc_id, passage_idx, pred_score] + doc_values
+            row = lmap(lambda x: "{0}".format(x), row_float)
+            rows.append(row)
+        print_table(rows)
 
 
 if __name__ == "__main__":
