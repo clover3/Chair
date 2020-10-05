@@ -4,8 +4,9 @@ from typing import List, Dict, Tuple
 from arg.perspectives.collection_based_classifier import NamedNumber, predict_interface
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.pc_tokenizer import PCTokenizer
-from arg.perspectives.runner_uni.build_topic_lm import merge_lms, ClaimLM, get_log_odd
+from arg.perspectives.runner_uni.build_topic_lm import merge_lms, ClaimLM
 from list_lib import lmap
+from models.classic.lm_util import get_log_odd
 
 
 def get_lm_scorer(claim_lms: List[ClaimLM], alpha):

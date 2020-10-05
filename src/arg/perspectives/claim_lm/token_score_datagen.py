@@ -1,13 +1,14 @@
 from collections import Counter, OrderedDict
 from typing import List, NamedTuple, Iterable, Tuple
 
-from arg.perspectives.runner_uni.build_topic_lm import smooth, subtract, get_lm_log, ClaimLM
+from arg.perspectives.runner_uni.build_topic_lm import ClaimLM
 from arg.perspectives.select_paragraph_claim import remove_duplicate
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from datastore.interface import preload_man, load
 from datastore.table_names import BertTokenizedCluewebDoc
 from galagos.types import GalagoDocRankEntry
 from list_lib import lmap, foreach, flatten
+from models.classic.lm_util import get_lm_log, subtract, smooth
 from models.classic.stopword import load_stopwords_ex
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.data_gen.base import get_basic_input_feature

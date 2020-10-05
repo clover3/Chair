@@ -2,12 +2,13 @@ from collections import Counter
 from typing import List, Iterable
 
 from arg.perspectives.claim_lm.token_score_datagen import enum_paragraph_functor, get_target_labels
-from arg.perspectives.runner_uni.build_topic_lm import get_lm_log, ClaimLM, smooth, subtract
+from arg.perspectives.runner_uni.build_topic_lm import ClaimLM
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from datastore.interface import preload_man
 from datastore.table_names import BertTokenizedCluewebDoc
 from galagos.types import GalagoDocRankEntry
 from list_lib import lmap
+from models.classic.lm_util import get_lm_log, subtract, smooth
 from models.classic.stopword import load_stopwords_ex
 
 

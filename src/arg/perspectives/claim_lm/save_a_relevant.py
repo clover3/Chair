@@ -5,12 +5,13 @@ from arg.perspectives.claim_lm.passage_common import iterate_passages
 from arg.perspectives.claim_lm.show_docs_per_claim import preload_docs
 from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids, load_dev_claim_ids
 from arg.perspectives.pc_tokenizer import PCTokenizer
-from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms, merge_lms, get_lm_log, subtract, smooth
+from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms, merge_lms
 from base_type import FilePath
 from cache import save_to_pickle
 from galagos.parse import load_galago_ranked_list
 from galagos.types import GalagoDocRankEntry
 from list_lib import lmap, lfilter
+from models.classic.lm_util import get_lm_log, subtract, smooth
 from models.classic.stopword import load_stopwords_ex
 
 

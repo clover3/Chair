@@ -17,8 +17,11 @@ def main():
     train, val = split_7_3(claims)
 
     val_cids = {str(t['cId']) for t in val}
+
     qk_candidate: List[QKUnit] = load_qk_candidate_train()
     qk_candidate_val = list([qk for qk in qk_candidate if qk[0].query_id in val_cids])
+
+    print(qk_candidate_val[0][0])
 
     for q, kdp_list in qk_candidate_val[1:9]:
         job_id = request_kdp_eval(kdp_list)

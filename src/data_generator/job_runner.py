@@ -43,7 +43,7 @@ class JobRunner:
         job_id = mtm.pool_job()
         print("Job id : ", job_id)
         while job_id is not None:
-            worker.make_tfrecord(job_id)
+            worker.work(job_id)
             self.mark_as_done_job(job_id)
             job_id = mtm.pool_job()
             print("Job id : ", job_id)
@@ -58,7 +58,7 @@ class JobRunner:
 
     def run_one_job(self):
         worker = self.worker_factory(self.out_path)
-        worker.make_tfrecord(int(sys.argv[1]))
+        worker.work(int(sys.argv[1]))
 
 # Example Usage
 #

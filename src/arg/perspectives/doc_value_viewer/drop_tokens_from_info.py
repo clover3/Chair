@@ -7,8 +7,8 @@ from misc_lib import get_dir_files, exist_or_mkdir
 
 
 def main():
-    dir_path = os.path.join(job_man_dir, "argu_qck_datagen_validation_info")
-    out_dir_path = os.path.join(job_man_dir, "argu_qck_validation_light")
+    dir_path = os.path.join(job_man_dir, "qcknc_ex_val_info")
+    out_dir_path = os.path.join(job_man_dir, "qcknc_ex_val_info_light")
     exist_or_mkdir(out_dir_path)
     for file_path in get_dir_files(FilePath(dir_path)):
         print(file_path)

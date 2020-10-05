@@ -3,10 +3,11 @@ from typing import List, Tuple
 
 from arg.perspectives.load import get_perspective_dict
 from arg.perspectives.pc_tokenizer import PCTokenizer
-from arg.perspectives.runner_uni.build_topic_lm import tokens_to_freq, smooth_ex, ClaimLM
+from arg.perspectives.runner_uni.build_topic_lm import tokens_to_freq, ClaimLM
 from cache import load_from_pickle
 from list_lib import flatten, left
 from misc_lib import TimeEstimator
+from models.classic.lm_util import smooth_ex
 
 
 def passage_to_lm(tokenizer, claim, passages: List[Tuple[List[str], float]], alpha):

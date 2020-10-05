@@ -4,6 +4,7 @@ from typing import List, Dict, Tuple
 
 from arg.perspectives.doc_value_viewer.calculate_doc_score import calculate_score
 from arg.qck.doc_value_calculator import QCKOutEntry, logit_to_score_softmax, DocValueParts
+from arg.qck.prediction_reader import load_combine_info_jsons, qck_convert_map
 from cpath import output_path
 from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
@@ -13,11 +14,14 @@ from taskman_client.file_watching_job_runner import FileWatchingJobRunner
 def load_baseline() -> Dict[Tuple[str, str], float]:
     # 2. Load baseline scores
     tf_record_dir = os.environ["tf_record_dir"]
-    baseline_info_file_path = os.path.join(tf_record_dir, "baseline_ext.info")
-    info = pickle.load(open(baseline_info_file_path, "rb"))
+    #baseline_info_file_path = os.path.join(tf_record_dir, "baseline_ext.info")
+    #info = pickle.load(open(baseline_info_file_path, "rb"))
+    baseline_info_file_path = os.path.join(tf_record_dir, "baseline_info.json")
+    info = load_combine_info_jsons(baseline_info_file_path, qck_convert_map)
     out_dir = os.path.join(output_path, "cppnc_auto")
-    pred_path = os.path.join(out_dir, "baseline_ext.score")
-    predictions: List[Dict] = join_prediction_with_info(pred_path, info, ["logits"], False)
+    #pred_path = os.path.join(out_dir, "baseline_ext.score")
+    pred_path = os.path.join(out_dir, "val_ex_pred_new.score")
+    predictions: List[Dict] = join_prediction_with_info(pred_path, info, ["logits"], True)
     out_entries: List[QCKOutEntry] = lmap(QCKOutEntry.from_dict, predictions)
 
     baseline_d: Dict[Tuple[str, str], float] = {}

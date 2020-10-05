@@ -1,5 +1,4 @@
 import pickle
-import sys
 from collections import Counter
 from typing import List, Dict
 
@@ -8,8 +7,23 @@ from misc_lib import group_by, get_second
 from tab_print import print_table
 
 
-def main(dvp_pickle_path):
+def load_auto_payload():
+    all_dvp = []
+    for i in range(4, 13):
+        dvp_pickle_path = "output/cppnc_auto/{}.summary".format(i)
+        dvp: List[DocValueParts] = pickle.load(open(dvp_pickle_path, "rb"))
+        all_dvp.extend(dvp)
+    return all_dvp
+
+
+def load():
+    dvp_pickle_path = "output/cppnc_val_ex_score.summary"
     dvp: List[DocValueParts] = pickle.load(open(dvp_pickle_path, "rb"))
+    return dvp
+
+
+def main():
+    dvp: List[DocValueParts] = load()
 
     def get_qid(e: DocValueParts):
         return e.query.query_id
@@ -27,7 +41,6 @@ def main(dvp_pickle_path):
     rows = [head]
 
     rows2 = []
-
     for qid, entries in dvp_qid_grouped.items():
         # Q : How many kdp are useful?
         # Q : Does relevant matter?
@@ -35,7 +48,7 @@ def main(dvp_pickle_path):
         counter = Counter()
         doc_value = Counter()
         for kdp_id, entries2 in kdp_grouped.items():
-            doc_id, _  = kdp_id
+            doc_id, _ = kdp_id
             value_avg: float = sum([e.value for e in entries2])
             if value_avg > 1:
                 counter["good"] += 1
@@ -65,4 +78,4 @@ def main(dvp_pickle_path):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main()

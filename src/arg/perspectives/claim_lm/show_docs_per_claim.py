@@ -7,7 +7,7 @@ from arg.perspectives.clueweb_db import load_doc
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids, get_claim_perspective_id_dict
 from arg.perspectives.pc_tokenizer import PCTokenizer
-from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms, merge_lms, get_lm_log, subtract, smooth
+from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms, merge_lms
 from base_type import FilePath
 from cache import save_to_pickle
 from datastore.interface import preload_man
@@ -16,6 +16,7 @@ from galagos.parse import load_galago_ranked_list
 from galagos.types import GalagoDocRankEntry
 from list_lib import lmap, flatten, left, lfilter, right
 from misc_lib import average, two_digit_float
+from models.classic.lm_util import get_lm_log, subtract, smooth
 from models.classic.stopword import load_stopwords_ex
 from visualize.html_visual import HtmlVisualizer, Cell
 
