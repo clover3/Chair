@@ -127,7 +127,6 @@ def get_claim_perspective_id_dict2() -> Dict[int, List[int]]:
     return d
 
 
-
 def get_claim_perspective_label_dict() -> Dict[CPIDPair, int]:
     gold = get_claim_perspective_id_dict()
     d = defaultdict(int)

@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import NamedTuple, List, Tuple
 
 
@@ -99,3 +100,95 @@ class PayloadAsTokens(NamedTuple):
     text2: List[str]
     data_id: int
     is_correct: int
+
+
+def get_qk_pair_id(entry) -> Tuple[str, str]:
+    return entry['query'].query_id, "{}_{}".format(entry['kdp'].doc_id, entry['kdp'].passage_idx)
+
+
+def get_qc_pair_id(entry) -> Tuple[str, str]:
+    return entry['query'].query_id, entry['candidate'].id
+
+
+class FormatHandler(ABC):
+    @abstractmethod
+    def get_pair_id(self, entry):
+        pass
+
+    @abstractmethod
+    def get_mapping(self):
+        pass
+
+    @abstractmethod
+    def drop_kdp(self):
+        pass
+
+
+class QCKFormatHandler(FormatHandler):
+    def get_pair_id(self, entry):
+        return get_qc_pair_id(entry)
+
+    def get_mapping(self):
+        return qck_convert_map
+
+    def drop_kdp(self):
+        return True
+
+
+class QCFormatHandler(FormatHandler):
+    def get_pair_id(self, entry):
+        return get_qc_pair_id(entry)
+
+    def get_mapping(self):
+        return qc_convert_map
+
+    def drop_kdp(self):
+        return False
+
+
+class QKFormatHandler(FormatHandler):
+    def get_pair_id(self, entry):
+        return get_qk_pair_id(entry)
+
+    def get_mapping(self):
+        return qk_convert_map
+
+    def drop_kdp(self):
+        return False
+
+
+def get_format_handler(input_type):
+    if input_type == "qck":
+        return QCKFormatHandler()
+    elif input_type == "qc":
+        return QCFormatHandler()
+    elif input_type == "qk":
+        return QKFormatHandler()
+    else:
+        assert False
+
+
+qck_convert_map = {
+        'kdp': KDP,
+        'query': QCKQuery,
+        'candidate': QCKCandidate
+    }
+qk_convert_map = {
+        'kdp': KDP,
+        'query': QCKQuery,
+    }
+qc_convert_map = {
+        'query': QCKQuery,
+        'candidate': QCKCandidate,
+    }
+
+
+class QCKOutEntry(NamedTuple):
+    logits: List[float]
+    query: QCKQuery
+    candidate: QCKCandidate
+    kdp: KDP
+
+    @classmethod
+    def from_dict(cls, d):
+        return QCKOutEntry(d['logits'], d['query'], d['candidate'], d['kdp'])

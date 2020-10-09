@@ -7,7 +7,8 @@ from arg.perspectives.doc_value_viewer.show_doc_value2 import collect_score_per_
     get_score_from_entry, load_train_claim_d
 from arg.perspectives.load import get_claim_perspective_id_dict
 from arg.perspectives.ppnc.get_doc_value import load_baseline
-from arg.qck.prediction_reader import group_by_qid_cid, qck_convert_map, load_combine_info_jsons
+from arg.qck.decl import qck_convert_map
+from arg.qck.prediction_reader import group_by_qid_cid, load_combine_info_jsons
 from cpath import output_path
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
 from data_generator.tokenizer_wo_tf import get_tokenizer

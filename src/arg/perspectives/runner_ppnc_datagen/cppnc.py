@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     def functor(cid_to_passage) -> CPPNCGeneratorInterface:
         candidate_pers = dict(get_eval_candidate_as_pids("train"))
-        return cppnc_datagen.Generator(cid_to_passage, candidate_pers, False)
+        return cppnc_datagen.Generator(cid_to_passage, candidate_pers, True)
 
     start_generate_jobs_for_train_val(functor,
                                       cppnc_datagen.write_records,

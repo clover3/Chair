@@ -12,14 +12,21 @@ def flag_to_run_name(FLAGS):
 
 def report_number(r):
     try:
-        value = float(r[FLAGS.report_field])
+        field = FLAGS.report_field
+        if "," in field:
+            field_list = field.split(",")
+        else:
+            field_list = [field]
 
-        condition = None
-        if FLAGS.report_condition:
-            condition = FLAGS.report_condition
+        for field in field_list:
+            value = float(r[field])
 
-        proxy = get_task_manager_proxy()
-        proxy.report_number(FLAGS.run_name, value, condition, FLAGS.report_field)
+            condition = None
+            if FLAGS.report_condition:
+                condition = FLAGS.report_condition
+
+            proxy = get_task_manager_proxy()
+            proxy.report_number(FLAGS.run_name, value, condition, field)
     except Exception as e:
         print(e)
 

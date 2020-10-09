@@ -562,3 +562,73 @@ def input_fn_token_scoring(input_files,
         return format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
 
     return input_fn
+
+
+def format_dataset_no_shuffle(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads, repeat_for_eval=False):
+    if is_training:
+        d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
+        if flags.repeat_data:
+            d = d.repeat()
+
+        # `cycle_length` is the number of parallel files that get read.
+        cycle_length = 1
+        # `sloppy` mode means that the interleaving is not exact. This adds
+        # even more randomness to the training pipeline.
+        d = d.apply(
+            tf.data.experimental.parallel_interleave(
+                tf.data.TFRecordDataset,
+                sloppy=is_training,
+                cycle_length=cycle_length))
+        d = d.shuffle(buffer_size=10)
+    else:
+        d = tf.data.TFRecordDataset(input_files)
+
+        if repeat_for_eval:
+            d = d.repeat()
+
+        if flags.max_pred_steps:
+            n_predict = flags.eval_batch_size * flags.max_pred_steps
+            d = d.take(n_predict)
+
+        # Since we evaluate for a fixed number of steps we don't want to encounter
+        # out-of-range exceptions.
+        # d = d.repeat()
+    # We must `drop_remainder` on training because the TPU requires fixed
+    # size dimensions. For eval, we assume we are evaluating on the CPU or GPU
+    # and we *don't* want to drop the remainder, otherwise we wont cover
+    # every sample.
+    d = d.apply(
+        tf.data.experimental.map_and_batch(
+            lambda record: _decode_record(record, name_to_features),
+            batch_size=batch_size,
+            num_parallel_batches=num_cpu_threads,
+            drop_remainder=True))
+    return d
+
+
+def input_fn_builder_vector_ck(flags, config):
+    input_files = get_input_files_from_flags(flags)
+    show_input_files(input_files)
+    is_training = flags.do_train
+    num_cpu_threads = 4
+
+    num_window = config.num_window
+    max_sequence = config.max_sequence
+    num_hidden = config.hidden_size
+
+    vector_size = num_window * max_sequence * num_hidden
+    mask_size = num_window * max_sequence
+
+    def input_fn(params):
+        """The actual input function."""
+        batch_size = params["batch_size"]
+
+        name_to_features = dict({
+                "vectors": tf.io.FixedLenFeature([vector_size], tf.float32),
+                "valid_mask": tf.io.FixedLenFeature([mask_size], tf.int64),
+        })
+        name_to_features["label_ids"] = tf.io.FixedLenFeature([1], tf.int64)
+        name_to_features["data_id"] = tf.io.FixedLenFeature([1], tf.int64)
+        return format_dataset_no_shuffle(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+
+    return input_fn

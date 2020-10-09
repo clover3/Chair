@@ -5,7 +5,9 @@ import sys
 
 import scipy.special
 
-from arg.qck.prediction_reader import load_combine_info_jsons, qck_convert_map, qc_convert_map, qk_convert_map
+from arg.qck.decl import get_qk_pair_id, get_qc_pair_id, get_format_handler, qck_convert_map, qk_convert_map, \
+    qc_convert_map
+from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.qck.trec_helper import scrore_d_to_trec_style_predictions
 from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
@@ -33,18 +35,7 @@ def top_k_average(items):
 
 
 def summarize_score(info_dir, prediction_file, input_type, combine_strategy) -> Dict[Tuple[str, str], float]:
-    if input_type == "qck":
-        mapping = qck_convert_map
-        drop_kdp = True
-    elif input_type == "qc":
-        mapping = qc_convert_map
-        drop_kdp = False
-    elif input_type == "ck":
-        mapping = qk_convert_map
-        drop_kdp = True
-    else:
-        assert False
-
+    f_handler = get_format_handler(input_type)
     if combine_strategy == "top_k":
         print("using top k")
         combine_score = top_k_average
@@ -57,9 +48,9 @@ def summarize_score(info_dir, prediction_file, input_type, combine_strategy) -> 
     else:
         assert False
 
-    info = load_combine_info_jsons(info_dir, mapping, drop_kdp)
+    info = load_combine_info_jsons(info_dir, f_handler.get_mapping(), f_handler.drop_kdp())
     print("Info has {} entries".format(len(info)))
-    data: List[Dict] = join_prediction_with_info(prediction_file, info)
+    data: List[Dict] = join_prediction_with_info(prediction_file, info, ["data_id", "logits"])
 
     def logit_to_score_softmax(logit):
         return scipy.special.softmax(logit)[1]
@@ -67,10 +58,7 @@ def summarize_score(info_dir, prediction_file, input_type, combine_strategy) -> 
     def get_score(entry):
         return logit_to_score_softmax(entry['logits'])
 
-    def get_pair_id(entry):
-        return entry['query'].query_id, entry['candidate'].id
-
-    grouped: Dict[Tuple[str, str], List[Dict]] = group_by(data, get_pair_id)
+    grouped: Dict[Tuple[str, str], List[Dict]] = group_by(data, f_handler.get_pair_id)
     print("Group size:", len(grouped))
     out_d = {}
     for pair_id, items in grouped.items():
@@ -81,6 +69,24 @@ def summarize_score(info_dir, prediction_file, input_type, combine_strategy) -> 
     num_items_per_group = average(lmap(len, grouped.values()))
     print("Num items per group : ", num_items_per_group)
     return out_d
+
+
+def get_mapping_per_input_type(input_type):
+    if input_type == "qck":
+        mapping = qck_convert_map
+        group_fn = get_qc_pair_id
+        drop_kdp = True
+    elif input_type == "qc":
+        mapping = qc_convert_map
+        group_fn = get_qc_pair_id
+        drop_kdp = False
+    elif input_type == "qk":
+        mapping = qk_convert_map
+        group_fn = get_qk_pair_id
+        drop_kdp = True
+    else:
+        assert False
+    return drop_kdp, group_fn, mapping
 
 
 def save_to_common_path(pred_file_path, info_file_path, run_name, input_type, max_entry, combine_strategy):

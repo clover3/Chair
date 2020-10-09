@@ -3,9 +3,8 @@ import json
 import sys
 from typing import List, Iterable, Dict
 
-from arg.qck.decl import QKUnit
-from arg.qck.prediction_reader import load_combine_info_jsons, \
-    qk_convert_map
+from arg.qck.decl import QKUnit, qk_convert_map
+from arg.qck.prediction_reader import load_combine_info_jsons
 from cache import save_to_pickle
 from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap, lfilter
@@ -22,12 +21,6 @@ def get_regression_score(entry):
     return entry['logits'][0]
 
 
-def main():
-    args = parser.parse_args(sys.argv[1:])
-    r = extract_qk_unit(args.info_path, args.prediction_path, args.config_path)
-    save_to_pickle(list(r), args.save_name)
-
-
 def extract_qk_unit(info_path, pred_path, config_path) -> Iterable[QKUnit]:
     info = load_combine_info_jsons(info_path, qk_convert_map, False)
     predictions = join_prediction_with_info(pred_path, info)
@@ -38,7 +31,6 @@ def extract_qk_unit(info_path, pred_path, config_path) -> Iterable[QKUnit]:
 
     def is_good(entry):
         return get_regression_score(entry) > score_cut
-
 
     select_rate_list = []
     qk_units = []
@@ -60,6 +52,11 @@ def extract_qk_unit(info_path, pred_path, config_path) -> Iterable[QKUnit]:
     print("average select rate", average(select_rate_list))
     return qk_units
 
+
+def main():
+    args = parser.parse_args(sys.argv[1:])
+    r = extract_qk_unit(args.info_path, args.prediction_path, args.config_path)
+    save_to_pickle(list(r), args.save_name)
 
 
 if __name__ == "__main__":

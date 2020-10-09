@@ -3,6 +3,8 @@ import time
 
 from google.cloud import storage
 
+from google_wrap.get_storage_name import get_storage_name
+
 
 def wait_checkpoint(model_dir, step):
     target_path = get_model_path(model_dir, step)
@@ -30,7 +32,7 @@ def check_gsfile_exists(target_path):
     if "clovertpu" in target_path:
         print("WARNING, target path should not include the root storage name")
     client = storage.Client()
-    for blob in client.list_blobs("clovertpu", prefix=target_path):
+    for blob in client.list_blobs(get_storage_name(), prefix=target_path):
         print(blob.name)
         return True
     return False

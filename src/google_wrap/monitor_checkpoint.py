@@ -3,8 +3,8 @@ import time
 
 from google.cloud import storage
 
-
-#model.ckpt-1000.meta
+# model.ckpt-1000.meta
+from google_wrap.get_storage_name import get_storage_name
 
 
 def get_name_from_path(file_path):
@@ -103,7 +103,7 @@ def get_file_list(target_path):
             'id':blob.id
         }
         return d
-    info_list = list(map(fetch_info, client.list_blobs("clovertpu", prefix=target_path)))
+    info_list = list(map(fetch_info, client.list_blobs(get_storage_name(), prefix=target_path)))
     return info_list
 
 

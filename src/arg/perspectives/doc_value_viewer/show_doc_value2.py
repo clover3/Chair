@@ -6,8 +6,9 @@ from arg.perspectives.load import get_claims_from_ids, \
     get_claim_perspective_id_dict, \
     load_train_claim_ids
 from arg.perspectives.ppnc.get_doc_value import load_cppnc_score, load_baseline
+from arg.qck.decl import qk_convert_map
 from arg.qck.doc_value_calculator import doc_value
-from arg.qck.prediction_reader import qk_convert_map, load_combine_info_jsons
+from arg.qck.prediction_reader import load_combine_info_jsons
 from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap, left
 from misc_lib import group_by, average, bool_to_yn

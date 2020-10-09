@@ -1,12 +1,14 @@
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Tuple
 
 from arg.perspectives.basic_analysis import predict_by_elastic_search, predict_by_oracle_on_candidate
-from arg.perspectives.bm25_predict import predict_by_bm25, get_bm25_module
+from arg.perspectives.bm25_predict import predict_by_bm25, get_bm25_module, predict_by_bm25_from_candidate
 from arg.perspectives.claim_lm.lm_predict import predict_by_lm
 from arg.perspectives.claim_lm.passage_to_lm import get_train_passage_a_lms
 from arg.perspectives.cpid_def import CPID
-from arg.perspectives.evaluate import evaluate, evaluate_map
+from arg.perspectives.eval_helper import get_eval_candidates, claim_as_query, get_eval_candidates_l
+from arg.perspectives.evaluate import evaluate, evaluate_map, evaluate_recall
 from arg.perspectives.pc_para_predictor import load_cpid_resolute, predict_by_para_scorer
+from arg.perspectives.query_expansion.load_rm import get_expanded_query_text
 from arg.perspectives.relevance_based_predictor import predict_from_dict
 from arg.perspectives.reweight_predict import predict_by_reweighter
 from arg.perspectives.runner_uni.build_topic_lm import build_gold_claim_lm_train, build_baseline_lms, ClaimLM
@@ -83,6 +85,7 @@ def run_bm25():
     print(evaluate(pred))
 
 
+
 def run_gold_lm():
     claims, val = train_split()
     top_k = 5
@@ -114,7 +117,6 @@ def run_a_relevant_lm():
     print(evaluate_map(pred))
 
 
-
 def run_bm25_map():
     claims, val = train_split()
     top_k = 50
@@ -142,5 +144,21 @@ def run_reweight():
     print(evaluate(pred))
 
 
+def run_bm25_2():
+    claims, val = train_split()
+    top_k = 1000
+    candidate_dict: List[Tuple[int, List[int]]] = get_eval_candidates(claim_as_query(claims), top_k)
+    pred = predict_by_bm25_from_candidate(get_bm25_module(), claims, candidate_dict, top_k)
+    print(evaluate_recall(pred, True))
+
+
+def run_bm25_ex():
+    claims, val = train_split()
+    top_k = 100
+    candidate_dict = get_eval_candidates_l(get_expanded_query_text(claims, "train"))
+    pred = predict_by_bm25_from_candidate(get_bm25_module(), claims, candidate_dict, top_k)
+    print(evaluate_recall(pred, False))
+
+
 if __name__ == "__main__":
-    run_baseline_lm()
+    run_bm25_ex()

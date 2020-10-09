@@ -1,13 +1,12 @@
 import json
-import json
 import os
 import sys
 from typing import List, Dict, Tuple
 
 from arg.perspectives.eval_caches import get_eval_candidates_from_pickle
-from arg.perspectives.runner_qck.qck_common import get_qck_queries, get_qck_candidate_from_candidate_id
-from arg.qck.decl import QCKQuery, QCKCandidate
-from arg.qck.prediction_reader import load_combine_info_jsons, qk_convert_map
+from arg.perspectives.qck.qck_common import get_qck_queries, get_qck_candidate_from_candidate_id
+from arg.qck.decl import QCKQuery, QCKCandidate, qk_convert_map
+from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.qck.qk_summarize import collect_good_passages, QKOutEntry, qck_from_qk_results, \
     write_qck_as_tfrecord
 from base_type import FilePath

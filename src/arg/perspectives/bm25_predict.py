@@ -41,6 +41,38 @@ def predict_by_bm25(bm25_module,
     return r
 
 
+def predict_by_bm25_from_candidate(bm25_module,
+                                   claims,
+                                   candidate_dict: List[Tuple[int, List[int]]],
+                                   top_k) -> List[Tuple[int, List[Dict]]]:
+
+    cid_to_text: Dict[int, str] = claims_to_dict(claims)
+
+    def scorer(c_text, p_text) -> NamedNumber:
+        score = bm25_module.score(c_text, p_text)
+        return score
+
+    all_prediction_list: List[Tuple[int, List[Dict]]] = []
+    for cid, candidates in candidate_dict:
+        prediction_list: List[Dict] = []
+        claim_text = cid_to_text[cid]
+        for pid in candidates:
+            p_text = perspective_getter(pid)
+            p_entry = {
+                'cid': cid,
+                'pid': pid,
+                'claim_text': claim_text,
+                'perspective_text': p_text,
+                'rationale': "",
+                'score': scorer(claim_text, p_text),
+            }
+            prediction_list.append(p_entry)
+        prediction_list.sort(key=lambda x: x['score'], reverse=True)
+        prediction_list = prediction_list[:top_k]
+        all_prediction_list.append((cid, prediction_list))
+    return all_prediction_list
+
+
 def normalize_scores(score_list: List[Tuple[str, float]]) -> List[Tuple[str, float]]:
     if not score_list:
         return score_list

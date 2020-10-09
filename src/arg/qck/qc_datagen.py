@@ -3,12 +3,26 @@
 from collections import OrderedDict
 from typing import List, Iterable, Dict, Callable
 
-from arg.qck.decl import QCKQuery, QCKCandidate, QCInstance, PayloadAsTokens
-from arg.qck.encode_common import encode_two_inputs
+from arg.qck.decl import QCKQuery, QCKCandidate, QCInstance
 from arg.qck.qck_worker import InstanceGenerator
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import flatten, lmap
 from misc_lib import DataIDManager
+from tlm.data_gen.base import get_basic_input_feature
+from tlm.data_gen.bert_data_gen import create_int_feature
+
+
+def enc_to_feature(tokenizer, max_seq_length, inst: QCInstance) -> OrderedDict:
+    seg1 = tokenizer.tokenize(inst.query_text)
+    seg2 = tokenizer.tokenize(inst.candidate_text)
+
+    input_tokens = ["[CLS]"] + seg1 + ["[SEP]"] + seg2 + ["[SEP]"]
+    segment_ids = [0] * (len(seg1) + 2) + [1] * (len(seg2) + 1)
+
+    feature = get_basic_input_feature(tokenizer, max_seq_length, input_tokens, segment_ids)
+    feature["data_id"] = create_int_feature([int(inst.data_id)])
+    feature["label_ids"] = create_int_feature([int(inst.is_correct)])
+    return feature
 
 
 class QCInstanceGenerator(InstanceGenerator):
@@ -39,18 +53,6 @@ class QCInstanceGenerator(InstanceGenerator):
                 )
         return flatten(lmap(convert, q_list))
 
-    def _convert_sub_token(self, r: QCInstance) -> PayloadAsTokens:
-        tokenizer = self.tokenizer
-        tokens1: List[str] = tokenizer.tokenize(r.query_text)
-        tokens2: List[str] = tokenizer.tokenize(r.candidate_text)
-
-        return PayloadAsTokens(text1=tokens1,
-                               text2=tokens2,
-                               data_id=r.data_id,
-                               is_correct=r.is_correct,
-                               )
-
     def encode_fn(self, inst: QCInstance) -> OrderedDict:
-        inst_2 = self._convert_sub_token(inst)
-        return encode_two_inputs(self.max_seq_length, self.tokenizer, inst_2)
+        return enc_to_feature(self.tokenizer, self.max_seq_length, inst)
 

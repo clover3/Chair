@@ -6,12 +6,17 @@ import numpy as np
 
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
+from misc_lib import get_dir_files
 from tlm.token_utils import cells_from_tokens, float_aware_strize, cells_from_scores
 from visualize.html_visual import Cell
 
 
 def flatten_batches(data):
     keys = list(data[0].keys())
+    return flatten_batches_inner(data, keys)
+
+
+def flatten_batches_inner(data, keys):
     vectors = {}
     for e in data:
         for key in keys:
@@ -24,8 +29,8 @@ def flatten_batches(data):
 
 
 class EstimatorPredictionViewer:
-    def __init__(self, file_path):
-        self.vectors, self.keys, self.data_len = self.estimator_prediction_loader(file_path)
+    def __init__(self, file_path, fetch_data_list=None):
+        self.vectors, self.keys, self.data_len = self.estimator_prediction_loader(file_path, fetch_data_list)
         self.tokenizer = get_tokenizer()
         self.method_list = list([func for func in dir(EstimatorPredictionViewer)
                                  if callable(getattr(EstimatorPredictionViewer, func))])
@@ -84,11 +89,21 @@ class EstimatorPredictionViewer:
         return cells_from_scores(scores, hightlight)
 
     @staticmethod
-    def estimator_prediction_loader(p):
-        data = pickle.load(open(p, "rb"))
+    def estimator_prediction_loader(p, fetch_field_list=None):
+        if os.path.isdir(p):
+            data = []
+            for file_path in get_dir_files(p):
+                data.extend(pickle.load(open(file_path, "rb")))
+        else:
+            data = pickle.load(open(p, "rb"))
 
-        keys = list(data[0].keys())
-        vectors = flatten_batches(data)
+        if fetch_field_list is None:
+            keys = list(data[0].keys())
+            vectors = flatten_batches(data)
+        else:
+            keys = list([k for k in data[0].keys() if k in fetch_field_list])
+            vectors = flatten_batches_inner(data, fetch_field_list)
+
 
         any_key = keys[0]
         data_len = len(vectors[any_key])

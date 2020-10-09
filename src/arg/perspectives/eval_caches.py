@@ -12,6 +12,10 @@ def get_eval_candidates_from_pickle(split) -> List[Tuple[int, List[Dict]]]:
     return load_from_pickle("pc_candidates_{}".format(split))
 
 
+def get_eval_candidates_1k(split) -> List[Tuple[int, List[Dict]]]:
+    return load_from_pickle("pc_candidates_1000_{}".format(split))
+
+
 def predict_from_dict(score_d: Dict[CPIDPair, float],
                       candidates: List[Tuple[int, List[Dict]]],
                       top_k,

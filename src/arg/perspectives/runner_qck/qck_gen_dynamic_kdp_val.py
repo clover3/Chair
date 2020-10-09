@@ -3,7 +3,7 @@ from typing import List, Dict
 from arg.perspectives.eval_caches import get_extended_eval_candidate_as_qck
 from arg.perspectives.eval_helper_qck import get_is_correct_fn
 from arg.perspectives.load import load_claims_for_sub_split
-from arg.perspectives.runner_qck.qck_common import get_qck_queries
+from arg.perspectives.qck.qck_common import get_qck_queries
 from arg.qck.decl import QCKCandidate
 from arg.qck.dynamic_kdp.qck_generator import QCKGenDynamicKDP
 

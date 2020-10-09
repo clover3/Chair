@@ -40,7 +40,7 @@ def get_all_candidate(claims):
     return list(zip(claims, candidate))
 
 
-def get_eval_candidates(split):
+def get_eval_candidates(split, top_k=50):
     # split -> claims
     d_ids = load_claim_ids_for_split(split)
     claims: List[Dict] = get_claims_from_ids(d_ids)
@@ -50,7 +50,6 @@ def get_eval_candidates(split):
         cid = c["cId"]
         assert type(cid) == int
         claim_text = c["text"]
-        top_k = 50
         lucene_results = es_helper.get_perspective_from_pool(claim_text, top_k)
         candidate_list = []
         for rank, (_text, _pid, _score) in enumerate(lucene_results):
@@ -69,15 +68,6 @@ def get_eval_candidates(split):
     candidates: List[Tuple[int, List[Dict]]] = lmap(get_candidates, claims)
     return candidates
 
-
-def precache():
-    for split in splits:
-        c = get_eval_candidates(split)
-        save_to_pickle(c, "pc_candidates_{}".format(split))
-
-
-if __name__ == "__main__":
-    save_dev_candidate()
 
 
 def get_extended_eval_candidate(split) -> Dict[int, List[int]]:
@@ -133,3 +123,55 @@ def get_extended_eval_candidate(split) -> Dict[int, List[int]]:
     candidates: List[Tuple[int, List[int]]] = lmap(get_candidates, claims)
     return dict(candidates)
 
+
+def claim_as_query(claims):
+    l = []
+    for c in claims:
+        e = c['cId'], c['text']
+        l.append(e)
+    return l
+
+
+def get_eval_candidates_w_q_text(cid_and_q_text: List[Tuple[int, str]], top_k=50) -> List[Tuple[int, List[int]]]:
+    def get_candidates(e: Tuple[int, str]) -> Tuple[int, List[int]]:
+        cid, text = e
+        lucene_results = es_helper.get_perspective_from_pool(text, top_k)
+        candidate_list = []
+        for rank, (_text, _pid, _score) in enumerate(lucene_results):
+            assert type(_pid) == int
+            candidate_list.append(_pid)
+        return cid, candidate_list
+
+    candidates: List[Tuple[int, List[int]]] = lmap(get_candidates, cid_and_q_text)
+    return candidates
+
+
+def get_eval_candidates_l(cid_and_q_text: List[Tuple[int, List[str]]], top_k=50) -> List[Tuple[int, List[int]]]:
+    def get_candidates(e: Tuple[int, List[str]]) -> Tuple[int, List[int]]:
+        cid, text_list = e
+        candidate_list = set()
+        for text in text_list:
+            lucene_results = es_helper.get_perspective_from_pool(text, top_k)
+            for rank, (_text, _pid, _score) in enumerate(lucene_results):
+                candidate_list.add(_pid)
+        return cid, list(candidate_list)
+
+    candidates: List[Tuple[int, List[int]]] = lmap(get_candidates, cid_and_q_text)
+    return candidates
+
+
+def precache():
+    for split in splits:
+        c = get_eval_candidates(split)
+        save_to_pickle(c, "pc_candidates_{}".format(split))
+
+
+def precache1000():
+    top_k = 1000
+    for split in splits:
+        c = get_eval_candidates(split, top_k)
+        save_to_pickle(c, "pc_candidates_{}_{}".format(top_k, split))
+
+
+if __name__ == "__main__":
+    precache1000()

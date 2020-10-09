@@ -1,5 +1,5 @@
+from arg.perspectives.qck.qcknc_datagen import get_eval_candidates_as_qck, is_correct_factory
 from arg.perspectives.runner_qck.qcknc_common import start_generate_jobs_for_train
-from arg.perspectives.runner_qck.qcknc_datagen import get_eval_candidates_as_qck, is_correct_factory
 from arg.qck.qcknc_datagen import QCKInstanceGenerator
 
 

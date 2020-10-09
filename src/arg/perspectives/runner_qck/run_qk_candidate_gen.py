@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from arg.perspectives.runner_qck.qck_common import get_qck_queries
+from arg.perspectives.qck.qck_common import get_qck_queries
 from arg.qck.decl import QCKQuery, KDP, QKUnit
 from arg.qck.kd_candidate_gen import qk_candidate_gen
 from base_type import FilePath

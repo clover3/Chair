@@ -2,17 +2,18 @@ from typing import List, Dict, Tuple, NamedTuple
 
 import scipy.special
 
-from arg.qck.decl import QCKQuery, KDP, QCKCandidate
-from arg.qck.prediction_reader import qck_convert_map, load_combine_info_jsons
+from arg.qck.decl import QCKQuery, KDP, QCKCandidate, qck_convert_map, QCKOutEntry
+from arg.qck.prediction_reader import load_combine_info_jsons
 from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
 from misc_lib import group_by, get_first
 
 
-def load_and_group_predictions(info_path, pred_path):
+def load_and_group_predictions(info_path, pred_path) -> List[QCKOutEntry]:
     info = load_combine_info_jsons(info_path, qck_convert_map, False)
     predictions: List[Dict] = join_prediction_with_info(pred_path, info)
     out_entries: List[QCKOutEntry] = lmap(QCKOutEntry.from_dict, predictions)
+    return out_entries
 
 
 def doc_value(score, score_baseline, gold):
@@ -20,17 +21,6 @@ def doc_value(score, score_baseline, gold):
     error = gold - score
     improvement = abs(error_baseline) - abs(error)
     return improvement
-
-
-class QCKOutEntry(NamedTuple):
-    logits: List[float]
-    query: QCKQuery
-    candidate: QCKCandidate
-    kdp: KDP
-
-    @classmethod
-    def from_dict(cls, d):
-        return QCKOutEntry(d['logits'], d['query'], d['candidate'], d['kdp'])
 
 
 class DocValueParts(NamedTuple):
@@ -128,8 +118,8 @@ def doc_value_type(score: float, base_score: float, label: int):
 
 
 def get_doc_value_parts2(out_entries: List[QCKOutEntry],
-                        baseline_score_d: Dict[Tuple[str, str], float],
-                        gold: Dict[str, List[str]]) -> List[DocValueParts2]:
+                         baseline_score_d: Dict[Tuple[str, str], float],
+                         gold: Dict[str, List[str]]) -> List[DocValueParts2]:
 
     def get_qid(entry: QCKOutEntry):
         return entry.query.query_id

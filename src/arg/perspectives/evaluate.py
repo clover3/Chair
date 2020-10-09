@@ -56,6 +56,41 @@ def get_prec_recll(predicted_perspectives, gold_pids, debug):
     return prec, recall
 
 
+def get_modified_recall(predicted_perspectives, gold_pids, debug):
+    ## In this metrics, it is possible to get precision > 1, as some clusters shares same perspective
+    tp = 0
+    for prediction in predicted_perspectives:
+        pid = prediction['pid']
+        valid = False
+        for cluster in gold_pids:
+            if pid in cluster:
+                tp += 1
+                valid = True
+                break
+        if not valid:
+            correct_str = "N"
+        else:
+            correct_str = "Y"
+        if debug and False:
+            print(correct_str, prediction['score'], prediction['rationale'], pid, prediction['perspective_text'])
+    p_Id_list = list([p['pid'] for p in predicted_perspectives])
+    r_tp = 0
+    for cluster in gold_pids:
+        for pid in p_Id_list:
+            if pid in cluster:
+                r_tp += 1
+                break
+    if r_tp == 0:
+        for cluster in gold_pids:
+            print("-")
+            for pid in cluster:
+                print(pid, perspective_getter(pid))
+
+    prec = tp / len(predicted_perspectives) if len(predicted_perspectives) > 0 else 1
+    recall = r_tp / len(gold_pids) if len(gold_pids) > 0 else 1
+    return prec, recall
+
+
 def get_ap(predicted_perspectives, gold_pids, debug):
     ## In this metrics, it is possible to get precision > 1, as some clusters shares same perspective
     # if debug:
@@ -176,7 +211,32 @@ def evaluate(predictions, debug=True):
 
     return {
         'precision': avg_prec,
-        'recall' :avg_recall,
+        'recall' : avg_recall,
+        'f1': get_f1(avg_prec, avg_recall)
+    }
+
+
+def evaluate_recall(predictions, debug=True):
+    gold = get_claim_perspective_id_dict()
+    prec_list = []
+    recall_list = []
+    for c_Id, prediction_list in predictions:
+        gold_pids = gold[c_Id]
+        claim_text = prediction_list[0]['claim_text']
+        if debug:
+            print("Claim {}: ".format(c_Id), claim_text)
+        prec, recall = get_modified_recall(prediction_list, gold_pids, debug)
+        prec_list.append(prec)
+        recall_list.append(recall)
+
+    l = sum([1 for r in recall_list if r < 0.001])
+    print("zero recall : ", l)
+    avg_prec = average(prec_list)
+    avg_recall = average(recall_list)
+
+    return {
+        'precision': avg_prec,
+        'recall' : avg_recall,
         'f1': get_f1(avg_prec, avg_recall)
     }
 

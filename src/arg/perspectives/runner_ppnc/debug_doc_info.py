@@ -1,8 +1,8 @@
 import json
 import os
 
-from arg.qck.decl import KDP
-from arg.qck.prediction_reader import parse_info, qck_convert_map
+from arg.qck.decl import KDP, qck_convert_map
+from arg.qck.prediction_reader import parse_info
 from cpath import output_path
 from misc_lib import get_dir_files
 

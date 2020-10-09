@@ -1,7 +1,8 @@
 from typing import Dict, Tuple
 
 from arg.perspectives.types import DataID, CPIDPair
-from arg.qck.prediction_reader import parse_info_inner, qck_convert_map, qc_convert_map
+from arg.qck.decl import qck_convert_map, qc_convert_map
+from arg.qck.prediction_reader import parse_info_inner
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 
 

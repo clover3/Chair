@@ -4,10 +4,11 @@ import sys
 from typing import List, Dict, Tuple
 
 from arg.perspectives.doc_value_viewer.calculate_doc_score import load_labels
-from arg.qck.doc_value_calculator import QCKOutEntry, get_doc_value_parts2, \
+from arg.qck.decl import qck_convert_map, QCKOutEntry
+from arg.qck.doc_value_calculator import get_doc_value_parts2, \
     DocValueParts2
 from arg.qck.dynamic_kdp.score_summarizer import load_baseline
-from arg.qck.prediction_reader import qck_convert_map, load_combine_info_jsons
+from arg.qck.prediction_reader import load_combine_info_jsons
 from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
 

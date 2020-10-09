@@ -2,8 +2,8 @@ import argparse
 import sys
 from typing import List, Dict
 
-from arg.qck.prediction_reader import load_combine_info_jsons, \
-    qk_convert_map
+from arg.qck.decl import qk_convert_map
+from arg.qck.prediction_reader import load_combine_info_jsons
 from estimator_helper.output_reader import join_prediction_with_info
 from misc_lib import group_by
 from tab_print import print_table

@@ -25,9 +25,9 @@ def join_prediction_with_info(prediction_file,
                               str_data_id=True
                               ) -> List[Dict]:
     if fetch_field_list is None:
-        fetch_field_list = ["logits"]
+        fetch_field_list = ["logits", "data_id"]
     print("Reading pickle...")
-    data = EstimatorPredictionViewer(prediction_file)
+    data = EstimatorPredictionViewer(prediction_file, fetch_field_list)
     print("Num data ", data.data_len)
     seen_data_id = set()
     out = []

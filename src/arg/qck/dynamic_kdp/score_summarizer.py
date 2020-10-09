@@ -3,8 +3,9 @@ import pickle
 from typing import List, Dict, Tuple
 
 from arg.perspectives.doc_value_viewer.calculate_doc_score import calculate_score
-from arg.qck.doc_value_calculator import QCKOutEntry, logit_to_score_softmax, DocValueParts
-from arg.qck.prediction_reader import load_combine_info_jsons, qck_convert_map
+from arg.qck.decl import qck_convert_map, QCKOutEntry
+from arg.qck.doc_value_calculator import logit_to_score_softmax, DocValueParts
+from arg.qck.prediction_reader import load_combine_info_jsons
 from cpath import output_path
 from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
@@ -17,19 +18,25 @@ def load_baseline() -> Dict[Tuple[str, str], float]:
     #baseline_info_file_path = os.path.join(tf_record_dir, "baseline_ext.info")
     #info = pickle.load(open(baseline_info_file_path, "rb"))
     baseline_info_file_path = os.path.join(tf_record_dir, "baseline_info.json")
-    info = load_combine_info_jsons(baseline_info_file_path, qck_convert_map)
     out_dir = os.path.join(output_path, "cppnc_auto")
     #pred_path = os.path.join(out_dir, "baseline_ext.score")
     pred_path = os.path.join(out_dir, "val_ex_pred_new.score")
-    predictions: List[Dict] = join_prediction_with_info(pred_path, info, ["logits"], True)
-    out_entries: List[QCKOutEntry] = lmap(QCKOutEntry.from_dict, predictions)
+    is_info_from_pickle = True
 
+    baseline_d = load_baseline_score_d(baseline_info_file_path, pred_path, is_info_from_pickle)
+
+    return baseline_d
+
+
+def load_baseline_score_d(baseline_info_file_path, pred_path, is_info_from_pickle) -> Dict[Tuple[str, str], float] :
+    info = load_combine_info_jsons(baseline_info_file_path, qck_convert_map)
+    predictions: List[Dict] = join_prediction_with_info(pred_path, info, ["logits"], is_info_from_pickle)
+    out_entries: List[QCKOutEntry] = lmap(QCKOutEntry.from_dict, predictions)
     baseline_d: Dict[Tuple[str, str], float] = {}
     for e in out_entries:
         key = e.query.query_id, e.candidate.id
         score = logit_to_score_softmax(e.logits)
         baseline_d[key] = score
-
     return baseline_d
 
 
@@ -61,7 +68,3 @@ class ScoreSummarizer:
         summary_save_path = os.path.join(self.save_dir, "{}.summary".format(job_id))
         pickle.dump(doc_score_parts, open(summary_save_path, "wb"))
 
-
-if __name__ == "__main__":
-    worker = ScoreSummarizer()
-    worker.file_watch_daemon()

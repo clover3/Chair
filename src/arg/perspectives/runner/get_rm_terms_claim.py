@@ -25,8 +25,9 @@ def submit_rm_jobs(all_query, out_root):
 
 def work():
     claim_ids, split_name = (load_train_claim_ids(), "train")
+    print("Num claims in train : ", len(list(claim_ids)))
 
-
+    exit()
     def submit_jobs_inner(claim_ids, split_name):
         claims = get_claims_from_ids(claim_ids)
         queries = get_claims_query(claims)
