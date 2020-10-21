@@ -55,6 +55,11 @@ def load_test_claim_ids() -> Iterable[int]:
     return load_claim_ids_for_split('test')
 
 
+def get_all_claims():
+    claims = get_claims_from_ids(map(int, load_data_set_split()))
+    return claims
+
+
 def load_claim_ids_for_split(split) -> Iterable[int]:
     d = load_data_set_split()
     for c_id in d:
@@ -162,6 +167,7 @@ def show_claim_perspective_pair():
             print("Stance: ", stance_coarse)
             for pid in pids:
                 print("P: ", perspective[pid])
+
 
 
 

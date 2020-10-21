@@ -25,10 +25,10 @@ def get_prec_recll(predicted_perspectives, gold_pids, debug):
     tp = 0
     # if debug:
     #     print(gold_pids)
-    # for cluster in gold_pids:
-    #     print("-")
-    #     for pid in cluster:
-    #         print(pid, perspective_getter(pid))
+    for cluster in gold_pids:
+        print("-")
+        for pid in cluster:
+            print(pid, perspective_getter(pid))
     for prediction in predicted_perspectives:
         pid = prediction['pid']
         valid = False
@@ -71,7 +71,7 @@ def get_modified_recall(predicted_perspectives, gold_pids, debug):
             correct_str = "N"
         else:
             correct_str = "Y"
-        if debug and False:
+        if debug:
             print(correct_str, prediction['score'], prediction['rationale'], pid, prediction['perspective_text'])
     p_Id_list = list([p['pid'] for p in predicted_perspectives])
     r_tp = 0

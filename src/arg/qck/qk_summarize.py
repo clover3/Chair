@@ -38,7 +38,7 @@ def collect_good_passages(data_id_to_info: Dict[str, Dict],
     score_cut = config['score_cut']
     top_k = config['top_k']
     score_type = config['score_type']
-    fetch_field_list = ["logits", "input_ids"]
+    fetch_field_list = ["logits", "input_ids", "data_id"]
     data: List[Dict] = join_prediction_with_info(passage_score_path,
                                                  data_id_to_info,
                                                  fetch_field_list

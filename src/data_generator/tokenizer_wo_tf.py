@@ -592,3 +592,27 @@ class CachedTokenizer:
         tokens = self.tokenizer.tokenize(text)
         self.cache_tokenize[text] = tokens
         return tokens
+
+
+def get_word_level_location(tokenizer, input_ids):
+    tokens = tokenizer.convert_ids_to_tokens(input_ids)
+    intervals = []
+    start = 0
+    idx = 0
+    while idx < len(tokens):
+        token = tokens[idx]
+        if idx == 0:
+            pass
+        elif is_continuation(token):
+            pass
+        elif token == "[PAD]":
+            break
+        else:
+            end = idx
+            intervals.append((start, end))
+            start = idx
+        idx += 1
+    end = idx
+    if end > start:
+        intervals.append((start, end))
+    return intervals

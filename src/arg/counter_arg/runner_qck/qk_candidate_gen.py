@@ -13,14 +13,16 @@ from misc_lib import TimeEstimator
 def config1():
     return {
         'step_size': 300,
-        'window_size': 300
+        'window_size': 300,
+        'top_n': 10,
     }
 
 
 def config2():
     return {
         'step_size': 30,
-        'window_size': 300
+        'window_size': 300,
+        'top_n': 10,
     }
 
 
@@ -40,6 +42,7 @@ def generate(split):
 
 def get_candidates(q_res_path, split, config) -> List[QKUnit]:
     problems: List[ArguDataPoint] = load_problems(split)
+    top_n = config['top_n']
     print("{} problems".format(len(problems)))
 
     def problem_to_qckquery(problem: ArguDataPoint):
@@ -47,14 +50,14 @@ def get_candidates(q_res_path, split, config) -> List[QKUnit]:
 
     print("Making queries")
     queries: List[QCKQuery] = lmap(problem_to_qckquery, problems)
-    top_n = 10
-    woker = QKWorker(q_res_path, config, top_n)
+
+    worker = QKWorker(q_res_path, config, top_n)
     all_candidate = []
     ticker = TimeEstimator(len(queries))
     for q in queries:
         ticker.tick()
         try:
-            doc_part_list = woker.work(q)
+            doc_part_list = worker.work(q)
             e = q, doc_part_list
             all_candidate.append(e)
         except KeyError as e:

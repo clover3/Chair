@@ -3,10 +3,12 @@
 from typing import List
 
 #
-from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids, load_dev_claim_ids
+from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids, load_dev_claim_ids, \
+    load_claims_for_sub_split, d_n_claims_per_split
 from arg.perspectives.ppnc.resource import load_qk_candidate_train, load_qk_candidate_dev
 from arg.qck.decl import QKUnit
 from arg.qck.qck_worker import QCKWorker, InstanceGenerator
+from cache import load_from_pickle
 from data_generator.job_runner import JobRunner
 from epath import job_man_dir
 from misc_lib import split_7_3
@@ -113,3 +115,28 @@ def start_generate_jobs_for_dev(generator: InstanceGenerator,
     runner = JobRunner(job_man_dir, 138, name_prefix + "_dev", worker_factory)
     runner.start()
 
+
+def start_generate_jobs(generator: InstanceGenerator,
+                        subsplit,
+                        qk_candidate_name,
+                        name_prefix):
+    # claim ids split to train/val
+    print("Loading data ....")
+    claims = load_claims_for_sub_split(subsplit)
+
+    valid_cids = {str(t['cId']) for t in claims}
+    qk_candidate: List[QKUnit] = load_from_pickle(qk_candidate_name)
+    qk_candidate_val = list([qk for qk in qk_candidate if qk[0].query_id in valid_cids])
+
+    print("Generate instances :")
+    print("split: ", subsplit)
+    print("qk_candidate_name: ", qk_candidate_name)
+
+    def worker_factory(out_dir):
+        return QCKWorker(qk_candidate_val,
+                         generator,
+                         out_dir)
+
+    num_job = d_n_claims_per_split[subsplit]
+    runner = JobRunner(job_man_dir, num_job, name_prefix + "_" + subsplit, worker_factory)
+    runner.auto_runner()

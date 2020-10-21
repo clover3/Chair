@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Iterator
 
 from arg.perspectives import es_helper
 from arg.perspectives.bm25_predict import get_bm25_module
@@ -8,6 +8,7 @@ from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids, load_
     get_claim_perspective_id_dict2
 from arg.perspectives.pc_tokenizer import PCTokenizer
 from cache import save_to_pickle
+from evals.trec import TrecRankedListEntry
 from list_lib import lmap, left
 
 
@@ -40,7 +41,7 @@ def get_all_candidate(claims):
     return list(zip(claims, candidate))
 
 
-def get_eval_candidates(split, top_k=50):
+def get_eval_candidates(split, top_k=50) -> List[Tuple[int, List[Dict]]] :
     # split -> claims
     d_ids = load_claim_ids_for_split(split)
     claims: List[Dict] = get_claims_from_ids(d_ids)
@@ -171,6 +172,13 @@ def precache1000():
     for split in splits:
         c = get_eval_candidates(split, top_k)
         save_to_pickle(c, "pc_candidates_{}_{}".format(top_k, split))
+
+
+def prediction_to_trec_format(predictions: List[Tuple[int, List[Dict]]], run_name) -> Iterator[TrecRankedListEntry]:
+    for qid, entries in predictions:
+        for rank, e in enumerate(entries):
+            yield TrecRankedListEntry(str(qid), str(e['pid']), rank, e['score'], run_name)
+
 
 
 if __name__ == "__main__":

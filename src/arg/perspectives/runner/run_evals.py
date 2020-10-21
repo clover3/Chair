@@ -1,3 +1,4 @@
+import os
 from typing import Dict, List, Set, Tuple
 
 from arg.perspectives.basic_analysis import predict_by_elastic_search, predict_by_oracle_on_candidate
@@ -5,16 +6,20 @@ from arg.perspectives.bm25_predict import predict_by_bm25, get_bm25_module, pred
 from arg.perspectives.claim_lm.lm_predict import predict_by_lm
 from arg.perspectives.claim_lm.passage_to_lm import get_train_passage_a_lms
 from arg.perspectives.cpid_def import CPID
-from arg.perspectives.eval_helper import get_eval_candidates, claim_as_query, get_eval_candidates_l
+from arg.perspectives.eval_helper import claim_as_query, get_eval_candidates_l, \
+    prediction_to_trec_format, get_eval_candidates_w_q_text
 from arg.perspectives.evaluate import evaluate, evaluate_map, evaluate_recall
+from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids
 from arg.perspectives.pc_para_predictor import load_cpid_resolute, predict_by_para_scorer
-from arg.perspectives.query_expansion.load_rm import get_expanded_query_text
+from arg.perspectives.query.load_rm import get_expanded_query_text
 from arg.perspectives.relevance_based_predictor import predict_from_dict
 from arg.perspectives.reweight_predict import predict_by_reweighter
 from arg.perspectives.runner_uni.build_topic_lm import build_gold_claim_lm_train, build_baseline_lms, ClaimLM
 from arg.perspectives.split_helper import train_split
 from base_type import FileName
 from cache import load_from_pickle
+from cpath import output_path
+from evals.trec import write_trec_ranked_list_entry
 from list_lib import lmap, lfilter
 
 
@@ -50,7 +55,7 @@ def run_rel_scorer():
 
 def run_bert_baseline():
     claims, val = train_split()
-    top_k = 6
+    top_k = 50
     target = filter_avail(val)
     print("targets", len(target))
     pc_score_d = load_from_pickle("pc_bert_baseline_score_d_train")
@@ -147,9 +152,19 @@ def run_reweight():
 def run_bm25_2():
     claims, val = train_split()
     top_k = 1000
-    candidate_dict: List[Tuple[int, List[int]]] = get_eval_candidates(claim_as_query(claims), top_k)
+    candidate_dict: List[Tuple[int, List[int]]] = get_eval_candidates_w_q_text(claim_as_query(claims), top_k)
     pred = predict_by_bm25_from_candidate(get_bm25_module(), claims, candidate_dict, top_k)
     print(evaluate_recall(pred, True))
+
+
+def save_bm25_as_trec_format():
+    d_ids: List[int] = list(load_train_claim_ids())
+    claims = get_claims_from_ids(d_ids)
+    top_k = 200
+    candidate_dict: List[Tuple[int, List[int]]] = get_eval_candidates_w_q_text(claim_as_query(claims), top_k)
+    pred = predict_by_bm25_from_candidate(get_bm25_module(), claims, candidate_dict, top_k)
+    entries = prediction_to_trec_format(pred, "bm25")
+    write_trec_ranked_list_entry(entries, os.path.join(output_path, "ranked_list", "bm25.txt"))
 
 
 def run_bm25_ex():
@@ -157,8 +172,8 @@ def run_bm25_ex():
     top_k = 100
     candidate_dict = get_eval_candidates_l(get_expanded_query_text(claims, "train"))
     pred = predict_by_bm25_from_candidate(get_bm25_module(), claims, candidate_dict, top_k)
-    print(evaluate_recall(pred, False))
+    print(evaluate_recall(pred, True))
 
 
 if __name__ == "__main__":
-    run_bm25_ex()
+    run_bert_baseline()

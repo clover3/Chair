@@ -333,6 +333,7 @@ def apply_cotext_mask(info_vectors, use_context):
     info_vectors = info_vectors * tf.cast(tf.reshape(use_context, broadcast_shape), tf.float32)
     return info_vectors
 
+
 def exchange_return_context(batch_size, middle_output, window_size, num_window, use_context):
     middle_output_head = middle_output[:, :window_size, :]
     # Now re-distribute the context
@@ -346,6 +347,7 @@ def exchange_return_context(batch_size, middle_output, window_size, num_window, 
     middle_output_tail = tf.reshape(middle_output_tail, [batch_size * num_window, num_window, -1])
     input_to_upper = tf.concat([middle_output_head, middle_output_tail], axis=1)
     return input_to_upper
+
 
 def exchange_contexts(batch_size, lower_module_last_layer, num_window, use_context):
     window_vectors = lower_module_last_layer[:, -1, :]

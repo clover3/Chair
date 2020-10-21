@@ -2,7 +2,7 @@ working_path ="/mnt/nfs/work3/youngwookim/data/tlm_simple"
 from cache import *
 from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
-from galagos.basic import load_galago_judgement2
+from galagos.parse import load_galago_judgement2
 from misc_lib import TimeEstimator
 from sydney_manager import ReadyMarkTaskManager
 from tlm.two_seg_pretraining import write_predict_instance

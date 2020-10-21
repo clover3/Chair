@@ -111,6 +111,7 @@ def write_claim_perspective_pair_as_query():
     write_queries_to_files(n_query_per_file, out_dir, queries)
 
 
+
 if __name__ == "__main__":
     write_claim_queries_k0()
 

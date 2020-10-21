@@ -1,14 +1,18 @@
-from arg.perspectives.ppnc.qck_job_starter import start_generate_jobs_for_train_val
-from arg.qck.qknc_datagen import QKInstanceGenerator
 
+from arg.perspectives.ppnc.qck_job_starter import start_generate_jobs_for_dev
+from arg.qck.decl import KDP, QCKQuery
 # Make payload without any annotation
+from arg.qck.qk_regression_datagen import QKRegressionInstanceGenerator
+
 
 def main():
-    def is_correct(dummy_query, dummy_passage):
-        return 0
 
-    start_generate_jobs_for_train_val(QKInstanceGenerator(is_correct), "qknc")
+    def get_score(query: QCKQuery, passage: KDP):
+        return 0.01
+
+    start_generate_jobs_for_dev(QKRegressionInstanceGenerator(get_score), "qk_regression")
 
 
 if __name__ == "__main__":
     main()
+

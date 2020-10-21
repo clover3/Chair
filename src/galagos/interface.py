@@ -141,6 +141,8 @@ def send_queries_inner(index_path, num_result, queries, timeout) -> List[str]:
 
 def format_query_bm25(query_id: str,
                       tokens: List[str], k=0) -> DocQuery:
+
+    tokens = [t.replace(".", "") for t in tokens]
     q_str_inner = " ".join(["#bm25:K={}({})".format(k, t) for t in tokens])
     query_str = "#combine({})".format(q_str_inner)
     return DocQuery({

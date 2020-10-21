@@ -21,6 +21,7 @@ def get_lm_scorer(claim_lms: List[ClaimLM], alpha):
     return scorer
 
 
+
 def predict_by_lm(claim_lms: List[ClaimLM],
                   claims,
                   top_k) -> List[Tuple[str, List[Dict]]]:
@@ -36,8 +37,9 @@ def predict_by_lm(claim_lms: List[ClaimLM],
         p_text = perspective_getter(int(p_id))
         tokens = tokenizer.tokenize_stem(p_text)
         c_lm = claim_log_odds_dict[claim_id]
+        reason = " ".join(["{0} ({1:.2f})".format(t, c_lm[t]) for t in tokens])
         score = sum([c_lm[t] for t in tokens])
-        return NamedNumber(score, "")
+        return NamedNumber(score, reason)
 
     r = predict_interface(claims, top_k, scorer)
     return r

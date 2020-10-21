@@ -47,3 +47,11 @@ def get_log_odd(topic_lm, bg_lm, alpha):
     log_bg_lm = get_lm_log(bg_lm)
     log_odd: Counter = subtract(log_topic_lm, log_bg_lm)
     return log_odd
+
+
+
+def get_log_odd2(topic_lm: Counter, bg_lm: Counter, alpha: float):
+    log_topic_lm: Counter = get_lm_log(smooth(topic_lm, bg_lm, alpha))
+    log_bg_lm: Counter = get_lm_log(bg_lm)
+    log_odd: Counter = subtract(log_topic_lm, log_bg_lm)
+    return log_odd

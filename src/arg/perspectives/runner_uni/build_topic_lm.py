@@ -2,14 +2,14 @@ from collections import Counter
 from typing import List, NamedTuple
 
 from arg.perspectives.evaluate import perspective_getter
-from arg.perspectives.load import get_claim_perspective_id_dict
+from arg.perspectives.load import get_claim_perspective_id_dict, load_claims_for_sub_split
 from arg.perspectives.pc_tokenizer import PCTokenizer
 from arg.perspectives.split_helper import train_split
 from list_lib import lmap, foreach, left
 from models.classic.lm_util import get_lm_log, subtract, least_common, smooth
 
 
-def merge_lms(counter_list):
+def merge_lms(counter_list: List[Counter]) -> Counter:
     n = len(counter_list)
     output = Counter()
     for counter in counter_list:
@@ -31,6 +31,11 @@ def build_gold_claim_lm_train() -> List[ClaimLM]:
     return build_gold_lms(claims)
 
 
+def build_gold_lms_for_split(sub_split) -> List[ClaimLM]:
+    claims = load_claims_for_sub_split(sub_split)
+    return build_gold_lms(claims)
+
+
 def tokens_to_freq(tokens):
     output = Counter(tokens)
     if not tokens:
@@ -45,7 +50,7 @@ def build_gold_lms(claims):
     gold = get_claim_perspective_id_dict()
     tokenizer = PCTokenizer()
 
-    def get_cluster_lm(cluster: List[int]):
+    def get_cluster_lm(cluster: List[int]) -> Counter:
         p_text_list: List[str] = lmap(perspective_getter, cluster)
         tokens_list: List[List[str]] = lmap(tokenizer.tokenize_stem, p_text_list)
         counter_list = lmap(tokens_to_freq, tokens_list)
@@ -54,8 +59,8 @@ def build_gold_lms(claims):
 
     def get_claim_lm(claim):
         cid = claim["cId"]
-        counter_list = lmap(get_cluster_lm, gold[cid])
-        counter = merge_lms(counter_list)
+        counter_list: List[Counter] = lmap(get_cluster_lm, gold[cid])
+        counter: Counter = merge_lms(counter_list)
         return ClaimLM(cid, claim['text'], counter)
 
     claim_lms = lmap(get_claim_lm, claims)

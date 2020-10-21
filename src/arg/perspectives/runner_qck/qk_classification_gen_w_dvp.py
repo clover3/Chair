@@ -22,8 +22,8 @@ def main():
         return bool(dvp_to_correctness_dict[key])
 
     do_all_jobs(QKInstanceGenerator(is_correct),
-                                qk_candidate_name,
-                                job_prefix, "val")
+                                    qk_candidate_name,
+                                    job_prefix, "val")
 
 
 if __name__ == "__main__":

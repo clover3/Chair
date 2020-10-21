@@ -1,7 +1,7 @@
 import os
 
 from arg.perspectives.load import load_train_claim_ids, load_dev_claim_ids, get_claims_from_ids
-from arg.perspectives.query_gen import get_claims_query
+from arg.perspectives.query.query_gen import get_claims_query
 from cpath import project_root
 from galagos.query_to_all_clueweb_disk import get_rm_terms
 from misc_lib import exist_or_mkdir
