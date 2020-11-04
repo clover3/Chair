@@ -2,7 +2,7 @@ import os
 import random
 import shutil
 import time
-from collections import Counter
+from collections import Counter, OrderedDict
 from time import gmtime, strftime
 from typing import Iterable, TypeVar, Callable, Dict, List
 
@@ -501,3 +501,19 @@ class DataIDManager:
 
 def bool_to_yn(label):
     return "Y" if label else "N"
+
+
+def unique_list(l):
+    return list(OrderedDict.fromkeys(l))
+
+
+def get_duplicate_list(l):
+    s = set()
+    duplicate_indices = []
+    for idx, e in enumerate(l):
+        if e in s:
+            duplicate_indices.append(idx)
+        else:
+            s.add(e)
+
+    return duplicate_indices

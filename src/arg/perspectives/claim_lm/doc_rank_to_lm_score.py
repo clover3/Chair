@@ -4,13 +4,13 @@ from arg.perspectives.claim_lm.show_docs_per_claim import preload_docs
 from arg.perspectives.clueweb_db import load_doc
 from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids
 from arg.perspectives.pc_tokenizer import PCTokenizer
-from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms, merge_lms
+from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms
 from base_type import FilePath
 from galagos.parse import load_galago_ranked_list
 from galagos.types import GalagoDocRankEntry
 from list_lib import lmap
 from misc_lib import average
-from models.classic.lm_util import get_lm_log, smooth, subtract
+from models.classic.lm_util import get_lm_log, smooth, subtract, merge_lms
 from models.classic.stopword import load_stopwords_ex
 from tab_print import print_table
 

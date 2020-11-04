@@ -76,13 +76,20 @@ def main():
     metric_fn = get_metric_fn(metric)
 
     score_per_query_list = []
+    not_found = 0
     for query_id in ranked_list:
         q_ranked_list = ranked_list[query_id]
 
-        gold_list = qrels[query_id]
-        true_gold = list([doc_id for doc_id, score in gold_list if score > 0])
-        score_per_query = metric_fn(q_ranked_list, true_gold)
-        score_per_query_list.append(score_per_query)
+        try:
+            gold_list = qrels[query_id]
+            true_gold = list([doc_id for doc_id, score in gold_list if score > 0])
+            score_per_query = metric_fn(q_ranked_list, true_gold)
+            score_per_query_list.append(score_per_query)
+        except KeyError as e:
+            not_found += 1
+
+    if not_found:
+        print("{} of {} queires not found".format(not_found, len(ranked_list)))
 
     score = average(score_per_query_list)
     print("{}\t{}".format(metric, score))

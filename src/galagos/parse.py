@@ -1,7 +1,7 @@
 import json
 import string
 from collections import Counter
-from typing import Iterator, Dict, List, Tuple
+from typing import Iterator, Dict, List, Tuple, Iterable
 
 from galagos.types import GalagoDocRankEntry, GalagoPassageRankEntry, Query, RankedListDict
 from list_lib import flatten, right
@@ -225,3 +225,12 @@ def write_ranked_list_from_s(ranked_list_dict: RankedListDict, out_path):
             line = "{} Q0 {} {} {} galago\n".format(q_id, entry.doc_id, entry.rank, entry.score)
             f.write(line)
     f.close()
+
+
+def get_doc_ids_from_ranked_list_path(q_res_path):
+    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    rank_entries: Iterable[GalagoDocRankEntry] = flatten(ranked_list.values())
+    doc_ids = [e.doc_id for e in rank_entries]
+    doc_ids_unique = set(doc_ids)
+    return doc_ids_unique
+

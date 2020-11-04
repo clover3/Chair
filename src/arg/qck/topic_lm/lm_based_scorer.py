@@ -3,10 +3,9 @@ from collections import Counter
 from typing import List, Tuple
 
 from arg.perspectives.pc_tokenizer import PCTokenizer
-from arg.perspectives.runner_uni.build_topic_lm import merge_lms
 from arg.qck.token_scoring.decl import ScoreVector, TokenScore
 from list_lib import right
-from models.classic.lm_util import get_log_odd2
+from models.classic.lm_util import get_log_odd2, merge_lms
 
 
 class ScorerInterface(ABC):

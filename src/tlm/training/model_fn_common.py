@@ -44,7 +44,7 @@ def log_var_assignments(tvars, initialized_variable_names, initialized_variable_
     if num_init_vars == len(tvars):
         tf_logging.info("All variables initialized")
     elif num_init_vars == 0:
-        tf_logging.info("No variables initialized")
+        tf_logging.info("[WARNING] No variables initialized")
     else:
         log_var_assignments_one_by_one(tvars, initialized_variable_names, initialized_variable_names2)
     tf_logging.info("Total parameters : %d" % get_param_num())

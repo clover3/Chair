@@ -60,6 +60,10 @@ def get_all_claims():
     return claims
 
 
+def get_all_claim_d() -> Dict[int, str]:
+    return claims_to_dict(get_all_claims())
+
+
 def load_claim_ids_for_split(split) -> Iterable[int]:
     d = load_data_set_split()
     for c_id in d:
@@ -79,19 +83,22 @@ def load_claims_for_sub_split(sub_split) -> List[Dict]:
             return val
         else:
             assert False
-
     else:
-        split = sub_split
-        ids = load_claim_ids_for_split(split)
-        return get_claims_from_ids(ids)
+        d_ids: Iterable[int] = load_claim_ids_for_split(sub_split)
+        claims = get_claims_from_ids(d_ids)
+        return claims
 
 
-d_n_claims_per_split = {
+d_n_claims_per_subsplit = {
         'train': 378,
         'val': 162,
         'dev': 138
     }
 
+d_n_claims_per_split2 = {
+        'train': 541,
+        'dev': 139
+    }
 
 def claims_to_dict(claims) -> Dict[int, str]:
     d = {}

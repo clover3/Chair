@@ -68,13 +68,13 @@ def iterate_docs(q_res: List[GalagoDocRankEntry], top_n: int) -> Iterable[Knowle
     return unique_docs
 
 
-def iterate_document_parts(docs: Iterable[KnowledgeDocument], window_size, step_size) -> List[KnowledgeDocumentPart]:
+def iterate_document_parts(docs: Iterable[KnowledgeDocument], window_size, step_size, max_per_doc=999) -> List[KnowledgeDocumentPart]:
     # knowledge document parts list
     kdp_list: List[KnowledgeDocumentPart] = []
     for doc in docs:
         idx = 0
         passage_idx = 0
-        while idx < len(doc.tokens):
+        while idx < len(doc.tokens) and passage_idx < max_per_doc:
             tokens = doc.tokens[idx:idx + window_size]
             kdp = KnowledgeDocumentPart(doc.doc_id, passage_idx, idx, tokens)
             kdp_list.append(kdp)

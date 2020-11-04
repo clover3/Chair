@@ -134,7 +134,7 @@ def model_fn_classification(bert_config, train_config, model_class, special_flag
         if override_prediction_fn is not None:
             predictions = override_prediction_fn(predictions, model)
 
-        useful_inputs = ["data_id", "input_ids2"]
+        useful_inputs = ["data_id", "input_ids2", "data_ids"]
         for input_name in useful_inputs:
             if input_name in features:
                 predictions[input_name] = features[input_name]

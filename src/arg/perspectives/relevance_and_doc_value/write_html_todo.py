@@ -33,8 +33,9 @@ def main():
     for query, k_list in load_qk():
         claim_id = query.query_id
         claim_text = query.text
-        for k in k_list[:10]:
-            doc_id = k.doc_id
+
+        doc_ids = set([k.doc_id for k in k_list])
+        for doc_id in list(doc_ids)[:10]:
             url = os.path.join(output_path, "pc_docs_html", doc_id + ".html")
             a = "<a href=\"{}\">url</a>".format(url)
             #tab_print(data_id, claim_id, doc_id)

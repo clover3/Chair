@@ -1,5 +1,6 @@
 import copy
 from collections import Counter
+from typing import List
 
 import math
 
@@ -55,3 +56,22 @@ def get_log_odd2(topic_lm: Counter, bg_lm: Counter, alpha: float):
     log_bg_lm: Counter = get_lm_log(bg_lm)
     log_odd: Counter = subtract(log_topic_lm, log_bg_lm)
     return log_odd
+
+
+def merge_lms(counter_list: List[Counter]) -> Counter:
+    n = len(counter_list)
+    output = Counter()
+    for counter in counter_list:
+        for k, v in counter.items():
+            output[k] += v/n
+    return output
+
+
+def tokens_to_freq(tokens):
+    output = Counter(tokens)
+    if not tokens:
+        return output
+
+    for k, v in output.items():
+        output[k] = v / len(tokens)
+    return output

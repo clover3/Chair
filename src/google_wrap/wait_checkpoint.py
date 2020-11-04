@@ -4,14 +4,12 @@ import time
 from google.cloud import storage
 
 from google_wrap.get_storage_name import get_storage_name
+from google_wrap.monitor_checkpoint import get_file_list, is_valid_checkpoint
 
 
 def wait_checkpoint(model_dir, step):
     target_path = get_model_path(model_dir, step)
-    wait_gsfile(target_path)
-
-
-def wait_gsfile(target_path):
+    print("Target path : ", target_path)
     found = check_gsfile_exists(target_path)
     acc_sleep_time = 0
     sleep_interval = 60
@@ -19,7 +17,9 @@ def wait_gsfile(target_path):
         acc_sleep_time += sleep_interval
         print("\r Sleeping {} mins".format(int(acc_sleep_time / 60)), end="")
         time.sleep(sleep_interval)
-        found = check_gsfile_exists(target_path)
+        if check_gsfile_exists(target_path):
+            info_list = get_file_list(model_dir)
+            found = is_valid_checkpoint(target_path, info_list)
 
 
 def get_model_path(model_dir, step):

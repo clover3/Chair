@@ -3,12 +3,11 @@ import sys
 from collections import defaultdict
 from typing import Dict, Tuple, List
 
-import scipy.special
-
 from arg.perspectives.types import CPIDPair
 from cpath import output_path
 from estimator_helper.output_reader import load_combine_info_jsons
 from misc_lib import exist_or_mkdir
+from scipy_aux import logit_to_score_softmax
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 from visualize.html_visual import HtmlVisualizer
 
@@ -54,13 +53,6 @@ def show(all_info):
 
         if cnt > 10000:
             break
-
-
-
-
-
-def logit_to_score_softmax(logit):
-    return scipy.special.softmax(logit)[1]
 
 
 def main():

@@ -30,13 +30,13 @@ def generate_for_all_split():
     for split in splits[1:]:
         generate(split)
 
+
 #aa
 def generate(split):
     print("Generate for ", split)
     q_res_path = FilePath("/mnt/nfs/work3/youngwookim/data/counter_arg/q_res/{}_all.txt".format(split))
     candidate = get_candidates(q_res_path, split, config1())
     print("Num candidate : {}", len(candidate))
-
     save_to_pickle(candidate, "ca_qk_candidate_{}".format(split))
 
 

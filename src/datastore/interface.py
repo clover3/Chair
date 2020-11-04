@@ -84,6 +84,7 @@ def load(table_name, key):
         raise KeyError()
 
 
+
 def load_all(table_name):
     table_class = table_class_by_name[table_name]
     q_res_itr = session.query(table_class).all()
@@ -108,6 +109,17 @@ def load_multiple(table_name, keys, unpickle=False):
     except NoResultFound as e:
         raise KeyError()
     return out_d
+
+
+def load_multiple_divided(table_name, keys, unpickle=False):
+    idx = 0
+    step = 1000
+    items = []
+    while idx < len(keys):
+        print(idx)
+        items.extend(load_multiple(table_name, keys[idx:idx+step], unpickle))
+        idx += step
+    return items
 
 
 def get_existing_keys(table_name, keys):
@@ -189,6 +201,13 @@ class PreloadMan:
             self.data_d[table_name][key] = pickle.loads(value)
 
         self.not_found_d[table_name].update(not_found_list)
+
+    def preload_divided(self, table_name, keys, step=1000):
+        idx = 0
+        while idx < len(keys):
+            print(idx, idx+step)
+            self.preload(table_name, keys[idx:idx+step])
+            idx += step
 
     def do_empty(self):
         self.data_d = {}

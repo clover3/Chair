@@ -6,7 +6,7 @@ from misc_lib import get_dir_files
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 
 
-def load_combine_info_jsons(dir_path) -> Dict:
+def load_combine_info_jsons(dir_path, silent=False) -> Dict:
     if os.path.isdir(dir_path):
         d = {}
         for file_path in get_dir_files(dir_path):
@@ -15,25 +15,30 @@ def load_combine_info_jsons(dir_path) -> Dict:
                 d.update(j)
     else:
         d = json.load(open(dir_path, "r"))
-    print("{} items loaded".format(len(d.keys())))
+    if not silent:
+        print("{} items loaded".format(len(d.keys())))
     return d
 
 
 def join_prediction_with_info(prediction_file,
                               info: Dict[str, Any],
                               fetch_field_list=None,
-                              str_data_id=True
+                              str_data_id=True,
+                              s_data_id="data_id",
+                              silent=False,
                               ) -> List[Dict]:
     if fetch_field_list is None:
-        fetch_field_list = ["logits", "data_id"]
-    print("Reading pickle...")
+        fetch_field_list = ["logits", s_data_id]
+    if not silent:
+        print("Reading pickle...")
     data = EstimatorPredictionViewer(prediction_file, fetch_field_list)
-    print("Num data ", data.data_len)
+    if not silent:
+        print("Num data ", data.data_len)
     seen_data_id = set()
     out = []
     not_found_cnt = 0
     for entry in data:
-        data_id = entry.get_vector("data_id")[0]
+        data_id = entry.get_vector(s_data_id)[0]
         try:
             if str_data_id:
                 k_data_id = str(data_id)

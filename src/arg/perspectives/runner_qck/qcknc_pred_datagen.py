@@ -1,6 +1,6 @@
 from typing import List
 
-from arg.perspectives.load import load_claims_for_sub_split, d_n_claims_per_split
+from arg.perspectives.load import load_claims_for_sub_split, d_n_claims_per_subsplit
 from arg.perspectives.qck.qcknc_datagen import get_eval_candidates_as_qck, is_correct_factory
 from arg.qck.decl import QKUnit
 from arg.qck.qck_worker import InstanceGenerator, QCKWorker
@@ -15,7 +15,7 @@ def run_jobs_with_qk_candidate(generator: InstanceGenerator,
                                qk_candidate_name,
                                name_prefix):
 
-    n_claims_per_split = d_n_claims_per_split[sub_split]
+    n_claims_per_split = d_n_claims_per_subsplit[sub_split]
     print("Loading data ....")
 
     claims = load_claims_for_sub_split(sub_split)

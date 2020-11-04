@@ -3,12 +3,13 @@ from typing import List, Dict
 
 from arg.perspectives.claim_lm.token_score_datagen import get_generator, Record, write_records
 from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids
-from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms, merge_lms
+from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms
 from base_type import FilePath
 from galagos.parse import load_galago_ranked_list
 from galagos.types import GalagoDocRankEntry
 from list_lib import lmap
 from misc_lib import exist_or_mkdir
+from models.classic.lm_util import merge_lms
 
 env_data_dir = os.environ["DATA_DIR"]
 
