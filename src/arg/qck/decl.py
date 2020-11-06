@@ -157,6 +157,17 @@ class QKFormatHandler(FormatHandler):
         return False
 
 
+class QCKLFormatHandler(FormatHandler):
+    def get_pair_id(self, entry):
+        return get_qc_pair_id(entry)
+
+    def get_mapping(self):
+        return qckl_convert_map
+
+    def drop_kdp(self):
+        return False
+
+
 def get_format_handler(input_type):
     if input_type == "qck":
         return QCKFormatHandler()
@@ -164,6 +175,8 @@ def get_format_handler(input_type):
         return QCFormatHandler()
     elif input_type == "qk":
         return QKFormatHandler()
+    elif input_type == "qckl":
+        return QCKLFormatHandler()
     else:
         assert False
 
@@ -182,6 +195,18 @@ qc_convert_map = {
         'candidate': QCKCandidate,
     }
 
+
+def parse_kdp_list(*tuple):
+    l = list(tuple)
+    return list([KDP(*kdp) for kdp in l])
+
+
+
+qckl_convert_map = {
+        'kdp_list': parse_kdp_list,
+        'query': QCKQuery,
+        'candidate': QCKCandidate
+    }
 
 class QCKOutEntry(NamedTuple):
     logits: List[float]

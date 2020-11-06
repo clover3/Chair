@@ -247,7 +247,7 @@ def model_fn_pointwise_ranking(model_config, train_config, model_class, special_
             predictions = {
                 "q_input_ids": q_input_ids,
                 "d_input_ids": d_input_ids,
-                "score": logits
+                "logits": logits
             }
 
             useful_inputs = ["data_id", "input_ids2", "data_ids"]

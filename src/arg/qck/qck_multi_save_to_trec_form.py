@@ -3,9 +3,7 @@ import os
 import sys
 from typing import List, Dict, Tuple
 
-import scipy.special
-
-from arg.qck.decl import get_qk_pair_id, get_qc_pair_id, get_format_handler, qck_convert_map, qk_convert_map, \
+from arg.qck.decl import get_qk_pair_id, get_qc_pair_id, qck_convert_map, qk_convert_map, \
     qc_convert_map
 from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.qck.trec_helper import scrore_d_to_trec_style_predictions
@@ -22,48 +20,22 @@ def top_k_average(items):
     return average(items[:k])
 
 
-def summarize_score(info_dir,
-                    prediction_file,
-                    input_type,
-                    combine_strategy,
-                    score_type) -> Dict[Tuple[str, str], float]:
-    f_handler = get_format_handler(input_type)
-    if combine_strategy == "top_k":
-        print("using top k")
-        combine_score = top_k_average
-    elif combine_strategy == "avg":
-        combine_score = average
-        print("using avg")
-    elif combine_strategy == "max":
-        print("using max")
-        combine_score = max
-    else:
-        assert False
 
-    info = load_combine_info_jsons(info_dir, f_handler.get_mapping(), f_handler.drop_kdp())
+def summarize_score(info_dir, prediction_file) -> Dict[Tuple[str, str], float]:
+    info = load_combine_info_jsons(info_dir, qckl_convert_map, False)
     print("Info has {} entries".format(len(info)))
-
-    key_logit = "logits"
-    key_logit = "score"
-    data: List[Dict] = join_prediction_with_info(prediction_file, info, ["data_id", key_logit])
-
-    def logit_to_score_softmax(logit):
-        return scipy.special.softmax(logit)[1]
+    data: List[Dict] = join_prediction_with_info(prediction_file, info, ["data_id", "logits"])
 
     def get_score(entry):
-        if score_type == "softmax":
-            return logit_to_score_softmax(entry['logits'])
-        elif score_type == "raw":
-            return entry[key_logit][0]
-        else:
-            assert False
+        return entry['logits']
 
-    grouped: Dict[Tuple[str, str], List[Dict]] = group_by(data, f_handler.get_pair_id)
+    grouped: Dict[Tuple[str, str], List[Dict]] = group_by(data, get_qc_pair_id)
     print("Group size:", len(grouped))
     out_d = {}
     for pair_id, items in grouped.items():
         scores = lmap(get_score, items)
-        final_score = combine_score(scores)
+        assert len(scores) == 1
+        final_score = scores[0]
         out_d[pair_id] = final_score
 
     num_items_per_group = average(lmap(len, grouped.values()))
@@ -84,18 +56,14 @@ def get_mapping_per_input_type(input_type):
         mapping = qk_convert_map
         group_fn = get_qk_pair_id
         drop_kdp = True
-    elif input_type == "qckl":
-        mapping = qck_convert_map
-        group_fn = get_qc_pair_id
-        drop_kdp = False
     else:
         assert False
     return drop_kdp, group_fn, mapping
 
 
-def save_to_common_path(pred_file_path, info_file_path, run_name, input_type, max_entry, combine_strategy, score_type):
+def save_to_common_path(pred_file_path, info_file_path, run_name, max_entry):
     print("Reading from :", pred_file_path)
-    score_d = summarize_score(info_file_path, pred_file_path, input_type, combine_strategy, score_type)
+    score_d = summarize_score(info_file_path, pred_file_path)
     ranked_list = scrore_d_to_trec_style_predictions(score_d, run_name, max_entry)
 
     save_dir = os.path.join(output_path, "ranked_list")
@@ -112,6 +80,5 @@ if __name__ == "__main__":
                         run_config["run_name"],
                         run_config["input_type"],
                         run_config["max_entry"],
-                        run_config["combine_strategy"],
-                        run_config["score_type"]
+                        run_config["combine_strategy"]
     )
