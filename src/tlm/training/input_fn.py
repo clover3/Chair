@@ -151,6 +151,47 @@ def input_fn_builder_cppnc_multi_evidence(flags):
     return input_fn
 
 
+
+def input_fn_builder_dot_product_ck(flags, max_sent_length, total_doc_length):
+    input_files = get_input_files_from_flags(flags)
+    show_input_files(input_files)
+    is_training = flags.do_train
+    num_cpu_threads = 4
+
+    def input_fn(params):
+        """The actual input function."""
+        batch_size = params["batch_size"]
+
+        name_to_features = dict({
+                "q_input_ids": tf.io.FixedLenFeature([max_sent_length], tf.int64),
+                "q_input_masks": tf.io.FixedLenFeature([max_sent_length], tf.int64),
+                "c_input_ids": tf.io.FixedLenFeature([max_sent_length], tf.int64),
+                "c_input_masks": tf.io.FixedLenFeature([max_sent_length], tf.int64),
+                "d_input_ids": tf.io.FixedLenFeature([total_doc_length], tf.int64),
+                "d_input_masks": tf.io.FixedLenFeature([total_doc_length], tf.int64),
+                "label_ids": tf.io.FixedLenFeature([1], tf.int64),
+                "data_id": tf.io.FixedLenFeature([1], tf.int64),
+        })
+        dataset = format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+        ds_renamed = dataset.map(lambda dataset: {
+            'q_input_ids': dataset['c_input_ids'],
+            'q_input_mask': dataset['c_input_masks'],
+            'd_input_ids': dataset['d_input_ids'],
+            'd_input_mask': dataset['d_input_masks'],
+            'label_ids': dataset['label_ids'],
+            'data_id': dataset['data_id'],
+        })
+
+        return ds_renamed
+
+
+    return input_fn
+
+
+
+
+
+
 def input_fn_builder_cppnc_triple(flags):
     input_files = get_input_files_from_flags(flags)
     show_input_files(input_files)

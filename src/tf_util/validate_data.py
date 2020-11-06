@@ -1,8 +1,9 @@
 import os
 import sys
 
-import tensorflow as tf
+from tf_v2_support import tf1
 
+tf = tf1
 
 def validate_data(fn):
     keys = None
@@ -37,6 +38,7 @@ def validate_dir(dir_path, idx_range):
             try:
                 validate_data(fn)
             except Exception as e:
+                print(e)
                 corrupt_list.append(i)
 
         else:

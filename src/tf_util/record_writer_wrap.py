@@ -30,17 +30,18 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-
 def write_records_w_encode_fn(output_path,
                               encode: Callable[[A], OrderedDict],
                               records: Iterable[A],
                               n_items=0
                               ):
-    writer = RecordWriterWrap(output_path)
+    writer = None
     features_list: Iterable[OrderedDict] = map(encode, records)
     if n_items > 0:
         ticker = TimeEstimator(n_items)
     for e in features_list:
+        if writer is None:
+            writer = RecordWriterWrap(output_path)
         writer.write_feature(e)
         if n_items > 0:
             ticker.tick()

@@ -78,6 +78,7 @@ def start_generate_jobs_for_sub_split(generator: InstanceGenerator,
     runner = JobRunner(job_man_dir, num_jobs, name_prefix + "_" + sub_split, worker_factory)
     runner.auto_runner()
 
+
 def do_all_jobs(generator: InstanceGenerator,
                                     qk_candidate_name,
                                       name_prefix,
