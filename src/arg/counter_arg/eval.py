@@ -1,6 +1,6 @@
 import enum
 from collections import Counter
-from typing import List, Iterable, Callable, Dict, Tuple
+from typing import List, Iterable, Callable, Dict, Tuple, NamedTuple
 
 from arg.counter_arg import es
 from arg.counter_arg.data_loader import load_labeled_data
@@ -20,6 +20,7 @@ class EvalCondition(enum.Enum):
     SameThemeArguments = 3
     EntirePortalCounters = 4
     EntirePortalArguments = 5
+    SameDebateClassification = 6
 
 
 def get_eval_payload(split) -> List[Passage]:
@@ -49,6 +50,19 @@ def eval_correctness(predictions: List[ArguDataID], gold_labels: List[ArguDataPo
     return correctness
 
 
+class ParsedID(NamedTuple):
+    split: str
+    theme: str
+    debate_name: str
+    stance: str
+    sub_name: str
+
+    @classmethod
+    def from_str(cls, source_id:ArguDataID):
+        split, theme, debate_name, stance, sub_name = source_id.id.split("/")
+        return ParsedID(split, theme, debate_name, stance, sub_name)
+
+
 def retrieve_candidate(p: Passage, split, condition: EvalCondition, top_k=100) -> List[ArguDataID]:
     r = []
 
@@ -74,6 +88,8 @@ def retrieve_candidate(p: Passage, split, condition: EvalCondition, top_k=100) -
         elif condition == EvalCondition.EntirePortalCounters:
             if "counter" not in sub_name2:
                 return False
+        elif condition == EvalCondition.SameDebateClassification:
+            return True
         return True
 
     text = p.text

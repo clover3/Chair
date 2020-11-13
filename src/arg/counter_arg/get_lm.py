@@ -1,7 +1,7 @@
 from typing import List, Dict, Tuple
 
 from arg.counter_arg.eval import EvalCondition
-from arg.counter_arg.qck_datagen import load_base_resource
+from arg.counter_arg.qck_datagen_prepare import load_base_resource
 from arg.qck.decl import QCKCandidate
 
 

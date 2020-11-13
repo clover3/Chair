@@ -1,12 +1,10 @@
 import os
 import sys
 
-import tensorflow as tf
-
 from taskman_client.task_proxy import get_task_proxy
 
 
-def main(_):
+def main():
     if 'uuid' in os.environ:
         uuid_var = os.environ['uuid']
     else:
@@ -16,5 +14,6 @@ def main(_):
     print(proxy.uuid_var)
     proxy.task_start(run_name)
 
+
 if __name__ == "__main__":
-    tf.compat.v1.app.run()
+    main()

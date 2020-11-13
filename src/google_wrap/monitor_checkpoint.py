@@ -36,14 +36,15 @@ def check_new_checkpoint(known_checkpoint, new_files):
 
 def is_valid_checkpoint(checkpoint_name, info_list):
     all_names = list([get_name_from_path(info['name']) for info in info_list])
+    print("checkpoint_name", checkpoint_name)
+    print('all_names', all_names)
     if not (checkpoint_name + ".meta" in all_names and checkpoint_name + ".index" in all_names):
         return False
 
     for name in all_names:
         if name.startswith(checkpoint_name + ".data"):
             return True
-        else:
-            return False
+    return False
 
 
 def watch_dir(model_dir):

@@ -1,13 +1,16 @@
-from cache import load_from_pickle
+import pickle
+import sys
+
 from datastore.tool import commit_buffer_to_db_batch
 
 
 def run():
-    for i in range(0, 2316):
+    prefix = sys.argv[1]
+    num_items = int(sys.argv[2])
+    for i in range(0, num_items):
         try:
-            print(i)
-            name = "ca_docs.jsonl_{}".format(i)
-            payload_saver = load_from_pickle(name)
+            path = prefix + "_{}.pickle".format(i)
+            payload_saver = pickle.load(open(path, "rb"))
             commit_buffer_to_db_batch(payload_saver.buffer)
         except FileNotFoundError as e:
             print(e)

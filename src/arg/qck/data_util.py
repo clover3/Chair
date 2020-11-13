@@ -1,8 +1,8 @@
+import json
 from collections import OrderedDict
 from typing import List, Iterable, Tuple
 
 from arg.qck.decl import QCInstance, QCKQuery, QCKCandidate
-from cache import save_to_pickle
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import DataIDManager
 from tf_util.record_writer_wrap import write_records_w_encode_fn
@@ -36,7 +36,7 @@ def write_qc_records(output_path, qc_records):
         return encode(tokenizer, max_seq_length, inst)
 
     write_records_w_encode_fn(output_path, encode_fn, instances)
-    save_to_pickle(data_id_man.id_to_info, output_path + ".info")
+    json.dump(data_id_man.id_to_info, open(output_path + ".info", "w"))
 
 
 def collect_info_transform(data: Iterable[Tuple[QCKQuery, QCKCandidate, bool]], data_id_man: DataIDManager) \

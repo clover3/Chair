@@ -4,7 +4,7 @@ from collections import OrderedDict
 from typing import List, Iterable, Dict, Tuple
 
 from arg.qck.decl import QCKQuery, KDP, QKUnit, QCKInstance, \
-    QCKCandidate, PayloadAsTokens
+    QCKCandidate, PayloadAsTokens, get_light_qckquery, get_light_qckcandidate, get_light_kdp
 from arg.qck.encode_common import encode_two_inputs
 from arg.qck.qck_worker import InstanceGenerator
 from data_generator.tokenizer_wo_tf import get_tokenizer, tokenize_from_tokens
@@ -25,25 +25,30 @@ class QCKInstanceGenerator(InstanceGenerator):
     def generate(self,
                  kc_candidate: Iterable[QKUnit],
                  data_id_manager: DataIDManager,
-               ) -> Iterable[QCKInstance]:
+               ) -> Iterable[PayloadAsTokens]:
 
-        def convert(pair: Tuple[QCKQuery, List[KDP]]) -> Iterable[QCKInstance]:
+        def convert(pair: Tuple[QCKQuery, List[KDP]]) -> Iterable[PayloadAsTokens]:
             query, passages = pair
+            tokenizer = self.tokenizer
+            q_tokens: List[str] = tokenizer.tokenize(query.text)
             candidates = self.candidates_dict[query.query_id]
             for c in candidates:
+                c_tokens: List[str] = tokenizer.tokenize(c.text)
                 for passage in passages:
                     info = {
-                                'query': query,
-                                'candidate': c,
-                                'kdp': passage
+                                'query': get_light_qckquery(query),
+                                'candidate': get_light_qckcandidate(c),
+                                'kdp': get_light_kdp(passage)
                             }
-                    yield QCKInstance(
-                        query.text,
-                        c.text,
-                        passage.tokens,
-                        data_id_manager.assign(info),
-                        self._is_correct(query, c)
+                    passage_subtokens = tokenize_from_tokens(tokenizer, passage.tokens)
+                    inst = PayloadAsTokens(
+                        passage=passage_subtokens,
+                        text1=q_tokens,
+                        text2=c_tokens,
+                        data_id=data_id_manager.assign(info),
+                        is_correct=self._is_correct(query, c)
                     )
+                    yield inst
 
         return flatten(lmap(convert, kc_candidate))
 
@@ -60,7 +65,6 @@ class QCKInstanceGenerator(InstanceGenerator):
                                is_correct=r.is_correct,
                                )
 
-    def encode_fn(self, inst: QCKInstance) -> OrderedDict:
-        inst_2 = self._convert_sub_token(inst)
-        return encode_two_inputs(self.max_seq_length, self.tokenizer, inst_2)
+    def encode_fn(self, inst: PayloadAsTokens) -> OrderedDict:
+        return encode_two_inputs(self.max_seq_length, self.tokenizer, inst)
 

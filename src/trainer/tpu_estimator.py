@@ -32,6 +32,7 @@ def run_estimator(model_fn, input_fn, host_call=None):
     if FLAGS.use_tpu and FLAGS.tpu_name:
         tpu_cluster_resolver = tf.distribute.cluster_resolver.TPUClusterResolver(
             FLAGS.tpu_name, zone=FLAGS.tpu_zone, project=FLAGS.gcp_project)
+    print("FLAGS.save_checkpoints_steps", FLAGS.save_checkpoints_steps)
     config = tf.compat.v1.ConfigProto(allow_soft_placement=False,)
     is_per_host = tf.compat.v1.estimator.tpu.InputPipelineConfig.PER_HOST_V2
     run_config = tf.compat.v1.estimator.tpu.RunConfig(

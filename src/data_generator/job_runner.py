@@ -20,7 +20,7 @@ class WorkerInterface(ABC):
 
 class JobRunner:
     # worker_factory : gets output_path to as argument, returns object
-    def __init__(self, working_path, max_job, job_name, worker_factory):
+    def __init__(self, working_path: object, max_job: object, job_name: object, worker_factory: object) -> object:
         self.max_job = max_job
         self.working_path = working_path
         self.mark_path = os.path.join(working_path, job_name + "_mark")

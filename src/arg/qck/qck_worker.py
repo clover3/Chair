@@ -6,7 +6,7 @@ from typing import List, Iterable, Tuple, Any
 
 from arg.qck.decl import QCKQuery, KDP, QKUnit
 from data_generator.job_runner import WorkerInterface
-from misc_lib import DataIDManager, exist_or_mkdir
+from misc_lib import DataIDManager, exist_or_mkdir, tprint
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 
 
@@ -35,14 +35,18 @@ class QCKWorker(WorkerInterface):
         base = job_id * max_data_per_job
         data_id_manager = DataIDManager(base, base + max_data_per_job)
         todo = self.qk_candidate[job_id:job_id + 1]
+        tprint("Generating instances")
         insts: List = self.generator.generate(todo, data_id_manager)
-        print("{} instances".format(len(insts)))
+        tprint("{} instances".format(len(insts)))
         save_path = os.path.join(self.out_dir, str(job_id))
+        tprint("Writing")
         write_records_w_encode_fn(save_path, self.generator.encode_fn, insts)
+        tprint("writing done")
 
         info_dir = self.out_dir + "_info"
         exist_or_mkdir(info_dir)
         info_path = os.path.join(info_dir, str(job_id) + ".info")
         json.dump(data_id_manager.id_to_info, open(info_path, "w"))
+
 
 

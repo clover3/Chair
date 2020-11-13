@@ -37,7 +37,22 @@ def get_p_at_k(k):
     return fn
 
 
+def get_ap(ranked_list: List[TrecRankedListEntry], true_gold: List[str]):
+    num_pred = 0
+    n_tp = 0
+    prec_list = []
+    for e in ranked_list:
+        num_pred += 1
+        if e.doc_id in true_gold:
+            n_tp += 1
 
+            prec = n_tp / num_pred
+            prec_list.append(prec)
+
+    while len(prec_list) < len(true_gold):
+        prec_list.append(0)
+
+    return average(prec_list)
 
 
 def get_is_metric_at_k(metric_prefix):
@@ -57,14 +72,16 @@ def get_is_metric_at_k(metric_prefix):
 def get_metric_fn(input_text):
     is_recall_at_k = get_is_metric_at_k("R")
     is_precision_at_k = get_is_metric_at_k("P")
+
     k = is_recall_at_k(input_text)
     if k:
         return get_recall_at_k(k)
     k = is_precision_at_k(input_text)
-
     if k:
         return get_p_at_k(k)
 
+    if input_text == "MAP":
+        return get_ap
     assert False
 
 

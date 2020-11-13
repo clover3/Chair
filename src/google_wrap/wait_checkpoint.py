@@ -7,24 +7,26 @@ from google_wrap.get_storage_name import get_storage_name
 from google_wrap.monitor_checkpoint import get_file_list, is_valid_checkpoint
 
 
-def wait_checkpoint(model_dir, step):
-    target_path = get_model_path(model_dir, step)
-    print("Target path : ", target_path)
-    found = check_gsfile_exists(target_path)
+def wait_checkpoint(model_dir_name, step):
+    model_dir_path = "training/model/" + model_dir_name
+    model_name = "model.ckpt-{}".format(step)
+
+    def check():
+        print('model_dir', model_dir_path)
+        info_list = get_file_list(model_dir_path)
+        found = is_valid_checkpoint(model_name , info_list)
+        return found
+    print("model_name  : ", model_name)
+    found = check()
     acc_sleep_time = 0
     sleep_interval = 60
     while not found:
         acc_sleep_time += sleep_interval
         print("\r Sleeping {} mins".format(int(acc_sleep_time / 60)), end="")
         time.sleep(sleep_interval)
-        if check_gsfile_exists(target_path):
-            info_list = get_file_list(model_dir)
-            found = is_valid_checkpoint(target_path, info_list)
+        found = check()
 
-
-def get_model_path(model_dir, step):
-    model_dir_path = "training/model/" + model_dir
-    target_path = model_dir_path + "/model.ckpt-{}".format(step)
+    target_path = model_dir_path + model_name
     return target_path
 
 

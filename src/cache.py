@@ -1,4 +1,5 @@
 import os
+from pickle import UnpicklingError
 
 from cpath import cache_path, data_path
 
@@ -6,8 +7,13 @@ from cpath import cache_path, data_path
 def load_from_pickle(name):
     pickle_name = "{}.pickle".format(name)
     path = os.path.join(cache_path, pickle_name)
-    return pickle.load(open(path, "rb"))
+    try:
+        obj = pickle.load(open(path, "rb"))
+    except UnpicklingError:
+        print("pickle name:", name)
+        raise
 
+    return obj
 
 def save_to_pickle(obj, name: str):
     assert type(name) == str

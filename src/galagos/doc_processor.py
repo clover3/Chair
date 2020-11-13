@@ -36,6 +36,7 @@ def process_jsonl(line_itr, tokenize_fn, buffered_saver, num_insts=0):
             # remove boilderplate
             parse_doc_and_save(buffered_saver, doc_id, html, tokenize_fn)
         except Exception as e:
+            print("Exception at parse_doc_and_save")
             print(e)
 
     return buffered_saver
@@ -45,6 +46,7 @@ def parse_doc_and_save(buffered_saver, doc_id, html, tokenize_fn):
     buffered_saver.save(RawCluewebDoc, doc_id, html)
     extractor = Extractor(extractor='ArticleExtractor', html=html)
     core_text = extractor.getText()
+    core_text = str(core_text)
     # write boilerplate removed data as jsonl
     buffered_saver.save(CleanedCluewebDoc, doc_id, html)
     # tokenize the docs

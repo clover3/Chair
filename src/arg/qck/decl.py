@@ -201,6 +201,18 @@ def parse_kdp_list(*tuple):
     return list([KDP(*kdp) for kdp in l])
 
 
+def get_light_qckquery(query: QCKQuery):
+    return QCKQuery(query.query_id, "")
+
+
+def get_light_qckcandidate(c: QCKCandidate):
+    return QCKCandidate(c.id, "")
+
+
+def get_light_kdp(k: KnowledgeDocumentPart):
+    return KnowledgeDocumentPart(k.doc_id, k.passage_idx, k.start_location, [])
+
+
 
 qckl_convert_map = {
         'kdp_list': parse_kdp_list,

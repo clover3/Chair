@@ -45,6 +45,8 @@ def write_records_w_encode_fn(output_path,
         writer.write_feature(e)
         if n_items > 0:
             ticker.tick()
-    writer.close()
+
+    if writer is not None:
+        writer.close()
 
 

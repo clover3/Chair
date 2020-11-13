@@ -4,6 +4,7 @@ from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging, MuteEnqueueFilter
 from tlm.model.base import BertModel
 from tlm.model.dot_product_model import model_fn_pointwise_ranking
+from tlm.model.projected_max_pooling import ProjectedMaxPooling
 from tlm.model_cnfig import JsonConfig
 from tlm.training.input_fn import input_fn_builder_dot_product_ck
 from tlm.training.train_config import TrainConfigEx
@@ -21,8 +22,15 @@ def main(_):
     input_fn = input_fn_builder_dot_product_ck(FLAGS, config.max_sent_length, total_doc_length)
     special_flags = FLAGS.special_flags.split(",")
     special_flags.append("feed_features")
+    modeling = FLAGS.modeling
+    if modeling is None:
+        model_class = BertModel
+    elif modeling == "pmp":
+        model_class = ProjectedMaxPooling
+    else:
+        assert False
 
-    model_fn = model_fn_pointwise_ranking(config, train_config, BertModel, special_flags)
+    model_fn = model_fn_pointwise_ranking(config, train_config, model_class, special_flags)
     if FLAGS.do_predict:
         tf_logging.addFilter(MuteEnqueueFilter())
 
