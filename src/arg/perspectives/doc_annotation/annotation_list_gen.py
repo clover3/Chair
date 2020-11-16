@@ -4,29 +4,11 @@ from typing import List, Dict
 
 from arg.perspectives.load import claims_to_dict, get_all_claims
 from cpath import output_path
-from datastore.interface import load_multiple
-from datastore.table_names import TokenizedCluewebDoc
+from datastore.clueweb_helper import remove_duplicate
 from exec_lib import run_func_with_config
 from galagos.parse import load_galago_ranked_list
 from galagos.types import GalagoDocRankEntry
-from list_lib import lmap
-from misc_lib import get_duplicate_list
 from visualize.html_visual import Cell, HtmlVisualizer
-
-
-def doc_hash(doc: List[str]):
-    if doc is None:
-        return " "
-    else:
-        return " ".join(doc)
-
-
-def remove_duplicate(doc_id_list: List[str]) -> List[str]:
-    docs_d: Dict[str, List[str]] = load_multiple(TokenizedCluewebDoc, doc_id_list, True)
-    hashes = lmap(doc_hash, [docs_d[doc_id] if doc_id in docs_d else None for doc_id in doc_id_list])
-    duplicate_indice = get_duplicate_list(hashes)
-    non_duplicate = list([doc_id_list[i] for i in range(len(doc_id_list)) if i not in duplicate_indice])
-    return non_duplicate
 
 
 def main(config):
