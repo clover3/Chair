@@ -2,7 +2,7 @@ import json
 from collections import OrderedDict
 from typing import List, Iterable, Tuple
 
-from arg.qck.decl import QCInstance, QCKQuery, QCKCandidate
+from arg.qck.decl import QCInstance, QCKQuery, QCKCandidate, get_light_qckquery, get_light_qckcandidate
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import DataIDManager
 from tf_util.record_writer_wrap import write_records_w_encode_fn
@@ -43,7 +43,7 @@ def collect_info_transform(data: Iterable[Tuple[QCKQuery, QCKCandidate, bool]], 
         -> Iterable[QCInstance]:
     for query, candidate, is_correct in data:
         info = {
-            'query': query,
-            'candidate': candidate
+            'query': get_light_qckquery(query),
+            'candidate': get_light_qckcandidate(candidate)
         }
         yield QCInstance(query.text, candidate.text, data_id_man.assign(info), int(is_correct))
