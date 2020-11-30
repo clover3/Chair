@@ -4,7 +4,7 @@ import shutil
 import time
 from collections import Counter, OrderedDict
 from time import gmtime, strftime
-from typing import Iterable, TypeVar, Callable, Dict, List
+from typing import Iterable, TypeVar, Callable, Dict, List, Any
 
 from base_type import FilePath
 
@@ -485,17 +485,21 @@ def timed_lmap(func: Callable[[A], B],
 
 
 class DataIDManager:
-    def __init__(self, base=0, max_count=10000):
+    def __init__(self, base=0, max_idx=-1):
         self.id_to_info = {}
         self.id_idx = base
-        self.max_count = max_count
+        max_count = 10000
+        if max_idx == -1:
+            self.max_idx = base + max_count
+        else:
+            self.max_idx = max_idx
 
     def assign(self, info):
         idx = self.id_idx
         self.id_to_info[idx] = info
         self.id_idx += 1
-        if self.id_idx == self.max_count:
-            print("WARNING id idx over maximum", self.max_count)
+        if self.id_idx == self.max_idx:
+            print("WARNING id idx over maximum", self.max_idx)
         return idx
 
 
@@ -517,3 +521,13 @@ def get_duplicate_list(l):
             s.add(e)
 
     return duplicate_indices
+
+
+def enum_passage(tokens: List[Any], window_size: int) -> Iterable[List[Any]]:
+    cursor = 0
+    while cursor < len(tokens):
+        st = cursor
+        ed = cursor + window_size
+        second_tokens = tokens[st:ed]
+        cursor += window_size
+        yield second_tokens

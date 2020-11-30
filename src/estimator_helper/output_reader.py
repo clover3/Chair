@@ -46,7 +46,10 @@ def join_prediction_with_info(prediction_file,
                 k_data_id = data_id
 
             cur_info = info[k_data_id]
-            assert data_id not in seen_data_id
+
+            if data_id in seen_data_id:
+                print("data id {} have been seen".format(data_id))
+                raise IndexError()
             seen_data_id.add(data_id)
             new_entry = dict(cur_info)
             for field in fetch_field_list:

@@ -3,7 +3,7 @@ import pickle
 
 from data_generator.adhoc.robust_tokenizer import RobustPreprocessTrain
 from data_generator.job_runner import JobRunner, sydney_working_dir
-from tlm.data_gen.adhoc_datagen import robust_chunk_num
+from tlm.robust.load import robust_chunk_num
 
 
 class TrainTokenWorker:

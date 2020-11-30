@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import List, Tuple
 
 import numpy as np
 
@@ -14,12 +15,11 @@ from taskman_client.task_proxy import get_task_manager_proxy
 from tlm.estimator_prediction_viewer import flatten_batches
 
 
-def generate_ranked_list(tf_prediction_data, payload_info, k):
+def generate_ranked_list(tf_prediction_data, payload_info, k) -> List[List[Tuple[str, int, float]]]:
     tf_prediction_data = flatten_batches(tf_prediction_data)
     logits = tf_prediction_data["logits"]
 
     scores = np.reshape(logits, [-1])
-
 
     g_idx = 0
     pred_list = []
@@ -41,6 +41,36 @@ def generate_ranked_list(tf_prediction_data, payload_info, k):
         all_ranked_list.append(new_ranked_list)
 
     return all_ranked_list
+
+
+def generate_ranked_list_by_max(tf_prediction_data, payload_info, k) -> List[List[Tuple[str, int, float]]]:
+    tf_prediction_data = flatten_batches(tf_prediction_data)
+    logits = tf_prediction_data["logits"]
+
+    scores = np.reshape(logits, [-1])
+
+    g_idx = 0
+    pred_list = []
+
+    all_ranked_list = []
+    raw_entries = []
+    num_item = len(scores)
+    for i in range(num_item):
+        score = scores[i]
+        doc_id = payload_info[i]
+        raw_entries.append((doc_id, score))
+        g_idx += 1
+
+
+        ranked_list.sort(key=lambda x: x[1], reverse=True)
+
+        new_ranked_list = []
+        for idx, (doc_id, score) in enumerate(ranked_list):
+            new_ranked_list.append((doc_id, idx+1, score))
+        all_ranked_list.append(new_ranked_list)
+
+    return all_ranked_list
+
 
 
 def parse_prediction_and_eval(prediction_path, payload_type, data_id, k=100):
@@ -164,4 +194,4 @@ if __name__ == "__main__":
     #show(tf_prediction_data, payload_info, data_id)
     P20, NDCG20 = parse_prediction_and_eval(prediction_path, payload_type, data_id)
     proxy = get_task_manager_proxy()
-    proxy.report_number(sys.argv[2], NDCG20, "NDCG")
+    proxy.report_number(prediction_path, NDCG20, "", "NDCG")

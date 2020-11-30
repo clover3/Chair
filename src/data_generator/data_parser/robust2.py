@@ -22,7 +22,7 @@ def load_2k_rank():
 
 
 def load_bm25_best():
-    path =os.path.join(robust_path, "rob04.desc.galago.2k.out")
+    path = os.path.join(robust_path, "rob04.desc.galago.2k.out")
     return load_galago_ranked_list(path)
 
 

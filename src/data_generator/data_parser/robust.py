@@ -2,7 +2,7 @@ import os
 
 import cpath
 import data_generator.data_parser.trec as trec
-from data_generator.data_parser.robust2 import load_2k_rank, robust_path
+from data_generator.data_parser.robust2 import load_2k_rank, robust_path, load_qrel
 from data_generator.data_parser.trec import load_trec
 
 
@@ -24,6 +24,11 @@ def load_robust04_query():
     for key in queries:
         queries[key] = queries[key].strip()
     return queries
+
+
+def load_robust04_qrels():
+    path = os.path.join(robust_path, "qrels.rob04.txt")
+    return load_qrel(path)
 
 
 def load_robust04_desc():

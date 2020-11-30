@@ -1,0 +1,7 @@
+div.c_content {
+  background-color: white;
+  width: 600px;
+  height: 110px;
+  resize: both;
+  overflow: scroll;
+}

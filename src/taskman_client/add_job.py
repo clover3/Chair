@@ -12,6 +12,7 @@ def run_job(sh_format_path, arg_map):
     f = open(sh_path, "w")
     f.write(content)
     f.close()
+    return job_id
 
 
 def ukp_add_task(model_name, step, iteration):

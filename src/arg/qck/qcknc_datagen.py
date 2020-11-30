@@ -1,25 +1,27 @@
 
 
 from collections import OrderedDict
-from typing import List, Iterable, Dict, Tuple
+from typing import List, Iterable, Dict, Tuple, Union
 
 from arg.qck.decl import QCKQuery, KDP, QKUnit, QCKInstance, \
-    QCKCandidate, PayloadAsTokens, get_light_qckquery, get_light_qckcandidate, get_light_kdp
+    QCKCandidate, PayloadAsTokens, get_light_qckquery, get_light_qckcandidate, get_light_kdp, QCKCandidateWToken
 from arg.qck.encode_common import encode_two_inputs
 from arg.qck.qck_worker import InstanceGenerator
 from data_generator.tokenizer_wo_tf import get_tokenizer, tokenize_from_tokens
 from list_lib import flatten, lmap
 from misc_lib import DataIDManager
 
+QCKCandidateI = Union[QCKCandidate, QCKCandidateWToken]
+
 
 class QCKInstanceGenerator(InstanceGenerator):
     def __init__(self,
-                 candidates_dict: Dict[str, List[QCKCandidate]],
+                 candidates_dict: Dict[str, List[QCKCandidateI]],
                  is_correct_fn,
                  ):
         self.max_seq_length = 512
         self.tokenizer = get_tokenizer()
-        self.candidates_dict: Dict[str, List[QCKCandidate]] = candidates_dict
+        self.candidates_dict: Dict[str, List[QCKCandidateI]] = candidates_dict
         self._is_correct = is_correct_fn
 
     def generate(self,
@@ -32,8 +34,13 @@ class QCKInstanceGenerator(InstanceGenerator):
             tokenizer = self.tokenizer
             q_tokens: List[str] = tokenizer.tokenize(query.text)
             candidates = self.candidates_dict[query.query_id]
+            num_inst_expectation = len(passages) * len(candidates)
+            if num_inst_expectation > 1000 * 1000:
+                print(query)
+                print(len(passages))
+                print(len(candidates))
             for c in candidates:
-                c_tokens: List[str] = tokenizer.tokenize(c.text)
+                c_tokens: List[str] = c.get_tokens(tokenizer)
                 for passage in passages:
                     info = {
                                 'query': get_light_qckquery(query),

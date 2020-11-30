@@ -145,6 +145,15 @@ def model_fn_rank_pred(FLAGS):
                 "input_ids":input_ids,
                 "logits":logits,
             }
+        else:
+            predictions = {
+                "input_ids": input_ids,
+                "logits": logits,
+            }
+            useful_inputs = ["data_id", "input_ids2", "data_ids"]
+            for input_name in useful_inputs:
+                if input_name in features:
+                    predictions[input_name] = features[input_name]
         output_spec = rank_predict_estimator_spec(logits, mode, scaffold_fn, predictions)
         return output_spec
 

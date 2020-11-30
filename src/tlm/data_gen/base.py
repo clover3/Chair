@@ -263,7 +263,6 @@ class LMTrainGen(LMTrainBase):
             all_docs.extend(pickle.load(f))
         return all_docs
 
-
     def create_instances_from_document(self, document):
         vocab_words = list(self.tokenizer.vocab.keys())
         max_num_tokens = self.max_seq_length - 2

@@ -79,9 +79,7 @@ def get_prediction_structure(modeling_opt, pooled_output):
     if modeling_opt == "hinge" or modeling_opt == "pair_ce":
         logits = tf.keras.layers.Dense(1, name="cls_dense")(pooled_output)
     elif modeling_opt == "ce":
-        raw_logits = tf.keras.layers.Dense(2, name="cls_dense")(pooled_output)
-        probs = tf.nn.softmax(raw_logits, axis=1)
-        logits = probs[:, 1]
+        logits = tf.keras.layers.Dense(2, name="cls_dense")(pooled_output)
     elif modeling_opt == "multi_label_hinge":
         logits = tf.keras.layers.Dense(3, name="cls_dense")(pooled_output)
     else:

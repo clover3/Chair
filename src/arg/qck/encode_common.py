@@ -16,6 +16,12 @@ def encode_two_inputs(max_seq_length, tokenizer, inst: PayloadAsTokens) -> Order
     tokens_2_2 = inst.passage[:max_seg2_len]
 
     def combine(tokens1, tokens2):
+        effective_length = max_seq_length - 3
+        if len(tokens1) + len(tokens2) > effective_length:
+            half = int(effective_length/2 + 1)
+            tokens1 = tokens1[:half]
+            remain = effective_length - len(tokens1)
+            tokens2 = tokens2[:remain]
         tokens = ["[CLS]"] + tokens1 + ["[SEP]"] + tokens2 + ["[SEP]"]
         segment_ids = [0] * (len(tokens1) + 2) \
                       + [1] * (len(tokens2) + 1)

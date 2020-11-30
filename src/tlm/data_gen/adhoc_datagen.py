@@ -8,12 +8,12 @@ from data_generator.data_parser.robust import load_robust04_query
 from data_generator.data_parser.robust2 import load_qrel, load_bm25_best
 from data_generator.job_runner import sydney_working_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
+from misc_lib import enum_passage
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.data_gen.base import get_basic_input_feature
 from tlm.data_gen.bert_data_gen import create_int_feature
-from tlm.data_gen.pairwise_common import generate_pairwise_combinations
-
-robust_chunk_num = 32
+from tlm.data_gen.pairwise_common import generate_pairwise_combinations, write_pairwise_record
+from tlm.robust.load import load_robust_tokens_for_train
 
 
 class EncoderInterface(ABC):
@@ -67,15 +67,10 @@ class AllSegmentAsDoc(EncoderInterface):
 
     def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
         content_len = self.max_seq_length - 3 - len(query_tokens)
-        cursor = 0
         insts = []
-        while cursor < len(tokens):
-            st = cursor
-            ed = cursor + content_len
-            second_tokens = tokens[st:ed]
+        for second_tokens in enum_passage(tokens, content_len):
             out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
             segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
-            cursor += content_len
             entry = out_tokens, segment_ids
             insts.append(entry)
         return insts
@@ -83,7 +78,7 @@ class AllSegmentAsDoc(EncoderInterface):
 
 class RobustTrainGen:
     def __init__(self, encoder, max_seq_length):
-        self.data = self.load_from_pickles()
+        self.data = load_robust_tokens_for_train()
         assert len(self.data) == 174787
         qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
         self.judgement = load_qrel(qrel_path)
@@ -91,16 +86,6 @@ class RobustTrainGen:
         self.queries = load_robust04_query()
         self.encoder = encoder
         self.tokenizer = get_tokenizer()
-
-    @staticmethod
-    def load_from_pickles():
-        data = {}
-        for i in range(robust_chunk_num):
-            path = os.path.join(sydney_working_dir, "RobustTokensClean", str(i))
-            d = pickle.load(open(path, "rb"))
-            if d is not None:
-                data.update(d)
-        return data
 
     def generate(self, query_list):
         all_insts = []
@@ -127,8 +112,7 @@ class RobustTrainGen:
         return all_insts
 
     def write(self, insts, out_path):
-        self.write_pairwise_record(self.tokenizer, self.max_seq_length, insts, out_path)
-
+        write_pairwise_record(self.tokenizer, self.max_seq_length, insts, out_path)
 
 
 class RobustPredictGen:
@@ -158,7 +142,6 @@ class RobustPredictGen:
                 tokens = self.data[doc_id]
                 insts = self.encoder.encode(query_tokens, tokens)
                 all_insts.extend([(t,s, doc_id) for t, s in insts])
-                print(query_id, doc_id)
         return all_insts
 
     def write(self, insts, out_path):

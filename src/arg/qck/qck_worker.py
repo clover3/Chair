@@ -31,7 +31,7 @@ class QCKWorker(WorkerInterface):
         self.qk_candidate = qk_candidate
 
     def work(self, job_id):
-        max_data_per_job = 100000
+        max_data_per_job = 1000 * 1000
         base = job_id * max_data_per_job
         data_id_manager = DataIDManager(base, base + max_data_per_job)
         todo = self.qk_candidate[job_id:job_id + 1]

@@ -2,7 +2,7 @@ import os
 from functools import partial
 
 from data_generator.job_runner import JobRunner, sydney_working_dir
-from tlm.data_gen.adhoc_datagen import RobustTrainGen, FirstSegmentAsDoc
+from tlm.data_gen.adhoc_datagen import RobustTrainGen, AllSegmentAsDoc
 # There is four-level hierarchy for generating data for robust
 # 1. JobRunner : this is basic job runner
 # 2. Worker : RobustWorker  -> give range of queries to generator
@@ -25,14 +25,14 @@ class RobustWorker:
         self.gen.write(insts, out_path)
 
 
-def generate_robust_first_for_train():
+def generate_robust_all_seg_for_train():
     max_seq_length = 512
-    encoder = FirstSegmentAsDoc(max_seq_length)
+    encoder = AllSegmentAsDoc(max_seq_length)
     worker_factory = partial(RobustWorker, RobustTrainGen(encoder, max_seq_length))
-    runner = JobRunner(sydney_working_dir, 4, "RobustFirstClean", worker_factory)
+    runner = JobRunner(sydney_working_dir, 4, "robust_all_passage", worker_factory)
     runner.start()
 
 
 if __name__ == "__main__":
-    generate_robust_first_for_train()
+    generate_robust_all_seg_for_train()
 

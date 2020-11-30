@@ -207,15 +207,13 @@ def model_fn_pointwise_ranking(model_config, train_config, model_class, special_
         pooled_q_t = tf.expand_dims(pooled_q, 1)
         pooled_d_t = tf.transpose(pooled_d, [0, 2, 1])
         all_logits = tf.matmul(pooled_q_t, pooled_d_t) # [batch, 1, num_window]
-        print('all_logits', all_logits)
-        logits = tf.reduce_max(all_logits, axis=2)
-        print('logits', logits)
-        y = tf.cast(label_ids, tf.float32) * 2 - 1
-        print('label_ids', label_ids)
-        print('y', y)
-        losses = tf.maximum(1.0 - logits * y, 0)
-        loss = tf.reduce_mean(losses)
-
+        if "hinge_all" in special_flags:
+            apply_loss_modeing = hinge_all
+        elif "sigmoid_all" in special_flags:
+            apply_loss_modeing = sigmoid_all
+        else:
+            apply_loss_modeing = hinge_max
+        logits, loss = apply_loss_modeing(all_logits, label_ids)
         pred = tf.cast(logits > 0, tf.int32)
 
         tvars = tf.compat.v1.trainable_variables()
@@ -262,5 +260,53 @@ def model_fn_pointwise_ranking(model_config, train_config, model_class, special_
         return output_spec
 
     return model_fn
+
+
+def hinge_all(all_logits, label_ids):
+    print('all_logits', all_logits)
+    # logits = tf.reduce_max(all_logits, axis=2)
+    print('logits', all_logits)
+    y = tf.cast(label_ids, tf.float32) * 2 - 1
+    print('label_ids', label_ids)
+    print('y', y)
+    y_expand = tf.expand_dims(y, 2)
+    print('y_expand')
+    t = all_logits * y_expand
+    losses = tf.maximum(1.0 - t, 0)
+    loss = tf.reduce_mean(losses)
+    logits = tf.reduce_mean(all_logits, axis=2)
+    return logits, loss
+
+
+def hinge_max(all_logits, label_ids):
+    print('all_logits', all_logits)
+    logits = tf.reduce_max(all_logits, axis=2)
+    print('logits', all_logits)
+    y = tf.cast(label_ids, tf.float32) * 2 - 1
+    print('label_ids', label_ids)
+    print('y', y)
+    t = logits * y
+    losses = tf.maximum(1.0 - t, 0)
+    loss = tf.reduce_mean(losses)
+    logits = tf.reduce_mean(all_logits, axis=2)
+    return logits, loss
+
+
+def sigmoid_all(all_logits, label_ids):
+    print('all_logits', all_logits)
+    print('logits', all_logits)
+    batch_size, _, num_seg = get_shape_list(all_logits)
+    lable_ids_tile = tf.cast(tf.tile(tf.expand_dims(label_ids, 2), [1, 1, num_seg]), tf.float32)
+    print('label_ids', label_ids)
+    losses = tf.nn.sigmoid_cross_entropy_with_logits(logits=all_logits, labels=lable_ids_tile)
+    loss = tf.reduce_mean(losses)
+
+    probs = tf.nn.sigmoid(all_logits)
+    logits = tf.reduce_mean(probs, axis=2)
+    return logits, loss
+
+
+
+
 
 

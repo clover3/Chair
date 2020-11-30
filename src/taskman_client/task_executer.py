@@ -9,11 +9,11 @@ from taskman_client.sync import JsonTiedDict
 from taskman_client.task_proxy import get_task_manager_proxy, get_local_machine_name
 
 sh_path = os.path.join("task", "task_sh")
-mark_path = os.path.join("task", "task_mark")
+mark_dir = os.path.join("task", "task_mark")
 log_path = os.path.join("task", "task_log")
 
 exist_or_mkdir(sh_path)
-exist_or_mkdir(mark_path)
+exist_or_mkdir(mark_dir)
 exist_or_mkdir(log_path)
 
 info_path = os.path.join("task", "info.json")
@@ -61,10 +61,14 @@ def get_log_path(job_id):
 def get_last_mark():
     init_id = max(task_info.last_task_id, 0)
     id_idx = init_id
-    while os.path.exists(os.path.join(mark_path, str(id_idx))):
+    while os.path.exists(os.path.join(mark_dir, str(id_idx))):
         id_idx += 1
 
     return id_idx - 1
+
+
+def check_job_mark(job_id):
+    return os.path.exists(os.path.join(mark_dir, str(job_id)))
 
 
 def get_new_job_id():
@@ -111,8 +115,8 @@ def loop():
         print("{} active {} pending".format(active_jobs, pending_jobs))
         return active_jobs + pending_jobs > 30
 
-
-    while True:
+    no_job_time = 0
+    while no_job_time < 1200:
         # check if there is additional job to run
         job_id = last_mask + 1
         next_sh_path = get_sh_path_for_job_id(job_id)
@@ -123,16 +127,20 @@ def loop():
                 print("Sleeping for jobs to be done. Remaining jobs : {}".format(remaining_jobs))
                 time.sleep(10)
             execute(job_id)
+            no_job_time = 0
             task_info.set("last_task_id ", task_info.last_task_id + 1)
             mark(job_id)
             last_mask += 1
             time.sleep(2)
         else:
+            no_job_time += 10
             time.sleep(10)
+
+    print("Terminating")
 
 
 def mark(job_id):
-    open(os.path.join(mark_path, str(job_id)), "w").close()
+    open(os.path.join(mark_dir, str(job_id)), "w").close()
 
 
 def execute(job_id):

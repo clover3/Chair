@@ -11,17 +11,26 @@ class QCKCandidate(NamedTuple):
     id: str
     text: str
 
+    def get_tokens(self, tokenizer):
+        return tokenizer.tokenize(self.text)
 
-class QCKQueryWToken(NamedTuple):
+
+class QCKQueryWToken(QCKQuery):
     query_id: str
     text: str
     tokens: List[str]
+
+    def get_tokens(self, tokenizer):
+        return self.tokens
 
 
 class QCKCandidateWToken(NamedTuple):
     id: str
     text: str
     tokens: List[str]
+
+    def get_tokens(self, tokenizer):
+        return self.tokens
 
 
 class KnowledgeDocument(NamedTuple):
@@ -45,6 +54,22 @@ class KnowledgeDocumentPart(NamedTuple):
 
 KD = KnowledgeDocument
 KDP = KnowledgeDocumentPart
+
+# KDP , BERT tokenized
+
+
+class KDP_BT(NamedTuple):
+    doc_id: str
+    passage_idx: int
+    start_location: int
+    tokens: List[str]
+
+    def getstate(self):
+        return self.doc_id, self.passage_idx, self.start_location, self.tokens
+
+    @classmethod
+    def from_state(cls, state):
+        return KnowledgeDocumentPart(*state)
 
 
 class QKInstance(NamedTuple):
@@ -92,6 +117,8 @@ class CKInstance(NamedTuple):
 
 
 QKUnit = Tuple[QCKQuery, List[KDP]]
+
+QKUnitBT = Tuple[QCKQuery, List[KDP_BT]]
 
 
 class PayloadAsTokens(NamedTuple):

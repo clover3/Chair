@@ -80,32 +80,55 @@ def get_tooltip_style_text():
     return open(os.path.join(cpath.data_path, "html", "tooltip")).read()
 
 
+def get_collapsible_css():
+    return open(os.path.join(cpath.src_path, "html", "collapsible.css")).read()
+
+
+def get_scroll_css():
+    return open(os.path.join(cpath.src_path, "html", "scroll.css")).read()
+
+
+def get_collapsible_script():
+    return open(os.path.join(cpath.src_path, "html", "collapsible.js")).read()
+
+
 class HtmlVisualizer(VisualizerCommon):
-    def __init__(self, filename, dark_mode=False, use_tooltip=False):
+    def __init__(self, filename, dark_mode=False, use_tooltip=False, additional_styles=[]):
         p = os.path.join(output_path, "visualize", filename)
         self.f_html = open(p, "w", encoding="utf-8")
         self.dark_mode = dark_mode
         self.dark_foreground = "A9B7C6"
         self.dark_background = "2B2B2B"
         self.use_tooltip = use_tooltip
-        self._write_header()
+        self._write_header(additional_styles)
 
-    def _write_header(self):
+    def _write_header(self, additional_styles):
         self.f_html.write("<html><head>\n")
         self.f_html.write("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>")
+        style_dark = "body{color:#" + self.dark_foreground + ";}"
         if self.dark_mode:
-            self.f_html.write("<style>body{color:#" + self.dark_foreground + ";}</style>")
+            additional_styles.append(style_dark)
 
         if self.use_tooltip:
             tooltip_style = get_tooltip_style_text()
-            self.f_html.write(tooltip_style)
+            additional_styles.append(tooltip_style)
 
+        self.f_html.write("<style>")
+        for style in additional_styles:
+            self.f_html.write(style)
+        self.f_html.write("</style>")
         self.f_html.write("</head>\n")
 
         if self.dark_mode:
             self.f_html.write("<body style=\"background-color:#{};\"".format(self.dark_background))
         else:
             self.f_html.write("<body>\n")
+
+    def write_script(self, script):
+        self.f_html.write("<script>")
+        self.f_html.write(script)
+        self.f_html.write("</script>")
+
 
     def close(self):
         self.f_html.write("</body>\n")
@@ -115,6 +138,34 @@ class HtmlVisualizer(VisualizerCommon):
         self.f_html.write("<p>\n")
         self.f_html.write(s+"\n")
         self.f_html.write("</p>\n")
+
+    def write_div(self, s, div_class):
+        self.write_elem("div", s, div_class)
+
+    def write_elem(self, elem, s, elem_class, style=""):
+        if elem_class:
+            optional_class = " class=" + elem_class
+        else:
+            optional_class = ""
+
+        if style:
+            style_text = " style=\"{}\"".format(style)
+        else:
+            style_text = ""
+
+        self.f_html.write("<{}{}{}>\n".format(elem, optional_class, style_text))
+        self.f_html.write(s + "\n")
+        self.f_html.write("</{}>\n".format(elem))
+
+    def write_div_open(self, div_class=""):
+        if div_class:
+            optional_class = " class=" + div_class
+        else:
+            optional_class = ""
+        self.f_html.write("<div{}>\n".format(optional_class))
+
+    def write_div_close(self):
+        self.f_html.write("</div>\n")
 
     def write_headline(self, s, level=4):
         self.f_html.write("<h{}>{}</h{}>\n".format(level, s, level))
