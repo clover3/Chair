@@ -8,6 +8,7 @@ from tlm.wiki.split_wikipedia import WikiSpliter
 def empty_line(line):
     return len(line.strip()) == 0
 
+
 class Segment:
     def __init__(self, outpath):
         self.ws = WikiSpliter()
@@ -17,6 +18,7 @@ class Segment:
         self.seg_max_seq = 256 - 3
         self.skip = int(self.seg_max_seq/2)
         self.out_f = open(outpath, "w")
+        self.pop = self.pop_to_small_seg
 
     def pop_old(self, title, content):
         content_str = "".join(content)
@@ -51,14 +53,13 @@ class Segment:
             segment = content_str[st_loc:ed_loc]
             self.save(title, st_loc, ed_loc, segment)
 
-    def pop(self, title, content):
+    def pop_to_small_seg(self, title, content):
         content_str = "".join(content)
 
         segments = self.ftokenizer.smart_cut(title, content_str, self.seg_max_seq)
 
         for segment, st, ed in segments:
             self.save(title, st, ed, segment)
-
 
     def save(self, title, st_loc, ed_loc, segment):
         new_title = title + "-{}-{}".format(st_loc, ed_loc)
