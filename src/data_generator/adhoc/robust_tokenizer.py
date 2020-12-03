@@ -74,10 +74,21 @@ class RobustPreprocessPredict(RobustPreprocess):
         return self.tokenize_docs(all_doc_id_list)
 
 
-
-if __name__ == "__main__":
+def predict_tokens3():
     gen = RobustPreprocessPredict()
     d = gen.tokenize()
 
     save_path = os.path.join(sydney_working_dir, "RobustPredictTokens3", "1")
     pickle.dump(d, open(save_path, "wb"))
+
+
+def predict_tokens4():
+    gen = RobustPreprocessPredict(1000)
+    d = gen.tokenize()
+
+    save_path = os.path.join(sydney_working_dir, "RobustPredictTokens4", "1")
+    pickle.dump(d, open(save_path, "wb"))
+
+
+if __name__ == "__main__":
+    predict_tokens4()

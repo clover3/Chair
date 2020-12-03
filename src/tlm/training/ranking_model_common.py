@@ -80,6 +80,8 @@ def get_prediction_structure(modeling_opt, pooled_output):
         logits = tf.keras.layers.Dense(1, name="cls_dense")(pooled_output)
     elif modeling_opt == "ce":
         logits = tf.keras.layers.Dense(2, name="cls_dense")(pooled_output)
+    elif modeling_opt == "ce3":
+        logits = tf.keras.layers.Dense(3, name="cls_dense")(pooled_output)
     elif modeling_opt == "multi_label_hinge":
         logits = tf.keras.layers.Dense(3, name="cls_dense")(pooled_output)
     else:

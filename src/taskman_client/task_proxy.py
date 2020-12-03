@@ -47,9 +47,11 @@ class TaskManagerProxy(RESTProxy):
         }
         return self.post("/experiment/update", data)
 
-    def get_tpu(self, tpu_condition=None):
+    def get_tpu(self, tpu_condition=None, uuid=None, run_name=""):
         data = {
-            "v": tpu_condition
+            "v": tpu_condition,
+            "uuid": uuid,
+            "run_name": run_name
         }
         return self.post("/task/get_tpu", data)
 
@@ -66,6 +68,7 @@ class TaskManagerProxy(RESTProxy):
         }
         r = self.post("/task/get_num_pending_jobs", data)
         return r['num_pending_jobs']
+
 
 class TaskProxy:
     def __init__(self, host, port, machine, tpu_name=None, uuid_var=None):
@@ -98,6 +101,23 @@ class TaskProxy:
             return
         return self.proxy.task_interrupted(run_name, self.uuid_var, self.tpu_name, self.machine, msg)
 
+    def request_tpu(self, run_name, wait=True):
+        condition = get_applicable_tpu_condition()
+
+        def request():
+            return self.proxy.get_tpu(condition, self.uuid_var, run_name)['tpu_name']
+
+        assigned_tpu = request()
+
+        sleep_time = 5
+        while wait and assigned_tpu is None:
+            time.sleep(sleep_time)
+            if sleep_time < 300:
+                sleep_time += 10
+            assigned_tpu = request()
+        print("Assigned tpu : ", assigned_tpu)
+        return assigned_tpu
+
 
 def get_local_machine_name():
     if os.name == "nt":
@@ -115,8 +135,26 @@ def get_task_manager_proxy():
     return TaskManagerProxy("gosford.cs.umass.edu", 8000)
 
 
-def assign_tpu(wait=True):
+def assign_tpu_anonymous(wait=True):
     print("Auto assign TPU")
+    condition = get_applicable_tpu_condition()
+
+    def request_tpu():
+        return get_task_manager_proxy().get_tpu(condition)['tpu_name']
+
+    assigned_tpu = request_tpu()
+
+    sleep_time = 5
+    while wait and assigned_tpu is None:
+        time.sleep(sleep_time)
+        if sleep_time < 300:
+            sleep_time += 10
+        assigned_tpu = request_tpu()
+    print("Assigned tpu : ", assigned_tpu)
+    return assigned_tpu
+
+
+def get_applicable_tpu_condition():
     machine = get_local_machine_name()
     if machine == "lesterny":
         condition = "v2"
@@ -126,18 +164,7 @@ def assign_tpu(wait=True):
         condition = "v3"
     else:
         condition = None
-
-    assigned_tpu = get_task_manager_proxy().get_tpu(condition)['tpu_name']
-
-    sleep_time = 5
-    while wait and assigned_tpu is None:
-        time.sleep(sleep_time)
-        if sleep_time < 300:
-            sleep_time += 10
-        assigned_tpu = get_task_manager_proxy().get_tpu(condition)['tpu_name']
-    print("Assigned tpu : ", assigned_tpu)
-    return assigned_tpu
-
+    return condition
 
 
 if __name__ == "__main__":

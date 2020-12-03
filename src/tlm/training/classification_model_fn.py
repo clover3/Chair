@@ -69,6 +69,8 @@ def model_fn_classification(bert_config, train_config, model_class, special_flag
 
     if train_config.checkpoint_type != "bert_nli" and train_config.use_old_logits:
         tf_logging.info("Use old version of logistic regression")
+        if is_training:
+            pooled = dropout(pooled, 0.1)
         logits = tf.keras.layers.Dense(train_config.num_classes, name="cls_dense")(pooled)
     else:
         tf_logging.info("Use fixed version of logistic regression")
@@ -131,13 +133,15 @@ def model_fn_classification(bert_config, train_config, model_class, special_flag
                 "input_ids": input_ids,
                 "logits": logits
         }
-        if override_prediction_fn is not None:
-            predictions = override_prediction_fn(predictions, model)
 
         useful_inputs = ["data_id", "input_ids2", "data_ids"]
         for input_name in useful_inputs:
             if input_name in features:
                 predictions[input_name] = features[input_name]
+
+        if override_prediction_fn is not None:
+            predictions = override_prediction_fn(predictions, model)
+
         output_spec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
                 mode=mode,
                 predictions=predictions,

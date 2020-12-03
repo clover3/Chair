@@ -18,11 +18,13 @@ class QCKInstanceGenerator(InstanceGenerator):
     def __init__(self,
                  candidates_dict: Dict[str, List[QCKCandidateI]],
                  is_correct_fn,
+                 kdp_as_sub_token=False
                  ):
         self.max_seq_length = 512
         self.tokenizer = get_tokenizer()
         self.candidates_dict: Dict[str, List[QCKCandidateI]] = candidates_dict
         self._is_correct = is_correct_fn
+        self.kdp_as_sub_token = kdp_as_sub_token
 
     def generate(self,
                  kc_candidate: Iterable[QKUnit],
@@ -47,7 +49,10 @@ class QCKInstanceGenerator(InstanceGenerator):
                                 'candidate': get_light_qckcandidate(c),
                                 'kdp': get_light_kdp(passage)
                             }
-                    passage_subtokens = tokenize_from_tokens(tokenizer, passage.tokens)
+                    if self.kdp_as_sub_token:
+                        passage_subtokens = passage.tokens
+                    else:
+                        passage_subtokens = tokenize_from_tokens(tokenizer, passage.tokens)
                     inst = PayloadAsTokens(
                         passage=passage_subtokens,
                         text1=q_tokens,

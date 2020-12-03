@@ -78,6 +78,34 @@ def parse_galago_ranked_list(line_itr: Iterator[str]) -> Dict[str, List[GalagoDo
     return q_group
 
 
+def parse_with_space(line):
+    tokens = line.split(" ")
+    query = tokens[0]
+    Q0 = tokens[1]
+    doc_id = " ".join(tokens[2:-3])
+    galago = tokens[-1]
+    score = float(tokens[-2])
+    rank = int(tokens[-3])
+    return query, doc_id, rank, score
+
+
+def parse_galago_ranked_list_with_space(line_itr: Iterator[str]) -> Dict[str, List[GalagoDocRankEntry]]:
+    q_group: Dict[str, List[GalagoDocRankEntry]] = dict()
+    for line in line_itr:
+        q_id, doc_id, rank, score = parse_with_space(line)
+        if q_id not in q_group:
+            q_group[q_id] = list()
+        e = GalagoDocRankEntry(doc_id=str(doc_id), rank=int(rank), score=float(score))
+        q_group[q_id].append(e)
+    return q_group
+
+
+def load_galago_ranked_list_w_space(path) -> Dict[str, List[GalagoDocRankEntry]]:
+    # Sample Format : 475287 Q0 LA053190-0016_1274 1 15.07645119 galago
+    line_itr = open(path, "r")
+    return parse_galago_ranked_list_with_space(line_itr)
+
+
 def parse_galago_passage_ranked_list(line_itr: Iterator[str])\
         -> Dict[str, List[GalagoPassageRankEntry]]:
     q_group = dict()

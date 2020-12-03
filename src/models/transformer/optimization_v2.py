@@ -106,9 +106,6 @@ def create_optimizer_from_config(loss, train_config, tvars=None):
     max_train_step = train_config.num_train_steps
     if train_config.no_lr_decay:
       max_train_step = 100000 * 100000
-    print("max_train_step", max_train_step)
-    print("train_config.learning_rate", train_config.learning_rate)
-    print("train_config.num_warmup_steps", train_config.num_warmup_steps)
     train_op = create_optimizer(
     loss,
     train_config.learning_rate,

@@ -1,4 +1,4 @@
-from taskman_client.task_proxy import get_task_proxy, get_task_manager_proxy, assign_tpu
+from taskman_client.task_proxy import get_task_proxy, get_task_manager_proxy
 from tlm.benchmark.report import get_hp_str_from_flag
 from tlm.training.train_flags import FLAGS
 
@@ -39,7 +39,7 @@ def report_run(func):
 
         if FLAGS.use_tpu and FLAGS.tpu_name is None:
             task_proxy.task_pending(run_name, flags_str)
-            FLAGS.tpu_name = assign_tpu()
+            FLAGS.tpu_name = task_proxy.request_tpu(run_name)
             task_proxy.tpu_name = FLAGS.tpu_name
 
         flags_str = get_hp_str_from_flag(FLAGS)

@@ -113,7 +113,7 @@ def loop():
         active_jobs = task_manager_proxy.get_num_active_jobs(machine_name)
         pending_jobs = task_manager_proxy.get_num_pending_jobs(machine_name)
         print("{} active {} pending".format(active_jobs, pending_jobs))
-        return active_jobs + pending_jobs > 30
+        return active_jobs + pending_jobs > 10
 
     no_job_time = 0
     while no_job_time < 1200:
@@ -131,7 +131,7 @@ def loop():
             task_info.set("last_task_id ", task_info.last_task_id + 1)
             mark(job_id)
             last_mask += 1
-            time.sleep(2)
+            time.sleep(5)
         else:
             no_job_time += 10
             time.sleep(10)

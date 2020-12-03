@@ -9,11 +9,12 @@ from data_generator.data_parser.robust2 import load_qrel, load_bm25_best
 from data_generator.job_runner import sydney_working_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import enum_passage
-from tf_util.record_writer_wrap import RecordWriterWrap
+from tf_util.record_writer_wrap import RecordWriterWrap, write_records_w_encode_fn
 from tlm.data_gen.base import get_basic_input_feature
 from tlm.data_gen.bert_data_gen import create_int_feature
+from tlm.data_gen.classification_common import ClassificationInstance, encode_classification_instance
 from tlm.data_gen.pairwise_common import generate_pairwise_combinations, write_pairwise_record
-from tlm.robust.load import load_robust_tokens_for_train
+from tlm.robust.load import load_robust_tokens_for_train, load_robust_tokens_for_predict
 
 
 class EncoderInterface(ABC):
@@ -76,7 +77,7 @@ class AllSegmentAsDoc(EncoderInterface):
         return insts
 
 
-class RobustTrainGen:
+class RobustPairwiseTrainGen:
     def __init__(self, encoder, max_seq_length):
         self.data = load_robust_tokens_for_train()
         assert len(self.data) == 174787
@@ -141,7 +142,7 @@ class RobustPredictGen:
             for doc_id, _, _ in self.galago_rank[query_id][:self.top_k]:
                 tokens = self.data[doc_id]
                 insts = self.encoder.encode(query_tokens, tokens)
-                all_insts.extend([(t,s, doc_id) for t, s in insts])
+                all_insts.extend([(t, s, doc_id) for t, s in insts])
         return all_insts
 
     def write(self, insts, out_path):
@@ -159,9 +160,9 @@ class RobustPredictGen:
         writer.close()
 
 
-class SeroRobustTrainGen(RobustTrainGen):
+class SeroRobustPairwiseTrainGen(RobustPairwiseTrainGen):
     def __init__(self, max_seq_length):
-        super(SeroRobustTrainGen, self).__init__(SeroRobustTrainGen, max_seq_length)
+        super(SeroRobustPairwiseTrainGen, self).__init__(SeroRobustPairwiseTrainGen, max_seq_length)
         self.max_query_len = 20
 
     def write(self, insts, out_path):
@@ -178,3 +179,96 @@ class SeroRobustTrainGen(RobustTrainGen):
             feature['label_ids'] = create_int_feature([label])
             writer.write_feature(feature)
         writer.close()
+
+
+class RobustPointwiseTrainGen:
+    def __init__(self, encoder, max_seq_length):
+        self.data = load_robust_tokens_for_train()
+        assert len(self.data) == 174787
+        qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
+        self.judgement = load_qrel(qrel_path)
+        self.max_seq_length = max_seq_length
+        self.queries = load_robust04_query()
+        self.encoder = encoder
+        self.tokenizer = get_tokenizer()
+
+    def generate(self, query_list) -> List[ClassificationInstance]:
+        all_insts = []
+        for query_id in query_list:
+            if query_id not in self.judgement:
+                continue
+
+            judgement = self.judgement[query_id]
+            query = self.queries[query_id]
+            query_tokens = self.tokenizer.tokenize(query)
+            for doc_id, score in judgement.items():
+                tokens = self.data[doc_id]
+                insts: List[Tuple[List, List]] = self.encoder.encode(query_tokens, tokens)
+                label = 1 if score > 0 else 0
+
+                for tokens_seg, seg_ids in insts:
+                    assert type(tokens_seg[0]) == str
+                    assert type(seg_ids[0]) == int
+                    all_insts.append(ClassificationInstance(tokens_seg, seg_ids, label))
+
+        return all_insts
+
+    def write(self, insts: List[ClassificationInstance], out_path: str):
+        def encode_fn(inst: ClassificationInstance) -> collections.OrderedDict :
+            return encode_classification_instance(self.tokenizer, self.max_seq_length, inst)
+        write_records_w_encode_fn(out_path, encode_fn, insts, len(insts))
+
+
+class RobustPointwiseTrainGenEx:
+    def __init__(self, encoder, max_seq_length):
+        self.data = self.load_tokens()
+        qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
+        self.judgement = load_qrel(qrel_path)
+        self.max_seq_length = max_seq_length
+        self.queries = load_robust04_query()
+        self.encoder = encoder
+        self.tokenizer = get_tokenizer()
+        self.galago_rank = load_bm25_best()
+
+
+    def load_tokens(self):
+        tokens_d = load_robust_tokens_for_train()
+        tokens_d.update(load_robust_tokens_for_predict(4))
+        return tokens_d
+
+
+    def generate(self, query_list) -> List[ClassificationInstance]:
+        neg_k = 1000
+        all_insts = []
+        for query_id in query_list:
+            if query_id not in self.judgement:
+                continue
+
+            judgement = self.judgement[query_id]
+            query = self.queries[query_id]
+            query_tokens = self.tokenizer.tokenize(query)
+
+            ranked_list = self.galago_rank[query_id]
+            ranked_list = ranked_list[:neg_k]
+
+            target_docs = set(judgement.keys())
+            target_docs.update([e.doc_id for e in ranked_list])
+            print("Total of {} docs".format(len(target_docs)))
+
+            for doc_id in target_docs:
+                tokens = self.data[doc_id]
+                insts: List[Tuple[List, List]] = self.encoder.encode(query_tokens, tokens)
+                label = 1 if doc_id in judgement and judgement[doc_id] > 0 else 0
+
+                for tokens_seg, seg_ids in insts:
+                    assert type(tokens_seg[0]) == str
+                    assert type(seg_ids[0]) == int
+                    all_insts.append(ClassificationInstance(tokens_seg, seg_ids, label))
+
+        return all_insts
+
+    def write(self, insts: List[ClassificationInstance], out_path: str):
+        def encode_fn(inst: ClassificationInstance) -> collections.OrderedDict :
+            return encode_classification_instance(self.tokenizer, self.max_seq_length, inst)
+        write_records_w_encode_fn(out_path, encode_fn, insts, len(insts))
+

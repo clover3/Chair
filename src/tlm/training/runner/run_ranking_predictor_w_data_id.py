@@ -1,6 +1,7 @@
 from my_tf import tf
 
 from taskman_client.wrapper import report_run
+from tf_util.tf_logging import tf_logging, MuteEnqueueFilter
 from tlm.training.flags_wrapper import get_input_files_from_flags, show_input_files
 from tlm.training.input_fn import input_fn_builder_prediction_w_data_id
 from tlm.training.ranking_model_fn import model_fn_rank_pred
@@ -21,6 +22,9 @@ def main(_):
             max_seq_length=FLAGS.max_seq_length)
     else:
         assert False
+
+    if FLAGS.do_predict:
+        tf_logging.addFilter(MuteEnqueueFilter())
 
     result = run_estimator(model_fn, input_fn)
     return result

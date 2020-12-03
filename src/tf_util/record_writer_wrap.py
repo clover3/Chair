@@ -17,7 +17,7 @@ class RecordWriterWrap:
         self.writer = tf.python_io.TFRecordWriter(outfile)
         self.total_written = 0
 
-    def write_feature(self, features):
+    def write_feature(self, features: OrderedDict):
         tf_example = tf.train.Example(features=tf.train.Features(feature=features))
         self.writer.write(tf_example.SerializeToString())
         self.total_written += 1
