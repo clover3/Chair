@@ -38,17 +38,16 @@ def wait_files(job_info_list):
     num_files = len(job_info_list)
     file_list = list([info['save_path'] for info in job_info_list])
     job_id_list = list([info['job_id'] for info in job_info_list])
-    n_found = 0
     all_started = False
     all_started_time = -1
     last_new_file = -1
     last_found = 0
-    while n_found < num_files:
+    repeat = True
+    while repeat:
         n_found = 0
         for file_path in file_list:
             if os.path.exists(file_path):
                 n_found += 1
-        time.sleep(60)
 
         if all_started:
             time_since_all_started = time.time() - all_started_time
@@ -63,7 +62,7 @@ def wait_files(job_info_list):
                 if check_job_mark(job_id):
                     n_job_started += 1
 
-            if n_job_started == n_found:
+            if n_job_started == num_files:
                 tprint("all jobs started")
                 all_started = True
                 all_started_time = time.time()
@@ -72,4 +71,7 @@ def wait_files(job_info_list):
             tprint("Num files : {}".format(n_found))
             last_new_file = time.time()
         last_found = n_found
-    time.sleep(360)
+        repeat = n_found < num_files
+        if repeat:
+            time.sleep(60)
+    #time.sleep(360)

@@ -21,7 +21,6 @@ def load_robust_tokens_for_train() -> Dict[str, List[str]]:
 
 def load_robust_tokens_for_predict(version=3) -> Dict[str, List[str]]:
     data_name = "RobustPredictTokens{}".format(version)
-    print(data_name)
     path = os.path.join(sydney_working_dir, data_name, "1")
     data = pickle.load(open(path, "rb"))
     return data

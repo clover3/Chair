@@ -50,7 +50,7 @@ def main():
     data_ed = run_info['data_ed']
     sh_format_path = run_info['sh_format_path']
     model_sub_path = run_info['model_sub_path']
-    if 'rerun_jobs' in run_info:
+    if 'rerun_jobs' in run_info and run_info['rerun_jobs']:
         new_job_info_list = rerun_jobs(sh_format_path, model_sub_path, save_dir, job_group_name,
                job_info_list)
         job_info_list = new_job_info_list

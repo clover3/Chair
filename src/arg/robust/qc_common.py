@@ -1,8 +1,10 @@
 import os
+import random
 from typing import Dict, List, Iterable
 
 from arg.qck.decl import QCKCandidateWToken, QCKQuery
 from cpath import data_path
+from data_generator.data_parser.robust import load_robust04_query
 from data_generator.data_parser.robust2 import load_bm25_best, load_qrel
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from galagos.types import GalagoDocRankEntry
@@ -91,6 +93,45 @@ def load_candidate_all_passage_from_qrel(max_seq_length, max_passage_per_doc=10)
                                      9999
                                      )
 
+
+def get_candidate_all_passage_w_samping(max_seq_length=256,
+                                        neg_k=1000) -> Dict[str, List[QCKCandidateWToken]]:
+    qrel_path = os.path.join(data_path, "robust", "qrels.rob04.txt")
+    galago_rank = load_bm25_best()
+    tokens_d = load_robust_tokens_for_train()
+    tokens_d.update(load_robust_tokens_for_predict(4))
+    queries = load_robust04_query()
+    tokenizer = get_tokenizer()
+    judgement: Dict[str, Dict] = load_qrel(qrel_path)
+    out_d : Dict[str, List[QCKCandidateWToken]] = {}
+    for query_id in judgement.keys():
+        if query_id not in judgement:
+            continue
+        query = queries[query_id]
+        query_tokens = tokenizer.tokenize(query)
+
+        judge_entries = judgement[query_id]
+        doc_ids = set(judge_entries.keys())
+
+        ranked_list = galago_rank[query_id]
+        ranked_list = ranked_list[:neg_k]
+        doc_ids.update([e.doc_id for e in ranked_list])
+
+        candidate = []
+        for doc_id in doc_ids:
+            tokens = tokens_d[doc_id]
+            for idx, passage in enumerate(enum_passage(tokens, max_seq_length)):
+                if idx == 0:
+                    include = True
+                else:
+                    include = random.random() < 0.1
+
+                if include:
+                    c = QCKCandidateWToken(doc_id, "", passage)
+                    candidate.append(c)
+
+        out_d[query_id] = candidate
+    return out_d
 
 def to_qck_queries(queries):
     qck_queries = []

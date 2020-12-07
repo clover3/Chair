@@ -1,6 +1,7 @@
 import collections
 import os
 import pickle
+import random
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
@@ -74,6 +75,27 @@ class AllSegmentAsDoc(EncoderInterface):
             segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
             entry = out_tokens, segment_ids
             insts.append(entry)
+        return insts
+
+
+class PassageSampling(EncoderInterface):
+    def __init__(self, max_seq_length):
+        super(PassageSampling, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+
+    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
+        content_len = self.max_seq_length - 3 - len(query_tokens)
+        insts = []
+        for idx, second_tokens in enumerate(enum_passage(tokens, content_len)):
+            if idx == 0:
+                include = True
+            else:
+                include = random.random() < 0.1
+            if include:
+                out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
+                segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+                entry = out_tokens, segment_ids
+                insts.append(entry)
         return insts
 
 
@@ -230,12 +252,10 @@ class RobustPointwiseTrainGenEx:
         self.tokenizer = get_tokenizer()
         self.galago_rank = load_bm25_best()
 
-
     def load_tokens(self):
         tokens_d = load_robust_tokens_for_train()
         tokens_d.update(load_robust_tokens_for_predict(4))
         return tokens_d
-
 
     def generate(self, query_list) -> List[ClassificationInstance]:
         neg_k = 1000
@@ -271,4 +291,3 @@ class RobustPointwiseTrainGenEx:
         def encode_fn(inst: ClassificationInstance) -> collections.OrderedDict :
             return encode_classification_instance(self.tokenizer, self.max_seq_length, inst)
         write_records_w_encode_fn(out_path, encode_fn, insts, len(insts))
-

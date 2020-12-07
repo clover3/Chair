@@ -129,6 +129,14 @@ class PayloadAsTokens(NamedTuple):
     is_correct: int
 
 
+class PayloadAsIds(NamedTuple):
+    passage: List[int]
+    text1: List[int]
+    text2: List[int]
+    data_id: int
+    is_correct: int
+
+
 def get_qk_pair_id(entry) -> Tuple[str, str]:
     return entry['query'].query_id, "{}_{}".format(entry['kdp'].doc_id, entry['kdp'].passage_idx)
 

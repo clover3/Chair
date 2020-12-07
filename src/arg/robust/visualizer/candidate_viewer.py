@@ -43,7 +43,7 @@ def main():
     #   2. Doc ID
     #   3. Snippet with most keyword match (BM25 score)
     #   4. scrollable component
-    ranked_list_path = os.path.join(output_path, "ranked_list", "robust_F_200000.txt")
+    ranked_list_path = os.path.join(output_path, "ranked_list", "robust_U_10K_5000.txt")
     bert_ranked_list = load_ranked_list_grouped(ranked_list_path)
 
     queries: Dict[str, str] = load_robust04_query()
