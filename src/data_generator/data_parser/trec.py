@@ -573,7 +573,7 @@ def parse_date_from_content(path):
     return d
 
 
-def load_robust(docs_dir, only_one_seg = False):
+def load_robust(docs_dir, only_one_seg=False):
     collections = dict()
     for (dirpath, dirnames, filenames) in os.walk(docs_dir):
         for name in filenames:

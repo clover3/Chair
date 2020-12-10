@@ -1,32 +1,10 @@
-import json
-import os
 import sys
 
 from arg.robust.eval_helper import add_jobs, wait_files
 from arg.robust.runner.collect_scores import make_ranked_list_from_multiple_files
-from cpath import output_path
-from misc_lib import tprint, exist_or_mkdir
+from arg.robust.runner.run_eval_jobs import get_save_dir, save_run_group_info
+from misc_lib import tprint
 
-if "EXT_DISK_ROOT" not in os.environ:
-    ext_disk_root = "/mnt/disks/disk500/"
-else:
-    ext_disk_root = os.environ["EXT_DISK_ROOT"]
-
-
-def save_run_group_info(info, name):
-    log_dir = os.path.join(output_path, "run_group_info")
-    exist_or_mkdir(log_dir)
-    save_path = os.path.join(log_dir, name + ".json")
-    print("Run group info saved at : {}".format(save_path))
-    json.dump(info, open(save_path, "w"), indent=True)
-
-
-def get_save_dir(job_group_name):
-    # ext_disk_root = "/mnt/disks/disk500/"
-    save_root = os.path.join(ext_disk_root, "robust_score")
-    exist_or_mkdir(save_root)
-    save_dir = os.path.join(save_root, "{}.score".format(job_group_name))
-    return save_dir
 
 def main():
     model_name = sys.argv[1]
@@ -39,7 +17,7 @@ def main():
     save_dir = get_save_dir(job_group_name)
     data_st = 200
     data_ed = 250
-    job_list = range(data_st, data_ed)
+    job_list = [205,206,207,210,211,216,220,225,227,228,230,231,238,240,241,242,243,244,245,246,248]
     tprint("Adding jobs..")
     job_info_list = add_jobs(sh_format_path, model_sub_path, save_dir,
                              job_group_name, job_list)

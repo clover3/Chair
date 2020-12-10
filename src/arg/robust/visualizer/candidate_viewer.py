@@ -6,11 +6,9 @@ from cache import load_from_pickle
 from cpath import output_path
 from data_generator.data_parser.robust import load_robust04_query, load_robust04_qrels
 from data_generator.data_parser.robust2 import load_bm25_best
-from data_generator.tokenizer_wo_tf import pretty_tokens
 from evals.trec import load_ranked_list_grouped
 from galagos.types import GalagoDocRankEntry
 from list_lib import dict_value_map
-from tlm.robust.load import load_robust_tokens_for_predict
 from visualize.html_visual import HtmlVisualizer, get_collapsible_script, get_collapsible_css, get_scroll_css
 
 
@@ -21,15 +19,17 @@ def load_candidate_d():
         return list([e.doc_id for e in l])
 
     candidate_doc_ids: Dict[str, List[str]] = dict_value_map(get_doc_id, candidate_docs)
-    token_data: Dict[str, List[str]] = load_robust_tokens_for_predict()
+    # token_data: Dict[str, List[str]] = load_robust_tokens_for_predict()
+    docs = load_from_pickle("robust04_docs_predict")
 
     out_d = {}
     top_k = 100
     for query_id, doc_id_list in candidate_doc_ids.items():
         new_entries = []
         for doc_id in doc_id_list[:top_k]:
-            tokens = token_data[doc_id]
-            new_entries.append((doc_id, tokens))
+            # tokens = token_data[doc_id]
+            content = docs[doc_id]
+            new_entries.append((doc_id, content))
 
         out_d[query_id] = new_entries
     return out_d
@@ -50,9 +50,9 @@ def main():
     qck_queries = to_qck_queries(queries)
     qrels = load_robust04_qrels()
 
-    # candidates_d = load_candidate_d()
+    candidates_d = load_candidate_d()
     # save_to_pickle(candidates_d, "candidate_viewer_candidate_d")
-    candidates_d = load_from_pickle("candidate_viewer_candidate_d")
+    # candidates_d = load_from_pickle("candidate_viewer_candidate_d")
     style = [
         get_collapsible_css(),
         get_scroll_css()
@@ -63,14 +63,7 @@ def main():
                           )
 
     def is_perfect(judgement, ranked_list):
-        label_list = []
-        for e in ranked_list:
-            doc_id = e.doc_id
-            if doc_id in judgement:
-                label = judgement[doc_id]
-            else:
-                label = 0
-            label_list.append(label)
+        label_list = get_labels(judgement, ranked_list)
 
         all_relevant = True
         for l in label_list:
@@ -80,6 +73,23 @@ def main():
                 if not all_relevant:
                     return False
         return True
+
+    def get_labels(judgement, ranked_list):
+        label_list = []
+        for e in ranked_list:
+            doc_id = e.doc_id
+            if doc_id in judgement:
+                label = judgement[doc_id]
+            else:
+                label = 0
+            label_list.append(label)
+        return label_list
+
+    def p_at_k(judgement, ranked_list, k=10):
+        label_list = get_labels(judgement, ranked_list)
+        num_correct = sum([1 if label else 0 for label in label_list[:k]])
+        return num_correct / k
+
 
     for qid in bert_ranked_list :
         if qid in candidates_d:
@@ -92,14 +102,15 @@ def main():
                 continue
 
             html.write_div_open()
-            html.write_elem("button", "{}: {}".format(qid, q_text),
+            text = "{0}: {1} ({2:.2f})".format(qid, q_text, p_at_k(judgement, ranked_list))
+            html.write_elem("button", text,
                             "collapsible",
                             )
             html.write_div_open("content")
-            doc_tokens = dict(candidates_d[qid])
+            doc_text_d = dict(candidates_d[qid])
 
             for e in ranked_list:
-                tokens = doc_tokens[e.doc_id]
+                #tokens = doc_tokens[e.doc_id]
                 doc_id = e.doc_id
                 if doc_id in judgement:
                     label = judgement[doc_id]
@@ -111,9 +122,11 @@ def main():
                     style += " background-color: DarkGreen"
                 else:
                     style += " background-color: DarkRed"
-                html.write_elem("p", doc_id, "collapsible", style)
-                text = pretty_tokens(tokens, True)
-                html.write_div(text, "c_content")
+                text = "{0}] {1} ({2:.2f})".format(e.rank, doc_id, e.score)
+                html.write_elem("p", text, "collapsible", style)
+                #text = pretty_tokens(tokens, True)
+                doc_text = doc_text_d[doc_id]
+                html.write_div(doc_text, "c_content")
             html.write_div_close()
             html.write_div_close()
     html.write_script(get_collapsible_script())

@@ -133,6 +133,39 @@ def get_candidate_all_passage_w_samping(max_seq_length=256,
         out_d[query_id] = candidate
     return out_d
 
+
+def get_candidate_all_passage_w_samping_predict(max_seq_length=256) -> Dict[str, List[QCKCandidateWToken]]:
+    qrel_path = os.path.join(data_path, "robust", "qrels.rob04.txt")
+    galago_rank = load_bm25_best()
+    tokens_d = load_robust_tokens_for_predict(4)
+    queries = load_robust04_query()
+    tokenizer = get_tokenizer()
+    out_d : Dict[str, List[QCKCandidateWToken]] = {}
+    for query_id in queries:
+        query = queries[query_id]
+        query_tokens = tokenizer.tokenize(query)
+
+        ranked_list = galago_rank[query_id]
+        ranked_list = ranked_list[:100]
+        doc_ids =list([e.doc_id for e in ranked_list])
+
+        candidate = []
+        for doc_id in doc_ids:
+            tokens = tokens_d[doc_id]
+            for idx, passage in enumerate(enum_passage(tokens, max_seq_length)):
+                if idx == 0:
+                    include = True
+                else:
+                    include = random.random() < 0.1
+
+                if include:
+                    c = QCKCandidateWToken(doc_id, "", passage)
+                    candidate.append(c)
+
+        out_d[query_id] = candidate
+    return out_d
+
+
 def to_qck_queries(queries):
     qck_queries = []
     for qid, query_text in queries.items():

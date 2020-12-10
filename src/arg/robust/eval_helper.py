@@ -7,12 +7,12 @@ from taskman_client.add_job import run_job
 from taskman_client.task_executer import check_job_mark
 
 
-def add_jobs(sh_format_path, model_sub_path, save_dir, job_group_name, data_st, data_ed):
+def add_jobs(sh_format_path, model_sub_path, save_dir, job_group_name, job_list):
     save_path_list = []
     exist_or_mkdir(save_dir)
     job_id_list = []
     job_info_list: List[Dict] = []
-    for i in range(data_st, data_ed):
+    for i in job_list:
         save_path = os.path.join(save_dir, str(i))
         run_name = "{}-{}".format(job_group_name, i)
         d = {

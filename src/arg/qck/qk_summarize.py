@@ -29,6 +29,22 @@ class QKOutEntry(NamedTuple):
                           )
 
 
+    @classmethod
+    def from_dict2(cls, d):
+        return QKOutEntry(d['logits'], d['query'], d['kdp'],
+                          []
+                          )
+
+
+def get_score_from_logit(score_type, logits) -> float:
+    if score_type == "softmax":
+        return scipy.special.softmax(logits)[1]
+    elif score_type == "regression":
+        return logits[0]
+    else:
+        assert False
+
+
 def collect_good_passages(data_id_to_info: Dict[str, Dict],
                           passage_score_path: FilePath,
                           config: Dict
@@ -47,20 +63,14 @@ def collect_good_passages(data_id_to_info: Dict[str, Dict],
 
     grouped: Dict[str, List[QKOutEntry]] = group_by(qk_out_entries, lambda x: x.query.query_id)
 
-
-    def get_score_from_logit(logits) -> float:
-        if score_type == "softmax":
-            return scipy.special.softmax(logits)[1]
-        elif score_type == "regression":
-            return logits[0]
-        else:
-            assert False
+    def get_score_from_logit_local(logits) -> float:
+        return get_score_from_logit(score_type, logits)
 
     def get_score(entry: QKOutEntry):
-        return get_score_from_logit(entry.logits)
+        return get_score_from_logit_local(entry.logits)
 
     def is_good(qk_out_entry: QKOutEntry):
-        score = get_score_from_logit(qk_out_entry.logits)
+        score = get_score_from_logit_local(qk_out_entry.logits)
         return score >= score_cut
 
     output = []
@@ -86,7 +96,7 @@ def join_candidate(qk_output: List[Tuple[str, List[QKOutEntry]]],
 
     for qid, passages in qk_output:
         for candidate_id in candidate_id_dict[qid]:
-            e: Tuple[str, str, List[QKOutEntry]] = qid, candidate_id, passages
+            e: Tuple[str, str, List[QKOutEntry]] = (qid, candidate_id, passages)
             yield e
 
 
