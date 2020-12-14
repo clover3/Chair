@@ -6,13 +6,13 @@ from arg.robust.qc_common import to_qck_queries
 from arg.robust.runner.robust_on_robust_qk_gen import config1
 from base_type import FilePath
 from cache import save_to_pickle
-from data_generator.data_parser.robust import load_robust04_query
+from data_generator.data_parser.robust import load_robust04_title_query
 from misc_lib import TimeEstimator
 
 
 def get_candidates(q_res_path, config) -> List[QKUnit]:
     top_n = config['top_n']
-    queries: Dict[str, str] = load_robust04_query()
+    queries: Dict[str, str] = load_robust04_title_query()
     print("{} queries".format(len(queries)))
     qck_queries = to_qck_queries(queries)
 

@@ -27,7 +27,6 @@ def build_gold_lms_for_split(sub_split) -> List[ClaimLM]:
     return build_gold_lms(claims)
 
 
-
 def build_gold_lms(claims):
     gold = get_claim_perspective_id_dict()
     tokenizer = PCTokenizer()

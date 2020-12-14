@@ -4,7 +4,7 @@ from typing import List, Dict
 from arg.robust.qc_common import to_qck_queries
 from cache import load_from_pickle
 from cpath import output_path
-from data_generator.data_parser.robust import load_robust04_query, load_robust04_qrels
+from data_generator.data_parser.robust import load_robust04_qrels, load_robust04_desc2
 from data_generator.data_parser.robust2 import load_bm25_best
 from evals.trec import load_ranked_list_grouped
 from galagos.types import GalagoDocRankEntry
@@ -43,10 +43,10 @@ def main():
     #   2. Doc ID
     #   3. Snippet with most keyword match (BM25 score)
     #   4. scrollable component
-    ranked_list_path = os.path.join(output_path, "ranked_list", "robust_U_10K_5000.txt")
+    ranked_list_path = os.path.join(output_path, "ranked_list", "robust_V_10K_10000.txt")
     bert_ranked_list = load_ranked_list_grouped(ranked_list_path)
 
-    queries: Dict[str, str] = load_robust04_query()
+    queries: Dict[str, str] = load_robust04_desc2()
     qck_queries = to_qck_queries(queries)
     qrels = load_robust04_qrels()
 
@@ -58,7 +58,7 @@ def main():
         get_scroll_css()
     ]
     #
-    html = HtmlVisualizer("robust_candidate.html",
+    html = HtmlVisualizer("robust_V_predictions.html",
                           additional_styles=style,
                           )
 

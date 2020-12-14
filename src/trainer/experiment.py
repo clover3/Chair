@@ -6515,7 +6515,7 @@ class Experiment:
 
 
     def rank_robust_bm25(self):
-        queries = load_robust04_query()
+        queries = load_robust04_title_query()
         ranked_lists = load_2k_rank()
 
         collection_len = 252359881

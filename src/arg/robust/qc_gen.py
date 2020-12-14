@@ -5,7 +5,7 @@ from typing import NamedTuple, List
 
 from arg.qck.decl import QCKQuery, QCKCandidate
 from data_generator.create_feature import create_int_feature
-from data_generator.data_parser.robust import load_robust04_query
+from data_generator.data_parser.robust import load_robust_04_query
 from data_generator.data_parser.robust2 import load_bm25_best
 from data_generator.job_runner import sydney_working_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
@@ -23,13 +23,12 @@ class Instance(NamedTuple):
 
 
 class RobustPredictGen:
-    def __init__(self, encoder, max_seq_length, top_k=100):
+    def __init__(self, encoder, max_seq_length, top_k=100, query_type="title"):
         self.data = self.load_tokens_from_pickles()
         self.max_seq_length = max_seq_length
-        self.queries = load_robust04_query()
+        self.queries = load_robust_04_query(query_type)
         self.galago_rank = load_bm25_best()
         self.top_k = top_k
-
         self.encoder = encoder
         self.tokenizer = get_tokenizer()
 
@@ -63,8 +62,6 @@ class RobustPredictGen:
 
     def write(self, insts: List[Instance], out_path):
         writer = RecordWriterWrap(out_path)
-        f = open(out_path+".info", "wb")
-        doc_id_list = []
         for inst in insts:
             feature = get_basic_input_feature(self.tokenizer, self.max_seq_length,
                                               inst.tokens,
@@ -73,7 +70,6 @@ class RobustPredictGen:
             feature["label_ids"] = create_int_feature([int(inst.label)])
             writer.write_feature(feature)
 
-        pickle.dump(doc_id_list, f)
         writer.close()
 
 

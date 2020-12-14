@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 
 import cpath
 from galagos.parse import load_galago_ranked_list
@@ -26,7 +27,7 @@ def load_bm25_best():
     return load_galago_ranked_list(path)
 
 
-def load_qrel(path):
+def load_qrel(path) -> Dict[str, Dict[str, int]]:
     f = open(path, "r")
     q_dict = {}
     for line in f:
@@ -39,7 +40,7 @@ def load_qrel(path):
     return q_dict
 
 
-def load_robust_qrel():
+def load_robust_qrel() -> Dict[str, Dict[str, int]]:
     qrel_path = os.path.join(robust_path, "qrels.rob04.txt")
     return load_qrel(qrel_path)
 

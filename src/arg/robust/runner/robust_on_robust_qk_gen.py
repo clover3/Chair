@@ -3,7 +3,7 @@ from typing import List, Dict
 from arg.qck.decl import KDP_BT, QKUnitBT
 from arg.robust.qc_common import to_qck_queries
 from cache import save_to_pickle
-from data_generator.data_parser.robust import load_robust04_query
+from data_generator.data_parser.robust import load_robust04_title_query
 from galagos.parse import load_galago_ranked_list
 from galagos.types import GalagoDocRankEntry
 from misc_lib import TimeEstimator
@@ -36,7 +36,7 @@ class KDPGeneratorFirstOnly:
 
 
 def get_candidates(q_res_path, top_n) -> List[QKUnitBT]:
-    queries: Dict[str, str] = load_robust04_query()
+    queries: Dict[str, str] = load_robust04_title_query()
     print("{} queries".format(len(queries)))
     qck_queries = to_qck_queries(queries)
     kdp_gen = KDPGeneratorFirstOnly(q_res_path, top_n, 300)

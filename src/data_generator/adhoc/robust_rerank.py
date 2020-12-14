@@ -3,7 +3,6 @@ from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor
 
 from cpath import data_path
-from data_generator.data_parser import trec
 from data_generator.data_parser.robust import *
 from data_generator.data_parser.robust2 import load_2k_rank
 from data_generator.tokenizer_b import EncoderUnit
@@ -67,7 +66,7 @@ def write_payload_in_plain(top_k, max_seq):
     voca_path = os.path.join(data_path, vocab_filename)
     collection = trec.load_robust(trec.robust_path)
     print("Collection has #docs :", len(collection))
-    queries = load_robust04_query()
+    queries = load_robust04_title_query()
     #queries = load_robust04_desc()
     ranked_lists = load_2k_rank()
     window_size = max_seq * 3

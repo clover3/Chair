@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 
 import cpath
 import data_generator.data_parser.trec as trec
@@ -18,7 +19,7 @@ def load_robust04_query_krovetsz():
     return result
 
 
-def load_robust04_query():
+def load_robust04_title_query() -> Dict[str, str]:
     path = os.path.join(robust_path, "topics.txt")
     queries = load_trec(path, 2)
     for key in queries:
@@ -32,9 +33,17 @@ def load_robust04_qrels():
 
 
 def load_robust04_desc():
-    q_path =os.path.join(robust_path, "04.testset")
-    f = open(q_path, "r")
+    q_path = os.path.join(robust_path, "04.testset")
+    return parse_robust04_desc(q_path)
 
+
+def load_robust04_desc2() -> Dict[str, str]:
+    q_path = os.path.join(robust_path, "topics.robust04.txt")
+    return parse_robust04_desc(q_path)
+
+
+def parse_robust04_desc(q_path) -> Dict[str, str]:
+    f = open(q_path, "r")
     STATE_DEF = 0
     STATE_DESC = 2
     state = STATE_DEF
@@ -52,10 +61,8 @@ def load_robust04_desc():
                 state = STATE_DEF
             else:
                 desc += line
-
     print("Total of {} queries".format(len(queries)))
     return queries
-
 
 
 def sanity_check():
@@ -73,7 +80,16 @@ def sanity_check():
 
 if __name__ == '__main__':
     #queries = load_robust04_query()
-    queries = load_robust04_desc()
+    queries = load_robust04_desc2()
     for q_id in queries:
         print("\t".join([q_id] + queries[q_id].split()))
     #sanity_check()
+
+
+def load_robust_04_query(query_type):
+    if query_type == "title":
+        return load_robust04_title_query()
+    elif query_type == "desc":
+        return load_robust04_desc2()
+    else:
+        assert False

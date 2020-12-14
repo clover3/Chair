@@ -5,7 +5,7 @@ from arg.qck.kd_candidate_gen import iterate_document_parts
 from arg.robust.qc_common import to_qck_queries
 from base_type import FilePath
 from cache import load_from_pickle, save_to_pickle
-from data_generator.data_parser.robust import load_robust04_query
+from data_generator.data_parser.robust import load_robust04_title_query
 from galagos.parse import load_galago_ranked_list_w_space
 from galagos.types import GalagoDocRankEntry
 
@@ -40,7 +40,7 @@ def load_doc_tokens():
 
 def main():
     q_res_path = FilePath("/mnt/nfs/work3/youngwookim/data/qck/robust_on_wiki/q_res.txt")
-    queries: Dict[str, str] = load_robust04_query()
+    queries: Dict[str, str] = load_robust04_title_query()
     qck_queries = to_qck_queries(queries)
     ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list_w_space(q_res_path)
     doc_tokens = load_doc_tokens()

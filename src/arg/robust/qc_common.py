@@ -4,7 +4,7 @@ from typing import Dict, List, Iterable
 
 from arg.qck.decl import QCKCandidateWToken, QCKQuery
 from cpath import data_path
-from data_generator.data_parser.robust import load_robust04_query
+from data_generator.data_parser.robust import load_robust04_title_query
 from data_generator.data_parser.robust2 import load_bm25_best, load_qrel
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from galagos.types import GalagoDocRankEntry
@@ -100,7 +100,7 @@ def get_candidate_all_passage_w_samping(max_seq_length=256,
     galago_rank = load_bm25_best()
     tokens_d = load_robust_tokens_for_train()
     tokens_d.update(load_robust_tokens_for_predict(4))
-    queries = load_robust04_query()
+    queries = load_robust04_title_query()
     tokenizer = get_tokenizer()
     judgement: Dict[str, Dict] = load_qrel(qrel_path)
     out_d : Dict[str, List[QCKCandidateWToken]] = {}
@@ -138,7 +138,7 @@ def get_candidate_all_passage_w_samping_predict(max_seq_length=256) -> Dict[str,
     qrel_path = os.path.join(data_path, "robust", "qrels.rob04.txt")
     galago_rank = load_bm25_best()
     tokens_d = load_robust_tokens_for_predict(4)
-    queries = load_robust04_query()
+    queries = load_robust04_title_query()
     tokenizer = get_tokenizer()
     out_d : Dict[str, List[QCKCandidateWToken]] = {}
     for query_id in queries:
