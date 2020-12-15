@@ -5,7 +5,7 @@ from typing import Iterable, List, Dict, NamedTuple, Tuple
 
 from arg.perspectives.types import CPIDPair
 from cpath import data_path
-from list_lib import flatten
+from list_lib import flatten, lmap
 from misc_lib import split_7_3
 
 dir_path = os.path.join(data_path, "perspective")
@@ -109,6 +109,12 @@ def evidence_gold_dict_str_qid() -> Dict[str, List[int]]:
         d[get_pc_cluster_query_id(e)] = e.evidence_ids
     return d
 
+
+def evidence_gold_dict_str_str() -> Dict[str, List[str]]:
+    d = {}
+    for e in enum_perspective_clusters():
+        d[get_pc_cluster_query_id(e)] = lmap(str, e.evidence_ids)
+    return d
 
 
 

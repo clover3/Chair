@@ -25,6 +25,8 @@ class TrecRankedListEntry(NamedTuple):
     score: float
     run_name: str
 
+    def get_doc_id(self):
+        return self.doc_id
 
 def write_trec_ranked_list_entry(entries: Iterable[TrecRankedListEntry], save_path: str):
     f = open(save_path, "w")

@@ -1,12 +1,12 @@
 import sys
 from typing import List, Dict
 
+from evals.trec import load_ranked_list_grouped, TrecRankedListEntry
 from scipy.stats import stats
 
-from evals.trec import load_ranked_list_grouped, TrecRankedListEntry
-from evals.trec_eval_like import get_metric_fn
 from galagos.parse import load_qrels
 from misc_lib import average
+from runnable.trec.trec_eval_like import get_metric_fn
 
 
 def get_score_per_query(qrels, metric_fn, ranked_list):
