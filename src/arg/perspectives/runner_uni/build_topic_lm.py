@@ -6,7 +6,7 @@ from arg.perspectives.load import get_claim_perspective_id_dict, load_claims_for
 from arg.perspectives.pc_tokenizer import PCTokenizer
 from arg.perspectives.split_helper import train_split
 from list_lib import lmap, foreach, left
-from models.classic.lm_util import get_lm_log, subtract, least_common, smooth, merge_lms, tokens_to_freq
+from models.classic.lm_util import get_lm_log, subtract, least_common, smooth, average_counters, tokens_to_freq
 
 
 class ClaimLM(NamedTuple):
@@ -35,13 +35,13 @@ def build_gold_lms(claims):
         p_text_list: List[str] = lmap(perspective_getter, cluster)
         tokens_list: List[List[str]] = lmap(tokenizer.tokenize_stem, p_text_list)
         counter_list = lmap(tokens_to_freq, tokens_list)
-        counter = merge_lms(counter_list)
+        counter = average_counters(counter_list)
         return counter
 
     def get_claim_lm(claim):
         cid = claim["cId"]
         counter_list: List[Counter] = lmap(get_cluster_lm, gold[cid])
-        counter: Counter = merge_lms(counter_list)
+        counter: Counter = average_counters(counter_list)
         return ClaimLM(cid, claim['text'], counter)
 
     claim_lms = lmap(get_claim_lm, claims)
@@ -63,7 +63,7 @@ def build_baseline_lms(claims):
 def build_and_show():
     claim_lms = build_gold_claim_lm_train()
     alpha = 0.1
-    bg_lm = merge_lms(lmap(lambda x: x.LM, claim_lms))
+    bg_lm = average_counters(lmap(lambda x: x.LM, claim_lms))
 
     def show(claim_lm: ClaimLM):
         print('----')

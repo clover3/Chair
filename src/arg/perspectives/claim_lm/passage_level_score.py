@@ -9,13 +9,13 @@ from datastore.table_names import BertTokenizedCluewebDoc
 from galagos.types import GalagoDocRankEntry
 from list_lib import lmap
 from models.classic.lm_util import get_lm_log, subtract, smooth
-from models.classic.stopword import load_stopwords_ex
+from models.classic.stopword import load_stopwords_for_query
 
 
 def get_generator(max_seq_length, bg_lm, alpha):
     log_bg_lm = get_lm_log(bg_lm)
     top_n = 100
-    stopwords = load_stopwords_ex()
+    stopwords = load_stopwords_for_query()
     fail_logger = Counter()
     bert_tokenizer = get_tokenizer()
 

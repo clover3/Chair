@@ -4,7 +4,7 @@ import sys
 import numpy as np
 
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
-from models.classic.stopword import load_stopwords_ex
+from models.classic.stopword import load_stopwords_for_query
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 from visualize.html_visual import HtmlVisualizer, Cell
 
@@ -14,7 +14,7 @@ def main():
     name = os.path.basename(file_path)
     viewer = EstimatorPredictionViewer(file_path)
     html = HtmlVisualizer("toke_score_gold.html")
-    stopwords = load_stopwords_ex()
+    stopwords = load_stopwords_for_query()
 
     skip = 10
     for entry_idx, entry in enumerate(viewer):

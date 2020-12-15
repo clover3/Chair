@@ -12,8 +12,8 @@ from datastore.table_names import TokenizedCluewebDoc
 from galagos.parse import load_galago_ranked_list
 from galagos.types import GalagoDocRankEntry
 from list_lib import lmap
-from models.classic.lm_util import merge_lms, get_lm_log, smooth, subtract
-from models.classic.stopword import load_stopwords_ex
+from models.classic.lm_util import average_counters, get_lm_log, smooth, subtract
+from models.classic.stopword import load_stopwords_for_query
 
 
 def load_subjectivity(path):
@@ -34,10 +34,10 @@ def main():
 
     # load LM
     claim_lms: List[ClaimLM] = build_gold_lms_for_split(split)
-    bg_lm = merge_lms(lmap(lambda x: x.LM, claim_lms))
+    bg_lm = average_counters(lmap(lambda x: x.LM, claim_lms))
     log_bg_lm = get_lm_log(bg_lm)
     alpha = 0.1
-    stopwords = load_stopwords_ex()
+    stopwords = load_stopwords_for_query()
     # load subjectivity predictions.
     subj_d: Dict[str, Tuple[int, int]] = load_subjectivity(subjectivity_path)
     doc_ids = subj_d.keys()

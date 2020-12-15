@@ -211,6 +211,8 @@ def clean_query(query):
     for t in query:
         if t in spe_chars:
             continue
+        elif len(t) == 1 and ord(t[0]) > 256:
+            continue
         else:
             q_term.append(t)
     return q_term

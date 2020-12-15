@@ -10,8 +10,8 @@ from galagos.parse import load_galago_ranked_list
 from galagos.types import GalagoDocRankEntry
 from list_lib import lmap
 from misc_lib import average
-from models.classic.lm_util import get_lm_log, smooth, subtract, merge_lms
-from models.classic.stopword import load_stopwords_ex
+from models.classic.lm_util import get_lm_log, smooth, subtract, average_counters
+from models.classic.stopword import load_stopwords_for_query
 from tab_print import print_table
 
 
@@ -32,7 +32,7 @@ def a_relevant():
     claims: List[Dict] = get_claims_from_ids(d_ids)
     claim_lms = build_gold_lms(claims)
     claim_lms_d = {lm.cid: lm for lm in claim_lms}
-    bg_lm = merge_lms(lmap(lambda x: x.LM, claim_lms))
+    bg_lm = average_counters(lmap(lambda x: x.LM, claim_lms))
     log_bg_lm = get_lm_log(bg_lm)
 
     claims = claims[:10]
@@ -41,7 +41,7 @@ def a_relevant():
     ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
     preload_docs(ranked_list, claims, top_n)
 
-    stopwords = load_stopwords_ex()
+    stopwords = load_stopwords_for_query()
     alpha = 0.7
 
     tokenizer = PCTokenizer()

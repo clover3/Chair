@@ -4,6 +4,7 @@
 import os
 import subprocess
 import time
+from collections import Counter
 from subprocess import PIPE
 from typing import List, Dict
 
@@ -173,3 +174,19 @@ def write_queries_to_files(n_query_per_file, out_dir, queries: List[DocQuery]):
         out_path = os.path.join(out_dir, "{}.json".format(i))
         save_queries_to_file(queries[st:ed], out_path)
         i += 1
+
+
+def counter_to_galago_query(query_id: str, q_tf: Counter, k=0) -> DocQuery:
+    def get_weight(q_term):
+        f = q_tf[q_term]
+        return "{0:.2f}".format(f)
+
+    keys = q_tf.keys()
+    combine_weight = ":".join(["{}={}".format(idx, get_weight(t)) for idx, t in enumerate(keys)])
+
+    q_str_inner = " ".join(["#bm25:K={}({})".format(k, t) for t in keys])
+    query_str = "#combine:{}({})".format(combine_weight, q_str_inner)
+    return DocQuery({
+        'number': query_id,
+        'text': query_str
+    })

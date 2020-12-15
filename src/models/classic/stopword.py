@@ -12,9 +12,13 @@ def load_stopwords():
     return s
 
 
-def load_stopwords_ex():
+additional_stopwords = ["'s", "n't"]
+
+
+def load_stopwords_for_query():
     s = load_stopwords()
     s.update(get_all_punct())
+    s.update(additional_stopwords)
     return s
 
 

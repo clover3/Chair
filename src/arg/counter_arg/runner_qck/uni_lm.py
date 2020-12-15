@@ -8,7 +8,7 @@ from arg.counter_arg.header import Passage
 from arg.perspectives.pc_tokenizer import PCTokenizer
 from list_lib import left, foreach
 from list_lib import lmap
-from models.classic.lm_util import tokens_to_freq, merge_lms, get_lm_log, smooth, subtract, least_common
+from models.classic.lm_util import tokens_to_freq, average_counters, get_lm_log, smooth, subtract, least_common
 
 
 class RelevanceModel(NamedTuple):
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     split = "training"
     lms: List[Tuple[str, Counter]] = list(build_lm(split))
     alpha = 0.1
-    bg_lm = merge_lms(lmap(lambda x: x.lm, lms))
+    bg_lm = average_counters(lmap(lambda x: x.lm, lms))
 
     def show(r: RelevanceModel):
         print('----')

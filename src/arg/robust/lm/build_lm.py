@@ -8,7 +8,7 @@ from data_generator.data_parser.robust2 import load_robust_qrel
 from epath import job_man_dir
 from list_lib import lmap
 from misc_lib import get_dir_files, tprint
-from models.classic.lm_util import merge_lms
+from models.classic.lm_util import average_counters
 
 
 def load_counter_dict():
@@ -47,7 +47,7 @@ def main():
     for query_id in queries:
         pos_docs_ids: Iterable[str] = get_pos_docs(query_id)
         pos_doc_lms: List[Counter] = lmap(get_doc_lm, pos_docs_ids)
-        query_lm: Counter = merge_lms(pos_doc_lms)
+        query_lm: Counter = average_counters(pos_doc_lms)
         query_lm_dict[query_id] = query_lm
 
 

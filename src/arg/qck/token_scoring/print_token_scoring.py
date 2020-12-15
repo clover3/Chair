@@ -9,7 +9,7 @@ from cache import load_pickle_from
 from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens
 from exec_lib import run_func_with_config
 from misc_lib import get_second
-from models.classic.stopword import load_stopwords_ex
+from models.classic.stopword import load_stopwords_for_query
 
 
 def main(config):
@@ -18,7 +18,7 @@ def main(config):
     per_query_infos: Dict[str, Dict[WordAsID, np.array]] = load_pickle_from(word_prob_path)
     claims = load_claims_for_sub_split(split)
     claim_d = claims_to_dict(claims)
-    stopwords = load_stopwords_ex()
+    stopwords = load_stopwords_for_query()
 
     def is_stopword(tokens):
         if len(tokens) == 1 and tokens[0] in stopwords:

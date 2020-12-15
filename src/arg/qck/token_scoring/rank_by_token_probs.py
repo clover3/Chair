@@ -15,7 +15,7 @@ from evals.trec import scores_to_ranked_list_entries, write_trec_ranked_list_ent
 from exec_lib import run_func_with_config
 from list_lib import lmap
 from misc_lib import get_second, average
-from models.classic.stopword import load_stopwords_ex
+from models.classic.stopword import load_stopwords_for_query
 
 
 class Scorer:
@@ -25,7 +25,7 @@ class Scorer:
         self.stopwords_as_ids: Set[WordAsID] = set()
         new_d = {}
         if skip_stopwords:
-            stopwords = load_stopwords_ex()
+            stopwords = load_stopwords_for_query()
             for key in d.keys():
                 tokens = decode_word_as_id(self.tokenizer, key)
                 if len(tokens) == 1 and tokens[0] in stopwords:

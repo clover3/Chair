@@ -5,7 +5,7 @@ from typing import List, Tuple
 from arg.perspectives.pc_tokenizer import PCTokenizer
 from arg.qck.token_scoring.decl import ScoreVector, TokenScore
 from list_lib import right
-from models.classic.lm_util import get_log_odd2, merge_lms
+from models.classic.lm_util import get_log_odd2, average_counters
 
 
 class ScorerInterface(ABC):
@@ -24,7 +24,7 @@ class ScorerInterface(ABC):
 
 class LogOddScorer(ScorerInterface):
     def __init__(self, q_lms: List[Tuple[str, Counter]], alpha=0.1):
-        bg_lm = merge_lms(right(q_lms))
+        bg_lm = average_counters(right(q_lms))
         self.tokenizer = PCTokenizer()
         print("Eval log odds")
         self.claim_log_odds_dict = {qid: get_log_odd2(q_lm, bg_lm, alpha)
@@ -48,7 +48,7 @@ class LogOddScorer(ScorerInterface):
 class RawProbabilityScorer(ScorerInterface):
     def __init__(self, q_lms: List[Tuple[str, Counter]]):
         self.q_lm_dict = dict(q_lms)
-        self.bg_lm = merge_lms(right(q_lms))
+        self.bg_lm = average_counters(right(q_lms))
         self.tokenizer = PCTokenizer()
 
     def score_text(self, q_id, text) -> ScoreVector:

@@ -9,7 +9,7 @@ from cpath import output_path
 from galagos.interface import DocQuery
 from galagos.parse import save_queries_to_file
 from galagos.tokenize_util import clean_tokenize_str_to_tokens
-from models.classic.stopword import load_stopwords_ex
+from models.classic.stopword import load_stopwords_for_query
 
 
 def load_terms(split) -> Dict[str, List[str]]:
@@ -60,7 +60,7 @@ def drop_words(q_terms, words):
 
 def get_claims_query(claims, expand_term_dict, drop_stopwords=False, aux_weight=0.1):
     if drop_stopwords:
-        stopword = load_stopwords_ex()
+        stopword = load_stopwords_for_query()
 
     queries = []
     for c in claims:

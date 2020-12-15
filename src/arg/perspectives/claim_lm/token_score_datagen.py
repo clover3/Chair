@@ -9,7 +9,7 @@ from datastore.table_names import BertTokenizedCluewebDoc
 from galagos.types import GalagoDocRankEntry
 from list_lib import lmap, foreach, flatten
 from models.classic.lm_util import get_lm_log, subtract, smooth
-from models.classic.stopword import load_stopwords_ex
+from models.classic.stopword import load_stopwords_for_query
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.data_gen.base import get_basic_input_feature
 from tlm.data_gen.bert_data_gen import create_int_feature, create_float_feature
@@ -99,7 +99,7 @@ def get_target_labels(tokens: List[str], log_odd, stopwords, fail_logger: Counte
 def get_generator(max_seq_length, bg_lm, alpha):
     log_bg_lm = get_lm_log(bg_lm)
     top_n = 100
-    stopwords = load_stopwords_ex()
+    stopwords = load_stopwords_for_query()
     fail_logger = Counter()
     bert_tokenizer = get_tokenizer()
 

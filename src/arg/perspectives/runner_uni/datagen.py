@@ -9,7 +9,7 @@ from galagos.parse import load_galago_ranked_list
 from galagos.types import GalagoDocRankEntry
 from list_lib import lmap
 from misc_lib import exist_or_mkdir
-from models.classic.lm_util import merge_lms
+from models.classic.lm_util import average_counters
 
 env_data_dir = os.environ["DATA_DIR"]
 
@@ -25,7 +25,7 @@ def do_datagen(d_ids, q_res_path, save_name):
     claims: List[Dict] = get_claims_from_ids(d_ids)
     ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
     claim_lms = build_gold_lms(claims)
-    bg_lm = merge_lms(lmap(lambda x: x.LM, claim_lms))
+    bg_lm = average_counters(lmap(lambda x: x.LM, claim_lms))
     alpha = 0.1
     max_seq_length = 512
     generator = get_generator(max_seq_length, bg_lm, alpha)

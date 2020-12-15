@@ -12,7 +12,6 @@ def get_all_data_size() -> Dict[DataName, Dict]:
     robust_all_passage_unpaired = DataName("robust_all_passage_unpaired")
     robust_selected = DataName("robust_selected")
 
-
     robust_K = ModelName("Robust_K")
     robust_L = ModelName("robust_L")
 

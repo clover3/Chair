@@ -6,11 +6,11 @@ from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.pc_tokenizer import PCTokenizer
 from arg.perspectives.runner_uni.build_topic_lm import ClaimLM
 from list_lib import lmap
-from models.classic.lm_util import get_log_odd, merge_lms
+from models.classic.lm_util import get_log_odd, average_counters
 
 
 def get_lm_scorer(claim_lms: List[ClaimLM], alpha):
-    bg_lm = merge_lms(lmap(lambda x: x.LM, claim_lms))
+    bg_lm = average_counters(lmap(lambda x: x.LM, claim_lms))
     claim_log_odds_dict: Dict[int, Counter] = {c_lm.cid: get_log_odd(c_lm, bg_lm, alpha) for c_lm in claim_lms}
 
     def scorer(claim_id: int, p_tokens: List[str]) -> NamedNumber:
@@ -27,7 +27,7 @@ def predict_by_lm(claim_lms: List[ClaimLM],
                   top_k) -> List[Tuple[str, List[Dict]]]:
 
     alpha = 0.1
-    bg_lm = merge_lms(lmap(lambda x: x.LM, claim_lms))
+    bg_lm = average_counters(lmap(lambda x: x.LM, claim_lms))
     tokenizer = PCTokenizer()
     print("Eval log odds")
     claim_log_odds_dict = {str(c_lm.cid): get_log_odd(c_lm, bg_lm, alpha) for c_lm in claim_lms}

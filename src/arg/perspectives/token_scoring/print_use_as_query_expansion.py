@@ -4,14 +4,14 @@ from typing import Dict
 from arg.perspectives.load import claims_to_dict, get_all_claims
 from arg.perspectives.pc_tokenizer import PCTokenizer
 from exec_lib import run_func_with_config
-from models.classic.stopword import load_stopwords_ex
+from models.classic.stopword import load_stopwords_for_query
 
 
 def main(config):
     word_list_path = config['word_list_path']
     claims = get_all_claims()
     claim_d = claims_to_dict(claims)
-    stopwords = load_stopwords_ex()
+    stopwords = load_stopwords_for_query()
 
     word_list_d: Dict = json.load(open(word_list_path, "r"))
 

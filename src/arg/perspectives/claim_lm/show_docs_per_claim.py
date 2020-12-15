@@ -16,8 +16,8 @@ from galagos.parse import load_galago_ranked_list
 from galagos.types import GalagoDocRankEntry
 from list_lib import lmap, flatten, left, lfilter, right
 from misc_lib import average, two_digit_float
-from models.classic.lm_util import get_lm_log, subtract, smooth, merge_lms
-from models.classic.stopword import load_stopwords_ex
+from models.classic.lm_util import get_lm_log, subtract, smooth, average_counters
+from models.classic.stopword import load_stopwords_for_query
 from visualize.html_visual import HtmlVisualizer, Cell
 
 
@@ -81,7 +81,7 @@ def report_missing(claims, ranked_list, top_n):
     print("")
 
 
-stopwords = load_stopwords_ex()
+stopwords = load_stopwords_for_query()
 def get_cell_from_token(token, log_odd):
     if token in stopwords:
         log_odd = 0
@@ -121,7 +121,7 @@ def join_docs_and_lm():
     preload_docs(ranked_list, claims, top_n)
     claim_lms = build_gold_lms(claims)
     claim_lms_d = {lm.cid: lm for lm in claim_lms}
-    bg_lm = merge_lms(lmap(lambda x: x.LM, claim_lms))
+    bg_lm = average_counters(lmap(lambda x: x.LM, claim_lms))
     log_bg_lm = get_lm_log(bg_lm)
 
 
@@ -198,10 +198,10 @@ def doc_lm_scoring():
     preload_docs(ranked_list, claims, top_n)
     claim_lms = build_gold_lms(claims)
     claim_lms_d = {lm.cid: lm for lm in claim_lms}
-    bg_lm = merge_lms(lmap(lambda x: x.LM, claim_lms))
+    bg_lm = average_counters(lmap(lambda x: x.LM, claim_lms))
     log_bg_lm = get_lm_log(bg_lm)
 
-    stopwords = load_stopwords_ex()
+    stopwords = load_stopwords_for_query()
     alpha = 0.5
 
     html_visualizer = HtmlVisualizer("doc_lm_doc_level.html")
@@ -307,10 +307,10 @@ def a_relevant():
     preload_docs(ranked_list, claims, top_n)
     claim_lms = build_gold_lms(claims)
     claim_lms_d = {lm.cid: lm for lm in claim_lms}
-    bg_lm = merge_lms(lmap(lambda x: x.LM, claim_lms))
+    bg_lm = average_counters(lmap(lambda x: x.LM, claim_lms))
     log_bg_lm = get_lm_log(bg_lm)
 
-    stopwords = load_stopwords_ex()
+    stopwords = load_stopwords_for_query()
     alpha = 0.3
 
     tokenizer = PCTokenizer()
