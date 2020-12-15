@@ -19,7 +19,7 @@ from arg.perspectives.split_helper import train_split
 from base_type import FileName
 from cache import load_from_pickle
 from cpath import output_path
-from evals.trec import write_trec_ranked_list_entry
+from trec.trec_parse import write_trec_ranked_list_entry
 from list_lib import lmap, lfilter
 
 

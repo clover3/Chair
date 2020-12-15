@@ -8,7 +8,7 @@ from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids, load_
     get_claim_perspective_id_dict2
 from arg.perspectives.pc_tokenizer import PCTokenizer
 from cache import save_to_pickle
-from evals.trec import TrecRankedListEntry
+from trec.trec_parse import TrecRankedListEntry
 from list_lib import lmap, left
 
 

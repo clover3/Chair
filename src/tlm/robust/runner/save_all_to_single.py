@@ -1,5 +1,5 @@
 from cache import load_pickle_from
-from evals.trec import TrecRankedListEntry
+from trec.trec_parse import TrecRankedListEntry
 from galagos.parse import write_ranked_list_from_s
 from tlm.robust.eval_metrics import get_payload_info, generate_ranked_list
 

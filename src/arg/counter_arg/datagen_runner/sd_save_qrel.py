@@ -4,7 +4,7 @@ from arg.counter_arg.header import splits
 from arg.counter_arg.same_debate import load_base_resource
 from arg.qck.qrel_helper import get_trec_relevance_judgement
 from cpath import output_path
-from evals.trec import write_trec_relevance_judgement
+from trec.trec_parse import write_trec_relevance_judgement
 
 
 def get_labels():

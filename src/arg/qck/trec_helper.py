@@ -1,7 +1,7 @@
 
 from typing import List, Dict, Tuple, Iterable
 
-from evals.trec import TrecRankedListEntry
+from trec.trec_parse import TrecRankedListEntry
 from misc_lib import get_second, group_by
 
 

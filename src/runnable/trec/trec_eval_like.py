@@ -1,7 +1,7 @@
 import sys
 from typing import List, Dict
 
-from evals.trec import load_ranked_list_grouped, TrecRankedListEntry
+from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
 
 from galagos.parse import load_qrels
 from misc_lib import average

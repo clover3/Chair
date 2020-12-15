@@ -9,7 +9,7 @@ from arg.perspectives.trec_helper import scrore_d_to_trec_style_predictions
 from arg.perspectives.types import CPIDPair
 from cache import load_from_pickle
 from cpath import output_path
-from evals.trec import write_trec_ranked_list_entry
+from trec.trec_parse import write_trec_ranked_list_entry
 from list_lib import left
 from tab_print import print_table
 

@@ -2,7 +2,7 @@ import json
 import sys
 from typing import List, Iterable, Dict, Tuple
 
-from evals.trec import load_ranked_list_grouped, write_trec_ranked_list_entry, TrecRankedListEntry, \
+from trec.trec_parse import load_ranked_list_grouped, write_trec_ranked_list_entry, TrecRankedListEntry, \
     scores_to_ranked_list_entries
 from list_lib import flatten
 

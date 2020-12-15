@@ -4,7 +4,7 @@ from typing import List, Dict, Tuple
 
 from arg.perspectives.eval_caches import get_eval_candidate_as_pids
 from arg.perspectives.load import get_claim_perspective_id_dict2
-from evals.trec import load_ranked_list
+from trec.trec_parse import load_ranked_list
 
 
 def main():

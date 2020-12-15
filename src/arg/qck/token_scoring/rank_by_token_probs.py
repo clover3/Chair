@@ -11,7 +11,7 @@ from arg.qck.token_scoring.collect_score import WordAsID, ids_to_word_as_id, dec
 from arg.qck.token_scoring.decl import TokenScore
 from cache import load_pickle_from
 from data_generator.tokenizer_wo_tf import get_tokenizer, get_word_level_location, pretty_tokens
-from evals.trec import scores_to_ranked_list_entries, write_trec_ranked_list_entry
+from trec.trec_parse import scores_to_ranked_list_entries, write_trec_ranked_list_entry
 from exec_lib import run_func_with_config
 from list_lib import lmap
 from misc_lib import get_second, average

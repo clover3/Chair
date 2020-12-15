@@ -2,7 +2,7 @@ import random
 import sys
 from typing import List, Iterable, Dict
 
-from evals.trec import load_ranked_list_grouped, write_trec_ranked_list_entry, TrecRankedListEntry
+from trec.trec_parse import load_ranked_list_grouped, write_trec_ranked_list_entry, TrecRankedListEntry
 
 from list_lib import flatten
 

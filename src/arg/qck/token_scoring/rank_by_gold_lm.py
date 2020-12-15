@@ -10,7 +10,7 @@ from arg.qck.token_scoring.collect_score import WordAsID, ids_to_word_as_id
 from arg.qck.token_scoring.decl import TokenScore
 from arg.qck.topic_lm.lm_based_scorer import RawProbabilityScorer
 from data_generator.tokenizer_wo_tf import get_tokenizer, get_word_level_location
-from evals.trec import scores_to_ranked_list_entries, write_trec_ranked_list_entry
+from trec.trec_parse import scores_to_ranked_list_entries, write_trec_ranked_list_entry
 from exec_lib import run_func_with_config
 from list_lib import lmap, left
 from misc_lib import get_second

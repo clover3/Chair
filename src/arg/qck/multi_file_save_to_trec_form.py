@@ -8,7 +8,7 @@ from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.qck.save_to_trec_form import get_score_d
 from arg.qck.trec_helper import scrore_d_to_trec_style_predictions
 from cpath import output_path
-from evals.trec import write_trec_ranked_list_entry
+from trec.trec_parse import write_trec_ranked_list_entry
 from misc_lib import exist_or_mkdir
 
 

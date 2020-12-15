@@ -6,7 +6,7 @@ from cache import load_from_pickle
 from cpath import output_path
 from data_generator.data_parser.robust import load_robust04_qrels, load_robust04_desc2
 from data_generator.data_parser.robust2 import load_bm25_best
-from evals.trec import load_ranked_list_grouped
+from trec.trec_parse import load_ranked_list_grouped
 from galagos.types import GalagoDocRankEntry
 from list_lib import dict_value_map
 from visualize.html_visual import HtmlVisualizer, get_collapsible_script, get_collapsible_css, get_scroll_css

@@ -9,7 +9,7 @@ from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.qck.trec_helper import scrore_d_to_trec_style_predictions
 from cpath import output_path
 from estimator_helper.output_reader import join_prediction_with_info
-from evals.trec import write_trec_ranked_list_entry
+from trec.trec_parse import write_trec_ranked_list_entry
 from list_lib import lmap
 from misc_lib import exist_or_mkdir, group_by, average
 

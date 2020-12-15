@@ -3,7 +3,7 @@ from typing import Dict
 
 from arg.perspectives.load import get_perspective_dict
 from cpath import output_path
-from evals.trec import trec_writer
+from trec.trec_parse import trec_writer
 
 
 def main():

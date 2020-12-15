@@ -5,7 +5,7 @@ from arg.perspectives.eval_caches import get_eval_candidates_from_pickle
 from arg.perspectives.load import get_claim_perspective_id_dict
 from arg.perspectives.types import CPIDPair
 from cpath import data_path
-from evals.trec import write_trec_relevance_judgement, TrecRankedListEntry, TrecRelevanceJudgementEntry
+from trec.trec_parse import write_trec_relevance_judgement, TrecRankedListEntry, TrecRelevanceJudgementEntry
 from list_lib import flatten
 from misc_lib import group_by, get_second
 

@@ -3,7 +3,7 @@ from typing import List, Dict
 
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import get_claim_perspective_id_dict, get_all_claims, claims_to_dict
-from evals.trec import load_ranked_list_grouped
+from trec.trec_parse import load_ranked_list_grouped
 from list_lib import lmap
 
 
