@@ -1,7 +1,7 @@
 import json
 import os
 from collections import defaultdict
-from typing import Iterable, List, Dict, NamedTuple
+from typing import Iterable, List, Dict, NamedTuple, Tuple
 
 from arg.perspectives.types import CPIDPair
 from cpath import data_path
@@ -35,6 +35,19 @@ def get_perspective_dict() -> Dict[int, str]:
         pId = e['pId']
         text = e['text']
         d[pId] = text
+    return d
+
+
+def load_evidence_pool() -> List[Dict]:
+    return load_json_by_name("evidence_pool_v1.0.json")
+
+
+def load_evidence_dict() -> Dict[int, str]:
+    d = {}
+    for e in load_evidence_pool():
+        eId = e['eId']
+        text = e['text']
+        d[eId] = text
     return d
 
 
@@ -73,6 +86,30 @@ def enum_perspective_clusters() -> Iterable[PerspectiveCluster]:
     gold = load_perspectrum_golds()
     for key, value in gold.items():
         yield from value
+
+
+def enum_perspective_clusters_for_split(split) -> Iterable[PerspectiveCluster]:
+    claim_ids = set(load_claim_ids_for_split(split))
+    for pc in enum_perspective_clusters():
+        if pc.claim_id in claim_ids:
+            yield pc
+
+
+def evidence_gold_dict() -> Dict[Tuple[int, int], List[int]]:
+    d = {}
+    for e in enum_perspective_clusters():
+        key = e.claim_id, e.perspective_ids[0]
+        d[key] = e.evidence_ids
+    return d
+
+
+def evidence_gold_dict_str_qid() -> Dict[str, List[int]]:
+    d = {}
+    for e in enum_perspective_clusters():
+        d[get_pc_cluster_query_id(e)] = e.evidence_ids
+    return d
+
+
 
 
 def load_train_claim_ids() -> Iterable[int]:
@@ -209,10 +246,11 @@ def show_claim_perspective_pair():
                 print("P: ", perspective[pid])
 
 
-
+def get_pc_cluster_query_id(cluster: PerspectiveCluster) -> str:
+    min_pid = min(cluster.perspective_ids)
+    query_id = "{}_{}".format(cluster.claim_id, min_pid)
+    return query_id
 
 
 if __name__ == "__main__":
     show_claim_perspective_pair()
-
-

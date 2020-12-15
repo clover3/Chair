@@ -14,6 +14,9 @@ class QCKCandidate(NamedTuple):
     def get_tokens(self, tokenizer):
         return tokenizer.tokenize(self.text)
 
+    def get_id(self):
+        return self.id
+
 
 class QCKQueryWToken(QCKQuery):
     query_id: str

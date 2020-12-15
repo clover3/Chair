@@ -2,7 +2,8 @@ import os
 from collections import Counter
 from typing import List, Iterable, Dict
 
-from arg.perspectives.load import PerspectiveCluster, enum_perspective_clusters, get_all_claim_d, get_perspective_dict
+from arg.perspectives.load import PerspectiveCluster, enum_perspective_clusters, get_all_claim_d, get_perspective_dict, \
+    get_pc_cluster_query_id
 from cpath import output_path
 from galagos.interface import DocQuery, counter_to_galago_query
 from galagos.parse import save_queries_to_file
@@ -26,16 +27,14 @@ def main():
     def cluster_to_query(cluster: PerspectiveCluster) -> DocQuery:
         claim_text = claim_text_d[cluster.claim_id]
         perspective_text_list = list([perspective_text_d[pid] for pid in cluster.perspective_ids])
-
-        min_pid = min(cluster.perspective_ids)
-        query_id = "{}_{}".format(cluster.claim_id, min_pid)
-
+        query_id = get_pc_cluster_query_id(cluster)
         claim_tf: Counter = get_terms(claim_text)
         pers_tf: Counter = average_counters(lmap(get_terms, perspective_text_list))
         tf = sum_counters([claim_tf, pers_tf])
 
         query: DocQuery = counter_to_galago_query(query_id, tf)
         return query
+
 
     query_list: List[DocQuery] = lmap(cluster_to_query, pc_clusters)
     print(len(query_list))
