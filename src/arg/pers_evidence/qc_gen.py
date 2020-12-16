@@ -3,7 +3,8 @@ import os
 from typing import List, Dict
 
 from arg.pers_evidence.common import get_qck_queries
-from arg.pers_evidence.runner.get_candidate_dict import load_candidate
+from arg.pers_evidence.runner.get_candidate_dict import get_ex_candidate_for_training, \
+    get_candidate
 from arg.perspectives.load import splits, evidence_gold_dict_str_str
 from arg.qck.decl import QCKQuery, QCKCandidate
 from arg.qck.qc_datagen import QCInstanceGenerator
@@ -17,7 +18,7 @@ def get_is_correct_fn():
     gold_dict: Dict[str, List[str]] = evidence_gold_dict_str_str()
 
     def is_correct(query: QCKQuery, candidate: QCKCandidate) -> bool:
-        gold_e_ids = gold_dict[query.query_id]
+        gold_e_ids: List[str] = gold_dict[query.query_id]
         if candidate.id in gold_e_ids:
             return True
         else:
@@ -25,21 +26,48 @@ def get_is_correct_fn():
     return is_correct
 
 
-def generate_qc_bert():
+
+def do_generate_jobs(candidate_dict, is_correct_fn, save_dir, split):
+    queries = get_qck_queries(split)
+    generator = QCInstanceGenerator(candidate_dict, is_correct_fn)
+    data_id_manager = DataIDManager()
+    insts = generator.generate(queries, data_id_manager)
+    save_path = os.path.join(save_dir, split)
+    write_records_w_encode_fn(save_path, generator.encode_fn, insts)
+    json.dump(data_id_manager.id_to_info, open(save_path + ".info", "w"))
+
+
+def generate_qc3():
     is_correct_fn = get_is_correct_fn()
-    save_dir = os.path.join(output_path, "pc_evidence_qc")
+    save_dir = os.path.join(output_path, "pc_evidence_qc3")
     exist_or_mkdir(save_dir)
     for split in splits:
-        candidate_dict: Dict[str, List[QCKCandidateI]] = load_candidate(split)
-        queries = get_qck_queries(split)
-        generator = QCInstanceGenerator(candidate_dict, is_correct_fn)
-        data_id_manager = DataIDManager()
-        insts = generator.generate(queries, data_id_manager)
+        candidate_dict: Dict[str, List[QCKCandidateI]] = get_candidate(split)
+        do_generate_jobs(candidate_dict, is_correct_fn, save_dir, split)
 
-        save_path = os.path.join(save_dir, split)
-        write_records_w_encode_fn(save_path, generator.encode_fn, insts)
-        json.dump(data_id_manager.id_to_info, open(save_path + ".info", "w"))
+
+def generate_qc_bert_bal():
+    is_correct_fn = get_is_correct_fn()
+    save_dir = os.path.join(output_path, "pc_evidence_qc_bal")
+    exist_or_mkdir(save_dir)
+    for split in splits:
+        candidate_dict: Dict[str, List[QCKCandidateI]] = get_ex_candidate_for_training(split)
+        # candidate_dict: Dict[str, List[QCKCandidateI]] = get_candidate(split)
+        #candidate_dict: Dict[str, List[QCKCandidateI]] = load_candidate(split)
+        do_generate_jobs(candidate_dict, is_correct_fn, save_dir, split)
+
+
+def generate_qc_bert4():
+    is_correct_fn = get_is_correct_fn()
+    save_dir = os.path.join(output_path, "pc_evidence_qc4")
+    exist_or_mkdir(save_dir)
+    for split in splits:
+        candidate_dict: Dict[str, List[QCKCandidateI]] = get_ex_candidate_for_training(split, False)
+        # candidate_dict: Dict[str, List[QCKCandidateI]] = get_candidate(split)
+        #candidate_dict: Dict[str, List[QCKCandidateI]] = load_candidate(split)
+        do_generate_jobs(candidate_dict, is_correct_fn, save_dir, split)
+
 
 
 if __name__ == "__main__":
-    generate_qc_bert()
+    generate_qc_bert4()

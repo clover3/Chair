@@ -17,6 +17,9 @@ class QCKCandidate(NamedTuple):
     def get_id(self):
         return self.id
 
+    def light_rep(self):
+        return QCKCandidate(self.id, "")
+
 
 class QCKQueryWToken(QCKQuery):
     query_id: str
@@ -34,6 +37,9 @@ class QCKCandidateWToken(NamedTuple):
 
     def get_tokens(self, tokenizer):
         return self.tokens
+
+    def light_rep(self):
+        return QCKCandidate(self.id, "")
 
 
 class KnowledgeDocument(NamedTuple):
@@ -94,6 +100,14 @@ class QCInstance(NamedTuple):
     candidate_text: str
     data_id: int
     is_correct: int
+
+
+class QCInstanceTokenized(NamedTuple):
+    query_text: List[str]
+    candidate_text: List[str]
+    data_id: int
+    is_correct: int
+
 
 
 class QCKInstance(NamedTuple):
@@ -206,6 +220,17 @@ class QCKLFormatHandler(FormatHandler):
         return False
 
 
+class QCWTFormatHandler(FormatHandler):
+    def get_pair_id(self, entry):
+        return get_qc_pair_id(entry)
+
+    def get_mapping(self):
+        return qcwt_convert_map
+
+    def drop_kdp(self):
+        return False
+
+
 def get_format_handler(input_type):
     if input_type == "qck":
         return QCKFormatHandler()
@@ -215,6 +240,8 @@ def get_format_handler(input_type):
         return QKFormatHandler()
     elif input_type == "qckl":
         return QCKLFormatHandler()
+    elif input_type == "qcwt":
+        return QCWTFormatHandler()
     else:
         assert False
 
@@ -228,11 +255,16 @@ qk_convert_map = {
         'kdp': KDP,
         'query': QCKQuery,
     }
+
 qc_convert_map = {
         'query': QCKQuery,
         'candidate': QCKCandidate,
     }
 
+qcwt_convert_map = {
+        'query': QCKQuery,
+        'candidate': QCKCandidateWToken,
+    }
 
 def parse_kdp_list(*tuple):
     l = list(tuple)

@@ -32,7 +32,12 @@ def parse_info_inner(info, convert_map, drop_kdp):
     for key, class_ in convert_map.items():
         if drop_kdp and key == "kdp" and len(info[key]) > 3:
             info[key][3] = []
-        info[key] = class_(*info[key])
+        try:
+            info[key] = class_(*info[key])
+        except:
+            print(info[key])
+            print(class_)
+            raise
 
 
 def load_prediction_with_info(info_path, pred_path, fetch_field_list=None) -> List[Dict]:

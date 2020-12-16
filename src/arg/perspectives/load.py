@@ -117,7 +117,6 @@ def evidence_gold_dict_str_str() -> Dict[str, List[str]]:
     return d
 
 
-
 def load_train_claim_ids() -> Iterable[int]:
     return load_claim_ids_for_split('train')
 
