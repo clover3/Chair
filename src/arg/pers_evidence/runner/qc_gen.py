@@ -26,7 +26,6 @@ def get_is_correct_fn():
     return is_correct
 
 
-
 def do_generate_jobs(candidate_dict, is_correct_fn, save_dir, split):
     queries = get_qck_queries(split)
     generator = QCInstanceGenerator(candidate_dict, is_correct_fn)
@@ -52,8 +51,6 @@ def generate_qc_bert_bal():
     exist_or_mkdir(save_dir)
     for split in splits:
         candidate_dict: Dict[str, List[QCKCandidateI]] = get_ex_candidate_for_training(split)
-        # candidate_dict: Dict[str, List[QCKCandidateI]] = get_candidate(split)
-        #candidate_dict: Dict[str, List[QCKCandidateI]] = load_candidate(split)
         do_generate_jobs(candidate_dict, is_correct_fn, save_dir, split)
 
 
@@ -63,10 +60,7 @@ def generate_qc_bert4():
     exist_or_mkdir(save_dir)
     for split in splits:
         candidate_dict: Dict[str, List[QCKCandidateI]] = get_ex_candidate_for_training(split, False)
-        # candidate_dict: Dict[str, List[QCKCandidateI]] = get_candidate(split)
-        #candidate_dict: Dict[str, List[QCKCandidateI]] = load_candidate(split)
         do_generate_jobs(candidate_dict, is_correct_fn, save_dir, split)
-
 
 
 if __name__ == "__main__":

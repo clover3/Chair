@@ -124,3 +124,18 @@ class QKWorker:
         all_doc_parts += len(doc_part_list)
         return doc_part_list
 
+
+def get_qk_candidate(config, q_res_path, qck_queries):
+    top_n = config['top_n']
+    worker = QKWorker(q_res_path, config, top_n)
+    all_candidate = []
+    ticker = TimeEstimator(len(qck_queries))
+    for q in qck_queries:
+        ticker.tick()
+        try:
+            doc_part_list = worker.work(q)
+            e = q, doc_part_list
+            all_candidate.append(e)
+        except KeyError as e:
+            print(e)
+    return all_candidate

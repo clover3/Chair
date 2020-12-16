@@ -174,6 +174,8 @@ d_n_claims_per_split2 = {
         'dev': 139
     }
 
+d_n_pc_per_split = {'train': 2977, 'dev': 914, 'test': 1204}
+
 
 def claims_to_dict(claims) -> Dict[int, str]:
     d = {}

@@ -55,8 +55,15 @@ def load_candidate(split) -> Dict[str, List[QCKCandidateI]]:
     return load_from_pickle("pc_evidence_candidate_{}".format(split))
 
 
-def get_ex_candidate_for_training(split, balanced=True) -> Dict[str, List[QCKCandidateI]]:
-    d = get_candidate(split)
+def load_bal_candidate(split) -> Dict[str, List[QCKCandidateI]]:
+    return load_from_pickle("pc_evi_ex_candidate_{}_bal".format(split))
+
+
+def get_ex_candidate_for_training(split, balanced=True, cached=False) -> Dict[str, List[QCKCandidateI]]:
+    if cached:
+        bow_ranked = load_candidate(split)
+    else:
+        bow_ranked = get_candidate(split)
     tokenizer = get_tokenizer()
     evi_dict: Dict[int, str] = load_evidence_dict()
     evi_gold_dict: Dict[str, List[int]] = evidence_gold_dict_str_qid()
@@ -65,7 +72,7 @@ def get_ex_candidate_for_training(split, balanced=True) -> Dict[str, List[QCKCan
     out_d = {}
     for query in queries:
         qid = query.query_id
-        c_list = d[qid]
+        c_list = bow_ranked[qid]
         gold_e_ids: List[int] = evi_gold_dict[qid]
         top_ranked: List[int] = lmap(int, map(QCKCandidate.get_id, c_list))
         query_len = len(tokenizer.tokenize(query.text))
@@ -88,11 +95,16 @@ def get_ex_candidate_for_training(split, balanced=True) -> Dict[str, List[QCKCan
     return out_d
 
 
-
-def main():
+def save_to_cache():
     for split in splits:
         c = get_candidate(split)
         save_to_pickle(c, "pc_evidence_candidate_{}".format(split))
+
+
+def main():
+    for split in splits:
+        c = get_ex_candidate_for_training(split, True)
+        save_to_pickle(c, "pc_evi_ex_candidate_{}_bal".format(split))
 
 
 if __name__ == "__main__":
