@@ -5,7 +5,7 @@ from arg.perspectives.runner_qck.qck_gen_dynamic_kdp_val import get_qck_gen_dyna
 from arg.qck.dynamic_kdp.qck_generator import QCKGenDynamicKDP
 from cpath import output_path
 from misc_lib import DataIDManager
-from taskman_client.file_watching_job_runner import FileWatchingJobRunner
+from job_manager.file_watching_job_runner import FileWatchingJobRunner
 from taskman_client.sync import JsonTiedDict
 from taskman_client.task_executer import get_next_sh_path_and_job_id
 from tf_util.record_writer_wrap import write_records_w_encode_fn

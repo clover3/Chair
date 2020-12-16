@@ -1,7 +1,7 @@
 import sys
 
 from cache import *
-from sydney_manager import MarkedTaskManager
+from job_manager.marked_task_manager import MarkedTaskManager
 from tlm.ibert.ibert_data_transformer import convert_write, read_bert_data
 
 working_path ="/mnt/nfs/work3/youngwookim/data/ibert_tf"

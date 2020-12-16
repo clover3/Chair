@@ -3,6 +3,7 @@ import random
 import itertools
 import time
 
+
 class MarkedTaskManager:
     def __init__(self, task_max, mark_dir, interval):
         self.task_max = task_max

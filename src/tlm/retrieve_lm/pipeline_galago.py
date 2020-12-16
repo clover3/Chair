@@ -1,5 +1,5 @@
 import os
-from sydney_manager import MarkedTaskManager, ReadyMarkTaskManager
+from job_manager.marked_task_manager import MarkedTaskManager, ReadyMarkTaskManager
 
 iteration_dir = "/mnt/scratch/youngwookim/data/tlm_iter1"
 if not os.path.exists("/mnt/scratch/youngwookim/"):

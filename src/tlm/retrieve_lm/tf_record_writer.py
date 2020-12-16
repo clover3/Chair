@@ -4,7 +4,7 @@ import random
 
 import cpath
 from data_generator import tokenizer_wo_tf as tokenization
-from sydney_manager import MarkedTaskManager
+from job_manager.marked_task_manager import MarkedTaskManager
 from tlm.two_seg_pretraining import write_instance_to_example_files, write_predict_instance
 
 

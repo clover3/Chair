@@ -8,7 +8,7 @@ from dictionary.reader import DictionaryReader, DictionaryParser, all_pos_list
 from list_lib import lmap
 from misc_lib import TimeEstimator
 from misc_lib import exist_or_mkdir
-from sydney_manager import MarkedTaskManager
+from job_manager.marked_task_manager import MarkedTaskManager
 from tf_util.tf_logging import tf_logging
 from tlm.dictionary.data_gen import DictEntryPredictGen
 

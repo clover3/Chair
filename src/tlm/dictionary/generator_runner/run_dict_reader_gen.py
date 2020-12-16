@@ -4,7 +4,7 @@ from cache import *
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from dictionary.reader import DictionaryReader
 from misc_lib import exist_or_mkdir
-from sydney_manager import MarkedTaskManager
+from job_manager.marked_task_manager import MarkedTaskManager
 from tf_util.tf_logging import tf_logging
 from tlm.data_gen import run_unmasked_pair_gen
 from tlm.dictionary.data_gen import DictTrainGen, Dictionary

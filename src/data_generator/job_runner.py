@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from base_type import FilePath
 from cache import *
 from misc_lib import exist_or_mkdir
-from sydney_manager import MarkedTaskManager
+from job_manager.marked_task_manager import MarkedTaskManager
 
 # JobRunner is responsible for recording which job is done and assigning jobs
 # Worker is responsible for actually doing job

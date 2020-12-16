@@ -7,7 +7,7 @@ from arg.perspectives.load import splits, d_n_pc_per_split
 from arg.qck.decl import QKUnit
 from arg.qck.qck_worker import QCKWorker
 from arg.qck.qcknc_datagen import QCKInstanceGenerator
-from data_generator.job_runner2 import JobRunner2
+from job_manager.job_runner2 import JobRunner2
 from epath import job_man_dir
 from misc_lib import tprint
 

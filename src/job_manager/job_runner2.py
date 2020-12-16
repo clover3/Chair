@@ -2,7 +2,7 @@ import os
 import sys
 
 from misc_lib import exist_or_mkdir
-from sydney_manager import MTM
+from job_manager.marked_task_manager import MTM
 
 
 class JobRunner2:

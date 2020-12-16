@@ -10,7 +10,7 @@ from data_generator import tokenizer_wo_tf as tokenization
 from list_lib import flatten, left
 from misc_lib import TimeEstimator
 from models.classic.stopword import load_stopwords
-from sydney_manager import ReadyMarkTaskManager
+from job_manager.marked_task_manager import ReadyMarkTaskManager
 from tlm.retrieve_lm.retreive_candidates import get_visible
 from tlm.retrieve_lm.stem import CacheStemmer
 

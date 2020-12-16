@@ -4,7 +4,7 @@ import pickle
 import tensorflow as tf
 
 import tlm.model.base as modeling
-from sydney_manager import MarkedTaskManager
+from job_manager.marked_task_manager import MarkedTaskManager
 from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging, CounterFilter
 from tlm.estimator_loop import run_estimator_loop

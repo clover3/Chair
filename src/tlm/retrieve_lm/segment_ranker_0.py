@@ -6,7 +6,7 @@ from galagos.basic import load_galago_ranked_list
 from list_lib import left
 from misc_lib import *
 from models.classic.stopword import load_stopwords
-from sydney_manager import MarkedTaskManager
+from job_manager.marked_task_manager import MarkedTaskManager
 from tlm.retrieve_lm import per_doc_posting_server
 from tlm.retrieve_lm.retreive_candidates import get_visible
 from tlm.retrieve_lm.stem import CacheStemmer, stemmed_counter

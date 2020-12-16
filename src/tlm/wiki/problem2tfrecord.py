@@ -4,7 +4,7 @@ from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
 from galagos.parse import load_galago_judgement2
 from misc_lib import TimeEstimator
-from sydney_manager import ReadyMarkTaskManager
+from job_manager.marked_task_manager import ReadyMarkTaskManager
 from tlm.two_seg_pretraining import write_predict_instance
 from tlm.wiki.tf_instance_maker import TFInstanceMaker
 from tlm.wiki.token_db import load_seg_token_readers

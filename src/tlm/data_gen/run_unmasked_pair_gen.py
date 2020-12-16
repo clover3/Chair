@@ -2,7 +2,7 @@ import random
 import sys
 
 from cache import *
-from sydney_manager import MarkedTaskManager
+from job_manager.marked_task_manager import MarkedTaskManager
 from tlm.data_gen.base import UnmaskedPairGen
 
 working_path ="/mnt/nfs/work3/youngwookim/data/bert_tf"

@@ -5,7 +5,7 @@ from cache import *
 from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import TimeEstimator
-from sydney_manager import MarkedTaskManager
+from job_manager.marked_task_manager import MarkedTaskManager
 from tlm.two_seg_pretraining import write_predict_instance
 from tlm.wiki.tf_instance_maker import TFInstanceMakerPair
 from tlm.wiki.token_db import load_seg_token_readers

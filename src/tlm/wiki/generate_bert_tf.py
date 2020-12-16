@@ -6,7 +6,7 @@ from cache import *
 from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
 from misc_lib import TimeEstimator
-from sydney_manager import MarkedTaskManager
+from job_manager.marked_task_manager import MarkedTaskManager
 from tlm.wiki import bert_training_data as btd
 
 working_path ="/mnt/nfs/work3/youngwookim/data/bert_tf"
