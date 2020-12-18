@@ -6,7 +6,7 @@ from scipy.stats import pearsonr
 
 from arg.perspectives.clueweb_db import load_doc
 from arg.perspectives.pc_tokenizer import PCTokenizer
-from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms_for_split, ClaimLM
+from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms_for_sub_split, ClaimLM
 from datastore.interface import preload_man
 from datastore.table_names import TokenizedCluewebDoc
 from galagos.parse import load_galago_ranked_list
@@ -33,7 +33,7 @@ def main():
     ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
 
     # load LM
-    claim_lms: List[ClaimLM] = build_gold_lms_for_split(split)
+    claim_lms: List[ClaimLM] = build_gold_lms_for_sub_split(split)
     bg_lm = average_counters(lmap(lambda x: x.LM, claim_lms))
     log_bg_lm = get_lm_log(bg_lm)
     alpha = 0.1

@@ -19,8 +19,8 @@ from arg.perspectives.split_helper import train_split
 from base_type import FileName
 from cache import load_from_pickle
 from cpath import output_path
-from trec.trec_parse import write_trec_ranked_list_entry
 from list_lib import lmap, lfilter
+from trec.trec_parse import write_trec_ranked_list_entry
 
 
 def filter_avail(claims):
@@ -76,6 +76,7 @@ def run_oracle_on_candiate():
     pred = predict_by_oracle_on_candidate(claims, top_k)
     print(evaluate(pred))
 
+
 def run_oracle_on_candiate_map():
     claims, val = train_split()
     top_k = 50
@@ -88,7 +89,6 @@ def run_bm25():
     top_k = 20
     pred = predict_by_bm25(get_bm25_module(), claims, top_k)
     print(evaluate(pred))
-
 
 
 def run_gold_lm():
@@ -176,4 +176,4 @@ def run_bm25_ex():
 
 
 if __name__ == "__main__":
-    run_bert_baseline()
+    run_bm25()

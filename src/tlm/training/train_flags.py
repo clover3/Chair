@@ -117,6 +117,10 @@ flags.DEFINE_integer("keep_checkpoint_every_n_hours", 1,
 flags.DEFINE_integer("keep_checkpoint_max", 5,
                      "Maximum number of checkpoint to keep.")
 
+flags.DEFINE_integer("cycle_length", 250, "number of parallel files read")
+
+flags.DEFINE_integer("buffer_size", 1000000, "size of shuffling buffer")
+
 flags.DEFINE_integer("iterations_per_loop", 1000,
                      "How many steps to make in each estimator call.")
 

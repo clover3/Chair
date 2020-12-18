@@ -4,16 +4,16 @@ import math
 import numpy as np
 
 from arg.perspectives.qck.qcknc_datagen import get_eval_candidates_as_qck, get_eval_candidates_1k_as_qck
-from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms_for_split
+from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms_for_sub_split
 from arg.qck.decl import QCKCandidate
 from arg.qck.token_scoring.collect_score import WordAsID, ids_to_word_as_id
 from arg.qck.token_scoring.decl import TokenScore
 from arg.qck.topic_lm.lm_based_scorer import RawProbabilityScorer
 from data_generator.tokenizer_wo_tf import get_tokenizer, get_word_level_location
-from trec.trec_parse import scores_to_ranked_list_entries, write_trec_ranked_list_entry
 from exec_lib import run_func_with_config
 from list_lib import lmap, left
 from misc_lib import get_second
+from trec.trec_parse import scores_to_ranked_list_entries, write_trec_ranked_list_entry
 
 
 class Scorer:
@@ -67,7 +67,7 @@ def main(config):
     else:
         assert False
 
-    lms = build_gold_lms_for_split("val")
+    lms = build_gold_lms_for_sub_split("val")
     lm_pair_list = list([(str(lm.cid), lm.LM) for lm in lms])
     scorer = RawProbabilityScorer(lm_pair_list)
 

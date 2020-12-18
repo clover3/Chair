@@ -1,8 +1,9 @@
 from collections import Counter
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Iterable
 
 from arg.perspectives.evaluate import perspective_getter
-from arg.perspectives.load import get_claim_perspective_id_dict, load_claims_for_sub_split
+from arg.perspectives.load import get_claim_perspective_id_dict, load_claims_for_sub_split, load_claim_ids_for_split, \
+    get_claims_from_ids
 from arg.perspectives.pc_tokenizer import PCTokenizer
 from arg.perspectives.split_helper import train_split
 from list_lib import lmap, foreach, left
@@ -22,12 +23,19 @@ def build_gold_claim_lm_train() -> List[ClaimLM]:
     return build_gold_lms(claims)
 
 
-def build_gold_lms_for_split(sub_split) -> List[ClaimLM]:
+def build_gold_lms_for_sub_split(sub_split) -> List[ClaimLM]:
     claims = load_claims_for_sub_split(sub_split)
+
     return build_gold_lms(claims)
 
 
-def build_gold_lms(claims):
+def build_gold_lms_for_split(split) -> List[ClaimLM]:
+    d_ids: Iterable[int] = load_claim_ids_for_split(split)
+    claims = get_claims_from_ids(d_ids)
+    return build_gold_lms(claims)
+
+
+def build_gold_lms(claims) -> List[ClaimLM]:
     gold = get_claim_perspective_id_dict()
     tokenizer = PCTokenizer()
 
@@ -38,7 +46,7 @@ def build_gold_lms(claims):
         counter = average_counters(counter_list)
         return counter
 
-    def get_claim_lm(claim):
+    def get_claim_lm(claim) -> ClaimLM:
         cid = claim["cId"]
         counter_list: List[Counter] = lmap(get_cluster_lm, gold[cid])
         counter: Counter = average_counters(counter_list)

@@ -1,7 +1,7 @@
 from typing import List
 
 from arg.perspectives.runner_qck.qcknc_common import start_generate_jobs_for_sub_split
-from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms_for_split, ClaimLM
+from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms_for_sub_split, ClaimLM
 from arg.qck.decl import QCKQuery, KDP
 # Make payload without any annotation
 from arg.qck.token_scoring.token_scoring_gen import TokenScoringGen, ScoreVector
@@ -15,7 +15,7 @@ def main():
     qk_candidate_name = config['qk_candidate_name']
     score_type = config['score_type']
     split = config['split']
-    lms: List[ClaimLM] = build_gold_lms_for_split(split)
+    lms: List[ClaimLM] = build_gold_lms_for_sub_split(split)
     lm_pair_list = list([(str(lm.cid), lm.LM) for lm in lms])
 
     def get_scorer():

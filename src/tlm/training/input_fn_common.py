@@ -51,7 +51,7 @@ def format_dataset(name_to_features, batch_size, is_training, flags, input_files
         d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
         if flags.repeat_data:
             d = d.repeat()
-        d = d.shuffle(buffer_size=1000 * 1000)
+        d = d.shuffle(buffer_size=flags.buffer_size)
 
         # `cycle_length` is the number of parallel files that get read.
         cycle_length = min(num_cpu_threads, len(input_files))
@@ -63,7 +63,7 @@ def format_dataset(name_to_features, batch_size, is_training, flags, input_files
                 tf.data.TFRecordDataset,
                 sloppy=is_training,
                 cycle_length=cycle_length))
-        d = d.shuffle(buffer_size=1000 * 1000)
+        d = d.shuffle(buffer_size=flags.buffer_size)
     else:
         d = tf.data.TFRecordDataset(input_files)
 
