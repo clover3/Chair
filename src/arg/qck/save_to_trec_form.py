@@ -11,9 +11,9 @@ from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.qck.trec_helper import scrore_d_to_trec_style_predictions
 from cpath import output_path
 from estimator_helper.output_reader import join_prediction_with_info
-from trec.trec_parse import write_trec_ranked_list_entry
 from list_lib import lmap
 from misc_lib import exist_or_mkdir, group_by, average
+from trec.trec_parse import write_trec_ranked_list_entry
 
 
 def top_k_average(items):
@@ -140,7 +140,7 @@ def get_score_d(pred_file_path: str, info: Dict, f_handler: FormatHandler, combi
         combine_score = max
     elif combine_strategy == "avg_then_doc_max":
         combine_score = average
-        print("using avg")
+        print("using avg then max")
     else:
         assert False
     score_d = summarize_score(info, pred_file_path, f_handler, combine_score, score_type)

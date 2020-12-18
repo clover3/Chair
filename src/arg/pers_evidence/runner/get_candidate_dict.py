@@ -51,7 +51,7 @@ def get_candidate_w_score(split, score_cut) -> Dict[str, List[QCKCandidate]]:
     return dict(zip(qid_list, candidate_list_list))
 
 
-def load_candidate(split) -> Dict[str, List[QCKCandidateI]]:
+def load_top_rank_candidate(split) -> Dict[str, List[QCKCandidateI]]:
     return load_from_pickle("pc_evidence_candidate_{}".format(split))
 
 
@@ -61,7 +61,7 @@ def load_bal_candidate(split) -> Dict[str, List[QCKCandidateI]]:
 
 def get_ex_candidate_for_training(split, balanced=True, cached=False) -> Dict[str, List[QCKCandidateI]]:
     if cached:
-        bow_ranked = load_candidate(split)
+        bow_ranked = load_top_rank_candidate(split)
     else:
         bow_ranked = get_candidate(split)
     tokenizer = get_tokenizer()

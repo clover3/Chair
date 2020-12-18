@@ -1,4 +1,4 @@
-from tf_util.tf_logging import tf_logging, CounterFilter
+from tf_util.tf_logging import tf_logging, MuteEnqueueFilter
 from tlm.model.base import BertConfig, BertModel
 from tlm.training.classification_model_fn import model_fn_classification
 from tlm.training.flags_wrapper import get_input_files_from_flags, show_input_files
@@ -21,7 +21,7 @@ def run_classification_w_second_input():
         special_flags=special_flags,
     )
     if FLAGS.do_predict:
-        tf_logging.addFilter(CounterFilter())
+        tf_logging.addFilter(MuteEnqueueFilter())
     input_fn = input_fn_builder_use_second_input(FLAGS)
     result = run_estimator(model_fn, input_fn)
     return result

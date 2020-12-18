@@ -5,6 +5,7 @@ from tf_v2_support import tf1
 
 tf = tf1
 
+
 def validate_data(fn):
     keys = None
     length_d ={}
@@ -29,6 +30,7 @@ def validate_data(fn):
                 print("Error at {} ({}): {} != {}".format(fn, key, length_d[key], len(v)))
     print(keys)
 
+
 def validate_dir(dir_path, idx_range):
     corrupt_list = []
     for i in idx_range:
@@ -48,6 +50,7 @@ def validate_dir(dir_path, idx_range):
         print("Corrputed _list")
     for e in corrupt_list:
         print(e)
+
 
 if __name__ == "__main__":
     if len(sys.argv) == 4:
