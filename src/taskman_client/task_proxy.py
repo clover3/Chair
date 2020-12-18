@@ -69,6 +69,25 @@ class TaskManagerProxy(RESTProxy):
         r = self.post("/task/get_num_pending_jobs", data)
         return r['num_pending_jobs']
 
+    def pool_job(self, job_name, max_job, machine) -> int:
+        data = {
+            'max_job': max_job,
+            'job_name': job_name,
+            'machine': machine,
+        }
+        r = self.post("/task/pool_job", data)
+        return r['job_id']
+
+    def report_done_and_pool_job(self, job_name, max_job, machine, job_id) -> int:
+        data = {
+            'max_job': max_job,
+            'job_name': job_name,
+            'machine    ': machine,
+            'job_id': job_id
+        }
+        r = self.post("/task/sub_job_done_and_pool_job", data)
+        return r['job_id']
+
 
 class TaskProxy:
     def __init__(self, host, port, machine, tpu_name=None, uuid_var=None):
