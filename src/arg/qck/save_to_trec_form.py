@@ -141,11 +141,14 @@ def get_score_d(pred_file_path: str, info: Dict, f_handler: FormatHandler, combi
     elif combine_strategy == "avg_then_doc_max":
         combine_score = average
         print("using avg then max")
+    elif combine_strategy == "max_then_doc_max":
+        combine_score = max
+        print("using avg then max")
     else:
         assert False
     score_d = summarize_score(info, pred_file_path, f_handler, combine_score, score_type)
 
-    if combine_strategy == "avg_then_doc_max":
+    if combine_strategy == "avg_then_doc_max" or combine_strategy == "max_then_doc_max":
         score_d = get_max_score_from_doc_parts(score_d)
 
     return score_d

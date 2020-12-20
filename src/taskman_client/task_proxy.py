@@ -82,7 +82,7 @@ class TaskManagerProxy(RESTProxy):
         data = {
             'max_job': max_job,
             'job_name': job_name,
-            'machine    ': machine,
+            'machine': machine,
             'job_id': job_id
         }
         r = self.post("/task/sub_job_done_and_pool_job", data)

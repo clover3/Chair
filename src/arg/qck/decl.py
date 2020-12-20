@@ -5,6 +5,8 @@ from typing import NamedTuple, List, Tuple
 class QCKQuery(NamedTuple):
     query_id: str
     text: str
+    def get_id(self):
+        return self.query_id
 
 
 class QCKCandidate(NamedTuple):
