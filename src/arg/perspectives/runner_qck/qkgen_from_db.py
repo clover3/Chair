@@ -8,7 +8,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 from datastore.interface import load_multiple
 from datastore.table_names import BertTokenizedCluewebDoc
 from galagos.parse import load_galago_ranked_list
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from misc_lib import exist_or_mkdir, DataIDManager, tprint
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from tlm.data_gen.base import get_basic_input_feature
@@ -24,7 +24,7 @@ class Instance(NamedTuple):
 
 class QKGenFromDB(WorkerInterface):
     def __init__(self, q_res_path, query_d: Dict[int, str], out_dir):
-        self.ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+        self.ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
         query_ids = list(self.ranked_list.keys())
         query_ids.sort()
         self.job_id_to_q_id = {job_id: q_id for job_id, q_id in enumerate(query_ids)}

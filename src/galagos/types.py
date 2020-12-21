@@ -3,13 +3,13 @@ from typing import TypeVar, NamedTuple, List, Dict
 from base_type import *
 
 
-class GalagoDocRankEntry(NamedTuple):
+class SimpleRankedListEntry(NamedTuple):
     doc_id: str
     rank: int
     score: float
 
 
-RankedListDict = NewType('RankedListDict', Dict[str, List[GalagoDocRankEntry]])
+RankedListDict = NewType('RankedListDict', Dict[str, List[SimpleRankedListEntry]])
 
 
 class GalagoPassageRankEntry(NamedTuple):
@@ -20,7 +20,7 @@ class GalagoPassageRankEntry(NamedTuple):
     score: float
 
 
-GalagoRankEntry = TypeVar('GalagoRankEntry' , GalagoDocRankEntry, GalagoPassageRankEntry)
+GalagoRankEntry = TypeVar('GalagoRankEntry', SimpleRankedListEntry, GalagoPassageRankEntry)
 
 QueryID = NewType('QueryID', str)
 QueryResultID = NewType('QueryResultID', str)

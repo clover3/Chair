@@ -5,7 +5,7 @@ from arg.robust.qc_common import to_qck_queries
 from cache import save_to_pickle
 from data_generator.data_parser.robust import load_robust04_title_query
 from galagos.parse import load_galago_ranked_list
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from misc_lib import TimeEstimator
 from tlm.robust.load import load_robust_tokens_for_predict
 
@@ -21,7 +21,7 @@ def config1():
 class KDPGeneratorFirstOnly:
     def __init__(self, q_res_path, top_n, window_size):
         self.robust_tokens: Dict[str, List[str]] = load_robust_tokens_for_predict()
-        self.ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+        self.ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
         self.top_n = top_n
         self.window_size = window_size
 

@@ -9,7 +9,7 @@ from datastore.interface import has_key, save, flush
 from datastore.table_names import QueryResult
 from galagos.interface import DocQuery, send_doc_queries
 from galagos.query_runs_ids import Q_CONFIG_ID_BM25_10000
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import foreach, lfilter, lmap
 
 
@@ -28,7 +28,7 @@ def work(st, ed):
     not_done = lfilter(partial(db_not_contains, q_config_id), todo)
     queries: List[DocQuery] = lmap(datapoint_to_doc_query, not_done)
     print("Executing {} queries".format(len(queries)))
-    ranked_list_dict: Dict[str, List[GalagoDocRankEntry]] = \
+    ranked_list_dict: Dict[str, List[SimpleRankedListEntry]] = \
         send_doc_queries(ci.disk_path, num_request, queries, 600)
     qid_list = lmap(dp_to_qid, not_done)
 

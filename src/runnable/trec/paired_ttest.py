@@ -1,12 +1,12 @@
 import sys
 from typing import List, Dict
 
-from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
 from scipy.stats import stats
 
-from galagos.parse import load_qrels
+from evals.parse import load_qrels_flat
 from misc_lib import average
 from runnable.trec.trec_eval_like import get_metric_fn
+from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
 
 
 def get_score_per_query(qrels, metric_fn, ranked_list):
@@ -34,7 +34,7 @@ def main():
     ranked_list_path1 = sys.argv[3]
     ranked_list_path2 = sys.argv[4]
     # print
-    qrels = load_qrels(judgment_path)
+    qrels = load_qrels_flat(judgment_path)
 
     ranked_list_1: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranked_list_path1)
     ranked_list_2: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranked_list_path2)

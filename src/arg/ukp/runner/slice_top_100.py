@@ -5,7 +5,7 @@ from base_type import FileName
 from cpath import pjoin
 from galagos.parse import load_galago_ranked_list
 from galagos.query_runs_ids import Q_CONFIG_ID_BM25_UKP
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from misc_lib import TimeEstimator
 from sydney_clueweb.clue_path import index_name_list
 
@@ -18,7 +18,7 @@ def work():
     for i in range(num_query_file):
         file_name = FileName("{}_{}.txt".format(index_name_list[0], str(i)))
         ranked_list_path = pjoin(ranked_list_save_root, file_name)
-        rl: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(ranked_list_path)
+        rl: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(ranked_list_path)
 
         for key, value in rl.items():
             for entry in value[:100]:

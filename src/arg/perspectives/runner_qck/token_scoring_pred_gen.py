@@ -20,6 +20,7 @@ def main():
 
     def get_scorer():
         if score_type == "log_odd":
+            assert False
             return LogOddScorer(lm_pair_list)
         elif score_type == "raw_prob":
             return RawProbabilityScorer(lm_pair_list)

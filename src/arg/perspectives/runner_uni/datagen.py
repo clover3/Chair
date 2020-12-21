@@ -6,7 +6,7 @@ from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids
 from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms
 from base_type import FilePath
 from galagos.parse import load_galago_ranked_list
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import lmap
 from misc_lib import exist_or_mkdir
 from models.classic.lm_util import average_counters
@@ -23,7 +23,7 @@ def main():
 
 def do_datagen(d_ids, q_res_path, save_name):
     claims: List[Dict] = get_claims_from_ids(d_ids)
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
     claim_lms = build_gold_lms(claims)
     bg_lm = average_counters(lmap(lambda x: x.LM, claim_lms))
     alpha = 0.1

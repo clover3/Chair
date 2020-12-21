@@ -12,7 +12,7 @@ from arg.perspectives.ranked_list_interface import DynRankedListInterface
 from arg.pf_common.text_processing import re_tokenize
 from datastore.interface import load_multiple
 from datastore.table_names import CluewebDocTF
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import lmap, dict_value_map, lfilter, lmap_w_exception
 
 
@@ -154,7 +154,7 @@ def get_feature_binary_model(claim_id,
         return is_mention_fn(doc, claim_text, perspective_text)
 
     print(claim_id, perspective_id)
-    ranked_docs: List[GalagoDocRankEntry] = ci.query(claim_id, perspective_id, claim_text, perspective_text)
+    ranked_docs: List[SimpleRankedListEntry] = ci.query(claim_id, perspective_id, claim_text, perspective_text)
     ranked_docs = ranked_docs[:100]
     print("{} docs in ranked list".format(len(ranked_docs)))
 

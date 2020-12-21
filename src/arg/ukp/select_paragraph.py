@@ -6,11 +6,11 @@ from typing import List, Iterable, Callable, NamedTuple
 
 import math
 import nltk
+from arg.pf_common.select_paragraph import subword_tokenize_functor, enum_paragraph
 
 from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from arg.pf_common.base import TPDataPoint, ParagraphFeature, Paragraph, ScoreParagraph, DPID
 from arg.pf_common.ranked_list_interface import RankedListInterface
-from arg.pf_common.select_paragraph import subword_tokenize_functor, enum_paragraph
 from arg.pf_common.text_processing import re_tokenize
 from arg.ukp.data_loader import UkpDataPoint, load_all_data_flat
 from cache import load_from_pickle
@@ -19,7 +19,7 @@ from data_generator.subword_translate import Subword
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from datastore.interface import preload_man
 from datastore.table_names import TokenizedCluewebDoc, BertTokenizedCluewebDoc
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import lfilter, lmap, flatten
 from misc_lib import ceil_divide
 
@@ -89,7 +89,7 @@ class Option(NamedTuple):
 def select_paragraph_dp_list(ci: RankedListInterface,
                              dp_id_to_q_res_id_fn: Callable[[str], str],
                              paragraph_scorer_factory: Callable[[TPDataPoint], Callable[[Paragraph], ScoreParagraph]],
-                             paragraph_iterator: Callable[[GalagoDocRankEntry], Iterable[Paragraph]],
+                             paragraph_iterator: Callable[[SimpleRankedListEntry], Iterable[Paragraph]],
                              datapoint_list: List[TPDataPoint],
                              option: Option,
                              ) -> List[ParagraphFeature]:
@@ -98,7 +98,7 @@ def select_paragraph_dp_list(ci: RankedListInterface,
 
     def select_paragraph_from_datapoint(x: TPDataPoint) -> ParagraphFeature:
         try:
-            ranked_docs: List[GalagoDocRankEntry] = ci.fetch_from_q_res_id(dp_id_to_q_res_id_fn(x.id))
+            ranked_docs: List[SimpleRankedListEntry] = ci.fetch_from_q_res_id(dp_id_to_q_res_id_fn(x.id))
             ranked_docs = ranked_docs[:100]
         except KeyError:
             ranked_docs = []
@@ -109,13 +109,13 @@ def select_paragraph_dp_list(ci: RankedListInterface,
         preload_man.preload(TokenizedCluewebDoc, doc_ids)
         preload_man.preload(BertTokenizedCluewebDoc, doc_ids)
 
-        def get_best_paragraph_from_doc(doc: GalagoDocRankEntry) -> List[ScoreParagraph]:
+        def get_best_paragraph_from_doc(doc: SimpleRankedListEntry) -> List[ScoreParagraph]:
             paragraph_list = paragraph_iterator(doc)
             score_paragraph = lmap(paragraph_scorer_local, paragraph_list)
             score_paragraph.sort(key=lambda p: p.score, reverse=True)
             return score_paragraph[:1]
 
-        def get_all_paragraph_from_doc(doc: GalagoDocRankEntry) -> List[ScoreParagraph]:
+        def get_all_paragraph_from_doc(doc: SimpleRankedListEntry) -> List[ScoreParagraph]:
             paragraph_list = paragraph_iterator(doc)
             score_paragraph = lmap(paragraph_scorer_local, paragraph_list)
             return score_paragraph

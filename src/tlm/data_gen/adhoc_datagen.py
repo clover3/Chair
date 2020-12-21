@@ -8,9 +8,10 @@ from typing import List, Tuple, Dict
 import numpy as np
 
 from data_generator.data_parser.robust import load_robust04_title_query, load_robust_04_query
-from data_generator.data_parser.robust2 import load_qrel, load_bm25_best
+from data_generator.data_parser.robust2 import load_bm25_best
 from data_generator.job_runner import sydney_working_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
+from evals.parse import load_qrels_structured
 from misc_lib import enum_passage, DataIDManager
 from tf_util.record_writer_wrap import RecordWriterWrap, write_records_w_encode_fn
 from tlm.data_gen.base import get_basic_input_feature
@@ -107,7 +108,7 @@ class RobustPairwiseTrainGen:
         self.data = load_robust_tokens_for_train()
         assert len(self.data) == 174787
         qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
-        self.judgement = load_qrel(qrel_path)
+        self.judgement = load_qrels_structured(qrel_path)
         self.max_seq_length = max_seq_length
         self.queries = load_robust04_title_query()
         self.encoder = encoder
@@ -211,7 +212,7 @@ class RobustPointwiseTrainGen:
         self.data = load_robust_tokens_for_train()
         assert len(self.data) == 174787
         qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
-        self.judgement = load_qrel(qrel_path)
+        self.judgement = load_qrels_structured(qrel_path)
         self.max_seq_length = max_seq_length
         self.queries = load_robust04_title_query()
         self.encoder = encoder
@@ -248,7 +249,7 @@ class RobustPointwiseTrainGenEx:
     def __init__(self, encoder, max_seq_length, query_type="title"):
         self.data = self.load_tokens()
         qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
-        self.judgement = load_qrel(qrel_path)
+        self.judgement = load_qrels_structured(qrel_path)
         self.max_seq_length = max_seq_length
         self.queries = load_robust_04_query(query_type)
         self.encoder = encoder
@@ -300,7 +301,7 @@ class RobustTrainGenWDataID:
     def __init__(self, encoder, max_seq_length, query_type="title"):
         self.data = self.load_tokens()
         qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
-        self.judgement = load_qrel(qrel_path)
+        self.judgement = load_qrels_structured(qrel_path)
         self.max_seq_length = max_seq_length
         self.queries = load_robust_04_query(query_type)
         self.encoder = encoder
@@ -360,7 +361,7 @@ class RobustTrainGenSelected:
     def __init__(self, encoder, max_seq_length, scores, query_type="title"):
         self.data = self.load_tokens()
         qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
-        self.judgement = load_qrel(qrel_path)
+        self.judgement = load_qrels_structured(qrel_path)
         self.max_seq_length = max_seq_length
         self.queries = load_robust_04_query(query_type)
         self.encoder = encoder

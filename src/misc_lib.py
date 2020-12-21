@@ -4,7 +4,7 @@ import shutil
 import time
 from collections import Counter, OrderedDict
 from time import gmtime, strftime
-from typing import Iterable, TypeVar, Callable, Dict, List, Any
+from typing import Iterable, TypeVar, Callable, Dict, List, Any, Tuple
 
 from base_type import FilePath
 
@@ -531,3 +531,11 @@ def enum_passage(tokens: List[Any], window_size: int) -> Iterable[List[Any]]:
         second_tokens = tokens[st:ed]
         cursor += window_size
         yield second_tokens
+
+
+def dict_to_tuple_list(d: Dict[A, B]) -> List[Tuple[A, B]]:
+    out_l = []
+    for k, v in d.items():
+        out_l.append((k, v))
+
+    return out_l

@@ -9,7 +9,7 @@ from arg.qck.save_to_trec_form import get_doc_id
 from cache import load_cache
 from estimator_helper.output_reader import join_prediction_with_info
 from evals.basic_func import get_acc_prec_recall
-from galagos.parse import load_qrels
+from evals.parse import load_qrels_flat
 from list_lib import dict_value_map
 from misc_lib import group_by
 from tab_print import print_table
@@ -17,7 +17,7 @@ from tab_print import print_table
 
 def prec_recall(pred_file_path: str, info_file_path: str, input_type: str, score_type: str,
          qrel_path: str):
-    judgments_raw: Dict[str, List[Tuple[str, int]]] = load_qrels(qrel_path)
+    judgments_raw: Dict[str, List[Tuple[str, int]]] = load_qrels_flat(qrel_path)
     judgments = dict_value_map(dict, judgments_raw)
 
     grouped = load_cache("ck_based_analysis")
@@ -74,7 +74,7 @@ def prec_recall(pred_file_path: str, info_file_path: str, input_type: str, score
 
 
 def show_tp(pred_file_path: str, info_file_path: str, input_type: str, score_type: str, qrel_path: str):
-    judgments_raw: Dict[str, List[Tuple[str, int]]] = load_qrels(qrel_path)
+    judgments_raw: Dict[str, List[Tuple[str, int]]] = load_qrels_flat(qrel_path)
     judgments = dict_value_map(dict, judgments_raw)
     key_logit = "logits"
 

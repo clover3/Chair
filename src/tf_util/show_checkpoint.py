@@ -11,4 +11,5 @@ def show_checkpoint(lm_checkpoint):
 
 
 if __name__ == "__main__":
-    show_checkpoint(sys.argv[1])
+    if len(sys.argv) == 2:
+        show_checkpoint(sys.argv[1])

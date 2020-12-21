@@ -3,9 +3,10 @@ import pickle
 import re
 
 from data_generator.data_parser import trec
-from data_generator.data_parser.robust2 import load_qrel, load_bm25_best
+from data_generator.data_parser.robust2 import load_bm25_best
 from data_generator.job_runner import sydney_working_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
+from evals.parse import load_qrels_structured
 from misc_lib import TimeEstimator
 
 
@@ -33,7 +34,7 @@ class RobustPreprocessTrain(RobustPreprocess):
     def __init__(self):
         super(RobustPreprocessTrain, self).__init__()
         qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
-        self.judgement = load_qrel(qrel_path)
+        self.judgement = load_qrels_structured(qrel_path)
 
     def tokenize(self, job_id):
         all_doc_id_list = []

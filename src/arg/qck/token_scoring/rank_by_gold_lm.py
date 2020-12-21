@@ -77,7 +77,7 @@ def main(config):
         candidates: List[QCKCandidate] = candidate_d[query_id]
         entries = []
         for c in candidates:
-            scores = scorer.score_text(query_id, c.text)
+            scores = scorer.get_text_score_per_token(query_id, c.text)
             score = 0
             for token_score in scores:
                 pos_prob = math.log(token_score[0]+eps)

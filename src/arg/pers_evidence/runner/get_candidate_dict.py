@@ -34,6 +34,22 @@ def get_candidate(split) -> Dict[str, List[QCKCandidateI]]:
     return dict(zip(qid_list, candidate_list_list))
 
 
+def get_candidate_full_text(split) -> Dict[str, List[QCKCandidate]]:
+    queries = get_qck_queries(split)
+
+    def get_candidate_for_query(query: QCKQuery):
+        res = get_evidence_from_pool(query.text, 60)
+        output = []
+        for text, e_id, score in res:
+            c = QCKCandidate(str(e_id), text)
+            output.append(c)
+        return output
+
+    qid_list = lmap(lambda q: q.query_id, queries)
+    candidate_list_list = lmap(get_candidate_for_query, queries)
+    return dict(zip(qid_list, candidate_list_list))
+
+
 def get_candidate_w_score(split, score_cut) -> Dict[str, List[QCKCandidate]]:
     queries = get_qck_queries(split)
 

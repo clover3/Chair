@@ -5,12 +5,12 @@ from arg.qck.decl import QCKQuery, KnowledgeDocument, KnowledgeDocumentPart, KDP
 from datastore.interface import preload_man
 from datastore.table_names import TokenizedCluewebDoc
 from galagos.parse import load_galago_ranked_list
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 # KD = Knowledge Document
 from misc_lib import TimeEstimator, tprint
 
 
-def preload_docs(ranked_list: Dict[str, List[GalagoDocRankEntry]], top_n):
+def preload_docs(ranked_list: Dict[str, List[SimpleRankedListEntry]], top_n):
     all_doc_ids = set()
     for entries in ranked_list.values():
         for entry in entries[:top_n]:
@@ -50,7 +50,7 @@ def get_duplicate(doc_list: List[KnowledgeDocument]):
     return duplicates
 
 
-def iterate_docs(q_res: List[GalagoDocRankEntry], top_n: int) -> Iterable[KnowledgeDocument]:
+def iterate_docs(q_res: List[SimpleRankedListEntry], top_n: int) -> Iterable[KnowledgeDocument]:
     docs = []
     for i in range(top_n):
         try:
@@ -85,7 +85,7 @@ def iterate_document_parts(docs: Iterable[KnowledgeDocument], window_size, step_
 
 def qk_candidate_gen(q_res_path: str, queries: List[QCKQuery], top_n, config) -> List[Tuple[QCKQuery, List[KDP]]]:
     print("loading ranked list")
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
     print("Pre loading docs")
     preload_docs(ranked_list, top_n)
     entries: List[Tuple[QCKQuery, List[KnowledgeDocumentPart]]] = []
@@ -93,7 +93,7 @@ def qk_candidate_gen(q_res_path: str, queries: List[QCKQuery], top_n, config) ->
     all_doc_parts = 0
     ticker = TimeEstimator(len(queries))
     for q in queries:
-        q_res: List[GalagoDocRankEntry] = ranked_list[q.query_id]
+        q_res: List[SimpleRankedListEntry] = ranked_list[q.query_id]
         doc_part_list = enum_doc_parts_from_ranked_list(config, q_res, top_n)
         all_doc_parts += len(doc_part_list)
         entries.append((q, doc_part_list))
@@ -112,14 +112,14 @@ class QKWorker:
         self.config = config
         self.top_n = top_n
         print("loading ranked list")
-        self.ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+        self.ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
         print("Ranked list loaded for {} queries".format(len(self.ranked_list)))
         print("Pre loading docs")
         preload_docs(self.ranked_list, top_n)
 
     def work(self, q: QCKQuery):
         all_doc_parts = 0
-        q_res: List[GalagoDocRankEntry] = self.ranked_list[q.query_id]
+        q_res: List[SimpleRankedListEntry] = self.ranked_list[q.query_id]
         doc_part_list = enum_doc_parts_from_ranked_list(self.config, q_res, self.top_n)
         all_doc_parts += len(doc_part_list)
         return doc_part_list

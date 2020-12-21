@@ -1,10 +1,10 @@
 import sys
 from typing import List, Dict
 
-from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
-
-from galagos.parse import load_qrels
+from evals.mean_average_precision import get_ap
+from evals.parse import load_qrels_flat
 from misc_lib import average
+from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
 
 
 def get_recall_at_k(k):
@@ -36,24 +36,6 @@ def get_p_at_k(k):
 
         return tp / k
     return fn
-
-
-def get_ap(ranked_list: List[TrecRankedListEntry], true_gold: List[str]):
-    num_pred = 0
-    n_tp = 0
-    prec_list = []
-    for e in ranked_list:
-        num_pred += 1
-        if e.doc_id in true_gold:
-            n_tp += 1
-
-            prec = n_tp / num_pred
-            prec_list.append(prec)
-
-    while len(prec_list) < len(true_gold):
-        prec_list.append(0)
-
-    return average(prec_list)
 
 
 def get_is_metric_at_k(metric_prefix):
@@ -91,7 +73,7 @@ def main():
     ranked_list_path = sys.argv[2]
     metric = sys.argv[3]
 
-    qrels = load_qrels(judgment_path)
+    qrels = load_qrels_flat(judgment_path)
     ranked_list: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranked_list_path)
 
     metric_fn = get_metric_fn(metric)

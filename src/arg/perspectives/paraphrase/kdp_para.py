@@ -14,7 +14,7 @@ from datastore.table_names import BertTokenizedCluewebDoc
 from epath import job_man_dir
 from exec_lib import run_func_with_config
 from galagos.parse import load_galago_ranked_list
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import lmap, dict_value_map
 from misc_lib import DataIDManager, exist_or_mkdir
 from tf_util.record_writer_wrap import write_records_w_encode_fn
@@ -75,7 +75,7 @@ class KDPParaWorker(WorkerInterface):
         self.top_n = config['top_n']
         self.num_sent = config['num_sent']
         self.max_seq_length = config['max_seq_length']
-        self.ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+        self.ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
         self.cids = lmap(int, self.ranked_list.keys())
         self.pid_dict = first_pid_as_rep()
         self.out_dir = out_dir
@@ -83,7 +83,7 @@ class KDPParaWorker(WorkerInterface):
 
     def work(self, job_id):
         cid = self.cids[job_id]
-        entries: List[GalagoDocRankEntry] = self.ranked_list[str(cid)]
+        entries: List[SimpleRankedListEntry] = self.ranked_list[str(cid)]
         max_items = 1000 * 1000
         base = job_id * max_items
         end = base + max_items
@@ -125,7 +125,7 @@ def main(config):
         return KDPParaWorker(config, writer, out_dir)
 
     q_res_path = config['q_res_path']
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
     num_job = len(ranked_list)-1
 
     runner = JobRunner(job_man_dir, num_job, config['job_name'], get_worker)

@@ -2,13 +2,14 @@ from arg.pers_evidence.get_lm import get_query_lms
 from arg.qck.decl import QKUnit
 from arg.qck.filter_qk import filter_qk
 from cache import save_to_pickle, load_from_pickle
-from list_lib import lmap, lfilter
+from list_lib import lfilter
 from misc_lib import tprint
 
 
 def main():
     qk_list = load_from_pickle("pc_evidence_qk")
     split = "train"
+    split = "dev"
     tprint("Building query lms")
     query_lms = get_query_lms(split)
     split_query_ids = list(query_lms.keys())

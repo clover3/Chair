@@ -42,7 +42,6 @@ class QCKInstanceGenerator(InstanceGenerator):
                 print(query)
                 print(len(passages))
                 print(len(candidates))
-
             p_sub_tokens= []
             for p_idx, passage in enumerate(passages):
                 if self.kdp_as_sub_token:

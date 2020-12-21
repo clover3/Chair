@@ -8,14 +8,14 @@ from arg.qck.qcknc_datagen import QCKInstanceGenerator, QCKCandidateI
 from arg.robust.qc_common import get_candidate_all_passage_w_samping
 from cache import load_from_pickle, save_to_pickle, load_cache
 from cpath import data_path
-from data_generator.data_parser.robust2 import load_qrel
 from data_generator.job_runner import JobRunner
 from epath import job_man_dir
+from evals.parse import load_qrels_structured
 
 
 def main():
     qrel_path = os.path.join(data_path, "robust", "qrels.rob04.txt")
-    judgement = load_qrel(qrel_path)
+    judgement = load_qrels_structured(qrel_path)
 
     def is_correct(query: QCKQuery, candidate: QCKCandidate):
         qid = query.query_id

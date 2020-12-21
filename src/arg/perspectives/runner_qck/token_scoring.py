@@ -5,7 +5,7 @@ from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms_for_sub_sp
 from arg.qck.decl import QCKQuery, KDP
 # Make payload without any annotation
 from arg.qck.token_scoring.token_scoring_gen import TokenScoringGen, ScoreVector
-from arg.qck.topic_lm.lm_based_scorer import LogOddScorer, ScorerInterface, RawProbabilityScorer
+from arg.qck.topic_lm.lm_based_scorer import ScorerInterface, RawProbabilityScorer
 from arg.util import load_run_config
 
 
@@ -20,7 +20,7 @@ def main():
 
     def get_scorer():
         if score_type == "log_odd":
-            return LogOddScorer(lm_pair_list)
+            assert False
         elif score_type == "raw_prob":
             return RawProbabilityScorer(lm_pair_list)
         else:

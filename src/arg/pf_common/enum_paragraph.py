@@ -4,7 +4,7 @@ from arg.pf_common.base import Paragraph
 from data_generator.subword_translate import Subword
 from datastore.interface import load
 from datastore.table_names import TokenizedCluewebDoc
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import lmap, flatten
 
 
@@ -35,7 +35,7 @@ def move_cursor(subword_tokens: List[List[Subword]], start: int, max_len: int):
 
 
 def enum_paragraph(step_size, subword_len,
-                   subword_tokenize: Callable[[str], List[Subword]], doc: GalagoDocRankEntry) -> Iterable[Paragraph]:
+                   subword_tokenize: Callable[[str], List[Subword]], doc: SimpleRankedListEntry) -> Iterable[Paragraph]:
     # load tokens and BERT subword tokens
     tokens = load(TokenizedCluewebDoc, doc.doc_id)
     subword_tokens: List[List[Subword]] = lmap(subword_tokenize, tokens)

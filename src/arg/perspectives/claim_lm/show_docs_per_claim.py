@@ -13,7 +13,7 @@ from cache import save_to_pickle
 from datastore.interface import preload_man
 from datastore.table_names import TokenizedCluewebDoc
 from galagos.parse import load_galago_ranked_list
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import lmap, flatten, left, lfilter, right
 from misc_lib import average, two_digit_float
 from models.classic.lm_util import get_lm_log, subtract, smooth, average_counters
@@ -27,7 +27,7 @@ def show_docs_per_claim():
     claims = claims[:10]
     top_n = 10
     q_res_path = FilePath("/mnt/nfs/work3/youngwookim/data/perspective/train_claim/q_res_100")
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
 
     preload_docs(ranked_list, claims, top_n)
 
@@ -40,7 +40,7 @@ def show_missing():
     claims = claims[:10]
     top_n = 100
     q_res_path = FilePath("/mnt/nfs/work3/youngwookim/data/perspective/train_claim/q_res_100")
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
 
     preload_docs(ranked_list, claims, top_n)
     report_missing(claims, ranked_list, top_n)
@@ -49,7 +49,7 @@ def show_missing():
 def show_docs(claims, ranked_list, top_n):
     # for each claim
     for c in claims:
-        q_res: List[GalagoDocRankEntry] = ranked_list[str(c['cId'])]
+        q_res: List[SimpleRankedListEntry] = ranked_list[str(c['cId'])]
         print(c['cId'], c['text'])
         for i in range(top_n):
             try:
@@ -66,7 +66,7 @@ def report_missing(claims, ranked_list, top_n):
     # for each claim
     n_missing = 0
     for c in claims:
-        q_res: List[GalagoDocRankEntry] = ranked_list[str(c['cId'])]
+        q_res: List[SimpleRankedListEntry] = ranked_list[str(c['cId'])]
         print(c['cId'], c['text'])
         missing = []
         for i in range(top_n):
@@ -99,7 +99,7 @@ def get_cell_from_token(token, log_odd):
 def preload_docs(ranked_list, claims, top_n):
     def get_doc_ids(claim: Dict):
         # Find the q_res
-        q_res: List[GalagoDocRankEntry] = ranked_list[str(claim['cId'])]
+        q_res: List[SimpleRankedListEntry] = ranked_list[str(claim['cId'])]
         return list([q_res[i].doc_id for i in range(top_n)])
 
     all_doc_ids: Set[str] = set(flatten(lmap(get_doc_ids, claims)))
@@ -117,7 +117,7 @@ def join_docs_and_lm():
     claims = claims[:10]
     top_n = 10
     q_res_path = FilePath("/mnt/nfs/work3/youngwookim/data/perspective/train_claim/q_res_100")
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
     preload_docs(ranked_list, claims, top_n)
     claim_lms = build_gold_lms(claims)
     claim_lms_d = {lm.cid: lm for lm in claim_lms}
@@ -141,7 +141,7 @@ def join_docs_and_lm():
 
     tokenizer = PCTokenizer()
     for c in claims:
-        q_res: List[GalagoDocRankEntry] = ranked_list[str(c['cId'])]
+        q_res: List[SimpleRankedListEntry] = ranked_list[str(c['cId'])]
         html_visualizer.write_headline("{} : {}".format(c['cId'], c['text']))
 
         clusters: List[List[int]] = gold[c['cId']]
@@ -194,7 +194,7 @@ def doc_lm_scoring():
     claims = claims
     top_n = 10
     q_res_path = FilePath("/mnt/nfs/work3/youngwookim/data/perspective/train_claim/q_res_100")
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
     preload_docs(ranked_list, claims, top_n)
     claim_lms = build_gold_lms(claims)
     claim_lms_d = {lm.cid: lm for lm in claim_lms}
@@ -211,7 +211,7 @@ def doc_lm_scoring():
     num_pos_sum = 0
     num_pos_exists = 0
     for c in claims:
-        q_res: List[GalagoDocRankEntry] = ranked_list[str(c['cId'])]
+        q_res: List[SimpleRankedListEntry] = ranked_list[str(c['cId'])]
         html_visualizer.write_headline("{} : {}".format(c['cId'], c['text']))
         # for cluster in clusters:
         #     html_visualizer.write_paragraph("---")
@@ -303,7 +303,7 @@ def a_relevant():
     claims = claims
     top_n = 10
     q_res_path = FilePath("/mnt/nfs/work3/youngwookim/data/perspective/train_claim/q_res_100")
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
     preload_docs(ranked_list, claims, top_n)
     claim_lms = build_gold_lms(claims)
     claim_lms_d = {lm.cid: lm for lm in claim_lms}
@@ -317,7 +317,7 @@ def a_relevant():
     all_passages = []
     entries = []
     for c in claims:
-        q_res: List[GalagoDocRankEntry] = ranked_list[str(c['cId'])]
+        q_res: List[SimpleRankedListEntry] = ranked_list[str(c['cId'])]
         claim_lm = claim_lms_d[c['cId']]
         log_topic_lm = get_lm_log(smooth(claim_lm.LM, bg_lm, alpha))
         log_odd: Counter = subtract(log_topic_lm, log_bg_lm)

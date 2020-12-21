@@ -4,8 +4,8 @@ import scipy.special
 
 from arg.qck.decl import get_format_handler, QCKOutEntry
 from arg.qck.prediction_reader import load_combine_info_jsons
-from data_generator.data_parser.robust2 import load_qrel
 from estimator_helper.output_reader import join_prediction_with_info
+from evals.parse import load_qrels_structured
 from exec_lib import run_func_with_config
 from list_lib import lmap
 from misc_lib import group_by, unique_list
@@ -20,7 +20,7 @@ def main(config):
     info = load_combine_info_jsons(info_dir, f_handler.get_mapping(), f_handler.drop_kdp())
     data: List[Dict] = join_prediction_with_info(prediction_file, info, ["data_id", "logits"])
     out_entries: List[QCKOutEntry] = lmap(QCKOutEntry.from_dict, data)
-    qrel: Dict[str, Dict[str, int]] = load_qrel(config['qrel_path'])
+    qrel: Dict[str, Dict[str, int]] = load_qrels_structured(config['qrel_path'])
 
     def get_label(query_id, candi_id):
         if candi_id in qrel[query_id]:

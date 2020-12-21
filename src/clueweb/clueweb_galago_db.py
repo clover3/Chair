@@ -8,7 +8,7 @@ from datastore.alchemy_schema import Base, KeyOnlyTable, engine, Session, Tokeni
 from datastore.interface import has_key, load, save, flush
 from datastore.table_names import TokenizedCluewebDoc, RawCluewebDoc, CluewebDocTF, QueryResult
 from galagos.parse import load_galago_ranked_list
-from galagos.types import GalagoDocRankEntry, QueryResultID
+from galagos.types import SimpleRankedListEntry, QueryResultID
 from misc_lib import TimeEstimator
 from sydney_clueweb.clue_path import get_first_disk
 
@@ -25,7 +25,7 @@ def load_from_db_or_from_galago(table_name, key, galago_fn):
 
 
 def insert_ranked_list(q_res_id: QueryResultID,
-                       ranked_list: List[GalagoDocRankEntry]):
+                       ranked_list: List[SimpleRankedListEntry]):
     save(QueryResult, q_res_id, ranked_list)
     flush()
 
@@ -73,7 +73,7 @@ class DocGetter:
 
 
 def insert_ranked_list_from_path(file_path: FilePath, q_config_id: str):
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(file_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(file_path)
 
     for query_id in ranked_list:
         q_res_id: QueryResultID = QueryResultID("{}_{}".format(query_id, q_config_id))

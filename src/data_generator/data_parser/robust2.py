@@ -2,6 +2,7 @@ import os
 from typing import Dict
 
 import cpath
+from evals.parse import load_qrels_structured
 from galagos.parse import load_galago_ranked_list
 
 
@@ -27,22 +28,9 @@ def load_bm25_best():
     return load_galago_ranked_list(path)
 
 
-def load_qrel(path) -> Dict[str, Dict[str, int]]:
-    f = open(path, "r")
-    q_dict = {}
-    for line in f:
-        q_id, _, doc_id, score = line.split()
-        if q_id not in q_dict:
-            q_dict[q_id] = {}
-
-        q_dict[q_id][doc_id] = int(score)
-
-    return q_dict
-
-
 def load_robust_qrel() -> Dict[str, Dict[str, int]]:
     qrel_path = os.path.join(robust_path, "qrels.rob04.txt")
-    return load_qrel(qrel_path)
+    return load_qrels_structured(qrel_path)
 
 
 

@@ -10,7 +10,7 @@ from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms_for_sub_sp
 from datastore.interface import preload_man
 from datastore.table_names import TokenizedCluewebDoc
 from galagos.parse import load_galago_ranked_list
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import lmap
 from models.classic.lm_util import average_counters, get_lm_log, smooth, subtract
 from models.classic.stopword import load_stopwords_for_query
@@ -30,7 +30,7 @@ def main():
     split = "train"
     subjectivity_path = sys.argv[1]
     q_res_path = sys.argv[2]
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
 
     # load LM
     claim_lms: List[ClaimLM] = build_gold_lms_for_sub_split(split)

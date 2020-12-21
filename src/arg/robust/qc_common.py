@@ -5,9 +5,10 @@ from typing import Dict, List, Iterable
 from arg.qck.decl import QCKCandidateWToken, QCKQuery
 from cpath import data_path
 from data_generator.data_parser.robust import load_robust04_title_query
-from data_generator.data_parser.robust2 import load_bm25_best, load_qrel
+from data_generator.data_parser.robust2 import load_bm25_best
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from galagos.types import GalagoDocRankEntry
+from evals.parse import load_qrels_structured
+from galagos.types import SimpleRankedListEntry
 from list_lib import dict_value_map
 from misc_lib import enum_passage
 from tlm.robust.load import load_robust_tokens_for_predict, load_robust_tokens_for_train
@@ -15,7 +16,7 @@ from tlm.robust.load import load_robust_tokens_for_predict, load_robust_tokens_f
 
 def load_candidate_head_as_doc(doc_len=400) -> Dict[str, List[QCKCandidateWToken]]:
     top_k = 100
-    candidate_docs: Dict[str, List[GalagoDocRankEntry]] = load_bm25_best()
+    candidate_docs: Dict[str, List[SimpleRankedListEntry]] = load_bm25_best()
     print("Num queries : ", len(candidate_docs))
     print("Loading robust collection tokens...", end= "")
     data: Dict[str, List[str]] = load_robust_tokens_for_predict()
@@ -26,16 +27,16 @@ def load_candidate_head_as_doc(doc_len=400) -> Dict[str, List[QCKCandidateWToken
         tokens = data[doc_id]
         return QCKCandidateWToken(doc_id, "", tokens[:doc_len])
 
-    def fetch_docs(ranked_list: List[GalagoDocRankEntry]) -> List[QCKCandidateWToken]:
+    def fetch_docs(ranked_list: List[SimpleRankedListEntry]) -> List[QCKCandidateWToken]:
         return list([make_candidate(e.doc_id) for e in ranked_list[:top_k]])
 
     return dict_value_map(fetch_docs, candidate_docs)
 
 
 def load_candidate_all_passage(max_seq_length, max_passage_per_doc=10) -> Dict[str, List[QCKCandidateWToken]]:
-    candidate_docs: Dict[str, List[GalagoDocRankEntry]] = load_bm25_best()
+    candidate_docs: Dict[str, List[SimpleRankedListEntry]] = load_bm25_best()
 
-    def get_doc_id(l: List[GalagoDocRankEntry]):
+    def get_doc_id(l: List[SimpleRankedListEntry]):
         return list([e.doc_id for e in l])
 
     candidate_doc_ids: Dict[str, List[str]] = dict_value_map(get_doc_id, candidate_docs)
@@ -76,7 +77,7 @@ def load_candidate_all_passage_inner(candidate_doc_ids, token_data,
 
 def load_candidate_all_passage_from_qrel(max_seq_length, max_passage_per_doc=10) -> Dict[str, List[QCKCandidateWToken]]:
     qrel_path = os.path.join(data_path, "robust", "qrels.rob04.txt")
-    judgement: Dict[str, Dict] = load_qrel(qrel_path)
+    judgement: Dict[str, Dict] = load_qrels_structured(qrel_path)
 
     candidate_doc_ids = {}
     for query_id in judgement.keys():
@@ -102,7 +103,7 @@ def get_candidate_all_passage_w_samping(max_seq_length=256,
     tokens_d.update(load_robust_tokens_for_predict(4))
     queries = load_robust04_title_query()
     tokenizer = get_tokenizer()
-    judgement: Dict[str, Dict] = load_qrel(qrel_path)
+    judgement: Dict[str, Dict] = load_qrels_structured(qrel_path)
     out_d : Dict[str, List[QCKCandidateWToken]] = {}
     for query_id in judgement.keys():
         if query_id not in judgement:

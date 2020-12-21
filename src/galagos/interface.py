@@ -10,7 +10,7 @@ from typing import List, Dict
 
 from cpath import output_path
 from galagos.parse import save_queries_to_file, parse_galago_ranked_list, parse_galago_passage_ranked_list
-from galagos.types import GalagoDocRankEntry, GalagoPassageRankEntry
+from galagos.types import SimpleRankedListEntry, GalagoPassageRankEntry
 from misc_lib import exist_or_mkdir
 from taskman_client.sync import JsonTiedDict
 
@@ -82,7 +82,7 @@ def get_doc_jsonl(index_path, doc_id) -> List[str]:
 
 # queries : List[ "num":query_id, "text": query_str ]
 # output : Dict[Query -> List(doc_id, score, rank)]
-def send_doc_queries(index_path, num_result, queries, timeout=3600) -> Dict[str, List[GalagoDocRankEntry]]:
+def send_doc_queries(index_path, num_result, queries, timeout=3600) -> Dict[str, List[SimpleRankedListEntry]]:
     lines = send_queries_inner(index_path, num_result, queries, timeout)
     return parse_galago_ranked_list(lines)
 

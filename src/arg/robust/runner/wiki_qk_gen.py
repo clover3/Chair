@@ -7,16 +7,16 @@ from base_type import FilePath
 from cache import load_from_pickle, save_to_pickle
 from data_generator.data_parser.robust import load_robust04_title_query
 from galagos.parse import load_galago_ranked_list_w_space
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 
 
 def make_qk_unit_list(qck_queries: List[QCKQuery],
-         ranked_list_dict: Dict[str, List[GalagoDocRankEntry]],
-         doc_tokens: Dict[str, List[str]],
-         window_size,
-         step_size,
-         max_per_doc
-         ) -> List[QKUnit]:
+                      ranked_list_dict: Dict[str, List[SimpleRankedListEntry]],
+                      doc_tokens: Dict[str, List[str]],
+                      window_size,
+                      step_size,
+                      max_per_doc
+                      ) -> List[QKUnit]:
 
     output: List[QKUnit] = []
     for q in qck_queries:
@@ -42,7 +42,7 @@ def main():
     q_res_path = FilePath("/mnt/nfs/work3/youngwookim/data/qck/robust_on_wiki/q_res.txt")
     queries: Dict[str, str] = load_robust04_title_query()
     qck_queries = to_qck_queries(queries)
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list_w_space(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list_w_space(q_res_path)
     doc_tokens = load_doc_tokens()
     window_size = 256
     step_size = 256

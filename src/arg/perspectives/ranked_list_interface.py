@@ -7,7 +7,7 @@ from datastore.table_names import QueryResult
 from galagos.interface import send_queries_passage, PassageQuery, format_passage_query, DocQuery, \
     format_query_bm25, send_doc_queries
 from galagos.tokenize_util import clean_tokenize_str_to_tokens
-from galagos.types import GalagoDocRankEntry, GalagoPassageRankEntry
+from galagos.types import SimpleRankedListEntry, GalagoPassageRankEntry
 from sydney_clueweb.clue_path import get_first_disk
 
 
@@ -81,16 +81,16 @@ class DynRankedListInterface:
               claim_id: str,
               perspective_id: str,
               claim_text: str,
-              p_text: str) -> List[GalagoDocRankEntry]:
+              p_text: str) -> List[SimpleRankedListEntry]:
         query_id = "{}_{}".format(claim_id, perspective_id)
         #print("query", query_id)
         # check if query_id is in DB
         q_res_id = "{}_{}".format(query_id, self.q_config_id)
 
-        def galago_fn() -> List[GalagoDocRankEntry]:
+        def galago_fn() -> List[SimpleRankedListEntry]:
             print("running galago batch-search")
             query = make_doc_query(claim_id, perspective_id, claim_text, p_text)
-            r: Dict[str, List[GalagoDocRankEntry]] = send_doc_queries(self.disk_path, self.num_request, [query])
+            r: Dict[str, List[SimpleRankedListEntry]] = send_doc_queries(self.disk_path, self.num_request, [query])
             return r[query_id]
 
         try:
@@ -113,7 +113,7 @@ class StaticRankedListInterface(RankedListInterface):
     def fetch(self,
               claim_id: str,
               perspective_id: str
-              ) -> List[GalagoDocRankEntry]:
+              ) -> List[SimpleRankedListEntry]:
         query_id = "{}_{}".format(claim_id, perspective_id)
         q_res_id = "{}_{}".format(query_id, self.q_config_id)
         return self.fetch_from_q_res_id(q_res_id)

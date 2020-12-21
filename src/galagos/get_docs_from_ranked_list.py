@@ -3,11 +3,11 @@ from typing import List, Dict
 from datastore.interface import preload_man, load
 from datastore.table_names import TokenizedCluewebDoc
 from galagos.parse import load_galago_ranked_list
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import lmap, dict_value_map
 
 
-def get_docs_from_ranked_list(ranked_list: List[GalagoDocRankEntry]) -> List[List[str]]:
+def get_docs_from_ranked_list(ranked_list: List[SimpleRankedListEntry]) -> List[List[str]]:
     doc_ids = lmap(lambda x: x.doc_id, ranked_list)
     preload_man.preload(TokenizedCluewebDoc, doc_ids)
 
@@ -36,17 +36,17 @@ def get_docs_from_ranked_list(ranked_list: List[GalagoDocRankEntry]) -> List[Lis
 
 
 def get_docs_from_q_res_path(file_path) -> Dict[str, List[List[str]]]:
-    ranked_list_d: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(file_path)
+    ranked_list_d: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(file_path)
     return get_docs_from_q_res(ranked_list_d)
 
 
 def get_docs_from_q_res_path_top_k(file_path, top_k) -> Dict[str, List[List[str]]]:
-    ranked_list_d: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(file_path)
+    ranked_list_d: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(file_path)
     ranked_list_d = dict_value_map(lambda x:x[:top_k], ranked_list_d)
     return get_docs_from_q_res(ranked_list_d)
 
 
-def get_docs_from_q_res(ranked_list_d: Dict[str, List[GalagoDocRankEntry]]) -> Dict[str, List[List[str]]]:
+def get_docs_from_q_res(ranked_list_d: Dict[str, List[SimpleRankedListEntry]]) -> Dict[str, List[List[str]]]:
     print(len(ranked_list_d))
     return dict_value_map(get_docs_from_ranked_list, ranked_list_d)
 

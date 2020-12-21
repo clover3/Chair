@@ -17,13 +17,13 @@ from data_generator.subword_translate import Subword
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from datastore.interface import preload_man
 from datastore.table_names import TokenizedCluewebDoc, BertTokenizedCluewebDoc
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import lfilter, lmap, flatten
 
 
 def select_paragraph_dp_list(ci: StaticRankedListInterface,
                              clue12_13_df,
-                             paragraph_iterator: Callable[[GalagoDocRankEntry], Iterable[Paragraph]],
+                             paragraph_iterator: Callable[[SimpleRankedListEntry], Iterable[Paragraph]],
                              datapoint_list: List[PerspectiveCandidate]) -> List[ParagraphClaimPersFeature]:
     not_found_set = set()
 
@@ -50,7 +50,7 @@ def select_paragraph_dp_list(ci: StaticRankedListInterface,
         return ScoreParagraph(paragraph=paragraph, score=score)
 
     def select_paragraph_from_datapoint(x: PerspectiveCandidate) -> ParagraphClaimPersFeature:
-        ranked_docs: List[GalagoDocRankEntry] = ci.fetch(x.cid, x.pid)
+        ranked_docs: List[SimpleRankedListEntry] = ci.fetch(x.cid, x.pid)
         ranked_docs = ranked_docs[:100]
         cp_tokens = nltk.word_tokenize(x.claim_text) + nltk.word_tokenize(x.p_text)
         cp_tokens = lmap(lambda x: x.lower(), cp_tokens)
@@ -64,13 +64,13 @@ def select_paragraph_dp_list(ci: StaticRankedListInterface,
         def paragraph_scorer_local(p):
             return paragraph_scorer(p, cp_tokens)
 
-        def get_best_paragraph_from_doc(doc: GalagoDocRankEntry) -> List[ScoreParagraph]:
+        def get_best_paragraph_from_doc(doc: SimpleRankedListEntry) -> List[ScoreParagraph]:
             paragraph_list = paragraph_iterator(doc)
             score_paragraph = lmap(paragraph_scorer_local, paragraph_list)
             score_paragraph.sort(key=lambda p: p.score, reverse=True)
             return score_paragraph[:1]
 
-        def get_all_paragraph_from_doc(doc: GalagoDocRankEntry) -> List[ScoreParagraph]:
+        def get_all_paragraph_from_doc(doc: SimpleRankedListEntry) -> List[ScoreParagraph]:
             paragraph_list = paragraph_iterator(doc)
             score_paragraph = lmap(paragraph_scorer_local, paragraph_list)
             return score_paragraph

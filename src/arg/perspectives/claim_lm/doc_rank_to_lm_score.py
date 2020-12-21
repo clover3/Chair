@@ -7,7 +7,7 @@ from arg.perspectives.pc_tokenizer import PCTokenizer
 from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms
 from base_type import FilePath
 from galagos.parse import load_galago_ranked_list
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import lmap
 from misc_lib import average
 from models.classic.lm_util import get_lm_log, smooth, subtract, average_counters
@@ -38,7 +38,7 @@ def a_relevant():
     claims = claims[:10]
     top_n = 100
     q_res_path = FilePath("/mnt/nfs/work3/youngwookim/data/perspective/train_claim/q_res_100")
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
     preload_docs(ranked_list, claims, top_n)
 
     stopwords = load_stopwords_for_query()
@@ -46,7 +46,7 @@ def a_relevant():
 
     tokenizer = PCTokenizer()
     for c in claims:
-        q_res: List[GalagoDocRankEntry] = ranked_list[str(c['cId'])]
+        q_res: List[SimpleRankedListEntry] = ranked_list[str(c['cId'])]
         claim_lm = claim_lms_d[c['cId']]
         log_topic_lm = get_lm_log(smooth(claim_lm.LM, bg_lm, alpha))
         log_odd: Counter = subtract(log_topic_lm, log_bg_lm)

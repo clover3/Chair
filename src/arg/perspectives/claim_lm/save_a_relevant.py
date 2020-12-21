@@ -9,7 +9,7 @@ from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms
 from base_type import FilePath
 from cache import save_to_pickle
 from galagos.parse import load_galago_ranked_list
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import lmap, lfilter
 from models.classic.lm_util import get_lm_log, subtract, smooth, average_counters
 from models.classic.stopword import load_stopwords_for_query
@@ -17,14 +17,14 @@ from models.classic.stopword import load_stopwords_for_query
 
 def a_relevant_candidate(save_name, q_res_path, claims):
     top_n = 10
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
     preload_docs(ranked_list, claims, top_n)
     all_passages = []
     entries = []
 
     all_docs = 0
     for c in claims:
-        q_res: List[GalagoDocRankEntry] = ranked_list[str(c['cId'])]
+        q_res: List[SimpleRankedListEntry] = ranked_list[str(c['cId'])]
         claim_text = c['text']
         def get_passage_score(dummy):
             return 0
@@ -41,7 +41,7 @@ def a_relevant_candidate(save_name, q_res_path, claims):
 def a_relevant(save_name, q_res_path, claims):
     top_n = 10
 
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
     preload_docs(ranked_list, claims, top_n)
     claim_lms = build_gold_lms(claims)
     claim_lms_d = {lm.cid: lm for lm in claim_lms}
@@ -58,7 +58,7 @@ def a_relevant(save_name, q_res_path, claims):
     num_pos_exists = 0
 
     for c in claims:
-        q_res: List[GalagoDocRankEntry] = ranked_list[str(c['cId'])]
+        q_res: List[SimpleRankedListEntry] = ranked_list[str(c['cId'])]
         claim_lm = claim_lms_d[c['cId']]
         log_topic_lm = get_lm_log(smooth(claim_lm.LM, bg_lm, alpha))
         log_odd: Counter = subtract(log_topic_lm, log_bg_lm)

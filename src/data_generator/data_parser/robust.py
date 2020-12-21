@@ -3,8 +3,9 @@ from typing import Dict
 
 import cpath
 import data_generator.data_parser.trec as trec
-from data_generator.data_parser.robust2 import load_2k_rank, robust_path, load_qrel
+from data_generator.data_parser.robust2 import load_2k_rank, robust_path
 from data_generator.data_parser.trec import load_trec
+from evals.parse import load_qrels_structured
 
 
 def load_robust04_query_krovetsz():
@@ -29,7 +30,7 @@ def load_robust04_title_query() -> Dict[str, str]:
 
 def load_robust04_qrels():
     path = os.path.join(robust_path, "qrels.rob04.txt")
-    return load_qrel(path)
+    return load_qrels_structured(path)
 
 
 def load_robust04_desc():

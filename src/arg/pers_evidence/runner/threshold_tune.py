@@ -1,14 +1,14 @@
 import sys
 from typing import List, Dict
 
-from data_generator.data_parser.robust2 import load_qrel
+from evals.parse import load_qrels_structured
 from misc_lib import average, get_f1
 from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
 
 
 def main():
     l1: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(sys.argv[1])
-    qrel: Dict[str, Dict[str, int]] = load_qrel(sys.argv[2])
+    qrel: Dict[str, Dict[str, int]] = load_qrels_structured(sys.argv[2])
 
     threshold_list = []
     ptr = 0.0

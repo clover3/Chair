@@ -7,7 +7,7 @@ from arg.perspectives.declaration import PerspectiveCandidate
 from arg.perspectives.ranked_list_interface import DynRankedListInterface, make_doc_query
 from cpath import output_path
 from galagos.query_runs_ids import Q_CONFIG_ID_BM25_10000
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import lmap, flatten
 
 
@@ -18,7 +18,7 @@ def main():
 
     print("data_poing len" , len(all_data_points))
     def data_point_to_doc_id_list(x: PerspectiveCandidate) -> List[str]:
-        ranked_docs: List[GalagoDocRankEntry] = ci.query(x.cid, x.pid, x.claim_text, x.p_text)
+        ranked_docs: List[SimpleRankedListEntry] = ci.query(x.cid, x.pid, x.claim_text, x.p_text)
         ranked_docs = ranked_docs[:100]
         doc_id_list: List[str] = lmap(get_doc_id, ranked_docs)
         return doc_id_list

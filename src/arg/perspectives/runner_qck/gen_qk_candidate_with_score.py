@@ -13,7 +13,7 @@ from datastore.interface import preload_man
 from datastore.table_names import TokenizedCluewebDoc
 from exec_lib import run_func_with_config
 from galagos.parse import load_galago_ranked_list
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import left
 from misc_lib import TimeEstimator, get_second, tprint
 
@@ -50,7 +50,7 @@ def qk_candidate_gen(q_res_path: str,
     score_d = load_doc_scores(doc_score_path, num_jobs)
 
     tprint("loading ranked list")
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
     query_ids = list(ranked_list.keys())
     query_ids.sort()
     print("num queries", len(query_ids))

@@ -10,7 +10,7 @@ from data_generator.create_feature import create_int_feature
 from data_generator.subword_translate import Subword
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from galagos.parse import load_galago_ranked_list
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.data_gen.base import get_basic_input_feature
 
@@ -25,7 +25,7 @@ def encode_query_and_text(tokenizer, query_str, text, max_seq_length) -> Tuple[L
     return out_tokens, segment_ids
 
 
-def tf_record_gen(ranked_list: Dict[str, List[GalagoDocRankEntry]],
+def tf_record_gen(ranked_list: Dict[str, List[SimpleRankedListEntry]],
                   queries: Dict,
                   text_reader: Callable[[str], str],
                   output_path,
@@ -63,7 +63,7 @@ def tf_record_gen(ranked_list: Dict[str, List[GalagoDocRankEntry]],
 def main():
     queries = load_queries()
     bm25_path = pjoin(cord_working_dir, "youngwoo_bm25_query")
-    ranked_list:  Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(bm25_path)
+    ranked_list:  Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(bm25_path)
     out_path = os.path.join(cord_working_dir, "tfrecord_2_4")
     max_seq_length = 512
 

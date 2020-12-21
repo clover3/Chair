@@ -3,7 +3,7 @@ from typing import List
 
 from arg.qck.decl import QKUnit, QCKCandidate, QCKQuery
 from cache import load_from_pickle
-from data_generator.data_parser.robust2 import load_qrel
+from evals.parse import load_qrels_structured
 
 
 def load_qk_robust_heldout(data_id) -> List[QKUnit]:
@@ -13,7 +13,7 @@ def load_qk_robust_heldout(data_id) -> List[QKUnit]:
 class QRel:
     def __init__(self):
         qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
-        self.judgement = load_qrel(qrel_path)
+        self.judgement = load_qrels_structured(qrel_path)
 
     def is_correct(self, query: QCKQuery, candidate: QCKCandidate):
         qid = query.query_id

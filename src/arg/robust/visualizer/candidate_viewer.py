@@ -6,16 +6,16 @@ from cache import load_from_pickle
 from cpath import output_path
 from data_generator.data_parser.robust import load_robust04_qrels, load_robust04_desc2
 from data_generator.data_parser.robust2 import load_bm25_best
-from trec.trec_parse import load_ranked_list_grouped
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import dict_value_map
+from trec.trec_parse import load_ranked_list_grouped
 from visualize.html_visual import HtmlVisualizer, get_collapsible_script, get_collapsible_css, get_scroll_css
 
 
 def load_candidate_d():
-    candidate_docs: Dict[str, List[GalagoDocRankEntry]] = load_bm25_best()
+    candidate_docs: Dict[str, List[SimpleRankedListEntry]] = load_bm25_best()
 
-    def get_doc_id(l: List[GalagoDocRankEntry]):
+    def get_doc_id(l: List[SimpleRankedListEntry]):
         return list([e.doc_id for e in l])
 
     candidate_doc_ids: Dict[str, List[str]] = dict_value_map(get_doc_id, candidate_docs)

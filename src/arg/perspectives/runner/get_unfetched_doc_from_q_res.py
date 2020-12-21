@@ -15,7 +15,7 @@ from cpath import output_path
 from datastore.interface import has_key, load
 from datastore.table_names import QueryResult
 from galagos.query_runs_ids import Q_CONFIG_ID_BM25_10000
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import foreach, lmap
 from misc_lib import exist_or_mkdir, TimeEstimator
 
@@ -38,7 +38,7 @@ def read_doc_list(st, ed):
         q_res_id: str = "{}_{}".format(query_id, q_config_id)
         ticker.tick()
         if has_key(QueryResult, q_res_id):
-            r: List[GalagoDocRankEntry] = load(QueryResult, q_res_id)
+            r: List[SimpleRankedListEntry] = load(QueryResult, q_res_id)
 
             for entry in r:
                 doc_id, rank, score = entry

@@ -9,7 +9,7 @@ from arg.mpqa.bert_datagen import encode_w_data_id
 from arg.qck.kd_candidate_gen import preload_docs, iterate_docs
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from galagos.parse import load_galago_ranked_list
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 # KD = Knowledge Document
 from misc_lib import TimeEstimator, DataIDManager
 from tf_util.record_writer_wrap import write_records_w_encode_fn
@@ -17,7 +17,7 @@ from tf_util.record_writer_wrap import write_records_w_encode_fn
 
 def sentence_payload_gen(q_res_path: str, top_n, data_id_man: DataIDManager):
     print("loading ranked list")
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
     qid_list = list(ranked_list.keys())
     qid_list = qid_list[:10]
     ranked_list = {k: ranked_list[k] for k in qid_list}
@@ -32,7 +32,7 @@ def sentence_payload_gen(q_res_path: str, top_n, data_id_man: DataIDManager):
 
     ticker = TimeEstimator(len(ranked_list))
     for qid in ranked_list:
-        q_res: List[GalagoDocRankEntry] = ranked_list[qid]
+        q_res: List[SimpleRankedListEntry] = ranked_list[qid]
         docs = iterate_docs(q_res, top_n)
 
         for doc in docs:

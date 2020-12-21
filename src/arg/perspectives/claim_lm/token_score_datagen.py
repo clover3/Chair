@@ -6,7 +6,7 @@ from arg.perspectives.select_paragraph_claim import remove_duplicate
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from datastore.interface import preload_man, load
 from datastore.table_names import BertTokenizedCluewebDoc
-from galagos.types import GalagoDocRankEntry
+from galagos.types import SimpleRankedListEntry
 from list_lib import lmap, foreach, flatten
 from models.classic.lm_util import get_lm_log, subtract, smooth
 from models.classic.stopword import load_stopwords_for_query
@@ -104,7 +104,7 @@ def get_generator(max_seq_length, bg_lm, alpha):
     bert_tokenizer = get_tokenizer()
 
     def generate(claim_lm: ClaimLM,
-                 ranked_list: List[GalagoDocRankEntry]) -> List[Record]:
+                 ranked_list: List[SimpleRankedListEntry]) -> List[Record]:
         claim_text = claim_lm.claim
         claim_tokens = bert_tokenizer.tokenize(claim_text)
         claim_token_len = len(claim_tokens)

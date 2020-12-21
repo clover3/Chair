@@ -3,7 +3,7 @@ import string
 from collections import Counter
 from typing import Iterator, Dict, List, Tuple, Iterable
 
-from galagos.types import GalagoDocRankEntry, GalagoPassageRankEntry, Query, RankedListDict
+from galagos.types import SimpleRankedListEntry, GalagoPassageRankEntry, Query, RankedListDict
 from list_lib import flatten, right
 from misc_lib import group_by
 
@@ -34,20 +34,6 @@ def load_galago_judgement2(path):
     return q_group
 
 
-def load_qrels(path) -> Dict[str, List[Tuple[str, int]]]:
-    # 101001 0 clueweb12-0001wb-40-32733 0
-
-    q_group = dict()
-    for line in open(path, "r"):
-        q_id, _, doc_id, score = line.split()
-        score = int(score)
-        if q_id not in q_group:
-            q_group[q_id] = list()
-
-        q_group[q_id].append((doc_id, int(score)))
-    return q_group
-
-
 def write_qrels(qrels: Dict[str, List[Tuple[str, int]]],
                 path):
 
@@ -61,19 +47,19 @@ def write_qrels(qrels: Dict[str, List[Tuple[str, int]]],
     # 101001 0 clueweb12-0001wb-40-32733 0
 
 
-def load_galago_ranked_list(path) -> Dict[str, List[GalagoDocRankEntry]]:
+def load_galago_ranked_list(path) -> Dict[str, List[SimpleRankedListEntry]]:
     # Sample Format : 475287 Q0 LA053190-0016_1274 1 15.07645119 galago
     line_itr = open(path, "r")
     return parse_galago_ranked_list(line_itr)
 
 
-def parse_galago_ranked_list(line_itr: Iterator[str]) -> Dict[str, List[GalagoDocRankEntry]]:
-    q_group: Dict[str, List[GalagoDocRankEntry]] = dict()
+def parse_galago_ranked_list(line_itr: Iterator[str]) -> Dict[str, List[SimpleRankedListEntry]]:
+    q_group: Dict[str, List[SimpleRankedListEntry]] = dict()
     for line in line_itr:
         q_id, _, doc_id, rank, score, _ = line.split()
         if q_id not in q_group:
             q_group[q_id] = list()
-        e = GalagoDocRankEntry(doc_id=str(doc_id), rank=int(rank), score=float(score))
+        e = SimpleRankedListEntry(doc_id=str(doc_id), rank=int(rank), score=float(score))
         q_group[q_id].append(e)
     return q_group
 
@@ -89,18 +75,18 @@ def parse_with_space(line):
     return query, doc_id, rank, score
 
 
-def parse_galago_ranked_list_with_space(line_itr: Iterator[str]) -> Dict[str, List[GalagoDocRankEntry]]:
-    q_group: Dict[str, List[GalagoDocRankEntry]] = dict()
+def parse_galago_ranked_list_with_space(line_itr: Iterator[str]) -> Dict[str, List[SimpleRankedListEntry]]:
+    q_group: Dict[str, List[SimpleRankedListEntry]] = dict()
     for line in line_itr:
         q_id, doc_id, rank, score = parse_with_space(line)
         if q_id not in q_group:
             q_group[q_id] = list()
-        e = GalagoDocRankEntry(doc_id=str(doc_id), rank=int(rank), score=float(score))
+        e = SimpleRankedListEntry(doc_id=str(doc_id), rank=int(rank), score=float(score))
         q_group[q_id].append(e)
     return q_group
 
 
-def load_galago_ranked_list_w_space(path) -> Dict[str, List[GalagoDocRankEntry]]:
+def load_galago_ranked_list_w_space(path) -> Dict[str, List[SimpleRankedListEntry]]:
     # Sample Format : 475287 Q0 LA053190-0016_1274 1 15.07645119 galago
     line_itr = open(path, "r")
     return parse_galago_ranked_list_with_space(line_itr)
@@ -258,8 +244,8 @@ def write_ranked_list_from_s(ranked_list_dict: RankedListDict, out_path):
 
 
 def get_doc_ids_from_ranked_list_path(q_res_path):
-    ranked_list: Dict[str, List[GalagoDocRankEntry]] = load_galago_ranked_list(q_res_path)
-    rank_entries: Iterable[GalagoDocRankEntry] = flatten(ranked_list.values())
+    ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
+    rank_entries: Iterable[SimpleRankedListEntry] = flatten(ranked_list.values())
     doc_ids = [e.doc_id for e in rank_entries]
     doc_ids_unique = set(doc_ids)
     return doc_ids_unique
