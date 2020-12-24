@@ -207,6 +207,8 @@ class HtmlVisualizer(VisualizerCommon):
             bg_color = ("%02x" % r) + "ff" + ("%02x" % r)
         elif color == "Y":
             bg_color = "ffff" + ("%02x" % r)
+        elif color == "Gray":
+            bg_color = ("%02x" % r) + ("%02x" % r) + ("%02x" % r)
         else:
             assert False
         return bg_color

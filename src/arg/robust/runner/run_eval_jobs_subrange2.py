@@ -15,8 +15,8 @@ def main():
     step = int(sys.argv[2])
     model_sub_path = "{}/model.ckpt-{}".format(model_name, step)
     job_group_name = "{}_{}".format(model_name, step)
-
     sh_format_path = sys.argv[3]
+    template_json = sys.argv[4]
     save_dir = get_save_dir(job_group_name)
     data_st = 200
     data_ed = 250
@@ -39,7 +39,7 @@ def main():
 
     tprint("Waiting files")
     wait_files(job_info_list)
-    template_json = "data/run_config/robust_trec_save_qck10.json"
+
     save_config = json.load(open(template_json, "r"))
     pred_file_list: List[str] = lmap(lambda d: d['save_path'], job_info_list)
     tprint("Make ranked list")
