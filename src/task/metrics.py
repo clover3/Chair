@@ -39,6 +39,10 @@ def eval_2label(pred_y, gold_y):
     return eval_n_label(2, pred_y, gold_y)
 
 
+def accuracy(pred_y, gold_y):
+    return np.average(np.equal(gold_y, pred_y).astype(np.int))
+
+
 def eval_n_label(n, pred_y, gold_y):
     assert len(pred_y) == len(gold_y)
 

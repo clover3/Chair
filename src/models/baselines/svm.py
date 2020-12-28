@@ -1,9 +1,10 @@
 from collections import Counter
-from sklearn.svm import LinearSVC
-from sklearn.feature_extraction.text import CountVectorizer
+from typing import Iterable
 
-import numpy as np
 from scipy.sparse import csr_matrix
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.svm import LinearSVC
+
 
 def train_svm_and_test(feature_extractor, train_x, train_y, test_x):
     X_train_counts = feature_extractor.fit_transform(train_x)
@@ -17,9 +18,18 @@ def train_svm_and_test(feature_extractor, train_x, train_y, test_x):
     return svclassifier.predict(x_test_count)
 
 
+def ngram_rep(g):
+    return ' '.join(g)
+
+
+def ngram_rep2(g):
+    ext = ["{}({})".format(t, ord(t)) for t in g]
+    return ' '.join(ext)
+
+
 def find_ngrams(input_list, n):
-    ngrams = zip(*[input_list[i:] for i in range(n)])
-    return [' '.join(g) for g in ngrams]
+    ngrams: Iterable[Iterable] = zip(*[input_list[i:] for i in range(n)])
+    return [ngram_rep2(g) for g in ngrams]
 
 
 def find_ngram_range(sent, n_range):
@@ -30,8 +40,10 @@ def find_ngram_range(sent, n_range):
 
 
 class NGramFeature:
-    def __init__(self):
+    def __init__(self, use_char_ngram=True, ngram_max=3):
         self.word_feature = None
+        self.use_char_ngram = use_char_ngram
+        self.ngram_max = ngram_max
 
     def transform(self, X):
         x_word_feature = self.word_feature.transform(X)
@@ -49,16 +61,16 @@ class NGramFeature:
             for col, val in zip(lil.rows[i], lil.data[i]):
                 indices.append(col)
                 data.append(val)
+            if self.use_char_ngram:
+                new_line = Counter()
+                for t in find_ngram_range(line, range(2,6)):
+                    if t in self.char_feature_dict:
+                        f_id = self.c_base + self.char_feature_dict[t]
+                        new_line[f_id] += 1
 
-            new_line = Counter()
-            for t in find_ngram_range(line, range(2,6)):
-                if t in self.char_feature_dict:
-                    f_id = self.c_base + self.char_feature_dict[t]
-                    new_line[f_id] += 1
-
-            for key, val in new_line.items():
-                indices.append(key)
-                data.append(val)
+                for key, val in new_line.items():
+                    indices.append(key)
+                    data.append(val)
             indptr.append(len(indices))
 
         X_out = csr_matrix((data, indices, indptr), dtype=int,
@@ -68,14 +80,15 @@ class NGramFeature:
     def fit_transform(self, X):
         self.char_feature_dict = dict()
         feature_id = 0
-        for line in X:
-            tokens = line.lower()
-            for t in find_ngram_range(line, range(2,6)):
-                if t not in self.char_feature_dict:
-                    self.char_feature_dict[t] = feature_id
-                    feature_id += 1
+        if self.use_char_ngram:
+            for line in X:
+                tokens = line.lower()
+                for t in find_ngram_range(line, range(2,6)):
+                    if t not in self.char_feature_dict:
+                        self.char_feature_dict[t] = feature_id
+                        feature_id += 1
 
-        self.word_feature = CountVectorizer(ngram_range=(1,3))
+        self.word_feature = CountVectorizer(ngram_range=(1, self.ngram_max))
         self.word_feature.fit(X)
 
         n_gram_num = len(self.word_feature.vocabulary_)

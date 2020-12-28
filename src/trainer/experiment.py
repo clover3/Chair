@@ -135,7 +135,7 @@ class Experiment:
 
     def stance_baseline(self, topic, voca_path):
         print("Experiment.stance_baseline()")
-        max_sequence= 140
+        max_sequence = 140
         stance_data = stance_detection.DataLoader(topic, max_sequence, voca_path)
 
         stance_data.load_train_data()
@@ -147,7 +147,6 @@ class Experiment:
 
         common_label, _ = label_count.most_common(1)[0]
         pred_major = np.array([common_label] * len(stance_data.dev_data_raw))
-
 
         train_x = [entry["inputs"] for entry in stance_data.train_data_raw]
         train_y = [entry["label"] for entry in stance_data.train_data_raw]
