@@ -1,12 +1,12 @@
 from collections import Counter
 from typing import Dict
 
+from arg.bm25 import BM25
 from arg.perspectives import es_helper
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import claims_to_dict, get_claim_perspective_id_dict
 from arg.perspectives.random_walk.pc_predict import normalize_counter
 from list_lib import dict_value_map, lmap
-from models.classic.bm25 import BM25
 
 
 def pc_predict_to_inspect(bm25_module: BM25,

@@ -67,15 +67,6 @@ def get_adjusted_score(data_point):
     return diff / 5
 
 
-class NamedNumber(float):
-    def __new__(self, value, name):
-        return float.__new__(self, value)
-
-    def __init__(self, value, extra):
-        float.__init__(value)
-        self.name = extra
-
-
 def predict_interface(claims, top_k, scorer, get_rationale=None):
     def get_claim_prediction(c: Dict) -> Tuple[str, List[Dict]]:
         cid = c["cId"]

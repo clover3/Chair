@@ -1,7 +1,10 @@
 from collections import Counter
 from typing import Dict, List, Tuple
 
-from arg.perspectives.collection_based_classifier import predict_interface, NamedNumber
+# num_doc = 541
+# avdl = 11.74
+from arg.bm25 import BM25
+from arg.perspectives.collection_based_classifier import predict_interface
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import claims_to_dict
 from arg.perspectives.pc_tokenizer import PCTokenizer
@@ -9,9 +12,7 @@ from arg.perspectives.pc_tokenizer import PCTokenizer
 # avdl = 11.74
 from cache import load_from_pickle, save_to_pickle
 from list_lib import dict_value_map, lmap
-# num_doc = 541
-# avdl = 11.74
-from models.classic.bm25 import BM25
+from misc_lib import NamedNumber
 
 
 def get_bm25_module():

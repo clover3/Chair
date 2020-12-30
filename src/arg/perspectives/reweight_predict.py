@@ -3,16 +3,17 @@ from typing import Dict, List, Tuple, Iterator
 
 import spacy
 
-from arg.perspectives.collection_based_classifier import predict_interface, NamedNumber
+# num_doc = 541
+# avdl = 11.74
+from arg.bm25 import BM25
+from arg.perspectives.collection_based_classifier import predict_interface
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import claims_to_dict
 # num_doc = 541
 # avdl = 11.74
 from arg.perspectives.runner.claim_analysis import get_claim_term_weighting
 from list_lib import dict_value_map
-# num_doc = 541
-# avdl = 11.74
-from models.classic.bm25 import BM25
+from misc_lib import NamedNumber
 
 
 def predict_by_reweighter(bm25_module: BM25,

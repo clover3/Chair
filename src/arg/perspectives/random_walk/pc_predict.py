@@ -3,12 +3,13 @@ from typing import Dict, List, Tuple, Iterator
 
 import spacy
 
-from arg.perspectives.collection_based_classifier import predict_interface, NamedNumber
+from arg.bm25 import BM25
+from arg.perspectives.collection_based_classifier import predict_interface
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import claims_to_dict
 from arg.perspectives.runner.claim_analysis import get_claim_term_weighting
 from list_lib import dict_value_map
-from models.classic.bm25 import BM25
+from misc_lib import NamedNumber
 
 
 def normalize_counter(c: Counter) -> Counter:

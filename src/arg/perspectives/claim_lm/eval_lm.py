@@ -3,12 +3,12 @@ from typing import List, Callable, Dict, Tuple
 from arg.perspectives.claim_lm.debug_lm import debug_failture
 from arg.perspectives.claim_lm.lm_predict import get_lm_scorer
 from arg.perspectives.claim_lm.passage_to_lm import get_train_passage_a_lms
-from arg.perspectives.collection_based_classifier import NamedNumber
 from arg.perspectives.eval_caches import get_eval_candidates_from_pickle
 from arg.perspectives.eval_helper import get_eval_candidates
 from arg.perspectives.evaluate import evaluate_map
 from arg.perspectives.runner_uni.build_topic_lm import ClaimLM
 from list_lib import lmap
+from misc_lib import NamedNumber
 
 
 def eval_raw(claim_lm_list: List[ClaimLM], split):

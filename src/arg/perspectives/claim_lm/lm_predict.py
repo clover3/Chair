@@ -1,11 +1,12 @@
 from collections import Counter
 from typing import List, Dict, Tuple
 
-from arg.perspectives.collection_based_classifier import NamedNumber, predict_interface
+from arg.perspectives.collection_based_classifier import predict_interface
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.pc_tokenizer import PCTokenizer
 from arg.perspectives.runner_uni.build_topic_lm import ClaimLM
 from list_lib import lmap
+from misc_lib import NamedNumber
 from models.classic.lm_util import get_log_odd, average_counters
 
 

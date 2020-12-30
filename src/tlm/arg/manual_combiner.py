@@ -54,6 +54,7 @@ class TwoInputModelManualCombine(BertModelInterface):
         x2 = get_dense(n_intermediate_dim)(model_2_first_token)
         x2 = get_dense(n_dim)(x2)
 
+
         def get_pos_only_weight_param(shape, name):
             output_weights = tf.compat.v1.get_variable(
                 name, shape,
@@ -67,6 +68,9 @@ class TwoInputModelManualCombine(BertModelInterface):
                 "bias", [1, n_dim],
                 initializer=tf.compat.v1.truncated_normal_initializer(stddev=0.02)
             )
+        if config.zero_k2:
+            print("Zero k2")
+            k2 = 0
         self.score1 = x1
         self.score2 = x2
         h = x1 * k1 + x2 * k2 + B

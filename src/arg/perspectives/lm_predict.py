@@ -5,13 +5,14 @@ import math
 from krovetzstemmer import Stemmer
 
 from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
-from arg.perspectives.collection_based_classifier import predict_interface, NamedNumber
+from arg.perspectives.collection_based_classifier import predict_interface
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import claims_to_dict, load_perspective_pool
 from arg.perspectives.pc_tokenizer import PCTokenizer
 # num_doc = 541
 # avdl = 11.74
 from list_lib import dict_value_map
+from misc_lib import NamedNumber
 
 
 # num_doc = 541

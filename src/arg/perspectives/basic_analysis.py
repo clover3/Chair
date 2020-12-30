@@ -3,13 +3,13 @@ from typing import List, Dict, Tuple
 import nltk
 
 from arg.perspectives import es_helper
-from arg.perspectives.collection_based_classifier import NamedNumber, predict_interface
+from arg.perspectives.collection_based_classifier import predict_interface
 from arg.perspectives.declaration import PerspectiveCandidate
 from arg.perspectives.load import get_claim_perspective_id_dict, get_perspective_dict, load_claim_perspective_pair, \
     get_claims_from_ids, load_claim_ids_for_split
 from cie.msc.tf_idf import sublinear_term_frequency, cosine_similarity, inverse_document_frequencies
 from list_lib import flatten
-from misc_lib import split_7_3
+from misc_lib import split_7_3, NamedNumber
 
 
 def get_candidates(claims, balance) -> List[PerspectiveCandidate]:
