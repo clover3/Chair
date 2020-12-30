@@ -3,13 +3,13 @@ from typing import List, Tuple
 
 import nltk
 
+from arg.bm25 import BM25
 from arg.counter_arg.header import Passage
 from arg.counter_arg.methods.bm25_predictor import BasicTF
 from arg.counter_arg.methods.tool import get_term_importance, sent_tokenize_newline
-from arg.perspectives.collection_based_classifier import NamedNumber
 from bert_api.client_lib import BERTClient
 from list_lib import lmap, lmap_pairing, left
-from models.classic.bm25 import BM25
+from misc_lib import NamedNumber
 
 
 def get_stance_check_candidate(text: str, bm25_module: BM25):

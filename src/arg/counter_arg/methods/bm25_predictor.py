@@ -1,14 +1,14 @@
 from collections import Counter
 from typing import List, Iterable, Dict, Callable, Any
 
+from arg.bm25 import BM25
 from arg.counter_arg import header
 from arg.counter_arg.enum_all_argument import enum_all_argument
 from arg.counter_arg.header import ArguDataID, Passage
-from arg.perspectives.collection_based_classifier import NamedNumber
 from arg.perspectives.pc_tokenizer import PCTokenizer
 from cache import load_from_pickle, save_to_pickle
 from list_lib import lmap
-from models.classic.bm25 import BM25
+from misc_lib import NamedNumber
 
 
 def counter_sum(counter1: Dict[Any, float], weight1: float,

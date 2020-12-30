@@ -3,8 +3,8 @@ from collections import Counter
 from math import log
 
 from adhoc.bm25 import BM25_verbose
-from arg.perspectives.collection_based_classifier import NamedNumber
 from arg.perspectives.pc_tokenizer import PCTokenizer
+from misc_lib import NamedNumber
 
 
 class BM25Bare:

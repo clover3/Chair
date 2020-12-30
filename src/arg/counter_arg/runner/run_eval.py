@@ -4,7 +4,7 @@ from arg.counter_arg.eval import run_eval, EvalCondition
 from arg.counter_arg.header import Passage
 from arg.counter_arg.methods import bm25_predictor, msmarco_predictor
 from arg.counter_arg.methods.structured import get_structured_scorer
-from arg.perspectives.collection_based_classifier import NamedNumber
+from misc_lib import NamedNumber
 
 
 def bm25_eval():

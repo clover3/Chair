@@ -9,9 +9,9 @@ from arg.counter_arg.header import Passage
 from arg.counter_arg.methods import bm25_predictor
 from arg.counter_arg.methods.bm25_predictor import get_bm25_module
 from arg.counter_arg.methods.stance_query import get_stance_check_candidate
-from arg.perspectives.collection_based_classifier import NamedNumber
 from cache import save_to_pickle, load_from_pickle
 from data_generator.tokenizer_wo_tf import get_tokenizer
+from misc_lib import NamedNumber
 from visualize.html_visual import Cell, HtmlVisualizer
 
 

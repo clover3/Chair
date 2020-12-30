@@ -3,16 +3,15 @@ from typing import Iterable, List
 
 import spacy
 
+from arg.bm25 import BM25Bare
 from arg.counter_arg import header
 from arg.counter_arg.enum_all_argument import enum_all_argument
 from arg.counter_arg.header import Passage
 from arg.counter_arg.methods.bm25_predictor import BasicTF, remove_space_chars
-from arg.perspectives.collection_based_classifier import NamedNumber
 from arg.query_weight.syntactic_weight_gen import QueryWeightGenBySyntactic
 from cache import save_to_pickle, load_from_pickle
 from list_lib import lmap
-from misc_lib import TimeEstimator
-from models.classic.bm25 import BM25Bare
+from misc_lib import TimeEstimator, NamedNumber
 from tlm.retrieve_lm.stem import CacheStemmer
 
 

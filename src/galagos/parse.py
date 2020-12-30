@@ -250,3 +250,7 @@ def get_doc_ids_from_ranked_list_path(q_res_path):
     doc_ids_unique = set(doc_ids)
     return doc_ids_unique
 
+
+def load_query_json_as_dict(query_json_path):
+    j = json.load(open(query_json_path, "r"))
+    return {e['number']: e['text'] for e in j["queries"]}

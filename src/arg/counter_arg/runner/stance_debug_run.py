@@ -7,8 +7,8 @@ from arg.counter_arg.header import Passage
 from arg.counter_arg.methods import bm25_predictor
 from arg.counter_arg.methods.bm25_predictor import get_bm25_module
 from arg.counter_arg.methods.stance_query import get_stance_check_candidate
-from arg.perspectives.collection_based_classifier import NamedNumber
 from bert_api.client_lib import BERTClient
+from misc_lib import NamedNumber
 from trainer.promise import PromiseKeeper, MyPromise
 
 PORT_UKP = 8123

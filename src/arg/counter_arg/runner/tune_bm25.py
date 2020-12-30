@@ -1,7 +1,7 @@
+from arg.bm25 import BM25
 from arg.counter_arg.eval import run_eval, EvalCondition
 from arg.counter_arg.methods import bm25_predictor
 from arg.counter_arg.methods.bm25_predictor import get_bm25_module
-from models.classic.bm25 import BM25
 
 
 def modify(bm25_module: BM25, k1, k2, b):

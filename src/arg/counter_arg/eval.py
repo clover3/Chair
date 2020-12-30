@@ -7,11 +7,10 @@ from arg.counter_arg.data_loader import load_labeled_data
 from arg.counter_arg.enum_all_argument import enum_all_argument
 from arg.counter_arg.header import ArguDataPoint
 from arg.counter_arg.header import Passage, ArguDataID
-from arg.perspectives.collection_based_classifier import NamedNumber
 from cache import load_cache, save_to_pickle
 from distrib.parallel import parallel_run
 from list_lib import lmap, max_idx
-from misc_lib import average
+from misc_lib import average, NamedNumber
 
 
 class EvalCondition(enum.Enum):

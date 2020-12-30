@@ -539,3 +539,24 @@ def dict_to_tuple_list(d: Dict[A, B]) -> List[Tuple[A, B]]:
         out_l.append((k, v))
 
     return out_l
+
+
+def find_max_idx(itr: Iterable[A], key_fn: Callable[[A], Any]) -> int:
+    max_idx = -1
+    max_score = None
+    for idx, entry in enumerate(itr):
+        score = key_fn(entry)
+        if max_idx < 0 or score > max_score:
+            max_idx = idx
+            max_score = score
+
+    return max_idx
+
+
+class NamedNumber(float):
+    def __new__(self, value, name):
+        return float.__new__(self, value)
+
+    def __init__(self, value, extra):
+        float.__init__(value)
+        self.name = extra

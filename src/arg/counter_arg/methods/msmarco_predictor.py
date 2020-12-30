@@ -1,8 +1,8 @@
 from typing import List, Callable
 
 from arg.counter_arg.header import Passage
-from arg.perspectives.collection_based_classifier import NamedNumber
 from bert_api.client_lib import get_ingham_client
+from misc_lib import NamedNumber
 
 
 def get_scorer() -> Callable[[Passage, List[Passage]], List[NamedNumber]]:
