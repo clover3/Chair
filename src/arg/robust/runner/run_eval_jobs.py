@@ -22,8 +22,7 @@ def save_run_group_info(info, name):
 
 
 def get_save_dir(job_group_name):
-    # ext_disk_root = "/mnt/disks/disk500/"
-    save_root = os.path.join(ext_disk_root, "robust_score")
+    save_root = "/mnt/disks/disk100/score"
     exist_or_mkdir(save_root)
     save_dir = os.path.join(save_root, "{}.score".format(job_group_name))
     return save_dir
@@ -35,7 +34,10 @@ def main():
     job_group_name = "{}_{}".format(model_name, step)
 
     sh_format_path = sys.argv[3]
-    #sh_format_path = "robust_qck6/predict_template.sh"
+    if len(sys.argv) > 4:
+        template_json = sys.argv[4]
+    else:
+        template_json = "data/run_config/robust_trec_save_qck5.json"
     save_dir = get_save_dir(job_group_name)
     data_st = 200
     data_ed = 250
@@ -60,7 +62,7 @@ def main():
     wait_files(job_info_list)
 
     tprint("Make ranked list")
-    make_ranked_list_from_multiple_files(job_group_name, save_dir, data_st, data_ed)
+    make_ranked_list_from_multiple_files(job_group_name, save_dir, data_st, data_ed, template_json)
 
 
 if __name__ == "__main__":

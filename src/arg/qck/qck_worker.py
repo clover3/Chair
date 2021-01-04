@@ -1,23 +1,12 @@
-import abc
 import json
 import os
-from collections import OrderedDict
-from typing import List, Iterable, Tuple, Any
+from typing import List, Tuple
 
-from arg.qck.decl import QCKQuery, KDP, QKUnit
+from arg.qck.decl import QCKQuery, KDP
+from arg.qck.instance_generator.base import InstanceGenerator
 from data_generator.job_runner import WorkerInterface
 from misc_lib import DataIDManager, exist_or_mkdir, tprint
 from tf_util.record_writer_wrap import write_records_w_encode_fn
-
-
-class InstanceGenerator(abc.ABC):
-    @abc.abstractmethod
-    def generate(self, kc_candidate: Iterable[QKUnit],
-                       data_id_manager: DataIDManager):
-        pass
-
-    def encode_fn(self, any: Any) -> OrderedDict:
-        pass
 
 
 class QCKWorker(WorkerInterface):

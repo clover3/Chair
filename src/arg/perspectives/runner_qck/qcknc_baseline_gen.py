@@ -6,7 +6,7 @@ from arg.perspectives.eval_caches import get_extended_eval_candidate_as_qck
 from arg.perspectives.load import get_claim_perspective_id_dict, load_train_claim_ids, get_claims_from_ids
 from arg.perspectives.ppnc.resource import load_qk_candidate_train
 from arg.qck.decl import QCKCandidate, QCKQuery, QKUnit, KnowledgeDocumentPart
-from arg.qck.qcknc_datagen import QCKInstanceGenerator
+from arg.qck.instance_generator.qcknc_datagen import QCKInstanceGenerator
 from cpath import output_path
 from list_lib import lmap
 from misc_lib import split_7_3, DataIDManager, exist_or_mkdir

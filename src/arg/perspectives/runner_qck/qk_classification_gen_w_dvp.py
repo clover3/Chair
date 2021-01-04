@@ -3,7 +3,7 @@ import pickle
 from arg.perspectives.runner_qck.qcknc_common import do_all_jobs
 from arg.qck.decl import QCKQuery, KDP
 from arg.qck.dvp_to_correctness import dvp_to_correctness
-from arg.qck.qknc_datagen import QKInstanceGenerator
+from arg.qck.instance_generator.qknc_datagen import QKInstanceGenerator
 # Make payload without any annotation
 from arg.util import load_run_config
 

@@ -1,7 +1,7 @@
 from arg.counter_arg.header import num_problems
 from arg.qck.decl import QCKCandidate, QCKQuery
+from arg.qck.instance_generator.qcknc_datagen import QCKInstanceGenerator
 from arg.qck.qck_worker import QCKWorker
-from arg.qck.qcknc_datagen import QCKInstanceGenerator
 from data_generator.job_runner import JobRunner
 from epath import job_man_dir
 

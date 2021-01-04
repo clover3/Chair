@@ -2,7 +2,7 @@ from collections import Counter
 from typing import Dict, List
 
 from arg.qck.filter_qk import LMScorer
-from arg.qck.qcknc_datagen import QCKCandidateI
+from arg.qck.instance_generator.qcknc_datagen import QCKCandidateI
 from misc_lib import TimeEstimator
 from trec.trec_parse import TrecRankedListEntry
 

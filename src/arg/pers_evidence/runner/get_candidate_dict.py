@@ -4,7 +4,7 @@ from arg.pers_evidence.common import get_qck_queries
 from arg.pers_evidence.es_helper import get_evidence_from_pool
 from arg.perspectives.load import splits, load_evidence_dict, evidence_gold_dict_str_qid
 from arg.qck.decl import QCKCandidate, QCKQuery, QCKCandidateWToken
-from arg.qck.qcknc_datagen import QCKCandidateI
+from arg.qck.instance_generator.qcknc_datagen import QCKCandidateI
 from cache import save_to_pickle, load_from_pickle
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap, lflatten

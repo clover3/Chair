@@ -7,10 +7,12 @@ from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids, loa
     load_claims_for_sub_split, d_n_claims_per_subsplit
 from arg.perspectives.ppnc.resource import load_qk_candidate_train, load_qk_candidate_dev
 from arg.qck.decl import QKUnit
-from arg.qck.qck_worker import QCKWorker, InstanceGenerator
+from arg.qck.instance_generator.base import InstanceGenerator
+from arg.qck.qck_worker import QCKWorker
 from cache import load_from_pickle
 from data_generator.job_runner import JobRunner
 from epath import job_man_dir
+from job_manager.job_runner_with_server import JobRunnerS
 from misc_lib import split_7_3
 
 
@@ -112,7 +114,7 @@ def start_generate_jobs_for_dev(generator: InstanceGenerator,
                          generator,
                          out_dir)
 
-    runner = JobRunner(job_man_dir, 138, name_prefix + "_dev", worker_factory)
+    runner = JobRunnerS(job_man_dir, 138, name_prefix + "_dev", worker_factory)
     runner.start()
 
 

@@ -3,7 +3,8 @@ from typing import List
 
 from arg.perspectives.basic_analysis import get_candidates
 from arg.perspectives.declaration import PerspectiveCandidate
-from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids, load_dev_claim_ids, load_test_claim_ids
+from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids, load_dev_claim_ids, load_test_claim_ids, \
+    splits, load_claim_ids_for_split
 from arg.perspectives.pc_run_path import query_dir_format
 from cpath import output_path, pjoin
 from galagos.interface import format_query_bm25, DocQuery, write_queries_to_files
@@ -51,6 +52,7 @@ def get_claims_query(claims, drop_stopwords=False):
         print(q_terms)
         if drop_stopwords:
             q_terms = list([t for t in q_terms if t not in stopword])
+        q_terms = list([t.replace(".", "") for t in q_terms])
         print(q_terms)
 
         q_entry = format_query_bm25(cid, q_terms)
@@ -80,6 +82,15 @@ def write_claim_queries_k0():
     write(claim_ids, split_name)
     claim_ids, split_name = (load_dev_claim_ids(), "dev")
     write(claim_ids, split_name)
+
+
+def write_claim_queries2():
+    for split in splits:
+        claim_ids = load_claim_ids_for_split(split)
+        claims = get_claims_from_ids(claim_ids)
+        queries = get_claims_query(claims, True)
+        out_path = os.path.join(output_path, "perspective_claim_query2_{}.json".format(split))
+        save_queries_to_file(queries, out_path)
 
 
 def write_claim_perspective_pair_as_query():
@@ -113,5 +124,5 @@ def write_claim_perspective_pair_as_query():
 
 
 if __name__ == "__main__":
-    write_claim_queries_k0()
+    write_claim_queries2()
 

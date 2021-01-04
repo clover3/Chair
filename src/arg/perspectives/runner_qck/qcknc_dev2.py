@@ -1,6 +1,6 @@
 from arg.perspectives.qck.qcknc_datagen import get_eval_candidates_as_qck, is_correct_factory
 from arg.perspectives.runner_qck.qcknc_pred_datagen import run_jobs_with_qk_candidate
-from arg.qck.qcknc_datagen import QCKInstanceGenerator
+from arg.qck.instance_generator.qcknc_datagen import QCKInstanceGenerator
 
 
 def main():

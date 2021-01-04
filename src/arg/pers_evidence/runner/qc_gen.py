@@ -7,8 +7,8 @@ from arg.pers_evidence.runner.get_candidate_dict import get_ex_candidate_for_tra
     get_candidate
 from arg.perspectives.load import splits, evidence_gold_dict_str_str
 from arg.qck.decl import QCKQuery, QCKCandidate
-from arg.qck.qc_datagen import QCInstanceGenerator
-from arg.qck.qcknc_datagen import QCKCandidateI
+from arg.qck.instance_generator.qc_datagen import QCInstanceGenerator
+from arg.qck.instance_generator.qcknc_datagen import QCKCandidateI
 from cpath import output_path
 from misc_lib import DataIDManager, exist_or_mkdir
 from tf_util.record_writer_wrap import write_records_w_encode_fn

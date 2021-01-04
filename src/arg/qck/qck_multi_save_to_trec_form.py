@@ -4,14 +4,14 @@ import sys
 from typing import List, Dict, Tuple
 
 from arg.qck.decl import get_qk_pair_id, get_qc_pair_id, qck_convert_map, qk_convert_map, \
-    qc_convert_map
+    qc_convert_map, qckl_convert_map
 from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.qck.trec_helper import scrore_d_to_trec_style_predictions
 from cpath import output_path
 from estimator_helper.output_reader import join_prediction_with_info
-from trec.trec_parse import write_trec_ranked_list_entry
 from list_lib import lmap
 from misc_lib import exist_or_mkdir, group_by, average
+from trec.trec_parse import write_trec_ranked_list_entry
 
 
 def top_k_average(items):

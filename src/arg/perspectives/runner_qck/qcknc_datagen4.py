@@ -1,7 +1,7 @@
 from arg.perspectives.qck.qcknc_datagen import get_eval_candidates_as_qck, is_correct_factory
 from arg.perspectives.runner_qck.qcknc_common import start_generate_jobs_for_train, start_generate_jobs_for_val, \
     start_generate_jobs_for_sub_split
-from arg.qck.qcknc_datagen import QCKInstanceGenerator
+from arg.qck.instance_generator.qcknc_datagen import QCKInstanceGenerator
 
 
 def main():

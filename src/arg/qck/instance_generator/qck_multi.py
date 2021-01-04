@@ -3,7 +3,7 @@ from collections import OrderedDict
 from typing import List, Iterable, Dict, Tuple, NamedTuple
 
 from arg.qck.decl import QCKQuery, KDP, QKUnit, QCKInstance, QCKCandidate, KnowledgeDocumentPart
-from arg.qck.qck_worker import InstanceGenerator
+from arg.qck.instance_generator.base import InstanceGenerator
 from data_generator.tokenizer_wo_tf import get_tokenizer, tokenize_from_tokens
 from list_lib import flatten, lmap
 from misc_lib import DataIDManager

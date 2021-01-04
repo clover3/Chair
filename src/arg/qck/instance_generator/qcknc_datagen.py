@@ -1,5 +1,3 @@
-
-
 from collections import OrderedDict
 from typing import List, Iterable, Dict, Tuple, Union
 
@@ -7,7 +5,7 @@ from arg.qck.decl import QCKQuery, KDP, QKUnit, QCKInstance, \
     QCKCandidate, PayloadAsTokens, get_light_qckquery, get_light_qckcandidate, get_light_kdp, QCKCandidateWToken, \
     PayloadAsIds
 from arg.qck.encode_common import encode_two_inputs, encode_two_input_ids
-from arg.qck.qck_worker import InstanceGenerator
+from arg.qck.instance_generator.base import InstanceGenerator
 from data_generator.tokenizer_wo_tf import get_tokenizer, tokenize_from_tokens
 from list_lib import flatten, lmap
 from misc_lib import DataIDManager

@@ -9,9 +9,9 @@ def make_ranked_list_from_multiple_files(
         run_name,
         save_dir,
         file_idx_start,
-        file_idx_end):
+        file_idx_end,
+        template_json = "data/run_config/robust_trec_save_qck5.json"):
 
-    template_json = "data/run_config/robust_trec_save_qck5.json"
     j = json.load(open(template_json, "r"))
     j['run_name'] = run_name
     j['prediction_dir'] = save_dir
@@ -28,7 +28,7 @@ def main():
     model_name = sys.argv[1]
     step = int(sys.argv[2])
     run_name = "{}_{}".format(model_name, step)
-    save_root = "/mnt/disks/disk500/robust_score"
+    save_root = "/mnt/disks/disk100/score"
     save_dir = os.path.join(save_root, "{}.score".format(run_name))
     print("Loading scores from")
     print(save_dir)

@@ -4,8 +4,8 @@ from typing import Dict
 from typing import List
 
 from arg.qck.decl import QKUnit, QCKQuery, QCKCandidate
+from arg.qck.instance_generator.qcknc_datagen import QCKInstanceGenerator, QCKCandidateI
 from arg.qck.qck_worker import QCKWorker
-from arg.qck.qcknc_datagen import QCKInstanceGenerator, QCKCandidateI
 from arg.robust.qc_common import load_candidate_all_passage
 from cache import load_from_pickle, save_to_pickle, load_cache
 from data_generator.job_runner import JobRunner

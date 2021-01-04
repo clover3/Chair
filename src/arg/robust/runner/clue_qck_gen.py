@@ -1,8 +1,8 @@
 from typing import List
 
 from arg.qck.decl import QKUnit
+from arg.qck.instance_generator.qcknc_datagen import QCKInstanceGenerator
 from arg.qck.qck_worker import QCKWorker
-from arg.qck.qcknc_datagen import QCKInstanceGenerator
 from arg.robust.qc_common import load_candidate_head_as_doc
 from arg.robust.qck_gen import QRel
 from cache import load_from_pickle

@@ -128,7 +128,6 @@ def get_existing_keys(table_name, keys):
     try:
         q_res = session.query(table_class.key).filter(table_class.key.in_(keys)).all()
         out = list([row.key for row in q_res])
-
     except MultipleResultsFound as e:
         raise KeyError()
     except NoResultFound as e:

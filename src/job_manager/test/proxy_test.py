@@ -1,6 +1,6 @@
 import time
 
-from job_manager.job_runner_with_server import JobRunnerWServer
+from job_manager.job_runner_with_server import JobRunnerS
 
 
 class DummyWorker:
@@ -14,7 +14,7 @@ def main():
     working_path = "d:\\job_dir"
     max_job = 3
     job_name = "test_job"
-    job_runner = JobRunnerWServer(working_path, max_job, job_name, DummyWorker)
+    job_runner = JobRunnerS(working_path, max_job, job_name, DummyWorker)
     job_id = job_runner.pool_job()
     print(job_id)
 

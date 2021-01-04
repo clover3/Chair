@@ -2,7 +2,7 @@ import collections
 from typing import List, Dict
 
 from arg.qck.decl import PayloadAsTokens
-from arg.qck.qcknc_datagen import QCKInstanceGenerator, QCKCandidateI
+from arg.qck.instance_generator.qcknc_datagen import QCKInstanceGenerator, QCKCandidateI
 from data_generator.create_feature import create_int_feature
 from tlm.data_gen.base import get_basic_input_feature_as_list
 

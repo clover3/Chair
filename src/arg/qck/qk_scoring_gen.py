@@ -2,7 +2,7 @@ from collections import OrderedDict
 from typing import List, Iterable, Tuple
 
 from arg.qck.decl import QCKQuery, KDP, QKUnit, QKInstance
-from arg.qck.qck_worker import InstanceGenerator
+from arg.qck.instance_generator.base import InstanceGenerator
 from data_generator.create_feature import create_int_feature
 from data_generator.tokenizer_wo_tf import get_tokenizer, tokenize_from_tokens
 from list_lib import flatten, lmap

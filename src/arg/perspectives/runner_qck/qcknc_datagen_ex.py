@@ -4,7 +4,7 @@ from arg.perspectives.eval_caches import get_extended_eval_candidate_as_qck
 from arg.perspectives.load import get_claim_perspective_id_dict
 from arg.perspectives.ppnc.qck_job_starter import start_generate_jobs_for_val
 from arg.qck.decl import QCKCandidate, QCKQuery
-from arg.qck.qcknc_datagen import QCKInstanceGenerator
+from arg.qck.instance_generator.qcknc_datagen import QCKInstanceGenerator
 
 
 def is_correct_factory():

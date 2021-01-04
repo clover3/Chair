@@ -7,7 +7,7 @@ from tlm.training.classification_model_fn import get_init_fn
 from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments, classification_metric_fn
 
 
-def model_fn_classification_manual_combiner(model_config, train_config):
+def model_fn_classification_manual_combiner(model_config, train_config, model_class=TwoInputModelManualCombine):
     """Returns `model_fn` closure for TPUEstimator."""
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
         """The `model_fn` for TPUEstimator."""
@@ -25,7 +25,7 @@ def model_fn_classification_manual_combiner(model_config, train_config):
             is_real_example = tf.ones(tf.shape(label_ids), dtype=tf.float32)
         is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
-        model = TwoInputModelManualCombine(
+        model = model_class(
             config=model_config,
             is_training=is_training,
             input_ids=input_ids,

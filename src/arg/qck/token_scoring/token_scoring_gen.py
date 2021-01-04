@@ -3,7 +3,7 @@ from typing import List, Iterable, Callable, Tuple
 from typing import NamedTuple
 
 from arg.qck.decl import QCKQuery, KDP, QKUnit
-from arg.qck.qck_worker import InstanceGenerator
+from arg.qck.instance_generator.base import InstanceGenerator
 from arg.qck.token_scoring.decl import ScoreVector
 from data_generator.create_feature import create_int_feature
 from data_generator.tokenizer_wo_tf import get_tokenizer

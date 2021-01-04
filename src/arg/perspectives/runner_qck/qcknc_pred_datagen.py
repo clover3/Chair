@@ -3,8 +3,9 @@ from typing import List
 from arg.perspectives.load import load_claims_for_sub_split, d_n_claims_per_subsplit
 from arg.perspectives.qck.qcknc_datagen import get_eval_candidates_as_qck, is_correct_factory
 from arg.qck.decl import QKUnit
-from arg.qck.qck_worker import InstanceGenerator, QCKWorker
-from arg.qck.qcknc_datagen import QCKInstanceGenerator
+from arg.qck.instance_generator.base import InstanceGenerator
+from arg.qck.instance_generator.qcknc_datagen import QCKInstanceGenerator
+from arg.qck.qck_worker import QCKWorker
 from cache import load_from_pickle
 from data_generator.job_runner import JobRunner
 from epath import job_man_dir

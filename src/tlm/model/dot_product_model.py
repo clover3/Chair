@@ -278,6 +278,7 @@ def hinge_all(all_logits, label_ids):
     return logits, loss
 
 
+# Get the maximum score for each data point and apply loss
 def hinge_max(all_logits, label_ids):
     print('all_logits', all_logits)
     logits = tf.reduce_max(all_logits, axis=2)

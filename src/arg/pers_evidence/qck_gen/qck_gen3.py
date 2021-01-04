@@ -5,11 +5,11 @@ from arg.pers_evidence.runner.get_candidate_dict import load_bal_candidate
 from arg.pers_evidence.runner.qc_gen import get_is_correct_fn
 from arg.perspectives.load import splits, d_n_pc_per_split
 from arg.qck.decl import QKUnit, KDP
+from arg.qck.instance_generator.qcknc_datagen import QCKInstanceGenerator
 from arg.qck.qck_worker import QCKWorkerMultiple
-from arg.qck.qcknc_datagen import QCKInstanceGenerator
 from cache import load_from_pickle
 from epath import job_man_dir
-from job_manager.job_runner_with_server import JobRunnerWServer
+from job_manager.job_runner_with_server import JobRunnerS
 from list_lib import left, right, lmap
 from misc_lib import tprint, ceil_divide
 
@@ -44,7 +44,7 @@ def main():
             return worker
 
         job_name = "pc_evi_qck3_{}".format(split)
-        runner = JobRunnerWServer(job_man_dir, num_jobs, job_name, worker_factory)
+        runner = JobRunnerS(job_man_dir, num_jobs, job_name, worker_factory)
         runner.start()
 
 

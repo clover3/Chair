@@ -23,6 +23,7 @@ def submit_rm_jobs(all_query, out_root):
         get_rm_terms(queries, disk_name, out_root, base_head, base_tail, sh_path)
         idx += window
 
+
 def work():
     claim_ids, split_name = (load_train_claim_ids(), "train")
     print("Num claims in train : ", len(list(claim_ids)))
@@ -37,6 +38,7 @@ def work():
 
     claim_ids, split_name = (load_dev_claim_ids(), "dev")
     submit_jobs_inner(claim_ids, split_name)
+
 
 if __name__ == "__main__":
     work()

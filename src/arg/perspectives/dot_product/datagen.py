@@ -2,7 +2,7 @@
 
 from arg.perspectives.qck.qcknc_datagen import get_eval_candidates_as_qck, is_correct_factory
 from arg.perspectives.runner_qck.qcknc_common import start_generate_jobs_for_sub_split
-from arg.qck.qck_multi import MultiDocInstanceGenerator
+from arg.qck.instance_generator.qck_multi import MultiDocInstanceGenerator
 from exec_lib import run_func_with_config
 
 

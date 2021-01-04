@@ -5,7 +5,7 @@ from misc_lib import exist_or_mkdir
 from taskman_client.task_proxy import get_task_manager_proxy, get_local_machine_name
 
 
-class JobRunnerWServer:
+class JobRunnerS:
     # worker_factory : gets output_path to as argument, returns object
     def __init__(self, working_path: str, max_job: int, job_name: str, worker_factory):
         self.machine = get_local_machine_name()

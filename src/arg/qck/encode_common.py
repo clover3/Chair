@@ -4,7 +4,7 @@ from typing import List
 
 from arg.qck.decl import PayloadAsTokens, PayloadAsIds
 from data_generator.create_feature import create_int_feature
-from tlm.data_gen.base import get_basic_input_feature_as_list_all_ids
+from tlm.data_gen.base import get_basic_input_feature_as_list_all_ids, get_basic_input_feature_as_list
 from tlm.data_gen.pairwise_common import combine_features_B
 
 
@@ -79,6 +79,37 @@ def encode_two_input_ids(max_seq_length, tokenizer, inst: PayloadAsIds) -> Order
     features["input_ids2"] = create_int_feature(input_ids)
     features["input_mask2"] = create_int_feature(input_mask)
     features["segment_ids2"] = create_int_feature(segment_ids)
+
+    features['label_ids'] = create_int_feature([inst.is_correct])
+    features['data_id'] = create_int_feature([inst.data_id])
+    return features
+
+
+def encode_single(tokenizer, tokens, max_seq_length):
+    effective_length = max_seq_length - 2
+    tokens = tokens[:effective_length]
+    tokens = ["[CLS]"] + tokens + ["[SEP]"]
+    segment_ids = [0] * (len(tokens) + 2)
+    tokens = tokens[:max_seq_length]
+    segment_ids = segment_ids[:max_seq_length]
+    input_ids, input_mask, segment_ids = get_basic_input_feature_as_list(tokenizer, max_seq_length,
+                                                                         tokens, segment_ids)
+
+    return input_ids, input_mask, segment_ids
+
+
+def encode_three_inputs(max_seq_length_list: List[int], tokenizer, inst: PayloadAsTokens) -> OrderedDict:
+    tokens1: List[str] = inst.text1
+    tokens2: List[str] = inst.text2
+    tokens3: List[str] = inst.passage
+
+    tokens_list = [tokens1, tokens2, tokens3]
+    features = collections.OrderedDict()
+    for i in range(3):
+        input_ids, input_mask, segment_ids = encode_single(tokenizer, tokens_list[i], max_seq_length_list[i])
+        features["input_ids{}".format(i)] = input_ids
+        features["input_mask{}".format(i)] = input_mask
+        features["segment_ids{}".format(i)] = segment_ids
 
     features['label_ids'] = create_int_feature([inst.is_correct])
     features['data_id'] = create_int_feature([inst.data_id])

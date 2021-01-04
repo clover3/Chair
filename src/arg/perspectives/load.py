@@ -171,8 +171,9 @@ d_n_claims_per_subsplit = {
 
 d_n_claims_per_split2 = {
         'train': 541,
-        'dev': 139
-    }
+        'dev': 139,
+        'test': 227,
+}
 
 d_n_pc_per_split = {'train': 2977, 'dev': 914, 'test': 1204}
 

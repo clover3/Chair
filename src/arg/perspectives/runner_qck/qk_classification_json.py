@@ -1,5 +1,5 @@
 from arg.perspectives.ppnc.qck_job_starter import start_generate_jobs
-from arg.qck.qknc_datagen import QKInstanceGenerator
+from arg.qck.instance_generator.qknc_datagen import QKInstanceGenerator
 
 # Make payload without any annotation
 from exec_lib import run_func_with_config

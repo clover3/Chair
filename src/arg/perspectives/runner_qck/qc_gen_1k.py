@@ -3,7 +3,7 @@ import os
 from arg.perspectives.load import splits
 from arg.perspectives.qck.qck_common import get_qck_queries
 from arg.perspectives.qck.qcknc_datagen import get_eval_candidates_1k_as_qck
-from arg.perspectives.runner_qck.qc_gen_50 import make_pc_qc
+from arg.qck.qc.qc_common import make_pc_qc
 from cpath import output_path
 from misc_lib import exist_or_mkdir
 
