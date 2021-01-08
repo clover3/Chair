@@ -1,7 +1,7 @@
 from typing import List, Iterable, Dict, Tuple
 
 from arg.perspectives.clueweb_db import load_doc
-from arg.qck.decl import QCKQuery, KnowledgeDocument, KnowledgeDocumentPart, KDP
+from arg.qck.decl import QCKQuery, KnowledgeDocument, KnowledgeDocumentPart, KDP, QKUnit
 from datastore.interface import preload_man
 from datastore.table_names import TokenizedCluewebDoc
 from galagos.parse import load_galago_ranked_list
@@ -83,6 +83,46 @@ def iterate_document_parts(docs: Iterable[KnowledgeDocument], window_size, step_
     return kdp_list
 
 
+def enum_doc_parts_from_ranked_list(config, q_res, top_n) -> List[KDP]:
+    docs = iterate_docs(q_res, top_n)
+    doc_part_list: List[KDP] = iterate_document_parts(docs, config['window_size'], config['step_size'])
+    return doc_part_list
+
+
+class QKWorker:
+    def __init__(self, q_res_path, config, top_n):
+        self.config = config
+        self.top_n = top_n
+        print("loading ranked list")
+        self.ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
+        print("Ranked list loaded for {} queries".format(len(self.ranked_list)))
+        print("Pre loading docs")
+        preload_docs(self.ranked_list, top_n)
+
+    def work(self, q: QCKQuery) -> List[KDP]:
+        all_doc_parts = 0
+        q_res: List[SimpleRankedListEntry] = self.ranked_list[q.query_id]
+        doc_part_list: List[KDP] = enum_doc_parts_from_ranked_list(self.config, q_res, self.top_n)
+        all_doc_parts += len(doc_part_list)
+        return doc_part_list
+
+
+def get_qk_candidate(config, q_res_path, qck_queries: List[QCKQuery]) -> List[QKUnit]:
+    top_n = config['top_n']
+    worker = QKWorker(q_res_path, config, top_n)
+    all_candidate: List[QKUnit] = []
+    ticker = TimeEstimator(len(qck_queries))
+    for q in qck_queries:
+        ticker.tick()
+        try:
+            doc_part_list: List[KDP] = worker.work(q)
+            e: QKUnit = q, doc_part_list
+            all_candidate.append(e)
+        except KeyError as e:
+            print(e)
+    return all_candidate
+
+
 def qk_candidate_gen(q_res_path: str, queries: List[QCKQuery], top_n, config) -> List[Tuple[QCKQuery, List[KDP]]]:
     print("loading ranked list")
     ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
@@ -100,42 +140,3 @@ def qk_candidate_gen(q_res_path: str, queries: List[QCKQuery], top_n, config) ->
         ticker.tick()
     return entries
 
-
-def enum_doc_parts_from_ranked_list(config, q_res, top_n):
-    docs = iterate_docs(q_res, top_n)
-    doc_part_list: List[KDP] = iterate_document_parts(docs, config['window_size'], config['step_size'])
-    return doc_part_list
-
-
-class QKWorker:
-    def __init__(self, q_res_path, config, top_n):
-        self.config = config
-        self.top_n = top_n
-        print("loading ranked list")
-        self.ranked_list: Dict[str, List[SimpleRankedListEntry]] = load_galago_ranked_list(q_res_path)
-        print("Ranked list loaded for {} queries".format(len(self.ranked_list)))
-        print("Pre loading docs")
-        preload_docs(self.ranked_list, top_n)
-
-    def work(self, q: QCKQuery):
-        all_doc_parts = 0
-        q_res: List[SimpleRankedListEntry] = self.ranked_list[q.query_id]
-        doc_part_list = enum_doc_parts_from_ranked_list(self.config, q_res, self.top_n)
-        all_doc_parts += len(doc_part_list)
-        return doc_part_list
-
-
-def get_qk_candidate(config, q_res_path, qck_queries):
-    top_n = config['top_n']
-    worker = QKWorker(q_res_path, config, top_n)
-    all_candidate = []
-    ticker = TimeEstimator(len(qck_queries))
-    for q in qck_queries:
-        ticker.tick()
-        try:
-            doc_part_list = worker.work(q)
-            e = q, doc_part_list
-            all_candidate.append(e)
-        except KeyError as e:
-            print(e)
-    return all_candidate

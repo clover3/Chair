@@ -62,6 +62,9 @@ class KnowledgeDocumentPart(NamedTuple):
     def from_state(cls, state):
         return KnowledgeDocumentPart(*state)
 
+    def to_str(self) -> str:
+        return "{}_{}".format(self.doc_id, self.passage_idx)
+
 
 KD = KnowledgeDocument
 KDP = KnowledgeDocumentPart
@@ -154,6 +157,8 @@ class PayloadAsIds(NamedTuple):
     text2: List[int]
     data_id: int
     is_correct: int
+
+
 
 
 def get_qk_pair_id(entry) -> Tuple[str, str]:

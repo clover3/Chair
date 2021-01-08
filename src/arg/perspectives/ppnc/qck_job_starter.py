@@ -140,5 +140,5 @@ def start_generate_jobs(generator: InstanceGenerator,
                          out_dir)
 
     num_job = d_n_claims_per_subsplit[subsplit]
-    runner = JobRunner(job_man_dir, num_job, name_prefix + "_" + subsplit, worker_factory)
+    runner = JobRunnerS(job_man_dir, num_job, name_prefix + "_" + subsplit, worker_factory)
     runner.auto_runner()

@@ -24,6 +24,7 @@ from misc_lib import TimeEstimator, get_second, tprint
 # python src/arg/perspectives/runner_qck/gen_qk_candidate_with_score.py data/run_config/qk_candidate_with_score_dev.json
 # python src/arg/perspectives/runner_qck/gen_qk_candidate_with_score.py data/run_config/qk_candidate_with_score_train.json
 
+
 def iterate_docs(doc_ids: List[str]) -> Iterable[KnowledgeDocument]:
     docs = []
     for doc_id in doc_ids:

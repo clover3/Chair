@@ -25,6 +25,8 @@ def qck_gen_w_ranked_list(job_name, qk_candidate_name, ranked_list_path, split):
     claim_ids = load_claim_ids_for_split(split)
     cids: List[str] = lmap(str, claim_ids)
     qk_candidate: List[QKUnit] = load_from_pickle(qk_candidate_name)
+    print("cids", len(cids))
+    print("len(qk_candidate)", len(qk_candidate))
     print("Generate instances : ", split)
     generator = QCKInstanceGenerator(get_qck_candidate_from_ranked_list_path(ranked_list_path),
                                      is_correct_factory())

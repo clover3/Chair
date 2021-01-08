@@ -7,6 +7,8 @@ QRelsFlat = Dict[QueryID, List[Tuple[DocID, int]]]
 QRelsDict = Dict[QueryID, Dict[DocID, int]]
 
 
+
+
 class TrecRankedListEntry(NamedTuple):
     query_id: str
     doc_id: str

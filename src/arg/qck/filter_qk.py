@@ -87,3 +87,24 @@ def filter_qk(qk_candidate: List[QKUnit], query_lms: Dict[str, Counter]) -> List
     n_no_kdp_query = sum(lmap(lambda l: 1 if not l else 0, right(filtered_qk_list)))
     print("{} queries, {} has no kdp ".format(len(qk_candidate), n_no_kdp_query))
     return filtered_qk_list
+
+
+def filter_qk_rel(qk_candidate: List[QKUnit],
+                  query_lms: Dict[str, Counter],
+                  top_n=50) -> List[QKUnit]:
+    scorer = LMScorer(query_lms)
+
+    filtered_qk_list: List[QKUnit] = []
+    ticker = TimeEstimator(len(qk_candidate))
+    for query, k_candidates in qk_candidate:
+        def get_kdp_score(kdp: KDP) -> float:
+            return scorer.score(query.query_id, kdp.tokens)
+
+        k_candidates.sort(key=get_kdp_score, reverse=True)
+        good_kdps: List[KDP] = k_candidates[:top_n]
+        filtered_qk_list.append((query, good_kdps))
+        ticker.tick()
+
+    n_no_kdp_query = sum(lmap(lambda l: 1 if not l else 0, right(filtered_qk_list)))
+    print("{} queries, {} has no kdp ".format(len(qk_candidate), n_no_kdp_query))
+    return filtered_qk_list

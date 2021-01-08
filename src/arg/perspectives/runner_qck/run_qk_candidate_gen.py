@@ -57,6 +57,7 @@ def dev_gen():
     save_to_pickle(candidate, "perspective_qk_candidate_dev")
 
 
+
 def get_candidates(q_res_path, split, config) -> List[QKUnit]:
     queries = get_qck_queries(split)
     top_n = config['top_n']

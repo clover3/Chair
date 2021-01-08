@@ -105,8 +105,8 @@ def put_texts(joined_payload: Iterable[Tuple[int, int, List[Dict]]],
               ) \
         -> Iterable[PayloadAsTokens]:
     cid_to_text = {c['cId']: c['text'] for c in claims}
-
     cache_tokenize = {}
+
     def tokenize(text):
         if text in cache_tokenize:
             return cache_tokenize[text]

@@ -17,13 +17,13 @@
   * Select good passages 
   * output: perspective_qk_candidate2_train.pickle
 
-3. qcknc_datagen2.py : To train second FinalScorer < train split >
+1. qcknc_datagen2.py : To train second FinalScorer < train split >
  
  
-3. run_qk_candidate_gen.py : Make all QK candidates for < dev split >
+1. run_qk_candidate_gen.py : Make all QK candidates for < dev split >
  perspective_qk_candidate_val
  
-4. qk_regression_datagen_dev.py : < dev split >
+1. qk_regression_datagen_dev.py : < dev split >
     Make data to be fed to doc selector 
 
 1. doc_scorer_summarizer.py  < dev split >

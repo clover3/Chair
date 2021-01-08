@@ -1,8 +1,8 @@
 from typing import List
 
 from arg.qck.decl import QKUnit, QCKQuery, KDP
+from arg.qck.instance_generator.qk_scoring_gen import QKInstanceGenerator
 from arg.qck.qck_worker import QCKWorker
-from arg.qck.qk_scoring_gen import QKInstanceGenerator
 from cache import load_from_pickle
 from data_generator.job_runner import JobRunner
 from epath import job_man_dir

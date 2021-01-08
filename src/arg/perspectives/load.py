@@ -166,8 +166,9 @@ def load_claims_for_sub_split(sub_split) -> List[Dict]:
 d_n_claims_per_subsplit = {
         'train': 378,
         'val': 162,
-        'dev': 138
-    }
+        'dev': 138,
+        'test': 227,
+}
 
 d_n_claims_per_split2 = {
         'train': 541,
