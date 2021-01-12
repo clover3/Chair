@@ -5,9 +5,9 @@ from cpath import output_path
 
 
 def main():
-    for split in ["dev"]:
-        job_name = "qck7"
-        qk_candidate_name = "perspective_qk_candidate_{}_filtered".format(split)
+    for split in ["dev", "test"]:
+        job_name = "qck12"
+        qk_candidate_name = "pc_qk2_{}_cpnc14_filtered".format(split)
         ranked_list_path = os.path.join(output_path,
                                         "perspective_experiments",
                                         "pc_qres", "{}.txt".format(split))

@@ -71,8 +71,8 @@ class LMScorer:
         return average(lmap(get_score, tokens))
 
 
-def filter_qk(qk_candidate: List[QKUnit], query_lms: Dict[str, Counter]) -> List[QKUnit]:
-    scorer = LMScorer(query_lms)
+def filter_qk(qk_candidate: List[QKUnit], query_lms: Dict[str, Counter], alpha=0.5) -> List[QKUnit]:
+    scorer = LMScorer(query_lms, alpha)
 
     filtered_qk_list: List[QKUnit] = []
     ticker = TimeEstimator(len(qk_candidate))

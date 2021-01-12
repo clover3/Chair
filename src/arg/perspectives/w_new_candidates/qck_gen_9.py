@@ -1,6 +1,6 @@
 import os
 
-from arg.perspectives.w_new_candidates.qck_gen import qck_gen_w_ranked_list
+from arg.perspectives.w_new_candidates.common import qck_gen_w_ranked_list
 from cpath import output_path
 
 

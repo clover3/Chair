@@ -18,6 +18,16 @@ def main1():
     save_to_pickle(filtered_qk_candidate, "pc_qk2_filtered_{}".format(split))
 
 
+def main_hp09():
+    split = "train"
+    qk_candidate = get_qk_candidate(split)
+    query_lms: Dict[str, Counter] = get_query_lms(split)
+    print(len(qk_candidate), len(query_lms))
+    alpha = 0.9
+    filtered_qk_candidate = filter_qk(qk_candidate, query_lms, alpha)
+    save_to_pickle(filtered_qk_candidate, "pc_qk2_09_filtered_{}".format(split))
+
+
 def main():
     split = "train"
     qk_candidate = get_qk_candidate(split)
@@ -28,4 +38,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_hp09()

@@ -17,6 +17,13 @@ def main():
     generator = QCKInstanceGenerator(get_eval_candidates_as_qck("train"), is_correct_factory())
     start_generate_jobs_for_val(generator, qk_candidate_name, "qcknc3")
 
+def make_test():
+    split = "test"
+    qk_candidate_name = "qk_candidate_msmarco_filtered_{}".format(split)
+    generator = QCKInstanceGenerator(get_eval_candidates_as_qck(split), is_correct_factory())
+    start_generate_jobs_for_sub_split(generator, qk_candidate_name, "qcknc3", split)
+
+
 
 if __name__ == "__main__":
     main()

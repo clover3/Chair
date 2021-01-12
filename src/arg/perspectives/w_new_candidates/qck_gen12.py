@@ -6,8 +6,8 @@ from cpath import output_path
 
 def main():
     split = "train"
-    job_name = "qck10"
-    qk_candidate_name = "pc_qk2_filtered_rel_" + split
+    job_name = "qck12"
+    qk_candidate_name = "pc_qk2_09_filtered_{}".format(split)
     ranked_list_path = os.path.join(output_path,
                                     "perspective_experiments",
                                     "pc_qres", "{}.txt".format(split))

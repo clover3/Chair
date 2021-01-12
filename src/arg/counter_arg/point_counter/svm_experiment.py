@@ -1,5 +1,3 @@
-from sklearn.svm import LinearSVC
-
 from typing import List, Tuple
 
 import numpy as np
@@ -45,6 +43,7 @@ def show_features():
     tprint("training and testing")
     feature_extractor = svm.NGramFeature(False, 4)
     X_train_counts = feature_extractor.fit_transform(train_x)
+    save_to_pickle(feature_extractor, "feature_extractor")
 
     svclassifier = LinearSVC()
     svclassifier.fit(X_train_counts, train_y)
