@@ -134,6 +134,7 @@ def loop():
             time.sleep(5)
         else:
             no_job_time += 10
+            print("no job time: ", no_job_time)
             time.sleep(10)
 
     print("Terminating")

@@ -79,12 +79,17 @@ def get_mapping_per_input_type(input_type):
 
 
 def save_to_common_path(pred_file_path: str, info_file_path: str, run_name: str,
-                        input_type: str, max_entry: int, combine_strategy: str, score_type: str):
+                        input_type: str,
+                        max_entry: int,
+                        combine_strategy: str,
+                        score_type: str,
+                        shuffle_sort: bool
+                        ):
     f_handler = get_format_handler(input_type)
     info: Dict = load_combine_info_jsons(info_file_path, f_handler.get_mapping(), f_handler.drop_kdp())
     print("Info has {} entries".format(len(info)))
     score_d = get_score_d(pred_file_path, info, f_handler, combine_strategy, score_type)
-    ranked_list = scrore_d_to_trec_style_predictions(score_d, run_name, max_entry)
+    ranked_list = scrore_d_to_trec_style_predictions(score_d, run_name, max_entry, shuffle_sort)
 
     save_dir = os.path.join(output_path, "ranked_list")
     exist_or_mkdir(save_dir)
@@ -162,5 +167,6 @@ if __name__ == "__main__":
                         run_config["input_type"],
                         run_config["max_entry"],
                         run_config["combine_strategy"],
-                        run_config["score_type"]
+                        run_config["score_type"],
+                        False
     )

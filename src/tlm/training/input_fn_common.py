@@ -46,7 +46,11 @@ def get_lm_mask_features(flags):
     }
 
 
-def format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads, repeat_for_eval=False):
+def format_dataset(name_to_features, batch_size, is_training, flags,
+                   input_files,
+                   num_cpu_threads,
+                   repeat_for_eval=False,
+                   cycle_length=250):
     if is_training:
         d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
         if flags.repeat_data:
@@ -62,6 +66,7 @@ def format_dataset(name_to_features, batch_size, is_training, flags, input_files
             tf.data.experimental.parallel_interleave(
                 tf.data.TFRecordDataset,
                 sloppy=is_training,
+                block_length=flags.block_length,
                 cycle_length=cycle_length))
         d = d.shuffle(buffer_size=flags.buffer_size)
     else:

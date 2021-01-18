@@ -119,6 +119,9 @@ flags.DEFINE_integer("keep_checkpoint_max", 5,
 
 flags.DEFINE_integer("cycle_length", 250, "number of parallel files read")
 
+flags.DEFINE_integer("block_length", 1, "The number of consecutive elements to pull from "
+                                        "an input Dataset before advancing to the next input Dataset.")
+
 flags.DEFINE_integer("buffer_size", 1000000, "size of shuffling buffer")
 
 flags.DEFINE_integer("iterations_per_loop", 1000,

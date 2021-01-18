@@ -7,7 +7,7 @@ from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids, loa
     splits, load_claim_ids_for_split
 from arg.perspectives.pc_run_path import query_dir_format
 from cpath import output_path, pjoin
-from galagos.interface import format_query_bm25, DocQuery, write_queries_to_files
+from galagos.interface import format_query_bm25, DocQuery, write_queries_to_files, format_query_simple
 from galagos.parse import clean_query, get_query_entry_bm25_anseri, save_queries_to_file
 from galagos.tokenize_util import clean_tokenize_str_to_tokens
 from list_lib import lmap
@@ -40,11 +40,11 @@ def get_claims_as_plain_query(claims):
     return q_str_list
 
 
-def get_claims_query(claims, drop_stopwords=False):
+def get_claims_query(claims, drop_stopwords=False) -> List[DocQuery]:
     if drop_stopwords:
         stopword = load_stopwords()
 
-    queries = []
+    queries: List[DocQuery] = []
     for c in claims:
         cid = str(c["cId"])
         claim_text = c["text"]
@@ -55,9 +55,30 @@ def get_claims_query(claims, drop_stopwords=False):
         q_terms = list([t.replace(".", "") for t in q_terms])
         print(q_terms)
 
-        q_entry = format_query_bm25(cid, q_terms)
+        q_entry: DocQuery = format_query_bm25(cid, q_terms)
         queries.append(q_entry)
     return queries
+
+
+def get_simple_claim_query(claims, drop_stopwords=False) -> List[DocQuery]:
+    if drop_stopwords:
+        stopword = load_stopwords()
+
+    queries: List[DocQuery] = []
+    for c in claims:
+        cid = str(c["cId"])
+        claim_text = c["text"]
+        q_terms: List[str] = clean_tokenize_str_to_tokens(claim_text)
+        print(q_terms)
+        if drop_stopwords:
+            q_terms = list([t for t in q_terms if t not in stopword])
+        q_terms = list([t.replace(".", "") for t in q_terms])
+        print(q_terms)
+
+        q_entry: DocQuery = format_query_simple(cid, q_terms)
+        queries.append(q_entry)
+    return queries
+
 
 
 def run_write_claims_as_plain_query():
@@ -93,6 +114,15 @@ def write_claim_queries2():
         save_queries_to_file(queries, out_path)
 
 
+def write_simple_claim_queries():
+    for split in splits:
+        claim_ids = load_claim_ids_for_split(split)
+        claims = get_claims_from_ids(claim_ids)
+        queries = get_simple_claim_query(claims, True)
+        out_path = os.path.join(output_path, "perspective_query", "simple_query_{}.json".format(split))
+        save_queries_to_file(queries, out_path)
+
+
 def write_claim_perspective_pair_as_query():
     split = "dev"
     assert split in ["train", "dev", "test"]
@@ -122,7 +152,6 @@ def write_claim_perspective_pair_as_query():
     write_queries_to_files(n_query_per_file, out_dir, queries)
 
 
-
 if __name__ == "__main__":
-    write_claim_queries2()
+    write_simple_claim_queries()
 

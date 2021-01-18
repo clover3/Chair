@@ -246,7 +246,7 @@ class RobustPointwiseTrainGen:
 
 
 class RobustPointwiseTrainGenEx:
-    def __init__(self, encoder, max_seq_length, query_type="title"):
+    def __init__(self, encoder, max_seq_length, query_type="title", neg_k=1000):
         self.data = self.load_tokens()
         qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
         self.judgement = load_qrels_structured(qrel_path)
@@ -255,6 +255,7 @@ class RobustPointwiseTrainGenEx:
         self.encoder = encoder
         self.tokenizer = get_tokenizer()
         self.galago_rank = load_bm25_best()
+        self.neg_k = neg_k
 
     def load_tokens(self):
         tokens_d = load_robust_tokens_for_train()
@@ -262,7 +263,7 @@ class RobustPointwiseTrainGenEx:
         return tokens_d
 
     def generate(self, query_list) -> List[ClassificationInstance]:
-        neg_k = 1000
+        neg_k = self.neg_k
         all_insts = []
         for query_id in query_list:
             if query_id not in self.judgement:

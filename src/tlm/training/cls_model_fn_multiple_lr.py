@@ -11,7 +11,12 @@ from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assig
 
 
 
-def model_fn_classification(bert_config, train_config, model_class, special_flags=[], learning_rate_group_b=[]):
+def model_fn_classification(bert_config,
+                            train_config,
+                            model_class,
+                            special_flags=[],
+                            learning_rate_group_b=[],
+                            lr_factor=10):
   """Returns `model_fn` closure for TPUEstimator."""
 
   def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -110,7 +115,7 @@ def model_fn_classification(bert_config, train_config, model_class, special_flag
             train_op = optimization.create_optimizer_different(
                 loss,
                 learning_rate_group_b,
-                10,
+                lr_factor,
                 train_config.learning_rate,
                 train_config.num_train_steps,
                 train_config.num_warmup_steps,

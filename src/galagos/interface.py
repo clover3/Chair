@@ -152,6 +152,16 @@ def format_query_bm25(query_id: str,
     })
 
 
+def format_query_simple(query_id: str, tokens: List[str]) -> DocQuery:
+    tokens = [t.replace(".", "") for t in tokens]
+    query_str = " ".join(tokens)
+    return DocQuery({
+        'number': query_id,
+        'text': query_str
+    })
+
+
+
 def format_passage_query(query_id: str,
                          tokens: List[str],
                          k=0) -> PassageQuery:

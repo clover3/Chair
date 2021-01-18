@@ -1,11 +1,13 @@
-
+import random
 from typing import List, Dict, Tuple, Iterable
 
-from trec.trec_parse import TrecRankedListEntry
 from misc_lib import get_second, group_by
+from trec.trec_parse import TrecRankedListEntry
 
 
-def scrore_d_to_trec_style_predictions(score_d: Dict[Tuple[str, str], float], run_name="runname", max_entry=-1) \
+def scrore_d_to_trec_style_predictions(score_d: Dict[Tuple[str, str], float], run_name="runname",
+                                       max_entry=-1,
+                                       shuffle_sort=False) \
         -> Iterable[TrecRankedListEntry]:
 
     def get_qid(x) -> str:
@@ -13,6 +15,8 @@ def scrore_d_to_trec_style_predictions(score_d: Dict[Tuple[str, str], float], ru
     qid_grouped: Dict[str, List[Tuple[Tuple[str, str], float]]] = group_by(score_d.items(), get_qid)
     for qid, entries in qid_grouped.items():
         l: List[Tuple[Tuple[str, str], float]] = list(entries)
+        if shuffle_sort:
+            random.shuffle(l)
         l.sort(key=get_second, reverse=True)
         query_id = str(qid)
         if max_entry > 0:

@@ -13,7 +13,7 @@ def file_show(fn):
 
         print("---- record -----")
         for key in keys:
-            if key == "masked_lm_weights":
+            if key in ["masked_lm_weights", "rel_score"]:
                 v = feature[key].float_list.value
             else:
                 v = feature[key].int64_list.value

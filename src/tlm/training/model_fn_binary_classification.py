@@ -28,6 +28,11 @@ def model_fn_binary_classification(model_config, train_config, model_class):
             features=features,
         )
         probs = model.get_prob()
+        print(probs)
+        prob0 = 1-probs
+        print(prob0)
+        prob2d = tf.stack([prob0, probs], 1)
+        print(prob2d)
         logits = probs
         y_true = tf.cast(label_ids, tf.float32)
         loss_arr = tf.keras.losses.BinaryCrossentropy()(y_true, probs)
@@ -48,7 +53,7 @@ def model_fn_binary_classification(model_config, train_config, model_class):
             output_spec = TPUEstimatorSpec(mode=mode, loss=loss, train_op=train_op, scaffold_fn=scaffold_fn)
         elif mode == tf.estimator.ModeKeys.EVAL:
             eval_metrics = (classification_metric_fn, [
-                logits, label_ids, is_real_example
+                prob2d, label_ids, is_real_example
             ])
             output_spec = TPUEstimatorSpec(mode=mode, loss=loss, eval_metrics=eval_metrics, scaffold_fn=scaffold_fn)
         else:

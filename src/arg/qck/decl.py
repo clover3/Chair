@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import NamedTuple, List, Tuple
+from typing import NamedTuple, List, Tuple, Union
+
+from data_generator.tokenizer_wo_tf import tokenize_from_tokens
 
 
 class QCKQuery(NamedTuple):
@@ -23,7 +25,7 @@ class QCKCandidate(NamedTuple):
         return QCKCandidate(self.id, "")
 
 
-class QCKQueryWToken(QCKQuery):
+class QCKQueryWToken(NamedTuple):
     query_id: str
     text: str
     tokens: List[str]
@@ -42,6 +44,10 @@ class QCKCandidateWToken(NamedTuple):
 
     def light_rep(self):
         return QCKCandidate(self.id, "")
+
+    @classmethod
+    def from_qck_candidate(cls, tokenizer, c: QCKCandidate):
+        return QCKCandidateWToken(c.id, c.text, tokenizer.tokenize(c.text))
 
 
 class KnowledgeDocument(NamedTuple):
@@ -64,6 +70,17 @@ class KnowledgeDocumentPart(NamedTuple):
 
     def to_str(self) -> str:
         return "{}_{}".format(self.doc_id, self.passage_idx)
+
+
+class KDPWToken(NamedTuple):
+    doc_id: str
+    passage_idx: int
+    start_location: int
+    tokens: List[str]
+    sub_tokens: List[str]
+
+    def get_tokens(self):
+        return self.sub_tokens
 
 
 KD = KnowledgeDocument
@@ -114,7 +131,6 @@ class QCInstanceTokenized(NamedTuple):
     is_correct: int
 
 
-
 class QCKInstance(NamedTuple):
     query_text: str
     candidate_text: str
@@ -140,7 +156,20 @@ class CKInstance(NamedTuple):
 
 QKUnit = Tuple[QCKQuery, List[KDP]]
 
+QKUnitWToken = Tuple[QCKQueryWToken, List[KDPWToken]]
+
 QKUnitBT = Tuple[QCKQuery, List[KDP_BT]]
+
+
+def add_tokens_to_qk_unit(qk_unit: QKUnit, tokenizer) -> QKUnitWToken:
+    query, kdp_list = qk_unit
+    q = QCKQueryWToken(query.query_id, query.text, tokenizer.tokenize(query.text))
+    new_kdp_list = []
+    for kdp in kdp_list:
+        sub_tokens = tokenize_from_tokens(tokenizer, kdp.tokens)
+        kdp_w_tokens = KDPWToken(kdp.doc_id, kdp.passage_idx, kdp.start_location, kdp.tokens, sub_tokens)
+        new_kdp_list.append(kdp_w_tokens)
+    return q, new_kdp_list
 
 
 class PayloadAsTokens(NamedTuple):
@@ -157,8 +186,6 @@ class PayloadAsIds(NamedTuple):
     text2: List[int]
     data_id: int
     is_correct: int
-
-
 
 
 def get_qk_pair_id(entry) -> Tuple[str, str]:
@@ -273,21 +300,29 @@ qcwt_convert_map = {
         'candidate': QCKCandidateWToken,
     }
 
+
 def parse_kdp_list(*tuple):
     l = list(tuple)
     return list([KDP(*kdp) for kdp in l])
 
 
-def get_light_qckquery(query: QCKQuery):
+QCKQueryLike = Union[QCKQuery, QCKQueryWToken]
+KDPLike = Union[KDP, KDPWToken]
+QCKCandidateLike = Union[QCKCandidate, QCKCandidateWToken]
+
+
+def get_light_qckquery(query: QCKQueryLike):
     return QCKQuery(query.query_id, "")
 
 
-def get_light_qckcandidate(c: QCKCandidate):
+def get_light_qckcandidate(c: QCKCandidateLike):
     return QCKCandidate(c.id, "")
 
 
-def get_light_kdp(k: KnowledgeDocumentPart):
+def get_light_kdp(k: KDPLike):
     return KnowledgeDocumentPart(k.doc_id, k.passage_idx, k.start_location, [])
+
+
 
 
 
