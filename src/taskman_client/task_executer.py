@@ -156,4 +156,7 @@ def execute(job_id):
 
 
 if __name__ == "__main__":
-    loop()
+    try:
+        loop()
+    except KeyboardInterrupt:
+        print("Terminating with Keyboard interrupt")

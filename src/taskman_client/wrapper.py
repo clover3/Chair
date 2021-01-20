@@ -43,8 +43,9 @@ def report_run(func):
             task_proxy.tpu_name = FLAGS.tpu_name
 
         flags_str = get_hp_str_from_flag(FLAGS)
-
+        print("FLAGS.job_id", FLAGS.job_id)
         job_id = FLAGS.job_id if FLAGS.job_id >= 0 else None
+        print('job_id', job_id)
         task_proxy.task_start(run_name, flags_str, job_id)
         try:
             r = func(*args)

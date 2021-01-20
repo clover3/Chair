@@ -12,11 +12,10 @@ def wait_checkpoint(model_dir_name, step):
     model_name = "model.ckpt-{}".format(step)
 
     def check():
-        print('model_dir', model_dir_path)
         info_list = get_file_list(model_dir_path)
-        found = is_valid_checkpoint(model_name , info_list)
+        found = is_valid_checkpoint(model_name, info_list)
         return found
-    print("model_name  : ", model_name)
+    print("Wait for the model: ", model_name)
     found = check()
     acc_sleep_time = 0
     sleep_interval = 60

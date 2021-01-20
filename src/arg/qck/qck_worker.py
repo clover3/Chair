@@ -4,7 +4,6 @@ from typing import List, Tuple
 
 from arg.qck.decl import QCKQuery, KDP
 from arg.qck.instance_generator.base import InstanceGenerator
-from arg.qck.instance_generator.qcknc_mix import QCKGeneratorMixed
 from data_generator.job_runner import WorkerInterface
 from misc_lib import DataIDManager, exist_or_mkdir, tprint
 from tf_util.record_writer_wrap import write_records_w_encode_fn
@@ -42,7 +41,7 @@ class QCKWorker(WorkerInterface):
 class QCKWorkerWithNeg(WorkerInterface):
     def __init__(self,
                  qk_candidate: List[Tuple[QCKQuery, List[KDP]]],
-                 instance_generator: QCKGeneratorMixed,
+                 instance_generator,
                  out_dir):
         self.generator = instance_generator
         print("Total of {} jobs".format(len(qk_candidate)))

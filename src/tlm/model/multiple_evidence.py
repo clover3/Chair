@@ -496,9 +496,8 @@ class ME4:
         weight = tf.nn.softmax(probs, axis=1)  # [batch_size, num_window]
         if is_training:
             weight = dropout(weight, 0.1)
-
         prob = tf.matmul(probs, weight, transpose_b=True)
-        self.prob = tf.reduce_mean(prob, axis=1)
+        self.prob = tf.reduce_mean(prob, axis=1) # just remove the last dimension
 
     def get_prob(self):
         return self.prob
@@ -598,4 +597,344 @@ class ME4_2(BertModelInterface):
         pooled_output = dense_layer(rep)
         self.pooled_output = pooled_output
 
+
+class ME5:
+    def __init__(self,
+                 config,
+                 is_training,
+                 use_one_hot_embeddings=True,
+                 features=None,
+                 scope=None):
+        super(ME5, self).__init__()
+        input_ids = features["input_ids"]
+
+        input_ids2 = features["input_ids2"]
+        input_mask2 = features["input_mask2"]
+        segment_ids2 = features["segment_ids2"]
+
+        unit_length = config.max_seq_length
+        d_seq_length = config.max_d_seq_length
+        num_window = int(d_seq_length / unit_length)
+        batch_size, _ = get_shape_list2(input_ids)
+
+        def dense(hidden_size, name):
+            return tf.keras.layers.Dense(hidden_size,
+                                         activation=tf.keras.activations.tanh,
+                                         name=name,
+                                         kernel_initializer=create_initializer(config.initializer_range))
+
+        def r2to3(arr):
+            return tf.reshape(arr, [batch_size, num_window, -1])
+
+        def r3to4(arr):
+            return tf.reshape(arr, [batch_size, num_window, unit_length, -1])
+
+        def get_seq_output_3d(model_class, input_ids, input_masks, segment_ids):
+            # [Batch, num_window, unit_seq_length]
+            stacked_input_ids, stacked_input_mask, stacked_segment_ids = split_input(input_ids,
+                                                                                     input_masks,
+                                                                                     segment_ids,
+                                                                                     d_seq_length,
+                                                                                     unit_length)
+            model = model_class(
+                config=config,
+                is_training=is_training,
+                input_ids=r3to2(stacked_input_ids),
+                input_mask=r3to2(stacked_input_mask),
+                token_type_ids=r3to2(stacked_segment_ids),
+                use_one_hot_embeddings=use_one_hot_embeddings,
+            )
+
+            # [Batch * num_window, seq_length, hidden_size]
+            sequence = model.get_sequence_output()
+            # [Batch, num_window, window_length, hidden_size]
+            return r3to4(sequence)
+
+        stacked_input_ids, stacked_input_mask, stacked_segment_ids = split_input(input_ids2,
+                                                                                 input_mask2,
+                                                                                 segment_ids2,
+                                                                                 d_seq_length,
+                                                                                 unit_length)
+
+        # [Batch, num_window, window_length, hidden_size]
+        seq_output = get_seq_output_3d(BertModel, input_ids2, input_mask2, segment_ids2)
+
+        first_token = seq_output[:, :, 0, :]
+        hidden1 = dense(config.hidden_size, "hidden1")(first_token)
+        pooled = dense(config.hidden_size, "hidden2")(hidden1)
+        logits = tf.keras.layers.Dense(2, name="cls_dense")(pooled)
+        probs = tf.nn.softmax(logits)[:, :, 1]  # [batch_size, num_window]
+        probs_sorted = tf.sort(probs, axis=1, direction='DESCENDING')
+        self.probs_sorted = probs_sorted
+        if is_training:
+            probs_sorted = dropout(probs_sorted, 0.1)
+
+        h1 = dense(num_window, "weight_hidden")(probs_sorted)
+        weights_logits = dense(num_window, "weight_hidden2")(h1)
+        weight = tf.nn.softmax(weights_logits, axis=1)  # [batch_size, num_window]
+
+        self.weight = weight
+        prob = tf.matmul(probs_sorted, weight, transpose_b=True)
+        self.prob = tf.reduce_mean(prob, axis=1) # just remove the last dimension
+
+    def get_prob(self):
+        return self.prob
+
+
+class ME5_2(BertModelInterface):
+    def __init__(self,
+                 config,
+                 is_training,
+                 input_ids,
+                 input_mask=None,
+                 token_type_ids=None,
+                 use_one_hot_embeddings=True,
+                 features=None,
+                 scope=None):
+        super(ME5_2, self).__init__()
+        input_ids = features["input_ids"]
+
+        input_ids2 = features["input_ids2"]
+        input_mask2 = features["input_mask2"]
+        segment_ids2 = features["segment_ids2"]
+
+        unit_length = config.max_seq_length
+        d_seq_length = config.max_d_seq_length
+        num_window = int(d_seq_length / unit_length)
+        batch_size, _ = get_shape_list2(input_ids)
+
+        def dense(hidden_size, name):
+            return tf.keras.layers.Dense(hidden_size,
+                                         activation=tf.keras.activations.tanh,
+                                         name=name,
+                                         kernel_initializer=create_initializer(config.initializer_range))
+
+        def r2to3(arr):
+            return tf.reshape(arr, [batch_size, num_window, -1])
+
+        def r3to4(arr):
+            return tf.reshape(arr, [batch_size, num_window, unit_length, -1])
+
+        def get_seq_output_3d(model_class, input_ids, input_masks, segment_ids):
+            # [Batch, num_window, unit_seq_length]
+            stacked_input_ids, stacked_input_mask, stacked_segment_ids = split_input(input_ids,
+                                                                                     input_masks,
+                                                                                     segment_ids,
+                                                                                     d_seq_length,
+                                                                                     unit_length)
+            model = model_class(
+                config=config,
+                is_training=is_training,
+                input_ids=r3to2(stacked_input_ids),
+                input_mask=r3to2(stacked_input_mask),
+                token_type_ids=r3to2(stacked_segment_ids),
+                use_one_hot_embeddings=use_one_hot_embeddings,
+            )
+
+            # [Batch * num_window, seq_length, hidden_size]
+            sequence = model.get_sequence_output()
+            # [Batch, num_window, window_length, hidden_size]
+            return r3to4(sequence)
+
+        stacked_input_ids, stacked_input_mask, stacked_segment_ids = split_input(input_ids2,
+                                                                                 input_mask2,
+                                                                                 segment_ids2,
+                                                                                 d_seq_length,
+                                                                                 unit_length)
+
+        # [Batch, num_window, window_length, hidden_size]
+        seq_output = get_seq_output_3d(BertModel, input_ids2, input_mask2, segment_ids2)
+
+        first_token = seq_output[:, :, 0, :]
+        hidden1 = dense(config.hidden_size, "hidden1")(first_token)
+        pooled = dense(config.hidden_size, "hidden2")(hidden1)
+        logits = tf.keras.layers.Dense(2, name="cls_dense")(pooled)
+        probs = tf.nn.softmax(logits)[:, :, 1]  # [batch_size, num_window]
+        probs_sorted = probs
+        # probs_sorted = tf.sort(probs, axis=1, direction='DESCENDING')
+        if is_training:
+            probs_sorted = dropout(probs_sorted, 0.1)
+
+        pad_len = config.hidden_size - num_window
+        self.pooled_output = tf.concat([probs_sorted, tf.zeros([batch_size, pad_len])], axis=1)
+        print(self.pooled_output)
+
+
+
+class ME6:
+    def __init__(self,
+                 config,
+                 is_training,
+                 use_one_hot_embeddings=True,
+                 features=None,
+                 scope=None):
+        super(ME6, self).__init__()
+        input_ids = features["input_ids"]
+
+        input_ids2 = features["input_ids2"]
+        input_mask2 = features["input_mask2"]
+        segment_ids2 = features["segment_ids2"]
+
+        unit_length = config.max_seq_length
+        d_seq_length = config.max_d_seq_length
+        num_window = int(d_seq_length / unit_length)
+        batch_size, _ = get_shape_list2(input_ids)
+
+        def dense(hidden_size, name):
+            return tf.keras.layers.Dense(hidden_size,
+                                         activation=tf.keras.activations.tanh,
+                                         name=name,
+                                         kernel_initializer=create_initializer(config.initializer_range))
+
+        def r2to3(arr):
+            return tf.reshape(arr, [batch_size, num_window, -1])
+
+        def r3to4(arr):
+            return tf.reshape(arr, [batch_size, num_window, unit_length, -1])
+
+        def get_seq_output_3d(model_class, input_ids, input_masks, segment_ids):
+            # [Batch, num_window, unit_seq_length]
+            stacked_input_ids, stacked_input_mask, stacked_segment_ids = split_input(input_ids,
+                                                                                     input_masks,
+                                                                                     segment_ids,
+                                                                                     d_seq_length,
+                                                                                     unit_length)
+            model = model_class(
+                config=config,
+                is_training=is_training,
+                input_ids=r3to2(stacked_input_ids),
+                input_mask=r3to2(stacked_input_mask),
+                token_type_ids=r3to2(stacked_segment_ids),
+                use_one_hot_embeddings=use_one_hot_embeddings,
+            )
+
+            # [Batch * num_window, seq_length, hidden_size]
+            sequence = model.get_sequence_output()
+            # [Batch, num_window, window_length, hidden_size]
+            return r3to4(sequence)
+
+        stacked_input_ids, stacked_input_mask, stacked_segment_ids = split_input(input_ids2,
+                                                                                 input_mask2,
+                                                                                 segment_ids2,
+                                                                                 d_seq_length,
+                                                                                 unit_length)
+
+        # [Batch, num_window, window_length, hidden_size]
+        seq_output = get_seq_output_3d(BertModel, input_ids2, input_mask2, segment_ids2)
+
+        first_token = seq_output[:, :, 0, :]
+        hidden1 = dense(config.hidden_size, "hidden1")(first_token)
+        pooled = dense(config.hidden_size, "hidden2")(hidden1)
+        logits = tf.keras.layers.Dense(2, name="cls_dense")(pooled)
+        probs = tf.nn.softmax(logits)[:, :, 1]  # [batch_size, num_window]
+        probs_sorted = tf.sort(probs, axis=1, direction='DESCENDING')
+        self.probs_sorted = probs_sorted
+        if is_training:
+            probs_sorted = dropout(probs_sorted, 0.1)
+
+        weights_logits = tf.compat.v1.get_variable(
+            "weights_logits", [1, num_window],
+            initializer=tf.compat.v1.zeros_initializer()
+        )
+        weight = tf.nn.softmax(weights_logits, axis=1)  # [batch_size, num_window]
+
+        self.weight = weight
+        prob = tf.matmul(probs_sorted, weight, transpose_b=True)
+        self.prob = tf.reduce_mean(prob, axis=1) # just remove the last dimension
+
+    def get_prob(self):
+        return self.prob
+
+
+class ME7(BertModelInterface):
+    def __init__(self,
+                 config,
+                 is_training,
+                 input_ids,
+                 input_mask=None,
+                 token_type_ids=None,
+                 use_one_hot_embeddings=True,
+                 features=None,
+                 scope=None):
+        super(ME7, self).__init__()
+        input_ids2 = features["input_ids2"]
+        input_mask2 = features["input_mask2"]
+        segment_ids2 = features["segment_ids2"]
+
+        unit_length = config.max_seq_length
+        d_seq_length = config.max_d_seq_length
+        num_window = int(d_seq_length / unit_length)
+        batch_size, _ = get_shape_list2(input_ids)
+
+        def dense(hidden_size, name):
+            return tf.keras.layers.Dense(hidden_size,
+                                         activation=tf.keras.activations.tanh,
+                                         name=name,
+                                         kernel_initializer=create_initializer(config.initializer_range))
+
+        def r2to3(arr):
+            return tf.reshape(arr, [batch_size, num_window, -1])
+
+        def r3to4(arr):
+            return tf.reshape(arr, [batch_size, num_window, unit_length, -1])
+
+        def get_seq_output_3d(model_class, input_ids, input_masks, segment_ids):
+            # [Batch, num_window, unit_seq_length]
+            stacked_input_ids, stacked_input_mask, stacked_segment_ids = split_input(input_ids,
+                                                                                     input_masks,
+                                                                                     segment_ids,
+                                                                                     d_seq_length,
+                                                                                     unit_length)
+            model = model_class(
+                config=config,
+                is_training=is_training,
+                input_ids=r3to2(stacked_input_ids),
+                input_mask=r3to2(stacked_input_mask),
+                token_type_ids=r3to2(stacked_segment_ids),
+                use_one_hot_embeddings=use_one_hot_embeddings,
+            )
+
+            # [Batch * num_window, seq_length, hidden_size]
+            sequence = model.get_sequence_output()
+            # [Batch, num_window, window_length, hidden_size]
+            return r3to4(sequence)
+
+        stacked_input_ids, stacked_input_mask, stacked_segment_ids = split_input(input_ids2,
+                                                                                 input_mask2,
+                                                                                 segment_ids2,
+                                                                                 d_seq_length,
+                                                                                 unit_length)
+
+        with tf.compat.v1.variable_scope(dual_model_prefix1):
+            model_1 = BertModel(
+                config=config,
+                is_training=is_training,
+                input_ids=input_ids,
+                input_mask=input_mask,
+                token_type_ids=token_type_ids,
+                use_one_hot_embeddings=use_one_hot_embeddings,
+            )
+
+        # [Batch, num_window, window_length, hidden_size]
+        with tf.compat.v1.variable_scope(dual_model_prefix2):
+            print(input_ids2)
+            seq_output = get_seq_output_3d(BertModel, input_ids2, input_mask2, segment_ids2)
+            print(seq_output)
+
+            model_2_first_token = seq_output[:, :, 0, :] # batch, num_window, hidden_size
+
+        model_1_first_token = model_1.get_sequence_output()[:, :1, :] # batch, 1, hidden_size]
+        m1ft = tf.tile(model_1_first_token, [1, num_window, 1])
+        print(m1ft)
+
+        common_rep = tf.concat([m1ft, model_2_first_token], axis=2) # batch, num_window, hidden_size]
+        dense_layer1 = tf.keras.layers.Dense(config.hidden_size * 4,
+                                            activation=tf.keras.activations.tanh,
+                                            kernel_initializer=create_initializer(config.initializer_range))
+        dense_layer2 = tf.keras.layers.Dense(config.hidden_size,
+                                             activation=tf.keras.activations.tanh,
+                                             kernel_initializer=create_initializer(config.initializer_range))
+        hidden1 = dense_layer1(common_rep)
+        hidden2 = dense_layer2(hidden1)
+        self.pooled_output = tf.reduce_max(hidden2, axis=1)
 

@@ -131,7 +131,7 @@ class TaskProxy:
         sleep_time = 5
         while wait and assigned_tpu is None:
             time.sleep(sleep_time)
-            if sleep_time < 300:
+            if sleep_time < 60:
                 sleep_time += 10
             assigned_tpu = request()
         print("Assigned tpu : ", assigned_tpu)
