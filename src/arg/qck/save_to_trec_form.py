@@ -40,6 +40,8 @@ def summarize_score(info: Dict,
             return entry[key_logit][0]
         elif score_type == "scalar":
             return entry[key_logit]
+        elif score_type == "tuple":
+            return entry[key_logit][1]
         else:
             assert False
 

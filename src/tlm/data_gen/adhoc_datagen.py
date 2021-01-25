@@ -1,24 +1,22 @@
 import collections
 import os
 import pickle
-import random
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Dict
-
-import numpy as np
+from typing import Tuple, Dict, Callable
 
 from data_generator.data_parser.robust import load_robust04_title_query, load_robust_04_query
 from data_generator.data_parser.robust2 import load_bm25_best
 from data_generator.job_runner import sydney_working_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from evals.parse import load_qrels_structured
-from misc_lib import enum_passage, DataIDManager
+from misc_lib import enum_passage, DataIDManager, enum_passage_overlap
 from tf_util.record_writer_wrap import RecordWriterWrap, write_records_w_encode_fn
 from tlm.data_gen.base import get_basic_input_feature
 from tlm.data_gen.bert_data_gen import create_int_feature
 from tlm.data_gen.classification_common import ClassificationInstance, encode_classification_instance, \
     ClassificationInstanceWDataID, encode_classification_instance_w_data_id
 from tlm.data_gen.pairwise_common import generate_pairwise_combinations, write_pairwise_record
+from tlm.data_gen.robust_gen.select_supervision.score_selection_methods import *
 from tlm.robust.load import load_robust_tokens_for_train, load_robust_tokens_for_predict
 
 
@@ -82,6 +80,23 @@ class AllSegmentAsDoc(EncoderInterface):
         return insts
 
 
+class OverlappingSegments(EncoderInterface):
+    def __init__(self, max_seq_length, step_size):
+        super(OverlappingSegments, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+        self.step_size = step_size
+
+    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
+        content_len = self.max_seq_length - 3 - len(query_tokens)
+        insts = []
+        for second_tokens in enum_passage_overlap(tokens, content_len, self.step_size):
+            out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
+            segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+            entry = out_tokens, segment_ids
+            insts.append(entry)
+        return insts
+
+
 class PassageSampling(EncoderInterface):
     def __init__(self, max_seq_length):
         super(PassageSampling, self).__init__(max_seq_length)
@@ -101,6 +116,53 @@ class PassageSampling(EncoderInterface):
                 entry = out_tokens, segment_ids
                 insts.append(entry)
         return insts
+
+
+class LeadingSegments(EncoderInterface):
+    def __init__(self, max_seq_length, num_segment):
+        super(LeadingSegments, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+        self.num_segment = num_segment
+
+    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
+        content_len = self.max_seq_length - 3 - len(query_tokens)
+        insts = []
+        for idx, second_tokens in enumerate(enum_passage(tokens, content_len)):
+            if idx == 0:
+                include = True
+            else:
+                include = random.random() < 0.1
+            if include:
+                out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
+                segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+                entry = out_tokens, segment_ids
+                insts.append(entry)
+        return insts
+
+
+class LeadingSegmentsCombined(EncoderInterface):
+    def __init__(self, max_seq_length, num_segment):
+        super(LeadingSegmentsCombined, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+        self.num_segment = num_segment
+        self.window_size = int(max_seq_length / num_segment)
+
+    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
+        content_len = self.window_size - 3 - len(query_tokens)
+        tokens_extending = []
+        segment_ids_extending = []
+
+        for idx, second_tokens in enumerate(enum_passage(tokens, content_len)):
+            if idx == self.num_segment:
+                break
+            out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
+            segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+
+            assert len(tokens_extending) % self.window_size == 0
+            assert len(segment_ids_extending) % self.window_size == 0
+            tokens_extending.extend(out_tokens)
+            segment_ids_extending.extend(segment_ids)
+        return [(tokens_extending, segment_ids_extending)]
 
 
 class RobustPairwiseTrainGen:
@@ -142,11 +204,11 @@ class RobustPairwiseTrainGen:
         write_pairwise_record(self.tokenizer, self.max_seq_length, insts, out_path)
 
 
-class RobustPredictGen:
-    def __init__(self, encoder, max_seq_length, top_k=100):
+class RobustPredictGenOld:
+    def __init__(self, encoder, max_seq_length, top_k=100, query_type="title"):
         self.data = self.load_tokens_from_pickles()
         self.max_seq_length = max_seq_length
-        self.queries = load_robust04_title_query()
+        self.queries = load_robust_04_query(query_type)
         self.galago_rank = load_bm25_best()
         self.top_k = top_k
 
@@ -359,7 +421,7 @@ class RobustTrainGenWDataID:
 
 
 class RobustTrainGenSelected:
-    def __init__(self, encoder, max_seq_length, scores, query_type="title"):
+    def __init__(self, encoder, max_seq_length, scores, query_type="title", target_selection="best"):
         self.data = self.load_tokens()
         qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
         self.judgement = load_qrels_structured(qrel_path)
@@ -369,6 +431,13 @@ class RobustTrainGenSelected:
         self.tokenizer = get_tokenizer()
         self.galago_rank = load_bm25_best()
         self.scores: Dict[Tuple[str, str, int], float] = scores
+        self.get_target_indices: Callable[[], List[int]] = {
+            'best': get_target_indices_get_best,
+            'all': get_target_indices_all,
+            'first_and_best': get_target_indices_first_and_best,
+            'best_or_over_09': get_target_indices_best_or_over_09,
+            'random_over_09': get_target_indices_random_over_09
+        }[target_selection]
 
     def load_tokens(self):
         tokens_d = load_robust_tokens_for_train()
@@ -399,10 +468,13 @@ class RobustTrainGenSelected:
                 label = 1 if doc_id in judgement and judgement[doc_id] > 0 else 0
                 if label:
                     passage_scores = list([self.scores[query_id, doc_id, idx] for idx, _ in enumerate(insts)])
-                    selected_idx = int(np.argmax(passage_scores))
-                    target_indices = [selected_idx]
+                    target_indices = self.get_target_indices(passage_scores)
                 else:
-                    target_indices = range(len(insts))
+                    target_indices = [0]
+                    n = len(insts)
+                    if random.random() < 0.1 and n > 1:
+                        idx = random.randint(1, n-1)
+                        target_indices.append(idx)
 
                 for passage_idx in target_indices:
                     tokens_seg, seg_ids = insts[passage_idx]

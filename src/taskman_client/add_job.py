@@ -8,6 +8,8 @@ def run_job(sh_format_path, arg_map):
         content = content.replace(key, arg_val)
 
     sh_path, job_id = get_next_sh_path_and_job_id()
+    if "--job_id=-1" not in content:
+        print("WARNING: --job_id=-1 is not in the script")
     content = content.replace("--job_id=-1", "--job_id={}".format(job_id))
     f = open(sh_path, "w")
     f.write(content)

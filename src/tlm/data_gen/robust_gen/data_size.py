@@ -12,6 +12,7 @@ def get_all_data_size() -> Dict[DataName, Dict]:
     robust_all_passage_unpaired = DataName("robust_all_passage_unpaired")
     robust_selected = DataName("robust_selected")
     robust_all_passage_predict = DataName("robust_all_passage_predict")
+    robust_train_desc = DataName("robust_train_desc")
     robust_neg100 = DataName("robust_neg100")
     robust_K = ModelName("Robust_K")
     robust_L = ModelName("robust_L")
@@ -63,12 +64,20 @@ def get_all_data_size() -> Dict[DataName, Dict]:
         "601": 73605,
         "651": 46715
     }
+    data_size_dict[robust_train_desc] = {
+        "301": 133392,
+        "351": 161762,
+        "401": 186594,
+        "601": 104097,
+        "651": 82839,
+    }
+
     return data_size_dict
 
 
 def main():
     all_data_size_d = get_all_data_size()
-    data_name = DataName("robust_neg100")
+    data_name = DataName("robust_train_desc")
 
     target_data = ["301", "351", "401", "601"]
     data_size_d = all_data_size_d[data_name]

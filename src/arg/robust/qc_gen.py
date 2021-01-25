@@ -3,7 +3,7 @@ import os
 import pickle
 from typing import NamedTuple, List
 
-from arg.qck.decl import QCKQuery, QCKCandidate
+from arg.qck.decl import QCKQuery, QCKCandidate, get_light_qckquery, get_light_qckcandidate
 from data_generator.create_feature import create_int_feature
 from data_generator.data_parser.robust import load_robust_04_query
 from data_generator.data_parser.robust2 import load_bm25_best
@@ -51,8 +51,8 @@ class RobustPredictGen:
                 candidate = QCKCandidate(doc_id, "")
                 for idx, (tokens, seg_ids) in enumerate(passage_list):
                     info = {
-                        'query': qck_query,
-                        'candidate': candidate,
+                        'query': get_light_qckquery(qck_query),
+                        'candidate': get_light_qckcandidate(candidate),
                         'idx': idx
                     }
                     data_id = data_id_manager.assign(info)

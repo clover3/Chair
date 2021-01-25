@@ -28,6 +28,7 @@ def input_fn_builder_unmasked(input_files,
 def input_fn_builder_pairwise_for_bert(flags):
     return input_fn_builder_pairwise(flags.max_seq_length, flags)
 
+
 def input_fn_builder_pairwise_for_sero(max_seq_length, flags):
     return input_fn_builder_pairwise(max_seq_length, flags)
 
@@ -249,10 +250,6 @@ def input_fn_builder_dot_product_ck(flags, max_sent_length, total_doc_length):
     return input_fn
 
 
-
-
-
-
 def input_fn_builder_cppnc_triple(flags):
     input_files = get_input_files_from_flags(flags)
     show_input_files(input_files)
@@ -282,6 +279,25 @@ def input_fn_builder_cppnc_triple(flags):
     return input_fn
 
 
+def input_fn_builder_classification2(input_files,
+                              flags,
+                              is_training,
+                              num_cpu_threads=4):
+
+    def input_fn(params):
+        """The actual input function."""
+        batch_size = params["batch_size"]
+        max_seq_length = flags.max_seq_length
+
+        name_to_features = {
+                "input_ids":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_mask":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "segment_ids":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "label_ids": tf.io.FixedLenFeature([1], tf.int64),
+        }
+        return format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+
+    return input_fn
 
 
 def input_fn_builder_classification(input_files,
@@ -310,6 +326,7 @@ def input_fn_builder_classification(input_files,
         if is_training:
             d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
             d = d.repeat()
+            # d = d.shuffle(buffer_size=len(input_files))
             d = d.shuffle(buffer_size=1000 * 1000)
 
             # `cycle_length` is the number of parallel files that get read.
@@ -323,6 +340,7 @@ def input_fn_builder_classification(input_files,
                             sloppy=is_training,
                             cycle_length=cycle_length))
             d = d.shuffle(buffer_size=1000 * 1000)
+            # d = d.shuffle(buffer_size=100)
         else:
             d = tf.data.TFRecordDataset(input_files)
             # Since we evaluate for a fixed number of steps we don't want to encounter
@@ -345,6 +363,67 @@ def input_fn_builder_classification(input_files,
 
     return input_fn
 
+
+def input_fn_builder_classification3(input_files,
+                                         max_seq_length,
+                                         is_training,
+                                         flags,
+                                         num_cpu_threads=4,
+                                        repeat_for_eval=False):
+
+    def input_fn(params):
+        """The actual input function."""
+        batch_size = params["batch_size"]
+
+        name_to_features = {
+                "input_ids":
+                        tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_mask":
+                        tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "segment_ids":
+                        tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "label_ids":
+                        tf.io.FixedLenFeature([1], tf.int64),
+        }
+        # For training, we want a lot of parallel reading and shuffling.
+        # For eval, we want no shuffling and parallel reading doesn't matter.
+        if is_training:
+            d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
+            d = d.repeat()
+            d = d.shuffle(buffer_size=len(input_files))
+
+            # `cycle_length` is the number of parallel files that get read.
+            cycle_length = min(num_cpu_threads, len(input_files))
+
+            # `sloppy` mode means that the interleaving is not exact. This adds
+            # even more randomness to the training pipeline.
+            d = d.apply(
+                    tf.data.experimental.parallel_interleave(
+                            tf.data.TFRecordDataset,
+                            sloppy=is_training,
+                            cycle_length=cycle_length))
+            d = d.shuffle(buffer_size=100)
+        else:
+            d = tf.data.TFRecordDataset(input_files)
+            # Since we evaluate for a fixed number of steps we don't want to encounter
+            # out-of-range exceptions.
+            if flags.max_pred_steps > 0:
+                d = d.take(flags.max_pred_steps)
+            #d = d.repeat()
+
+        # We must `drop_remainder` on training because the TPU requires fixed
+        # size dimensions. For eval, we assume we are evaluating on the CPU or GPU
+        # and we *don't* want to drop the remainder, otherwise we wont cover
+        # every sample.
+        d = d.apply(
+                tf.data.experimental.map_and_batch(
+                        lambda record: _decode_record(record, name_to_features),
+                        batch_size=batch_size,
+                        num_parallel_batches=num_cpu_threads,
+                        drop_remainder=True))
+        return d
+
+    return input_fn
 
 def input_fn_builder_prediction(input_files,
                                  max_seq_length,
@@ -603,6 +682,29 @@ def input_fn_builder_classification_w_data_id(input_files,
         return format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
 
     return input_fn
+
+
+def input_fn_builder_classification_w_data_id2(input_files,
+                                       max_seq_length,
+                                      flags,
+                                      is_training,
+                                      num_cpu_threads=4):
+
+    def input_fn(params):
+        """The actual input function."""
+        batch_size = params["batch_size"]
+
+        name_to_features = {
+                "input_ids":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "input_mask":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "segment_ids":tf.io.FixedLenFeature([max_seq_length], tf.int64),
+                "label_ids": tf.io.FixedLenFeature([1], tf.int64),
+                "data_id": tf.io.FixedLenFeature([1], tf.int64),
+        }
+        return format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+
+    return input_fn
+
 
 
 def input_fn_builder_classification_w_data_ids_typo(input_files,

@@ -158,8 +158,8 @@ def classification_metric_fn(log_probs, label, is_real_example):
 
     return {
       "accuracy": accuracy,
-        "precision": precision,
-        "recall": recall,
+      "precision": precision,
+      "recall": recall,
     }
 
 

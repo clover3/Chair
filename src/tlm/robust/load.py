@@ -25,3 +25,8 @@ def load_robust_tokens_for_predict(version=3) -> Dict[str, List[str]]:
     data = pickle.load(open(path, "rb"))
     return data
 
+
+def load_robust_tokens() -> Dict[str, List[str]]:
+    tokens_d = load_robust_tokens_for_train()
+    tokens_d.update(load_robust_tokens_for_predict(4))
+    return tokens_d

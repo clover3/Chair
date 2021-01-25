@@ -279,6 +279,7 @@ class MESecondProb:
                  features=None,
                  scope=None):
         super(MESecondProb, self).__init__()
+        self.config = config
         input_ids = features["input_ids"]
 
         input_ids2 = features["input_ids2"]
@@ -341,6 +342,100 @@ class MESecondProb:
 
     def get_prob(self):
         return self.prob
+
+    def get_loss(self, label_ids):
+        if self.config.loss == 'hinge':
+            return tf.keras.losses.Hinge()(label_ids, self.get_prob())
+        elif self.config.loss == 'mae':
+            return tf.keras.losses.MAE(label_ids, self.get_prob())
+        elif self.config.loss == 'ce':
+            return tf.keras.losses.BinaryCrossentropy()(label_ids, self.get_prob())
+        else:
+            assert False
+
+
+class MELogit:
+    def __init__(self,
+                 config,
+                 is_training,
+                 use_one_hot_embeddings=True,
+                 features=None,
+                 scope=None):
+        super(MELogit, self).__init__()
+        self.config = config
+        input_ids = features["input_ids"]
+
+        input_ids2 = features["input_ids2"]
+        input_mask2 = features["input_mask2"]
+        segment_ids2 = features["segment_ids2"]
+
+        unit_length = config.max_seq_length
+        d_seq_length = config.max_d_seq_length
+        num_window = int(d_seq_length / unit_length)
+        batch_size, _ = get_shape_list2(input_ids)
+
+        def dense(hidden_size, name):
+            return tf.keras.layers.Dense(hidden_size,
+                                         activation=tf.keras.activations.tanh,
+                                         name=name,
+                                         kernel_initializer=create_initializer(config.initializer_range))
+
+        def r2to3(arr):
+            return tf.reshape(arr, [batch_size, num_window, -1])
+
+        def r3to4(arr):
+            return tf.reshape(arr, [batch_size, num_window, unit_length, -1])
+
+        def get_seq_output_3d(model_class, input_ids, input_masks, segment_ids):
+            # [Batch, num_window, unit_seq_length]
+            stacked_input_ids, stacked_input_mask, stacked_segment_ids = split_input(input_ids,
+                                                                                     input_masks,
+                                                                                     segment_ids,
+                                                                                     d_seq_length,
+                                                                                     unit_length)
+            model = model_class(
+                config=config,
+                is_training=is_training,
+                input_ids=r3to2(stacked_input_ids),
+                input_mask=r3to2(stacked_input_mask),
+                token_type_ids=r3to2(stacked_segment_ids),
+                use_one_hot_embeddings=use_one_hot_embeddings,
+            )
+
+            # [Batch * num_window, seq_length, hidden_size]
+            sequence = model.get_sequence_output()
+            # [Batch, num_window, window_length, hidden_size]
+            return r3to4(sequence)
+
+        stacked_input_ids, stacked_input_mask, stacked_segment_ids = split_input(input_ids2,
+                                                                                 input_mask2,
+                                                                                 segment_ids2,
+                                                                                 d_seq_length,
+                                                                                 unit_length)
+
+        # [Batch, num_window, window_length, hidden_size]
+        seq_output = get_seq_output_3d(BertModel, input_ids2, input_mask2, segment_ids2)
+
+        first_token = seq_output[:, :, 0, :]
+        hidden1 = dense(config.hidden_size, "hidden1")(first_token)
+        pooled = dense(config.hidden_size, "hidden2")(hidden1)
+        logits = tf.keras.layers.Dense(2, name="cls_dense")(pooled)
+        self.logits = tf.reduce_mean(logits, 1)
+
+    def get_logits(self):
+        return self.logits
+
+    def get_loss(self, label_ids):
+        y_true = tf.one_hot(label_ids, 2)
+        if self.config.loss == 'hinge':
+            logits = self.get_logits()
+            return tf.keras.losses.Hinge()(label_ids, logits[:, 1])
+        elif self.config.loss == 'mae':
+            return tf.keras.losses.MAE(y_true, self.get_logits())
+        elif self.config.loss == 'ce':
+            return tf.keras.losses.BinaryCrossentropy()(y_true, self.get_logits())
+        else:
+            assert False
 
 # ME : Multi Evidence
 
@@ -938,3 +1033,100 @@ class ME7(BertModelInterface):
         hidden2 = dense_layer2(hidden1)
         self.pooled_output = tf.reduce_max(hidden2, axis=1)
 
+
+class MEDirect(BertModelInterface):
+    def __init__(self,
+                 config,
+                 is_training,
+                 use_one_hot_embeddings=True,
+                 features=None,
+                 scope=None):
+        super(MEDirect, self).__init__()
+        input_ids = features["input_ids"]
+        input_mask = features["input_mask"]
+        segment_ids = features["segment_ids"]
+
+        input_ids2 = features["input_ids2"]
+        input_mask2 = features["input_mask2"]
+        segment_ids2 = features["segment_ids2"]
+
+        unit_length = config.max_seq_length
+        d_seq_length = config.max_d_seq_length
+        num_window = int(d_seq_length / unit_length)
+        batch_size, _ = get_shape_list2(input_ids)
+
+        def dense(hidden_size, name):
+            return tf.keras.layers.Dense(hidden_size,
+                                         activation=tf.keras.activations.tanh,
+                                         name=name,
+                                         kernel_initializer=create_initializer(config.initializer_range))
+
+        def r2to3(arr):
+            return tf.reshape(arr, [batch_size, num_window, -1])
+
+        def get_pooled_output_3d(model_class, input_ids, input_masks, segment_ids):
+            # [Batch, num_window, unit_seq_length]
+            stacked_input_ids, stacked_input_mask, stacked_segment_ids = split_input(input_ids,
+                                                                                     input_masks,
+                                                                                     segment_ids,
+                                                                                     d_seq_length,
+                                                                                     unit_length)
+            model = model_class(
+                config=config,
+                is_training=is_training,
+                input_ids=r3to2(stacked_input_ids),
+                input_mask=r3to2(stacked_input_mask),
+                token_type_ids=r3to2(stacked_segment_ids),
+                use_one_hot_embeddings=use_one_hot_embeddings,
+            )
+
+            # [Batch * num_window, hidden_size]
+            raw_pooled = model.get_pooled_output()
+            # [Batch, num_window, hidden_size]
+            pooled_3d = r2to3(raw_pooled)
+            return pooled_3d
+
+        with tf.compat.v1.variable_scope(triple_model_prefix1):
+            model_1 = BertModel(
+                config=config,
+                is_training=is_training,
+                input_ids=input_ids,
+                input_mask=input_mask,
+                token_type_ids=segment_ids,
+                use_one_hot_embeddings=use_one_hot_embeddings,
+            )
+
+        with tf.compat.v1.variable_scope(triple_model_prefix2):
+            pooled2 = get_pooled_output_3d(BertModel, input_ids2, input_mask2, segment_ids2)
+
+        bert1_rep = model_1.get_sequence_output()[:, 0, :]
+        bert1_rep = tf.expand_dims(bert1_rep, 1)
+        bert1_rep = tf.tile(bert1_rep, [1, num_window, 1]) #
+        combined_rep = tf.concat([bert1_rep, pooled2], axis=2)
+        hidden1 = dense(config.hidden_size, "hidden1")(combined_rep)
+        hidden2 = dense(config.hidden_size, "hidden2")(hidden1)
+        dense_layer = tf.keras.layers.Dense(2,
+                                            name="hidden3",
+                                            activation=tf.keras.activations.tanh,
+                                            kernel_initializer=create_initializer(config.initializer_range))
+        logits = dense_layer(hidden2)
+        label_ids = features["label_ids"]
+        all_probs = tf.nn.softmax(logits)
+        self.prob = tf.reduce_mean(all_probs, axis=1)
+        epsilon = 1e-6
+        probs_ad = tf.clip_by_value(self.prob, epsilon, 1.0 - epsilon)
+        y_true = tf.one_hot(label_ids, 2)
+        loss_arr = tf.keras.losses.BinaryCrossentropy()(y_true, probs_ad)
+        loss = tf.reduce_mean(loss_arr)
+        self.loss = loss
+
+    def get_prob(self):
+        return self.prob
+
+    def get_logits(self):
+        epsilon = 1e-6
+        probs_ad = tf.clip_by_value(self.prob, epsilon, 1.0 - epsilon)
+        return tf.math.log(probs_ad)
+
+    def get_loss(self, label_ids):
+        return self.loss

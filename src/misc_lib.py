@@ -536,6 +536,16 @@ def enum_passage(tokens: List[Any], window_size: int) -> Iterable[List[Any]]:
         yield second_tokens
 
 
+def enum_passage_overlap(tokens: List[Any], window_size: int, step_size: int) -> Iterable[List[Any]]:
+    cursor = 0
+    while cursor < len(tokens):
+        st = cursor
+        ed = cursor + window_size
+        second_tokens = tokens[st:ed]
+        cursor += step_size
+        yield second_tokens
+
+
 def dict_to_tuple_list(d: Dict[A, B]) -> List[Tuple[A, B]]:
     out_l = []
     for k, v in d.items():
