@@ -186,7 +186,6 @@ def claims_to_dict(claims) -> Dict[int, str]:
     return d
 
 
-
 # get claim_per
 def get_claim_perspective_id_dict() -> Dict[int, List[List[int]]]:
     claim_and_perspective = load_claim_perspective_pair()

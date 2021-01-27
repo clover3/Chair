@@ -1,5 +1,6 @@
 import os
 from collections import Counter, defaultdict
+from typing import Dict, Tuple
 
 from cache import save_to_pickle, load_from_pickle
 from cpath import data_path
@@ -24,8 +25,7 @@ def load_clueweb12_B13_termstat():
 cdf = 50 * 1000 * 1000
 
 
-
-def load_clueweb12_B13_termstat_stemmed():
+def load_clueweb12_B13_termstat_stemmed() -> Tuple[Dict, Dict]:
     from krovetzstemmer import Stemmer
     stemmer = Stemmer()
     tf, df = load_clueweb12_B13_termstat()

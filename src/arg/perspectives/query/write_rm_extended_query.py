@@ -9,7 +9,7 @@ from list_lib import left
 from models.classic.stopword import load_stopwords_for_query
 
 
-def extract_terms_from_structured_query(text: str):
+def extract_terms_from_structured_query(text: str) -> List[str]:
     combine_str = "#combine("
     bm25 = "#bm25:K=0("
     text = text.strip()

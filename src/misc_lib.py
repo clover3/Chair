@@ -210,6 +210,7 @@ def get_first(x):
 def get_second(x):
     return x[1]
 
+
 def get_third(x):
     return x[2]
 
@@ -257,7 +258,6 @@ def flat_apply_stack(list_fn, list_of_list, verbose=True):
     return stack
 
 
-
 def parallel_run(input_list, list_fn, split_n):
     def chunks(l, n):
         """Yield successive n-sized chunks from l."""
@@ -274,10 +274,6 @@ def parallel_run(input_list, list_fn, split_n):
         result.extend(result_list)
     return result
 
-def dict_reverse(d):
-    inv_map = {v: k for k, v in d.items()}
-    return inv_map
-
 
 def get_dir_files(dir_path: FilePath) -> List[FilePath]:
     path_list = []
@@ -287,12 +283,14 @@ def get_dir_files(dir_path: FilePath) -> List[FilePath]:
 
     return path_list
 
+
 def get_dir_files2(dir_path):
     r = []
     for item in os.scandir(dir_path):
         r.append(os.path.join(dir_path, item.name))
 
     return r
+
 
 def get_dir_files_sorted_by_mtime(dir_path):
     path_list = get_dir_files(dir_path)
@@ -329,27 +327,6 @@ def list_print(l, width):
     print()
 
 
-def group_by(interable: Iterable[A], key_fn: Callable[[A], B]) -> Dict[B, List[A]]:
-    grouped = {}
-    for elem in interable:
-        key = key_fn(elem)
-        if key not in grouped:
-            grouped[key] = list()
-
-        grouped[key].append(elem)
-    return grouped
-
-
-def assign_list_if_not_exists(dict_like, key):
-    if key not in dict_like:
-        dict_like[key] = list()
-
-
-def assign_default_if_not_exists(dict_like, key, default):
-    if key not in dict_like:
-        dict_like[key] = default()
-
-
 class BinHistogram:
     def __init__(self, bin_fn):
         self.counter = Counter()
@@ -357,8 +334,6 @@ class BinHistogram:
 
     def add(self, v):
         self.counter[self.bin_fn(v)] += 1
-
-
 
 
 class BinAverage:
@@ -461,18 +436,6 @@ class DataIDGen:
         return r
 
 
-def merge_dict_list(dict_list: List[Dict]) -> Dict:
-    all_d = {}
-    for d in dict_list:
-        all_d.update(d)
-    return all_d
-
-
-def print_dict_tab(d):
-    for key, value in d.items():
-        print("{}\t{}".format(key, value))
-
-
 def two_digit_float(f):
     return "{0:.2f}".format(f)
 
@@ -546,13 +509,6 @@ def enum_passage_overlap(tokens: List[Any], window_size: int, step_size: int) ->
         yield second_tokens
 
 
-def dict_to_tuple_list(d: Dict[A, B]) -> List[Tuple[A, B]]:
-    out_l = []
-    for k, v in d.items():
-        out_l.append((k, v))
-
-    return out_l
-
 
 def find_max_idx(itr: Iterable[A], key_fn: Callable[[A], Any]) -> int:
     max_idx = -1
@@ -573,3 +529,65 @@ class NamedNumber(float):
     def __init__(self, value, extra):
         float.__init__(value)
         self.name = extra
+
+
+# --- Dict related methods BEGIN ---
+
+def get_dict_items(d: Dict[A, B], l: Iterable[A], ignore_not_found=False) -> List[B]:
+    out_l = []
+    for k in l:
+        if ignore_not_found:
+            if k in d:
+                out_l.append(d[k])
+        else:
+            out_l.append(d[k])
+    return out_l
+
+
+def dict_to_tuple_list(d: Dict[A, B]) -> List[Tuple[A, B]]:
+    out_l = []
+    for k, v in d.items():
+        out_l.append((k, v))
+
+    return out_l
+
+
+def dict_reverse(d):
+    inv_map = {v: k for k, v in d.items()}
+    return inv_map
+
+
+def group_by(interable: Iterable[A], key_fn: Callable[[A], B]) -> Dict[B, List[A]]:
+    grouped = {}
+    for elem in interable:
+        key = key_fn(elem)
+        if key not in grouped:
+            grouped[key] = list()
+
+        grouped[key].append(elem)
+    return grouped
+
+
+def assign_list_if_not_exists(dict_like, key):
+    if key not in dict_like:
+        dict_like[key] = list()
+
+
+def assign_default_if_not_exists(dict_like, key, default):
+    if key not in dict_like:
+        dict_like[key] = default()
+
+
+def merge_dict_list(dict_list: List[Dict]) -> Dict:
+    all_d = {}
+    for d in dict_list:
+        all_d.update(d)
+    return all_d
+
+
+def print_dict_tab(d):
+    for key, value in d.items():
+        print("{}\t{}".format(key, value))
+
+# --- Dict related methods END ---
+

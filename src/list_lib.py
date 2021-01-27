@@ -61,7 +61,6 @@ def lfilter_not(func: Callable[[A], B], iterable_something: Iterable[A]) -> List
     return list(filter(lambda x: not func(x), iterable_something))
 
 
-
 def lreduce(initial_val: B, func: Callable[[A, B], B], iterable_something: Iterable[A]) -> List[B]:
     return list(reduce(func, iterable_something, initial_val))
 
