@@ -80,7 +80,6 @@ def get_simple_claim_query(claims, drop_stopwords=False) -> List[DocQuery]:
     return queries
 
 
-
 def run_write_claims_as_plain_query():
     for claim_ids, out_name in [(load_train_claim_ids(), "train_claim_query_raw.txt"),
                                 (load_dev_claim_ids(), "dev_claim_query_raw.txt")]:
@@ -111,6 +110,15 @@ def write_claim_queries2():
         claims = get_claims_from_ids(claim_ids)
         queries = get_claims_query(claims, True)
         out_path = os.path.join(output_path, "perspective_claim_query2_{}.json".format(split))
+        save_queries_to_file(queries, out_path)
+
+
+def write_claim_queries3():
+    for split in splits:
+        claim_ids = load_claim_ids_for_split(split)
+        claims = get_claims_from_ids(claim_ids)
+        queries = get_claims_query(claims, False)
+        out_path = os.path.join(output_path, "perspective_claim_query3_{}.json".format(split))
         save_queries_to_file(queries, out_path)
 
 
@@ -153,5 +161,5 @@ def write_claim_perspective_pair_as_query():
 
 
 if __name__ == "__main__":
-    write_simple_claim_queries()
+    write_claim_queries3()
 

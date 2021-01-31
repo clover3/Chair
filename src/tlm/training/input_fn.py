@@ -64,7 +64,7 @@ def input_fn_builder_two_inputs_w_data_id(flags):
     show_input_files(input_files)
     is_training = flags.do_train
     num_cpu_threads = 4
-    max_seq_length=flags.max_seq_length
+    max_seq_length = flags.max_seq_length
 
     def input_fn(params):
         """The actual input function."""

@@ -78,6 +78,14 @@ def sanity_check():
             open(docs_path, "w").write(content)
 
 
+def load_robust_04_query(query_type) -> Dict[str, str]:
+    if query_type == "title":
+        return load_robust04_title_query()
+    elif query_type == "desc":
+        return load_robust04_desc2()
+    else:
+        assert False
+
 
 if __name__ == '__main__':
     #queries = load_robust04_query()
@@ -85,12 +93,3 @@ if __name__ == '__main__':
     for q_id in queries:
         print("\t".join([q_id] + queries[q_id].split()))
     #sanity_check()
-
-
-def load_robust_04_query(query_type):
-    if query_type == "title":
-        return load_robust04_title_query()
-    elif query_type == "desc":
-        return load_robust04_desc2()
-    else:
-        assert False

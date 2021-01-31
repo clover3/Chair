@@ -72,3 +72,11 @@ def open_pred_output(name):
     path = os.path.join(prediction_dir, name)
     fout = open(path, "w")
     return fout
+
+
+def at_output_dir(folder_name, file_name):
+    return os.path.join(output_path, folder_name, file_name)
+
+
+def at_data_dir(folder_name, file_name):
+    return os.path.join(data_path, folder_name, file_name)

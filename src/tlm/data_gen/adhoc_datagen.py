@@ -97,6 +97,50 @@ class OverlappingSegments(EncoderInterface):
         return insts
 
 
+class OverlappingSegmentsEx:
+    def __init__(self, max_seq_length, step_size):
+        self.max_seq_length = max_seq_length
+        self.step_size = step_size
+
+    def encode(self, query_tokens, tokens) -> List[Tuple[int, int, List, List]]:
+        content_len = self.max_seq_length - 3 - len(query_tokens)
+        insts = []
+        raw_entries = []
+        cursor = self.step_size - content_len
+        while cursor < len(tokens):
+            st = cursor if cursor >= 0 else 0
+            ed = cursor + content_len
+            second_tokens = tokens[st:ed]
+            cursor += self.step_size
+            e = st, ed, second_tokens
+            raw_entries.append(e)
+
+        short_window = content_len - self.step_size
+        cursor = self.step_size - short_window
+        while cursor < len(tokens):
+            st = cursor if cursor >= 0 else 0
+            ed = cursor + short_window
+            second_tokens = tokens[st:ed]
+            cursor += self.step_size
+            e = st, ed, second_tokens
+            raw_entries.append(e)
+
+        for st, ed, second_tokens in raw_entries:
+            out_tokens, segment_ids = self.decorate_tokens(query_tokens, second_tokens)
+            entry = st, ed, out_tokens, segment_ids
+            insts.append(entry)
+        return insts
+
+    def decorate_tokens(self, query_tokens, second_tokens):
+        out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
+        pad_length = self.max_seq_length - len(out_tokens)
+        out_tokens += ["[PAD]"] * pad_length
+        segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1) + [0] * pad_length
+        assert len(out_tokens) == self.max_seq_length
+        assert len(segment_ids) == self.max_seq_length
+        return out_tokens, segment_ids
+
+
 class PassageSampling(EncoderInterface):
     def __init__(self, max_seq_length):
         super(PassageSampling, self).__init__(max_seq_length)

@@ -60,6 +60,8 @@ def format_dataset(name_to_features, batch_size, is_training, flags,
         # `cycle_length` is the number of parallel files that get read.
         cycle_length = min(num_cpu_threads, len(input_files))
         cycle_length = 250
+        cycle_length = 100
+        print('buffer_size', flags.buffer_size)
         # `sloppy` mode means that the interleaving is not exact. This adds
         # even more randomness to the training pipeline.
         d = d.apply(

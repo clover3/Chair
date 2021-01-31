@@ -73,6 +73,35 @@ class RobustPredictGen:
         writer.close()
 
 
+class RobustPredictGenPrecise(RobustPredictGen):
+    def generate(self, query_list, data_id_manager):
+        all_insts = []
+        for query_id in query_list:
+            if query_id not in self.galago_rank:
+                continue
+            query = self.queries[query_id]
+            qck_query = QCKQuery(query_id, "")
+            query_tokens = self.tokenizer.tokenize(query)
+            for doc_id, _, _ in self.galago_rank[query_id][:self.top_k]:
+                tokens = self.data[doc_id]
+                passage_list = self.encoder.encode(query_tokens, tokens)
+                candidate = QCKCandidate(doc_id, "")
+                for idx, (st, ed, tokens, seg_ids) in enumerate(passage_list):
+                    info = {
+                        'query': get_light_qckquery(qck_query),
+                        'candidate': get_light_qckcandidate(candidate),
+                        'idx': idx,
+                        'st': st,
+                        'ed': ed,
+                    }
+                    data_id = data_id_manager.assign(info)
+                    inst = Instance(tokens, seg_ids, data_id, 0)
+                    all_insts.append(inst)
+        return all_insts
+
+
+
+
 class RobustWorker:
     def __init__(self, generator, out_path):
         self.out_path = out_path
