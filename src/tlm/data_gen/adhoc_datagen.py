@@ -19,6 +19,9 @@ from tlm.data_gen.pairwise_common import generate_pairwise_combinations, write_p
 from tlm.data_gen.robust_gen.select_supervision.score_selection_methods import *
 from tlm.robust.load import load_robust_tokens_for_train, load_robust_tokens_for_predict
 
+Tokens = List[str]
+SegmentIDs = List[int]
+
 
 class EncoderInterface(ABC):
     def __init__(self, max_seq_length):
@@ -30,6 +33,12 @@ class EncoderInterface(ABC):
         pass
 
 
+def get_combined_tokens_segment_ids(query_tokens, second_tokens) -> Tuple[Tokens, SegmentIDs]:
+    out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
+    segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+    return out_tokens, segment_ids
+
+
 class FirstSegmentAsDoc(EncoderInterface):
     def __init__(self, max_seq_length):
         super(FirstSegmentAsDoc, self).__init__(max_seq_length)
@@ -38,9 +47,9 @@ class FirstSegmentAsDoc(EncoderInterface):
     def encode(self, query_tokens, tokens):
         content_len = self.max_seq_length - 3 - len(query_tokens)
         second_tokens = tokens[:content_len]
-        out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
-        segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+        out_tokens, segment_ids = get_combined_tokens_segment_ids(query_tokens, second_tokens)
         return [(out_tokens, segment_ids)]
+
 
 
 class MultiWindow(EncoderInterface):
@@ -86,7 +95,7 @@ class OverlappingSegments(EncoderInterface):
         self.max_seq_length = max_seq_length
         self.step_size = step_size
 
-    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
+    def encode(self, query_tokens, tokens) -> List[Tuple[Tokens, SegmentIDs]]:
         content_len = self.max_seq_length - 3 - len(query_tokens)
         insts = []
         for second_tokens in enum_passage_overlap(tokens, content_len, self.step_size):
@@ -162,9 +171,9 @@ class PassageSampling(EncoderInterface):
         return insts
 
 
-class LeadingSegments(EncoderInterface):
+class FirstAndRandom(EncoderInterface):
     def __init__(self, max_seq_length, num_segment):
-        super(LeadingSegments, self).__init__(max_seq_length)
+        super(FirstAndRandom, self).__init__(max_seq_length)
         self.max_seq_length = max_seq_length
         self.num_segment = num_segment
 
@@ -182,6 +191,27 @@ class LeadingSegments(EncoderInterface):
                 entry = out_tokens, segment_ids
                 insts.append(entry)
         return insts
+
+
+class LeadingN(EncoderInterface):
+    def __init__(self, max_seq_length, num_segment):
+        super(LeadingN, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+        self.num_segment = num_segment
+
+    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
+        content_len = self.max_seq_length - 3 - len(query_tokens)
+        insts = []
+        for idx, second_tokens in enumerate(enum_passage(tokens, content_len)):
+            if idx == self.num_segment:
+                break
+
+            out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
+            segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+            entry = out_tokens, segment_ids
+            insts.append(entry)
+        return insts
+
 
 
 class LeadingSegmentsCombined(EncoderInterface):
