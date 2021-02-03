@@ -4,6 +4,8 @@ import pickle
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict, Callable
 
+import math
+
 from data_generator.data_parser.robust import load_robust04_title_query, load_robust_04_query
 from data_generator.data_parser.robust2 import load_bm25_best
 from data_generator.job_runner import sydney_working_dir
@@ -192,6 +194,25 @@ class FirstAndRandom(EncoderInterface):
                 insts.append(entry)
         return insts
 
+
+class GeoSampler(EncoderInterface):
+    def __init__(self, max_seq_length, g_factor=0.5):
+        super(GeoSampler, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+        self.g_factor = g_factor
+
+    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
+        content_len = self.max_seq_length - 3 - len(query_tokens)
+        insts = []
+        for idx, second_tokens in enumerate(enum_passage(tokens, content_len)):
+            chance = math.pow(self.g_factor, idx)
+            include = random.random() < chance
+            if include:
+                out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
+                segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+                entry = out_tokens, segment_ids
+                insts.append(entry)
+        return insts
 
 class LeadingN(EncoderInterface):
     def __init__(self, max_seq_length, num_segment):

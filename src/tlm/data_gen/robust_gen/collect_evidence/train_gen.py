@@ -1,5 +1,5 @@
 import collections
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 from numpy import argsort
 
@@ -18,10 +18,12 @@ class RobustCollectedEvidenceTrainGen:
     def __init__(self,
                  encoder,
                  max_seq_length,
+                 score_d,
                  query_type="title",
                  neg_k=1000):
         self.data = self.load_tokens()
         qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
+        self.score_d: Dict[str, List[float]] = score_d
         self.judgement = load_qrels_structured(qrel_path)
         self.max_seq_length = max_seq_length
         self.queries = load_robust_04_query(query_type)
@@ -56,8 +58,6 @@ class RobustCollectedEvidenceTrainGen:
 
             for doc_id in target_docs:
                 insts: List[Tuple[List, List]] = self.encode(query_tokens, doc_id)
-                tokens = self.data[doc_id]
-                insts: List[Tuple[List, List]] = self.encoder.encode(query_tokens, tokens)
                 label = 1 if doc_id in judgement and judgement[doc_id] > 0 else 0
 
                 for tokens_seg, seg_ids in insts:
@@ -75,7 +75,7 @@ class RobustCollectedEvidenceTrainGen:
     # # # # # # # # # # # # #
     def encode(self, query_tokens, doc_id) -> List[Tuple[Tokens, SegmentIDs]]:
         all_tokens: List[str] = self.data[doc_id]
-        score: List[float] = NotImplemented
+        score: List[float] = self.score_d[doc_id]
         assert len(all_tokens) == len(score)
         window_size = self.max_seq_length - len(query_tokens) - 3
         idx_list: List[Tuple[int, int]] = select_window(score, window_size, self.n_seg_per_doc)
