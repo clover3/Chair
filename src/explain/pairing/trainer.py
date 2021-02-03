@@ -1,26 +1,23 @@
 import os
-import pickle
 import sys
 from functools import partial
 
 import numpy as np
 import tensorflow as tf
 
-import cpath
 import data_generator.NLI.nli_info
 from attribution.eval import eval_explain
 from data_generator.NLI.nli import get_modified_data_loader
 from data_generator.shared_setting import BertNLI
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from explain.ex_train_modules import NLIExTrainConfig, get_informative_fn_by_name
-from explain.explain_model import CorrelationModeling, CrossEntropyModeling
+from explain.explain_model import CorrelationModeling, CrossEntropyModeling, ExplainModeling
 from explain.explain_trainer import ExplainTrainerM
 from explain.nli_common import train_classification_factory, save_fn_factory, valid_fn_factory
 from explain.runner.nli_ex_param import ex_arg_parser
 from explain.setups import init_fn_generic
 from explain.train_nli import get_nli_data
 from models.transformer import hyperparams
-from models.transformer.nli_base import transformer_nli_pooled
 from models.transformer.transformer_cls import transformer_pooled
 from tf_util.tf_logging import tf_logging, set_level_debug
 from trainer.model_saver import setup_summary_writer
@@ -32,156 +29,41 @@ from trainer.tf_module import step_runner
 from trainer.tf_train_module import init_session, get_train_op2, get_train_op_wo_gstep_update2
 
 
-def train_nli_ex_from_payload(hparam, train_config, save_dir,
-                 data, data_loader,
-                 tags, modeling_option, init_fn,
+class MatchPredictor:
+    def __init__(self,
+                 main_model: transformer_pooled,
+                 ex_model: ExplainModeling,
+                 target_ex_idx=1,
                  ):
-    print("train_nli_ex")
-    max_steps = train_config.max_steps
-    num_gpu = train_config.num_gpu
-    base_step = 61358
+        all_layers = main_model.model.get_all_encoder_layers() # List[ tensor[batch,seq_length, hidden] ]
 
-    def load_payload(step_i):
-        save_path = os.path.join(cpath.data_path, "nli_payload_1", str(step_i))
-        return pickle.load(open(save_path, "rb"))
+        self.main_model = main_model
+        self.ex_model = ex_model
+        ex_scores = ex_model.get_ex_scores(target_ex_idx)  # tensor[batch, seq_length]
 
-    ex_modeling_class = {
-        'ce': CrossEntropyModeling,
-        'co': CorrelationModeling
-    }[modeling_option]
-    lr_factor = 0.3
-    def build_model():
-        main_model = transformer_nli_pooled(hparam, train_config.vocab_size)
-        ex_model = ex_modeling_class(main_model.model.sequence_output, hparam.seq_max, len(tags),
-                                     main_model.batch2feed_dict)
-        return main_model, ex_model
-
-    if num_gpu == 1:
-        print("Using single GPU")
-        main_model, ex_model = build_model()
-        batch2feed_dict = main_model.batch2feed_dict
-
-        ex_score_tensor = ex_model.get_scores()
-        ex_loss_tensor = ex_model.get_loss()
-        ex_per_tag_loss = ex_model.get_losses()
-        ex_batch_feed2dict = ex_model.batch2feed_dict
-        with tf.variable_scope("explain_optimizer"):
-            train_ex_op = get_train_op2(ex_loss_tensor, hparam.lr * lr_factor, "adam2", max_steps)
-    else:
-        main_models, ex_models = zip(*get_multiple_models(build_model, num_gpu))
-        batch2feed_dict = get_batch2feed_dict_for_multi_gpu(main_models)
-        def get_loss_tensor(model):
-            t = tf.expand_dims(tf.stack(model.get_losses()), 0)
-            return t
-        ex_per_tag_loss = tf.reduce_mean(get_concat_tensors_from_models(ex_models, get_loss_tensor), axis=0)
-
-        ex_score_tensor = get_concat_tensors_list_from_models(ex_models, lambda model:model.get_scores())
-        print(ex_score_tensor)
-        ex_loss_tensor = get_avg_tensors_from_models(ex_models, ex_modeling_class.get_loss)
-        ex_batch_feed2dict = get_batch2feed_dict_for_multi_gpu(ex_models)
-        with tf.variable_scope("explain_optimizer"):
-            train_ex_op = get_train_op(([m.get_loss() for m in ex_models]), hparam.lr * lr_factor, max_steps)
-
-    global_step = tf.train.get_or_create_global_step()
-
-    explain_dev_data_list = {tag: data_loader.get_dev_explain(tag) for tag in tags}
-
-    run_name = os.path.basename(save_dir)
-    train_writer, test_writer = setup_summary_writer(run_name)
-
-    sess = init_session()
-    sess.run(tf.global_variables_initializer())
-    init_fn(sess)
-
-    def eval_tag():
-        print("Eval")
-        for label_idx, tag in enumerate(tags):
-            print(tag)
-            enc_explain_dev, explain_dev = explain_dev_data_list[tag]
-            batches = get_batches_ex(enc_explain_dev, hparam.batch_size, 3)
-            try:
-                ex_logit_list = []
-                for batch in batches:
-                    ex_logits,  = sess.run([ex_score_tensor[label_idx],], feed_dict=batch2feed_dict(batch))
-                    print(ex_logits.shape)
-                    ex_logit_list.append(ex_logits)
-
-                ex_logit_list = np.concatenate(ex_logit_list, axis=0)
-                print(ex_logit_list.shape)
-                assert len(ex_logit_list) == len(explain_dev)
-
-                scores = eval_explain(ex_logit_list, data_loader, tag)
-
-                for metric in scores.keys():
-                    print("{}\t{}".format(metric, scores[metric]))
-
-                p_at_1, MAP_score = scores["P@1"], scores["MAP"]
-                summary = tf.Summary()
-                summary.value.add(tag='{}_P@1'.format(tag), simple_value=p_at_1)
-                summary.value.add(tag='{}_MAP'.format(tag), simple_value=MAP_score)
-                train_writer.add_summary(summary, fetch_global_step())
-                train_writer.flush()
-            except ValueError as e:
-                print(e)
-                for ex_logits in ex_logit_list:
-                    print(ex_logits.shape)
-
-    # make explain train_op does not increase global step
-
-    def train_explain(step_i):
-        def commit_ex_train(batch):
-            fd = ex_batch_feed2dict(batch)
-            ex_loss, _ =  sess.run([ex_per_tag_loss, train_ex_op], feed_dict=fd)
-            return ex_loss
-
-        batch = load_payload(step_i)
-        commit_ex_train(batch)
-
-    def fetch_global_step():
-        step, = sess.run([global_step])
-        return step
-
-    save_fn = partial(save_fn_factory, sess, save_dir, global_step)
-
-    sess.run([global_step.assign(base_step)])
-    g_step_check, = sess.run([global_step])
-    print("Initialize step to {}".format(g_step_check))
-
-    def train_fn(step_i):
-        step_before_cls = fetch_global_step()
-        train_explain(step_i)
-        step_after_ex = fetch_global_step()
-        assert step_after_ex == step_before_cls + 1
-        return 0, 0
-
-    def valid_fn():
-        eval_tag()
-
-    valid_freq = 1000
-    save_interval = 5000
-    step_i = 61358
-    while step_i < max_steps:
-        print(step_i)
-        step_i += 1
-        train_fn(step_i)
-        if valid_fn is not None:
-            if step_i % valid_freq == 0:
-                valid_fn()
-
-    return save_fn()
+    def model_per_layer(self, layer_output, ex_scores):
+        logits = tf.layers.dense(layer_output, 2)
+        ex_score0 = 1-ex_scores
+        true_y = tf.stack([ex_score0, ex_scores], axis=2)
+        losses = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=true_y)
+        loss = tf.reduce_mean(losses)
+        return {
+            'loss': loss,
+            'losses': losses,
+            'logits': logits
+        }
 
 
-def train_self_explain(hparam, train_config, save_dir,
-                       data, data_loader,
-                       tags, modeling_option, init_fn, tag_informative_fn,
-                       ):
-    print("train_self_explain")
+
+
+def train_pairing(hparam, train_config, save_dir,
+                  data, data_loader,
+                  tags, modeling_option, init_fn, tag_informative_fn,
+                  ):
+    print("train pairing")
     max_steps = train_config.max_steps
     num_gpu = train_config.num_gpu
     train_batches, dev_batches = data
-    def save_payload(payload, step_i):
-        save_path = os.path.join(cpath.data_path, "nli_payload_1", str(step_i))
-        pickle.dump(payload, open(save_path, "wb"))
 
     ex_modeling_class = {
         'ce': CrossEntropyModeling,
@@ -193,6 +75,7 @@ def train_self_explain(hparam, train_config, save_dir,
         main_model = transformer_pooled(hparam, train_config.vocab_size)
         ex_model = ex_modeling_class(main_model.model.sequence_output, hparam.seq_max, len(tags),
                                      main_model.batch2feed_dict)
+        match_predictor = MatchPredictor(main_model, ex_model)
         return main_model, ex_model
 
     if num_gpu == 1:
@@ -349,20 +232,12 @@ def train_self_explain(hparam, train_config, save_dir,
 
 
 def train_from(start_model_path, start_type, save_dir,
-               modeling_option, tags, info_fn_name, num_deletion,
-               g_val=0.5,
-               drop_thres=0.3,
-               num_gpu=1):
+               modeling_option, tags, num_gpu=1):
 
-    num_deletion = int(num_deletion)
     num_gpu = int(num_gpu)
     tf_logging.info("train_from : nli_ex")
     data, data_loader, hp, informative_fn, init_fn, train_config\
         = get_params(start_model_path, start_type, info_fn_name, num_gpu)
-
-    train_config.num_deletion = num_deletion
-    train_config.g_val = float(g_val)
-    train_config.drop_thres = float(drop_thres)
 
     train_self_explain(hp, train_config, save_dir,
                        data, data_loader, tags, modeling_option,
@@ -403,8 +278,4 @@ if __name__  == "__main__":
                args.save_dir,
                args.modeling_option,
                data_generator.NLI.nli_info.tags,
-               args.info_fn,
-               args.num_deletion,
-               args.g_val,
-               args.drop_thres,
                args.num_gpu)

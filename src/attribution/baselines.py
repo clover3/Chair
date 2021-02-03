@@ -1,5 +1,3 @@
-from collections import Counter
-
 from trainer.tf_module import *
 from .deleter_trsfmr import *
 
@@ -34,7 +32,7 @@ def informative_fn_eq1(target_tag, logits_list):
 # forward_run :
 #  input : list of [x0,x1,x2]
 #  output: list of softmax val
-def explain_by_deletion(data, target_tag, forward_run):
+def explain_by_deletion(data, target_tag, forward_run) -> List[np.array]:
     inputs = []
     inputs_info = []
     base_indice = []
