@@ -22,13 +22,19 @@ if tf_logging.handlers:
 def set_level_debug():
     tf_logging.setLevel(logging.DEBUG)
 
-# def check(point_name):
-#     print()
-#     print(point_name)
-#     tf_logging.info(point_name)
-#     print("root logger handler : ", logging.root.handlers)
-#     print("logging.getLogger().handlers", logging.getLogger().handlers)
-#     print("tf_logging.handler", tf_logging.handlers)
+
+def reset_root_log_handler():
+    logging.root.handlers = logging.root.handlers[:1]
+
+
+def check(point_name):
+    print()
+    print(point_name)
+    tf_logging.info(point_name)
+    print("root logger handler : ", logging.root.handlers)
+    print("logging.getLogger().handlers", logging.getLogger().handlers)
+    print("tf_logging.handler", tf_logging.handlers)
+
 
 class MyFormatter(logging.Formatter):
     def prefix(self, record):
@@ -72,7 +78,6 @@ class TFFilter(logging.Filter):
             if e in record.msg:
                 return False
         return True
-
 
 
 h = ab_logging.get_absl_handler()

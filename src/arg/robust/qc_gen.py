@@ -1,7 +1,8 @@
 import json
 import os
 import pickle
-from typing import NamedTuple, List
+from typing import List
+from typing import NamedTuple
 
 from arg.qck.decl import QCKQuery, QCKCandidate, get_light_qckquery, get_light_qckcandidate
 from data_generator.create_feature import create_int_feature
@@ -98,8 +99,6 @@ class RobustPredictGenPrecise(RobustPredictGen):
                     inst = Instance(tokens, seg_ids, data_id, 0)
                     all_insts.append(inst)
         return all_insts
-
-
 
 
 class RobustWorker:

@@ -12,12 +12,18 @@ from list_lib import lmap
 
 clue_path = os.path.join(data_path, "genex", "clue.txt")
 tdlt_path = os.path.join(data_path, "genex", "tdlt.txt")
+wiki_path = os.path.join(data_path, "genex", "wiki.txt")
 
 
 class TokenizedInstance(NamedTuple):
     word_tokens: List[str]
     subword_tokens: List[str]
     idx_mapping: List[int]
+
+
+class QueryDoc(NamedTuple):
+    query: List[str]
+    doc: List[str]
 
 
 class PackedInstance(NamedTuple):
@@ -68,7 +74,6 @@ def load_from_path(file_path) -> List[PackedInstance]:
         return TokenizedInstance(tokens, sb_tokens_all, idx_mapping)
 
     output: List[TokenizedInstance] = lmap(parse_line, open(file_path, "r"))
-    print(len(output), "parsed")
     return list([PackedInstance.from_tokenize_instance(tokenizer, 512, ti) for ti in output])
 
 
@@ -79,12 +84,41 @@ def load_as_simple_format(file_name):
 
 
 def load_packed(file_name) -> List[PackedInstance]:
-    file_path = {
-        'tdlt': tdlt_path,
-        'clue': clue_path}[file_name]
-
+    file_path = os.path.join(data_path, "genex", "{}.txt".format(file_name))
     data = load_from_path(file_path)
     return data
+
+
+def load_as_lines(file_name) -> List[str]:
+    file_path = os.path.join(data_path, "genex", "{}.txt".format(file_name))
+    output = []
+    for line in open(file_path, "r"):
+        output.append(line)
+    return output
+
+
+def parse_problem(raw_tokens: List[str]) -> QueryDoc:
+    sep = "[SEP]"
+    idx = raw_tokens.index(sep)
+    query = raw_tokens[:idx]
+    doc = raw_tokens[idx + 1:]
+    return QueryDoc(query, doc)
+
+
+def load_as_tokens(file_name) -> List[QueryDoc]:
+    file_path = os.path.join(data_path, "genex", "{}.txt".format(file_name))
+    sep = "[SEP]"
+    output = []
+    for line in open(file_path, "r"):
+        idx = line.find(sep)
+        query = line[:idx]
+        doc = line[idx+len(sep):]
+
+        q_tokens = query.split()
+        doc_tokens = doc.split()
+        e = QueryDoc(q_tokens, doc_tokens)
+        output.append(e)
+    return output
 
 
 def main():

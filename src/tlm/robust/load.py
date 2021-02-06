@@ -6,6 +6,15 @@ from data_generator.job_runner import sydney_working_dir
 
 robust_query_intervals = [(301, 350), (351, 400), (401, 450), (601, 650), (651, 700)]
 
+
+def get_robust_qid_list():
+    output = []
+    for st, ed in robust_query_intervals:
+        for qid in range(st, ed+1):
+            output.append(qid)
+    return output
+
+
 robust_chunk_num = 33
 
 

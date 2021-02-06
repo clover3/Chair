@@ -5,11 +5,12 @@ from typing import NamedTuple
 
 from arg.bm25 import BM25Bare
 from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat_stemmed, cdf
-from arg.perspectives.pc_tokenizer import pc_tokenize_ex, StemmedToken
+from arg.perspectives.pc_tokenizer import pc_tokenize_ex
 from clueweb.html_to_text import get_text_from_html
 from galagos.parse import load_query_json_as_dict
 from list_lib import lmap
 from misc_lib import find_max_idx, get_first
+from models.classic.stemming import StemmedToken
 from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
 
 

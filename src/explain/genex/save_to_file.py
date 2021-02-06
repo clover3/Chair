@@ -1,3 +1,4 @@
+import random
 import sys
 from collections import Counter
 from typing import List
@@ -9,10 +10,28 @@ from explain.genex.load import load_packed, PackedInstance
 from models.classic.stopword import load_stopwords_for_query
 
 
-class Config1:
+class DropStop:
     drop_stopwords = True
-    max_terms = 5
+    max_terms = 10
     reorder = False
+    cut_factor = 0.1
+    name = "1a"
+
+
+class Config2:
+    drop_stopwords = False
+    max_terms = 10
+    reorder = False
+    cut_factor = 0.1
+    name = "1b"
+
+
+class ConfigShort:
+    drop_stopwords = True
+    max_terms = 10
+    reorder = False
+    cut_factor = 0.5
+    name = "2a"
 
 
 def get_answer_maker(config):
@@ -37,7 +56,6 @@ def get_answer_maker(config):
             token_score[token] += score[idx]
             n_appear[token] += 1
 
-        print(" ".join(problem.word_tokens))
         out_tokens = []
         max_score = None
         for token, token_score in token_score.most_common():
@@ -48,7 +66,7 @@ def get_answer_maker(config):
 
             if max_score is None:
                 max_score = token_score
-                score_cut = max_score * 0.1
+                score_cut = max_score * config.cut_factor
 
             if len(out_tokens) == 0:
                 include = True
@@ -58,13 +76,74 @@ def get_answer_maker(config):
                 else:
                     include = False
 
-            print("{0} {1:.4f} {2} {3}".format(token, token_score, n_appear[token], include))
             if include:
                 out_tokens.append(token)
             else:
                 break
         return out_tokens
     return make_answer1
+
+
+def get_answer_maker_token_level(config):
+    stopwords = load_stopwords_for_query()
+
+    def make_answer(problem: str, score: np.array) -> List[str]:
+        tokens = problem.split()
+        sep_idx = tokens.index("[SEP]")
+        # among tokens from documents
+        # select unique words that has highest score
+        token_score = Counter()
+        n_appear = Counter()
+        max_len = len(tokens)
+        print(tokens)
+        print(max_len)
+        print(len(score))
+        for idx in range(sep_idx + 1, max_len):
+            # skip query tokens
+            if tokens[idx] == "[PAD]":
+                break
+            token = tokens[idx]
+            token_score[token] += score[idx]
+            n_appear[token] += 1
+
+        out_tokens = []
+        max_score = None
+        for token, token_score in token_score.most_common():
+            if len(out_tokens) > config.max_terms:
+                break
+            if config.drop_stopwords and token in stopwords:
+                continue
+
+            if max_score is None:
+                max_score = token_score
+                score_cut = max_score * config.cut_factor
+
+            if len(out_tokens) == 0:
+                include = True
+            else:
+                if token_score > score_cut:
+                    include = True
+                else:
+                    include = False
+
+            if include:
+                out_tokens.append(token)
+            else:
+                break
+        return out_tokens
+    return make_answer
+
+
+def query_as_answer(problem: PackedInstance) -> List[str]:
+    sep_idx = problem.word_tokens.index("[SEP]")
+    q_terms = problem.word_tokens[:sep_idx]
+    return q_terms
+
+
+def random_answer(problem: PackedInstance) -> List[str]:
+    all_tokens = problem.word_tokens
+    random.shuffle(all_tokens)
+    return all_tokens[:10]
 
 
 def main():
@@ -75,14 +154,28 @@ def main():
     scores: List[np.array] = load_from_pickle(score_name)
     data: List[PackedInstance] = load_packed(data_name)
 
-    make_answer = get_answer_maker(Config1)
+    save_score_to_file(data, DropStop, save_path, scores)
 
+
+def save_score_to_file(data, config, save_path, scores):
+    make_answer = get_answer_maker(config)
     out_f = open(save_path, 'w')
     for problem, score in zip(data, scores):
         answer_tokens: List[str] = make_answer(problem, score)
         answer = " ".join(answer_tokens)
         out_f.write(answer + "\n")
     out_f.close()
+
+
+def save_score_to_file2(data, save_path, make_answer):
+    out_f = open(save_path, 'w')
+    for problem in data:
+        answer_tokens: List[str] = make_answer(problem)
+        answer = " ".join(answer_tokens)
+        out_f.write(answer + "\n")
+    out_f.close()
+
+
 
 
 if __name__ == "__main__":

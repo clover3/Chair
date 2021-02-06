@@ -54,6 +54,7 @@ def get_combiner(is_training, config):
     return name_to_func[option]
 
 
+# Final probability is built from the combination of vectors
 class MES(BertModelInterface):
     def __init__(self,
                  config,
@@ -114,8 +115,7 @@ class MES(BertModelInterface):
         self.pooled_output = combiner(seq_output)
 
 
-
-
+# Final probability is mean of each segments
 class MES_prob(BertModelInterface):
     def __init__(self,
                  config,
