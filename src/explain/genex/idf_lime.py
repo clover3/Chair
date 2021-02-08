@@ -32,12 +32,19 @@ def load_df_for(data_name):
     if data_name == "wiki":
         return load_df_stemmed(os.path.join(data_path, "enwiki", "tf_stat"))
     elif data_name == "clue":
-        return load_df_stemmed(os.path.join(data_path, "clueweb12_B13_termstat.txt"))
+        # return load_df_stemmed(os.path.join(data_path, "clueweb12_B13_termstat.txt"))
+        return load_df_stemmed(os.path.join(data_path, "clueweb09_term_stat.txt"))
+    elif data_name == "tdlt":
+        return load_df_stemmed(os.path.join(data_path, "msmarco_term_stat.txt"))
     else:
         assert False
 
 
 def load_idf_fn_for(data_name):
+    if "_" in data_name:
+        head, tail = data_name.split("_")
+        assert int(tail) >= 0
+        data_name = head
     df_dict = load_df_for(data_name)
 
     cdf = max(df_dict.values()) * 10
@@ -76,7 +83,6 @@ def explain_by_lime_idf(data: List[str], get_idf) -> List[Tuple[str, float]]:
         for term, cnt in tf.items():
             if term in q_terms_set:
                 idf = get_idf(term)
-                idf = 1
                 score += log(1+cnt) * idf
             # TODO add idf multiplication
         return score

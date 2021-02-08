@@ -167,7 +167,7 @@ def save_score_to_file(data, config, save_path, scores):
     out_f.close()
 
 
-def save_score_to_file2(data, save_path, make_answer):
+def save_score_to_answer2(data, save_path, make_answer):
     out_f = open(save_path, 'w')
     for problem in data:
         answer_tokens: List[str] = make_answer(problem)

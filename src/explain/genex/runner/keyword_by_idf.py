@@ -1,10 +1,11 @@
 import os
+import sys
 from collections import Counter
 from typing import List, Iterable
 
 import math
 
-from cpath import output_path
+from explain.genex.common import get_genex_run_save_dir
 from explain.genex.idf_lime import load_idf_fn_for
 from explain.genex.load import load_as_tokens, QueryDoc
 from list_lib import dict_key_map
@@ -46,12 +47,12 @@ def save_score_to_file(scores_list: Iterable[Counter], save_path):
 
 
 def main():
-    data_name = "wiki"
+    data_name = sys.argv[1]
     tprint("Loading idf scores")
     get_idf = load_idf_fn_for(data_name)
     problems: List[QueryDoc] = load_as_tokens(data_name)
     save_name = "{}_idf.txt".format(data_name)
-    save_path = os.path.join(output_path, "genex", save_name)
+    save_path = os.path.join(get_genex_run_save_dir(), save_name)
     scores_list: Iterable[Counter] = get_idf_keyword_score(problems, get_idf)
     save_score_to_file(scores_list, save_path)
 

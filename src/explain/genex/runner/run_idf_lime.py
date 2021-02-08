@@ -10,6 +10,8 @@ from misc_lib import tprint
 def main():
     method = "idflime"
     data_name = sys.argv[1]
+    if len(sys.argv) > 2:
+        method = sys.argv[2]
     try:
         save_name = "{}_{}".format(data_name, method)
         data: List[str] = load_as_lines(data_name)
