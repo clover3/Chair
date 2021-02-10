@@ -140,6 +140,19 @@ def load_tf(file_path):
     return ctf, tf_dict
 
 
+def load_term_stat(file_path):
+    tf = Counter()
+    df = Counter()
+    f = open(file_path, "r", encoding="utf-8")
+    for line in f:
+        tokens = line.split("\t")
+        assert len(tokens) == 3
+        word = tokens[0]
+        tf[word] = int(tokens[1])
+        df[word] = int(tokens[2])
+    return tf, df
+
+
 def load_df(file_path):
     f = open(file_path, "r", encoding="utf-8")
     lines = f.readlines()

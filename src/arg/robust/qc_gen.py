@@ -13,7 +13,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import DataIDManager, exist_or_mkdir
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.data_gen.base import get_basic_input_feature
-from tlm.robust.load import robust_query_intervals
+from tlm.robust.load import robust_query_intervals, get_robust_qid_list
 
 
 class Instance(NamedTuple):
@@ -114,6 +114,48 @@ class RobustWorker:
         data_id_manager = DataIDManager(base, max_inst_per_job)
         query_list = [str(i) for i in range(st, ed+1)]
         insts = self.gen.generate(query_list, data_id_manager)
+        self.gen.write(insts, out_path)
+
+        info_dir = self.out_path + "_info"
+        exist_or_mkdir(info_dir)
+        info_path = os.path.join(info_dir, str(job_id) + ".info")
+        json.dump(data_id_manager.id_to_info, open(info_path, "w"))
+
+
+class RobustPerQueryWorker_Legacy:
+    def __init__(self, generator, out_path):
+        self.out_path = out_path
+        self.gen = generator
+        self.qid_list = get_robust_qid_list()
+
+    def work(self, job_id):
+        qid = self.qid_list[job_id]
+        out_path = os.path.join(self.out_path, str(job_id))
+        max_inst_per_job = 1000 * 10000
+        base = job_id * max_inst_per_job
+        data_id_manager = DataIDManager(base, max_inst_per_job)
+        insts = self.gen.generate([str(qid)], data_id_manager)
+        self.gen.write(insts, out_path)
+
+        info_dir = self.out_path + "_info"
+        exist_or_mkdir(info_dir)
+        info_path = os.path.join(info_dir, str(job_id) + ".info")
+        json.dump(data_id_manager.id_to_info, open(info_path, "w"))
+
+
+class RobustPerQueryWorker:
+    def __init__(self, generator, out_path):
+        self.out_path = out_path
+        self.gen = generator
+        self.qid_list = get_robust_qid_list()
+
+    def work(self, job_id):
+        qid = self.qid_list[job_id]
+        out_path = os.path.join(self.out_path, str(job_id))
+        max_inst_per_job = 1000 * 1000
+        base = job_id * max_inst_per_job
+        data_id_manager = DataIDManager(base, max_inst_per_job)
+        insts = self.gen.generate([str(qid)], data_id_manager)
         self.gen.write(insts, out_path)
 
         info_dir = self.out_path + "_info"

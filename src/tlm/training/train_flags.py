@@ -215,3 +215,7 @@ flags.DEFINE_string(
 
 flags.DEFINE_string("report_field", None, "Report this field of the dictionary")
 flags.DEFINE_string("report_condition", None, "Report this condition ")
+
+
+flags.DEFINE_integer("max_query_len", 0, "")
+flags.DEFINE_integer("max_doc_len", 0, "")

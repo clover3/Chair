@@ -113,3 +113,20 @@ def max_idx(l) -> int:
             cur_max_idx = idx
 
     return cur_max_idx
+
+
+def find_where(func: Callable[[A], bool], z: Iterable[A]) -> A:
+    t = (x for x in z if func(x))
+    return next(t)
+
+
+def list_join(l_list: Iterable[Iterable], sep: List) -> List:
+    output = []
+    is_first = True
+    for idx, l in enumerate(l_list):
+        if not is_first:
+            output.extend(sep)
+        output.extend(l)
+        is_first = False
+
+    return output

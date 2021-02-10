@@ -4,7 +4,7 @@ import time
 
 import psutil
 
-from misc_lib import exist_or_mkdir
+from misc_lib import exist_or_mkdir, tprint
 from taskman_client.sync import JsonTiedDict
 from taskman_client.task_proxy import get_task_manager_proxy, get_local_machine_name
 
@@ -32,7 +32,7 @@ class ActiveProcList:
         self.proc_handles.append(proc)
 
     def update_alive(self):
-        print("check_active_tasks")
+        tprint("check_active_tasks")
         task_to_mark_complete = []
         for task_process in self.proc_handles:
             try:
@@ -94,17 +94,17 @@ max_task = 30
 
 def check_wait_tasks(active_proc_list):
     num_tas = active_proc_list.update_alive()
-    print("Number of active task : ", num_tas)
+    tprint("Number of active task : ", num_tas)
 
     while num_tas > max_task:
-        print("Waiting for tasks to be done")
+        tprint("Waiting for tasks to be done")
         time.sleep(60)
         num_tas = active_proc_list.update_alive()
 
 
 def loop():
     last_mask = get_last_mark()
-    print("Last mark : ", last_mask)
+    tprint("Last mark : ", last_mask)
     task_manager_proxy = get_task_manager_proxy()
 
     machine_name = get_local_machine_name()
@@ -112,7 +112,7 @@ def loop():
     def is_machine_busy():
         active_jobs = task_manager_proxy.get_num_active_jobs(machine_name)
         pending_jobs = task_manager_proxy.get_num_pending_jobs(machine_name)
-        print("{} active {} pending".format(active_jobs, pending_jobs))
+        tprint("{} active {} pending".format(active_jobs, pending_jobs))
         return active_jobs + pending_jobs > 10
 
     no_job_time = 0
@@ -124,7 +124,7 @@ def loop():
             last_scheduled_job_id = get_new_job_id() - 1
             remaining_jobs = last_scheduled_job_id - job_id
             while is_machine_busy():
-                print("Sleeping for jobs to be done. Remaining jobs : {}".format(remaining_jobs))
+                tprint("Sleeping for jobs to be done. Remaining jobs : {}".format(remaining_jobs))
                 time.sleep(10)
             execute(job_id)
             no_job_time = 0
@@ -134,10 +134,10 @@ def loop():
             time.sleep(5)
         else:
             no_job_time += 10
-            print("no job time: ", no_job_time)
+            tprint("no job time: ", no_job_time)
             time.sleep(10)
 
-    print("Terminating")
+    tprint("Terminating")
 
 
 def mark(job_id):
@@ -151,7 +151,7 @@ def execute(job_id):
                      stderr=out,
                      preexec_fn=preexec_function
                      )
-    print("Executed job {} .  pid={}".format(job_id, p.pid))
+    tprint("Executed job {} .  pid={}".format(job_id, p.pid))
     return p
 
 
@@ -159,4 +159,4 @@ if __name__ == "__main__":
     try:
         loop()
     except KeyboardInterrupt:
-        print("Terminating with Keyboard interrupt")
+        tprint("Terminating with Keyboard interrupt")

@@ -913,3 +913,23 @@ def input_fn_builder_vector_ck(flags, config):
         return format_dataset_no_shuffle(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
 
     return input_fn
+
+
+def input_fn_query_doc(input_files,
+                       flags,
+                       is_training,
+                       num_cpu_threads=4):
+
+    def input_fn(params):
+        """The actual input function."""
+        batch_size = params["batch_size"]
+        name_to_features = {
+                "query": tf.io.FixedLenFeature([flags.max_query_len], tf.int64),
+                "doc": tf.io.FixedLenFeature([flags.max_doc_len], tf.int64),
+                "doc_mask": tf.io.FixedLenFeature([flags.max_doc_len], tf.int64),
+                "label_ids": tf.io.FixedLenFeature([1], tf.int64),
+                "data_id": tf.io.FixedLenFeature([1], tf.int64),
+        }
+        return format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+
+    return input_fn

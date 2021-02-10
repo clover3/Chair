@@ -2,7 +2,8 @@ import os
 import random
 import shutil
 import time
-from collections import Counter, OrderedDict
+from _testcapi import INT_MAX
+from collections import Counter, OrderedDict, defaultdict
 from time import gmtime, strftime
 from typing import Iterable, TypeVar, Callable, Dict, List, Any, Tuple
 
@@ -11,15 +12,18 @@ from base_type import FilePath
 A = TypeVar('A')
 B = TypeVar('B')
 
+
 def average(l):
     if len(l) == 0:
         return 0
     return sum(l) / len(l)
 
 
-def tprint(text):
+def tprint(*arg):
     tim_str = strftime("%H:%M:%S", gmtime())
-    print("{} : {}".format(tim_str, text))
+    all_text = " ".join(str(t) for t in arg)
+    print("{} : {}".format(tim_str, all_text))
+
 
 class TimeEstimator:
     def __init__(self, total_repeat, name = "", sample_size = 10):
@@ -183,6 +187,8 @@ def pair_shuffle(l):
         result.append(b)
     return result
 
+
+
 class MovingWindow:
     def __init__(self, window_size):
         self.window_size = window_size
@@ -201,6 +207,37 @@ class MovingWindow:
             return 0
         else:
             return average(self.history)
+
+
+class Averager:
+    def __init__(self):
+        self.history = []
+
+    def append(self, val):
+        self.history.append(val)
+
+    def get_average(self):
+        if not self.history:
+            return 0
+        else:
+            return average(self.history)
+
+
+class NamedAverager:
+    def __init__(self):
+        self.avg_dict = defaultdict(Averager)
+
+    def __getitem__(self, key):
+        return self.avg_dict[key]
+
+    def get_average_dict(self):
+        d_out = {}
+        for key, averager in self.avg_dict.items():
+            d_out[key] = averager.get_average()
+        return d_out
+
+
+
 
 
 def get_first(x):
@@ -466,6 +503,8 @@ class DataIDManager:
         self.id_idx += 1
         if self.id_idx == self.max_idx:
             print("WARNING id idx over maximum", self.max_idx)
+        if self.id_idx >= INT_MAX:
+            raise IndexError("id idx is larger than INT_MAX", self.max_idx)
         return idx
 
 

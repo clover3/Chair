@@ -62,7 +62,6 @@ def parse_robust04_desc(q_path) -> Dict[str, str]:
                 state = STATE_DEF
             else:
                 desc += line
-    print("Total of {} queries".format(len(queries)))
     return queries
 
 
