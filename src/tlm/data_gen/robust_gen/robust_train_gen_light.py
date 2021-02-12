@@ -42,6 +42,11 @@ class RobustGenLight(RobustGenCommon):
             for doc_id in target_docs:
                 for tas in self.encoder.encode(query_id, doc_id):
                     label = 1 if doc_id in judgement and judgement[doc_id] > 0 else 0
+                    # if label:
+                    #     bprint(" -> Label={}".format(label))
+                    #     bflush()
+                    # else:
+                    #     bempty()
                     candidate = QCKCandidate(doc_id, "")
                     info = {
                         'query': get_light_qckquery(qck_query),

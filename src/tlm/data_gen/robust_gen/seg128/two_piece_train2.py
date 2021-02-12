@@ -9,10 +9,10 @@ from tlm.data_gen.robust_gen.seg_lib.segment_composer import TwoPieceSegmentComp
 
 def main():
     max_seq_length = 128
-    encoder = TwoPieceSegmentComposer(max_seq_length)
+    encoder = TwoPieceSegmentComposer(max_seq_length, True)
     worker_factory = partial(RobustPerQueryWorker, RobustTrainGenLight(encoder, max_seq_length))
     num_jobs = 250
-    runner = JobRunner(job_man_dir, num_jobs-1, "robust_two_piece", worker_factory)
+    runner = JobRunner(job_man_dir, num_jobs-1, "robust_two_piece2", worker_factory)
     runner.start()
 
 

@@ -5,6 +5,7 @@ from arg.qck.prediction_reader import load_combine_info_jsons
 from cpath import at_output_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import find_where
+from misc_lib import two_digit_float, str_float_list
 from tlm.data_gen.robust_gen.seg_lib.seg_score_common import ScoredPieceFromPair, OutputViewer, get_probs, \
     get_piece_scores
 
@@ -101,3 +102,28 @@ class PieceScoreParser:
 class Piece(NamedTuple):
     st: int
     ed: int
+
+
+class ScoredInterval(NamedTuple):
+    st: int
+    ed: int
+    piece_scores: List[float]
+    location_score: float
+    score: float
+
+    def __str__(self):
+        return str((self.st, self.ed)) \
+               + " " + str_float_list(self.piece_scores) \
+               + " " + two_digit_float(self.location_score)
+
+
+class PiecewiseSegment(NamedTuple):
+    piece_list: List[ScoredInterval]
+    score: float
+
+    def __str__(self):
+        text = ""
+        for piece in self.piece_list:
+            text += str(piece) + " "
+        return text
+
