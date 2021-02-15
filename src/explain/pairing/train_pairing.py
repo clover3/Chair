@@ -7,17 +7,14 @@ import numpy as np
 import tensorflow as tf
 
 from evals.basic_func import get_acc_prec_recall
-from explain.explain_model import CrossEntropyModeling, CorrelationModeling
 from explain.nli_common import save_fn_factory
-from explain.pairing.match_predictor import MatchPredictor
+from explain.pairing.lms_model import LMSModel
+from explain.pairing.match_predictor import LMSConfigI
 from misc_lib import average
-from models.transformer.transformer_cls import transformer_pooled
 from tf_util.tf_logging import tf_logging
 from trainer.model_saver import setup_summary_writer
-from trainer.multi_gpu_support import get_multiple_models, get_avg_loss, get_avg_tensors_from_models, get_train_op, \
-    get_batch2feed_dict_for_multi_gpu, get_concat_tensors_from_models, get_concat_tensors_list_from_models
 from trainer.tf_module import step_runner
-from trainer.tf_train_module import get_train_op2, init_session
+from trainer.tf_train_module import init_session
 
 
 class NLIPairingTrainConfig:
@@ -27,6 +24,28 @@ class NLIPairingTrainConfig:
     max_steps = 100000
     num_gpu = 1
     save_train_payload = False
+
+
+class HPCommon:
+    '''Hyperparameters'''
+    # data
+    # training
+    batch_size = 16  # alias = N
+    lr = 2e-5  # learning rate. In paper, learning rate is adjusted to the global step.
+    logdir = 'logdir'  # log directory
+
+    # model
+    seq_max = 300  # Maximum number of words in a sentence. alias = T.
+    # Feel free to increase this if you are ambitious.
+    hidden_units = 768  # alias = C
+    num_blocks = 12  # number of encoder/decoder blocks
+    num_heads = 12
+    dropout_rate = 0.1
+    sinusoid = False  # If True, use sinusoid. If false, positional embedding.
+    intermediate_size = 3072
+    vocab_size = 30522
+    type_vocab_size = 2
+    num_classes = 3
 
 
 def find_padding(input_mask):
@@ -142,55 +161,15 @@ def eval_fn_factory(sess, dev_batches,
     return avg_loss
 
 
-def train_pairing(hparam, train_config, save_dir,
-                  data,
-                  tags, modeling_option, init_fn,
-                  ):
+def train_LMS(bert_hp, train_config, lms_config: LMSConfigI, save_dir, nli_data, modeling_option, init_fn):
     tf_logging.info("train_pairing ENTRY")
+    train_batches, dev_batches = nli_data
+
     max_steps = train_config.max_steps
     num_gpu = train_config.num_gpu
-    train_batches, dev_batches = data
 
-    ex_modeling_class = {
-        'ce': CrossEntropyModeling,
-        'co': CorrelationModeling
-    }[modeling_option]
-    target_idx = 2
-
-    def build_model():
-        main_model = transformer_pooled(hparam, train_config.vocab_size)
-        ex_model = ex_modeling_class(main_model.model.sequence_output, hparam.seq_max, len(tags),
-                                     main_model.batch2feed_dict)
-
-        match_predictor = MatchPredictor(main_model, ex_model, target_idx, hparam.per_layer_component)
-        return main_model, ex_model, match_predictor
-
-    if num_gpu == 1:
-        tf_logging.info("Using single GPU")
-        task_model_, ex_model_, match_predictor = build_model()
-        loss_tensor = match_predictor.loss
-        per_layer_loss = match_predictor.all_losses
-        with tf.variable_scope("match_optimizer"):
-            train_cls = get_train_op2(match_predictor.loss, hparam.lr, "adam", max_steps)
-        batch2feed_dict = task_model_.batch2feed_dict
-        logits = task_model_.logits
-        ex_score_tensor = ex_model_.get_ex_scores(target_idx)
-        per_layer_logit_tensor = match_predictor.per_layer_logits
-    else:
-        main_models, ex_models, match_predictors = zip(*get_multiple_models(build_model, num_gpu))
-        loss_tensor = get_avg_loss(match_predictors)
-        per_layer_loss = get_avg_tensors_from_models(match_predictors, lambda match_predictor: match_predictor.all_losses)
-        with tf.variable_scope("match_optimizer"):
-            train_cls = get_train_op([m.loss for m in match_predictors], hparam.lr, max_steps)
-        batch2feed_dict = get_batch2feed_dict_for_multi_gpu(main_models)
-        logits = get_concat_tensors_from_models(main_models, lambda model: model.logits)
-        def get_loss_tensor(model):
-            t = tf.expand_dims(tf.stack(model.get_losses()), 0)
-            return t
-        ex_score_tensor = get_concat_tensors_from_models(ex_models, lambda model: model.get_ex_scores(target_idx))
-        per_layer_logit_tensor = \
-            get_concat_tensors_list_from_models(match_predictors, lambda model: model.per_layer_logits)
-
+    lms_model = LMSModel(modeling_option, bert_hp, lms_config, num_gpu)
+    train_cls = lms_model.get_train_op(bert_hp.lr, max_steps)
     global_step = tf.train.get_or_create_global_step()
 
     run_name = os.path.basename(save_dir)
@@ -206,9 +185,20 @@ def train_pairing(hparam, train_config, save_dir,
         step, = sess.run([global_step])
         return step
 
-    train_classification = partial(train_fn_factory, sess, loss_tensor, per_layer_loss, train_cls, batch2feed_dict)
-    eval_acc = partial(eval_fn_factory, sess, dev_batches[:20], loss_tensor, per_layer_loss, ex_score_tensor,
-                       per_layer_logit_tensor, global_step, batch2feed_dict, test_writer)
+    train_classification = partial(train_fn_factory,
+                                   sess,
+                                   lms_model.loss_tensor,
+                                   lms_model.per_layer_loss,
+                                   train_cls,
+                                   lms_model.batch2feed_dict)
+    eval_acc = partial(eval_fn_factory, sess, dev_batches[:20],
+                       lms_model.loss_tensor,
+                       lms_model.per_layer_loss,
+                       lms_model.ex_score_tensor,
+                       lms_model.per_layer_logit_tensor,
+                       global_step,
+                       lms_model.batch2feed_dict,
+                       test_writer)
 
     save_fn = partial(save_fn_factory, sess, save_dir, global_step)
     init_step,  = sess.run([global_step])
@@ -233,23 +223,3 @@ def train_pairing(hparam, train_config, save_dir,
     return save_fn()
 
 
-class HPCommon:
-    '''Hyperparameters'''
-    # data
-    # training
-    batch_size = 16  # alias = N
-    lr = 2e-5  # learning rate. In paper, learning rate is adjusted to the global step.
-    logdir = 'logdir'  # log directory
-
-    # model
-    seq_max = 300 # Maximum number of words in a sentence. alias = T.
-    # Feel free to increase this if you are ambitious.
-    hidden_units = 768  # alias = C
-    num_blocks = 12  # number of encoder/decoder blocks
-    num_heads = 12
-    dropout_rate = 0.1
-    sinusoid = False  # If True, use sinusoid. If false, positional embedding.
-    intermediate_size = 3072
-    type_vocab_size = 2
-    num_classes = 3
-    per_layer_component = 'linear'

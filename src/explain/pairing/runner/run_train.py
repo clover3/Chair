@@ -1,8 +1,8 @@
 import sys
 
-import data_generator.NLI.nli_info
 from data_generator.shared_setting import BertNLI
-from explain.pairing.train_pairing import NLIPairingTrainConfig, train_pairing
+from explain.pairing.match_predictor import LMSConfig
+from explain.pairing.train_pairing import NLIPairingTrainConfig, train_LMS
 from explain.runner.nli_ex_param import ex_arg_parser
 from explain.setups import init_fn_generic
 from explain.train_nli import get_nli_data
@@ -28,6 +28,7 @@ class HPCommon:
     intermediate_size = 3072
     type_vocab_size = 2
     num_classes = 3
+    vocab_size = 30522
     per_layer_component = 'linear'
 
 
@@ -48,7 +49,7 @@ def main(start_model_path, start_type, save_dir,
     def init_fn(sess):
         return init_fn_generic(sess, start_type, start_model_path)
 
-    train_pairing(hp, train_config, save_dir, data, data_generator.NLI.nli_info.tags, modeling_option, init_fn)
+    train_LMS(hp, train_config, LMSConfig(), save_dir, data, modeling_option, init_fn)
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
-from arg.qck.token_scoring.collect_score import sigmoid
 from cache import load_from_pickle
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap
 from misc_lib import two_digit_float
+from trainer.np_modules import sigmoid
 from visualize.html_visual import HtmlVisualizer, Cell
 
 
