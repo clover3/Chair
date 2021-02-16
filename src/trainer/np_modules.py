@@ -82,3 +82,8 @@ def numpy_print(arr):
 
 def over_zero(np_arr):
     return np.less(0, np_arr).astype(np.float32)
+
+
+def sigmoid(x):
+    z = 1 / (1 + np.exp(-x))
+    return z

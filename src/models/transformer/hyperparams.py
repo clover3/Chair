@@ -728,4 +728,6 @@ class HPGenEx:
     sinusoid = False  # If True, use sinusoid. If false, positional embedding.
     intermediate_size = 3072
     type_vocab_size = 2
+    vocab_size = 30522
+
 

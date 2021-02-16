@@ -53,7 +53,6 @@ class FirstSegmentAsDoc(EncoderInterface):
         return [(out_tokens, segment_ids)]
 
 
-
 class MultiWindow(EncoderInterface):
     def __init__(self, src_window_size, max_seq_length):
         super(MultiWindow, self).__init__(max_seq_length)
@@ -73,6 +72,33 @@ class MultiWindow(EncoderInterface):
                 break
 
         return [(out_tokens[:self.max_seq_length], out_segment_ids[:self.max_seq_length])]
+
+
+class MultiWindowAllSeg(EncoderInterface):
+    def __init__(self, src_window_size, max_seq_length):
+        super(MultiWindowAllSeg, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+        self.window_size = src_window_size
+        self.all_segment_as_doc = AllSegmentAsDoc(src_window_size)
+
+    def encode(self, query_tokens, tokens):
+        insts = self.all_segment_as_doc.encode(query_tokens, tokens)
+        out_tokens = []
+        out_segment_ids = []
+        for tokens, segment_ids in insts:
+            out_tokens.extend(tokens)
+            out_segment_ids.extend(segment_ids)
+
+            if len(out_tokens) == self.max_seq_length:
+                yield out_tokens, out_segment_ids
+                out_tokens = []
+                out_segment_ids = []
+
+            if len(out_tokens) > self.max_seq_length:
+                assert False
+
+        if out_tokens:
+            yield out_tokens, out_segment_ids
 
 
 class AllSegmentAsDoc(EncoderInterface):
@@ -214,6 +240,7 @@ class GeoSampler(EncoderInterface):
                 insts.append(entry)
         return insts
 
+
 class LeadingN(EncoderInterface):
     def __init__(self, max_seq_length, num_segment):
         super(LeadingN, self).__init__(max_seq_length)
@@ -231,6 +258,28 @@ class LeadingN(EncoderInterface):
             segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
             entry = out_tokens, segment_ids
             insts.append(entry)
+        return insts
+
+
+class FirstEquiSero(EncoderInterface):
+    def __init__(self, max_seq_length, sero_window_size, num_segment):
+        super(FirstEquiSero, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+        self.num_segment = num_segment
+        self.sero_window_size = sero_window_size
+
+    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
+        content_per_window = self.sero_window_size - 3 - len(query_tokens)
+        sero_content_length = content_per_window * 4
+        content_max_len = self.max_seq_length - 3 - len(query_tokens)
+        content_len = min(sero_content_length, content_max_len)
+        insts = []
+        for idx, second_tokens in enumerate(enum_passage(tokens, content_len)):
+            out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
+            segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+            entry = out_tokens, segment_ids
+            insts.append(entry)
+            break
         return insts
 
 

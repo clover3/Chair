@@ -5,6 +5,8 @@ def run_job(sh_format_path, arg_map):
 
     content = open(sh_format_path, "r").read()
     for key, arg_val in arg_map.items():
+        if key not in content:
+            print("WARNING key {} is not found".format(key))
         content = content.replace(key, arg_val)
 
     sh_path, job_id = get_next_sh_path_and_job_id()

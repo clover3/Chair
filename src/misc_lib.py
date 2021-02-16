@@ -404,7 +404,7 @@ class DictValueAverage:
     def avg(self, k):
         return self.acc_dict[k] / self.cnt_dict[k]
 
-    def all_average(self):
+    def all_average(self) -> Dict:
         output = {}
         for k, v in self.cnt_dict.items():
             output[k] = self.avg(k)
@@ -475,6 +475,10 @@ class DataIDGen:
 
 def two_digit_float(f):
     return "{0:.2f}".format(f)
+
+
+def str_float_list(f_list: List[float]):
+    return "[{}]".format(" ".join(map(two_digit_float, f_list)))
 
 
 def timed_lmap(func: Callable[[A], B],
@@ -630,3 +634,51 @@ def print_dict_tab(d):
 
 # --- Dict related methods END ---
 
+
+class BufferedWriter:
+    def __init__(self):
+        self.buffer = ""
+
+    def print(self, *args):
+        all_text = " ".join(str(t) for t in args)
+        self.buffer += all_text
+
+    def empty(self):
+        self.buffer = ""
+
+    def flush(self):
+        print(self.buffer)
+        self.buffer = ""
+
+
+bw_obj = None
+
+
+def bprint(*args):
+    global bw_obj
+    if bw_obj is None:
+        bw_obj = BufferedWriter()
+    bw_obj.print(*args)
+
+
+def bempty():
+    global bw_obj
+    if bw_obj is None:
+        bw_obj = BufferedWriter()
+    bw_obj.empty()
+
+
+def bflush():
+    global bw_obj
+    if bw_obj is None:
+        bw_obj = BufferedWriter()
+    bw_obj.flush()
+
+
+def int_list_to_str(l):
+    return " ".join(map(str, l))
+
+
+def recover_int_list_str(s):
+    assert type(s) == str
+    return list(map(int, s.split()))

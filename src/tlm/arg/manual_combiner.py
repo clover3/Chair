@@ -55,8 +55,6 @@ class TwoInputModelManualCombine(BertModelInterface):
         x2 = get_dense(n_intermediate_dim)(model_2_first_token)
         x2 = get_dense(n_dim)(x2)
 
-
-
         k1 = get_pos_only_weight_param([1, n_dim], "k1")
         k2 = get_pos_only_weight_param([1, n_dim], "k2")
         B = tf.compat.v1.get_variable(
@@ -80,7 +78,6 @@ class TwoInputModelManualCombine(BertModelInterface):
 
     def get_prob(self):
         return self.prob
-
 
 
 class TwoInputModelManualCombine2(BertModelInterface):
@@ -132,7 +129,6 @@ class TwoInputModelManualCombine2(BertModelInterface):
         x1 = get_dense(n_dim)(x1)
         x2 = get_dense(n_intermediate_dim)(model_2_first_token)
         x2 = get_dense(n_dim)(x2)
-
 
         def get_pos_only_weight_param(shape, name):
             output_weights = tf.compat.v1.get_variable(

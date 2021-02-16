@@ -1,4 +1,3 @@
-
 import tensorflow as tf
 
 from taskman_client.wrapper import report_run
@@ -19,8 +18,11 @@ def main(_):
     model_fn = model_fn_sero_ranking_train(config, train_config, SeroZeta)
     return run_estimator(model_fn, input_fn)
 
+
 if __name__ == "__main__":
     flags.mark_flag_as_required("input_file")
     flags.mark_flag_as_required("output_dir")
     flags.mark_flag_as_required("run_name")
     tf.compat.v1.app.run()
+
+

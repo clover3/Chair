@@ -12,6 +12,7 @@ from estimator_helper.output_reader import join_prediction_with_info
 from exec_lib import run_func_with_config
 from list_lib import lmap, dict_value_map
 from misc_lib import group_by, TimeEstimator
+from trainer.np_modules import sigmoid
 
 
 class QKTokenLevelOutEntry(NamedTuple):
@@ -23,11 +24,6 @@ class QKTokenLevelOutEntry(NamedTuple):
     @classmethod
     def from_dict(cls, d):
         return QKTokenLevelOutEntry(d['logits'], d['input_ids'], d['query'], d['kdp'])
-
-
-def sigmoid(x):
-    z = 1 / (1 + np.exp(-x))
-    return z
 
 
 WordAsID = str

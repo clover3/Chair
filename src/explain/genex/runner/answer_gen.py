@@ -8,7 +8,7 @@ import numpy as np
 from cache import load_from_pickle
 from cpath import output_path
 from explain.genex.load import PackedInstance, load_packed
-from explain.genex.save_to_file import save_score_to_file, DropStop, save_score_to_file_term_level
+from explain.genex.save_to_file import save_score_to_file, DropStop, save_score_to_file_term_level, RandomConfig
 
 arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument("--data_name", help="data_name")
@@ -18,16 +18,19 @@ arg_parser.add_argument("--method_name", )
 def run(args):
     data_name = args.data_name
     method_name = args.method_name
-    score_name = "{}_{}".format(data_name, method_name )
+    score_name = "{}_{}".format(data_name, method_name)
     config = DropStop
     try:
         save_name = "{}_{}.txt".format(score_name, config.name)
         save_path = os.path.join(output_path, "genex", "runs", save_name)
         data: List[PackedInstance] = load_packed(data_name)
-        if score_name == "random":
-            scores: List[np.array] = np.zeros([len(data), 512])
+
+        if method_name == "random":
+            config = RandomConfig
+            scores: List[np.array] = [np.random.random([512])] * len(data)
         else:
             scores: List[np.array] = load_from_pickle(score_name)
+
         if "term_" in method_name:
             save_score_to_file_term_level(data, config, save_path, scores)
         else:

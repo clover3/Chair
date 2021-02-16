@@ -20,6 +20,14 @@ class DropStop:
     name = "1a"
 
 
+class RandomConfig:
+    drop_stopwords = True
+    max_terms = 10
+    reorder = False
+    cut_factor = 0.001
+    name = "1a"
+
+
 class Config2:
     drop_stopwords = False
     max_terms = 10

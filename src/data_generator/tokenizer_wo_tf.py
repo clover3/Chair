@@ -178,6 +178,7 @@ def pretty_tokens(tokens, drop_sharp=False) -> str:
         s += t
     return s
 
+
 class FullTokenizerWarpper(object):
     def __init__(self, vocab_file, do_lower_case=True):
         self.ft = FullTokenizer(vocab_file, do_lower_case)

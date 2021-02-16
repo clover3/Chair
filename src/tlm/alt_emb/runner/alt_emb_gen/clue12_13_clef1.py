@@ -22,6 +22,7 @@ class Worker:
 # on Clueweb12_13B
 # for the words from NLI dev
 
+
 if __name__ == "__main__":
     def worker_gen(out_dir):
         match_tree = load_from_pickle("match_tree_clef1_test")
@@ -29,6 +30,3 @@ if __name__ == "__main__":
 
     runner = JobRunner(sydney_working_dir, 1000, "alt_emb_clef1", worker_gen)
     runner.start()
-
-
-
