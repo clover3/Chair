@@ -21,7 +21,8 @@ def run(args):
     hp = hyperparams.HPGenEx()
     nli_setting = BertNLI()
 
-    if args.method_name in ['deletion_seq', "random", 'idf', 'deletion', 'LIME']:
+    if args.method_name in ['deletion_seq', "random", 'idf', 'deletion', 'LIME',
+                            'term_deletion', 'replace_token', 'term_replace']:
         predictor = baseline_predict
     elif args.method_name in ["elrp", "deeplift", "saliency", "grad*input", "intgrad"]:
         predictor = nli_attribution_predict
