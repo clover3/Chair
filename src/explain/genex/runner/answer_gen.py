@@ -9,6 +9,7 @@ from cache import load_from_pickle
 from cpath import output_path
 from explain.genex.load import PackedInstance, load_packed
 from explain.genex.save_to_file import save_score_to_file, DropStop, save_score_to_file_term_level, RandomConfig
+from misc_lib import exist_or_mkdir
 
 arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument("--data_name", help="data_name")
@@ -22,7 +23,9 @@ def run(args):
     config = DropStop
     try:
         save_name = "{}_{}.txt".format(score_name, config.name)
-        save_path = os.path.join(output_path, "genex", "runs", save_name)
+        save_dir = os.path.join(output_path, "genex", "runs")
+        exist_or_mkdir(save_dir)
+        save_path = os.path.join(save_dir, save_name)
         data: List[PackedInstance] = load_packed(data_name)
 
         if method_name == "random":

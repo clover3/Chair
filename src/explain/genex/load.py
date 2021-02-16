@@ -5,9 +5,9 @@ from typing import NamedTuple
 from cpath import data_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap
+
 # tdlt_path = "/mnt/scratch/rahimi/div-exp/data/TDLT/Passage/test_data_filtered/q_rel_passage_content_more_than_100_toks.txt"
 # clue_path = "/mnt/scratch/rahimi/div-exp/data/Clueweb/top_50_length_200_600_justext/final_output_manual/query_rel_doc_text_256.txt"
-from log_lib import log_variables
 
 clue_path = os.path.join(data_path, "genex", "clue.txt")
 tdlt_path = os.path.join(data_path, "genex", "tdlt.txt")
@@ -74,7 +74,6 @@ class PackedInstance(NamedTuple):
         segments_ids = [0] * a_len + [1] * b_len + [0] * pad_len
 
         idx_mapping = [-1] + ti.idx_mapping
-        log_variables(input_ids, input_mask, segments_ids)
         return PackedInstance(ti.word_tokens, ti.subword_tokens, idx_mapping,
                               input_ids, input_mask, segments_ids)
 
