@@ -24,6 +24,7 @@ def run(args):
     try:
         save_name = "{}_{}.txt".format(score_name, config.name)
         save_dir = os.path.join(output_path, "genex", "runs")
+        exist_or_mkdir(os.path.join(output_path, "genex"))
         exist_or_mkdir(save_dir)
         save_path = os.path.join(save_dir, save_name)
         data: List[PackedInstance] = load_packed(data_name)
