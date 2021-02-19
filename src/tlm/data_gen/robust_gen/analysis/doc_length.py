@@ -13,6 +13,7 @@ def get_doc_length_counter():
         counter[len(tokens)] += 1
     return counter
 
+
 def get_doc_length_counter_from_pickle():
     return load_from_pickle("robust_doc_length_counter")
 
@@ -21,7 +22,7 @@ def get_doc_length_counter_from_pickle():
 def main():
     # counter = get_doc_length_counter()
     # save_to_pickle(counter, "robust_doc_length_counter")
-    counter = get_doc_length_counter_from_pickle()
+    counter: Counter = get_doc_length_counter_from_pickle()
     seg_length = 500
 
     all_keys = list(counter.keys())
@@ -31,15 +32,18 @@ def main():
     for l in all_keys:
         num_seg = ceil_divide(l, seg_length)
         cnt = counter[l]
+        assert type(cnt) == int
         num_seg_count[num_seg] += cnt
 
     num_docs = sum(counter.values())
     acc_portion = 0
     for key in sorted(num_seg_count.keys()):
         cnt = num_seg_count[key]
+        assert type(cnt) == int
         portion = cnt / num_docs
         acc_portion += portion
-        print("{0}\t{1}\t{2:.2f}\t{3:.2f}".format(key, cnt, portion, acc_portion))
+        # print("{0}\t{1}\t{2:.2f}\t{3:.2f}".format(key, cnt, portion, acc_portion))
+        print("{0}\t{1}\t{2:.4f}\t{3:.4f}".format(key, cnt, portion, acc_portion))
 
 
 if __name__ == "__main__":
