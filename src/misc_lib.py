@@ -542,7 +542,9 @@ def enum_passage(tokens: List[Any], window_size: int) -> Iterable[List[Any]]:
         yield second_tokens
 
 
-def enum_passage_overlap(tokens: List[Any], window_size: int, step_size: int) -> Iterable[List[Any]]:
+def enum_passage_overlap(tokens: List[Any], window_size: int,
+                         step_size: int,
+                         break_when_touch_end) -> Iterable[List[Any]]:
     cursor = 0
     while cursor < len(tokens):
         st = cursor
@@ -550,6 +552,8 @@ def enum_passage_overlap(tokens: List[Any], window_size: int, step_size: int) ->
         second_tokens = tokens[st:ed]
         cursor += step_size
         yield second_tokens
+        if break_when_touch_end and ed >= len(tokens):
+            break
 
 
 
@@ -682,3 +686,8 @@ def int_list_to_str(l):
 def recover_int_list_str(s):
     assert type(s) == str
     return list(map(int, s.split()))
+
+
+def readlines_strip(file_path):
+    lines = open(file_path, "r").readlines()
+    return list([l.strip() for l in lines])

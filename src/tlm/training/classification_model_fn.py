@@ -9,7 +9,7 @@ from tlm.model.dual_model_common import dual_model_prefix1, dual_model_prefix2, 
     triple_model_prefix2, triple_model_prefix3
 from tlm.training.assignment_map import get_init_fn_for_two_checkpoints, \
     get_init_fn_for_three_checkpoints, \
-    get_init_fn_for_two_checkpoints_ex, get_init_fn_for_cppnc_start
+    get_init_fn_for_two_checkpoints_ex, get_init_fn_for_cppnc_start, get_init_fn_for_phase2_phase1_remap
 from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments, classification_metric_fn, \
     reweight_zero
 
@@ -175,13 +175,20 @@ def get_init_fn(train_config, tvars):
                                                    train_config.second_init_checkpoint,
                                                    dual_model_prefix2)
         elif train_config.checkpoint_type == "two_checkpoints_cppnc_start":
-                return get_init_fn_for_cppnc_start(train_config,
+            return get_init_fn_for_cppnc_start(train_config,
                                                        tvars,
                                                        train_config.init_checkpoint,
                                                        dual_model_prefix1,
                                                        train_config.second_init_checkpoint,
                                                        dual_model_prefix2)
 
+        elif train_config.checkpoint_type == "two_checkpoints_phase2_to_phase1":
+            return get_init_fn_for_phase2_phase1_remap(train_config,
+                                                           tvars,
+                                                           train_config.init_checkpoint,
+                                                           dual_model_prefix1,
+                                                           train_config.second_init_checkpoint,
+                                                           dual_model_prefix2)
         else:
             if train_config.checkpoint_type == "two_checkpoints_v1_v1":
                 first_from_v1 = True

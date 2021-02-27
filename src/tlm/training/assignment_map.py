@@ -703,6 +703,67 @@ def cppnc_assignment_remap2(tvars, lm_checkpoint):
     return assignment_map, initialized_variable_names
 
 
+def phase2_to_phase1_assignment_remap(tvars, src_checkpoint):
+    tf_logging.debug("get_assignment_map_remap_from_v2")
+    """Compute the union of the current variables and checkpoint variables."""
+    initialized_variable_names = {}
+    assignment_candidate = {}
+    for var in tvars:
+        name = var.name
+        m = re.match("^(.*):\\d+$", name)
+        if m is not None:
+            name = m.group(1)
+        assignment_candidate[name] = var
+
+    def parse_shift_name(name, key, shift_idx):
+        tokens = name.split("/")
+        new_tokens = []
+        for token in tokens:
+            if token.startswith(key):
+                if token == key:
+                    idx = 0
+                else:
+                    idx_str = token[len(key) + 1:]
+                    idx = int(idx_str)
+                new_idx = idx + shift_idx
+
+                assert new_idx >= 0
+                if new_idx == 0:
+                    new_token = key
+                else:
+                    new_token = "_".join([key, str(new_idx)])
+            else:
+                new_token = token
+
+            new_tokens.append(new_token)
+        return "/".join(new_tokens)
+
+    assignment_map = collections.OrderedDict()
+    if src_checkpoint:
+        for x in tf.train.list_variables(src_checkpoint):
+            (old_name, var) = (x[0], x[1])
+            if old_name.startswith(dual_model_prefix2):
+                new_name = old_name.replace(dual_model_prefix2, dual_model_prefix1)
+                if "/dense" in new_name:
+                    new_name = parse_shift_name(new_name, "dense", -37)
+                if "/layer_normalization" in new_name:
+                    new_name = parse_shift_name(new_name, "layer_normalization", -25)
+            elif old_name.startswith("cls_dense_1/"):
+                new_name = old_name.replace("cls_dense_1/", dual_model_prefix1 + "/cls_dense/")
+            else:
+                new_name = None
+
+            if new_name is not None and new_name in assignment_candidate:
+                tf_logging.debug("Vars in checkpoint : %s" % old_name)
+                tf_logging.debug("map to -> : %s" % new_name)
+
+                assignment_map[old_name] = assignment_candidate[new_name]
+                initialized_variable_names[new_name] = 1
+                initialized_variable_names[new_name + ":0"] = 1
+
+    return assignment_map, initialized_variable_names
+
+
 def get_name_key(head_scope, tokens):
     inner_name = "/".join([head_scope] + tokens[1:])
     targ_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", inner_name)
@@ -718,6 +779,25 @@ def get_init_fn_for_cppnc_start(train_config, tvars, init_checkpoint, remap_pref
 
     assignment_map2, initialized_variable_names2 \
         = cppnc_assignment_remap2(tvars, second_init_checkpoint)
+    for k, v in initialized_variable_names2.items():
+        initialized_variable_names[k] = v
+
+    def init_fn():
+        tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+        tf.compat.v1.train.init_from_checkpoint(second_init_checkpoint, assignment_map2)
+
+    return initialized_variable_names, init_fn
+
+
+def get_init_fn_for_phase2_phase1_remap(train_config, tvars, init_checkpoint, remap_prefix, second_init_checkpoint, remap_prefix2):
+    assignment_fn2 = get_assignment_map_remap_from_v1
+
+    assignment_map, initialized_variable_names \
+        = phase2_to_phase1_assignment_remap(tvars, init_checkpoint)
+
+    assignment_map2, initialized_variable_names2 \
+        = assignment_fn2(tvars, remap_prefix2, second_init_checkpoint)
+
     for k, v in initialized_variable_names2.items():
         initialized_variable_names[k] = v
 

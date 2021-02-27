@@ -3,6 +3,7 @@ import pickle
 from typing import Dict, List
 
 from data_generator.job_runner import sydney_working_dir
+from list_lib import left
 
 robust_query_intervals = [(301, 350), (351, 400), (401, 450), (601, 650), (651, 700)]
 
@@ -39,3 +40,10 @@ def load_robust_tokens() -> Dict[str, List[str]]:
     tokens_d = load_robust_tokens_for_train()
     tokens_d.update(load_robust_tokens_for_predict(4))
     return tokens_d
+
+
+def get_robust_splits(split_idx):
+    interval_start_list = left(robust_query_intervals)
+    held_out = interval_start_list[split_idx]
+    train_items = interval_start_list[:split_idx] + interval_start_list[split_idx + 1:]
+    return train_items, held_out

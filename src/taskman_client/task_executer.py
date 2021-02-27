@@ -1,5 +1,7 @@
+import argparse
 import os
 import signal
+import sys
 import time
 
 import psutil
@@ -18,6 +20,11 @@ exist_or_mkdir(log_path)
 
 info_path = os.path.join("task", "info.json")
 task_info = JsonTiedDict(info_path)
+
+arg_parser = argparse.ArgumentParser(description='')
+arg_parser.add_argument("--max_job", default=10)
+
+
 
 
 def preexec_function():
@@ -102,7 +109,7 @@ def check_wait_tasks(active_proc_list):
         num_tas = active_proc_list.update_alive()
 
 
-def loop():
+def loop(max_job):
     last_mask = get_last_mark()
     tprint("Last mark : ", last_mask)
     task_manager_proxy = get_task_manager_proxy()
@@ -113,7 +120,7 @@ def loop():
         active_jobs = task_manager_proxy.get_num_active_jobs(machine_name)
         pending_jobs = task_manager_proxy.get_num_pending_jobs(machine_name)
         tprint("{} active {} pending".format(active_jobs, pending_jobs))
-        return active_jobs + pending_jobs > 10
+        return active_jobs + pending_jobs > max_job
 
     no_job_time = 0
     while no_job_time < 1200:
@@ -146,7 +153,7 @@ def mark(job_id):
 
 def execute(job_id):
     out = open(get_log_path(job_id), "w")
-    p = psutil.Popen(["/bin/sh", get_sh_path_for_job_id(job_id)],
+    p = psutil.Popen(["/bin/bash", get_sh_path_for_job_id(job_id)],
                      stdout=out,
                      stderr=out,
                      preexec_fn=preexec_function
@@ -157,6 +164,8 @@ def execute(job_id):
 
 if __name__ == "__main__":
     try:
-        loop()
+        args = arg_parser.parse_args(sys.argv[1:])
+        max_job = int(args.max_job)
+        loop(max_job)
     except KeyboardInterrupt:
         tprint("Terminating with Keyboard interrupt")

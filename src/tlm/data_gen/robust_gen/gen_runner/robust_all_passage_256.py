@@ -3,7 +3,7 @@ from functools import partial
 from data_generator.job_runner import JobRunner
 from epath import job_man_dir
 from tlm.data_gen.adhoc_datagen import RobustPairwiseTrainGen, AllSegmentAsDoc
-from tlm.data_gen.robust_gen.robust_all_passage import RobustWorker
+from tlm.data_gen.robust_gen.gen_runner.robust_all_passage import RobustWorker
 
 
 def generate_robust_all_seg_for_train():

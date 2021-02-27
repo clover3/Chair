@@ -4,7 +4,8 @@ from typing import List
 from typing import NamedTuple
 
 from data_generator.create_feature import create_int_feature
-from tlm.data_gen.base import get_basic_input_feature, get_basic_input_feature_as_list
+from tlm.data_gen.base import get_basic_input_feature, get_basic_input_feature_as_list, \
+    get_basic_input_feature_as_list_all_ids, ordered_dict_from_input_segment_mask_ids
 
 
 class ClassificationInstance(NamedTuple):
@@ -29,6 +30,13 @@ class ClassificationInstanceWDataID(NamedTuple):
         return ClassificationInstanceWDataID(tas.tokens, tas.seg_ids, label, data_id)
 
 
+class InstAsInputIds(NamedTuple):
+    input_ids: List[int]
+    seg_ids: List[int]
+    label: int
+    data_id: int
+
+
 class QueryDocInstance(NamedTuple):
     query_tokens: List[str]
     doc_tokens: List[str]
@@ -47,6 +55,16 @@ def encode_classification_instance_w_data_id(tokenizer, max_seq_length, inst: Cl
     feature['label_ids'] = create_int_feature([inst.label])
     feature['data_id'] = create_int_feature([inst.data_id])
     return feature
+
+
+def encode_inst_as_input_ids(max_seq_length, inst: InstAsInputIds) -> OrderedDict:
+    # this pads input_ids
+    input_ids, input_mask, segment_ids = get_basic_input_feature_as_list_all_ids(inst.input_ids, inst.seg_ids, max_seq_length)
+    feature = ordered_dict_from_input_segment_mask_ids(input_ids, input_mask, segment_ids)
+    feature['label_ids'] = create_int_feature([inst.label])
+    feature['data_id'] = create_int_feature([inst.data_id])
+    return feature
+
 
 
 def encode_query_doc_instance(tokenizer, doc_token_length, inst: QueryDocInstance) -> OrderedDict:

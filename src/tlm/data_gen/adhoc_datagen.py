@@ -35,6 +35,26 @@ class EncoderInterface(ABC):
         pass
 
 
+class EncoderTokenCounterInterface(ABC):
+    def __init__(self, max_seq_length):
+        pass
+
+    @abstractmethod
+    def count(self, query, tokens) -> int:
+        # returns tokens, segmend_ids
+        pass
+
+
+class EncoderTokenCounter2Interface(ABC):
+    def __init__(self, max_seq_length):
+        pass
+
+    @abstractmethod
+    def count(self, query, tokens) -> List[Tuple[List, List, int]]:
+        # returns tokens, segmend_ids
+        pass
+
+
 def get_combined_tokens_segment_ids(query_tokens, second_tokens) -> Tuple[Tokens, SegmentIDs]:
     out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
     segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
@@ -72,6 +92,55 @@ class MultiWindow(EncoderInterface):
                 break
 
         return [(out_tokens[:self.max_seq_length], out_segment_ids[:self.max_seq_length])]
+
+
+class MultiWindowTokenCount(EncoderTokenCounterInterface):
+    def __init__(self, src_window_size, max_seq_length):
+        super(MultiWindowTokenCount, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+        self.window_size = src_window_size
+        self.all_segment_as_doc = AllSegmentAsDocTokenCounter(src_window_size)
+
+    def count(self, query_tokens, tokens):
+        insts = self.all_segment_as_doc.count(query_tokens, tokens)
+        out_tokens = []
+        out_segment_ids = []
+        num_content_tokens_acc = 0
+        for tokens, segment_ids, num_content_tokens in insts:
+            out_tokens.extend(tokens)
+            out_segment_ids.extend(segment_ids)
+            num_content_tokens_acc += num_content_tokens
+            if len(out_tokens) > self.max_seq_length:
+                break
+
+        return num_content_tokens_acc
+
+
+
+class MultiWindowOverlap(EncoderInterface):
+    def __init__(self, src_window_size, max_seq_length):
+        super(MultiWindowOverlap, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+        self.window_size = src_window_size
+        step_size = int(self.window_size / 2)
+        self.sub_encoder = OverlappingSegments(src_window_size, step_size)
+
+    def encode(self, query_tokens, tokens):
+        insts = self.sub_encoder.encode(query_tokens, tokens)
+        out_tokens = []
+        out_segment_ids = []
+        for idx, (tokens, segment_ids) in enumerate(insts):
+            out_tokens.extend(tokens)
+            out_segment_ids.extend(segment_ids)
+
+            if idx + 1 < len(insts):
+                assert len(segment_ids) == self.window_size
+
+            if len(out_tokens) > self.max_seq_length:
+                break
+
+        return [(out_tokens[:self.max_seq_length], out_segment_ids[:self.max_seq_length])]
+
 
 
 class MultiWindowAllSeg(EncoderInterface):
@@ -117,6 +186,23 @@ class AllSegmentAsDoc(EncoderInterface):
         return insts
 
 
+class AllSegmentAsDocTokenCounter(EncoderTokenCounter2Interface):
+    def __init__(self, max_seq_length):
+        super(AllSegmentAsDocTokenCounter, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+
+    def count(self, query_tokens, tokens) -> List[Tuple[List, List, int]]:
+        content_len = self.max_seq_length - 3 - len(query_tokens)
+        insts = []
+        for second_tokens in enum_passage(tokens, content_len):
+            out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
+            segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+            entry = out_tokens, segment_ids, len(second_tokens)
+            insts.append(entry)
+        return insts
+
+
+
 class OverlappingSegments(EncoderInterface):
     def __init__(self, max_seq_length, step_size):
         super(OverlappingSegments, self).__init__(max_seq_length)
@@ -126,7 +212,7 @@ class OverlappingSegments(EncoderInterface):
     def encode(self, query_tokens, tokens) -> List[Tuple[Tokens, SegmentIDs]]:
         content_len = self.max_seq_length - 3 - len(query_tokens)
         insts = []
-        for second_tokens in enum_passage_overlap(tokens, content_len, self.step_size):
+        for second_tokens in enum_passage_overlap(tokens, content_len, self.step_size, True):
             out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
             segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
             entry = out_tokens, segment_ids
@@ -763,3 +849,86 @@ class RobustTrainGenSelectedVirtualCounter:
 
     def write(self, insts: List[ClassificationInstanceWDataID], out_path: str):
         pass
+
+
+class RobustTrainTextSize:
+    def __init__(self, encoder, max_seq_length, query_type="title", neg_k=1000):
+        self.data = self.load_tokens()
+        qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
+        self.judgement = load_qrels_structured(qrel_path)
+        self.max_seq_length = max_seq_length
+        self.queries = load_robust_04_query(query_type)
+        self.encoder = encoder
+        self.tokenizer = get_tokenizer()
+        self.galago_rank = load_bm25_best()
+        self.neg_k = neg_k
+
+    def load_tokens(self):
+        tokens_d = load_robust_tokens_for_train()
+        tokens_d.update(load_robust_tokens_for_predict(4))
+        return tokens_d
+
+    def count(self, query_list) -> List[int]:
+        neg_k = self.neg_k
+        leng_list = []
+        for query_id in query_list:
+            if query_id not in self.judgement:
+                continue
+
+            judgement = self.judgement[query_id]
+            query = self.queries[query_id]
+            query_tokens = self.tokenizer.tokenize(query)
+
+            ranked_list = self.galago_rank[query_id]
+            ranked_list = ranked_list[:neg_k]
+
+            target_docs = set(judgement.keys())
+            target_docs.update([e.doc_id for e in ranked_list])
+            for doc_id in target_docs:
+                tokens = self.data[doc_id]
+                n_tokens = self.encoder.count(query_tokens, tokens)
+                leng_list.append(n_tokens)
+
+        return leng_list
+
+
+
+class RobustTrainWordCount:
+    def __init__(self, encoder, max_seq_length, query_type="title", neg_k=1000):
+        self.data = self.load_tokens()
+        qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
+        self.judgement = load_qrels_structured(qrel_path)
+        self.max_seq_length = max_seq_length
+        self.queries = load_robust_04_query(query_type)
+        self.encoder = encoder
+        self.tokenizer = get_tokenizer()
+        self.galago_rank = load_bm25_best()
+        self.neg_k = neg_k
+
+    def load_tokens(self):
+        tokens_d = load_robust_tokens_for_train()
+        tokens_d.update(load_robust_tokens_for_predict(4))
+        return tokens_d
+
+    def count(self, query_list) -> List[int]:
+        neg_k = self.neg_k
+        leng_list = []
+        for query_id in query_list:
+            if query_id not in self.judgement:
+                continue
+
+            judgement = self.judgement[query_id]
+            query = self.queries[query_id]
+            query_tokens = self.tokenizer.tokenize(query)
+
+            ranked_list = self.galago_rank[query_id]
+            ranked_list = ranked_list[:neg_k]
+
+            target_docs = set(judgement.keys())
+            target_docs.update([e.doc_id for e in ranked_list])
+            for doc_id in target_docs:
+                tokens = self.data[doc_id]
+                n_tokens = self.encoder.count(query_tokens, tokens)
+                leng_list.append(n_tokens)
+
+        return leng_list

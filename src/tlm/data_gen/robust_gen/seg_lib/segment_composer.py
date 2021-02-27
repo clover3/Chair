@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
 from typing import List, Iterable, Dict, Tuple
 
+from tlm.data_gen.robust_gen.seg_lib.piece_score_parser import PieceScoreParser, Piece, ScoredInterval, PiecewiseSegment
+
 from data_generator.data_parser.robust import load_robust_04_query
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap, lflatten
 from misc_lib import ceil_divide, get_second
 from tlm.data_gen.classification_common import TokensAndSegmentIds
-from tlm.data_gen.robust_gen.seg_lib.piece_score_parser import PieceScoreParser, Piece, ScoredInterval, PiecewiseSegment
 from tlm.data_gen.robust_gen.seg_lib.seg_score_common import ScoredPieceFromPair
 from tlm.robust.load import get_robust_qid_list
 
@@ -216,6 +217,3 @@ class ManyTwoPieceSegmentComposer(IDBasedEncoder):
             return map(format_as_tas, two_piece_list)
         except KeyError:
             return []
-
-
-

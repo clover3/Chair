@@ -27,7 +27,7 @@ def main():
     pred_path = sys.argv[2]
     save_name = sys.argv[3]
     score_type = "softmax"
-    info = load_combine_info_jsons(info_path)
+    info = load_combine_info_jsons(info_path, False, False)
     score_d = summarize_score(info, pred_path, score_type)
 
     save_to_pickle(score_d, save_name)

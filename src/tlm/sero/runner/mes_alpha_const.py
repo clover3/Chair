@@ -10,7 +10,6 @@ def main(_):
     return run_mes_variant(MES_alpha_const)
 
 
-
 if __name__ == "__main__":
     flags.mark_flag_as_required("input_file")
     flags.mark_flag_as_required("model_config_file")

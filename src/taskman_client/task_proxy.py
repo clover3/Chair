@@ -181,6 +181,8 @@ def get_applicable_tpu_condition():
         condition = "v3"
     elif machine == "instance-4":
         condition = "v3"
+    elif machine == "instance-5":
+        condition = "v2"
     else:
         condition = None
     return condition

@@ -6,7 +6,7 @@ DocID = str
 QRelsFlat = Dict[QueryID, List[Tuple[DocID, int]]]
 QRelsDict = Dict[QueryID, Dict[DocID, int]]
 
-
+QRelsSubtopic = Dict[QueryID, List[Tuple[DocID, str, int]]]
 
 
 class TrecRankedListEntry(NamedTuple):

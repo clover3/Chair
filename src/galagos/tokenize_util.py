@@ -12,6 +12,12 @@ def clean_tokenize_str_to_tokens(raw_str: str) -> List[str]:
     return terms
 
 
+def clean_text_for_query(raw_str: str) -> str:
+    terms = clean_query(nltk.word_tokenize(raw_str))
+    terms = " ".join([t.lower() for t in terms])
+    return terms
+
+
 def drop_words(q_terms, words):
     q_terms = list([t for t in q_terms if t not in words])
     return q_terms

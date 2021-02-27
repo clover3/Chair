@@ -6,17 +6,20 @@ from misc_lib import get_dir_files
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 
 
-def load_combine_info_jsons(dir_path, silent=False) -> Dict:
+def load_combine_info_jsons(dir_path, silent=False, filter_by_extension=True) -> Dict:
     if os.path.isdir(dir_path):
         d = {}
         for file_path in get_dir_files(dir_path):
-            if file_path.endswith(".info"):
+            if not filter_by_extension or file_path.endswith(".info"):
                 j = json.load(open(file_path, "r", encoding="utf-8"))
                 d.update(j)
+        if len(d) == 0:
+            raise FileNotFoundError(dir_path)
     else:
         d = json.load(open(dir_path, "r"))
     if not silent:
         print("{} items loaded".format(len(d.keys())))
+
     return d
 
 

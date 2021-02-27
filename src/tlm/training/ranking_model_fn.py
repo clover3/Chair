@@ -159,3 +159,49 @@ def model_fn_rank_pred(FLAGS):
 
     return model_fn
 
+
+def model_fn_rank_pred_no_input_ids(FLAGS):
+    train_config = TrainConfigEx.from_flags(FLAGS)
+    bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
+    modeling_opt = FLAGS.modeling
+
+    def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
+        tf_logging.info("model_fn_sero_classification")
+        """The `model_fn` for TPUEstimator."""
+        log_features(features)
+        input_ids = features["input_ids"]
+        input_mask = features["input_mask"]
+        segment_ids = features["segment_ids"]
+
+        is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+        # Updated
+        model = BertModel(
+            config=bert_config,
+            is_training=is_training,
+            input_ids=input_ids,
+            input_mask=input_mask,
+            token_type_ids=segment_ids,
+            use_one_hot_embeddings=train_config.use_one_hot_embeddings,
+        )
+        pooled_output = model.get_pooled_output()
+        if is_training:
+            pooled_output = dropout(pooled_output, 0.1)
+
+        logits = get_prediction_structure(modeling_opt, pooled_output)
+        loss = 0
+
+        tvars = tf.compat.v1.trainable_variables()
+        assignment_fn = assignment_map.get_bert_assignment_map
+        initialized_variable_names, init_fn = get_init_fn(tvars, train_config.init_checkpoint, assignment_fn)
+        scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
+        log_var_assignments(tvars, initialized_variable_names)
+
+        predictions = {
+            "logits": logits,
+            "data_id": features["data_id"]
+        }
+        output_spec = rank_predict_estimator_spec(logits, mode, scaffold_fn, predictions)
+        return output_spec
+
+    return model_fn
+
