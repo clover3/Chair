@@ -19,6 +19,21 @@ def get_recall_at_k(k):
     return fn
 
 
+def get_ndcg_at_k(k):
+    from sklearn.metrics import ndcg_score
+    def fn(ranked_list: List[TrecRankedListEntry], true_gold: List[str]):
+        pred_scores = []
+        true_label = []
+        for e in ranked_list:
+            pred_scores.append(e.score)
+            label = 1 if e.doc_id in true_gold else 0
+            true_label.append(label)
+
+        return ndcg_score([true_label], [pred_scores], k=k)
+    return fn
+
+
+
 def get_p_at_k(k):
     def fn(ranked_list: List[TrecRankedListEntry], true_gold: List[str]):
         seen_doc_id = set()
@@ -62,4 +77,8 @@ def get_metric_fn(input_text):
 
     if input_text.lower() == "map":
         return get_ap
+    elif input_text.startswith("ndcg"):
+        k = int(input_text[len("ndcg"):])
+        return get_ndcg_at_k(k)
+
     assert False

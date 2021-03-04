@@ -1,17 +1,19 @@
 import collections
 import json
 import os
-from typing import List, Iterable
+from typing import List, Iterable, Dict
 from typing import NamedTuple
 
 from cache import load_pickle_from
 from estimator_helper.output_reader import join_prediction_with_info
+from list_lib import left
 from misc_lib import group_by, find_max_idx, tprint, exist_or_mkdir, DataIDManager
 from scipy_aux import logit_to_score_softmax
 from tf_util.record_writer_wrap import write_records_w_encode_fn
+from tlm.data_gen.base import pad0
 from tlm.data_gen.classification_common import InstAsInputIds, encode_inst_as_input_ids
 from tlm.data_gen.robust_gen.data_info_compression import decompress_seq
-from tlm.robust.load import get_robust_splits
+from tlm.robust.load import get_robust_splits, robust_query_intervals
 
 
 class SelectedSegment(NamedTuple):
@@ -32,7 +34,7 @@ class SelectedSegment(NamedTuple):
         }
 
 
-def enum_best_segments(pred_path, info) -> Iterable[SelectedSegment]:
+def enum_best_segments(pred_path, info) -> Iterable[Dict]:
     entries = join_prediction_with_info(pred_path, info)
     grouped = group_by(entries, lambda e: (e['query_id'], e['doc_id']))
 
@@ -45,37 +47,27 @@ def enum_best_segments(pred_path, info) -> Iterable[SelectedSegment]:
         max_idx = find_max_idx(sub_entries, get_score)
 
         selected_raw_entry = sub_entries[max_idx]
-        selected = decompress_entry(selected_raw_entry)
-
-        assert len(selected['input_ids']) == len(selected['seg_ids'])
-        ss = SelectedSegment(selected['input_ids'], selected['seg_ids'],
-                             selected['passage_idx'], selected['label'],
-                             selected['doc_id'], selected['query_id'],
-                             get_score(selected))
-        yield ss
+        yield selected_raw_entry
 
 
 def load_info_from_compressed(pickle_path):
     tprint("loading info pickle")
     output_d = {}
     data = load_pickle_from(pickle_path)
-    tprint("loading info pickle")
+    tprint("decompressing...")
     for data_id, value_d in data.items():
-        new_entry = decompress_entry(value_d)
+        new_entry = decompress_seg_ids_entry(value_d)
         output_d[data_id] = new_entry
     return output_d
 
 
-def decompress_entry(value_d):
-    new_entry = {}
-    for key, value in value_d.items():
-        if key == "seg_ids":
-            new_entry[key] = decompress_seq(value)
-        # elif key == "input_ids":
-        #     new_entry['tokens'] = tokenizer.convert_ids_to_tokens(value)
-        else:
-            new_entry[key] = value
-    return new_entry
+def decompress_seg_ids_entry(value_d):
+    if 'decompressed' in value_d:
+        return value_d
+    raw_seg_id = value_d["seg_ids"]
+    value_d["seg_ids"] = decompress_seq(raw_seg_id)
+    value_d['decompressed'] = True
+    return value_d
 
 
 def save_info(out_path, data_id_manager, job_id):
@@ -85,35 +77,60 @@ def save_info(out_path, data_id_manager, job_id):
     json.dump(data_id_manager.id_to_info, open(info_path, "w"))
 
 
-def generate_selected_training_data(split_no, score_dir, info_dir, max_seq_length, save_dir):
+def generate_selected_training_data_loop(split_no,
+                                         score_dir,
+                                         info_dir,
+                                         max_seq_length,
+                                         save_dir):
     train_items, held_out = get_robust_splits(split_no)
     print(train_items)
     exist_or_mkdir(save_dir)
     for key in train_items:
-        data_id_manager = DataIDManager()
         info_path = os.path.join(info_dir, str(key))
         # info = load_combine_info_jsons(info_path, False, False)
         tprint("loading info: " + info_path)
         info = load_pickle_from(info_path)
-        out_path = os.path.join(save_dir, str(key))
-        pred_path = os.path.join(score_dir, str(key))
-        tprint("data gen")
-        itr = enum_best_segments(pred_path, info)
+        # info = load_info_from_compressed(info_path)
+        generate_selected_training_data(info, key, max_seq_length, save_dir, score_dir)
 
-        insts = []
-        for selected_segment in itr:
-            data_id = data_id_manager.assign(selected_segment.to_info_d())
-            ci = InstAsInputIds(
-                selected_segment.input_ids,
-                selected_segment.seg_ids,
-                selected_segment.label,
-                data_id)
-            insts.append(ci)
-            assert len(selected_segment.input_ids) <= max_seq_length
 
-        def encode_fn(inst: InstAsInputIds) -> collections.OrderedDict:
-            return encode_inst_as_input_ids(max_seq_length, inst)
+def generate_selected_training_data_for_many_runs(target_data_idx, info_dir, max_seq_length, score_and_save_dir: List):
+    interval_start_list = left(robust_query_intervals)
+    key = interval_start_list[target_data_idx]
+    info_path = os.path.join(info_dir, str(key))
+    tprint("loading info: " + info_path)
+    info = load_pickle_from(info_path)
+    for score_dir, save_dir in score_and_save_dir:
+        exist_or_mkdir(save_dir)
+        tprint(save_dir)
+        generate_selected_training_data(info, key, max_seq_length, save_dir, score_dir)
 
-        tprint("writing")
-        write_records_w_encode_fn(out_path, encode_fn, insts, len(insts))
-        save_info(save_dir, data_id_manager, str(key) + ".info")
+
+def generate_selected_training_data(info, key, max_seq_length, save_dir, score_dir):
+    data_id_manager = DataIDManager(0, 1000000)
+    out_path = os.path.join(save_dir, str(key))
+    pred_path = os.path.join(score_dir, str(key))
+    tprint("data gen")
+    itr = enum_best_segments(pred_path, info)
+    insts = []
+    for selected_entry in itr:
+        selected = decompress_seg_ids_entry(selected_entry)
+        assert len(selected['input_ids']) == len(selected['seg_ids'])
+
+        selected['input_ids'] = pad0(selected['input_ids'], max_seq_length)
+        selected['seg_ids'] = pad0(selected['seg_ids'], max_seq_length)
+        # data_id = data_id_manager.assign(selected_segment.to_info_d())
+        data_id = 0
+        ci = InstAsInputIds(
+            selected['input_ids'],
+            selected['seg_ids'],
+            selected['label'],
+            data_id)
+        insts.append(ci)
+
+    def encode_fn(inst: InstAsInputIds) -> collections.OrderedDict:
+        return encode_inst_as_input_ids(max_seq_length, inst)
+
+    tprint("writing")
+    write_records_w_encode_fn(out_path, encode_fn, insts, len(insts))
+    save_info(save_dir, data_id_manager, str(key) + ".info")

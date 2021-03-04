@@ -12,7 +12,7 @@ from arg.qck.trec_helper import scrore_d_to_trec_style_predictions
 from cpath import output_path
 from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
-from misc_lib import exist_or_mkdir, group_by, average
+from misc_lib import exist_or_mkdir, group_by, average, tprint
 from trec.trec_parse import write_trec_ranked_list_entry
 
 
@@ -46,7 +46,7 @@ def summarize_score(info: Dict,
             assert False
 
     grouped: Dict[Tuple[str, str], List[Dict]] = group_by(data, f_handler.get_pair_id)
-    print("Group size:", len(grouped))
+    tprint("Group size:", len(grouped))
     out_d = {}
     for pair_id, items in grouped.items():
         scores = lmap(get_score, items)
@@ -54,7 +54,7 @@ def summarize_score(info: Dict,
         out_d[pair_id] = final_score
 
     num_items_per_group = average(lmap(len, grouped.values()))
-    print("Num items per group : ", num_items_per_group)
+    tprint("Num items per group : ", num_items_per_group)
     return out_d
 
 
@@ -87,9 +87,10 @@ def save_to_common_path(pred_file_path: str, info_file_path: str, run_name: str,
                         score_type: str,
                         shuffle_sort: bool
                         ):
+    tprint("Reading info...")
     f_handler = get_format_handler(input_type)
     info: Dict = load_combine_info_jsons(info_file_path, f_handler.get_mapping(), f_handler.drop_kdp())
-    print("Info has {} entries".format(len(info)))
+    tprint("Info has {} entries".format(len(info)))
     score_d = get_score_d(pred_file_path, info, f_handler, combine_strategy, score_type)
     ranked_list = scrore_d_to_trec_style_predictions(score_d, run_name, max_entry, shuffle_sort)
 
@@ -97,7 +98,7 @@ def save_to_common_path(pred_file_path: str, info_file_path: str, run_name: str,
     exist_or_mkdir(save_dir)
     save_path = os.path.join(save_dir, run_name + ".txt")
     write_trec_ranked_list_entry(ranked_list, save_path)
-    print("Saved at : ", save_path)
+    tprint("Saved at : ", save_path)
 
 
 def get_doc_id(doc_part_id: str):
@@ -135,7 +136,7 @@ def get_max_score_from_doc_parts(score_d: Dict[Tuple[str, str], float]) -> Dict[
 
 
 def get_score_d(pred_file_path: str, info: Dict, f_handler: FormatHandler, combine_strategy: str, score_type: str):
-    print("Reading from :", pred_file_path)
+    tprint("Reading from :", pred_file_path)
     if combine_strategy == "top_k":
         print("using top k")
         combine_score = top_k_average

@@ -6,7 +6,6 @@ from misc_lib import get_second, exist_or_mkdir, tprint, TimeEstimator
 
 def collect_doc_per_query(split):
     ms_reader = MSMarcoDataReader(split)
-    ms_reader.load_qrels()
 
     def pop(query_id, cur_doc_ids: Set):
         num_candidate_doc = len(cur_doc_ids)
@@ -26,19 +25,19 @@ def collect_doc_per_query(split):
             out_f.write(content + "\n")
         out_f.close()
 
-    total_line = 36701116
+    total_line = 20000
     skip = True
+    ticker = TimeEstimator(total_line, "reading", 1000)
     with open_top100(split) as top100f:
         last_topic_id = None
         cur_doc_ids = set()
         for line_no, line in enumerate(top100f):
             if skip:
-                if not line.startswith("872568"):
+                if not line.startswith("532603"):
                     continue
                 else:
                     tprint("skip done")
                     remain_lines = total_line - line_no
-                    ticker = TimeEstimator(remain_lines, "reading", 1000)
                     skip = False
 
             [topic_id, _, doc_id, rank, _, _] = line.split()
@@ -51,7 +50,7 @@ def collect_doc_per_query(split):
 
             ticker.tick()
             cur_doc_ids.add(doc_id)
-
+        pop(last_topic_id, cur_doc_ids)
 
 def main():
     collect_doc_per_query("train")

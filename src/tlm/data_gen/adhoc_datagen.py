@@ -586,6 +586,7 @@ class RobustPointwiseTrainGenEx:
     def write(self, insts: List[ClassificationInstance], out_path: str):
         def encode_fn(inst: ClassificationInstance) -> collections.OrderedDict :
             return encode_classification_instance(self.tokenizer, self.max_seq_length, inst)
+
         write_records_w_encode_fn(out_path, encode_fn, insts, len(insts))
 
 

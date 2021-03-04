@@ -1,5 +1,5 @@
 from exec_lib import run_func_with_config
-from tlm.data_gen.robust_gen.select_supervision.read_score import generate_selected_training_data
+from tlm.data_gen.robust_gen.select_supervision.read_score import generate_selected_training_data_loop
 
 
 def main(config):
@@ -9,7 +9,7 @@ def main(config):
     save_dir = config['save_dir']
     split_no = config['split_no']
 
-    generate_selected_training_data(split_no, score_dir, info_path, max_seq_length, save_dir)
+    generate_selected_training_data_loop(split_no, score_dir, info_path, max_seq_length, save_dir)
 
 
 if __name__ == "__main__":

@@ -15,8 +15,8 @@ def main():
                 text = j["document_text"]
                 yield text
             except:
-                nonlocal parse_fail
                 parse_fail += 1
+                ##
 
     summarize_doc_length(iter_docs())
 

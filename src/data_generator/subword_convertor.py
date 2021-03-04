@@ -1,3 +1,4 @@
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 from typing import List, Iterable, Iterator
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
@@ -40,6 +41,21 @@ class SubwordConvertor:
                 cur_word = [t]
         if cur_word:
             words.append(cur_word)
+
+        for word in words:
+            yield word
+
+    def get_word_as_subtoken_tuple(self, input_ids: Iterable[int]) -> Iterator[Tuple[int]]:
+        words: List[Tuple[int]] = []
+        cur_word: List[int] = []
+        for t in input_ids:
+            if t in self.continuation:
+                cur_word.append(t)
+            else:
+                words.append(tuple(cur_word))
+                cur_word = [t]
+        if cur_word:
+            words.append(tuple(cur_word))
 
         for word in words:
             yield word
