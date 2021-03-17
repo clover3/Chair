@@ -19,3 +19,8 @@ class TrecRankedListEntry(NamedTuple):
     def get_doc_id(self):
         return self.doc_id
 
+
+class TrecRelevanceJudgementEntry(NamedTuple):
+    query_id: str
+    doc_id: str
+    relevance: int

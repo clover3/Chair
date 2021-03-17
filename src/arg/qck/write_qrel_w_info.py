@@ -1,11 +1,11 @@
-from arg.qck.decl import get_format_handler
 from typing import Dict, Tuple
 
 from arg.qck.decl import get_format_handler
 from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.util import load_run_config
 from cache import load_pickle_from
-from trec.trec_parse import TrecRelevanceJudgementEntry, write_trec_relevance_judgement
+from trec.trec_parse import write_trec_relevance_judgement
+from trec.types import TrecRelevanceJudgementEntry
 
 
 def main(info_path, input_type, label_dict_path, save_path):

@@ -2,9 +2,9 @@ import json
 import sys
 from typing import List, Iterable, Dict, Tuple
 
-from trec.trec_parse import load_ranked_list_grouped, write_trec_ranked_list_entry, TrecRankedListEntry, \
-    scores_to_ranked_list_entries
 from list_lib import flatten
+from trec.trec_parse import load_ranked_list_grouped, write_trec_ranked_list_entry, scores_to_ranked_list_entries
+from trec.types import TrecRankedListEntry
 
 
 def reciprocal_fusion_score(rank1, rank2, k1, k2) -> float:

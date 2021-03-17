@@ -1,7 +1,7 @@
 from typing import List
 
 from evals.mean_average_precision import get_ap
-from trec.trec_parse import TrecRankedListEntry
+from trec.types import TrecRankedListEntry
 
 
 def get_recall_at_k(k):

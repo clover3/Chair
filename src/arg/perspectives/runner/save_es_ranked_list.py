@@ -4,7 +4,8 @@ from typing import List, Dict, Tuple
 from arg.perspectives.eval_helper import get_all_candidate
 from arg.perspectives.load import load_claims_for_sub_split
 from cpath import output_path
-from trec.trec_parse import write_trec_ranked_list_entry, TrecRankedListEntry
+from trec.trec_parse import write_trec_ranked_list_entry
+from trec.types import TrecRankedListEntry
 
 
 def main():

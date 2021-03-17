@@ -1,10 +1,10 @@
 from typing import List, Tuple
 
 from cache import load_pickle_from
-from trec.trec_parse import TrecRankedListEntry
 from exec_lib import run_func_with_config
 from galagos.parse import write_ranked_list_from_s
 from tlm.robust.eval_metrics import get_payload_info, generate_ranked_list
+from trec.types import TrecRankedListEntry
 
 
 def save_to_trec_format(prediction_path, payload_type, data_id, num_candidate, run_name, save_path):

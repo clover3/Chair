@@ -2,11 +2,11 @@ import sys
 from typing import List, Dict, Tuple
 
 import math
+from trec.parse import load_qrels_flat
 
-from evals.parse import load_qrels_flat
-from evals.types import TrecRankedListEntry, QueryID, DocID
 from misc_lib import average
 from trec.trec_parse import load_ranked_list_grouped
+from trec.types import TrecRankedListEntry, QueryID, DocID
 
 
 def main():

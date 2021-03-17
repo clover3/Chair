@@ -1,10 +1,12 @@
 import sys
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Dict
 
-from evals.parse import load_qrels_flat
+from trec.parse import load_qrels_flat
+
 from misc_lib import average
-from scratch.ndcg_lib import ndcg, dcg
-from trec.trec_parse import TrecRankedListEntry, load_ranked_list_grouped
+from scratch.ndcg_lib import dcg
+from trec.trec_parse import load_ranked_list_grouped
+from trec.types import TrecRankedListEntry
 
 
 def main():

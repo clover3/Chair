@@ -2,7 +2,7 @@ import random
 from typing import List, Dict, Tuple, Iterable
 
 from misc_lib import get_second, group_by
-from trec.trec_parse import TrecRankedListEntry
+from trec.types import TrecRankedListEntry
 
 
 def scrore_d_to_trec_style_predictions(score_d: Dict[Tuple[str, str], float], run_name="runname",

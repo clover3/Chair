@@ -2,8 +2,8 @@ import os
 from typing import Dict
 
 import cpath
-from evals.parse import load_qrels_structured
 from galagos.parse import load_galago_ranked_list
+from trec.qrel_parse import load_qrels_structured
 
 
 def load_2k_rank():

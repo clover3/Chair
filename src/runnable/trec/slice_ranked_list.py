@@ -1,7 +1,8 @@
 import sys
 from typing import List, Dict
 
-from trec.trec_parse import write_trec_ranked_list_entry, load_ranked_list_grouped, TrecRankedListEntry
+from trec.trec_parse import write_trec_ranked_list_entry, load_ranked_list_grouped
+from trec.types import TrecRankedListEntry
 
 
 def main():

@@ -1,7 +1,7 @@
 import argparse
 import sys
 from collections import defaultdict, Counter
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Dict
 
 import numpy as np
 import scipy.special
@@ -10,8 +10,8 @@ from arg.qck.decl import get_format_handler
 from arg.qck.prediction_reader import load_combine_info_jsons
 from cache import save_to_pickle
 from estimator_helper.output_reader import join_prediction_with_info
-from evals.parse import load_qrels_structured
 from misc_lib import group_by
+from trec.qrel_parse import load_qrels_structured
 
 parser = argparse.ArgumentParser(description='')
 

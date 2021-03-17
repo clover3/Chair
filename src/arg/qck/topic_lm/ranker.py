@@ -4,7 +4,7 @@ from typing import Dict, List
 from arg.qck.filter_qk import LMScorer
 from arg.qck.instance_generator.qcknc_datagen import QCKCandidateI
 from misc_lib import TimeEstimator
-from trec.trec_parse import TrecRankedListEntry
+from trec.types import TrecRankedListEntry
 
 
 def rank_with_query_lm(query_lms: Dict[str, Counter],

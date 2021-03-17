@@ -3,7 +3,7 @@ from typing import List
 
 from arg.qck.decl import QKUnit, QCKCandidate, QCKQuery
 from cache import load_from_pickle
-from evals.parse import load_qrels_structured
+from trec.qrel_parse import load_qrels_structured
 
 
 def load_qk_robust_heldout(data_id) -> List[QKUnit]:

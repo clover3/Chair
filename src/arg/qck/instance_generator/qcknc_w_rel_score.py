@@ -10,7 +10,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer, tokenize_from_tokens
 from list_lib import flatten, lmap, dict_value_map
 from misc_lib import DataIDManager
 from tlm.data_gen.bert_data_gen import create_float_feature
-from trec.trec_parse import TrecRankedListEntry
+from trec.types import TrecRankedListEntry
 
 
 class Payload(NamedTuple):

@@ -4,8 +4,9 @@ import random
 from collections import defaultdict
 from typing import List, Dict, Set, Tuple
 
+from trec.parse import load_qrels_flat
+
 from cpath import data_path
-from evals.parse import load_qrels_flat
 from list_lib import lmap
 
 

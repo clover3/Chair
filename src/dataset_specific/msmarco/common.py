@@ -2,13 +2,14 @@ import csv
 import gzip
 import os
 from collections import defaultdict
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import Dict
 from typing import List, Tuple, NamedTuple, NewType
 
 from cache import load_pickle_from
 from epath import job_man_dir
 from list_lib import left, lmap
-from trec.trec_parse import load_ranked_list, load_ranked_list_grouped, TrecRankedListEntry
+from trec.trec_parse import load_ranked_list_grouped
+from trec.types import TrecRankedListEntry
 
 root_dir = "/mnt/nfs/work3/youngwookim/data/msmarco"
 per_query_root = "/mnt/nfs/work3/youngwookim/data/msmarco/per_query"

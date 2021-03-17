@@ -92,6 +92,31 @@ def get_collapsible_script():
     return open(os.path.join(cpath.src_path, "html", "collapsible.js")).read()
 
 
+def get_link_highlight_code():
+    return """a {
+    color: blue !important;
+    text-decoration: none !important;
+    }
+    a:link, a:visited {
+        color: purple !important;
+    }
+    a:hover {
+        color: red !important;
+    }"""
+
+
+def get_bootstrap_include_source():
+    s = """<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+"""
+    return s
+
 class HtmlVisualizer(VisualizerCommon):
     def __init__(self, filename, dark_mode=False, use_tooltip=False, additional_styles=[]):
         p = os.path.join(output_path, "visualize", filename)
@@ -170,9 +195,22 @@ class HtmlVisualizer(VisualizerCommon):
     def write_headline(self, s, level=4):
         self.f_html.write("<h{}>{}</h{}>\n".format(level, s, level))
 
-    def write_table(self, rows):
+    def write_table(self, rows, head=None):
         self.f_html.write("<table style=\"border-spacing: 0px;\">\n")
+        if head is not None:
+            for column in head:
+                self.f_html.write(column)
 
+        for row in rows:
+            self.f_html.write("<tr>\n")
+            for cell in row:
+                s = self.get_cell_html(cell)
+                self.f_html.write(s)
+            self.f_html.write("</tr>\n")
+        self.f_html.write("</table>\n")
+
+    def write_table_with_class(self, rows, class_str):
+        self.f_html.write("<table class=\"{}\">\n".format(class_str))
         for row in rows:
             self.f_html.write("<tr>\n")
             for cell in row:
@@ -240,3 +278,10 @@ def normalize(scores):
         gap = 1
 
     return [(s - min_score) / gap * 100 for s in scores]
+
+
+def get_table_head_cell(s, width=0):
+    if width:
+        return "<th style=\"width:{}px\">{}</th>".format(width, s)
+    else:
+        return "<th>{}</th>".format(s)

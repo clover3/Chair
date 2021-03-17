@@ -12,7 +12,8 @@ from cpath import output_path
 from epath import job_man_dir
 from job_manager.job_runner_with_server import JobRunnerS
 from list_lib import lmap
-from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
+from trec.trec_parse import load_ranked_list_grouped
+from trec.types import TrecRankedListEntry
 
 
 def qck_gen(job_name, qk_candidate_name, candidate_ranked_list_path, kdp_ranked_list_path, split):

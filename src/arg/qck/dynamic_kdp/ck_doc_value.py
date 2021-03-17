@@ -5,11 +5,11 @@ import scipy.special
 from arg.qck.decl import get_format_handler, QCKOutEntry
 from arg.qck.prediction_reader import load_combine_info_jsons
 from estimator_helper.output_reader import join_prediction_with_info
-from evals.parse import load_qrels_structured
 from exec_lib import run_func_with_config
 from list_lib import lmap
 from misc_lib import group_by, unique_list
 from tab_print import print_table
+from trec.qrel_parse import load_qrels_structured
 
 
 def main(config):

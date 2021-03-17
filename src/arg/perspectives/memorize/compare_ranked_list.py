@@ -3,7 +3,8 @@ import os
 from cpath import at_output_dir
 from list_lib import lmap
 from misc_lib import get_first
-from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
+from trec.trec_parse import load_ranked_list_grouped
+from trec.types import TrecRankedListEntry
 
 
 def main():

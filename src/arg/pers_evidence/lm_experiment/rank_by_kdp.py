@@ -2,6 +2,8 @@ import os
 from collections import Counter
 from typing import List, Dict
 
+from trec.parse import load_qrels_flat
+
 from arg.pers_evidence.runner.get_candidate_dict import get_candidate_full_text
 from arg.qck.decl import QCKCandidate, QKUnit
 from arg.qck.topic_lm.kdp_to_lm import kdp_to_lm
@@ -9,8 +11,7 @@ from arg.qck.topic_lm.ranker import rank_with_query_lm
 from cache import load_from_pickle
 from cpath import data_path
 from evals.mean_average_precision import get_map
-from evals.parse import load_qrels_flat
-from evals.types import QRelsFlat
+from trec.types import QRelsFlat
 
 
 def main():

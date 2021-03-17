@@ -5,9 +5,10 @@ from arg.perspectives.eval_caches import get_eval_candidates_from_pickle
 from arg.perspectives.load import get_claim_perspective_id_dict
 from arg.perspectives.types import CPIDPair
 from cpath import data_path
-from trec.trec_parse import write_trec_relevance_judgement, TrecRankedListEntry, TrecRelevanceJudgementEntry
 from list_lib import flatten
 from misc_lib import group_by, get_second
+from trec.trec_parse import write_trec_relevance_judgement
+from trec.types import TrecRankedListEntry, TrecRelevanceJudgementEntry
 
 
 def scrore_d_to_trec_style_predictions(score_d: Dict[CPIDPair, float], run_name="runname") -> List[TrecRankedListEntry]:

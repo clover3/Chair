@@ -17,13 +17,12 @@ from arg.qck.qck_worker import QCKWorker
 from cache import load_from_pickle
 from cpath import output_path
 from epath import job_man_dir
-from evals.types import TrecRankedListEntry
 from galagos.parse import load_query_json_as_dict
 from job_manager.job_runner_with_server import JobRunnerS
 from list_lib import lmap
 from misc_lib import two_digit_float
-from trec.trec_parse import TrecRankedListEntry
 from trec.trec_parse import load_ranked_list_grouped
+from trec.types import TrecRankedListEntry
 
 
 def normalize_scores(query_path, kdp_ranked_list: Dict[str, List[TrecRankedListEntry]]) \

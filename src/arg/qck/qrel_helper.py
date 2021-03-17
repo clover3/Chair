@@ -1,6 +1,6 @@
 from typing import Iterable
 
-from trec.trec_parse import TrecRelevanceJudgementEntry
+from trec.types import TrecRelevanceJudgementEntry
 
 
 def get_trec_relevance_judgement(label_itr) -> Iterable[TrecRelevanceJudgementEntry]:

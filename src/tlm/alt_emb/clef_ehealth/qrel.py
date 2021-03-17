@@ -1,8 +1,9 @@
 import os
 from typing import Dict, List, Tuple
 
+from trec.parse import load_qrels_flat
+
 from cpath import data_path
-from evals.parse import load_qrels_flat
 from galagos.parse import write_qrels
 from list_lib import dict_value_map
 

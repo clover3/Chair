@@ -6,12 +6,12 @@ from numpy import argsort
 from data_generator.data_parser.robust import load_robust_04_query
 from data_generator.data_parser.robust2 import load_bm25_best
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from evals.parse import load_qrels_structured
 from misc_lib import ceil_divide, get_first
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from tlm.data_gen.adhoc_datagen import get_combined_tokens_segment_ids, SegmentIDs, Tokens
 from tlm.data_gen.classification_common import ClassificationInstance, encode_classification_instance
 from tlm.robust.load import load_robust_tokens_for_train, load_robust_tokens_for_predict
+from trec.qrel_parse import load_qrels_structured
 
 
 class RobustCollectedEvidenceTrainGen:

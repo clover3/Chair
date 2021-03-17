@@ -5,7 +5,7 @@ import cpath
 import data_generator.data_parser.trec as trec
 from data_generator.data_parser.robust2 import load_2k_rank, robust_path
 from data_generator.data_parser.trec import load_trec
-from evals.parse import load_qrels_structured
+from trec.qrel_parse import load_qrels_structured
 
 
 def load_robust04_query_krovetsz():

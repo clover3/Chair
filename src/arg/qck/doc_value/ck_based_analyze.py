@@ -2,6 +2,8 @@ import json
 import sys
 from typing import List, Dict, Tuple
 
+from trec.parse import load_qrels_flat
+
 from arg.qck.decl import get_format_handler, get_qk_pair_id
 from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.qck.qk_summarize import get_score_from_logit
@@ -9,7 +11,6 @@ from arg.qck.save_to_trec_form import get_doc_id
 from cache import load_cache
 from estimator_helper.output_reader import join_prediction_with_info
 from evals.basic_func import get_acc_prec_recall
-from evals.parse import load_qrels_flat
 from list_lib import dict_value_map
 from misc_lib import group_by
 from tab_print import print_table

@@ -4,8 +4,8 @@ from typing import List, Callable, Dict, Tuple
 import math
 
 from cache import load_from_pickle
-from evals.parse import load_qrels_structured
 from misc_lib import find_max_idx
+from trec.qrel_parse import load_qrels_structured
 
 
 def load_score_d():

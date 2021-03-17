@@ -10,7 +10,6 @@ from data_generator.data_parser.robust import load_robust04_title_query, load_ro
 from data_generator.data_parser.robust2 import load_bm25_best
 from data_generator.job_runner import sydney_working_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from evals.parse import load_qrels_structured
 from misc_lib import enum_passage, DataIDManager, enum_passage_overlap, average
 from tf_util.record_writer_wrap import RecordWriterWrap, write_records_w_encode_fn
 from tlm.data_gen.base import get_basic_input_feature
@@ -20,6 +19,7 @@ from tlm.data_gen.classification_common import ClassificationInstance, encode_cl
 from tlm.data_gen.pairwise_common import generate_pairwise_combinations, write_pairwise_record
 from tlm.data_gen.robust_gen.select_supervision.score_selection_methods import *
 from tlm.robust.load import load_robust_tokens_for_train, load_robust_tokens_for_predict
+from trec.qrel_parse import load_qrels_structured
 
 Tokens = List[str]
 SegmentIDs = List[int]

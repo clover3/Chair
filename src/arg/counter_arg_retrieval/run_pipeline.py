@@ -11,7 +11,8 @@ from galagos.parse import load_query_json_as_dict
 from list_lib import lmap
 from misc_lib import find_max_idx, get_first
 from models.classic.stemming import StemmedToken
-from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
+from trec.trec_parse import load_ranked_list_grouped
+from trec.types import TrecRankedListEntry
 
 
 class Doc(NamedTuple):

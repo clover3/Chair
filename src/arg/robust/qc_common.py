@@ -7,11 +7,11 @@ from cpath import data_path
 from data_generator.data_parser.robust import load_robust04_title_query
 from data_generator.data_parser.robust2 import load_bm25_best
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from evals.parse import load_qrels_structured
 from galagos.types import SimpleRankedListEntry
 from list_lib import dict_value_map
 from misc_lib import enum_passage
 from tlm.robust.load import load_robust_tokens_for_predict, load_robust_tokens_for_train
+from trec.qrel_parse import load_qrels_structured
 
 
 def load_candidate_head_as_doc(doc_len=400) -> Dict[str, List[QCKCandidateWToken]]:

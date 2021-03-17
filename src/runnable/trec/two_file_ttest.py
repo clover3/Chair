@@ -1,12 +1,8 @@
 import sys
-from typing import List, Dict
 
 from scipy.stats import stats
 
-from evals.metrics import get_metric_fn
-from evals.parse import load_qrels_flat
 from misc_lib import average
-from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
 
 
 def get_score_per_query(input_path):

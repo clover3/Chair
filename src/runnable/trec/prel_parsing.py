@@ -1,5 +1,6 @@
 from cpath import at_data_dir
-from trec.trec_parse import TrecRelevanceJudgementEntry, write_trec_relevance_judgement
+from trec.trec_parse import write_trec_relevance_judgement
+from trec.types import TrecRelevanceJudgementEntry
 
 
 def main():

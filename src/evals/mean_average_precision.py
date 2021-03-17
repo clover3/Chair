@@ -1,9 +1,8 @@
 from typing import List, Dict
 
-from evals.types import QRelsFlat
 from list_lib import lmap
 from misc_lib import average
-from trec.trec_parse import TrecRankedListEntry
+from trec.types import QRelsFlat, TrecRankedListEntry
 
 
 def get_ap(ranked_list: List[TrecRankedListEntry], true_gold: List[str]):

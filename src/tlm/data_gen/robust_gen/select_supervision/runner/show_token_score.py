@@ -9,10 +9,10 @@ from data_generator.data_parser.robust import load_robust_04_query
 from data_generator.job_runner import sydney_working_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from epath import at_job_man_dir1
-from evals.parse import load_qrels_structured
 from list_lib import lmap
 from misc_lib import tprint, two_digit_float
 from tlm.data_gen.robust_gen.select_supervision.token_score import collect_token_scores, DocTokenScore
+from trec.qrel_parse import load_qrels_structured
 from visualize.html_visual import HtmlVisualizer, get_tooltip_cell
 
 

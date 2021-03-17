@@ -2,9 +2,9 @@ from typing import List, Iterable, Dict
 
 from clueweb.adhoc.load_docs import read_doc_id_title_text
 from cpath import at_data_dir, at_output_dir
-from evals.parse import load_qrels_structured
-from evals.types import QRelsDict
-from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
+from trec.qrel_parse import load_qrels_structured
+from trec.trec_parse import load_ranked_list_grouped
+from trec.types import QRelsDict, TrecRankedListEntry
 
 
 def load_qrels_for(year) -> QRelsDict:

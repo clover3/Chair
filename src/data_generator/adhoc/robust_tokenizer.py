@@ -6,8 +6,8 @@ from data_generator.data_parser import trec
 from data_generator.data_parser.robust2 import load_bm25_best
 from data_generator.job_runner import sydney_working_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from evals.parse import load_qrels_structured
 from misc_lib import TimeEstimator
+from trec.qrel_parse import load_qrels_structured
 
 
 class RobustPreprocess:

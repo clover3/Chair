@@ -8,7 +8,7 @@ from arg.robust.qc_common import load_candidate_all_passage
 from cache import load_from_pickle
 from data_generator.job_runner import JobRunner
 from epath import job_man_dir
-from evals.parse import load_qrels_structured
+from trec.qrel_parse import load_qrels_structured
 
 
 def main():

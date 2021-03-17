@@ -3,7 +3,8 @@ from typing import List, Dict
 from arg.qck.decl import QKUnit, KDP
 from cache import load_from_pickle
 from list_lib import lfilter, right, lmap
-from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
+from trec.trec_parse import load_ranked_list_grouped
+from trec.types import TrecRankedListEntry
 
 
 def filter_with_ranked_list(qk_untis : List[QKUnit],

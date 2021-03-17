@@ -3,10 +3,12 @@ import os
 from collections import defaultdict, Counter
 from typing import List, Iterable, Dict, Tuple, Set
 
+from trec.parse import load_qrels_flat
+
 from arg.perspectives.load import splits
 from cpath import output_path, data_path
-from evals.parse import load_qrels_flat
-from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
+from trec.trec_parse import load_ranked_list_grouped
+from trec.types import TrecRankedListEntry
 
 
 def do_for_perspectrum():

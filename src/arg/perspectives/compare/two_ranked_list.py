@@ -1,9 +1,9 @@
 import sys
 
-from evals.parse import load_qrels_structured
-from evals.types import QRelsDict, TrecRankedListEntry
 from tab_print import print_table
+from trec.qrel_parse import load_qrels_structured
 from trec.trec_parse import load_ranked_list_grouped, write_trec_ranked_list_entry
+from trec.types import QRelsDict, TrecRankedListEntry
 
 
 def main():

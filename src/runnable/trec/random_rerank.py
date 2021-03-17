@@ -2,9 +2,9 @@ import random
 import sys
 from typing import List, Iterable, Dict
 
-from trec.trec_parse import load_ranked_list_grouped, write_trec_ranked_list_entry, TrecRankedListEntry
-
 from list_lib import flatten
+from trec.trec_parse import load_ranked_list_grouped, write_trec_ranked_list_entry
+from trec.types import TrecRankedListEntry
 
 
 def main():

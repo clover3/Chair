@@ -1,13 +1,8 @@
+from typing import Iterator
 from typing import List, Iterable, Dict, Tuple
-from typing import NamedTuple, Iterator
 
 from misc_lib import group_by, get_second
-
-
-class TrecRelevanceJudgementEntry(NamedTuple):
-    query_id: str
-    doc_id: str
-    relevance: int
+from trec.types import TrecRankedListEntry, TrecRelevanceJudgementEntry
 
 
 def write_trec_relevance_judgement(entries: Iterable[TrecRelevanceJudgementEntry], save_path):
@@ -16,17 +11,6 @@ def write_trec_relevance_judgement(entries: Iterable[TrecRelevanceJudgementEntry
         line = "{} 0 {} {}\n".format(e.query_id, e.doc_id, e.relevance)
         f.write(line)
     f.close()
-
-
-class TrecRankedListEntry(NamedTuple):
-    query_id: str
-    doc_id: str
-    rank: int
-    score: float
-    run_name: str
-
-    def get_doc_id(self):
-        return self.doc_id
 
 
 def write_trec_ranked_list_entry(entries: Iterable[TrecRankedListEntry], save_path: str):

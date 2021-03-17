@@ -1,10 +1,12 @@
 import sys
 from typing import List, Dict
 
+from trec.parse import load_qrels_flat
+
 from evals.metrics import get_metric_fn
-from evals.parse import load_qrels_flat
 from misc_lib import average
-from trec.trec_parse import load_ranked_list_grouped, TrecRankedListEntry
+from trec.trec_parse import load_ranked_list_grouped
+from trec.types import TrecRankedListEntry
 
 
 ## print

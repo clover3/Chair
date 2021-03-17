@@ -1,8 +1,8 @@
 from typing import List, Dict
 
-from evals.types import TrecRankedListEntry
 from list_lib import lmap, dict_value_map
 from trec.trec_parse import load_ranked_list_grouped
+from trec.types import TrecRankedListEntry
 
 
 def get_candidate_ids_from_ranked_list_path(ranked_list_path) -> Dict[str, List[str]]:

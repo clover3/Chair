@@ -1,7 +1,7 @@
-from trec.trec_parse import load_ranked_list, TrecRankedListEntry
-
 from datastore.interface import get_existing_keys
 from datastore.table_names import BertTokenizedCluewebDoc
+from trec.trec_parse import load_ranked_list
+from trec.types import TrecRankedListEntry
 
 
 def main():
