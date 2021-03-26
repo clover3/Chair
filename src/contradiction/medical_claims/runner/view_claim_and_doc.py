@@ -11,17 +11,21 @@ def main():
     review0: Review = reviews[0]
 
     is_first = True
-    for claim in review0.claim_list:
+    for idx, claim in enumerate(review0.claim_list):
         doc: Abstract = load_doc_parsed(claim.pmid)
         if is_first:
-            print("Question", claim.question)
+            print("Question (query):", claim.question)
             is_first = False
 
         print("PMID:", claim.pmid)
-        print("Claim:", claim.text)
-        print(claim.assertion)
+        print("Claim {}:".format(idx), claim.text)
+        if claim.assertion == "YS":
+            print("YES")
+        else:
+            print(claim.assertion)
+        print("Full abstract:")
         for text in doc.text_list:
-            print(text)
+            print("[{}] {}".format(text.label, text.text))
 
         print()
 
@@ -59,4 +63,4 @@ def run_trivial_solution_pair():
 
 
 if __name__ == "__main__":
-    run_trivial_solution_pair()
+    main()
