@@ -3,6 +3,7 @@ from typing import List, Tuple
 from arg.counter_arg import header
 from arg.counter_arg.data_loader import load_labeled_data_per_topic
 from arg.counter_arg.header import Passage
+from cache import load_from_pickle
 
 
 def load_data(split) -> List[Tuple[Passage, int]]:
@@ -17,4 +18,6 @@ def load_data(split) -> List[Tuple[Passage, int]]:
     return output_data
 
 
-
+def load_data_from_pickle(split):
+    save_name = "argu_pointwise_{}".format(split)
+    return load_from_pickle(save_name)

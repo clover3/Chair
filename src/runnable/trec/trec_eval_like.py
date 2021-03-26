@@ -1,15 +1,11 @@
 import sys
 from typing import List, Dict
 
-from trec.parse import load_qrels_flat
-
 from evals.metrics import get_metric_fn
 from misc_lib import average
+from trec.qrel_parse import load_qrels_flat_per_query
 from trec.trec_parse import load_ranked_list_grouped
 from trec.types import TrecRankedListEntry
-
-
-## print
 
 
 def main():
@@ -17,7 +13,7 @@ def main():
     ranked_list_path = sys.argv[2]
     metric = sys.argv[3]
 
-    qrels = load_qrels_flat(judgment_path)
+    qrels = load_qrels_flat_per_query(judgment_path)
     ranked_list: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranked_list_path)
 
     metric_fn = get_metric_fn(metric)
