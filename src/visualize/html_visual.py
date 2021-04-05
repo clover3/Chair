@@ -164,6 +164,9 @@ class HtmlVisualizer(VisualizerCommon):
         self.f_html.write(s+"\n")
         self.f_html.write("</p>\n")
 
+    def write_bar(self, ):
+        self.f_html.write("<hr>\n")
+
     def write_div(self, s, div_class):
         self.write_elem("div", s, div_class)
 

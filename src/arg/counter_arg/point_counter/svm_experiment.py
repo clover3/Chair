@@ -1,16 +1,12 @@
-from typing import List, Tuple
-
-from arg.counter_arg.header import Passage
 from arg.counter_arg.point_counter.feature_analysis import show_features_by_svm
-from arg.counter_arg.point_counter.prepare import load_data
-from list_lib import lmap, right
+from arg.counter_arg.point_counter.prepare_data import get_argu_pointwise_data
 from misc_lib import tprint
 from models.baselines import svm
 from task.metrics import accuracy
 
 
 def main():
-    train_x, train_y, dev_x, dev_y = get_data()
+    train_x, train_y, dev_x, dev_y = get_argu_pointwise_data()
     tprint("training and testing")
     use_char_ngram = False
     print("Use char ngram", use_char_ngram )
@@ -21,23 +17,8 @@ def main():
 
 
 def show_features():
-    train_x, train_y, dev_x, dev_y = get_data()
+    train_x, train_y, dev_x, dev_y = get_argu_pointwise_data()
     show_features_by_svm(train_x, train_y)
-
-
-def get_data():
-    tprint("Loading data")
-    train_data: List[Tuple[Passage, int]] = load_data("training")
-    dev_data = load_data("validation")
-
-    def get_texts(e: Tuple[Passage, int]) -> str:
-        return e[0].text.replace("\n", " ")
-
-    train_x: List[str] = lmap(get_texts, train_data)
-    train_y: List[int] = right(train_data)
-    dev_x: List[str] = lmap(get_texts, dev_data)
-    dev_y: List[int] = right(dev_data)
-    return train_x, train_y, dev_x, dev_y
 
 
 # [{'precision': 0.920751633986928, 'recall': 0.8756798756798757, 'f1': 0.8976503385105535},

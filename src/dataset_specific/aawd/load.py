@@ -61,9 +61,13 @@ def load_aawd_splits_as_binary():
     return convertl(train), convertl(dev), convertl(test)
 
 
-def load_aawd_splits():
+DataSetType = List[Tuple[str, int]]
+
+
+def load_aawd_splits() -> Tuple[DataSetType, DataSetType, DataSetType]:
     files = get_file_itr()
-    data_list = lmap(parse_file, files)
+    data_list: List[List[Tuple[str, int]]] = lmap(parse_file, files)
+
     dev, test, train = split_train_dev_test(data_list)
     return train, dev, test
 

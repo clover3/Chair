@@ -1,5 +1,5 @@
 from itertools import combinations
-from typing import List, Iterable, Tuple
+from typing import List, Iterable, Dict, Tuple
 
 from contradiction.medical_claims.load_corpus import load_parsed, Review, Claim
 from list_lib import lfilter
@@ -24,6 +24,19 @@ def enum_true_instance() -> Iterable[Tuple[Claim, Claim, str]]:
             for no_claim in no_claim_list:
                 yield yes_claim, no_claim, "Yes/No from a same review"
                 yield no_claim, yes_claim, "No/Yes from a same review"
+
+
+def claim_text_to_info() -> Dict[str, Dict]:
+    out_d = {}
+    reviews: List[Review] = load_parsed()
+    for review in reviews:
+        for claim in review.claim_list:
+            out_d[claim.text] = {
+                'assertion': claim.assertion,
+                'question': claim.question,
+                'pmid': claim.pmid
+            }
+    return out_d
 
 
 def enum_neg_instance() -> Iterable[Tuple[Claim, Claim, str]]:

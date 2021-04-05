@@ -3,7 +3,7 @@ import random
 from sklearn.svm import LinearSVC
 
 from arg.counter_arg.point_counter.feature_analysis import show_features_by_svm
-from arg.counter_arg.point_counter.svm_experiment import get_data
+from arg.counter_arg.point_counter.prepare_data import get_argu_pointwise_data
 from dataset_specific.aawd.load import load_train_dev
 from list_lib import lmap
 from misc_lib import tprint
@@ -57,7 +57,7 @@ def cross_eval():
 
 
 def sanity():
-    _, _, argu_ana_dev_x, argu_ana_dev_y = get_data()
+    _, _, argu_ana_dev_x, argu_ana_dev_y = get_argu_pointwise_data()
 
     def by_random():
         return random.randint(0, 1)
