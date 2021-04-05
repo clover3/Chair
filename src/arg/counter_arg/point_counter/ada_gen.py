@@ -23,6 +23,11 @@ def combine_source_and_target(source_data: List[Tuple[str, int]],
     if target_data_size > len(target_data):
         random.shuffle(target_data)
 
+    print("source_len={} target_len={}, truncating to {}".format(
+        len(source_data),
+        len(target_data),
+        target_data_size
+    ))
     target_data = target_data[:target_data_size]
 
     source_domain_id = 0
