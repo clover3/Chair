@@ -18,6 +18,6 @@ def load_data(split) -> List[Tuple[Passage, int]]:
     return output_data
 
 
-def load_data_from_pickle(split):
+def load_argu_data_from_pickle(split):
     save_name = "argu_pointwise_{}".format(split)
     return load_from_pickle(save_name)

@@ -48,12 +48,13 @@ def load_all_docs_text_only(ranked_list_path, html_dir_path) -> List[str]:
     return docs
 
 
-def main():
+def load_f5_docs_texts():
     rlp = "C:\\work\\Code\\Chair\\output\\clue_counter_arg\\ranked_list.txt"
     html_dir = "C:\\work\\Code\\Chair\\output\\clue_counter_arg\\docs"
     texts = load_all_docs_text_only(rlp, html_dir)
     print("{} texts loaded".format(len(texts)))
+    return texts
 
 
 if __name__ == "__main__":
-    main()
+    load_f5_docs_texts()

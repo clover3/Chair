@@ -3,7 +3,7 @@ from typing import List, Tuple
 from nltk.tokenize import sent_tokenize
 
 from arg.counter_arg.header import Passage
-from arg.counter_arg.point_counter.prepare import load_data, load_data_from_pickle
+from arg.counter_arg.point_counter.prepare import load_data, load_argu_data_from_pickle
 from cache import save_to_pickle
 from list_lib import lmap, lflatten, lfilter, lfilter_not
 from misc_lib import Averager
@@ -17,7 +17,7 @@ def save_to_cache():
 
 
 def main():
-    train_data = load_data_from_pickle("training")
+    train_data = load_argu_data_from_pickle("training")
     averager = Averager()
 
     for text, label in train_data[:200]:

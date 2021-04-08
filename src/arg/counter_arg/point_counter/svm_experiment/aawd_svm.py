@@ -4,7 +4,7 @@ from sklearn.svm import LinearSVC
 
 from arg.counter_arg.point_counter.feature_analysis import show_features_by_svm
 from arg.counter_arg.point_counter.prepare_data import get_argu_pointwise_data
-from dataset_specific.aawd.load import load_train_dev
+from dataset_specific.aawd.load import get_aawd_binary_train_dev
 from list_lib import lmap
 from misc_lib import tprint
 from models.baselines import svm
@@ -21,7 +21,7 @@ def main():
     # {'precision': 0.25, 'recall': 0.12244897959183673, 'f1': 0.1643835616438356},
     # {'precision': 0.24193548387096775, 'recall': 0.078125, 'f1': 0.11811023622047244}]
 
-    train_x, train_y, dev_x, dev_y = load_train_dev()
+    train_x, train_y, dev_x, dev_y = get_aawd_binary_train_dev()
     tprint("training and testing")
     use_char_ngram = False
     print("Use char ngram", use_char_ngram )
@@ -32,7 +32,7 @@ def main():
 
 
 def cross_eval():
-    aawd_train_x, aawd_train_y, _, _ = load_train_dev()
+    aawd_train_x, aawd_train_y, _, _ = get_aawd_binary_train_dev()
     threshold = 0.8
 
     def translate_label(prob):
@@ -43,12 +43,12 @@ def cross_eval():
     feature_extractor = svm.NGramFeature(False, 4)
     # _, _, argu_ana_dev_x, argu_ana_dev_y = get_data()
     X_train_counts = feature_extractor.fit_transform(train_x)
+    svclassifier = LinearSVC()
+    svclassifier.fit(X_train_counts, train_y)
 
     eval_x = train_x
     eval_y = train_y
     x_test_count = feature_extractor.transform(eval_x)
-    svclassifier = LinearSVC()
-    svclassifier.fit(X_train_counts, train_y)
     test_pred = svclassifier._predict_proba_lr(x_test_count)
     disagree_prob = test_pred[:, 1]
     test_pred = lmap(translate_label, disagree_prob)
@@ -75,7 +75,7 @@ def sanity():
 
 
 def show_features():
-    train_x, train_y, dev_x, dev_y = load_train_dev()
+    train_x, train_y, dev_x, dev_y = get_aawd_binary_train_dev()
     show_features_by_svm(train_x, train_y)
 
 

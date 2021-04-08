@@ -82,6 +82,17 @@ def init_spacy():
         #print(dir(chunk))
 
 
+def dependency_simple():
+    nlp = spacy.load("en_core_web_sm")
+    text = "There is still a place for mercenaries working for NGOs."
+    doc = nlp(text)
+    print(doc)
+    for idx, token in enumerate(doc):
+
+        print(token.text, token.dep_, token.head.text)
+    print("--------")
+
+
 from nltk.parse.corenlp import CoreNLPParser
 
 
@@ -110,4 +121,4 @@ def stanford_nlp():
 
 
 if __name__ == "__main__":
-    stanford_nlp()
+    init_spacy()

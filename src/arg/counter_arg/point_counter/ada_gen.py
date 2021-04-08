@@ -45,7 +45,7 @@ def combine_source_and_target(source_data: List[Tuple[str, int]],
         return augment
 
     augment_source = get_augment_fn(source_domain_id, False)
-    augment_target = get_augment_fn(target_domain_id, Tuple)
+    augment_target = get_augment_fn(target_domain_id, True)
 
     source_insts: List[ADAInstance] = lmap(augment_source, source_data)
     target_insts: List[ADAInstance] = lmap(augment_target, target_data)
