@@ -89,13 +89,20 @@ def get_file_itr():
     return files
 
 
-def load_train_dev():
-    train, dev, test = load_aawd_splits()
+aawd_train_dev_preload = None
+
+
+def get_aawd_binary_train_dev():
+    global aawd_train_dev_preload
+    if aawd_train_dev_preload is not None:
+        return aawd_train_dev_preload
+    train, dev, test = load_aawd_splits_as_binary()
     train_x = left(train)
     train_y = right(train)
     dev_x = left(dev)
     dev_y = right(dev)
-    return train_x, train_y, dev_x, dev_y
+    aawd_train_dev_preload = train_x, train_y, dev_x, dev_y
+    return aawd_train_dev_preload
 
 
 def stat():

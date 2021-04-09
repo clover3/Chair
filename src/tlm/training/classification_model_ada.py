@@ -66,6 +66,9 @@ def model_fn_classification_with_ada(model_config, train_config):
 
         pred_loss = tf.reduce_mean(pred_losses * tf.cast(is_valid_label, tf.float32))
         domain_loss = tf.reduce_mean(domain_losses)
+
+        tf.compat.v1.summary.scalar('domain_loss', domain_loss)
+        tf.compat.v1.summary.scalar('pred_loss', pred_loss)
         alpha = model_config.alpha
         loss = pred_loss + alpha * domain_loss
         tvars = tf.compat.v1.trainable_variables()

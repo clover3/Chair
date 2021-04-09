@@ -62,6 +62,12 @@ def load_parsed() -> List[Review]:
     return review_list
 
 
+def load_all_claims() -> List[Claim]:
+    output = []
+    for review in load_parsed():
+        output.extend(review.claim_list)
+    return output
+
 if __name__ == "__main__":
     review_list = load_parsed()
     print(review_list[0])

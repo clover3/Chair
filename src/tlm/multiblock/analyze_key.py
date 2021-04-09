@@ -40,7 +40,6 @@ def test_set_importance(coef, x_test, y_label):
     return importance
 
 
-
 def feature_analysis(data):
     key_list, tokens_list = zip(*list(data))
 

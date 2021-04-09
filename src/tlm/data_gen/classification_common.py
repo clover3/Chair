@@ -15,6 +15,13 @@ class ClassificationInstance(NamedTuple):
     label: int
 
 
+class TextInstance(NamedTuple):
+    text: str
+    label: int
+    data_id: int
+
+
+
 class TokensAndSegmentIds(NamedTuple):
     tokens: List[str]
     seg_ids: List[int]
