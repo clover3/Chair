@@ -32,6 +32,7 @@ def get_modified_data_loader(tokenizer, max_sequence, vocab_filename):
     data_loader.SEP_ID = SEP_ID
     return data_loader
 
+
 class DataLoader:
     def __init__(self, max_sequence, vocab_filename, using_alt_tokenizer=False, load_both_dev=False):
         self.train_data = None

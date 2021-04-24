@@ -104,7 +104,7 @@ def right(pairs: Iterable[Tuple[A, B]]) -> List[B]:
     return list([b for a, b in pairs])
 
 
-def max_idx(l) -> int:
+def get_max_idx(l) -> int:
     cur_max = l[0]
     cur_max_idx = 0
     for idx, item in enumerate(l):

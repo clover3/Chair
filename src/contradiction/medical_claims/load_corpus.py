@@ -1,5 +1,8 @@
+import os
 import xml.etree.ElementTree as ET
 from typing import List, NamedTuple
+
+from cpath import data_path
 
 
 class Claim(NamedTuple):
@@ -17,7 +20,7 @@ class Review(NamedTuple):
 
 
 def get_corpus_path():
-    corpus_path = "C:\\work\\Code\\Chair\\data\\med_contradiction\\corpus.xml"
+    corpus_path = os.path.join(data_path, "med_contradiction", "corpus.xml")
     return corpus_path
 
 
@@ -67,6 +70,7 @@ def load_all_claims() -> List[Claim]:
     for review in load_parsed():
         output.extend(review.claim_list)
     return output
+
 
 if __name__ == "__main__":
     review_list = load_parsed()

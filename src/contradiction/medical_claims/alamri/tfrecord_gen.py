@@ -1,7 +1,7 @@
 import json
 import os
 from collections import OrderedDict
-from typing import List
+from typing import List, Iterator
 from typing import NamedTuple
 
 from contradiction.medical_claims.alamri.pairwise_gen import enum_true_instance, enum_neg_instance, enum_neg_instance2, \
@@ -52,7 +52,7 @@ def generate_neg_pairs(data_id_man):
     yield from generate_inner(data_id_man, enum_fn)
 
 
-def generate_neg_pairs2(data_id_man):
+def generate_neg_pairs2(data_id_man) -> Iterator[Instance]:
     enum_fn = enum_neg_instance2
     yield from generate_inner(data_id_man, enum_fn)
 
@@ -62,7 +62,7 @@ def generate_neg_pairs_diff_review(data_id_man):
     yield from generate_inner(data_id_man, enum_fn)
 
 
-def generate_inner(data_id_man, enum_fn):
+def generate_inner(data_id_man, enum_fn) -> Instance:
     for c1, c2, pair_type in enum_fn():
         info = {
             'text1': c1.text,

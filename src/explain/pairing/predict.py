@@ -25,7 +25,7 @@ class FlattenBatch:
         return out_d
 
 
-def predict_fn(sess, dev_batches,
+def predict_fn(sess, dev_batches, logits,
                         loss_tensor, ex_scores_tensor, per_layer_logits_tensor,
                         batch2feed_dict):
     num_layer = len(per_layer_logits_tensor)
@@ -33,8 +33,8 @@ def predict_fn(sess, dev_batches,
     flatten_batch = FlattenBatch()
     for batch in dev_batches:
         input_ids, input_mask, segment_ids, label = batch
-        loss_val, ex_scores, per_layer_logits \
-            = sess.run([loss_tensor, ex_scores_tensor, per_layer_logits_tensor],
+        logits_val, loss_val, ex_scores, per_layer_logits \
+            = sess.run([logits, loss_tensor, ex_scores_tensor, per_layer_logits_tensor],
                        feed_dict=batch2feed_dict(batch)
                        )
         all_per_layer_logits.append(per_layer_logits)
@@ -43,6 +43,7 @@ def predict_fn(sess, dev_batches,
             'input_mask': input_mask,
             'segment_ids': segment_ids,
             'label': label,
+            'logits': logits_val,
             'ex_scores': ex_scores
         }
 
@@ -61,8 +62,9 @@ def predict_fn(sess, dev_batches,
         'input_ids': concat_d['input_ids'],
         "segment_ids": concat_d['segment_ids'],
         "input_mask": concat_d['input_mask'],
+        "logits": concat_d['logits'],
         "ex_scores": concat_d['ex_scores'],
         "label": concat_d['label'],
-        "logits": logits_grouped_by_layer
+        "per_layer_logits": logits_grouped_by_layer
     }
     return output_d

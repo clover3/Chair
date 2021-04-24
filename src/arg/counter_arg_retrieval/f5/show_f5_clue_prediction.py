@@ -59,6 +59,7 @@ def show_high():
         if int(score * 100) == 13:
             print(e['text'])
 
+
 def print_top_k():
     k = 30
     info_save_path = at_output_dir("clue_counter_arg", "clue_f5.tfrecord.info")

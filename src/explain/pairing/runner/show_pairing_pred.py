@@ -1,4 +1,7 @@
+import scipy.special
+
 from cache import load_from_pickle
+from contradiction.medical_claims.token_tagging.deletion_score_to_html import make_prediction_summary_str
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap
 from misc_lib import two_digit_float
@@ -7,10 +10,11 @@ from visualize.html_visual import HtmlVisualizer, Cell
 
 
 def main():
-    output_d = load_from_pickle("pairing_pred")
-    html = HtmlVisualizer("pairing.html")
+    save_name = "alamri_mismatch_all"
+    output_d = load_from_pickle(save_name)
+    html = HtmlVisualizer("alamri_mismatch.html")
     tokenizer = get_tokenizer()
-    logits_grouped_by_layer = output_d["logits"]
+    logits_grouped_by_layer = output_d["per_layer_logits"]
     num_layers = 12
 
     def float_arr_to_cell(head, float_arr):
@@ -26,7 +30,12 @@ def main():
 
         tokens = tokenizer.convert_ids_to_tokens(get("input_ids"))
         ex_scores = get('ex_scores')
-        html.write_paragraph("label={}".format(get("label")))
+        probs = scipy.special.softmax(get('logits'))
+
+        pred_str = make_prediction_summary_str(probs)
+
+        html.write_paragraph("Prediction: {}".format(pred_str))
+        html.write_paragraph("gold label={}".format(get("label")))
 
         row1 = [Cell("")] + list([Cell(t, int(s*100)) for t, s in zip(tokens, ex_scores)])
         row2 = float_arr_to_cell("ex_prob", ex_scores)

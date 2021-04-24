@@ -5,6 +5,7 @@
       <option name="ignoredIdentifiers">
         <list>
           <option value="tlm.benchmark.nli_v2.placeholder" />
+          <option value="explain.pairing.runner.run_predict_from_text.*" />
         </list>
       </option>
     </inspection_tool>

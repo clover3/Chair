@@ -76,3 +76,6 @@ def enum_neg_instance_diff_review() -> Iterable[Tuple[Claim, Claim, str]]:
         for c1 in r1.claim_list:
             for c2 in r2.claim_list:
                 yield c1, c2, "{}/{} from different reviews".format(c1.assertion, c2.assertion)
+
+
+

@@ -9,7 +9,7 @@ from arg.counter_arg.header import ArguDataPoint
 from arg.counter_arg.header import Passage, ArguDataID
 from cache import load_cache, save_to_pickle
 from distrib.parallel import parallel_run
-from list_lib import lmap, max_idx
+from list_lib import lmap, get_max_idx
 from misc_lib import average, NamedNumber
 
 
@@ -179,7 +179,7 @@ def run_eval(split,
         candidate_ids: List[ArguDataID] = retrieve_candidate(query, split, condition)
         candidate = list([candidate_d[x] for x in candidate_ids])
         scores: List[NamedNumber] = scorer(query, candidate)
-        best_idx = max_idx(scores)
+        best_idx = get_max_idx(scores)
         pred_item: Passage = candidate[best_idx]
         gold_id = p.text2.id
         pred_id = pred_item.id
@@ -225,7 +225,7 @@ def collect_failure(split,
         candidate_ids: List[ArguDataID] = retrieve_candidate(query, split, condition)
         candidate: List[Passage] = list([candidate_pool_d[x] for x in candidate_ids])
         scores: List[NamedNumber] = scorer(query, candidate)
-        best_idx = max_idx(scores)
+        best_idx = get_max_idx(scores)
         pred_item: Passage = candidate[best_idx]
         gold_id = p.text2.id
         pred_id = pred_item.id

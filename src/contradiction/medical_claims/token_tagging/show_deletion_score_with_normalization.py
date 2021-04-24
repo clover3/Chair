@@ -1,5 +1,4 @@
 import json
-import random
 from typing import List, Dict
 
 import scipy.special
@@ -77,11 +76,11 @@ def write_deletion_score_to_html(out_file_name, summarized_table: List[Entry], i
             cells[idx].highlight_score = score
             cells[idx].target_color = color
 
-        if max_change < 0.05:
+        if max_change < 0.05 and False:
             pass
         else:
-            if random.random() < 0.90:
-                continue
+            # if random.random() < 0.90:
+            #     continue
             base_probs = scipy.special.softmax(entry.base_logits)
             info_entry = info[str(entry.data_id[0])]
             claim1_info: Dict = text_to_info[info_entry['text1']]
