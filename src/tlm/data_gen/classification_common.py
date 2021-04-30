@@ -1,6 +1,6 @@
 import collections
 from collections import OrderedDict
-from typing import List
+from typing import List, Iterable
 from typing import NamedTuple
 
 from data_generator.create_feature import create_int_feature
@@ -97,7 +97,8 @@ def encode_query_doc_instance(tokenizer, doc_token_length, inst: QueryDocInstanc
     return feature
 
 
-def write_with_classification_instance_with_id(tokenizer, max_seq_length, insts: List[ClassificationInstanceWDataID], out_path: str):
+def write_with_classification_instance_with_id(tokenizer, max_seq_length,
+                                               insts: Iterable[ClassificationInstanceWDataID], out_path: str):
     def encode_fn(inst: ClassificationInstanceWDataID) -> collections.OrderedDict :
         return encode_classification_instance_w_data_id(tokenizer, max_seq_length, inst)
-    write_records_w_encode_fn(out_path, encode_fn, insts, len(insts))
+    write_records_w_encode_fn(out_path, encode_fn, insts)

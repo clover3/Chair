@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+from collections import Counter
 from typing import List, Dict, Tuple, Callable, NamedTuple
 
 import scipy.special
@@ -20,6 +21,17 @@ def top_k_average(items):
     k = 10
     items.sort(reverse=True)
     return average(items[:k])
+
+
+def non_tail_max(items):
+    if len(items) <= 1:
+        return max(items)
+    else:
+        return max(items[:-1])
+
+
+def select_first(items):
+    return items[0]
 
 
 def summarize_score(info: Dict,
@@ -55,6 +67,41 @@ def summarize_score(info: Dict,
 
     num_items_per_group = average(lmap(len, grouped.values()))
     tprint("Num items per group : ", num_items_per_group)
+    return out_d
+
+
+def summarize_score_wo_merge(info: Dict,
+                    prediction_file_path: str,
+                    f_handler: FormatHandler,
+                    score_type) -> Dict[Tuple[str, str], float]:
+    key_logit = "logits"
+    data: List[Dict] = join_prediction_with_info(prediction_file_path, info, ["data_id", key_logit])
+
+    def logit_to_score_softmax(logit):
+        return scipy.special.softmax(logit)[1]
+
+    def get_score(entry):
+        if score_type == "softmax":
+            return logit_to_score_softmax(entry['logits'])
+        elif score_type == "raw":
+            return entry[key_logit][0]
+        elif score_type == "scalar":
+            return entry[key_logit]
+        elif score_type == "tuple":
+            return entry[key_logit][1]
+        else:
+            assert False
+
+    grouped: Dict[Tuple[str, str], List[Dict]] = group_by(data, f_handler.get_pair_id)
+    tprint("Group size:", len(grouped))
+    out_d = {}
+    for pair_id, items in grouped.items():
+        query_id, doc_id = pair_id
+        scores = lmap(get_score, items)
+        for idx, score in enumerate(scores):
+            new_doc_id = "{}_{}".format(doc_id, idx)
+            out_d[(query_id, new_doc_id)] = score
+
     return out_d
 
 
@@ -137,27 +184,52 @@ def get_max_score_from_doc_parts(score_d: Dict[Tuple[str, str], float]) -> Dict[
 
 def get_score_d(pred_file_path: str, info: Dict, f_handler: FormatHandler, combine_strategy: str, score_type: str):
     tprint("Reading from :", pred_file_path)
+    DOC_SEG_COMBINE = 0
+    DOC_PART_SEG_COMBINE = 1
+    NO_COMBINE = 2
+
+    combine_type = ""
     if combine_strategy == "top_k":
         print("using top k")
         combine_score = top_k_average
+        combine_type = DOC_SEG_COMBINE
     elif combine_strategy == "avg":
         combine_score = average
+        combine_type = DOC_SEG_COMBINE
         print("using avg")
     elif combine_strategy == "max":
         print("using max")
+        combine_type = DOC_SEG_COMBINE
         combine_score = max
+    elif combine_strategy == "non_tail_max":
+        combine_type = DOC_SEG_COMBINE
+        combine_score = non_tail_max
+    elif combine_strategy == "first":
+        combine_type = DOC_SEG_COMBINE
+        combine_score = select_first
     elif combine_strategy == "avg_then_doc_max":
+        combine_type = DOC_PART_SEG_COMBINE
         combine_score = average
         print("using avg then max")
     elif combine_strategy == "max_then_doc_max":
+        combine_type = DOC_PART_SEG_COMBINE
         combine_score = max
         print("using avg then max")
+    elif combine_strategy == "no_merge":
+        combine_type = NO_COMBINE
+        combine_score = None
     else:
         assert False
-    score_d = summarize_score(info, pred_file_path, f_handler, combine_score, score_type)
 
-    if combine_strategy == "avg_then_doc_max" or combine_strategy == "max_then_doc_max":
+    if combine_type == DOC_SEG_COMBINE:
+        score_d = summarize_score(info, pred_file_path, f_handler, combine_score, score_type)
+    elif combine_type == DOC_PART_SEG_COMBINE:
+        score_d = summarize_score(info, pred_file_path, f_handler, combine_score, score_type)
         score_d = get_max_score_from_doc_parts(score_d)
+    elif combine_type == NO_COMBINE:
+        score_d = summarize_score_wo_merge(info, pred_file_path, f_handler, score_type)
+    else:
+        assert False
 
     return score_d
 

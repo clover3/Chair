@@ -123,6 +123,11 @@ def load_token_d_1(split, query_id) -> Dict[str, List[str]]:
     return load_pickle_from(save_path)
 
 
+def load_token_d_title_body(split, query_id) -> Dict[str, Tuple[List[str], List[str]]]:
+    save_path = os.path.join(job_man_dir, "MSMARCO_{}_title_body_tokens".format(split), query_id)
+    return load_pickle_from(save_path)
+
+
 def load_token_d_10doc(split, query_id) -> Dict[str, List[str]]:
     save_path = os.path.join(job_man_dir, "MSMARCO_{}_doc10_tokens".format(split), query_id)
     return load_pickle_from(save_path)
@@ -216,7 +221,6 @@ class MSMarcoDataReader:
             for [docid, _, offset] in tsvreader:
                 doc_offset[docid] = int(offset)
         return doc_offset
-
 
     def get_content(self, docid):
         """getcontent(docid, f) will get content for a given docid (a string) from filehandle f.

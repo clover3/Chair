@@ -1,172 +1,73 @@
-import abc
 import json
 import os
-import random
-from abc import ABC
-from typing import List, Dict, Tuple, OrderedDict
+from collections import Counter
+from typing import List, Tuple, OrderedDict, Iterable
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from arg.qck.decl import QCKQuery, QCKCandidate
 from data_generator.job_runner import WorkerInterface
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from dataset_specific.msmarco.common import SimpleQrel, QueryID
-from dataset_specific.msmarco.common import load_query_group, load_candidate_doc_list_1, load_msmarco_simple_qrels, \
-    load_token_d_1, load_queries, top100_doc_ids, load_candidate_doc_list_10, load_token_d_10doc, \
-    load_candidate_doc_top50, load_token_d_50doc
-from misc_lib import DataIDManager, tprint, exist_or_mkdir, pick1
+from misc_lib import DataIDManager, tprint, exist_or_mkdir, pick1, print_dict_tab
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from tlm.data_gen.classification_common import ClassificationInstanceWDataID, \
     write_with_classification_instance_with_id, PairedInstance
+from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResourceI, ProcessedResourcePredict, \
+    ProcessedResourceTitleBodyPredict, ProcessedResourceTitleBodyTrain
 from tlm.data_gen.pairwise_common import combine_features
 
 
-class ProcessedResourceI(ABC):
-    def __init__(self, split):
-        pass
-
-    @abc.abstractmethod
-    def get_doc_tokens_d(self, qid: QueryID) -> Dict[str, List[str]]:
-        pass
-
-    @abc.abstractmethod
-    def get_label(self, qid: QueryID, doc_id):
-        pass
-
-    @abc.abstractmethod
-    def get_q_tokens(self, qid: QueryID):
-        pass
-
-    @abc.abstractmethod
-    def get_doc_for_query_d(self):
-        pass
-
-    @abc.abstractmethod
-    def query_in_qrel(self, query_id):
-        pass
-
-
-class ProcessedResource(ProcessedResourceI):
-    def __init__(self, split):
-        super(ProcessedResource, self).__init__(split)
-        query_group: List[List[QueryID]] = load_query_group(split)
-        candidate_docs_d: Dict[QueryID, List[str]] = load_candidate_doc_list_1(split)
-        qrel: SimpleQrel = load_msmarco_simple_qrels(split)
-
-        self.split = split
-        self.queires = dict(load_queries(split))
-        self.query_group = query_group
-        self.tokenizer = get_tokenizer()
-        self.candidate_doc_d: Dict[QueryID, List[str]] = candidate_docs_d
-        self.qrel = qrel
-        self.tokenizer = get_tokenizer()
-
-    def get_doc_tokens_d(self, qid: QueryID) -> Dict[str, List[str]]:
-        return load_token_d_1(self.split, qid)
-
-    def get_label(self, qid: QueryID, doc_id):
-        return self.qrel.get_label(qid, doc_id)
-
-    def get_q_tokens(self, qid: QueryID):
-        query_text = self.queires[qid]
-        return self.tokenizer.tokenize(query_text)
-
-    def query_in_qrel(self, query_id):
-        return query_id in self.qrel.qrel_d
-
-    def get_doc_for_query_d(self):
-        return self.candidate_doc_d
-
-
-class ProcessedResource10doc(ProcessedResourceI):
-    def __init__(self, split):
-        super(ProcessedResource10doc, self).__init__(split)
-        query_group: List[List[QueryID]] = load_query_group(split)
-        candidate_docs_d: Dict[QueryID, List[str]] = load_candidate_doc_list_10(split)
-        qrel: SimpleQrel = load_msmarco_simple_qrels(split)
-
-        self.split = split
-        self.queires = dict(load_queries(split))
-        self.query_group = query_group
-        self.tokenizer = get_tokenizer()
-        self.candidate_doc_d: Dict[QueryID, List[str]] = candidate_docs_d
-        self.qrel = qrel
-        self.tokenizer = get_tokenizer()
-
-    def get_doc_tokens_d(self, qid: QueryID) -> Dict[str, List[str]]:
-        return load_token_d_10doc(self.split, qid)
-
-    def get_label(self, qid: QueryID, doc_id):
-        return self.qrel.get_label(qid, doc_id)
-
-    def get_q_tokens(self, qid: QueryID):
-        query_text = self.queires[qid]
-        return self.tokenizer.tokenize(query_text)
-
-    def get_doc_for_query_d(self):
-        return self.candidate_doc_d
-
-    def query_in_qrel(self, query_id):
-        return query_id in self.qrel.qrel_d
-
-
-class ProcessedResource50doc(ProcessedResourceI):
-    def __init__(self, split):
-        super(ProcessedResource50doc, self).__init__(split)
-        query_group: List[List[QueryID]] = load_query_group(split)
-        candidate_docs_d: Dict[QueryID, List[str]] = load_candidate_doc_top50(split)
-        qrel: SimpleQrel = load_msmarco_simple_qrels(split)
-
-        self.split = split
-        self.queires = dict(load_queries(split))
-        self.query_group = query_group
-        self.tokenizer = get_tokenizer()
-        self.candidate_doc_d: Dict[QueryID, List[str]] = candidate_docs_d
-        self.qrel = qrel
-        self.tokenizer = get_tokenizer()
-
-    def get_doc_tokens_d(self, qid: QueryID) -> Dict[str, List[str]]:
-        return load_token_d_50doc(self.split, qid)
-
-    def get_label(self, qid: QueryID, doc_id):
-        return self.qrel.get_label(qid, doc_id)
-
-    def get_q_tokens(self, qid: QueryID):
-        query_text = self.queires[qid]
-        return self.tokenizer.tokenize(query_text)
-
-    def get_doc_for_query_d(self):
-        return self.candidate_doc_d
-
-    def query_in_qrel(self, query_id):
-        return query_id in self.qrel.qrel_d
-
-
-class ProcessedResourcePredict:
-    def __init__(self, split):
-        query_group: List[List[QueryID]] = load_query_group(split)
-        candidate_docs_d: Dict[QueryID, List[str]] = top100_doc_ids(split)
-        qrel: SimpleQrel = load_msmarco_simple_qrels(split)
-
-        self.split = split
-        self.queires = dict(load_queries(split))
-        self.query_group = query_group
-        self.tokenizer = get_tokenizer()
-        self.candidate_doc_d: Dict[QueryID, List[str]] = candidate_docs_d
-        self.qrel = qrel
-        self.tokenizer = get_tokenizer()
-
-    def get_doc_tokens_d(self, qid: QueryID) -> Dict[str, List[str]]:
-        return load_token_d_1(self.split, qid)
-
-    def get_label(self, qid: QueryID, doc_id):
-        return self.qrel.get_label(qid, doc_id)
-
-    def get_q_tokens(self, qid: QueryID):
-        query_text = self.queires[qid]
-        return self.tokenizer.tokenize(query_text)
-
-
-class FirstPassageGenerator:
+class PointwiseGen:
     def __init__(self, resource: ProcessedResourceI,
+                 basic_encoder,
+                 max_seq_length):
+        self.resource = resource
+        self.encoder = basic_encoder
+        self.tokenizer = get_tokenizer()
+        self.max_seq_length = max_seq_length
+
+    def generate(self, data_id_manager, qids):
+        missing_cnt = 0
+        success_docs = 0
+        missing_doc_qid = []
+        for qid in qids:
+            if qid not in self.resource.get_doc_for_query_d():
+                assert not self.resource.query_in_qrel(qid)
+                continue
+
+            tokens_d = self.resource.get_doc_tokens_d(qid)
+            q_tokens = self.resource.get_q_tokens(qid)
+            for doc_id in self.resource.get_doc_for_query_d()[qid]:
+                label = self.resource.get_label(qid, doc_id)
+                try:
+                    doc_tokens = tokens_d[doc_id]
+                    insts: List[Tuple[List, List]] = self.encoder.encode(q_tokens, doc_tokens)
+
+                    for passage_idx, passage in enumerate(insts):
+                        tokens_seg, seg_ids = passage
+                        assert type(tokens_seg[0]) == str
+                        assert type(seg_ids[0]) == int
+                        data_id = data_id_manager.assign({
+                            'doc_id': doc_id,
+                            'passage_idx': passage_idx,
+                            'label': label,
+                        })
+                        inst = ClassificationInstanceWDataID(tokens_seg, seg_ids, label, data_id)
+                        yield inst
+                    success_docs += 1
+                except KeyError:
+                    missing_cnt += 1
+                    missing_doc_qid.append(qid)
+                    if missing_cnt > 10:
+                        print(missing_doc_qid)
+                        print("success: ", success_docs)
+                        raise KeyError
+
+    def write(self, insts: List[ClassificationInstanceWDataID], out_path: str):
+        return write_with_classification_instance_with_id(self.tokenizer, self.max_seq_length, insts, out_path)
+
+
+class TitleRepeatFirstRandomGen:
+    def __init__(self, resource: ProcessedResourceTitleBodyTrain,
                  basic_encoder,
                  max_seq_length):
         self.resource = resource
@@ -284,6 +185,81 @@ class FirstPassagePairGenerator:
         return write_records_w_encode_fn(out_path, encode_fn, insts, len(insts))
 
 
+class PassageLengthInspector:
+    def __init__(self, resource: ProcessedResourceI,
+                 basic_encoder,
+                 max_seq_length):
+        self.resource = resource
+        self.encoder = basic_encoder
+        self.tokenizer = get_tokenizer()
+        self.max_seq_length = max_seq_length
+
+    def generate(self, data_id_manager, qids):
+        missing_cnt = 0
+        success_docs = 0
+        missing_doc_qid = []
+        counter = Counter()
+        cut_list = [50, 100, 200, 300, 500, 1000, 999999999]
+        for qid in qids:
+            if qid not in self.resource.get_doc_for_query_d():
+                assert not self.resource.query_in_qrel(qid)
+                continue
+
+            tokens_d = self.resource.get_doc_tokens_d(qid)
+            q_tokens = self.resource.get_q_tokens(qid)
+
+            pos_doc_id_list = []
+            neg_doc_id_list = []
+            for doc_id in self.resource.get_doc_for_query_d()[qid]:
+                label = self.resource.get_label(qid, doc_id)
+                if label:
+                    pos_doc_id_list.append(doc_id)
+                else:
+                    neg_doc_id_list.append(doc_id)
+
+            try:
+                for pos_doc_id in pos_doc_id_list:
+                    sampled_neg_doc_id = pick1(neg_doc_id_list)
+                    pos_doc_tokens = tokens_d[pos_doc_id]
+                    for cut in cut_list:
+                        if len(pos_doc_tokens) < cut:
+                            counter["pos_under_{}".format(cut)] += 1
+                        else:
+                            counter["pos_over_{}".format(cut)] += 1
+                        neg_doc_tokens = tokens_d[sampled_neg_doc_id]
+                        if len(neg_doc_tokens) < cut:
+                            counter["neg_under_{}".format(cut)] += 1
+                        else:
+                            counter["neg_over_{}".format(cut)] += 1
+
+                    inst = PairedInstance([], [], [], [], 0)
+                    yield inst
+                    success_docs += 1
+            except KeyError:
+                missing_cnt += 1
+                missing_doc_qid.append(qid)
+                if missing_cnt > 10 * 40:
+                    print(missing_doc_qid)
+                    raise
+
+        for cut in cut_list:
+            n_pos_short = counter["pos_under_{}".format(cut)]
+            n_short = n_pos_short + counter["neg_under_{}".format(cut)]
+            if n_short > 0:
+                p_pos_if_short = n_pos_short / n_short
+                print("P(Pos|Len<{})={}".format(cut, p_pos_if_short))
+            else:
+                print("P(Pos|Len<{})={}".format(cut, "div 0"))
+
+
+        print_dict_tab(counter)
+
+    def write(self, insts: Iterable[PairedInstance], out_path: str):
+        cnt = 0
+        for i in insts:
+            cnt += 1
+
+
 class PredictionAllPassageGenerator:
     def __init__(self, resource: ProcessedResourcePredict,
                  basic_encoder,
@@ -334,6 +310,80 @@ class PredictionAllPassageGenerator:
         return write_with_classification_instance_with_id(self.tokenizer, self.max_seq_length, insts, out_path)
 
 
+def memory_profile_print():
+    from pympler import muppy, summary
+    all_objects = muppy.get_objects()
+    sum1 = summary.summarize(all_objects)
+    # Prints out a summary of the large objects
+    summary.print_(sum1)
+    # Get references to certain types of objects such as dataframe
+    dataframes = [ao for ao in all_objects if isinstance(ao, pd.DataFrame)]
+    for d in dataframes:
+        print(d.columns.values)
+        print(len(d))
+
+
+
+class PredictionTitleRepeatGen:
+    def __init__(self, resource: ProcessedResourceTitleBodyPredict,
+                 basic_encoder,
+                 max_seq_length):
+        self.resource = resource
+        self.encoder = basic_encoder
+        self.tokenizer = get_tokenizer()
+        self.max_seq_length = max_seq_length
+
+    def generate(self, data_id_manager, qids):
+        missing_cnt = 0
+        success_docs = 0
+        n_passage = 0
+        for qid in qids:
+            if qid not in self.resource.candidate_doc_d:
+                assert qid not in self.resource.qrel.qrel_d
+                continue
+
+            tokens_d: Dict[str, Tuple[List, List]] = self.resource.get_doc_tokens_d(qid)
+            q_tokens = self.resource.get_q_tokens(qid)
+
+            data_size_maybe = 0
+            for title_tokens, body_tokens in tokens_d.values():
+                data_size_maybe += len(title_tokens)
+                data_size_maybe += len(body_tokens)
+            for doc_id in self.resource.candidate_doc_d[qid]:
+                label = self.resource.get_label(qid, doc_id)
+                try:
+                    title_tokens, body_tokens = tokens_d[doc_id]
+                    if len(title_tokens) > 100:
+                        title_tokens = title_tokens[:100]
+                    insts: List[Tuple[List, List]] = self.encoder.encode(q_tokens, title_tokens, body_tokens)
+
+                    for passage_idx, passage in enumerate(insts):
+                        tokens_seg, seg_ids = passage
+                        assert type(tokens_seg[0]) == str
+                        assert type(seg_ids[0]) == int
+                        data_id = data_id_manager.assign({
+                            'query': QCKQuery(qid, ""),
+                            'candidate': QCKCandidate(doc_id, ""),
+                            'passage_idx': passage_idx,
+                        })
+                        inst = ClassificationInstanceWDataID(tokens_seg, seg_ids, label, data_id)
+                        n_passage += 1
+                        yield inst
+                        # if n_passage % 1000 == 0:
+                        #     tprint("n_passage : {}".format(n_passage))
+                        #     tprint('gc.get_count()', gc.get_count())
+                        #     tprint('gc.get_stats', gc.get_stats())
+                    success_docs += 1
+                except KeyError:
+                    missing_cnt += 1
+                    if missing_cnt > 10:
+                        print("success: ", success_docs)
+                        raise KeyError
+
+    def write(self, insts: Iterable[ClassificationInstanceWDataID], out_path: str):
+        return write_with_classification_instance_with_id(self.tokenizer, self.max_seq_length, insts, out_path)
+
+
 class MMDWorker(WorkerInterface):
     def __init__(self, query_group, generator, out_dir):
         self.out_dir = out_dir
@@ -349,8 +399,8 @@ class MMDWorker(WorkerInterface):
         data_id_ed = data_id_st + data_bin
         data_id_manager = DataIDManager(data_id_st, data_id_ed)
         tprint("generating instances")
-        insts = list(self.generator.generate(data_id_manager, qids))
-        tprint("{} instances".format(len(insts)))
+        insts = self.generator.generate(data_id_manager, qids)
+        # tprint("{} instances".format(len(insts)))
         out_path = os.path.join(self.out_dir, str(job_id))
         self.generator.write(insts, out_path)
 

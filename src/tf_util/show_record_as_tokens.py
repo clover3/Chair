@@ -26,7 +26,8 @@ def file_show(fn):
 
             if key in ["input_ids", "input_ids1", "input_ids2"]:
                 tokens = tokenizer.convert_ids_to_tokens(v)
-                print(tokens)
+                print(key)
+                print(" ".join(tokens))
 
 
         cnt += 1

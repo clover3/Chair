@@ -3,8 +3,10 @@ from typing import List, Dict
 from data_generator.job_runner import JobRunner
 from epath import job_man_dir
 from tlm.data_gen.adhoc_datagen import LeadingN
-from tlm.data_gen.msmarco_doc_gen.gen_worker import MMDWorker, ProcessedResource, FirstPassageGenerator, \
-    ProcessedResource10doc, ProcessedResource50doc, FirstPassagePairGenerator
+from tlm.data_gen.msmarco_doc_gen.gen_worker import MMDWorker, PointwiseGen, \
+    FirstPassagePairGenerator
+from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResource, ProcessedResource10doc, \
+    ProcessedResource50doc
 
 if __name__ == "__main__":
     split = "train"

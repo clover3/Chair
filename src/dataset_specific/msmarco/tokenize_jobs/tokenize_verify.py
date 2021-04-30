@@ -3,7 +3,7 @@ import sys
 
 from log_lib import log_variables
 from misc_lib import TimeEstimator
-from tlm.data_gen.msmarco_doc_gen.gen_worker import ProcessedResource
+from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResource
 
 
 class Verifier:

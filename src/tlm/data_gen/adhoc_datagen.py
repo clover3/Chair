@@ -186,6 +186,22 @@ class AllSegmentAsDoc(EncoderInterface):
         return insts
 
 
+class AllSegmentRepeatTitle:
+    def __init__(self, max_seq_length):
+        self.max_seq_length = max_seq_length
+
+    def encode(self, query_tokens, title_tokens, body_tokens) -> List[Tuple[List, List]]:
+        content_len = self.max_seq_length - 3 - len(query_tokens) - len(title_tokens)
+        insts = []
+        for second_tokens in enum_passage(body_tokens, content_len):
+            passage_tokens = title_tokens + second_tokens
+            out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + passage_tokens + ["[SEP]"]
+            segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(passage_tokens) + 1)
+            entry = out_tokens, segment_ids
+            insts.append(entry)
+        return insts
+
+
 class AllSegmentAsDocTokenCounter(EncoderTokenCounter2Interface):
     def __init__(self, max_seq_length):
         super(AllSegmentAsDocTokenCounter, self).__init__(max_seq_length)
@@ -290,6 +306,27 @@ class FirstAndRandom(EncoderInterface):
         super(FirstAndRandom, self).__init__(max_seq_length)
         self.max_seq_length = max_seq_length
         self.num_segment = num_segment
+
+    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
+        content_len = self.max_seq_length - 3 - len(query_tokens)
+        insts = []
+        for idx, second_tokens in enumerate(enum_passage(tokens, content_len)):
+            if idx == 0:
+                include = True
+            else:
+                include = random.random() < 0.1
+            if include:
+                out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
+                segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+                entry = out_tokens, segment_ids
+                insts.append(entry)
+        return insts
+
+
+class FirstAndRandomTitleRepeat(EncoderInterface):
+    def __init__(self, max_seq_length):
+        super(FirstAndRandomTitleRepeat, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
 
     def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
         content_len = self.max_seq_length - 3 - len(query_tokens)
