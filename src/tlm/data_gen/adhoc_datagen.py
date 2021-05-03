@@ -35,6 +35,13 @@ class EncoderInterface(ABC):
         pass
 
 
+class TitleRepeatInterface(ABC):
+    @abstractmethod
+    def encode(self, query, title_tokens, body_tokens):
+        # returns tokens, segmend_ids
+        pass
+
+
 class EncoderTokenCounterInterface(ABC):
     def __init__(self, max_seq_length):
         pass
@@ -186,12 +193,20 @@ class AllSegmentAsDoc(EncoderInterface):
         return insts
 
 
-class AllSegmentRepeatTitle:
+class AllSegmentRepeatTitle(TitleRepeatInterface):
     def __init__(self, max_seq_length):
         self.max_seq_length = max_seq_length
+        self.max_title_len = int(max_seq_length * 0.1)
+        self.long_title_cnt = 0
+        self.total_doc_cnt = 0
 
     def encode(self, query_tokens, title_tokens, body_tokens) -> List[Tuple[List, List]]:
+        if len(title_tokens) > self.max_title_len:
+            self.long_title_cnt += 1
+        self.total_doc_cnt += 1
+        title_tokens = title_tokens[:self.max_title_len]
         content_len = self.max_seq_length - 3 - len(query_tokens) - len(title_tokens)
+        assert content_len > 5
         insts = []
         for second_tokens in enum_passage(body_tokens, content_len):
             passage_tokens = title_tokens + second_tokens
@@ -216,7 +231,6 @@ class AllSegmentAsDocTokenCounter(EncoderTokenCounter2Interface):
             entry = out_tokens, segment_ids, len(second_tokens)
             insts.append(entry)
         return insts
-
 
 
 class OverlappingSegments(EncoderInterface):
@@ -323,25 +337,103 @@ class FirstAndRandom(EncoderInterface):
         return insts
 
 
-class FirstAndRandomTitleRepeat(EncoderInterface):
+class FirstAndRandomTitleRepeat(TitleRepeatInterface):
     def __init__(self, max_seq_length):
-        super(FirstAndRandomTitleRepeat, self).__init__(max_seq_length)
-        self.max_seq_length = max_seq_length
+        self.all_seg_repeat_encoder = AllSegmentRepeatTitle(max_seq_length)
 
-    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
-        content_len = self.max_seq_length - 3 - len(query_tokens)
-        insts = []
-        for idx, second_tokens in enumerate(enum_passage(tokens, content_len)):
+    def encode(self, query_tokens, title_tokens, body_tokens) -> List[Tuple[List, List]]:
+        insts = self.all_seg_repeat_encoder.encode(query_tokens, title_tokens, body_tokens)
+        selected_insts = []
+        for idx in range(len(insts)):
             if idx == 0:
                 include = True
             else:
                 include = random.random() < 0.1
+
             if include:
-                out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
-                segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
-                entry = out_tokens, segment_ids
-                insts.append(entry)
+                selected_insts.append(insts[idx])
         return insts
+
+
+class FirstNoTitle(TitleRepeatInterface):
+    def __init__(self, max_seq_length):
+        self.max_seq_length = max_seq_length
+        self.long_title_cnt = 0
+        self.total_doc_cnt = 0
+
+    def encode(self, query_tokens, title_tokens, body_tokens) -> List[Tuple[List, List]]:
+        self.total_doc_cnt += 1
+        content_len = self.max_seq_length - 3 - len(query_tokens)
+        assert content_len > 5
+        insts = []
+        for second_tokens in enum_passage(body_tokens, content_len):
+            passage_tokens = second_tokens
+            out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + passage_tokens + ["[SEP]"]
+            segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(passage_tokens) + 1)
+            entry = out_tokens, segment_ids
+            insts.append(entry)
+            break
+        return insts
+
+
+class FirstAndRandomNoTitle(TitleRepeatInterface):
+    def __init__(self, max_seq_length):
+        self.all_seg_repeat_encoder = NoTitle(max_seq_length)
+
+    def encode(self, query_tokens, title_tokens, body_tokens) -> List[Tuple[List, List]]:
+        insts = self.all_seg_repeat_encoder.encode(query_tokens, title_tokens, body_tokens)
+        selected_insts = []
+        for idx in range(len(insts)):
+            if idx == 0:
+                include = True
+            else:
+                include = random.random() < 0.1
+
+            if include:
+                selected_insts.append(insts[idx])
+        return insts
+
+
+class NoTitle(TitleRepeatInterface):
+    def __init__(self, max_seq_length):
+        self.max_seq_length = max_seq_length
+        self.long_title_cnt = 0
+        self.total_doc_cnt = 0
+
+    def encode(self, query_tokens, title_tokens, body_tokens) -> List[Tuple[List, List]]:
+        self.total_doc_cnt += 1
+        content_len = self.max_seq_length - 3 - len(query_tokens)
+        assert content_len > 5
+        insts = []
+        for second_tokens in enum_passage(body_tokens, content_len):
+            passage_tokens = second_tokens
+            out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + passage_tokens + ["[SEP]"]
+            segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(passage_tokens) + 1)
+            entry = out_tokens, segment_ids
+            insts.append(entry)
+        return insts
+
+
+class AllSegmentNoTitle(TitleRepeatInterface):
+    def __init__(self, max_seq_length):
+        self.max_seq_length = max_seq_length
+        self.long_title_cnt = 0
+        self.total_doc_cnt = 0
+
+    def encode(self, query_tokens, title_tokens, body_tokens) -> List[Tuple[List, List]]:
+        self.total_doc_cnt += 1
+        content_len = self.max_seq_length - 3 - len(query_tokens)
+        assert content_len > 5
+        insts = []
+        for second_tokens in enum_passage(body_tokens, content_len):
+            passage_tokens = second_tokens
+            out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + passage_tokens + ["[SEP]"]
+            segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(passage_tokens) + 1)
+            entry = out_tokens, segment_ids
+            insts.append(entry)
+        return insts
+
+
 
 
 class GeoSampler(EncoderInterface):

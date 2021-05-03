@@ -17,5 +17,8 @@ if __name__ == "__main__":
     def factory(out_dir):
         return MMDWorker(resource.query_group, generator, out_dir)
 
-    runner = JobRunner(job_man_dir, len(resource.query_group)-1, "MMD_pred_title_body".format(split), factory)
+    # The source code for MMD_pred_title_body2 is same as MMD_pred_title_body.
+    # However, codes was modified in between them
+    # Max title length limit
+    runner = JobRunner(job_man_dir, len(resource.query_group)-1, "MMD_pred_title_body2".format(split), factory)
     runner.start()

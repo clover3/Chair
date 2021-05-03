@@ -24,6 +24,7 @@ class TokenizeWorker:
         ticker = TimeEstimator(len(qid_list))
         missing_rel_cnt = 0
         missing_nrel_cnt = 0
+
         def empty_doc_fn(query_id, doc_id):
             rel_docs = self.ms_reader.qrel[query_id]
             nonlocal missing_rel_cnt

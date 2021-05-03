@@ -65,8 +65,6 @@ def load_candidate_doc_top50(split) -> Dict[QueryID, List[str]]:
     return load_candidate_doc_list(save_path)
 
 
-
-
 def load_candidate_doc_list(save_path):
     output = {}
     for line in open(save_path, "r"):

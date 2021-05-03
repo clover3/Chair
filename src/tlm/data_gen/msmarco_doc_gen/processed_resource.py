@@ -155,7 +155,29 @@ class ProcessedResourcePredict:
         return self.tokenizer.tokenize(query_text)
 
 
-class ProcessedResourceTitleBodyTrain:
+class ProcessedResourceTitleBodyI(ABC):
+    @abc.abstractmethod
+    def get_doc_tokens_d(self, qid: QueryID) -> Dict[str, Tuple[List[str], List[str]]]:
+        pass
+
+    @abc.abstractmethod
+    def get_label(self, qid: QueryID, doc_id):
+        pass
+
+    @abc.abstractmethod
+    def get_q_tokens(self, qid: QueryID):
+        pass
+
+    @abc.abstractmethod
+    def get_doc_for_query_d(self):
+        pass
+
+    @abc.abstractmethod
+    def query_in_qrel(self, query_id):
+        pass
+
+
+class ProcessedResourceTitleBodyTrain(ProcessedResourceTitleBodyI):
     def __init__(self, split, load_candidate_doc_list_fn):
         query_group: List[List[QueryID]] = load_query_group(split)
         candidate_docs_d: Dict[QueryID, List[str]] = load_candidate_doc_list_fn(split)
@@ -186,7 +208,7 @@ class ProcessedResourceTitleBodyTrain:
         return query_id in self.qrel.qrel_d
 
 
-class ProcessedResourceTitleBodyPredict:
+class ProcessedResourceTitleBodyPredict(ProcessedResourceTitleBodyI):
     def __init__(self, split):
         query_group: List[List[QueryID]] = load_query_group(split)
         candidate_docs_d: Dict[QueryID, List[str]] = top100_doc_ids(split)
@@ -209,3 +231,9 @@ class ProcessedResourceTitleBodyPredict:
     def get_q_tokens(self, qid: QueryID):
         query_text = self.queires[qid]
         return self.tokenizer.tokenize(query_text)
+
+    def get_doc_for_query_d(self):
+        return self.candidate_doc_d
+
+    def query_in_qrel(self, query_id):
+        return query_id in self.qrel.qrel_d

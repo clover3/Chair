@@ -9,10 +9,11 @@ from data_generator.job_runner import WorkerInterface
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import DataIDManager, tprint, exist_or_mkdir, pick1, print_dict_tab
 from tf_util.record_writer_wrap import write_records_w_encode_fn
+from tlm.data_gen.adhoc_datagen import TitleRepeatInterface
 from tlm.data_gen.classification_common import ClassificationInstanceWDataID, \
     write_with_classification_instance_with_id, PairedInstance
 from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResourceI, ProcessedResourcePredict, \
-    ProcessedResourceTitleBodyPredict, ProcessedResourceTitleBodyTrain
+    ProcessedResourceTitleBodyPredict, ProcessedResourceTitleBodyTrain, ProcessedResourceTitleBodyI
 from tlm.data_gen.pairwise_common import combine_features
 
 
@@ -66,12 +67,12 @@ class PointwiseGen:
         return write_with_classification_instance_with_id(self.tokenizer, self.max_seq_length, insts, out_path)
 
 
-class TitleRepeatFirstRandomGen:
-    def __init__(self, resource: ProcessedResourceTitleBodyTrain,
-                 basic_encoder,
+class GenerateFromTitleBody:
+    def __init__(self, resource: ProcessedResourceTitleBodyI,
+                 doc_encoder: TitleRepeatInterface,
                  max_seq_length):
         self.resource = resource
-        self.encoder = basic_encoder
+        self.doc_encoder = doc_encoder
         self.tokenizer = get_tokenizer()
         self.max_seq_length = max_seq_length
 
@@ -84,13 +85,13 @@ class TitleRepeatFirstRandomGen:
                 assert not self.resource.query_in_qrel(qid)
                 continue
 
-            tokens_d = self.resource.get_doc_tokens_d(qid)
+            tokens_d: Dict[str, Tuple[List[str], List[str]]] = self.resource.get_doc_tokens_d(qid)
             q_tokens = self.resource.get_q_tokens(qid)
             for doc_id in self.resource.get_doc_for_query_d()[qid]:
                 label = self.resource.get_label(qid, doc_id)
                 try:
-                    doc_tokens = tokens_d[doc_id]
-                    insts: List[Tuple[List, List]] = self.encoder.encode(q_tokens, doc_tokens)
+                    title_tokens, body_tokens = tokens_d[doc_id]
+                    insts: List[Tuple[List, List]] = self.doc_encoder.encode(q_tokens, title_tokens, body_tokens)
 
                     for passage_idx, passage in enumerate(insts):
                         tokens_seg, seg_ids = passage
@@ -111,6 +112,7 @@ class TitleRepeatFirstRandomGen:
                         print(missing_doc_qid)
                         print("success: ", success_docs)
                         raise KeyError
+
 
     def write(self, insts: List[ClassificationInstanceWDataID], out_path: str):
         return write_with_classification_instance_with_id(self.tokenizer, self.max_seq_length, insts, out_path)
@@ -323,13 +325,12 @@ def memory_profile_print():
         print(len(d))
 
 
-
-class PredictionTitleRepeatGen:
+class PredictionGenFromTitleBody:
     def __init__(self, resource: ProcessedResourceTitleBodyPredict,
-                 basic_encoder,
+                 basic_encoder: TitleRepeatInterface,
                  max_seq_length):
         self.resource = resource
-        self.encoder = basic_encoder
+        self.doc_encoder = basic_encoder
         self.tokenizer = get_tokenizer()
         self.max_seq_length = max_seq_length
 
@@ -353,9 +354,7 @@ class PredictionTitleRepeatGen:
                 label = self.resource.get_label(qid, doc_id)
                 try:
                     title_tokens, body_tokens = tokens_d[doc_id]
-                    if len(title_tokens) > 100:
-                        title_tokens = title_tokens[:100]
-                    insts: List[Tuple[List, List]] = self.encoder.encode(q_tokens, title_tokens, body_tokens)
+                    insts: List[Tuple[List, List]] = self.doc_encoder.encode(q_tokens, title_tokens, body_tokens)
 
                     for passage_idx, passage in enumerate(insts):
                         tokens_seg, seg_ids = passage
@@ -379,6 +378,7 @@ class PredictionTitleRepeatGen:
                     if missing_cnt > 10:
                         print("success: ", success_docs)
                         raise KeyError
+        print(" {} of {} has long title".format(self.doc_encoder.long_title_cnt, self.doc_encoder.total_doc_cnt))
 
     def write(self, insts: Iterable[ClassificationInstanceWDataID], out_path: str):
         return write_with_classification_instance_with_id(self.tokenizer, self.max_seq_length, insts, out_path)
