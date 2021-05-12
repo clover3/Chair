@@ -1,4 +1,5 @@
 import abc
+import os
 from abc import ABC
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
@@ -6,7 +7,8 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from dataset_specific.msmarco.common import QueryID, load_query_group, load_candidate_doc_list_1, SimpleQrel, \
     load_msmarco_simple_qrels, load_queries, load_token_d_1, load_candidate_doc_list_10, load_token_d_10doc, \
-    load_candidate_doc_top50, load_token_d_50doc, top100_doc_ids, load_token_d_title_body
+    load_candidate_doc_top50, load_token_d_50doc, top100_doc_ids, load_token_d_title_body, load_multiple_resource
+from epath import job_man_dir
 
 
 class ProcessedResourceI(ABC):
@@ -96,6 +98,60 @@ class ProcessedResource10doc(ProcessedResourceI):
 
     def query_in_qrel(self, query_id):
         return query_id in self.qrel.qrel_d
+
+
+class ProcessedResourceMultiInterface:
+    def __init__(self, split):
+        query_group: List[List[QueryID]] = load_query_group(split)
+        qrel: SimpleQrel = load_msmarco_simple_qrels(split)
+
+        self.split = split
+        self.queires = dict(load_queries(split))
+        self.query_group = query_group
+        self.tokenizer = get_tokenizer()
+        self.qrel = qrel
+
+    def get_stemmed_tokens_d(self, qid: QueryID) -> Dict[str, List[str]]:
+        return load_multiple_resource(self.split, "stemmed_tokens", qid)
+
+    def get_bert_tokens_d(self, qid: QueryID) -> Dict[str, List[str]]:
+        return load_multiple_resource(self.split, "bert_tokens", qid)
+
+    def get_text_d(self, qid: QueryID) -> Dict[str, List[str]]:
+        return load_multiple_resource(self.split, "test", qid)
+
+    def get_label(self, qid: QueryID, doc_id):
+        return self.qrel.get_label(qid, doc_id)
+
+    def get_query_text(self, qid: QueryID):
+        query_text = self.queires[qid]
+        return query_text
+
+    def get_doc_for_query_d(self):
+        return self.candidate_doc_d
+
+    def query_in_qrel(self, query_id):
+        return query_id in self.qrel.qrel_d
+
+
+class ProcessedResource10docMulti(ProcessedResourceMultiInterface):
+    def __init__(self, split):
+        super(ProcessedResource10docMulti, self).__init__(split)
+        candidate_docs_d: Dict[QueryID, List[str]] = load_candidate_doc_list_10(split)
+        self.candidate_doc_d: Dict[QueryID, List[str]] = candidate_docs_d
+
+    def get_doc_for_query_d(self):
+        return self.candidate_doc_d
+
+
+class ProcessedResource100docMulti(ProcessedResourceMultiInterface):
+    def __init__(self, split):
+        super(ProcessedResource100docMulti, self).__init__(split)
+        candidate_docs_d: Dict[QueryID, List[str]] = top100_doc_ids(split)
+        self.candidate_doc_d: Dict[QueryID, List[str]] = candidate_docs_d
+
+    def get_doc_for_query_d(self):
+        return self.candidate_doc_d
 
 
 class ProcessedResource50doc(ProcessedResourceI):

@@ -18,7 +18,7 @@ from tlm.data_gen.pairwise_common import combine_features
 
 
 class PointwiseGen:
-    def __init__(self, resource: ProcessedResourceI,
+    def  __init__(self, resource: ProcessedResourceI,
                  basic_encoder,
                  max_seq_length):
         self.resource = resource
@@ -32,7 +32,7 @@ class PointwiseGen:
         missing_doc_qid = []
         for qid in qids:
             if qid not in self.resource.get_doc_for_query_d():
-                assert not self.resource.query_in_qrel(qid)
+                # assert not self.resource.query_in_qrel(qid)
                 continue
 
             tokens_d = self.resource.get_doc_tokens_d(qid)

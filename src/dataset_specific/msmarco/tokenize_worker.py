@@ -103,3 +103,5 @@ class TokenizeDocTitleBodyWorker:
 
             save_path = os.path.join(self.out_dir, str(qid))
             pickle.dump(tokens_d, open(save_path, "wb"))
+
+

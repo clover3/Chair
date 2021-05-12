@@ -16,6 +16,7 @@ from tlm.data_gen.base import get_basic_input_feature
 from tlm.data_gen.bert_data_gen import create_int_feature
 from tlm.data_gen.classification_common import ClassificationInstance, encode_classification_instance, \
     ClassificationInstanceWDataID, encode_classification_instance_w_data_id
+from tlm.data_gen.doc_encode_common import enum_passage_random_short
 from tlm.data_gen.pairwise_common import generate_pairwise_combinations, write_pairwise_record
 from tlm.data_gen.robust_gen.select_supervision.score_selection_methods import *
 from tlm.robust.load import load_robust_tokens_for_train, load_robust_tokens_for_predict
@@ -23,6 +24,10 @@ from trec.qrel_parse import load_qrels_structured
 
 Tokens = List[str]
 SegmentIDs = List[int]
+
+token_first = "[unused3]"
+token_mid = "[unused4]"
+token_end = "[unused5]"
 
 
 class EncoderInterface(ABC):
@@ -98,6 +103,11 @@ class MultiWindow(EncoderInterface):
             if len(out_tokens) > self.max_seq_length:
                 break
 
+        if len(out_segment_ids) == 0:
+            print("query:", query_tokens)
+            print("doc: ", tokens)
+            raise ValueError
+
         return [(out_tokens[:self.max_seq_length], out_segment_ids[:self.max_seq_length])]
 
 
@@ -149,7 +159,6 @@ class MultiWindowOverlap(EncoderInterface):
         return [(out_tokens[:self.max_seq_length], out_segment_ids[:self.max_seq_length])]
 
 
-
 class MultiWindowAllSeg(EncoderInterface):
     def __init__(self, src_window_size, max_seq_length):
         super(MultiWindowAllSeg, self).__init__(max_seq_length)
@@ -183,11 +192,42 @@ class AllSegmentAsDoc(EncoderInterface):
         self.max_seq_length = max_seq_length
 
     def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
+        if len(query_tokens) > 64:
+            query_tokens = query_tokens[:64]
         content_len = self.max_seq_length - 3 - len(query_tokens)
+        if not tokens:
+            tokens = ['[PAD]']
         insts = []
         for second_tokens in enum_passage(tokens, content_len):
             out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
             segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+            entry = out_tokens, segment_ids
+            insts.append(entry)
+        return insts
+
+
+class AllSegmentWMark(EncoderInterface):
+    def __init__(self, max_seq_length):
+        super(AllSegmentWMark, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+
+    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
+        if len(query_tokens) > 64:
+            query_tokens = query_tokens[:64]
+        content_len = self.max_seq_length - 3 - len(query_tokens) - 1
+        insts = []
+        if not tokens:
+            tokens = ['[PAD]']
+        passages = list(enum_passage(tokens, content_len))
+        for idx, second_tokens in enumerate(passages):
+            if idx == 0:
+                mark = token_first
+            elif idx == len(passages) - 1:
+                mark = token_end
+            else:
+                mark = token_mid
+            out_tokens = ["[CLS]"] + query_tokens + ["[SEP]", mark] + second_tokens + ["[SEP]"]
+            segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 2)
             entry = out_tokens, segment_ids
             insts.append(entry)
         return insts
@@ -434,8 +474,6 @@ class AllSegmentNoTitle(TitleRepeatInterface):
         return insts
 
 
-
-
 class GeoSampler(EncoderInterface):
     def __init__(self, max_seq_length, g_factor=0.5):
         super(GeoSampler, self).__init__(max_seq_length)
@@ -451,6 +489,33 @@ class GeoSampler(EncoderInterface):
             if include:
                 out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
                 segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+                entry = out_tokens, segment_ids
+                insts.append(entry)
+        return insts
+
+
+class GeoSamplerWSegMark(EncoderInterface):
+    def __init__(self, max_seq_length, g_factor=0.5):
+        super(GeoSamplerWSegMark, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+        self.g_factor = g_factor
+
+    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
+        content_len = self.max_seq_length - 3 - len(query_tokens) - 1
+        insts = []
+        passages = list(enum_passage(tokens, content_len))
+        for idx, second_tokens in enumerate(passages):
+            chance = math.pow(self.g_factor, idx)
+            include = random.random() < chance
+            if include:
+                if idx == 0:
+                    mark = token_first
+                elif idx == len(passages) - 1:
+                    mark = token_end
+                else:
+                    mark = token_mid
+                out_tokens = ["[CLS]"] + query_tokens + ["[SEP]", mark] + second_tokens + ["[SEP]"]
+                segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 2)
                 entry = out_tokens, segment_ids
                 insts.append(entry)
         return insts
@@ -473,6 +538,46 @@ class LeadingN(EncoderInterface):
             segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
             entry = out_tokens, segment_ids
             insts.append(entry)
+        return insts
+
+
+class LeadingNWithRandomShort(EncoderInterface):
+    def __init__(self, max_seq_length, num_segment):
+        super(LeadingNWithRandomShort, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+        self.num_segment = num_segment
+
+    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
+        content_len = self.max_seq_length - 3 - len(query_tokens)
+        insts = []
+        for idx, second_tokens in enumerate(enum_passage_random_short(tokens, content_len)):
+            if idx == self.num_segment:
+                break
+
+            out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
+            segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+            entry = out_tokens, segment_ids
+            insts.append(entry)
+        return insts
+
+
+class GeoRandomShortSampler(EncoderInterface):
+    def __init__(self, max_seq_length, g_factor=0.5):
+        super(GeoRandomShortSampler, self).__init__(max_seq_length)
+        self.max_seq_length = max_seq_length
+        self.g_factor = g_factor
+
+    def encode(self, query_tokens, tokens) -> List[Tuple[List, List]]:
+        content_len = self.max_seq_length - 3 - len(query_tokens)
+        insts = []
+        for idx, second_tokens in enumerate(enum_passage_random_short(tokens, content_len)):
+            chance = math.pow(self.g_factor, idx)
+            include = random.random() < chance
+            if include:
+                out_tokens = ["[CLS]"] + query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
+                segment_ids = [0] * (len(query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+                entry = out_tokens, segment_ids
+                insts.append(entry)
         return insts
 
 

@@ -57,6 +57,10 @@ def drop_none(iterable_something: Iterable[A]) -> List[A]:
     return list(filter(lambda x: x is not None, iterable_something))
 
 
+def drop_empty_elem(iterable_something: Iterable[A]) -> List[A]:
+    return list(filter(lambda x: x, iterable_something))
+
+
 def lfilter_not(func: Callable[[A], B], iterable_something: Iterable[A]) -> List[A]:
     return list(filter(lambda x: not func(x), iterable_something))
 

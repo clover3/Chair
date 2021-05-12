@@ -30,6 +30,10 @@ def non_tail_max(items):
         return max(items[:-1])
 
 
+def first4_max(items):
+    return max(items[:4])
+
+
 def select_first(items):
     return items[0]
 
@@ -204,6 +208,9 @@ def get_score_d(pred_file_path: str, info: Dict, f_handler: FormatHandler, combi
     elif combine_strategy == "non_tail_max":
         combine_type = DOC_SEG_COMBINE
         combine_score = non_tail_max
+    elif combine_strategy == "first4_max":
+        combine_type = DOC_SEG_COMBINE
+        combine_score = first4_max
     elif combine_strategy == "first":
         combine_type = DOC_SEG_COMBINE
         combine_score = select_first

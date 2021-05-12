@@ -31,10 +31,8 @@ def main():
         claim_tf: Counter = get_terms(claim_text)
         pers_tf: Counter = average_counters(lmap(get_terms, perspective_text_list))
         tf = sum_counters([claim_tf, pers_tf])
-
         query: DocQuery = counter_to_galago_query(query_id, tf)
         return query
-
 
     query_list: List[DocQuery] = lmap(cluster_to_query, pc_clusters)
     print(len(query_list))

@@ -31,23 +31,23 @@ class MSMarcoDoc(NamedTuple):
 
 
 def load_per_query_docs(query_id, empty_doc_fn) -> List[MSMarcoDoc]:
-    f = open(get_per_query_doc_path(query_id), encoding="utf-8")
     out = []
-    for idx, line in enumerate(f):
-        try:
-            docid, url, title, body = line.split("\t")
-            d = MSMarcoDoc(docid, url, title, body)
-            out.append(d)
-        except ValueError:
-            tokens = line.strip().split("\t")
-            if len(tokens) > 1 and tokens[1].startswith("http"):
-                doc_id = tokens[0]
-                url = tokens[1]
-                title = ""
-                body = ""
-                d = MSMarcoDoc(doc_id, url, title, body)
+    with open(get_per_query_doc_path(query_id), encoding="utf-8") as f:
+        for idx, line in enumerate(f):
+            try:
+                docid, url, title, body = line.split("\t")
+                d = MSMarcoDoc(docid, url, title, body)
                 out.append(d)
-    return out
+            except ValueError:
+                tokens = line.strip().split("\t")
+                if len(tokens) > 1 and tokens[1].startswith("http"):
+                    doc_id = tokens[0]
+                    url = tokens[1]
+                    title = ""
+                    body = ""
+                    d = MSMarcoDoc(doc_id, url, title, body)
+                    out.append(d)
+        return out
 
 
 def load_candidate_doc_list_1(split) -> Dict[QueryID, List[str]]:
@@ -131,8 +131,26 @@ def load_token_d_10doc(split, query_id) -> Dict[str, List[str]]:
     return load_pickle_from(save_path)
 
 
+def load_multiple_resource(split, resource_type, query_id) -> Dict[str, List[str]]:
+    save_path = os.path.join(job_man_dir,
+                 "MSMARCO_{}_multiple_tokenize".format(split),
+                 resource_type,
+                 str(query_id))
+    return load_pickle_from(save_path)
+
+
 def load_token_d_50doc(split, query_id) -> Dict[str, List[str]]:
     save_path = os.path.join(job_man_dir, "MSMARCO_{}_top50_tokens".format(split), query_id)
+    return load_pickle_from(save_path)
+
+
+def load_token_d_sent_level(split, query_id) -> Dict[str, List[str]]:
+    save_path = os.path.join(job_man_dir, "MSMARCO_{}_sent_tokens".format(split), query_id)
+    return load_pickle_from(save_path)
+
+
+def load_token_d_bm25_tokenize(split, query_id) -> Dict[str, List[str]]:
+    save_path = os.path.join(job_man_dir, "MSMARCO_{}_bm25_tokenize".format(split), query_id)
     return load_pickle_from(save_path)
 
 

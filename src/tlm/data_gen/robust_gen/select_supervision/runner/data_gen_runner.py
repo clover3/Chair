@@ -2,7 +2,8 @@ import argparse
 import sys
 
 from cpath import at_output_dir
-from tlm.data_gen.robust_gen.select_supervision.read_score import generate_selected_training_data_for_many_runs
+from tlm.data_gen.robust_gen.select_supervision.read_score import generate_selected_training_data_for_many_runs, \
+    generate_selected_training_data
 
 arg_parser = argparse.ArgumentParser(description='')
 
@@ -27,7 +28,8 @@ def main():
         target_data_idx,
         info_dir,
         max_seq_length,
-        score_and_save_dir
+        score_and_save_dir,
+        generate_selected_training_data
     )
 
 

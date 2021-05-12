@@ -2,7 +2,7 @@ import json
 import sys
 from typing import List, Dict, Tuple
 
-from trec.parse import load_qrels_flat
+from trec.trec_parse import load_qrels_flat
 
 from arg.qck.decl import get_format_handler, get_qk_pair_id
 from arg.qck.prediction_reader import load_combine_info_jsons

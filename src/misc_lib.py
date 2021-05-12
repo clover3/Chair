@@ -53,6 +53,14 @@ class TimeEstimator:
             print("{}0% completed".format(self.progress_tenth))
             self.progress_tenth += 1
 
+
+def TEL(l: List):
+    ticker = TimeEstimator(len(l))
+    for e in l:
+        yield e
+        ticker.tick()
+
+
 class CodeTiming:
     def __init__(self):
         self.acc = {}
@@ -554,7 +562,6 @@ def enum_passage_overlap(tokens: List[Any], window_size: int,
         yield second_tokens
         if break_when_touch_end and ed >= len(tokens):
             break
-
 
 
 def find_max_idx(itr: Iterable[A], key_fn: Callable[[A], Any]) -> int:

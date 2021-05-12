@@ -81,7 +81,9 @@ def generate_selected_training_data_loop(split_no,
                                          score_dir,
                                          info_dir,
                                          max_seq_length,
-                                         save_dir):
+                                         save_dir,
+                                         generate_selected_training_data_fn
+                                         ):
     train_items, held_out = get_robust_splits(split_no)
     print(train_items)
     exist_or_mkdir(save_dir)
@@ -91,10 +93,14 @@ def generate_selected_training_data_loop(split_no,
         tprint("loading info: " + info_path)
         info = load_pickle_from(info_path)
         # info = load_info_from_compressed(info_path)
-        generate_selected_training_data(info, key, max_seq_length, save_dir, score_dir)
+        generate_selected_training_data_fn(info, key, max_seq_length, save_dir, score_dir)
 
-
-def generate_selected_training_data_for_many_runs(target_data_idx, info_dir, max_seq_length, score_and_save_dir: List):
+def generate_selected_training_data_for_many_runs(target_data_idx,
+                                                  info_dir,
+                                                  max_seq_length,
+                                                  score_and_save_dir: List,
+                                                  generate_selected_training_data_fn
+                                                  ):
     interval_start_list = left(robust_query_intervals)
     key = interval_start_list[target_data_idx]
     info_path = os.path.join(info_dir, str(key))
@@ -103,7 +109,7 @@ def generate_selected_training_data_for_many_runs(target_data_idx, info_dir, max
     for score_dir, save_dir in score_and_save_dir:
         exist_or_mkdir(save_dir)
         tprint(save_dir)
-        generate_selected_training_data(info, key, max_seq_length, save_dir, score_dir)
+        generate_selected_training_data_fn(info, key, max_seq_length, save_dir, score_dir)
 
 
 def generate_selected_training_data(info, key, max_seq_length, save_dir, score_dir):

@@ -58,7 +58,9 @@ class JobRunner:
 
     def run_one_job(self):
         worker = self.worker_factory(self.out_path)
-        worker.work(int(sys.argv[1]))
+        job_id = int(sys.argv[1])
+        worker.work(job_id)
+        self.mark_as_done_job(job_id)
 
 # Example Usage
 #
