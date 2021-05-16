@@ -126,6 +126,7 @@ class DocRep(NamedTuple):
 class LongSentenceError(Exception):
     pass
 
+
 class PointwiseGen:
     def  __init__(self, prcessed_resource: ProcessedResourceI,
                         get_tokens_d_bert,

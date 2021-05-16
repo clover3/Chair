@@ -20,14 +20,14 @@ def get_bm25_module():
 def work_for(split):
     resource = ProcessedResource100docMulti(split)
     max_seq_length = 512
-    basic_encoder = MaxSentEncoder(get_bm25_module(), max_seq_length)
+    basic_encoder = MaxSentEncoder(get_bm25_module(), max_seq_length, True)
     generator = BestSentGen(resource, basic_encoder, max_seq_length)
 
     def factory(out_dir):
         return MMDWorker(resource.query_group, generator, out_dir)
 
     runner = JobRunner(job_man_dir, len(resource.query_group)-1,
-                       "MMD_max_sent_{}_A".format(split), factory)
+                       "MMD_max_sent_{}_B".format(split), factory)
     runner.start()
 
 

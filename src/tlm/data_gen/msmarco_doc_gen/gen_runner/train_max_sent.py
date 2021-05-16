@@ -27,5 +27,5 @@ if __name__ == "__main__":
         return MMDWorker(resource.query_group, generator, out_dir)
 
     runner = JobRunner(job_man_dir, len(resource.query_group)-1,
-                       "MMD_train_max_sent".format(split), factory)
+                       "MMD_max_sent_{}_A".format(split), factory)
     runner.start()

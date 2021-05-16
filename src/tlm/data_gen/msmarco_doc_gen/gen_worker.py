@@ -1,8 +1,8 @@
 import json
 import os
 from collections import Counter
-from typing import List, Tuple, OrderedDict, Iterable
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import OrderedDict
+from typing import List, Iterable, Dict, Tuple
 
 from arg.qck.decl import QCKQuery, QCKCandidate
 from data_generator.job_runner import WorkerInterface
@@ -12,8 +12,9 @@ from tf_util.record_writer_wrap import write_records_w_encode_fn
 from tlm.data_gen.adhoc_datagen import TitleRepeatInterface
 from tlm.data_gen.classification_common import ClassificationInstanceWDataID, \
     write_with_classification_instance_with_id, PairedInstance
+from tlm.data_gen.msmarco_doc_gen.misc_common import get_pos_neg_doc_ids_for_qid
 from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResourceI, ProcessedResourcePredict, \
-    ProcessedResourceTitleBodyPredict, ProcessedResourceTitleBodyTrain, ProcessedResourceTitleBodyI
+    ProcessedResourceTitleBodyPredict, ProcessedResourceTitleBodyI
 from tlm.data_gen.pairwise_common import combine_features
 
 
@@ -139,15 +140,8 @@ class FirstPassagePairGenerator:
             tokens_d = self.resource.get_doc_tokens_d(qid)
             q_tokens = self.resource.get_q_tokens(qid)
 
-            pos_doc_id_list = []
-            neg_doc_id_list = []
-            for pos_doc_id in self.resource.get_doc_for_query_d()[qid]:
-
-                label = self.resource.get_label(qid, pos_doc_id)
-                if label:
-                    pos_doc_id_list.append(pos_doc_id)
-                else:
-                    neg_doc_id_list.append(pos_doc_id)
+            pos_doc_id_list, neg_doc_id_list \
+                = get_pos_neg_doc_ids_for_qid(self.resource, qid)
 
             def iter_passages(doc_id):
                 doc_tokens = tokens_d[doc_id]
@@ -184,7 +178,12 @@ class FirstPassagePairGenerator:
             return combine_features(inst.tokens1, inst.seg_ids1, inst.tokens2, inst.seg_ids2,
                                     self.tokenizer, self.max_seq_length)
 
-        return write_records_w_encode_fn(out_path, encode_fn, insts, len(insts))
+        try:
+            length = len(insts)
+        except TypeError:
+            length = 0
+
+        return write_records_w_encode_fn(out_path, encode_fn, insts, length)
 
 
 class PassageLengthInspector:

@@ -10,8 +10,7 @@ from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResource, P
     ProcessedResourcePredict
 
 
-if __name__ == "__main__":
-    split = "test"
+def gen_for_split(split):
     resource = ProcessedResourcePredict(split)
     max_seq_length = 512
     basic_encoder = LeadingNWithRandomShort(max_seq_length, 20)
@@ -20,5 +19,10 @@ if __name__ == "__main__":
     def factory(out_dir):
         return MMDWorker(resource.query_group, generator, out_dir)
 
-    runner = JobRunner(job_man_dir, len(resource.query_group)-1, "MMD_pred_{}_random_short".format(split), factory)
+    runner = JobRunner(job_man_dir, len(resource.query_group) - 1, "MMD_pred_{}_random_short".format(split), factory)
     runner.start()
+
+
+if __name__ == "__main__":
+    gen_for_split("test")
+    gen_for_split("dev")

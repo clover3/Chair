@@ -131,6 +131,10 @@ class SeroFromTextEncoder:
             all_tokens = []
             all_seg_ids = []
             for idx, (tokens, seg_ids) in enumerate(insts):
+                pad_len = src_window_size - len(tokens)
+                tokens = tokens + pad_len * ["[PAD]"]
+                seg_ids = seg_ids + pad_len * [0]
+                assert len(tokens) == src_window_size
                 all_tokens.extend(tokens)
                 all_seg_ids.extend(seg_ids)
                 if idx == max_seg_per_doc:
