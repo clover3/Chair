@@ -1,3 +1,4 @@
+import abc
 from typing import List, Iterable, Tuple, Any
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
@@ -38,10 +39,62 @@ def enum_passage_max_20(title_tokens: List[Any], body_tokens: List[List[Any]], w
         yield tokens
 
 
-def enum_passage_random_short(title_tokens: List[Any], body_tokens: List[List[Any]], window_size: int) -> Iterable[List[Any]]:
-    cursor = 0
+class TokensListPooler:
+    def __init__(self, tokens_list: List[List[str]]):
+        self.tokens_list = tokens_list
+        self.cursor = 0
+        self.remaining_tokens = []
 
+    def pool(self, max_acceptable_size, slice_if_too_long) -> List[str]:
+        if not self.remaining_tokens:
+            cur_tokens = self.tokens_list[self.cursor]
+        else:
+            cur_tokens = self.remaining_tokens
+
+        if len(cur_tokens) <= max_acceptable_size:
+            if self.remaining_tokens:
+                self.remaining_tokens = []
+            self.cursor += 1
+            return cur_tokens
+        elif slice_if_too_long:
+            head = cur_tokens[:max_acceptable_size]
+            tail = cur_tokens[max_acceptable_size:]
+            self.remaining_tokens = tail
+            return head
+        else:
+            return []
+
+    def is_end(self):
+        return self.cursor >= len(self.tokens_list)
+
+
+def enum_passage_random_short(title_tokens: List[Any], body_tokens: List[List[Any]], window_size: int) -> Iterable[List[Any]]:
+    pooler = TokensListPooler(body_tokens)
+
+    while not pooler.is_end():
+        n_sent = 0
+        tokens = []
+        tokens.extend(title_tokens)
+        current_window_size = draw_window_size(window_size)
+        available_length = current_window_size - len(tokens)
+        assert current_window_size > 10
+        new_sent_tokens = pooler.pool(available_length, n_sent == 0)
+        tokens.extend(new_sent_tokens)
+        while not pooler.is_end():
+            available_length = current_window_size - len(tokens)
+            new_sent_tokens = pooler.pool(available_length, n_sent == 0)
+            if not new_sent_tokens:
+                break
+            tokens.extend(new_sent_tokens)
+        yield tokens
+
+
+def enum_passage_random_short_old(title_tokens: List[Any],
+                                  body_tokens: List[List[Any]],
+                                  window_size: int) -> Iterable[List[Any]]:
+    cursor = 0
     while cursor < len(body_tokens):
+        n_sent = 0
         tokens = []
         tokens.extend(title_tokens)
         current_window_size = draw_window_size(window_size)
@@ -50,6 +103,7 @@ def enum_passage_random_short(title_tokens: List[Any], body_tokens: List[List[An
                 len(tokens) + len(body_tokens[cursor]) <= current_window_size:
             tokens.extend(body_tokens[cursor])
             cursor += 1
+            n_sent += 1
         yield tokens
 
 
@@ -125,6 +179,7 @@ class FromTextEncoder:
         return out_body_tokens
 
 
+
 class SeroFromTextEncoder:
     def __init__(self, src_window_size, max_seq_length, random_short=True, max_seg_per_doc=4):
         def seg_selection_fn(insts: List[Tuple[List, List]]) -> List[Tuple[List, List]]:
@@ -146,3 +201,55 @@ class SeroFromTextEncoder:
 
     def encode(self, query_tokens, title, body) -> List[Tuple[List, List]]:
         return self.inner_encoder.encode(query_tokens, title, body)
+
+
+class FromSentTokensListEncoderI(abc.ABC):
+    @abc.abstractmethod
+    def encode(self, query_tokens: List[str], title_tokens: List[str], body_tokens_list: List[List[str]]) -> List[Tuple[List, List]]:
+        pass
+
+
+class FromSentTokensListEncoder(FromSentTokensListEncoderI):
+    def __init__(self, max_seq_length, random_short=False, seg_selection_fn=None, max_seg_per_doc=999999):
+        self.max_seq_length = max_seq_length
+        self.tokenizer = get_tokenizer()
+        self.title_token_max = 64
+        self.query_token_max = 64
+        if random_short:
+            self.enum_passage_fn = enum_passage_random_short
+        else:
+            self.enum_passage_fn = enum_passage
+
+        self.seg_selection_fn = seg_selection_fn
+        self.max_seg_per_doc = max_seg_per_doc
+
+    def encode(self, query_tokens: List[str], title_tokens: List[str], body_tokens_list: List[List[str]]) -> List[Tuple[List, List]]:
+        query_tokens = query_tokens[:self.query_token_max]
+
+        content_len = self.max_seq_length - 3 - len(query_tokens)
+        assert content_len > 0
+
+        title_tokens = title_tokens[:self.title_token_max]
+        maybe_max_body_len = content_len - len(title_tokens)
+        ##
+        if not body_tokens_list:
+            body_tokens_list: List[List[str]] = [["[PAD]"]]
+
+        n_tokens = sum(map(len, body_tokens_list))
+        insts = []
+        for idx, second_tokens in enumerate(self.enum_passage_fn(title_tokens, body_tokens_list, content_len)):
+            out_tokens, segment_ids = join_tokens(query_tokens, second_tokens)
+            entry = out_tokens, segment_ids
+            insts.append(entry)
+            if idx > n_tokens:
+                print('idx', idx)
+                print(lmap(len, body_tokens_list))
+            assert idx <= n_tokens
+            if idx >= self.max_seg_per_doc:
+                break
+
+        if self.seg_selection_fn is not None:
+            insts = self.seg_selection_fn(insts)
+
+        return insts
+

@@ -281,7 +281,7 @@ class PredictionAllPassageGenerator:
 
             tokens_d = self.resource.get_doc_tokens_d(qid)
             q_tokens = self.resource.get_q_tokens(qid)
-            for doc_id in self.resource.candidate_doc_d[qid]:
+            for doc_id in self.resource.get_candidate_doc_d(qid):
                 label = self.resource.get_label(qid, doc_id)
                 try:
                     doc_tokens = tokens_d[doc_id]
@@ -309,6 +309,8 @@ class PredictionAllPassageGenerator:
 
     def write(self, insts: List[ClassificationInstanceWDataID], out_path: str):
         return write_with_classification_instance_with_id(self.tokenizer, self.max_seq_length, insts, out_path)
+
+
 
 
 def memory_profile_print():

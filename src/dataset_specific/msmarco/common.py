@@ -144,7 +144,8 @@ def load_token_d_50doc(split, query_id) -> Dict[str, List[str]]:
     return load_pickle_from(save_path)
 
 
-def load_token_d_sent_level(split, query_id) -> Dict[str, List[str]]:
+def load_token_d_sent_level(split, query_id)\
+        -> Dict[str, Tuple[List[str], List[List[str]]]]:
     save_path = os.path.join(job_man_dir, "MSMARCO_{}_sent_tokens".format(split), query_id)
     return load_pickle_from(save_path)
 

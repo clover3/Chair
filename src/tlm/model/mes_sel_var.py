@@ -513,8 +513,6 @@ class MES_const_0_handle(BertModelInterface):
         return self.logits
 
 
-
-
 class MES_train2_only(BertModelInterface):
     def __init__(self,
                  config,
@@ -558,8 +556,6 @@ class MES_train2_only(BertModelInterface):
         self.has_enough_evidence = has_enough_evidence
         self.is_valid_window = is_valid_window
         self.is_valid_window_mask = is_valid_window_mask
-
-
 
         with tf.compat.v1.variable_scope(dual_model_prefix1):
             model = BertModel(
@@ -948,3 +944,88 @@ class MES_pred_with_layer1(BertModelInterface):
     def get_logits(self):
         return self.logits
 
+
+class MES_single(BertModelInterface):
+    def __init__(self,
+                 config,
+                 is_training,
+                 use_one_hot_embeddings=True,
+                 features=None,
+                 scope=None):
+
+        super(MES_single, self).__init__()
+        alpha = config.alpha
+        input_ids = features["input_ids"]
+        input_mask = features["input_mask"]
+        segment_ids = features["segment_ids"]
+        label_ids = features["label_ids"]
+
+        unit_length = config.max_seq_length
+        d_seq_length = config.max_d_seq_length
+        num_window = int(d_seq_length / unit_length)
+        batch_size, _ = get_shape_list2(input_ids)
+
+        # [Batch, num_window, unit_seq_length]
+        stacked_input_ids, stacked_input_mask, stacked_segment_ids = split_input(input_ids,
+                                                                                 input_mask,
+                                                                                 segment_ids,
+                                                                                 d_seq_length,
+                                                                                 unit_length)
+        # Ignore the window if
+        # 1. The window is not first window and
+        #   1.1 All input_mask is 0
+        #   1.2 Content is too short, number of document tokens (other than query tokens) < 10
+
+        # [Batch, num_window]
+        is_first_window = tf.concat([tf.ones([batch_size, 1], tf.bool),
+                                     tf.zeros([batch_size, num_window-1], tf.bool)], axis=1)
+        num_content_tokens = tf.reduce_sum(stacked_segment_ids, 2)
+        has_enough_evidence = tf.less(10, num_content_tokens)
+        is_valid_window = tf.logical_or(is_first_window, has_enough_evidence)
+        is_valid_window_mask = tf.cast(is_valid_window, tf.float32)
+        # [batch, num_window]
+        self.is_first_window = is_first_window
+        self.num_content_tokens = num_content_tokens
+        self.has_enough_evidence = has_enough_evidence
+        self.is_valid_window = is_valid_window
+        self.is_valid_window_mask = is_valid_window_mask
+
+        model = BertModel(
+            config=config,
+            is_training=is_training,
+            input_ids=r3to2(stacked_input_ids),
+            input_mask=r3to2(stacked_input_mask),
+            token_type_ids=r3to2(stacked_segment_ids),
+            use_one_hot_embeddings=use_one_hot_embeddings,
+        )
+
+        def r2to3(arr):
+            return tf.reshape(arr, [batch_size, num_window, -1])
+
+        # [Batch, num_window, window_length, hidden_size]
+        pooled = model.get_pooled_output()
+        logits_2d = tf.keras.layers.Dense(2, name="cls_dense")(pooled) #
+        logits_3d = r2to3(logits_2d)
+        label_ids_repeat = tf.tile(label_ids, [1, num_window])
+        # [batch, num_window]
+        loss_arr = tf.nn.sparse_softmax_cross_entropy_with_logits(
+            logits=logits_3d,
+            labels=label_ids_repeat)
+        loss_arr = loss_arr * is_valid_window_mask
+        probs = tf.nn.softmax(logits_3d)[:, :, 1]  # [batch_size, num_window]
+        max_prob_window = tf.argmax(probs, axis=1)
+        beta = 10
+        loss_weight = tf.nn.softmax(probs * is_valid_window_mask * beta)
+        loss_weight = loss_weight * is_valid_window_mask
+        # apply loss if it is max
+        loss = tf.reduce_mean(loss_arr * loss_weight)
+        logits = tf.gather(logits_3d, max_prob_window, axis=1, batch_dims=1)
+        self.logits = logits
+
+        self.loss = loss
+
+    def get_loss(self, label_ids_not_used):
+        return self.loss
+
+    def get_logits(self):
+        return self.logits

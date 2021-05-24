@@ -1,6 +1,7 @@
 import os
 import time
 import uuid
+from typing import Dict
 
 from taskman_client.RESTProxy import RESTProxy
 
@@ -77,6 +78,13 @@ class TaskManagerProxy(RESTProxy):
         }
         r = self.post("/task/pool_job", data)
         return r['job_id']
+
+    def query_job_group_status(self, job_name) -> Dict:
+        data = {
+            'job_name': job_name,
+        }
+        r = self.post("/task/query_job_group_status", data)
+        return r
 
     def report_done_and_pool_job(self, job_name, max_job, machine, job_id) -> int:
         data = {
