@@ -216,6 +216,9 @@ class ProcessedResourcePredict:
     def get_candidate_doc_d(self, qid):
         return self.candidate_doc_d[qid]
 
+    def get_doc_for_query_d(self):
+        return self.candidate_doc_d
+
 
 class ProcessedResourcePredict10(ProcessedResourcePredict):
     def __init__(self, split):

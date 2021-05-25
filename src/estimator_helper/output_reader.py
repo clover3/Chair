@@ -2,7 +2,7 @@ import json
 import os
 from typing import Dict, Any, List
 
-from misc_lib import get_dir_files
+from misc_lib import get_dir_files, TimeProfiler
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 
 
@@ -55,6 +55,7 @@ def join_prediction_with_info(prediction_file,
                 raise IndexError()
             seen_data_id.add(data_id)
             new_entry = dict(cur_info)
+
             for field in fetch_field_list:
                 new_entry[field] = entry.get_vector(field)
             out.append(new_entry)
@@ -67,6 +68,7 @@ def join_prediction_with_info(prediction_file,
                 raise ReferenceError()
             pass
     return out
+
 
 
 

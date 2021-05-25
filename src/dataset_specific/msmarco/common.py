@@ -92,6 +92,9 @@ def load_queries(split) -> List[Tuple[QueryID, str]]:
     return read_queries_at(at_working_dir("msmarco-doc{}-queries.tsv.gz".format(split)))
 
 
+train_query_group_len = 367
+
+
 def load_query_group(split) -> List[List[QueryID]]:
     qids = left(load_queries(split))
     if split == "train":

@@ -23,7 +23,6 @@ def enum_passage(title_tokens: List[Any], body_tokens: List[List[Any]], window_s
         yield tokens
 
 
-
 def enum_passage_max_20(title_tokens: List[Any], body_tokens: List[List[Any]], window_size: int) -> Iterable[List[Any]]:
     cursor = 0
     if len(title_tokens) > window_size * 0.9:
@@ -177,7 +176,6 @@ class FromTextEncoder:
                 out_body_tokens.append(tokens)
 
         return out_body_tokens
-
 
 
 class SeroFromTextEncoder:

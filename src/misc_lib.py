@@ -698,3 +698,28 @@ def recover_int_list_str(s):
 def readlines_strip(file_path):
     lines = open(file_path, "r").readlines()
     return list([l.strip() for l in lines])
+
+
+class TimeProfiler:
+    def __init__(self):
+        self.cur_point = -1
+        self.last_time = time.time()
+        self.init_time = self.last_time
+        self.time_acc = Counter()
+
+    def check(self, point_idx):
+        prev_point = self.cur_point
+
+        now = time.time()
+        time_elapsed = now - self.last_time
+        interval_name = prev_point, point_idx
+        self.cur_point = point_idx
+        self.time_acc[interval_name] += time_elapsed
+        self.last_time = now
+
+    def print_time(self):
+        for key, value in self.time_acc.items():
+            print(key, value)
+
+    def life_time(self):
+        return time.time() - self.init_time
