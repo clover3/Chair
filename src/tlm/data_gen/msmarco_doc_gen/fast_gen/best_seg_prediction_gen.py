@@ -4,19 +4,26 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from dataset_specific.msmarco.common import QueryID, load_query_group
 from epath import job_man_dir
-from misc_lib import DataIDManager, exist_or_mkdir
+from misc_lib import DataIDManager, exist_or_mkdir, select_one_pos_neg_doc
 from tf_util.record_writer_wrap import RecordWriterWrap
-from tlm.data_gen.msmarco_doc_gen.fast_gen.seg_resource import SegmentResourceLoader
+from tlm.data_gen.msmarco_doc_gen.fast_gen.seg_resource import SegmentResourceLoader, SRPerQueryDoc
 from tlm.data_gen.msmarco_doc_gen.fast_gen.sr_to_tfrecord import encode_sr
 from tlm.data_gen.msmarco_doc_gen.missing_resource import missing_qids
 
 
 class BestSegmentPredictionGen:
-    def __init__(self, max_seq_length, split, out_dir):
+    def __init__(self,
+                 max_seq_length,
+                 split,
+                 skip_single_seg,
+                 pick_for_pairwise,
+                 out_dir):
         self.query_group: List[List[QueryID]] = load_query_group(split)
         self.seg_resource_loader = SegmentResourceLoader(job_man_dir, split)
         self.max_seq_length = max_seq_length
         self.out_dir = out_dir
+        self.skip_single_seg = skip_single_seg
+        self.pick_for_pairwise = pick_for_pairwise
         self.info_dir = self.out_dir + "_info"
         exist_or_mkdir(self.info_dir)
 
@@ -31,9 +38,10 @@ class BestSegmentPredictionGen:
         for qid in qids:
             try:
                 sr_per_qid = self.seg_resource_loader.load_for_qid(qid)
-                for sr_per_doc in sr_per_qid.sr_per_query_doc:
+                docs_to_predict = select_one_pos_neg_doc(sr_per_qid.sr_per_query_doc)
+                for sr_per_doc in docs_to_predict:
                     label_id = sr_per_doc.label
-                    if len(sr_per_doc.segs) == 1:
+                    if self.skip_single_seg and len(sr_per_doc.segs) == 1:
                         continue
                     for seg_idx, seg in enumerate(sr_per_doc.segs):
                         info = {

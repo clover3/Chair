@@ -32,6 +32,8 @@ class SRPerQueryDoc(NamedTuple):
     doc_id: str
     segs: List[SegmentRepresentation]
     label: int
+    def get_label(self):
+        return self.label
     #
     # def serialize(self) -> bytearray:
     #     all_bytes = bytearray()

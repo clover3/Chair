@@ -723,3 +723,23 @@ class TimeProfiler:
 
     def life_time(self):
         return time.time() - self.init_time
+
+
+def select_one_pos_neg_doc(doc_itr: List[Any], get_label_fn=None) \
+        -> Tuple[Any, Any]:
+    pos_doc = []
+    neg_doc = []
+    if get_label_fn is None:
+        def get_label_fn(x):
+            return x.get_label()
+
+    for doc in doc_itr:
+        if get_label_fn(doc):
+            pos_doc.append(doc)
+        else:
+            neg_doc.append(doc)
+
+    if not pos_doc or not neg_doc:
+        raise ValueError
+
+    return pick1(pos_doc), pick1(neg_doc)

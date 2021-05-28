@@ -11,12 +11,12 @@ def main():
         return BestSegmentPredictionGen(
             512,
             split,
-            True,
-            False,
-            out_dir)
+            skip_single_seg=False,
+            pick_for_pairwise=True,
+            out_dir=out_dir)
 
     runner = JobRunner(job_man_dir, train_query_group_len - 1,
-                       "MMD_best_seg_prediction_{}".format(split), factory)
+                       "MMD_best_seg_prediction_{}_A".format(split), factory)
     runner.start()
 
 
