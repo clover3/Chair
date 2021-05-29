@@ -6,8 +6,8 @@
     <title>Contradictory information in medical claims</title>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
 
-	<script src="./angular.js"></script>
-	<script src="./app.js"></script>
+	<script src="../angular.js"></script>
+	<script src="../app.js"></script>
 
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
 
@@ -19,7 +19,7 @@
 			<div>
 				<h5>Task instruction</h5>
 				<ul>
-					<li><a href="instruction.html" target="_blank" ng-click="instruction()">Task instruction</a></li>
+					<li><a href="../instruction.html" target="_blank" ng-click="instruction()">Task instruction</a></li>
 				</ul>
 			</div>
 			<div>
@@ -37,10 +37,10 @@
 		<h4>Task # {{inst_id}}</h4>
 		<div class="well">
 		<div>
-		<b>Claim 1 : </b>{{ claim1 }}
+		<b>Claim 1: </b>{{ claim1 }}
 		</div>
 		<div>
-		<b>Claim 2 : </b>
+		<b>Claim 2: </b>
 		{{ claim2 }}
 		</div>
 		<hr>
@@ -70,7 +70,7 @@
 		<br>
 		<div ng-repeat="sent_name in ['claim1', 'claim2']">
 			<div ng-repeat="role in ['yellow', 'red']">
-				<b> {{sent_name}} selected {{get_role_desc(role)}} tokens : </b>
+				<b> {{sent_name}} selected {{get_role_desc(role)}} tokens: </b>
 				<span>{{get_selected(sent_name, role)}}</span>&nbsp;&nbsp;
 			</div>
 		</div>

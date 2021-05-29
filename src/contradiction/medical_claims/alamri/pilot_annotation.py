@@ -1,5 +1,5 @@
 import csv
-from typing import List, Iterable, Tuple
+from typing import List, Tuple
 
 from contradiction.medical_claims.load_corpus import load_parsed, Review, Claim
 from cpath import at_output_dir
@@ -14,13 +14,14 @@ def num_common_terms(text1, text2):
     return len(term1.intersection(term2))
 
 
-def enum_true_instance(sel_per_review=0) -> Iterable[Tuple[Claim, Claim, str]]:
+def enum_true_instance(sel_per_review=0) -> List[Tuple[Review, List[Tuple[Claim, Claim]]]]:
     reviews: List[Review] = load_parsed()
 
-    def rank_fn(e = Tuple[Claim, Claim]):
+    def rank_fn(e: Tuple[Claim, Claim]):
         claim1, claim2 = e
         return num_common_terms(claim1.text, claim2.text)
 
+    output = []
     for review in reviews:
         pair_per_review = []
         yes_claim_list = lfilter(lambda c: c.assertion == "YS", review.claim_list)
@@ -38,8 +39,8 @@ def enum_true_instance(sel_per_review=0) -> Iterable[Tuple[Claim, Claim, str]]:
         else:
             pairs = pair_per_review[:sel_per_review]
 
-        for claim1, claim2 in pairs:
-            yield claim1, claim2
+        output.append((review, pairs))
+    return output
 
 
 def main():

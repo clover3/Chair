@@ -1,10 +1,12 @@
 import csv
 import os
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Tuple
+
+from contradiction.medical_claims.alamri.pilot_annotation import enum_true_instance
 from contradiction.medical_claims.load_corpus import Review, Claim
-from cpath import output_path, at_output_dir
+from cpath import at_output_dir
 from list_lib import foreach
-from misc_lib import DataIDManager, exist_or_mkdir
+from misc_lib import exist_or_mkdir
 
 
 def main():
@@ -12,7 +14,7 @@ def main():
     exist_or_mkdir(save_dir)
 
     summary = []
-    grouped_claim_pairs: List[Tuple[Review, List[Claim, Claim]]] = NotImplemented
+    grouped_claim_pairs: List[Tuple[Review, List[Tuple[Claim, Claim]]]] = enum_true_instance(20)
     for review_idx, (review, claim_pairs) in enumerate(grouped_claim_pairs):
         entries = []
         for claim1, claim2 in claim_pairs:
@@ -24,7 +26,7 @@ def main():
         foreach(csv_writer.writerow, entries)
         summary.append((str(review_no), review.pmid, str(len(claim_pairs))))
 
-    save_path = os.path.join(save_dir, 'sumamry.csv')
+    save_path = os.path.join(save_dir, 'summary.csv')
     csv_writer = csv.writer(open(save_path, "w", newline='', encoding="utf-8"))
     foreach(csv_writer.writerow, summary)
 
