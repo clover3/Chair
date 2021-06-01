@@ -1,7 +1,8 @@
 from functools import partial
 
 from data_generator.job_runner import JobRunner, sydney_working_dir
-from tlm.data_gen.adhoc_datagen import RobustPredictGenOld, FirstSegmentAsDoc
+from tlm.data_gen.adhoc_datagen import FirstSegmentAsDoc
+from tlm.data_gen.robust_gen.robust_generators import RobustPredictGenOld
 from tlm.data_gen.run_robust_gen import RobustWorker
 
 

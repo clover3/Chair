@@ -2,7 +2,8 @@ from functools import partial
 
 from data_generator.job_runner import JobRunner
 from epath import job_man_dir
-from tlm.data_gen.adhoc_datagen import AllSegmentAsDoc, RobustTrainGenSelected
+from tlm.data_gen.adhoc_datagen import AllSegmentAsDoc
+from tlm.data_gen.robust_gen.robust_generators import RobustTrainGenSelected
 from tlm.data_gen.robust_gen.robust_worker_w_data_id import RobustWorkerWDataID
 from tlm.data_gen.robust_gen.select_supervision.common import load_score_set1
 

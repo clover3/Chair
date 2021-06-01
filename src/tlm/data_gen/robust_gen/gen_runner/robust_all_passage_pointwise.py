@@ -2,7 +2,8 @@ from functools import partial
 
 from data_generator.job_runner import JobRunner
 from epath import job_man_dir
-from tlm.data_gen.adhoc_datagen import AllSegmentAsDoc, RobustPointwiseTrainGen
+from tlm.data_gen.adhoc_datagen import AllSegmentAsDoc
+from tlm.data_gen.robust_gen.robust_generators import RobustPointwiseTrainGen
 from tlm.data_gen.run_robust_gen import RobustWorker
 
 

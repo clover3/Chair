@@ -1,8 +1,8 @@
 import sys
 
 from tab_print import print_table
-from tlm.data_gen.adhoc_datagen import RobustTrainTextSize, \
-    MultiWindowTokenCount
+from tlm.data_gen.adhoc_datagen import MultiWindowTokenCount
+from tlm.data_gen.robust_gen.robust_generators import RobustTrainTextSize
 from tlm.robust.load import robust_query_intervals
 
 
