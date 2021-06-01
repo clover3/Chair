@@ -196,6 +196,13 @@ def get_init_fn(train_config, tvars):
                                                             dual_model_prefix1,
                                                             train_config.second_init_checkpoint,
                                                             dual_model_prefix2)
+        elif train_config.checkpoint_type == "two_checkpoints_phase1_load_and_bert":
+            return get_init_fn_for_phase1_load_and_bert(train_config,
+                                                            tvars,
+                                                            train_config.init_checkpoint,
+                                                            dual_model_prefix1,
+                                                            train_config.second_init_checkpoint,
+                                                            dual_model_prefix2)
         else:
             if train_config.checkpoint_type == "two_checkpoints_v1_v1":
                 first_from_v1 = True

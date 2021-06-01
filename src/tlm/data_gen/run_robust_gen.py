@@ -2,7 +2,8 @@ import os
 from functools import partial
 
 from data_generator.job_runner import JobRunner, sydney_working_dir
-from tlm.data_gen.adhoc_datagen import RobustPairwiseTrainGen, FirstSegmentAsDoc
+from tlm.data_gen.adhoc_datagen import FirstSegmentAsDoc
+from tlm.data_gen.robust_gen.robust_generators import RobustPairwiseTrainGen
 # There is four-level hierarchy for generating data for robust
 # 1. JobRunner : this is basic job runner
 # 2. Worker : RobustWorker  -> give range of queries to generator

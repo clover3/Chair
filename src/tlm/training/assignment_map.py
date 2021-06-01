@@ -859,3 +859,71 @@ def get_init_fn_for_phase1_load_and_bert(train_config, tvars, init_checkpoint, r
 
     return initialized_variable_names, init_fn
 
+
+def get_init_fn_for_seg_sel_steps(train_config,
+                                  tvars,
+                                  init_checkpoint,
+                                  remap_prefix,
+                                  second_init_checkpoint,
+                                  remap_prefix2):
+    assignment_fn2 = get_assignment_map_remap_from_v1
+
+    assignment_map, initialized_variable_names \
+        = seg_sel_layer2_to_1(tvars, init_checkpoint)
+
+    assignment_map2, initialized_variable_names2 \
+        = assignment_fn2(tvars, remap_prefix2, second_init_checkpoint)
+
+    for k, v in initialized_variable_names2.items():
+        initialized_variable_names[k] = v
+
+    def init_fn():
+        tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+        tf.compat.v1.train.init_from_checkpoint(second_init_checkpoint, assignment_map2)
+
+    return initialized_variable_names, init_fn
+
+
+
+def seg_sel_layer2_to_1(tvars, lm_checkpoint):
+    tf_logging.debug("seg_sel_layer2_to_1")
+    """Compute the union of the current variables and checkpoint variables."""
+    initialized_variable_names = {}
+    real_name_map = {}
+
+    assignment_candidate = {}
+    for var in tvars:
+        name = var.name
+        m = re.match("^(.*):\\d+$", name)
+        if m is not None:
+            name = m.group(1)
+
+        tokens = name.split("/")
+        top_scope = tokens[0]
+        if dual_model_prefix1 == top_scope:
+            targ_name = get_name_key(dual_model_prefix2, tokens[1:])
+            assignment_candidate[targ_name] = var
+            tf_logging.info("Init from v2 : %s" % name)
+            real_name_map[targ_name] = name
+        elif dual_model_prefix2 == top_scope:
+            pass
+
+    assignment_map = collections.OrderedDict()
+    if lm_checkpoint:
+        for x in tf.train.list_variables(lm_checkpoint):
+            (name, var) = (x[0], x[1])
+            simple_name = re.sub("layer_normalization[_]?\d*", "LayerNorm", name)
+            simple_name = re.sub("dense[_]?\d*", "dense", simple_name)
+            tf_logging.debug("Vars in TT : %s" % name)
+            tf_logging.debug("map to -> : %s" % simple_name)
+
+            if simple_name not in assignment_candidate:
+                continue
+            assignment_map[name] = assignment_candidate[simple_name]
+            tf_logging.debug("Matched variables : %s" % name)
+
+            real_name = real_name_map[simple_name]
+            initialized_variable_names[real_name] = 1
+            initialized_variable_names[real_name + ":0"] = 1
+
+    return assignment_map, initialized_variable_names

@@ -15,7 +15,7 @@ def wait_checkpoint(model_dir_name, step):
         info_list = get_file_list(model_dir_path)
         found = is_valid_checkpoint(model_name, info_list)
         return found
-    print("Wait for the model: ", model_name)
+    print("Wait for the model: ", model_dir_name, model_name)
     found = check()
     acc_sleep_time = 0
     sleep_interval = 60
@@ -41,3 +41,4 @@ def check_gsfile_exists(target_path):
 
 if __name__ == "__main__":
     wait_checkpoint(sys.argv[1], sys.argv[2])
+    print("Wait done")
