@@ -31,7 +31,7 @@ class PassageQuery(Dict):
 def get_new_query_json_path() -> str:
     last_query_file_idx = get_last_query_file_idx()
     new_query_id = last_query_file_idx + 1
-    task_info.last_task_id = new_query_id
+    task_info.last_executed_task_id = new_query_id
     return get_json_path_for_idx(new_query_id)
 
 

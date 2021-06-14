@@ -1,13 +1,21 @@
 import time
+from typing import List, Callable
+from typing import TypeVar
+
+A = TypeVar('A')
+B = TypeVar('B')
+
 
 class PromiseKeeper:
-    def __init__(self, list_fn):
+    def __init__(self, list_fn: Callable[[A], B]):
         self.X_list = []
         self.list_fn = list_fn
 
-    def do_duty(self):
+    def do_duty(self, log_size=False):
         x_list = list([X.X for X in self.X_list])
-        #print("Total of {} runs".format(len(x_list)))
+        if log_size:
+            print("{} items".format(len(x_list)))
+
         y_list = self.list_fn(x_list)
         for X, y in zip(self.X_list, y_list):
             X.future().Y = y
@@ -24,7 +32,7 @@ class MyFuture:
 
 
 class MyPromise:
-    def __init__(self, X, promise_keeper):
+    def __init__(self, X, promise_keeper: PromiseKeeper):
         self.X = X
         self.Y = MyFuture()
         promise_keeper.X_list.append(self)
@@ -44,6 +52,11 @@ def max_future(futures):
 # get from all element futures in the list
 def list_future(futures):
     return list([f.get() for f in futures])
+
+
+def promise_to_items(promises: List[MyPromise]):
+    return list_future([p.future() for p in promises])
+
 
 
 if __name__ == '__main__':

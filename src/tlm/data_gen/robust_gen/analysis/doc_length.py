@@ -46,5 +46,28 @@ def main():
         print("{0}\t{1}\t{2:.4f}\t{3:.4f}".format(key, cnt, portion, acc_portion))
 
 
+def show_median_90_percentile():
+    counter: Counter = get_doc_length_counter_from_pickle()
+    num_docs = sum(counter.values())
+
+    percentiles = list([i/10 for i in range(10)])
+    percentile_idx = 0
+    print("num_docs", num_docs)
+
+    cnt_acc = 0
+    for doc_len in range(10000):
+        if doc_len in counter:
+            cnt = counter[doc_len]
+            cnt_acc += cnt
+            percentile = cnt_acc / num_docs
+            if percentile > percentiles[percentile_idx]:
+                print("percentile goal={} cur percentile={} cnt_acc={} doc_len={}".
+                      format(percentiles[percentile_idx], percentile, cnt_acc, doc_len))
+                percentile_idx += 1
+
+
+
+
+
 if __name__ == "__main__":
-    main()
+    show_median_90_percentile()

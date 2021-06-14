@@ -431,42 +431,19 @@ class EncoderUnit:
         ids_2 = self.encoder.ft.convert_tokens_to_ids(tokens_b)
         return self.encode_inner(ids_1, ids_2)
 
-    def encode_inner(self, tokens_a, tokens_b):
-        # Modifies `tokens_a` and `tokens_b` in place so that the total
-        # length is less than the specified length.
-        # Account for [CLS], [SEP], [SEP] with "- 3"
-        _truncate_seq_pair(tokens_a, tokens_b, self.max_seq)
-
-        # The convention in BERT is:
-        # (a) For sequence pairs:
-        #  tokens:   [CLS] is this jack ##son ##ville ? [SEP] no it is not . [SEP]
-        #  type_ids: 0     0  0    0    0     0       0 0     1  1  1  1   1 1
-        # (b) For single sequences:
-        #  tokens:   [CLS] the dog is hairy . [SEP]
-        #  type_ids: 0     0   0   0  0     0 0
-        #
-        # Where "type_ids" are used to indicate whether this is the first
-        # sequence or the second sequence. The embedding vectors for `type=0` and
-        # `type=1` were learned during pre-training and are added to the wordpiece
-        # embedding vector (and position vector). This is not *strictly* necessary
-        # since the [SEP] token unambiguously separates the sequences, but it makes
-        # it easier for the model to learn the concept of sequences.
-        #
-        # For classification tasks, the first vector (corresponding to [CLS]) is
-        # used as as the "sentence vector". Note that this only makes sense because
-        # the entire model is fine-tuned.
-        tokens = []
+    def encode_inner(self, input_ids_a, input_ids_b):
+        _truncate_seq_pair(input_ids_a, input_ids_b, self.max_seq)
+        input_ids = []
         segment_ids = []
-        for token in tokens_a:
-            tokens.append(token)
+        for input_id in input_ids_a:
+            input_ids.append(input_id)
             segment_ids.append(0)
 
-        if tokens_b:
-            for token in tokens_b:
-                tokens.append(token)
+        if input_ids_b:
+            for input_id in input_ids_b:
+                input_ids.append(input_id)
                 segment_ids.append(1)
 
-        input_ids = tokens
 
         # The mask has 1 for real tokens and 0 for padding tokens. Only real
         # tokens are attended to.

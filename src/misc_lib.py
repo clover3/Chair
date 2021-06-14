@@ -743,3 +743,13 @@ def select_one_pos_neg_doc(doc_itr: List[Any], get_label_fn=None) \
         raise ValueError
 
     return pick1(pos_doc), pick1(neg_doc)
+
+
+def split_window(items: List[Any], window_size):
+    cursor = 0
+    output = []
+    while cursor < len(items):
+        output.append(items[cursor:cursor+window_size])
+        cursor += window_size
+
+    return output

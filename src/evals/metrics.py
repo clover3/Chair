@@ -33,7 +33,6 @@ def get_ndcg_at_k(k):
     return fn
 
 
-
 def get_p_at_k(k):
     def fn(ranked_list: List[TrecRankedListEntry], true_gold: List[str]):
         seen_doc_id = set()
@@ -79,6 +78,7 @@ def get_metric_fn(input_text):
         return get_ap
     elif input_text.startswith("ndcg"):
         k = int(input_text[len("ndcg"):])
+        print("using ndcg at {}".format(k))
         return get_ndcg_at_k(k)
 
     assert False

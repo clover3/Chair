@@ -325,7 +325,8 @@ def input_fn_builder_classification(input_files,
         # For eval, we want no shuffling and parallel reading doesn't matter.
         if is_training:
             d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
-            d = d.repeat()
+            if flags.repeat_data:
+                d = d.repeat()
             # d = d.shuffle(buffer_size=len(input_files))
             d = d.shuffle(buffer_size=1000 * 1000)
 

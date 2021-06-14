@@ -1,12 +1,8 @@
 from arg.bm25 import BM25
 from cache import load_from_pickle
-from data_generator.job_runner import JobRunner
-from epath import job_man_dir
 from tab_print import print_table
-from tlm.data_gen.msmarco_doc_gen.gen_worker import MMDWorker, PointwiseGen
-from tlm.data_gen.msmarco_doc_gen.max_sent_encode import SegScorer, PassageScoreTuner, get_mrr_from_ranks
-from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResource, ProcessedResource10docMulti
-
+from tlm.data_gen.msmarco_doc_gen.max_sent_encode import SegScorer, PassageScoreTuner
+from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResource10docMulti
 
 
 if __name__ == "__main__":

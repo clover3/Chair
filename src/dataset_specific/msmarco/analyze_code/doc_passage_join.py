@@ -1,21 +1,16 @@
-import csv
-from collections import defaultdict
+from typing import List, Iterable, Dict, Tuple, NamedTuple
 
 from cache import save_to_pickle, load_from_pickle
-from cpath import at_output_dir, at_data_dir
+from cpath import at_data_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from dataset_specific.msmarco.analyze_code.lcs_imp import split_indexed, lcs
-from dataset_specific.msmarco.common import load_train_queries, load_per_query_docs, load_msmarco_simple_qrels, \
-    SimpleQrel, load_msmarco_raw_qrels, MSMarcoDoc
-from typing import List, Iterable, Callable, Dict, Tuple, Set, NamedTuple
-
+from dataset_specific.msmarco.common import load_train_queries, load_per_query_docs, load_msmarco_raw_qrels, MSMarcoDoc
 from galagos.types import QueryID
-from list_lib import left, get_max_idx
+from list_lib import left
 from misc_lib import BinHistogram, TimeEstimator
 from tab_print import print_table
 from trec.qrel_parse import load_qrels_structured
 from trec.types import QRelsDict
-
 
 
 def heuristic_find(text_pattern, long_text, debug=False):
@@ -140,8 +135,6 @@ def join_doc_passage(todo: List[Tuple[str, MSMarcoDoc]],
         ticker.tick()
 
 
-
-
 def get_todo() -> List[Tuple[QueryID, MSMarcoDoc]]:
     print("get_todo()")
     doc_queries = load_train_queries()
@@ -231,16 +224,14 @@ def get_statistic_for_join(join_result: Iterable[Tuple[str, MSMarcoDoc, JoinedPa
 
 
 def get_passage_dict(passage_ids_to_find):
-    msmarco_passage_corpus_path = at_data_dir("msmarco", "collection.tsv")
     passage_dict = {}
+    msmarco_passage_corpus_path = at_data_dir("msmarco", "collection.tsv")
     with open(msmarco_passage_corpus_path, 'r', encoding='utf8') as f:
         for line in f:
             passage_id, text = line.split("\t")
             if passage_id in passage_ids_to_find:
                 passage_dict[passage_id] = text
     return passage_dict
-
-
 
 
 def main():

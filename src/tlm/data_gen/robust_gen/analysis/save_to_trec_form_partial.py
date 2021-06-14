@@ -1,4 +1,3 @@
-import os
 import argparse
 import os
 import sys
@@ -11,7 +10,7 @@ from arg.qck.decl import get_format_handler, FormatHandler
 from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.qck.qck_multi_save_to_trec_form import top_k_average
 from arg.qck.save_to_trec_form import get_max_score_from_doc_parts
-from arg.qck.trec_helper import scrore_d_to_trec_style_predictions
+from arg.qck.trec_helper import score_d_to_trec_style_predictions
 from cpath import output_path
 from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
@@ -92,7 +91,7 @@ def save_to_common_path(pred_file_path: str, info_file_path: str, run_name: str,
     info: Dict = load_combine_info_jsons(info_file_path, f_handler.get_mapping(), f_handler.drop_kdp())
     print("Info has {} entries".format(len(info)))
     score_d = get_score_d(pred_file_path, info, f_handler, combine_strategy, score_type)
-    ranked_list = scrore_d_to_trec_style_predictions(score_d, run_name, max_entry, shuffle_sort)
+    ranked_list = score_d_to_trec_style_predictions(score_d, run_name, max_entry, shuffle_sort)
 
     save_dir = os.path.join(output_path, "ranked_list")
     exist_or_mkdir(save_dir)

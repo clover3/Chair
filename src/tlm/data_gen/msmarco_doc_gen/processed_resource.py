@@ -1,16 +1,13 @@
 import abc
-import os
 import random
 from abc import ABC
-from typing import List, Iterable, Callable, Dict, Tuple, Set
-
+from typing import List, Dict, Tuple
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from dataset_specific.msmarco.common import QueryID, load_query_group, load_candidate_doc_list_1, SimpleQrel, \
     load_msmarco_simple_qrels, load_queries, load_token_d_1, load_candidate_doc_list_10, load_token_d_10doc, \
     load_candidate_doc_top50, load_token_d_50doc, top100_doc_ids, load_token_d_title_body, load_multiple_resource, \
     load_token_d_sent_level
-from epath import job_man_dir
 from list_lib import lfilter
 
 
@@ -38,6 +35,9 @@ class ProcessedResourceI(ABC):
     def query_in_qrel(self, query_id):
         pass
 
+    @abc.abstractmethod
+    def get_query_text(self, qid: QueryID):
+        pass
 
 class ProcessedResource(ProcessedResourceI):
     def __init__(self, split):
@@ -59,6 +59,14 @@ class ProcessedResource(ProcessedResourceI):
 
     def get_label(self, qid: QueryID, doc_id):
         return self.qrel.get_label(qid, doc_id)
+
+    def get_query(self, qid: QueryID):
+        query_text = self.queires[qid]
+        return query_text
+
+    def get_query_text(self, qid: QueryID):
+        query_text = self.queires[qid]
+        return query_text
 
     def get_q_tokens(self, qid: QueryID):
         query_text = self.queires[qid]
@@ -91,6 +99,10 @@ class ProcessedResource10doc(ProcessedResourceI):
 
     def get_label(self, qid: QueryID, doc_id):
         return self.qrel.get_label(qid, doc_id)
+
+    def get_query_text(self, qid: QueryID):
+        query_text = self.queires[qid]
+        return query_text
 
     def get_q_tokens(self, qid: QueryID):
         query_text = self.queires[qid]

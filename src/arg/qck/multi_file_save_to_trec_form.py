@@ -6,10 +6,10 @@ from typing import List, Dict
 from arg.qck.decl import get_format_handler
 from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.qck.save_to_trec_form import get_score_d
-from arg.qck.trec_helper import scrore_d_to_trec_style_predictions
+from arg.qck.trec_helper import score_d_to_trec_style_predictions
 from cpath import output_path
-from trec.trec_parse import write_trec_ranked_list_entry
 from misc_lib import exist_or_mkdir
+from trec.trec_parse import write_trec_ranked_list_entry
 
 
 def save_over_multiple_files(pred_file_list: List[str],
@@ -23,7 +23,7 @@ def save_over_multiple_files(pred_file_list: List[str],
     for pred_file_path in pred_file_list:
         d = get_score_d(pred_file_path, info, f_handler, combine_strategy, score_type)
         score_d.update(d)
-    ranked_list = scrore_d_to_trec_style_predictions(score_d, run_name, max_entry)
+    ranked_list = score_d_to_trec_style_predictions(score_d, run_name, max_entry)
     save_dir = os.path.join(output_path, "ranked_list")
     exist_or_mkdir(save_dir)
     save_path = os.path.join(save_dir, run_name + ".txt")

@@ -156,6 +156,65 @@ class MES_sel_pred(BertModelInterface):
         return self.logits
 
 
+# Segment wise
+class MES_sel_pred_inner(BertModelInterface):
+    def __init__(self,
+                 config,
+                 is_training,
+                 use_one_hot_embeddings=True,
+                 features=None,
+                 scope=None):
+
+        super(MES_sel_pred_inner, self).__init__()
+        input_ids = features["input_ids"]
+        input_mask = features["input_mask"]
+        segment_ids = features["segment_ids"]
+        label_ids = features["label_ids"]
+
+        unit_length = config.max_seq_length
+        d_seq_length = config.max_d_seq_length
+        batch_size, _ = get_shape_list2(input_ids)
+
+        # [Batch, unit_seq_length]
+        with tf.compat.v1.variable_scope(dual_model_prefix1):
+            model = BertModel(
+                config=config,
+                is_training=is_training,
+                input_ids=input_ids,
+                input_mask=input_mask,
+                token_type_ids=segment_ids,
+                use_one_hot_embeddings=use_one_hot_embeddings,
+            )
+            pooled = model.get_pooled_output()
+            logits_2d = tf.keras.layers.Dense(2, name="cls_dense")(pooled) #
+
+
+        with tf.compat.v1.variable_scope(dual_model_prefix2):
+            model = BertModel(
+                config=config,
+                is_training=is_training,
+                input_ids=input_ids,
+                input_mask=input_mask,
+                token_type_ids=segment_ids,
+                use_one_hot_embeddings=use_one_hot_embeddings,
+            )
+        logits = tf.keras.layers.Dense(2, name="cls_dense")(model.get_pooled_output())
+        self.logits = logits
+        label_ids = tf.reshape(label_ids, [-1])
+        loss_arr = tf.nn.sparse_softmax_cross_entropy_with_logits(
+            logits=logits,
+            labels=label_ids)
+
+        layer2_loss = tf.reduce_mean(loss_arr)
+        self.loss = layer2_loss
+
+    def get_loss(self, label_ids_not_used):
+        return self.loss
+
+    def get_logits(self):
+        return self.logits
+
+
 class MES_pad(BertModelInterface):
     def __init__(self,
                  config,

@@ -405,3 +405,64 @@ class MES_pred_layer2_load(BertModelInterface):
 
     def get_logits(self):
         return self.logits
+
+
+class MES_hinge_pred_with_layer1(BertModelInterface):
+    def __init__(self,
+                 config,
+                 is_training,
+                 use_one_hot_embeddings=True,
+                 features=None,
+                 scope=None):
+
+        super(MES_hinge_pred_with_layer1, self).__init__()
+        alpha = config.alpha
+        input_ids = features["input_ids"]
+        input_mask = features["input_mask"]
+        segment_ids = features["segment_ids"]
+        label_ids = features["label_ids"]
+
+        unit_length = config.max_seq_length
+        d_seq_length = config.max_d_seq_length
+        num_window = int(d_seq_length / unit_length)
+        batch_size, _ = get_shape_list2(input_ids)
+
+        # [Batch, num_window, unit_seq_length]
+
+
+        with tf.compat.v1.variable_scope(dual_model_prefix1):
+            model = BertModel(
+                config=config,
+                is_training=is_training,
+                input_ids=input_ids,
+                input_mask=input_mask,
+                token_type_ids=segment_ids,
+                use_one_hot_embeddings=use_one_hot_embeddings,
+            )
+
+        def r2to3(arr):
+            return tf.reshape(arr, [batch_size, num_window, -1])
+
+        # [Batch, num_window, window_length, hidden_size]
+        pooled = model.get_pooled_output()
+        logits = tf.keras.layers.Dense(1, name="cls_dense")(pooled) #
+        self.logits = logits
+
+
+        with tf.compat.v1.variable_scope(dual_model_prefix2):
+            model = BertModel(
+                config=config,
+                is_training=is_training,
+                input_ids=input_ids,
+                input_mask=input_mask,
+                token_type_ids=segment_ids,
+                use_one_hot_embeddings=use_one_hot_embeddings,
+            )
+        logits = tf.keras.layers.Dense(1, name="cls_dense")(model.get_pooled_output())
+        self.loss = 0
+
+    def get_loss(self, label_ids_not_used):
+        return self.loss
+
+    def get_logits(self):
+        return self.logits

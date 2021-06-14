@@ -34,6 +34,11 @@ def get_ingham_client():
     return BERTClient(server_addr, port)
 
 
+def get_localhost_client():
+    server_addr = "http://localhost"
+    port = 8122
+    return BERTClient(server_addr, port)
+
 
 def simple_test():
     text = "Practical text classification system should be able to utilize information from both expensive labelled documents and large volumes of cheap unlabelled documents. It should also easily deal with newly input samples. In this paper, we propose a random walks method for text classification, in which the classification problem is formulated as solving the absorption probabilities of Markov random walks on a weighted graph. Then the Laplacian operator for asymmetric graphs is derived and utilized for asymmetric transition matrix. We also develop an induction algorithm for the newly input documents based on the random walks method. Meanwhile, to make full use of text information, a difference measure for text data based on language model and KL-divergence is proposed, as well as a new smoothing technique for it. Finally an algorithm for elimination of ambiguous states is proposed to address the problem of noisy data. Experiments on two well-known data sets: W ebKB and 20Newsgroup demonstrate the effectivity of the proposed random walks method."

@@ -36,17 +36,18 @@ class JsonTiedDict:
 
         else:
             dict = {
-                "last_task_id": 0
+                "last_executed_task_id": 0
             }
         for key, value in dict.items():
             self.__dict__[key] = value
         self.save()
 
     def last_id(self):
-        return self.__dict__['last_task_id']
+        return self.__dict__['last_executed_task_id']
 
     def save(self):
         with open(self.file_path, "w") as f:
+            print(self.to_dict())
             json.dump(self.to_dict(), f)
 
     def set(self, key, value):
@@ -56,3 +57,6 @@ class JsonTiedDict:
     def to_dict(self):
         output = copy.deepcopy(self.__dict__)
         return output
+
+    def get(self, key):
+        return self.__dict__[key]

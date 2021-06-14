@@ -6,7 +6,7 @@ from typing import List, Dict, Tuple
 from arg.qck.decl import get_qk_pair_id, get_qc_pair_id, qck_convert_map, qk_convert_map, \
     qc_convert_map, qckl_convert_map
 from arg.qck.prediction_reader import load_combine_info_jsons
-from arg.qck.trec_helper import scrore_d_to_trec_style_predictions
+from arg.qck.trec_helper import score_d_to_trec_style_predictions
 from cpath import output_path
 from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
@@ -64,7 +64,7 @@ def get_mapping_per_input_type(input_type):
 def save_to_common_path(pred_file_path, info_file_path, run_name, max_entry):
     print("Reading from :", pred_file_path)
     score_d = summarize_score(info_file_path, pred_file_path)
-    ranked_list = scrore_d_to_trec_style_predictions(score_d, run_name, max_entry)
+    ranked_list = score_d_to_trec_style_predictions(score_d, run_name, max_entry)
 
     save_dir = os.path.join(output_path, "ranked_list")
     exist_or_mkdir(save_dir)

@@ -1,13 +1,9 @@
 import json
-from cpath import at_output_dir
-from galagos.parse import save_queries_to_file
-from list_lib import lmap
-
 from typing import List, Dict
 
-from arg.perspectives.evaluate import perspective_getter
-from arg.perspectives.load import load_claim_perspective_pair, load_perspectrum_golds, PerspectiveCluster
-from cpath import at_data_dir, at_output_dir
+from arg.counter_arg_retrieval.build_dataset.resources import load_step1_claims
+from arg.perspectives.load import load_perspectrum_golds, PerspectiveCluster
+from cpath import at_output_dir
 
 
 def load_pid_inv_index():
@@ -24,7 +20,7 @@ def load_pid_inv_index():
 def main():
     pid_inv_index = load_pid_inv_index()
     print(len(pid_inv_index))
-    j_obj = json.load(open(at_output_dir("ca_building", "claims.step1.txt"), "r"))
+    j_obj = load_step1_claims()
     old_query_list = json.load(open(at_output_dir("perspective_query", "pc_query_for_evidence.json"), "r"))
 
     old_query_d = {}

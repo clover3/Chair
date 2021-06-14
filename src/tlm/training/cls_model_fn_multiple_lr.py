@@ -9,8 +9,6 @@ from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assig
     reweight_zero
 
 
-
-
 def model_fn_classification(bert_config,
                             train_config,
                             model_class,

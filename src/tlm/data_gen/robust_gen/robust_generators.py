@@ -12,7 +12,7 @@ from misc_lib import pick1, DataIDManager, average
 from tf_util.record_writer_wrap import RecordWriterWrap, write_records_w_encode_fn
 from tlm.data_gen.base import get_basic_input_feature
 from tlm.data_gen.bert_data_gen import create_int_feature
-from tlm.data_gen.classification_common import PairedInstance, ClassificationInstance, encode_classification_instance, \
+from tlm.data_gen.classification_common import ClassificationInstance, encode_classification_instance, \
     ClassificationInstanceWDataID, encode_classification_instance_w_data_id
 from tlm.data_gen.pairwise_common import generate_pairwise_combinations, write_pairwise_record
 from tlm.data_gen.robust_gen.select_supervision.score_selection_methods import get_target_indices_get_best, \
@@ -65,7 +65,6 @@ class RobustPairwiseTrainGen:
 class RobustPairwiseTrainGen2:
     def __init__(self, encoder, max_seq_length, query_type="title", neg_k=1000):
         self.data = load_robust_tokens()
-        assert len(self.data) == 174787
         qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
         self.judgement = load_qrels_structured(qrel_path)
         self.max_seq_length = max_seq_length
@@ -103,9 +102,9 @@ class RobustPairwiseTrainGen2:
             for doc_id in target_docs:
                 label = 1 if doc_id in judgement and judgement[doc_id] > 0 else 0
                 if label:
-                    pos_doc_ids.extend(doc_id)
+                    pos_doc_ids.append(doc_id)
                 else:
-                    neg_doc_ids.extend(doc_id)
+                    neg_doc_ids.append(doc_id)
 
             for pos_doc_id in pos_doc_ids:
                 neg_doc_id = pick1(neg_doc_ids)
@@ -113,7 +112,7 @@ class RobustPairwiseTrainGen2:
                 tokens_seg1, seg_ids1 = pos_inst
                 neg_inst: Tuple[List, List] = encode_doc(neg_doc_id)
                 tokens_seg2, seg_ids2 = neg_inst
-                inst = PairedInstance(tokens_seg1, seg_ids1, tokens_seg2, seg_ids2, 0)
+                inst = (tokens_seg1, seg_ids1), (tokens_seg2, seg_ids2)
                 all_insts.append(inst)
 
         return all_insts

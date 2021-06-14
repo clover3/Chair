@@ -1,16 +1,14 @@
 import random
 from collections import Counter
+from typing import List, Tuple
 
 from arg.perspectives.pc_tokenizer import PCTokenizer
 from arg.qck.decl import QCKQuery, QCKCandidate
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from list_lib import lmap, get_max_idx, flatten, lflatten
-from misc_lib import find_max_idx, TEL, average
+from list_lib import lmap, get_max_idx, lflatten
+from misc_lib import TEL, average
 from tlm.data_gen.classification_common import ClassificationInstanceWDataID, write_with_classification_instance_with_id
-from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResource10docMulti, ProcessedResourceMultiInterface
-from typing import List, Iterable, Callable, Dict, Tuple, Set
-
-from trec.types import TrecRankedListEntry
+from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResourceMultiInterface
 
 
 def regroup_sent_list(tokens_list: List[List[str]], n) -> List[List[str]]:
@@ -23,6 +21,54 @@ def regroup_sent_list(tokens_list: List[List[str]], n) -> List[List[str]]:
 
 
 class MaxSentEncoder:
+    def __init__(self, bm25_module, max_seq_length, include_title=False):
+        self.max_seq_length = max_seq_length
+        self.bm25_module = bm25_module
+        pc_tokenize = PCTokenizer()
+        self.tokenize_stem = pc_tokenize.tokenize_stem
+        self.include_title = include_title
+        bert_tokenizer = get_tokenizer()
+        self.bert_tokenize = bert_tokenizer.tokenize
+
+    def encode(self, query_text,
+                     stemmed_title_tokens: List[str],
+                     stemmed_body_tokens_list: List[List[str]],
+                     bert_title_tokens: List[str],
+                     bert_body_tokens_list: List[List[str]]) -> List[Tuple[List, List]]:
+
+        # Title and body sentences are trimmed to 64 * 5 chars
+        # score each sentence based on bm25_module
+        stemmed_query_tokens = self.tokenize_stem(query_text)
+        q_tf = Counter(stemmed_query_tokens)
+        assert len(stemmed_body_tokens_list) == len(bert_body_tokens_list)
+
+        stemmed_body_tokens_list = regroup_sent_list(stemmed_body_tokens_list, 4)
+        bert_body_tokens_list = regroup_sent_list(bert_body_tokens_list, 4)
+
+        def get_score(sent_idx):
+            if self.include_title:
+                tokens = stemmed_title_tokens + stemmed_body_tokens_list[sent_idx]
+            else:
+                tokens = stemmed_body_tokens_list[sent_idx]
+
+            doc_tf = Counter(tokens)
+            return self.bm25_module.score_inner(q_tf, doc_tf)
+
+        bert_query_tokens = self.bert_tokenize(query_text)
+        if stemmed_body_tokens_list:
+            seg_scores = lmap(get_score, range(len(stemmed_body_tokens_list)))
+            max_idx = get_max_idx(seg_scores)
+            content_len = self.max_seq_length - 3 - len(bert_query_tokens)
+            second_tokens = bert_body_tokens_list[max_idx][:content_len]
+        else:
+            second_tokens = []
+        out_tokens = ["[CLS]"] + bert_query_tokens + ["[SEP]"] + second_tokens + ["[SEP]"]
+        segment_ids = [0] * (len(bert_query_tokens) + 2) + [1] * (len(second_tokens) + 1)
+        entry = out_tokens, segment_ids
+        return [entry]
+
+
+class MaxSegEncoder:
     def __init__(self, bm25_module, max_seq_length, include_title=False):
         self.max_seq_length = max_seq_length
         self.bm25_module = bm25_module
@@ -136,7 +182,7 @@ class SegScorer:
         self.bm25_module = bm25_module
         pc_tokenize = PCTokenizer()
         self.tokenize_stem = pc_tokenize.tokenize_stem
-        bert_tokenizer = get_tokenizer()
+        self.bert_tokenizer = get_tokenizer()
 
     # Return score of the tokens
     def get_scores(self, query_text,

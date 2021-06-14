@@ -58,7 +58,7 @@ class KDPEvalServer:
         job_id = self.next_job_id
         self.save_request(job_id, kdp_list)
         self.next_job_id += 1
-        self.json_tied_dict.set('last_task_id', self.next_job_id)
+        self.json_tied_dict.set('last_executed_task_id', self.next_job_id)
         return job_id
 
 

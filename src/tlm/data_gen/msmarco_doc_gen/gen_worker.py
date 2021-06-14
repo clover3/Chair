@@ -1,8 +1,8 @@
 import json
 import os
 from collections import Counter
-from typing import OrderedDict
 from typing import List, Iterable, Dict, Tuple
+from typing import OrderedDict
 
 from arg.qck.decl import QCKQuery, QCKCandidate
 from data_generator.job_runner import WorkerInterface
@@ -113,7 +113,6 @@ class GenerateFromTitleBody:
                         print(missing_doc_qid)
                         print("success: ", success_docs)
                         raise KeyError
-
 
     def write(self, insts: List[ClassificationInstanceWDataID], out_path: str):
         return write_with_classification_instance_with_id(self.tokenizer, self.max_seq_length, insts, out_path)
@@ -395,7 +394,7 @@ class MMDWorker(WorkerInterface):
 
     def work(self, job_id):
         qids = self.query_group[job_id]
-        data_bin = 100000
+        data_bin = 1000000
         data_id_st = job_id * data_bin
         data_id_ed = data_id_st + data_bin
         data_id_manager = DataIDManager(data_id_st, data_id_ed)

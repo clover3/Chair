@@ -125,8 +125,8 @@ class Executer:
         self._init_info()
 
     def _get_new_task_id(self):
-        new_task_id = self.info_dict.last_task_id + 1
-        self.info_dict.set("last_task_id", new_task_id)
+        new_task_id = self.info_dict.last_executed_task_id + 1
+        self.info_dict.set("last_executed_task_id", new_task_id)
         return new_task_id
 
     def _get_task_info_path(self, task_id):

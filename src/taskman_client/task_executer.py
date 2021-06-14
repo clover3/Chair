@@ -26,7 +26,6 @@ arg_parser.add_argument("--max_job", default=10)
 
 
 
-
 def preexec_function():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
@@ -66,11 +65,12 @@ def get_log_path(job_id):
 
 
 def get_last_mark():
-    init_id = max(task_info.last_task_id, 0)
+    init_id = max(task_info.last_executed_task_id, 0)
     id_idx = init_id
     while os.path.exists(os.path.join(mark_dir, str(id_idx))):
         id_idx += 1
 
+    task_info.set('last_executed_task_id', id_idx-1)
     return id_idx - 1
 
 
@@ -79,7 +79,7 @@ def check_job_mark(job_id):
 
 
 def get_new_job_id():
-    init_id = task_info.last_task_id
+    init_id = task_info.last_executed_task_id
     id_idx = init_id
     while os.path.exists(get_sh_path_for_job_id(id_idx)):
         id_idx += 1
@@ -135,7 +135,7 @@ def loop(max_job):
                 time.sleep(10)
             execute(job_id)
             no_job_time = 0
-            task_info.set("last_task_id ", task_info.last_task_id + 1)
+            task_info.set("last_executed_task_id", job_id)
             mark(job_id)
             last_mask += 1
             time.sleep(5)

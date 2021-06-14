@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-from collections import Counter
 from typing import List, Dict, Tuple, Callable, NamedTuple
 
 import scipy.special
@@ -9,7 +8,7 @@ import scipy.special
 from arg.qck.decl import get_qk_pair_id, get_qc_pair_id, get_format_handler, qck_convert_map, qk_convert_map, \
     qc_convert_map, FormatHandler
 from arg.qck.prediction_reader import load_combine_info_jsons
-from arg.qck.trec_helper import scrore_d_to_trec_style_predictions
+from arg.qck.trec_helper import score_d_to_trec_style_predictions
 from cpath import output_path
 from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
@@ -143,7 +142,7 @@ def save_to_common_path(pred_file_path: str, info_file_path: str, run_name: str,
     info: Dict = load_combine_info_jsons(info_file_path, f_handler.get_mapping(), f_handler.drop_kdp())
     tprint("Info has {} entries".format(len(info)))
     score_d = get_score_d(pred_file_path, info, f_handler, combine_strategy, score_type)
-    ranked_list = scrore_d_to_trec_style_predictions(score_d, run_name, max_entry, shuffle_sort)
+    ranked_list = score_d_to_trec_style_predictions(score_d, run_name, max_entry, shuffle_sort)
 
     save_dir = os.path.join(output_path, "ranked_list")
     exist_or_mkdir(save_dir)

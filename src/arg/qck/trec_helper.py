@@ -5,9 +5,9 @@ from misc_lib import get_second, group_by
 from trec.types import TrecRankedListEntry
 
 
-def scrore_d_to_trec_style_predictions(score_d: Dict[Tuple[str, str], float], run_name="runname",
-                                       max_entry=-1,
-                                       shuffle_sort=False) \
+def score_d_to_trec_style_predictions(score_d: Dict[Tuple[str, str], float], run_name="runname",
+                                      max_entry=-1,
+                                      shuffle_sort=False) \
         -> Iterable[TrecRankedListEntry]:
 
     def get_qid(x) -> str:

@@ -27,7 +27,7 @@ class FileWatchingJobRunner:
                 st = time.time()
                 job_id = self.next_job_id
                 self.do_job(job_id)
-                self.json_tied_dict.set('last_task_id', job_id)
+                self.json_tied_dict.set('last_executed_task_id', job_id)
                 self.next_job_id += 1
                 ed = time.time()
                 print("Finished {}. Elapsed={}".format(self.job_name, ed-st))
