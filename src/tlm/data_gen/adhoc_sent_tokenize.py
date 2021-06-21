@@ -164,11 +164,11 @@ def join_tokens(query_tokens, second_tokens):
 
 
 class FromTextEncoder:
-    def __init__(self, max_seq_length, random_short=False, seg_selection_fn=None, max_seg_per_doc=999999):
+    def __init__(self, max_seq_length, random_short=False, seg_selection_fn=None, max_seg_per_doc=999999, trim_len=64):
         self.max_seq_length = max_seq_length
         self.tokenizer = get_tokenizer()
-        self.title_token_max = 64
-        self.query_token_max = 64
+        self.title_token_max = trim_len
+        self.query_token_max = trim_len
         if random_short:
             self.enum_passage_fn = enum_passage_random_short
         else:
@@ -279,7 +279,7 @@ class FromTextEncoderShortSent:
 
 
 class SeroFromTextEncoder:
-    def __init__(self, src_window_size, max_seq_length, random_short=True, max_seg_per_doc=4):
+    def __init__(self, src_window_size, max_seq_length, random_short=True, max_seg_per_doc=4, trim_len=64):
         def seg_selection_fn(insts: List[Tuple[List, List]]) -> List[Tuple[List, List]]:
             all_tokens = []
             all_seg_ids = []
@@ -295,7 +295,7 @@ class SeroFromTextEncoder:
             return [(all_tokens[:max_seq_length], all_seg_ids[:max_seq_length])]
 
         assert src_window_size <= max_seq_length
-        self.inner_encoder = FromTextEncoder(src_window_size, random_short, seg_selection_fn, max_seg_per_doc)
+        self.inner_encoder = FromTextEncoder(src_window_size, random_short, seg_selection_fn, max_seg_per_doc, trim_len)
 
     def encode(self, query_tokens, title, body) -> List[Tuple[List, List]]:
         return self.inner_encoder.encode(query_tokens, title, body)

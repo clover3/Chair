@@ -29,10 +29,16 @@ def pairwise_model(pooled_output):
 def pairwise_cross_entropy(pooled_output):
     logits = tf.keras.layers.Dense(1, name="cls_dense")(pooled_output)
     pair_logits = tf.reshape(logits, [2, -1])
-    prob = tf.nn.softmax(pair_logits, axis=0)
-    losses = 1 - prob[0, :]
+    # softmax would results in domain of [0, 1),
+    # log_softmax would be (-inf, 0)
+    # -log_softmax would be (0, inf)
+    norm_logits = tf.nn.log_softmax(pair_logits, axis=0) #
+    losses = -norm_logits[0, :]
+
+    low_bar = 0.2
+    losses = tf.maximum(losses, low_bar) - low_bar
     loss = tf.reduce_mean(losses)
-    return loss, losses, prob[0, :]
+    return loss, losses, pair_logits[0, :]
 
 
 def cross_entropy(pooled_output):

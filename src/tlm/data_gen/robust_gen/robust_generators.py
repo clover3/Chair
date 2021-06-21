@@ -14,7 +14,7 @@ from tlm.data_gen.base import get_basic_input_feature
 from tlm.data_gen.bert_data_gen import create_int_feature
 from tlm.data_gen.classification_common import ClassificationInstance, encode_classification_instance, \
     ClassificationInstanceWDataID, encode_classification_instance_w_data_id
-from tlm.data_gen.pairwise_common import generate_pairwise_combinations, write_pairwise_record
+from tlm.data_gen.pairwise_common import generate_pairwise_combinations, write_pairwise_record, combine_features
 from tlm.data_gen.robust_gen.select_supervision.score_selection_methods import get_target_indices_get_best, \
     get_target_indices_all, get_target_indices_first_and_best, get_target_indices_best_or_over_09, \
     get_target_indices_random_over_09
@@ -62,8 +62,63 @@ class RobustPairwiseTrainGen:
         write_pairwise_record(self.tokenizer, self.max_seq_length, insts, out_path)
 
 
+def pos_major_enum(pos_doc_ids, neg_doc_ids):
+    for pos_doc_id in pos_doc_ids:
+        neg_doc_id = pick1(neg_doc_ids)
+        yield pos_doc_id, neg_doc_id
+
+
+def get_pos_major_repeat_enum(n_repeat):
+    def pos_major_repeat_enum(pos_doc_ids, neg_doc_ids):
+        for _ in range(n_repeat):
+            for pos_doc_id in pos_doc_ids:
+                neg_doc_id = pick1(neg_doc_ids)
+                yield pos_doc_id, neg_doc_id
+    return pos_major_repeat_enum
+
+
+def neg_major_enum(pos_doc_ids, neg_doc_ids):
+    pos_doc_ids_new = list(pos_doc_ids)
+    random.shuffle(pos_doc_ids_new)
+
+    pos_doc_cursor = 0
+
+    n_neg_doc = len(neg_doc_ids)
+    n_pos_doc = len(pos_doc_ids)
+    for neg_doc_id in neg_doc_ids:
+        if not n_pos_doc:
+            break
+        pos_doc_id = pos_doc_ids_new[pos_doc_cursor]
+        pos_doc_cursor += 1
+        if pos_doc_cursor == n_pos_doc:
+            pos_doc_cursor = 0
+        yield pos_doc_id, neg_doc_id
+
+
+def get_neg_major_limit_enum(n_limit):
+    def neg_major_enum(pos_doc_ids, neg_doc_ids):
+        pos_doc_ids_new = list(pos_doc_ids)
+        neg_doc_ids_new = list(neg_doc_ids)
+        random.shuffle(pos_doc_ids_new)
+        random.shuffle(neg_doc_ids_new)
+        pos_doc_cursor = 0
+        n_neg_doc = len(neg_doc_ids)
+        n_pos_doc = len(pos_doc_ids)
+        for neg_doc_id in neg_doc_ids[:n_limit]:
+            if not n_pos_doc:
+                break
+            pos_doc_id = pos_doc_ids_new[pos_doc_cursor]
+            pos_doc_cursor += 1
+            if pos_doc_cursor == n_pos_doc:
+                pos_doc_cursor = 0
+            yield pos_doc_id, neg_doc_id
+    return neg_major_enum
+
+
 class RobustPairwiseTrainGen2:
-    def __init__(self, encoder, max_seq_length, query_type="title", neg_k=1000):
+    def __init__(self, encoder, max_seq_length, query_type="title", neg_k=1000,
+                 enum_pos_neg_method="pos_major_enum",
+                 ):
         self.data = load_robust_tokens()
         qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
         self.judgement = load_qrels_structured(qrel_path)
@@ -73,6 +128,19 @@ class RobustPairwiseTrainGen2:
         self.tokenizer = get_tokenizer()
         self.galago_rank = load_bm25_best()
         self.neg_k = neg_k
+        if enum_pos_neg_method == "pos_major_enum":
+            self.enum_pos_neg_pairs = pos_major_enum
+        elif enum_pos_neg_method == "neg_major_enum":
+            self.enum_pos_neg_pairs = neg_major_enum
+        elif enum_pos_neg_method == "neg_major_limit100":
+            self.enum_pos_neg_pairs = get_neg_major_limit_enum(100)
+        elif enum_pos_neg_method == "pos_major_repeat_enum":
+            self.enum_pos_neg_pairs = get_pos_major_repeat_enum(5)
+        elif enum_pos_neg_method == "pos_major_repeat20_enum":
+            self.enum_pos_neg_pairs = get_pos_major_repeat_enum(20)
+        else:
+            print("enum_pos_neg_method {} is not expected".format(enum_pos_neg_method))
+            assert False
 
     def generate(self, query_list):
         neg_k = self.neg_k
@@ -106,8 +174,7 @@ class RobustPairwiseTrainGen2:
                 else:
                     neg_doc_ids.append(doc_id)
 
-            for pos_doc_id in pos_doc_ids:
-                neg_doc_id = pick1(neg_doc_ids)
+            for pos_doc_id, neg_doc_id in self.enum_pos_neg_pairs(pos_doc_ids, neg_doc_ids):
                 pos_inst: Tuple[List, List] = encode_doc(pos_doc_id)
                 tokens_seg1, seg_ids1 = pos_inst
                 neg_inst: Tuple[List, List] = encode_doc(neg_doc_id)
@@ -119,6 +186,92 @@ class RobustPairwiseTrainGen2:
 
     def write(self, insts, out_path):
         write_pairwise_record(self.tokenizer, self.max_seq_length, insts, out_path)
+
+
+
+class RobustPairwiseTrainGenWPosMask:
+    def __init__(self, encoder, max_seq_length, query_type="title", neg_k=1000,
+                 enum_pos_neg_method="pos_major_enum",
+                 ):
+        self.data = load_robust_tokens()
+        qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
+        self.judgement = load_qrels_structured(qrel_path)
+        self.max_seq_length = max_seq_length
+        self.queries = load_robust_04_query(query_type)
+        self.encoder = encoder
+        self.tokenizer = get_tokenizer()
+        self.galago_rank = load_bm25_best()
+        self.neg_k = neg_k
+        if enum_pos_neg_method == "pos_major_enum":
+            self.enum_pos_neg_pairs = pos_major_enum
+        elif enum_pos_neg_method == "neg_major_enum":
+            self.enum_pos_neg_pairs = neg_major_enum
+        elif enum_pos_neg_method == "neg_major_limit100":
+            self.enum_pos_neg_pairs = get_neg_major_limit_enum(100)
+        elif enum_pos_neg_method == "pos_major_repeat_enum":
+            self.enum_pos_neg_pairs = get_pos_major_repeat_enum(5)
+        elif enum_pos_neg_method == "pos_major_repeat20_enum":
+            self.enum_pos_neg_pairs = get_pos_major_repeat_enum(20)
+        else:
+            print("enum_pos_neg_method {} is not expected".format(enum_pos_neg_method))
+            assert False
+
+    def generate(self, query_list):
+        neg_k = self.neg_k
+        all_insts = []
+
+        for query_id in query_list:
+            if query_id not in self.judgement:
+                continue
+
+            judgement = self.judgement[query_id]
+            query = self.queries[query_id]
+            query_tokens = self.tokenizer.tokenize(query)
+
+            def encode_doc(doc_id):
+                tokens = self.data[doc_id]
+                insts: List[Tuple[List, List]] = self.encoder.encode(query_tokens, tokens)
+                return insts[0]
+
+            ranked_list = self.galago_rank[query_id]
+            ranked_list = ranked_list[:neg_k]
+
+            target_docs = set(judgement.keys())
+            target_docs.update([e.doc_id for e in ranked_list])
+            pos_doc_ids = []
+            neg_doc_ids = []
+
+            for doc_id in target_docs:
+                label = 1 if doc_id in judgement and judgement[doc_id] > 0 else 0
+                if label:
+                    pos_doc_ids.append(doc_id)
+                else:
+                    neg_doc_ids.append(doc_id)
+
+            seen_pos_doc = set()
+            for pos_doc_id, neg_doc_id in self.enum_pos_neg_pairs(pos_doc_ids, neg_doc_ids):
+                pos_inst: Tuple[List, List] = encode_doc(pos_doc_id)
+                tokens_seg1, seg_ids1 = pos_inst
+                neg_inst: Tuple[List, List] = encode_doc(neg_doc_id)
+                tokens_seg2, seg_ids2 = neg_inst
+
+                use_pos = 1 if pos_doc_id not in seen_pos_doc else 0
+                seen_pos_doc.add(pos_doc_id)
+                inst = (tokens_seg1, seg_ids1), (tokens_seg2, seg_ids2), use_pos
+                all_insts.append(inst)
+
+        return all_insts
+
+    def write(self, insts, out_path):
+        writer = RecordWriterWrap(out_path)
+        for inst in insts:
+            (tokens, segment_ids), (tokens2, segment_ids2), use_pos = inst
+
+            features = combine_features(tokens, segment_ids, tokens2, segment_ids2, self.tokenizer, self.max_seq_length)
+            features["use_pos"] = create_int_feature([use_pos])
+            writer.write_feature(features)
+        writer.close()
+
 
 
 class RobustPredictGenOld:
@@ -163,6 +316,45 @@ class RobustPredictGenOld:
 
         pickle.dump(doc_id_list, f)
         writer.close()
+
+
+class RobustPosToNegRate:
+    def __init__(self, encoder, max_seq_length, query_type="title", neg_k=1000):
+        qrel_path = "/home/youngwookim/Downloads/rob04-desc/qrels.rob04.txt"
+        self.judgement = load_qrels_structured(qrel_path)
+        self.max_seq_length = max_seq_length
+        self.queries = load_robust_04_query(query_type)
+        self.encoder = encoder
+        self.galago_rank = load_bm25_best()
+        self.neg_k = neg_k
+
+    def generate(self, query_list):
+        neg_k = self.neg_k
+        n_pos_doc = 0
+        n_neg_doc = 0
+        for query_id in query_list:
+            if query_id not in self.judgement:
+                continue
+
+            judgement = self.judgement[query_id]
+
+            ranked_list = self.galago_rank[query_id]
+            ranked_list = ranked_list[:neg_k]
+            target_docs = set(judgement.keys())
+            target_docs.update([e.doc_id for e in ranked_list])
+            pos_doc_ids = []
+            neg_doc_ids = []
+
+            for doc_id in target_docs:
+                label = 1 if doc_id in judgement and judgement[doc_id] > 0 else 0
+                if label:
+                    pos_doc_ids.append(doc_id)
+                else:
+                    neg_doc_ids.append(doc_id)
+
+            print(len(pos_doc_ids), len(neg_doc_ids))
+
+
 
 
 class SeroRobustPairwiseTrainGen(RobustPairwiseTrainGen):

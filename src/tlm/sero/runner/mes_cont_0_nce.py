@@ -1,12 +1,13 @@
 from my_tf import tf
 from taskman_client.wrapper import report_run
-from tlm.sero.runner.mes_hinge_common import run_mes_hinge_var
+from tlm.model.mes_cont import MES_continuous_0_nce
+from tlm.sero.mes_main_common import run_mes_variant
 from tlm.training.train_flags import *
 
 
 @report_run
 def main(_):
-    return run_mes_hinge_var()
+    return run_mes_variant(MES_continuous_0_nce)
 
 
 if __name__ == "__main__":

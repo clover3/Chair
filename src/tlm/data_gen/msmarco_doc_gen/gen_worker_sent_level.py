@@ -1,5 +1,5 @@
-from typing import OrderedDict
-from typing import OrderedDict
+from collections import OrderedDict
+from typing import List, Iterable, Tuple
 
 from arg.qck.decl import QCKQuery, QCKCandidate
 from data_generator.tokenizer_wo_tf import get_tokenizer

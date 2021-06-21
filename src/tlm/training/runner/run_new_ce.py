@@ -1,12 +1,15 @@
+
 from my_tf import tf
 from taskman_client.wrapper import report_run
-from tlm.sero.runner.mes_hinge_common import run_mes_hinge_var
+from tlm.training.bert_with_new_ce import BertNewCE
+from tlm.training.pointwise_train import run_pointwise_train
 from tlm.training.train_flags import *
 
 
 @report_run
 def main(_):
-    return run_mes_hinge_var()
+    model_class = BertNewCE
+    return run_pointwise_train(model_class)
 
 
 if __name__ == "__main__":
