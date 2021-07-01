@@ -1,5 +1,3 @@
-import numpy as np
-
 from attribution.deleter_trsfmr import token_delete_with_indice
 from data_generator.NLI import nli
 from data_generator.NLI.enlidef import get_target_class
@@ -61,6 +59,7 @@ def eval_pairing(pair_logits_p, pair_logits_h, data_loader, enc_list, pair_infos
     }
     return scores_p, scores_h
 
+
 def predict_translate(conf_score, data_loader, enc_payload, plain_payload):
     max_k = 999
     pred_list = []
@@ -93,6 +92,7 @@ def predict_translate(conf_score, data_loader, enc_payload, plain_payload):
 
         pred_list.append((p_explain, h_explain))
     return pred_list
+
 
 def eval_explain_1(conf_score, data_loader, tag):
     enc_explain_dev, explain_dev = data_loader.get_dev_explain_1(tag)

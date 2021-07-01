@@ -32,9 +32,58 @@ def get_duplicate_list(target_doc_ids):
     return skip_list
 
 
+def unigram_overlap(d1: str, d2: str):
+    tokens1 = d1.split()
+    tokens2 = d2.split()
+    min_tf_sum, overlap_tf = get_tokens_overlap(tokens1, tokens2)
+    print(overlap_tf/min_tf_sum)
+    return overlap_tf, min_tf_sum
+
+
+def get_ngram_count_rep(text):
+    tokens = text.split()
+    items = list(nltk.ngrams(tokens, 3))
+    return Counter(items)
+
+
+
+def ngram_overlap(d1: str, d2: str):
+    def get_ngram(text):
+        tokens = text.split()
+        items = list(nltk.ngrams(tokens, 3))
+        print(len(items))
+        return items
+
+    tf_common, tf_min = get_tokens_overlap(get_ngram(d1), get_ngram(d2))
+    print(tf_common, tf_min)
+
+
+def get_tokens_overlap(tokens1, tokens2):
+    tf1 = Counter(tokens1)
+    tf2 = Counter(tokens2)
+    tf_sum1 = sum(tf1.values())
+    tf_sum2 = sum(tf2.values())
+    min_tf_sum = min(tf_sum1, tf_sum2)
+    overlap_tf = 0
+    for key in tf1:
+        overlap_tf += min(tf1[key], tf2[key])
+    return overlap_tf, min_tf_sum
+
+
+def debug():
+    doc_id1 = "clueweb12-0610wb-68-32030"
+    doc_id2 = "clueweb12-0606wb-83-01024"
+    docs = load_run1_doc_indexed()
+
+    d1 = docs[doc_id1]
+    d2 = docs[doc_id2]
+
+    print(unigram_overlap(d1, d2))
+    print(ngram_overlap(d1, d2))
+
+
 def main():
-    load_docs()
-    return NotImplemented
+    debug()
 
 
 if __name__ == "__main__":

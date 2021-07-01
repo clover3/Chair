@@ -27,8 +27,6 @@ def main():
             print(e)
             raise
 
-
-
     print("{} workers in {} files".format(len(unique_workers), "?"))
 
 

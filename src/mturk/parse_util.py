@@ -1,6 +1,6 @@
 import csv
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import List, Dict, Any
 from typing import NamedTuple, NewType
 
 from list_lib import lmap
@@ -20,15 +20,21 @@ class AnswerUnit(ABC):
         pass
 
 
+# Names should not include prefixes "Input." or "Answers."
 class HITScheme(NamedTuple):
     inputs: List[ColumnName]
     answer_units: List[AnswerUnit]
 
+    def get_answer_names(self):
+        return list([ans.name for ans in self.answer_units])
+
 
 class RadioButtonGroup(AnswerUnit):
-    def __init__(self, prefix, post_fix):
+    def __init__(self, prefix, post_fix, make_int=False):
+        self.name = prefix
         self.pre_fix = prefix
         self.post_fix: List[str] = post_fix
+        self.make_int = make_int
 
     def get_column_names(self) -> List[ColumnName]:
         l = []
@@ -46,7 +52,36 @@ class RadioButtonGroup(AnswerUnit):
             if d[column_name] == "true":
                 assert answer is None
                 answer = post
+        if self.make_int:
+            return int(answer) if answer is not None else None
         return answer
+
+
+class Categorical(AnswerUnit):
+    def __init__(self, column_name, options: Dict[str, Any]):
+        self.name = column_name
+        self.column_name = column_name
+        self.options = options
+
+    def get_column_names(self) -> List[ColumnName]:
+        return [self.column_name]
+
+    def parse(self, d: Dict[ColumnName, str]):
+        answer_str = d[self.column_name]
+        return self.options[answer_str]
+
+
+class Checkbox(AnswerUnit):
+    def __init__(self, column_name):
+        self.name = column_name
+        self.column_name = column_name
+
+    def get_column_names(self) -> List[ColumnName]:
+        return [self.column_name]
+
+    def parse(self, d: Dict[ColumnName, str]):
+        answer_str = d[self.column_name]
+        return {"true": 1, "false": 0}[answer_str]
 
 
 class RepeatedEntries(AnswerUnit):
@@ -74,9 +109,14 @@ RadioGroupResult = NewType('RadioGroupResult', str)
 
 
 class HitResult:
-    def __init__(self, inputs_d, outputs_d):
+    def __init__(self, inputs_d, outputs_d, row):
         self.inputs: Dict[str, str] = inputs_d
         self.outputs: Dict = outputs_d
+        self.assignment_id = row['AssignmentId']
+        self.worker_id = row['WorkerId']
+        self.hit_id = row['HITId']
+        self.status = row['AssignmentStatus']
+        self.work_time = row['WorkTimeInSeconds']
 
     def get_input(self, input_name: ColumnName):
         return self.inputs[input_name]
@@ -91,7 +131,6 @@ def parse_file(path, hit_scheme: HITScheme) -> List[HitResult]:
     for row in csv.reader(f):
         data.append(row)
     head = list(data[0])
-    print(head)
 
     def get_input_raw_column(column_name):
         return "Input." + column_name
@@ -100,6 +139,10 @@ def parse_file(path, hit_scheme: HITScheme) -> List[HitResult]:
         return "Answer." + column_name
 
     row_idx_d: Dict[str, int] = {}
+
+    for idx, column_name in enumerate(head):
+        row_idx_d[column_name] = idx
+
     for input_name in hit_scheme.inputs:
         idx = head.index(get_input_raw_column(input_name))
         row_idx_d[input_name] = idx
@@ -112,18 +155,22 @@ def parse_file(path, hit_scheme: HITScheme) -> List[HitResult]:
     def parse_row(row) -> HitResult:
         inputs_d = {}
         answer_d = {}
+        all_value_d = {}
+        for column_name in row_idx_d:
+            row_idx = row_idx_d[column_name]
+            try:
+                all_value_d[column_name] = row[row_idx]
+            except IndexError:
+                pass
+
         for input_name in hit_scheme.inputs:
-            row_idx = row_idx_d[input_name]
-            value = row[row_idx]
-            inputs_d[input_name] = value
+            inputs_d[input_name] = all_value_d[input_name]
 
         for answer_unit in hit_scheme.answer_units:
             unit_output = {}
             for column_name in answer_unit.get_column_names():
-                row_idx = row_idx_d[column_name]
-                value = row[row_idx]
-                unit_output[column_name] = value
+                unit_output[column_name] = all_value_d[column_name]
             answer_d[answer_unit.name] = answer_unit.parse(unit_output)
-        return HitResult(inputs_d, answer_d)
+        return HitResult(inputs_d, answer_d, all_value_d)
 
     return lmap(parse_row, data[1:])

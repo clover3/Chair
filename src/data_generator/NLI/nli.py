@@ -59,7 +59,7 @@ class DataLoader:
             self.encoder = FullTokenizerWarpper(voca_path)
 
         self.dev_explain_0 = None
-        self.dev_explain_1 = None
+        self.dev_explain_1_cache = {}
 
     def get_train_data(self):
         if self.train_data is None:
@@ -150,15 +150,14 @@ class DataLoader:
         return self.dev_explain_0
 
     def get_dev_explain_1(self, tag):
-        if self.dev_explain_1 is None:
-            explain_data = list(load_nli_explain_1(tag))
+        explain_data = list(load_nli_explain_1(tag))
 
-            def entry2inst(raw_entry):
-                entry = self.encode(raw_entry[0], raw_entry[1])
-                return entry["input_ids"], entry["input_mask"], entry["segment_ids"]
+        def entry2inst(raw_entry):
+            entry = self.encode(raw_entry[0], raw_entry[1])
+            return entry["input_ids"], entry["input_mask"], entry["segment_ids"]
 
-            encoded_data = list([entry2inst(entry) for entry in explain_data])
-            self.dev_explain_1 = encoded_data, explain_data
+        encoded_data = list([entry2inst(entry) for entry in explain_data])
+        self.dev_explain_1 = encoded_data, explain_data
         return self.dev_explain_1
 
     def get_test_data(self, data_id):
@@ -701,7 +700,11 @@ def load_nli_explain_2(name_idx, name_text):
         yield prem, hypo, p_indice, h_indice
 
 
-def load_nli_explain_3(name_idx, name_text):
+Tokens = List[str]
+Indices = List[int]
+
+
+def load_nli_explain_3(name_idx, name_text) -> Iterable[Tuple[Tokens, Tokens, Indices, Indices]]:
     path_idx = os.path.join(corpus_dir, "{}.csv".format(name_idx))
     path_text = os.path.join(corpus_dir, "{}.csv".format(name_text))
 
@@ -775,7 +778,6 @@ def load_plain_text(file_name):
     return texts_list
 
 
-
 def load_nli(path):
     label_list = ["entailment", "neutral", "contradiction", ]
 
@@ -786,6 +788,7 @@ def load_nli(path):
         s1, s2 = split_line[8:10]
         l = label_list.index(split_line[-1])
         yield s1, s2, l
+
 
 def load_mnli_explain_0():
     return load_from_pickle("mnli_explain")
@@ -854,10 +857,8 @@ def load_mnli_explain_0():
 
 def reformat_mnli_explain_0():
     data = load_mnli_explain_0()
-
     text_list = []
     indice_list = []
-
     for entry in data:
         text_list.append((entry['p'], entry['h']))
         indice_list.append((entry['p_explain', 'h_explain']))

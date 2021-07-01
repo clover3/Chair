@@ -71,8 +71,6 @@ def top_k_combine_by_or():
     topics: List[CaTopic] = load_step2_claims_as_ca_topic()
 
     topics_ca_id_index: Dict[str, CaTopic] = {ca.ca_cid: ca for ca in topics}
-
-
     print("{} total docs from {} queries".format(total_docs, len(rlg1)))
 
     output_rows = []
