@@ -8,6 +8,10 @@ from google_wrap.monitor_checkpoint import get_file_list, is_valid_checkpoint
 
 
 def wait_checkpoint(model_dir_name, step):
+    if len(sys.argv) > 4:
+        max_wait = int(sys.argv[3])
+    else:
+        max_wait = 1000 * 1000 * 1000
     model_dir_path = "training/model/" + model_dir_name
     model_name = "model.ckpt-{}".format(step)
 
@@ -19,7 +23,7 @@ def wait_checkpoint(model_dir_name, step):
     found = check()
     acc_sleep_time = 0
     sleep_interval = 60
-    while not found:
+    while not found and acc_sleep_time < max_wait:
         acc_sleep_time += sleep_interval
         print("\r Sleeping {} mins".format(int(acc_sleep_time / 60)), end="")
         time.sleep(sleep_interval)

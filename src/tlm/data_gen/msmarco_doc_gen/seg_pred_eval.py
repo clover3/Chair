@@ -1,5 +1,4 @@
 import argparse
-import random
 import sys
 from typing import List, Dict, Tuple
 
@@ -8,16 +7,27 @@ import scipy.special
 from arg.qck.decl import get_format_handler
 from arg.qck.prediction_reader import load_combine_info_jsons
 from estimator_helper.output_reader import join_prediction_with_info
-from misc_lib import group_by, tprint, find_max_idx, SuccessCounter
+from misc_lib import group_by, find_max_idx, SuccessCounter
+from taskman_client.task_proxy import get_task_manager_proxy
 
 
-def save_to_common_path(pred_file_path: str, info_file_path: str, run_name: str,
-                        input_type: str,
-                        max_entry: int,
-                        combine_strategy: str,
-                        score_type: str,
-                        shuffle_sort: bool
-                        ):
+def score_sand_report(pred_file_path: str, info_file_path: str, run_name: str,
+                      input_type: str,
+                      max_entry: int,
+                      combine_strategy: str,
+                      score_type: str,
+                      shuffle_sort: bool
+                      ):
+    grouped, sc = get_scores(info_file_path, input_type, pred_file_path, score_type)
+    print("success", sc.get_suc(), sc.get_total())
+    #
+    acc = sc.get_suc_prob()
+    print("success probability", acc)
+    proxy = get_task_manager_proxy()
+    proxy.report_number(run_name, acc, "", "seg_pred")
+
+
+def get_scores(info_file_path, input_type, pred_file_path, score_type):
     f_handler = get_format_handler(input_type)
     info: Dict = load_combine_info_jsons(info_file_path, f_handler.get_mapping(), f_handler.drop_kdp())
     key_logit = "logits"
@@ -39,11 +49,7 @@ def save_to_common_path(pred_file_path: str, info_file_path: str, run_name: str,
             assert False
 
     grouped: Dict[Tuple[str, str], List[Dict]] = group_by(data, f_handler.get_pair_id)
-    tprint("Group size:", len(grouped))
-    out_d = {}
     sc = SuccessCounter()
-    sc_random = SuccessCounter()
-
     for pair_id, items in grouped.items():
         label_idx = []
         max_score_idx = find_max_idx(items, get_score)
@@ -53,21 +59,13 @@ def save_to_common_path(pred_file_path: str, info_file_path: str, run_name: str,
                 label_idx.append(item['passage_idx'])
 
         if len(items) > 1:
-            random_idx = random.randint(0, len(items)-1)
             if max_item['passage_idx'] in label_idx:
                 sc.suc()
             else:
                 sc.fail()
 
-            if random_idx in label_idx:
-                sc_random.suc()
-            else:
-                sc_random.fail()
-
         # print("{} {} {}".format(max_item['passage_idx'], label_idx, len(items)))
-
-    print(sc.get_total(), sc.get_suc_prob())
-    print('random', sc_random.get_total(), sc_random.get_suc_prob())
+    return grouped, sc
 
 
 if __name__ == "__main__":
@@ -82,12 +80,12 @@ if __name__ == "__main__":
     parser.add_argument("--shuffle_sort", default=False)
 
     args = parser.parse_args(sys.argv[1:])
-    save_to_common_path(args.pred_path,
-                        args.info_path,
-                        args.run_name,
-                        args.input_type,
-                        int(args.max_entry),
-                        args.combine_strategy,
-                        args.score_type,
-                        args.shuffle_sort
-    )
+    score_sand_report(args.pred_path,
+                      args.info_path,
+                      args.run_name,
+                      args.input_type,
+                      int(args.max_entry),
+                      args.combine_strategy,
+                      args.score_type,
+                      args.shuffle_sort
+                      )

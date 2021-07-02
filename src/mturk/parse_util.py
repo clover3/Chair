@@ -49,12 +49,41 @@ class RadioButtonGroup(AnswerUnit):
         answer = None
         for post in self.post_fix:
             column_name = self.get_column_name_for_postfix(post)
-            if d[column_name] == "true":
+            if d[column_name].lower() == "true":
                 assert answer is None
                 answer = post
         if self.make_int:
             return int(answer) if answer is not None else None
         return answer
+
+
+class YesNoRadioButtonGroup(AnswerUnit):
+    def __init__(self, prefix):
+        self.name = prefix
+        self.pre_fix = prefix
+        self.post_fix: List[str] = ['Yes', 'No']
+
+    def get_column_names(self) -> List[ColumnName]:
+        l = []
+        for post in self.post_fix:
+            l.append(self.get_column_name_for_postfix(post))
+        return l
+
+    def get_column_name_for_postfix(self, post):
+        return ColumnName(self.pre_fix + post + ".on")
+
+    def parse(self, d: Dict[ColumnName, str]):
+        answer = None
+        for post in self.post_fix:
+            column_name = self.get_column_name_for_postfix(post)
+            if d[column_name].lower() == "true":
+                assert answer is None
+                answer = post
+
+        if answer == "Yes":
+            return 1
+        else:
+            return 0
 
 
 class Categorical(AnswerUnit):
@@ -125,7 +154,7 @@ class HitResult:
         return self.outputs[name][idx]
 
 
-def parse_file(path, hit_scheme: HITScheme) -> List[HitResult]:
+def parse_file(path, hit_scheme: HITScheme, f_remove_rejected=True) -> List[HitResult]:
     f = open(path, "r", encoding="utf-8")
     data = []
     for row in csv.reader(f):
@@ -173,4 +202,15 @@ def parse_file(path, hit_scheme: HITScheme) -> List[HitResult]:
             answer_d[answer_unit.name] = answer_unit.parse(unit_output)
         return HitResult(inputs_d, answer_d, all_value_d)
 
-    return lmap(parse_row, data[1:])
+    outputs = lmap(parse_row, data[1:])
+    if f_remove_rejected:
+        outputs = remove_rejected(outputs)
+    return outputs
+
+
+def remove_rejected(hit_results: List[HitResult]):
+    output = []
+    for h in hit_results:
+        if h.status != "Rejected":
+            output.append(h)
+    return output

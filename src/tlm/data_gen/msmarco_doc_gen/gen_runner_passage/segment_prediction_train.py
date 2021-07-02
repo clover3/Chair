@@ -26,3 +26,4 @@ if __name__ == "__main__":
     num_jobs = 40
     runner = JobRunner(job_man_dir, num_jobs, "MMD_gold_segment_prediction_{}".format(split), factory)
     runner.start()
+##

@@ -1,7 +1,6 @@
-from crs.load_stance_annotation import load_stance_verify_annot
 from collections import Counter
 
-
+from crs.load_stance_annotation import load_stance_verify_annot
 
 
 def agreement(path):
