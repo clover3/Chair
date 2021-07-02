@@ -1,8 +1,8 @@
+
 import sys
 from collections import Counter, defaultdict
 
-from arg.counter_arg_retrieval.build_dataset.run1.summarize_mturk import get_ca_run1_scheme
-
+from arg.counter_arg_retrieval.build_dataset.run1.ca3_agreement import get_ca3_scheme
 from arg.counter_arg_retrieval.build_dataset.verify_common import get_list_of_known_labels
 from misc_lib import get_dict_items
 from mturk.parse_util import parse_file, remove_rejected
@@ -11,8 +11,9 @@ from mturk.parse_util import parse_file, remove_rejected
 def main():
     my_file_path = sys.argv[1]
     path_file_to_validate = sys.argv[2]
-    hit_scheme = get_ca_run1_scheme()
+    hit_scheme = get_ca3_scheme()
     label_d = get_list_of_known_labels(my_file_path, hit_scheme.inputs, ['label'])
+    print("{} known labels".format(len(label_d)))
     hit_results = parse_file(path_file_to_validate, hit_scheme)
 
     hit_results = remove_rejected(hit_results)
@@ -27,7 +28,7 @@ def main():
         if input_list in label_d:
             n_align += 1
             my_answer = int(label_d[input_list][0])
-            worker_answer = hit_result.outputs['relevant.label']
+            worker_answer = hit_result.outputs['Q2.']
             mturk_label_d[input_list].append(worker_answer)
 
             if my_answer != worker_answer:
