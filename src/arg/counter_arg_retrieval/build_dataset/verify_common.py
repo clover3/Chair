@@ -1,7 +1,12 @@
 import csv
 from collections import Counter
-from typing import Iterable, Dict, List
+from typing import Iterable, Dict
+from typing import List, Any
 
+from scipy.stats import pearsonr, kendalltau
+
+from list_lib import lmap
+from misc_lib import get_first, get_second, get_third, average
 from misc_lib import group_by
 from mturk.parse_util import HitResult
 
@@ -46,6 +51,61 @@ def summarize_agreement(hit_results: List[HitResult], min_entries=3):
                 answer_list_d[answer_column].append(list([e.outputs[answer_column] for e in entries]))
     return answer_list_d
 
+def get_agreement_rate_from_answer_list(measure_fn, list_answers):
+    annot1: List[Any] = lmap(get_first, list_answers)
+    annot2: List[Any] = lmap(get_second, list_answers)
+    annot3: List[Any] = lmap(get_third, list_answers)
+    k12 = measure_fn(annot1, annot2)
+    k23 = measure_fn(annot2, annot3)
+    k31 = measure_fn(annot3, annot1)
+    avg_k = average([k12, k23, k31])
+    return avg_k
+
+
+def show_agreement_inner(hit_results, measure_fn, scheme_question_d, drop_single_annotator):
+    if drop_single_annotator:
+        worker_count = Counter([h.worker_id for h in hit_results])
+        hit_results = list([h for h in hit_results if worker_count[h.worker_id] > 1])
+    answer_list_d = summarize_agreement(hit_results)
+    for answer_column, list_answers in answer_list_d.items():
+        avg_k = get_agreement_rate_from_answer_list(measure_fn, list_answers)
+        print("{0}\t{1:.2f}\t{2}".format(answer_column, avg_k, scheme_question_d[answer_column]))
+
+
+def count_true_rate(list_answers):
+    n_true = 0
+    n_all = 0
+    for answers in list_answers:
+        for answer in answers:
+            n_all += 1
+            if answer:
+                n_true += 1
+    return n_true/ n_all
+
+
+def show_agreement_inner_w_true_rate(hit_results, measure_fn, scheme_question_d, drop_single_annotator):
+    if drop_single_annotator:
+        worker_count = Counter([h.worker_id for h in hit_results])
+        hit_results = list([h for h in hit_results if worker_count[h.worker_id] > 1])
+    answer_list_d = summarize_agreement(hit_results)
+    for answer_column, list_answers in answer_list_d.items():
+        avg_k = get_agreement_rate_from_answer_list(measure_fn, list_answers)
+        true_rate = count_true_rate(list_answers)
+        print("{0}\t{1:.2f}\t{2:.2f}\t{3}".format(answer_column, avg_k, true_rate, scheme_question_d[answer_column]))
+
+
+def show_agreement_inner_for_two(hit_results, measure_fn, scheme_question_d, drop_single_annotator):
+    if drop_single_annotator:
+        worker_count = Counter([h.worker_id for h in hit_results])
+        hit_results = list([h for h in hit_results if worker_count[h.worker_id] > 1])
+    answer_list_d = summarize_agreement(hit_results, 2)
+    for answer_column, list_answers in answer_list_d.items():
+        annot1: List[Any] = lmap(get_first, list_answers)
+        annot2: List[Any] = lmap(get_second, list_answers)
+        k12 = measure_fn(annot1, annot2)
+        print("{0}\t{1:.2f}\t{2}".format(answer_column, k12, scheme_question_d[answer_column]))
+
+
 
 def annotator_eval(hit_results: List[HitResult]):
     input_columns = list(hit_results[0].inputs.keys())
@@ -84,3 +144,31 @@ def print_hit_answers(hit_results):
             print(answer_column)
             print(list_answers[k])
             n_answers = len(list_answers)
+
+
+def pearsonr_fixed(annot1, annot2):
+    a, b = pearsonr(annot1, annot2)
+    return "{0:.2f} {1:.2f}".format(a, b)
+
+
+def kendalltau_fixed(annot1, annot2):
+    a, b = kendalltau(annot1, annot2)
+    return "{0:.2f} {1:.2f}".format(a, b)
+
+
+def kendalltau_wrap(annot1, annot2):
+    a, b = kendalltau(annot1, annot2)
+    return a
+
+
+def count_all_true(hit_results, column):
+    answer_list_d = summarize_agreement(hit_results)
+    list_answers = answer_list_d[column]
+    all_true_cnt = 0
+    total = 0
+    for answers in list_answers:
+        if len(answers) == 3 and all(answers):
+            all_true_cnt += 1
+        total += 1
+
+    return all_true_cnt, total

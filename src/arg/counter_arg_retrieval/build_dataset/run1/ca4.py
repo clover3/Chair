@@ -7,7 +7,7 @@ from arg.counter_arg_retrieval.build_dataset.run1.ca_rate_compare import get_ca_
 from arg.counter_arg_retrieval.build_dataset.verify_by_acess_log import load_apache_log, verify_by_time, verify_by_ip, \
     ApacheLogParsed
 from arg.counter_arg_retrieval.build_dataset.verify_common import summarize_agreement, print_hit_answers, \
-    show_agreement_inner_for_two
+    show_agreement_inner_for_two, show_agreement_inner_w_true_rate, count_all_true
 from cpath import output_path
 from list_lib import lmap
 from misc_lib import group_by, average, SuccessCounter
@@ -25,6 +25,12 @@ scheme4_question_d = {
     "Q8.on": "document contains information opposing claim",
     "Q9.": "useful?"
 }
+ca4_path = os.path.join(output_path, "ca_building", "run1", "mturk_output", "CA4")
+
+ca4_shuffled_remain_A_path = os.path.join(ca4_path, "shuffled_remain_A.csv")
+ca4_shuffled_remain_A_master_path = os.path.join(ca4_path, "shuffled_remain_A_master.csv")
+ca4_shuffled_remain_B_master_path = os.path.join(ca4_path, "shuffled_remain_B_master.csv")
+
 
 def get_ca4_scheme():
     inputs = [ColumnName("c_text"), ColumnName("p_text"), ColumnName("doc_id")]
@@ -80,6 +86,25 @@ def show_agreement4():
     hit_results: List[HitResult] = parse_file(sys.argv[1], hit_scheme)
     # hit_results = list([h for h in hit_results if h.worker_id != "A1PZ6FQ0WT3ROZ"])
     show_agreement_inner_for_two(hit_results, cohens_kappa, scheme4_question_d, False)
+
+
+def master_all_agreement():
+    hit_results = load_master_all()
+    # hit_results = list([h for h in hit_results if h.worker_id != "A1PZ6FQ0WT3ROZ"])
+    show_agreement_inner_w_true_rate(hit_results, cohens_kappa, scheme4_question_d, False)
+
+
+def master_all_unanimous_count():
+    hit_results = load_master_all()
+    cnt, all = count_all_true(hit_results, "Q8.on")
+    print("{0} of {1} ({2:.2f})".format(cnt, all, cnt / all))
+
+
+def load_master_all():
+    hit_scheme = get_ca4_scheme()
+    hit_results: List[HitResult] = parse_file(ca4_shuffled_remain_A_master_path, hit_scheme)
+    hit_results += parse_file(ca4_shuffled_remain_B_master_path, hit_scheme)
+    return hit_results
 
 
 def get_ca3_ca_rate(input_path) -> SuccessCounter:
@@ -194,9 +219,8 @@ def group_by_claim():
 
 
 def main():
-
+    master_all_unanimous_count()
     ##
-    answers()
 
 
 if __name__ == "__main__":

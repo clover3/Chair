@@ -4,11 +4,11 @@ from typing import List, Any
 
 from scipy.stats import pearsonr
 
-from arg.counter_arg_retrieval.build_dataset.verify_common import print_hit_answers
+from arg.counter_arg_retrieval.build_dataset.verify_common import print_hit_answers, kendalltau_fixed
 from list_lib import lmap
 from misc_lib import group_by, get_first, get_second, get_third, average
 from mturk.parse_util import HITScheme, ColumnName, Categorical, parse_file, HitResult
-from stats.agreement import cohens_kappa, cohens_kappa_w_conversion
+from stats.agreement import cohens_kappa
 
 
 def summarize_agreement(hit_results: List[HitResult]):
@@ -22,9 +22,9 @@ def summarize_agreement(hit_results: List[HitResult]):
         pass
 
     print("kappa")
-    print('1 vs 2', cohens_kappa(annot1, annot2))
-    # print('2 vs 3', cohens_kappa(annot2, annot3))
-    # print('3 vs 1', cohens_kappa(annot3, annot1))
+    print('1 vs 2', kendalltau_fixed(annot1, annot2))
+    print('2 vs 3', kendalltau_fixed(annot2, annot3))
+    print('3 vs 1', kendalltau_fixed(annot3, annot1))
 
     def merge0_1(label):
         return {
@@ -32,7 +32,33 @@ def summarize_agreement(hit_results: List[HitResult]):
             1: 0,
             2: 1
         }[label]
-    print("kappa 0,1 vs 2", cohens_kappa_w_conversion(annot1, annot2, merge0_1))
+    print("kappa ", cohens_kappa(annot1, annot2))
+    annot1 = lmap(merge0_1, annot1)
+    annot2 = lmap(merge0_1, annot2)
+    print("kappa 0,1 vs 2", cohens_kappa(annot1, annot2))
+
+
+
+
+def if_we_have_many_0(hit_results: List[HitResult]):
+    list_answers: List[List] = get_as_list_list(hit_results)
+    k = 100
+    trivial = [0] * k
+
+    annot1: List[Any] = lmap(get_first, list_answers)
+    annot2: List[Any] = lmap(get_second, list_answers)
+
+    print("before")
+    print('kendal tau', kendalltau_fixed(annot1, annot2))
+    print('cohen kappa', cohens_kappa(annot1, annot2))
+
+    print("add {} 0's to {} data".format(k, len(annot1)))
+    annot1 = annot1 + trivial
+    annot2 = annot2 + trivial
+    print("after")
+    print('kendal tau', kendalltau_fixed(annot1, annot2))
+    print('cohen kappa', cohens_kappa(annot1, annot2))
+
 
 
 def pearson(hit_results: List[HitResult]):
@@ -126,9 +152,17 @@ def check_if_same_guy_always_wrong():
         print("{}/{} : {} {}".format(wrong_guy_count[worker_id], guy_count[worker_id], worker_id, average(work_times)))
 
 
+def test_if_we_have_many_0():
+    hit_scheme = get_ca_run1_scheme()
+    hit_results: List[HitResult] = parse_file(sys.argv[1], hit_scheme)
+    if_we_have_many_0(hit_results)
+
+
 def main():
-    show_agreement()
+    # check_if_same_guy_always_wrong()
+    # test_if_we_have_many_0()
     # show_answer()
+    show_agreement()
 
 
 if __name__ == "__main__":

@@ -3,13 +3,11 @@ import sys
 from collections import Counter
 from typing import List, Any
 
-from scipy.stats import pearsonr, kendalltau
-
-from arg.counter_arg_retrieval.build_dataset.verify_common import summarize_agreement, print_hit_answers
+from arg.counter_arg_retrieval.build_dataset.verify_common import summarize_agreement, print_hit_answers, \
+    pearsonr_fixed, kendalltau_wrap, show_agreement_inner
 from list_lib import lmap, foreach
 from misc_lib import group_by, get_first, get_second, get_third, average
 from mturk.parse_util import HITScheme, ColumnName, Checkbox, parse_file, HitResult, RadioButtonGroup
-from stats.agreement import cohens_kappa
 
 """
           <div><crowd-checkbox name="Q1">Q1. The claim supports the topic. </crowd-checkbox></div>
@@ -115,21 +113,22 @@ def show_agreement():
         annot1: List[Any] = lmap(get_first, list_answers)
         annot2: List[Any] = lmap(get_second, list_answers)
         annot3: List[Any] = lmap(get_third, list_answers)
-        k12 = cohens_kappa(annot1, annot2)
-        k23 = cohens_kappa(annot2, annot3)
-        k31 = cohens_kappa(annot3, annot1)
+        # measure_fn = cohens_kappa
+        measure_fn = kendalltau_wrap
+        k12 = measure_fn(annot1, annot2)
+        k23 = measure_fn(annot2, annot3)
+        k31 = measure_fn(annot3, annot1)
         avg_k = average([k12, k23, k31])
         print("{0}\t{1:.2f}\t{2}".format(answer_column, avg_k, scheme2_question_d[answer_column]))
 
 
-def pearsonr_fixed(annot1, annot2):
-    a, b = pearsonr(annot1, annot2)
-    return "{0:.2f} {1:.2f}".format(a, b)
+def show_agreement_after_drop():
+    hit_scheme = get_ca_run1_scheme2()
+    hit_results: List[HitResult] = parse_file(sys.argv[1], hit_scheme)
+    # foreach(apply_transitive, hit_results)
+    # measure_fn = cohens_kappa
+    show_agreement_inner(hit_results, kendalltau_wrap, scheme2_question_d)
 
-
-def kendalltau_fixed(annot1, annot2):
-    a, b = kendalltau(annot1, annot2)
-    return "{0:.2f} {1:.2f}".format(a, b)
 
 
 
@@ -189,10 +188,6 @@ def count_counter_argument():
             counter[c] += 1
 
 
-def main():
-    answers_per_input()
-
-
 def do_measure_correlation():
     common_dir = "C:\\work\\Code\\Chair\\output\\ca_building\\run1\\mturk_output"
     file_path_2 = os.path.join(common_dir,  "Batch_4490355_batch_results.csv")
@@ -202,5 +197,24 @@ def do_measure_correlation():
         measure_correlation(hit_results)
 
 
+def group_by_claim():
+    hit_scheme = get_ca_run1_scheme2()
+    hit_results: List[HitResult] = parse_file(sys.argv[1], hit_scheme)
+    def get_claim(h: HitResult):
+        return h.inputs['p_text']
+    def get_doc_id(h: HitResult):
+        return h.inputs['doc_id']
+
+    groups = group_by(hit_results, get_claim)
+
+    def get_counter_arg(h: HitResult):
+        return h.outputs["Q13.on"]
+
+    for key, items in groups.items():
+        print(key)
+        for doc_id, per_doc_items in group_by(items, get_doc_id).items():
+            print(doc_id, lmap(get_counter_arg, per_doc_items))
+
+
 if __name__ == "__main__":
-    show_agreement()
+    group_by_claim()
