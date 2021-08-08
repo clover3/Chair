@@ -1,4 +1,4 @@
-from typing import List, Tuple, NamedTuple, NewType
+from typing import List, Tuple, NamedTuple, NewType, Dict, Callable
 
 from bert_api.client_lib import BERTClient
 from data_generator.tokenizer_wo_tf import get_tokenizer
@@ -96,3 +96,12 @@ class DocumentScorer:
         promise_input = DocumentScorerInput(window_start_loc, payload_list)
         promise = MyPromise(promise_input, self.pk)
         return promise.future()
+
+
+def get_cache_doc_tokenizer(docs_d: Dict[str, str]) -> Callable:
+    doc_payload_d = {}
+    def get_tokenized_doc(doc_id) -> TokenizedText:
+        if doc_id in doc_payload_d:
+            return doc_payload_d[doc_id]
+        return TokenizedText.from_text(docs_d[doc_id])
+    return get_tokenized_doc

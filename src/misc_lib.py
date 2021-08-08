@@ -753,3 +753,14 @@ def split_window(items: List[Any], window_size):
         cursor += window_size
 
     return output
+
+
+def enum_segments(items: List[Any], window_size) -> List[Tuple[int, int]]:
+    cursor = 0
+    output: List[Tuple[int, int]] = []
+    while cursor < len(items):
+        st = cursor
+        ed = cursor + window_size
+        output.append((st, ed))
+        cursor += window_size
+    return output

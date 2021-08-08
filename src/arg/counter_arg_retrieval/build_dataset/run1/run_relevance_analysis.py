@@ -1,20 +1,17 @@
 import os
 import pickle
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 
 from tqdm import tqdm
 
-from arg.counter_arg_retrieval.build_dataset.ca_types import CaTopic, CaTopicv2, get_ca2_converter
-from arg.counter_arg_retrieval.build_dataset.resources import ca_building_q_res_path, \
-    load_step2_claims_as_ca_topic, load_run1_doc_indexed
+from arg.counter_arg_retrieval.build_dataset.ca_types import CaTopicv2
+from arg.counter_arg_retrieval.build_dataset.run1.load_resource import get_run1_resource
 from arg.counter_arg_retrieval.scorer.relevance_analysis import AnalyzedDocument, analyze_doc_wrt_ca_topic
-from bert_api.doc_score_helper import DocumentScorer
+from bert_api.doc_score_helper import DocumentScorer, get_cache_doc_tokenizer
 from bert_api.doc_score_helper import TokenizedText
 from bert_api.msmarco_rerank import get_msmarco_client
 from cache import save_to_pickle
 from cpath import output_path
-from list_lib import lfilter, lmap
-from trec.trec_parse import load_ranked_list_grouped
 
 
 def save_rel(topic, ad_list):
@@ -26,23 +23,14 @@ def save_rel(topic, ad_list):
 # - Relevance to the claim
 # - Relevance to the perspectives
 def main():
-    topics: List[CaTopic] = load_step2_claims_as_ca_topic()
-    rlg = load_ranked_list_grouped(ca_building_q_res_path)
-    docs_d: Dict[str, str] = load_run1_doc_indexed()
-    topics: List[CaTopic] = lfilter(lambda topic: topic.ca_cid in rlg, topics)
-    topics_v2: List[CaTopicv2] = lmap(get_ca2_converter(), topics)
+    rlg, topics_v2, docs_d = get_run1_resource()
 
     client = get_msmarco_client()
     document_scorer = DocumentScorer(client, 20)
 
     print("After filtering")
-    doc_payload_d = {}
 
-    def get_tokenized_doc(doc_id) -> TokenizedText:
-        if doc_id in doc_payload_d:
-            return doc_payload_d[doc_id]
-        return TokenizedText.from_text(docs_d[doc_id])
-
+    get_tokenized_doc = get_cache_doc_tokenizer(docs_d)
     save_payload: List[Tuple[CaTopicv2, List[AnalyzedDocument]]] = []
 
     ticker = tqdm(total=len(topics_v2) * 10)
