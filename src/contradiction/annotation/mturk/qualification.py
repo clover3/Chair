@@ -27,20 +27,20 @@ def make_qualification():
     print(qual_response['QualificationType']['QualificationTypeId'])
 
 
-def make_qualification2():
+def make_qualification_w_no(no):
     questions = open(at_data_dir("mturk", "password_question.txt"), mode='r').read()
-    answers = open(at_data_dir("mturk", "password_answer2.txt"), mode='r').read()
+    answers = open(at_data_dir("mturk", "password_answer{}.txt".format(no)), mode='r').read()
     sandbox_url = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com'
     active_url = 'https://mturk-requester.us-east-1.amazonaws.com'
     mturk = boto3.client('mturk',
                           region_name='us-east-1',
-                          endpoint_url=active_url)
+                          endpoint_url=sandbox_url)
 
     qual_response = mturk.create_qualification_type(
-                            Name='Password Authentication2',
-                            Keywords='Password Authentication2',
-                            RetryDelayInSeconds=1,
-                            Description='Password Authentication2',
+                            Name='Password Authentication{}'.format(no),
+                            Keywords='Password Authentication{}'.format(no),
+                            RetryDelayInSeconds=100,
+                            Description='Password Authentication{}'.format(no),
                             QualificationTypeStatus='Active',
                             Test=questions,
                             AnswerKey=answers,
@@ -49,4 +49,4 @@ def make_qualification2():
     print(qual_response['QualificationType']['QualificationTypeId'])
 
 
-make_qualification2()
+make_qualification_w_no(3)

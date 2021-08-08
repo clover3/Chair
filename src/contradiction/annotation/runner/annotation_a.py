@@ -9,7 +9,7 @@ def main():
     num_review = 24
     html_template_path = os.path.join(data_path, "med_contradiction", "annotation", "annotation_template.html")
 
-    html_out_root = at_output_dir("alamri_annotation1", "html")
+    html_out_root = at_output_dir("alamri_annotation1", "html2")
     exist_or_mkdir(html_out_root)
 
     for i in range(1, 1+num_review):

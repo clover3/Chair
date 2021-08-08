@@ -86,6 +86,17 @@ class YesNoRadioButtonGroup(AnswerUnit):
             return 0
 
 
+class Textbox(AnswerUnit):
+    def __init__(self, name):
+        self.name = ColumnName(name)
+
+    def get_column_names(self) -> List[ColumnName]:
+        return [self.name]
+
+    def parse(self, d: Dict[ColumnName, str]):
+        return d[self.name]
+
+
 class Categorical(AnswerUnit):
     def __init__(self, column_name, options: Dict[str, Any]):
         self.name = column_name
@@ -110,7 +121,10 @@ class Checkbox(AnswerUnit):
 
     def parse(self, d: Dict[ColumnName, str]):
         answer_str = d[self.column_name]
-        return {"true": 1, "false": 0}[answer_str]
+        return {"true": 1,
+                "TRUE": 1,
+                "FALSE": 0,
+                "false": 0}[answer_str]
 
 
 class RepeatedEntries(AnswerUnit):
@@ -146,6 +160,8 @@ class HitResult:
         self.hit_id = row['HITId']
         self.status = row['AssignmentStatus']
         self.work_time = row['WorkTimeInSeconds']
+        self.accept_time: str = row["AcceptTime"]
+        self.submit_time: str = row["SubmitTime"]
 
     def get_input(self, input_name: ColumnName):
         return self.inputs[input_name]

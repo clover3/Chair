@@ -320,12 +320,12 @@ def parallel_run(input_list, list_fn, split_n):
     return result
 
 
-def get_dir_files(dir_path: FilePath) -> List[FilePath]:
+def get_dir_files(dir_path) -> List[FilePath]:
     path_list = []
     for (dirpath, dirnames, filenames) in os.walk(dir_path):
         for filename in filenames:
             path_list.append(FilePath(os.path.join(dir_path, filename)))
-
+        break
     return path_list
 
 
