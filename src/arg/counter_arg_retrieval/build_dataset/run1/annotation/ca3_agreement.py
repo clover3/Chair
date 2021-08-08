@@ -1,20 +1,30 @@
 import sys
 from typing import List, Any
 
-from arg.counter_arg_retrieval.build_dataset.verify_common import summarize_agreement, annotator_eval
+from arg.counter_arg_retrieval.build_dataset.run1.annotation.scheme import get_ca3_scheme
+from arg.counter_arg_retrieval.build_dataset.run1.enum_disagreeing_ones import load_ca3_master
+from arg.counter_arg_retrieval.build_dataset.verify_common import summarize_agreement, annotator_eval, \
+    show_agreement_inner_w_true_rate
 from list_lib import lmap
 from misc_lib import get_first, get_second, get_third
-from mturk.parse_util import HITScheme, ColumnName, parse_file, HitResult, YesNoRadioButtonGroup
+from mturk.parse_util import parse_file, HitResult
 from stats.agreement import cohens_kappa
 
+scheme3_question_d = {
+    "Q1.": "claim supports topic",
+    "Q2.": "claim opposes topic",
+    "Q2": "why"
+}
 
-def get_ca3_scheme():
-    inputs = [ColumnName("c_text"), ColumnName("p_text"), ColumnName("doc_id")]
-    q1 = YesNoRadioButtonGroup("Q1.")
-    q2 = YesNoRadioButtonGroup("Q2.")
-    answer_units = [q1, q2]
-    hit_scheme = HITScheme(inputs, answer_units)
-    return hit_scheme
+
+def avg_agreement():
+    hit_results = load_ca3_master()
+    # hit_scheme = get_ca3_scheme()
+    # ca3_input = os.path.join(common_dir, "CA3", "Batch_4506547_batch_results.csv")
+    # hit_results = parse_file(ca3_input, hit_scheme)
+    # hit_results = list([h for h in hit_results if h.worker_id != "A1PZ6FQ0WT3ROZ"])
+    show_agreement_inner_w_true_rate(hit_results, cohens_kappa, scheme3_question_d, False)
+
 
 
 def show_agreement():
@@ -42,7 +52,7 @@ def show_agreement():
 
 
 def main():
-    show_agreement()
+    avg_agreement()
 
 
 if __name__ == "__main__":

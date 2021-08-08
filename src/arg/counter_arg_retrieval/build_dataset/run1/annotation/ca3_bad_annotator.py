@@ -2,7 +2,7 @@
 import sys
 from collections import Counter, defaultdict
 
-from arg.counter_arg_retrieval.build_dataset.run1.ca3_agreement import get_ca3_scheme
+from arg.counter_arg_retrieval.build_dataset.run1.annotation.scheme import get_ca3_scheme
 from arg.counter_arg_retrieval.build_dataset.verify_common import get_list_of_known_labels
 from misc_lib import get_dict_items
 from mturk.parse_util import parse_file, remove_rejected

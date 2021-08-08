@@ -2,7 +2,7 @@ import os
 from collections import Counter
 from typing import List
 
-from arg.counter_arg_retrieval.build_dataset.run1.agreement_scheme2 import get_ca_run1_scheme2
+from arg.counter_arg_retrieval.build_dataset.run1.annotation.scheme import get_ca_run1_scheme2
 from misc_lib import group_by
 from mturk.parse_util import parse_file, HitResult
 

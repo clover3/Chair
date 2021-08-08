@@ -3,7 +3,7 @@ import sys
 from collections import Counter
 from typing import List
 
-from arg.counter_arg_retrieval.build_dataset.run1.ca_rate_compare import get_ca_rate_common
+from arg.counter_arg_retrieval.build_dataset.run1.annotation.scheme import get_ca4_scheme, get_ca_rate_common
 from arg.counter_arg_retrieval.build_dataset.verify_by_acess_log import load_apache_log, verify_by_time, verify_by_ip, \
     ApacheLogParsed
 from arg.counter_arg_retrieval.build_dataset.verify_common import summarize_agreement, print_hit_answers, \
@@ -11,7 +11,7 @@ from arg.counter_arg_retrieval.build_dataset.verify_common import summarize_agre
 from cpath import output_path
 from list_lib import lmap
 from misc_lib import group_by, average, SuccessCounter
-from mturk.parse_util import HITScheme, ColumnName, Checkbox, parse_file, HitResult, RadioButtonGroup
+from mturk.parse_util import parse_file, HitResult
 from stats.agreement import cohens_kappa
 
 scheme4_question_d = {
@@ -30,16 +30,6 @@ ca4_path = os.path.join(output_path, "ca_building", "run1", "mturk_output", "CA4
 ca4_shuffled_remain_A_path = os.path.join(ca4_path, "shuffled_remain_A.csv")
 ca4_shuffled_remain_A_master_path = os.path.join(ca4_path, "shuffled_remain_A_master.csv")
 ca4_shuffled_remain_B_master_path = os.path.join(ca4_path, "shuffled_remain_B_master.csv")
-
-
-def get_ca4_scheme():
-    inputs = [ColumnName("c_text"), ColumnName("p_text"), ColumnName("doc_id")]
-    answer_units = []
-    for i in range(1, 9):
-        answer_units.append(Checkbox("Q{}.on".format(i)))
-    answer_units.append(RadioButtonGroup("Q9.", lmap(str, range(4)), True))
-    hit_scheme = HITScheme(inputs, answer_units)
-    return hit_scheme
 
 
 def answers_per_input():
@@ -219,7 +209,7 @@ def group_by_claim():
 
 
 def main():
-    master_all_unanimous_count()
+    master_all_agreement()
     ##
 
 

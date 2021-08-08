@@ -2,7 +2,7 @@ import sys
 from collections import Counter, defaultdict
 from typing import List
 
-from arg.counter_arg_retrieval.build_dataset.run1.agreement_scheme2 import get_ca_run1_scheme2
+from arg.counter_arg_retrieval.build_dataset.run1.annotation.scheme import get_ca_run1_scheme2
 from arg.counter_arg_retrieval.build_dataset.verify_common import get_list_of_known_labels
 from misc_lib import get_dict_items
 from mturk.parse_util import parse_file, HitResult

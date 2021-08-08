@@ -3,11 +3,12 @@ import sys
 from collections import Counter
 from typing import List, Any
 
+from arg.counter_arg_retrieval.build_dataset.run1.annotation.scheme import get_ca_run1_scheme2
 from arg.counter_arg_retrieval.build_dataset.verify_common import summarize_agreement, print_hit_answers, \
     pearsonr_fixed, kendalltau_wrap, show_agreement_inner
 from list_lib import lmap, foreach
 from misc_lib import group_by, get_first, get_second, get_third, average
-from mturk.parse_util import HITScheme, ColumnName, Checkbox, parse_file, HitResult, RadioButtonGroup
+from mturk.parse_util import parse_file, HitResult
 
 """
           <div><crowd-checkbox name="Q1">Q1. The claim supports the topic. </crowd-checkbox></div>
@@ -49,36 +50,6 @@ scheme2_question_d = {
     "Q13.on": "document contains information opposing claim",
     "Q14.": "useful?"
 }
-
-
-def get_ca_run1_scheme2():
-    inputs = [ColumnName("c_text"), ColumnName("p_text"), ColumnName("doc_id")]
-    # answer_list = [
-    #     "Q1.on",
-    #     "Q14.0.Q14.0",
-    #     "Q14.1.Q14.1",
-    #     "Q14.2.Q14.2",
-    #     "Q14.3.Q14.3",
-    #     "Q2.on",
-    #     "claim_arg_oppose.on",
-    #     "claim_arg_support.on",
-    #     "claim_info_oppose.on",
-    #     "claim_info_support.on",
-    #     "claim_mention.on",
-    #     "related.on",
-    #     "topic_arg_oppose.on",
-    #     "topic_arg_support.on",
-    #     "topic_info_oppose.on",
-    #     "topic_info_support.on",
-    #     "topic_mention.on",
-    # ]
-    answer_units = []
-    for i in range(1, 14):
-        answer_units.append(Checkbox("Q{}.on".format(i)))
-
-    answer_units.append(RadioButtonGroup("Q14.", lmap(str, range(4)), True))
-    hit_scheme = HITScheme(inputs, answer_units)
-    return hit_scheme
 
 
 def apply_transitive(hit: HitResult):
@@ -162,7 +133,7 @@ def answers_per_input():
 
 
 def count_counter_argument():
-    common_dir = "C:\\work\\Code\\Chair\\output\\ca_building\\run1\\mturk_output"
+    common_dir = "/output/ca_building/run1/mturk_output"
     file_path = os.path.join(common_dir,  "Batch_4490355_batch_results.csv")
     hit_scheme = get_ca_run1_scheme2()
     hit_results: List[HitResult] = parse_file(file_path, hit_scheme)
@@ -189,7 +160,7 @@ def count_counter_argument():
 
 
 def do_measure_correlation():
-    common_dir = "C:\\work\\Code\\Chair\\output\\ca_building\\run1\\mturk_output"
+    common_dir = "/output/ca_building/run1/mturk_output"
     file_path_2 = os.path.join(common_dir,  "Batch_4490355_batch_results.csv")
     hit_scheme = get_ca_run1_scheme2()
     for file_path in [file_path_2]:

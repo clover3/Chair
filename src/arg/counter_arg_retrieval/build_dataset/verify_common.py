@@ -62,6 +62,7 @@ def get_agreement_rate_from_answer_list(measure_fn, list_answers):
     return avg_k
 
 
+
 def show_agreement_inner(hit_results, measure_fn, scheme_question_d, drop_single_annotator):
     if drop_single_annotator:
         worker_count = Counter([h.worker_id for h in hit_results])
@@ -80,7 +81,7 @@ def count_true_rate(list_answers):
             n_all += 1
             if answer:
                 n_true += 1
-    return n_true/ n_all
+    return n_true / n_all
 
 
 def show_agreement_inner_w_true_rate(hit_results, measure_fn, scheme_question_d, drop_single_annotator):
@@ -88,6 +89,7 @@ def show_agreement_inner_w_true_rate(hit_results, measure_fn, scheme_question_d,
         worker_count = Counter([h.worker_id for h in hit_results])
         hit_results = list([h for h in hit_results if worker_count[h.worker_id] > 1])
     answer_list_d = summarize_agreement(hit_results)
+    print("column\tkappa\ttrue_rate\tquestion")
     for answer_column, list_answers in answer_list_d.items():
         avg_k = get_agreement_rate_from_answer_list(measure_fn, list_answers)
         true_rate = count_true_rate(list_answers)

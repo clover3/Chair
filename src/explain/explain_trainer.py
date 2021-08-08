@@ -294,7 +294,10 @@ class ExplainTrainerM:
                 tf_logging.debug("avg Tagged token#={}".format(avg_tag_size))
             return new_insts, instance_infos, deleted_mask_list
 
+        st = time.time()
         new_insts, instance_infos, deleted_mask_list = generate_alt_runs(batch)
+        ed = time.time()
+        print("{} for generate_alt_runs".format(ed-st))
 
         assert new_insts
         # Step 2) Execute deletion Runs

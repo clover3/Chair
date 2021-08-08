@@ -1,8 +1,9 @@
 import sys
 from typing import List
 
-from arg.counter_arg_retrieval.build_dataset.run1.agreement_scheme2 import get_ca_run1_scheme2
 from arg.counter_arg_retrieval.build_dataset.run1.ca4_access_verify import get_ca4_scheme
+
+from arg.counter_arg_retrieval.build_dataset.run1.annotation.scheme import get_ca_run1_scheme2
 from arg.counter_arg_retrieval.build_dataset.verify_common import summarize_agreement, \
     get_agreement_rate_from_answer_list
 from misc_lib import SuccessCounter

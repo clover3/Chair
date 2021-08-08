@@ -7,6 +7,7 @@ from arg.counter_arg_retrieval.build_dataset.resources import load_step2_claims_
 from cpath import output_path
 from list_lib import lmap, right, foreach
 from misc_lib import get_duplicate_list
+from tab_print import print_table
 from trec.trec_parse import load_ranked_list_grouped
 from trec.types import TrecRankedListEntry
 
@@ -39,13 +40,18 @@ def top_k_combine_by_and():
 
 
 def top_k_combine_by_or():
+    all_entries, duplicate_doc_ids = get_candidate_docs()
+    topics: List[CaTopic] = load_step2_claims_as_ca_topic()
+    topics_ca_id_index: Dict[str, CaTopic] = {ca.ca_cid: ca for ca in topics}
+    save_todo_list(all_entries, duplicate_doc_ids, topics_ca_id_index)
+
+
+def get_candidate_docs():
     ranking1 = os.path.join(output_path, "ca_building", "run1", "msmarco_ranked_list.txt")
     ranking2 = os.path.join(output_path, "ca_building", "q_res", "q_res_all")
-
     k = 5
     rlg1: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranking1)
     rlg2: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranking2)
-
     all_entries: List[Tuple[str, List[str]]] = []
     for q in rlg1:
         rl1 = rlg1[q]
@@ -60,19 +66,33 @@ def top_k_combine_by_or():
         doc_ids_all.update(doc_ids2)
         e = q, list(doc_ids_all)
         all_entries.append(e)
-
     total_docs = sum(map(len, right(all_entries)))
-
     doc_ids_all = set()
     for docs in right(all_entries):
         doc_ids_all.update(docs)
-
     duplicate_doc_ids = get_duplicate_list(doc_ids_all)
-    topics: List[CaTopic] = load_step2_claims_as_ca_topic()
-
-    topics_ca_id_index: Dict[str, CaTopic] = {ca.ca_cid: ca for ca in topics}
     print("{} total docs from {} queries".format(total_docs, len(rlg1)))
+    return all_entries, duplicate_doc_ids
 
+
+def msmarco_score_summary():
+    ranking1 = os.path.join(output_path, "ca_building", "run1", "msmarco_ranked_list.txt")
+    rlg: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranking1)
+    threshold = 0.7
+    summary = []
+    for qid, items in rlg.items():
+        cnt = 0
+        for e in items:
+            if e.score > threshold:
+                cnt += 1
+        row = qid, cnt, len(items)
+        summary.append(row)
+
+    print(len(rlg))
+    print_table(summary)
+
+
+def save_todo_list(all_entries, duplicate_doc_ids, topics_ca_id_index):
     output_rows = []
     for qid, entries in all_entries:
         topic = topics_ca_id_index[qid]
@@ -84,12 +104,10 @@ def top_k_combine_by_or():
 
             row = [c_text, p_text, doc_id]
             output_rows.append(row)
-
     save_path = os.path.join(output_path, "ca_building", "run1", "mturk_todo.csv")
     csv_writer = csv.writer(open(save_path, "w", newline='', encoding="utf-8"))
     foreach(csv_writer.writerow, output_rows)
 
 
-
 if __name__ == "__main__":
-    top_k_combine_by_or()
+    msmarco_score_summary()

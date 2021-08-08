@@ -18,14 +18,23 @@ class BERTClient:
         return self.send_payload(payload)
 
     def send_payload(self, payload):
-        r = self.proxy.predict(payload)
-        return r
+        if payload:
+            r = self.proxy.predict(payload)
+            return r
+        else:
+            return []
 
     def request_multiple(self, text_pair_list: List[Tuple[str, str]]):
         payload = []
         for text1, text2 in text_pair_list:
             payload.append(self.encoder.encode_pair(text1, text2))
         return self.send_payload(payload)
+
+    def request_multiple_from_tokens(self, payload_list: List[Tuple[List[str], List[str]]]):
+        conv_payload_list = []
+        for tokens_a, tokens_b in payload_list:
+            conv_payload_list.append(self.encoder.encode_token_pairs(tokens_a, tokens_b))
+        return self.send_payload(conv_payload_list)
 
 
 def get_ingham_client():

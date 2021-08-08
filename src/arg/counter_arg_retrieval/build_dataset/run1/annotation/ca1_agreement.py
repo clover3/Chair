@@ -4,10 +4,11 @@ from typing import List, Any
 
 from scipy.stats import pearsonr
 
+from arg.counter_arg_retrieval.build_dataset.run1.annotation.scheme import get_ca_run1_scheme
 from arg.counter_arg_retrieval.build_dataset.verify_common import print_hit_answers, kendalltau_fixed
 from list_lib import lmap
 from misc_lib import group_by, get_first, get_second, get_third, average
-from mturk.parse_util import HITScheme, ColumnName, Categorical, parse_file, HitResult
+from mturk.parse_util import parse_file, HitResult
 from stats.agreement import cohens_kappa
 
 
@@ -85,18 +86,6 @@ def get_as_list_list(hit_results):
         values = list([e.outputs[answer_column] for e in entries])
         list_answers.append(values)
     return list_answers
-
-
-def get_ca_run1_scheme():
-    inputs = [ColumnName("c_text"), ColumnName("p_text"), ColumnName("doc_id")]
-    options = {
-        "Not relevant": 0,
-        "Relevant but not a counter-argument.": 1,
-        "Counter-argument.": 2,
-    }
-    answer_units = [Categorical("relevant.label", options)]
-    hit_scheme = HITScheme(inputs, answer_units)
-    return hit_scheme
 
 
 def show_agreement():

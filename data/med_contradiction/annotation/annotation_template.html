@@ -7,7 +7,7 @@
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
 
 	<script src="../angular.js"></script>
-	<script src="../app.js"></script>
+	<script src="../app.js?1"></script>
 
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
 
@@ -61,11 +61,19 @@
 		<b>{{{'claim1':'Claim 1', 'claim2':'Claim 2'}[sent_name]}} : </b>
 		<span ng-repeat="token in tokens[sent_name] track by $index">
 		<a class="btn btn-sm " ng-class="{'yellow': 'btn-warning', 'red': 'btn-danger', 'white': 'btn-outline-dark'}[get_visual_type(sent_name, $index)]"
-		ng-click="click(sent_name, $index)">
-		{{token}}
+		   ng-mouseover="hover(sent_name, $index)"
+			ng-click="click(sent_name, $index)">
+			<div ng-init="bold=is_bold(sent_name, $index)">
+			<span ng-if="is_bold(sent_name, $index)"><b>{{token}}</b></span ng-if="is_bold(sent_name, $index)">
+			<span ng-if="!is_bold(sent_name, $index)">{{token}}</span ng-if="!is_bold(sent_name, $index)">
+			</div>
 		</a>
 		</span>
 		</div>
+			<span>
+				Use range select
+				<input type="checkbox" ng-model="f_range_select" />
+			</span>
 
 		<br>
 		<div ng-repeat="sent_name in ['claim1', 'claim2']">

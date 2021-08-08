@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        .bottom_border {
+            border-bottom: 1px solid black;
+        }
+
+        .bottom_double_border {
+            border-bottom: 4px double black;
+            padding: 10px 0;
+
+        }
+
+        .top_border {
+            border-top: 1px solid black;
+            padding: 10px 0;
+        }
+
+        .my-font {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        }
+
+        .claim_cell {
+            text-align: left;
+            font-family: "Times New Roman", Times, serif;
+
+            /*font-style: italic;*/
+        }
+    </style>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.2/angular.min.js"></script>
+
+    <title>Title</title>
+</head>
+<body>
+<!-- You must include this JavaScript file -->
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+
+<!-- For the full list of available Crowd HTML Elements and their input/output documentation,
+      please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->
+<script>
+    angular.module('app', [])
+        .controller('MyController', ['$scope', function ($scope) {
+            $scope.username = 'World';
+
+            var claims_base64 = '${claims_base64}';
+            // claims_base64 = "eyJ0YXJnZXRfY2xhaW0iOiBbIkF0IHNpeHRlZW4gdGhlcmUgaXMgYSBsYWNrIG9mIG1hdHVyaXR5IHRoYXQgaXMgbmVjZXNzYXJ5IHRvIHZvdGUgcmVzcG9uc2libHkuIiwgIjE2IHllYXIgb2xkcyBkb24ndCBoYXZlIGEgaGlnaCBlbm91Z2ggbGV2ZWwgb2YgbWF0dXJpdHkgdG8gdm90ZS4iLCAiMTYgeWVhcnMgb2xkIGlzIHRvbyBtdWNoIG9mIGFuIGltbWF0dXJlIGFnZSB0byB2b3RlLiIsICJjaGlsZHJlbiBhdCAxNiBoYXZlIG5vIHNlbnNlIG9mIGRlY2VzaW9uIG1ha2luZyIsICJOby4gdG9vIGltbWF0dXJlLiIsICJTaXh0ZWVuIGlzIHRvbyB5b3VuZyB0byBtYWtlIGRlY2lzaW9ucy4iLCAiQXQgc2l4dGVlbiB0aGUgYnJhaW4gaXMgbm90IGRldmVsb3BlZCBlbm91Z2ggdG8gbWFrZSBkZWNpc2lvbnMuIiwgIjE2IHllYXIgb2xkcyBhcmUgbm90IHJlc3BvbnNpYmxlIGVub3VnaCB0byB2b3RlLiAiLCAiMTYgeWVhciBvbGRzIGFyZSBub3Qgd2lzZSBlbm91Z2ggdG8gdm90ZSBhdCBlbGVjdGlvbnMuIiwgIlNpeHRlZW4geWVhciBvbGRzIGFyZSB0b28gaW1tYXR1cmUgdG8ganVkZ2UgdGhlIHZhbGlkaXR5IG9mIHBvbGl0aWNhbCBhcmd1bWVudHMuIl0sICJjbGFpbXMiOiBbWyJQYXJlbnRzIGFyZSBndWFyZGlhbnMgYW5kIHNob3VsZCBiZSB0cnVzdGVkIHRvIHZvdGUgaW4gdGhlaXIgY2hpbGRyZW5cdTIwMTlzIGludGVyZXN0cyIsICJNaW5vcidzIGludGVyZXN0cyBjYW4gYmUgYXBwcm9wcmlhdGVseSB0YWtlbiBpbnRvIGNvbnNpZGVyYXRpb24gYnkgdGhlIHZvdGVzIG9mIHRoZWlyIHBhcmVudHMuIiwgIkEgcGFyZW50J3Mgdm90ZSBzaG91bGQgYmUgY291bnRlZCBhcyBhIHZvdGUgaW4gdGhlIGludGVyZXN0IG9mIHRoZWlyIGNoaWxkLiJdLCBbIlZvdGluZyBhdCBhIGxvd2VyIGFnZSB3b3VsZCBpbmNyZWFzZSBwYXJ0aWNpcGF0aW9uIiwgIk1vcmUgY2l0aXplbnMgd291bGQgcGFydGljaXBhdGUgaWYgdGhlIHZvdGluZyBhZ2Ugd2VyZSBsb3dlcmVkLiIsICJBIGxvd2VyIHZvdGluZyBhZ2Ugd291bGQgcmVzdWx0IGluIGFuIGluY3JlYXNlIGluIHBhcnRpY2lwYXRpb24uIl0sIFsiWW91bmcgcGVvcGxlIHdvdWxkIGJlIG1vcmUgbGlrZWx5IHRvIG1pc3VzZSB0aGVpciB2b3RlIiwgIllvdW5nZXIgcGVvcGxlIGFyZSBtb3JlIGxpa2VseSB0byBub3QgdGFrZSB0aGUgaW1wYWN0IG9mIHRoZWlyIHZvdGUgc2VyaW91c2x5LiIsICJBbGxvd2luZyB5b3VuZyBwZW9wbGUgdG8gdm90ZSB3b3VsZCBiZSBsaWtlbHkgdG8gcmVzdWx0IGluIGluYXBwcm9wcmlhdGUgdm90ZXMuIl0sIFsiMTYgeWVhciBvbGRzIGFyZSBtYXR1cmUgZW5vdWdoIHRvIHZvdGUiLCAiMTYgeWVhciBvbGRzIGFyZSBpbmZvcm1lZCBlbm91Z2ggdG8gY2FzdCBhIHZvdGUuIiwgIkl0IGlzIGFwcHJvcHJpYXRlIGZvciAxNiB5ZWFyIG9sZHMgdG8gaGF2ZSB0aGUgcmlnaHQgdG8gdm90ZS4iXSwgWyJJdCB3b3VsZCBoZWxwIGRpc3Rpbmd1aXNoIGJldHdlZW4gbGV2ZWxzIG9mIGVsZWN0aW9ucyJdLCBbIlRoZXJlIHNob3VsZCBub3QgYmUgZGlmZmVyZW50IHZvdGluZyBhZ2VzIGZvciBkaWZmZXJlbnQgZWxlY3Rpb25zIl0sIFsiWUVTLCBnaXZlIHRoZW0gdGhlIHJpZ2h0cyB0aGV5IGRlc2VydmUhIiwgIlNpeHRlZW4geWVhcnMgd291bGQgYmUgYSBiZXR0ZXIgb3B0aW9uIGluIGRldmVsb3BlZCBjb3VudHJpZXMiLCAiSSB0aGluayB0aGV5IHNob3VsZCBoYXZlIHRoZXNlIHJpZ2h0cy4iLCAiSSB3b3VsZCBzYXkgZ2l2ZSB0aGVtIHRoZSByaWdodHMgdGhhdCB0aGV5IHNob3VsZCBoYXZlLiJdLCBbIkEgc2xpcHBlcnkgc2xvcGUgdG8gZm9yY2luZyBhbGwgY291bnRyaWVzIHRvIGFsbG93IHRoZSB2b3RlIGF0IHNpeHRlZW4gZm9yIGFsbCB2b3RlcyIsICJUaGlzIHNsaXBwZXJ5IHNsb3BlIGhlYWRzIHRvd2FyZHMgZm9yY2luZyBhbGwgY291bnRpcmVzIHRvIGxvd2VyIHRoZSB2b3RpbmcgYWdlIHRvIHNpeHRlZW4uIiwgIlRoaXMgaXMgYSBzbGlwcGVyeSBzbG9wZSB0aGF0IGhlYWRzIHRvd2FyZHMgZm9yY2luZyBhbGwgY291bnRyaWVzIHRvIGFsbG93IHZvdGluZyBhdCBzaXh0ZWVuIGZvciBhbGwgdm90ZXMuIiwgIlRoaXMgYmVnaW5zIGEgc2xpcHBlcnkgc2xvcGUgdGhhdCBjYW4gaGF2ZSBnbG9iYWwgaW1wbGljYXRpb25zIiwgIkRvaW5nIHNvIG1heSBlbmNvdXJhZ2Ugb3RoZXIgY291bnRyaWVzIHRvIHRyeSBzb21ldGhpbmcgc2ltaWxhciJdLCBbIldvdWxkIGNvbXBsaWNhdGUgZWxlY3Rpb25zIiwgIlRoaXMgd291bGQgY29tcGxpY2F0ZSBlbGVjdGlvbnMuIiwgIkVsZWN0aW9ucyB3b3VsZCBiZWNvbWUgbW9yZSBjb21wbGljYXRlZC4iLCAiRG9pbmcgc28gd291bGQgYWRkIG1vcmUgY29tcGxpY2F0aW9ucyB0byBlbGVjdGlvbnMiLCAiVGhpcyB3b3VsZCBtYWtlIGVsZWN0aW9ucyBldmVuIG1vcmUgY29uZnVzaW5nIl0sIFsiRVUgZWxlY3Rpb25zIHdvdWxkIHB1dCB5b3VuZyBwZW9wbGUgb2ZmIHZvdGluZyIsICJFVSBlbGVjdGlvbnMgd291bGQgZGlzY291cmFnZSB2b3RpbmcgYW1vbmcgeW91bmcgcGVvcGxlLiIsICJWb3RpbmcgYW1vbmcgeW91dGggd291bGQgYmUgZGlzY291cmFnZWQgYnkgRVUgZWxlY3Rpb25zLiIsICJJdCB3b3VsZCBjYXVzZSB0aGUgeW91dGggdG8gaGF2ZSBsZXNzIGludGVyZXN0IGluIHZvdGluZyJdXX0=";
+            var claims_json_str = atob(claims_base64);
+            var claims_json = JSON.parse(claims_json_str);
+            $scope.all_claims = [];
+            $scope.all_claims.push(claims_json['target_claim'])
+            let num_claims_to_use = Math.min(claims_json['claims'].length+1, 10);
+            for (let index = 0; index < num_claims_to_use; index++) {
+                $scope.all_claims.push(claims_json['claims'][index])
+            }
+            for (let index = 0; index < $scope.all_claims.length; index++) {
+                $scope.all_claims[index].expand = false;
+                $scope.all_claims[index].q_support = "Q" + index.toString() + "S";
+                $scope.all_claims[index].q_oppose = "Q" + index.toString() + "O";
+                $scope.all_claims[index].q_reason = "Q" + index.toString() + "R";
+            }
+            $scope.get_q_name = function (index, type_s)
+            {
+                return "Q" + toString(index) + typ;
+            };
+        }]);
+</script>
+<!-- You must include crowd-form so that your task submits answers to MTurk -->
+<div class="container" ng-app="app">
+    <crowd-form answer-format="flatten-objects">
+
+        <!-- The crowd-classifier element will create a tool for the Worker to select the
+               correct answer to your question -->
+        <div ng-controller="MyController">
+            <div class="my-font">
+                <h4>Background</h4>
+                <p>A number of claims on a topic exist on the web. We want to develop automated systems to retrieve
+                    counter
+                    arguments against those claims. Our broader goal is to inform web searchers about the controversial
+                    information that exists around a topic and help them to make rational decisions.
+                </p>
+                <h2>Instruction</h2>
+                <p class="my-font">For each HIT, there are three types of items : one <b>topic</b>, multiple
+                    <b>claims</b>, and a <b>document</b>.
+                </p>
+                <ul>
+                    <li>A <b>topic</b> is a sentence that describes a controversial issue.
+                    </li>
+                    <li><b>Claims</b> are the arguments that can support or oppose the topic.
+                    </li>
+                    <li>A <b>document</b> is a web page that is potentially relevant to the topic or the claims.
+                        <ul>
+                            <li>One of the claims was actually used as a query to retrieve the document.
+                                We will call this claim a <b>target claim</b> which will be listed first among the claims.
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                <p>
+                    Our goal is to search a document that contains a counter-argument for one of the claims.
+                </p>
+                <div>
+                    <h4>Procedure</h4>
+                    <ol>
+                        <li>
+                            Read through the document and check if it contains any argument that can be used to
+                            support or oppose the <b>target claim</b>.
+                        </li>
+                        <li>If you find some parts (arguments) that are possibly relevant to the <b>target claim,</b>
+                            <ul>
+                                <li>check the other claims to see if there is any claim that is more closely related.
+                                </li>
+                                <li style="list-style-type: none; ">
+                                    <ul style="list-style-type: upper-alpha">
+                                        <li>If there is another claim that is more closely
+                                            related and the argument supports or opposes the claim, check next to the
+                                            corresponding claim.
+                                        </li>
+                                        <li>1) If the target claim is the most closely related one and 2) if the argument in
+                                            the document can be used to support or oppose the claim, check in the related parts.
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+                <p>
+                    You are not required to exclusively match for all the claims. Instead, we want you to annotate at
+                    least
+                    one row in the table. The possible cases are
+                </p>
+                <ol>
+                    <li>The document has argument(s) that support or oppose the <b>target claim</b> or <b>other claims</b> (line
+                        1-12)
+                    </li>
+                    <li>The document has an argument that could support or oppose the topic, but there is <b>no appropriate
+                        claim</b>
+                        to be matched to the argument. (line 13)
+                    </li>
+                    <li>The document has <b>no argument</b> that either supports/opposes any of the claims or the topic. (line 14)
+                    </li>
+                </ol>
+                <p>
+                    If you check on some support or oppose, can you specify where the argument appears? If it is
+                    possible
+                    please copy-paste the texts from that part.
+                </p>
+                <ul>
+                    <li>If you cannot select small parts (less than 100 words) you can skip this.</li>
+                    <li>If you check both support/oppose for a row, put the text for the oppose.</li>
+                </ul>
+                <h4>Trivia</h4>
+                <ul>
+                    <li>You can click on each of the claims to see a few paraphrases for them.
+                        They can give you the lower bound about how closely it should be related. </li>
+                    <li>
+                        The webpage could take a long time to be loaded (but less than a minute).
+                    </li>
+                    <li>
+                        The webpage may have broken formats or missing images.
+                        Still, you'd be possible to read the main content of the page.
+                    </li>
+                </ul>
+            </div>
+            <hr>
+            <hr>
+            <hr>
+            <hr>
+            <h4>Answer follow.</h4>
+            <p>
+            <div ng-app=""></div>
+            <span></span>
+            </p>
+            <div style="display: flex;">
+                <div>
+                    <p>
+                        <strong>Topic: </strong>
+                        ${topic}
+                    </p>
+                    <p>
+                        <strong>Link to document: </strong>
+                        <!-- The search result item url will be substituted for the "url" attribute below
+                               when you publish a batch with a CSV input file containing multiple search results -->
+                        <a href="http://clovertask.online:8888/clueweb/${doc_id}.html" target="_blank">${doc_id}</a>
+                    </p>
+                    <table style="border: 1px solid black; border-collapse: collapse;" class="text-center table table-hover">
+                        <tr class="bottom_border">
+                            <th class="text-left">Claims</th>
+                            <th>Support</th>
+                            <th>Oppose</th>
+                            <th>Reason</th>
+                        </tr>
+                        <tr ng-repeat="claim in all_claims"
+                            ng-class="{'table-primary': $index==0,'': $index>0}"
+                        >
+                            <td class="claim_cell"
+                                ng-click="claim.expand=!claim.expand"
+                            >{{ claim[0] }} <b ng-if="$index==0">&nbsp;[Target Claim]</b>
+                                <ul ng-show="claim.expand" >
+                                    <li ng-repeat="para_claim in claim.slice(1)">{{para_claim}}</li>
+                                </ul>
+                            </td>
+                            <td>
+                                <crowd-checkbox name="{{claim.q_support}}">
+                                </crowd-checkbox>
+                            </td>
+                            <td>
+                                <crowd-checkbox name="{{claim.q_oppose}}">
+                                </crowd-checkbox>
+                            </td>
+                            <td>
+                                <crowd-text-area name="{{claim.q_reason}}" max-length="500"
+                                                 style="min-width: 10vh; max-width: 50vh;" value=" ">
+
+                                </crowd-text-area>
+                            </td>
+                        </tr>
+
+                        <tr class="bottom_border">
+                            <td><b>Write a new claim</b></td>
+                        </tr>
+                        <tr class="bottom_double_border">
+                            <td>
+                                <crowd-input num_lines=3 name="Q_CUS_CLAIM" max-length="300"
+                                             value=" "
+                                             style="max-width: 50vh;"></crowd-input>
+                            </td>
+                            <td>
+                                <crowd-checkbox name="Q_CUS_S"></crowd-checkbox>
+                            </td>
+                            <td>
+                                <crowd-checkbox name="Q_CUS_O"></crowd-checkbox>
+                            </td>
+                            <td>
+                                <crowd-text-area name="Q_CUS_R" max-length="500"
+                                                 style="min-width: 10vh; max-width: 50vh;" value=" ">
+                                </crowd-text-area>
+                            </td>
+
+                        </tr>
+                        <tr class="bottom_double_border">
+                            <td>No argument supports/opposes any claims or the topic</td>
+                            <td colspan=2>
+                                <crowd-checkbox name="Q_NOTHING"></crowd-checkbox>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </crowd-form>
+</div>
+</body>
+</html>
