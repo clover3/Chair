@@ -2,8 +2,8 @@ import csv
 import os
 from typing import List, Tuple
 
-from contradiction.medical_claims.alamri.pilot_annotation import enum_true_instance
 from contradiction.medical_claims.load_corpus import Review, Claim
+from contradiction.medical_claims.pilot.pilot_annotation import enum_true_instance
 from cpath import at_output_dir
 from list_lib import foreach
 from misc_lib import exist_or_mkdir

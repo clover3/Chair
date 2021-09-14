@@ -1,6 +1,6 @@
 import os
 
-from contradiction.annotation.annotation_html_gen import generate_hit
+from contradiction.medical_claims.annotation_1.annotation_html_gen import generate_hit
 from cpath import data_path, at_output_dir, output_path
 from misc_lib import exist_or_mkdir
 

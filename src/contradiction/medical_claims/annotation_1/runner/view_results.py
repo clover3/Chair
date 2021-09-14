@@ -1,9 +1,11 @@
 import os
+from collections import Counter
 from typing import List
 
 from arg.counter_arg_retrieval.build_dataset.verify_by_acess_log import parse_mturk_time
+from contradiction.medical_claims.annotation_1.read_batch import load_file_list
 from cpath import output_path
-from misc_lib import get_dir_files
+from misc_lib import get_dir_files, group_by
 from mturk.parse_util import HITScheme, HitResult, parse_file
 
 
@@ -44,6 +46,42 @@ def summarize_workers(file_path_list):
     return list(workers.values())
 
 
+def summarize_done_state(file_path_list):
+    hit_scheme = HITScheme([], [])
+
+    all_hits = []
+    for file_path in file_path_list:
+        print(file_path)
+        hit_results: List[HitResult] = parse_file(file_path, hit_scheme)
+        all_hits.extend(hit_results)
+
+    count_per_hit = Counter()
+    for hit in all_hits:
+        count_per_hit[hit.hit_id] += 1
+
+    done_distrib = Counter()
+    for key, cnt in count_per_hit.items():
+        done_distrib[cnt] += 1
+
+    for key, cnt in done_distrib.items():
+        print("{} Hits has {} done".format(cnt, key))
+
+
+def user_check(file_path_list):
+    hit_scheme = HITScheme([], [])
+    target_id = "A1J1MXAI07HGUT"
+    for file_path in file_path_list:
+        print(file_path)
+        hit_results: List[HitResult] = parse_file(file_path, hit_scheme)
+
+        grouped = group_by(hit_results, lambda x: x.hit_id)
+        for key, elems in grouped.items():
+            if len(elems) == 3:
+                worker_ids = list([e.worker_id for e in elems])
+                if target_id not in worker_ids:
+                    print(key)
+
+
 def all_summary():
     dir_path = os.path.join(output_path, "alamri_annotation1", "batch_results")
 
@@ -53,8 +91,20 @@ def all_summary():
         print("{}\t{}\t{}\t{}".format(worker.id, worker.n_hit, worker.first_time, worker.last_time))
 
 
+def run_summarize_done_state():
+    files = load_file_list()
+    for file in files:
+        summarize_done_state([file])
+
+
 def main():
-    all_summary()
+    files = load_file_list()
+    summarize_done_state(files)
+
+
+def do_user_check():
+    files = load_file_list()
+    user_check(files)
 
 
 def run_per_file():
@@ -68,4 +118,4 @@ def run_per_file():
 
 
 if __name__ == "__main__":
-    run_per_file()
+    main()

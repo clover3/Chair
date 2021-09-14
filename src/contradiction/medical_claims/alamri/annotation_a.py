@@ -1,7 +1,7 @@
 from typing import List, Iterable, Tuple
 
-from contradiction.medical_claims.alamri.pilot_annotation import num_common_terms
 from contradiction.medical_claims.load_corpus import load_parsed, Review, Claim
+from contradiction.medical_claims.pilot.pilot_annotation import num_common_terms
 from list_lib import lfilter
 from tab_print import tab_print
 

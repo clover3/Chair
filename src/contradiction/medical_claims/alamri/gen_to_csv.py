@@ -1,7 +1,7 @@
 import csv
 import os
 
-from contradiction.medical_claims.alamri.pilot_annotation import enum_true_instance
+from contradiction.medical_claims.pilot.pilot_annotation import enum_true_instance
 from cpath import output_path, at_output_dir
 from list_lib import foreach
 from misc_lib import DataIDManager, exist_or_mkdir
