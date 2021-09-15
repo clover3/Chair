@@ -1,7 +1,7 @@
 import sys
 from typing import List, Iterable, Dict
 
-from cache import save_to_pickle
+from cache import dump_to_json
 from clueweb.corpus_reading.doc_id_to_url import get_urls
 from list_lib import flatten
 from trec.trec_parse import load_ranked_list_grouped
@@ -17,7 +17,7 @@ def main():
     flat_entries: Iterable[TrecRankedListEntry] = flatten(new_entries.values())
     doc_ids = list(set([e.doc_id for e in flat_entries]))
     urls_d = get_urls(doc_ids)
-    save_to_pickle(urls_d, "urls_d")
+    dump_to_json(urls_d, sys.argv[2])
 
 
 

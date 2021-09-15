@@ -1,13 +1,12 @@
 import csv
-import json
 import os
 
 from cpath import output_path
+from galagos.jsonl_util import load_jsonl
 from misc_lib import exist_or_mkdir
 
 
-def main():
-    save_path = os.path.join(output_path, "ca_building", "run1", "mturk_todo.csv")
+def load_doc_ids(save_path):
     reader = csv.reader(open(save_path, "r"), delimiter=',')
     doc_ids = []
     for row in reader:
@@ -16,16 +15,15 @@ def main():
             doc_ids.append(doc_id)
         except IndexError as e:
             print(e)
+    return doc_ids
+
+
+def main():
+    save_path = os.path.join(output_path, "ca_building", "run1", "mturk_todo.csv")
+    doc_ids = load_doc_ids(save_path)
 
     save_path = os.path.join(output_path, "ca_building", "run1", "docs.jsonl")
-    docs_d = {}
-    for line_no, line in enumerate(open(save_path, "r", newline="\n")):
-        try:
-            j = json.loads(line, strict=False)
-            docs_d[j['id']] = j['content']
-        except json.decoder.JSONDecodeError:
-            print(line)
-            print("json.decoder.JSONDecodeError", line_no)
+    docs_d = load_jsonl(save_path)
 
     save_dir = os.path.join(output_path, "ca_building", "run1", "html")
     exist_or_mkdir(save_dir)
