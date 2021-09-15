@@ -1,9 +1,10 @@
 from collections import Counter
-from typing import List, Tuple
+from typing import List
 
 from contradiction.medical_claims.annotation_1.load_data import get_pair_dict
 from contradiction.medical_claims.annotation_1.mturk_scheme import load_all_annotation, parse_alamri_hit, \
-    MTurkOutputFormatError, PairedIndicesLabel, parse_hit_with_indices_fix, load_all_annotation_w_reject
+    MTurkOutputFormatError, parse_hit_with_indices_fix, load_all_annotation_w_reject, \
+    AlamriLabelUnit
 from contradiction.medical_claims.annotation_1.reject_list import get_worker_list_to_reject
 from list_lib import left
 from misc_lib import group_by, get_first, average
@@ -39,7 +40,7 @@ def print_annot_stats_grouped(all_annots):
             print(key, value)
 
 
-def load_annots_w_processing() -> List[Tuple[Tuple[int, int], PairedIndicesLabel]]:
+def load_annots_w_processing() -> List[AlamriLabelUnit]:
     exclude_worker_ids = get_worker_list_to_reject()
     exclude_worker_ids.extend(workers_to_filter)
     hits_inc_reject = load_all_annotation_w_reject()
@@ -50,7 +51,7 @@ def load_annots_w_processing() -> List[Tuple[Tuple[int, int], PairedIndicesLabel
     print(f"{len(hits_filtered)} from non-black list")
     invalid = []
 
-    def parse_hit(h) -> Tuple[Tuple[int, int], PairedIndicesLabel]:
+    def parse_hit(h) -> AlamriLabelUnit:
         try:
             return parse_alamri_hit(h)
         except MTurkOutputFormatError:
@@ -58,7 +59,7 @@ def load_annots_w_processing() -> List[Tuple[Tuple[int, int], PairedIndicesLabel
             print(h.worker_id, h.outputs['indices'])
             return None
 
-    annots: List[Tuple[Tuple[int, int], PairedIndicesLabel]] = list(filter(None, map(parse_hit, hits_filtered)))
+    annots: List[AlamriLabelUnit] = list(filter(None, map(parse_hit, hits_filtered)))
     print(f"{len(annots)} acquired")
     print("{} are broken".format(len(invalid)))
     trusted_worker = ['A1J1MXAI07HGUT', 'A1QE4E0WPJZGEI']
@@ -68,7 +69,7 @@ def load_annots_w_processing() -> List[Tuple[Tuple[int, int], PairedIndicesLabel
             annot = parse_hit_with_indices_fix(hit)
             added_annot.append(annot)
     print(f"add {len(added_annot)} annots by fixing")
-    all_annots: List[Tuple[Tuple[int, int], PairedIndicesLabel]] = annots + added_annot
+    all_annots: List[AlamriLabelUnit] = annots + added_annot
     return all_annots
 
 

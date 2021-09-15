@@ -1,14 +1,16 @@
 import csv
 import os
-from typing import Iterable, Tuple
+from typing import Tuple, List
 
 from misc_lib import exist_or_mkdir
 
 
-def load_corpus(path) -> Iterable[Tuple[str, str]]:
+def load_corpus(path) -> List[Tuple[str, str]]:
     f = open(path, "r", encoding="utf-8", errors='ignore')
+    output = []
     for row in csv.reader(f):
-        yield row[0], row[1]
+        output.append((row[0], row[1]))
+    return output
 
 
 def escape_sentence(s):

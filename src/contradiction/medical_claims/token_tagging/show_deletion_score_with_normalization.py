@@ -8,7 +8,7 @@ from contradiction.medical_claims.alamri.pairwise_gen import claim_text_to_info
 from contradiction.medical_claims.biobert.voca_common import get_biobert_tokenizer
 from contradiction.medical_claims.token_tagging.deletion_score_to_html import make_prediction_summary_str
 from data_generator.bert_input_splitter import get_sep_loc
-from explain.tf2.deletion_scorer import Entry, summarize_deletion_score
+from explain.tf2.deletion_scorer import TokenExEntry, summarize_deletion_score_batch8
 from misc_lib import get_second
 from tlm.token_utils import cells_from_tokens
 from visualize.html_visual import HtmlVisualizer, Cell
@@ -21,7 +21,7 @@ def get_neutral_probability(logit):
 def get_contradiction_probability(logit):
     return scipy.special.softmax(logit)[2]
 
-def write_deletion_score_to_html(out_file_name, summarized_table: List[Entry], info: Dict[int, Dict]):
+def write_deletion_score_to_html(out_file_name, summarized_table: List[TokenExEntry], info: Dict[int, Dict]):
     text_to_info = claim_text_to_info()
     html = HtmlVisualizer(out_file_name)
     tokenizer = get_biobert_tokenizer()
@@ -124,10 +124,10 @@ def main():
     num_jobs = 5
     max_offset = num_jobs * deletion_per_job
     deletion_offset_list = list(range(0, max_offset, deletion_per_job))
-    summarized_result = summarize_deletion_score(dir_path, deletion_per_job,
-                                                 deletion_offset_list,
-                                                 get_neutral_probability,
-                                                 )
+    summarized_result = summarize_deletion_score_batch8(dir_path, deletion_per_job,
+                                                        deletion_offset_list,
+                                                        get_neutral_probability,
+                                                        )
     out_file_name = "{}.html".format(save_name)
     write_deletion_score_to_html(out_file_name, summarized_result, info)
 

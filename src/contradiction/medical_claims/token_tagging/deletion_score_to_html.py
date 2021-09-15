@@ -7,14 +7,14 @@ import scipy.special
 from contradiction.medical_claims.alamri.pairwise_gen import claim_text_to_info
 from contradiction.medical_claims.biobert.voca_common import get_biobert_tokenizer
 from data_generator.bert_input_splitter import get_sep_loc
-from explain.tf2.deletion_scorer import Entry
+from explain.tf2.deletion_scorer import TokenExEntry
 from misc_lib import two_digit_float
 from tlm.token_utils import cells_from_tokens
 from visualize.html_visual import HtmlVisualizer, Cell
 
 
-def write_deletion_score_to_html(out_file_name, summarized_table: List[Entry], info: Dict[int, Dict]):
-    text_to_info = claim_text_to_info()
+def write_deletion_score_to_html(out_file_name, summarized_table: List[TokenExEntry], info: Dict[int, Dict]):
+    text_to_info: Dict[str, Dict] = claim_text_to_info()
     html = HtmlVisualizer(out_file_name)
     tokenizer = get_biobert_tokenizer()
     num_print = 0

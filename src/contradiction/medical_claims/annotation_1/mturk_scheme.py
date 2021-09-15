@@ -74,6 +74,28 @@ class PairedIndicesLabel(NamedTuple):
             'hypo_mismatch': self.hypo_mismatch,
         }
 
+    @staticmethod
+    def from_dict(d):
+        return PairedIndicesLabel(
+            d['prem_conflict'],
+            d['prem_mismatch'],
+            d['hypo_conflict'],
+            d['hypo_mismatch'],
+        )
+
+    @staticmethod
+    def get_sent_types():
+        return [
+            "prem_conflict",
+            "prem_mismatch",
+            'hypo_conflict',
+            'hypo_mismatch'
+        ]
+
+
+AlamriLabelUnit = Tuple[Tuple[int, int], PairedIndicesLabel]
+
+
 def parse_sub_indices(s):
     l = filter(None, s.strip().split(" "))
     try:
@@ -94,7 +116,7 @@ def parse_indices(indices_str: str) -> Union[PairedIndicesLabel, str]:
         raise MTurkOutputFormatError
 
 
-def parse_alamri_hit(h: HitResult) -> Tuple[Tuple[int, int], PairedIndicesLabel]:
+def parse_alamri_hit(h: HitResult) -> AlamriLabelUnit:
     group_no, inst_no = parse_url(h.inputs['url'])
     annot: PairedIndicesLabel = parse_indices(h.outputs['indices'])
     inst = (group_no, inst_no), annot

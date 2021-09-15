@@ -2,7 +2,7 @@ import json
 import sys
 
 from contradiction.medical_claims.token_tagging.deletion_score_to_html import write_deletion_score_to_html
-from explain.tf2.deletion_scorer import summarize_deletion_score
+from explain.tf2.deletion_scorer import summarize_deletion_score_batch8
 
 
 def raw_logit(logit):
@@ -19,10 +19,10 @@ def main():
     max_offset = num_jobs * deletion_per_job
 
     deletion_offset_list = list(range(0, max_offset, deletion_per_job))
-    summarized_result = summarize_deletion_score(dir_path, deletion_per_job,
-                                                 deletion_offset_list,
-                                                 raw_logit,
-                                                 )
+    summarized_result = summarize_deletion_score_batch8(dir_path, deletion_per_job,
+                                                        deletion_offset_list,
+                                                        raw_logit,
+                                                        )
     out_file_name = "{}.html".format(save_name)
     write_deletion_score_to_html(out_file_name, summarized_result, info)
 
