@@ -16,7 +16,11 @@ def convert_save_to_trec_format(name):
 
 
 def main():
-    name = "sel_by_longest"
+    # name = "sel_by_longest"
+    # convert_save_to_trec_format(name)
+    name = "worker_J"
+    convert_save_to_trec_format(name)
+    name = "worker_Q"
     convert_save_to_trec_format(name)
 
 

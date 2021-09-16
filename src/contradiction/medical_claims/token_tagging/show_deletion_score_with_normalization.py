@@ -21,6 +21,7 @@ def get_neutral_probability(logit):
 def get_contradiction_probability(logit):
     return scipy.special.softmax(logit)[2]
 
+
 def write_deletion_score_to_html(out_file_name, summarized_table: List[TokenExEntry], info: Dict[int, Dict]):
     text_to_info = claim_text_to_info()
     html = HtmlVisualizer(out_file_name)
@@ -30,7 +31,7 @@ def write_deletion_score_to_html(out_file_name, summarized_table: List[TokenExEn
         tokens = tokenizer.convert_ids_to_tokens(entry.input_ids)
         idx_sep1, idx_sep2 = get_sep_loc(entry.input_ids)
         max_change = 0
-        max_drop = 0
+        max_drop = 10
         cells = cells_from_tokens(tokens)
 
         drops = []
@@ -82,7 +83,7 @@ def write_deletion_score_to_html(out_file_name, summarized_table: List[TokenExEn
             # if random.random() < 0.90:
             #     continue
             base_probs = scipy.special.softmax(entry.base_logits)
-            info_entry = info[str(entry.data_id[0])]
+            info_entry = info[str(entry.data_id)]
             claim1_info: Dict = text_to_info[info_entry['text1']]
             claim2_info: Dict = text_to_info[info_entry['text2']]
             question = claim1_info['question']
