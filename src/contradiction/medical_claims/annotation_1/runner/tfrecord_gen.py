@@ -3,9 +3,9 @@ import os
 from typing import List, Callable, Tuple, Iterator
 
 from contradiction.medical_claims.annotation_1.load_data import load_alamri1_all
-from contradiction.medical_claims.biobert.voca_common import get_biobert_tokenizer
 from cpath import output_path
 from data_generator.cls_sep_encoder import get_text_pair_encode_fn, PairedInstance
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import DataIDManager, exist_or_mkdir
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 
@@ -27,7 +27,8 @@ def generate_and_write(file_name,
     json.dump(data_id_man.id_to_info, open(info_save_path, "w"))
 
 
-def main():
+
+def generate_tfrecord_inner(save_name, tokenizer):
     data: List[Tuple[int, List[Tuple[str, str]]]] = load_alamri1_all()
 
     def get_generator(data_id_manager: DataIDManager):
@@ -42,8 +43,17 @@ def main():
                 })
                 yield PairedInstance(t1, t2, data_id, 0)
 
-    tokenizer = get_biobert_tokenizer()
-    generate_and_write("biobert_alamri1", get_generator, tokenizer)
+    generate_and_write(save_name, get_generator, tokenizer)
+
+
+def main():
+    tokenizer = get_tokenizer()
+    save_name = "bert_alamri1"
+    generate_tfrecord_inner(save_name, tokenizer)
+
+    # tokenizer = get_biobert_tokenizer()
+    # save_name = "biobert_alamri1"
+    # generate_tfrecord_inner(save_name, tokenizer)
 
 
 if __name__ == "__main__":
