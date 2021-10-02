@@ -27,7 +27,6 @@ def generate_and_write(file_name,
     json.dump(data_id_man.id_to_info, open(info_save_path, "w"))
 
 
-
 def generate_tfrecord_inner(save_name, tokenizer):
     data: List[Tuple[int, List[Tuple[str, str]]]] = load_alamri1_all()
 

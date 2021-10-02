@@ -1,10 +1,10 @@
-from bert_api.client_lib import BERTClient
+from bert_api.client_lib import BERTClientMSMarco
 from trainer.promise import PromiseKeeper, MyPromise
 
 
 class Request:
     def __init__(self):
-        self.client = BERTClient("http://localhost", 8122, 300)
+        self.client = BERTClientMSMarco("http://localhost", 8122, 300)
 
     def request_multiple(self, payload):
         pk = PromiseKeeper(self.client.request_multiple)
@@ -25,7 +25,7 @@ class Request:
 
 class RequestEx:
     def __init__(self):
-        self.client = BERTClient("http://localhost", 8122, 300)
+        self.client = BERTClientMSMarco("http://localhost", 8122, 300)
 
     def request_multiple(self, payload):
         pk = PromiseKeeper(self.client.request_multiple)

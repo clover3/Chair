@@ -1,6 +1,7 @@
 import abc
 import os
 from abc import ABC
+from typing import List, NamedTuple
 
 import cpath
 from cpath import output_path
@@ -16,6 +17,11 @@ def get_color(r):
     r = 255 - int(r)
     bg_color = ("%02x" % r) + ("%02x" % r) + "ff"
     return bg_color
+
+
+class HtmlCellStr(NamedTuple):
+    s: str
+
 
 
 class Cell:
@@ -117,17 +123,25 @@ def get_bootstrap_include_source():
 """
     return s
 
+
 class HtmlVisualizer(VisualizerCommon):
-    def __init__(self, filename, dark_mode=False, use_tooltip=False, additional_styles=[]):
-        p = os.path.join(output_path, "visualize", filename)
-        self.f_html = open(p, "w", encoding="utf-8")
+    def __init__(self, filename, dark_mode=False, use_tooltip=False,
+                 additional_styles=[],
+                 script_include=[],
+                 ):
+        if os.path.basename(filename) == filename:
+            save_path = os.path.join(output_path, "visualize", filename)
+        else:
+            save_path = filename
+        self.f_html = open(save_path, "w", encoding="utf-8")
         self.dark_mode = dark_mode
         self.dark_foreground = "A9B7C6"
         self.dark_background = "2B2B2B"
         self.use_tooltip = use_tooltip
-        self._write_header(additional_styles)
+        self._write_header(additional_styles, script_include)
 
-    def _write_header(self, additional_styles):
+    def _write_header(self, additional_styles, script_include):
+        self.f_html.write("<!DOCTYPE html>\n")
         self.f_html.write("<html><head>\n")
         self.f_html.write("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>")
         style_dark = "body{color:#" + self.dark_foreground + ";}"
@@ -138,10 +152,14 @@ class HtmlVisualizer(VisualizerCommon):
             tooltip_style = get_tooltip_style_text()
             additional_styles.append(tooltip_style)
 
+        for script_text in script_include:
+            self.f_html.write(script_text)
+
         self.f_html.write("<style>")
         for style in additional_styles:
             self.f_html.write(style)
         self.f_html.write("</style>")
+
         self.f_html.write("</head>\n")
 
         if self.dark_mode:
@@ -200,29 +218,29 @@ class HtmlVisualizer(VisualizerCommon):
 
     def write_table(self, rows, head=None):
         self.f_html.write("<table style=\"border-spacing: 0px;\">\n")
+        self._write_table_inner(head, rows)
+        self.f_html.write("</table>\n")
+
+    def _write_table_inner(self, head, rows):
         if head is not None:
             for column in head:
-                self.f_html.write(column)
-
+                if type(column) == HtmlCellStr:
+                    self.f_html.write(column.s)
+                else:
+                    self.f_html.write(get_table_head_cell(column).s)
         for row in rows:
             self.f_html.write("<tr>\n")
             for cell in row:
                 s = self.get_cell_html(cell)
                 self.f_html.write(s)
             self.f_html.write("</tr>\n")
-        self.f_html.write("</table>\n")
 
-    def write_table_with_class(self, rows, class_str):
+    def write_table_with_class(self, rows: List[List[Cell]], class_str, head=None):
         self.f_html.write("<table class=\"{}\">\n".format(class_str))
-        for row in rows:
-            self.f_html.write("<tr>\n")
-            for cell in row:
-                s = self.get_cell_html(cell)
-                self.f_html.write(s)
-            self.f_html.write("</tr>\n")
+        self._write_table_inner(head, rows)
         self.f_html.write("</table>\n")
 
-    def get_cell_html(self, cell):
+    def get_cell_html(self, cell: Cell):
         left = "&nbsp;" if cell.space_left else ""
         right = "&nbsp;" if cell.space_right else ""
         no_padding = "style=\"padding-right:0px; padding-left:0px\""
@@ -283,8 +301,8 @@ def normalize(scores):
     return [(s - min_score) / gap * 100 for s in scores]
 
 
-def get_table_head_cell(s, width=0):
+def get_table_head_cell(s, width=0) -> HtmlCellStr:
     if width:
-        return "<th style=\"width:{}px\">{}</th>".format(width, s)
+        return HtmlCellStr("<th style=\"width:{}%\">{}</th>".format(width, s))
     else:
-        return "<th>{}</th>".format(s)
+        return HtmlCellStr("<th>{}</th>".format(s))

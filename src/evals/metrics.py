@@ -1,10 +1,12 @@
-from typing import List
+from typing import List, Callable
 
 from evals.mean_average_precision import get_ap
 from trec.types import TrecRankedListEntry
 
+MetricFn = Callable[[List[TrecRankedListEntry]], float]
 
-def get_recall_at_k(k):
+
+def get_recall_at_k(k) -> MetricFn:
     def fn(ranked_list: List[TrecRankedListEntry], true_gold: List[str]):
         top_k_doc_ids = []
         for e in ranked_list[:k]:
@@ -19,7 +21,7 @@ def get_recall_at_k(k):
     return fn
 
 
-def get_ndcg_at_k(k):
+def get_ndcg_at_k(k) -> MetricFn:
     from sklearn.metrics import ndcg_score
     def fn(ranked_list: List[TrecRankedListEntry], true_gold: List[str]):
         pred_scores = []
@@ -33,7 +35,7 @@ def get_ndcg_at_k(k):
     return fn
 
 
-def get_p_at_k(k):
+def get_p_at_k(k) -> MetricFn:
     def fn(ranked_list: List[TrecRankedListEntry], true_gold: List[str]):
         seen_doc_id = set()
         tp = 0
@@ -49,7 +51,7 @@ def get_p_at_k(k):
     return fn
 
 
-def get_is_metric_at_k(metric_prefix):
+def get_is_metric_at_k(metric_prefix) -> MetricFn:
     def fn(input_text):
         l = len(metric_prefix)
         if input_text[:l] == metric_prefix:
@@ -63,7 +65,7 @@ def get_is_metric_at_k(metric_prefix):
     return fn
 
 
-def get_metric_fn(input_text):
+def get_metric_fn(input_text) -> MetricFn:
     is_recall_at_k = get_is_metric_at_k("R")
     is_precision_at_k = get_is_metric_at_k("P")
 
@@ -81,4 +83,6 @@ def get_metric_fn(input_text):
         print("using ndcg at {}".format(k))
         return get_ndcg_at_k(k)
 
+
+    raise KeyError("Metric {} is not supported".format(input_text))
     assert False

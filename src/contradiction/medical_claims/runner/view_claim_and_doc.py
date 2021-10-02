@@ -7,7 +7,6 @@ from contradiction.medical_claims.trivial_solver import solve, pairwise
 
 def main():
     reviews: List[Review] = load_parsed()
-
     review0: Review = reviews[0]
 
     is_first = True
@@ -63,4 +62,4 @@ def run_trivial_solution_pair():
 
 
 if __name__ == "__main__":
-    main()
+    run_trivial_solution_pair()

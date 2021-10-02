@@ -45,6 +45,11 @@ def model_fn_sensitivity(bert_config, train_config, model_class, special_flags=[
     """Returns `model_fn` closure for TPUEstimator."""
     shift_str = special_flags[0]
     shift = int(shift_str)
+    if len(special_flags) > 1:
+        n_trial = int(special_flags[1])
+    else:
+        n_trial = 20
+    print(f"Shift={shift} n_trial={n_trial}")
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
         """The `model_fn` for TPUEstimator."""
         tf_logging.info("*** Features ***")
@@ -54,8 +59,6 @@ def model_fn_sensitivity(bert_config, train_config, model_class, special_flags=[
         input_ids = features["input_ids"]
         input_mask = features["input_mask"]
         segment_ids = features["segment_ids"]
-        n_trial = 20
-        print(shift)
         input_ids_masked = delete_tokens(input_ids, n_trial, shift)
 
         input_ids_all = tf.concat([input_ids, input_ids_masked], axis=0)

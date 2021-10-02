@@ -76,8 +76,7 @@ def train():
     model = build_model(decay_steps)
     model.evaluate(test_dataset)
     model.fit(train_dataset, epochs=num_epochs)
-    model.evaluate(test_dataset)
-
+    # model.evaluate(test_dataset)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 from typing import List, Tuple, Dict, Iterable
 
 from arg.qck.trec_helper import score_d_to_trec_style_predictions
-from bert_api.client_lib import BERTClient, get_localhost_client
+from bert_api.client_lib import BERTClientMSMarco, get_localhost_client
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap, right
 from misc_lib import split_window
@@ -52,5 +52,5 @@ def rerank_with_msmarco(queries: List[Tuple[str, str]],
     return list(tr_entries)
 
 
-def get_msmarco_client() -> BERTClient:
+def get_msmarco_client() -> BERTClientMSMarco:
     return get_localhost_client()

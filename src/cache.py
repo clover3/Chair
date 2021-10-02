@@ -1,7 +1,8 @@
+import json
 import os
 from pickle import UnpicklingError
 
-from cpath import cache_path, data_path
+from cpath import cache_path, data_path, json_cache_path
 
 
 def load_from_pickle(name):
@@ -25,6 +26,7 @@ def save_to_pickle(obj, name: str):
 def load_pickle_from(path):
     return pickle.load(open(path, "rb"))
 
+
 def load_cache(name):
     pickle_name = "{}.pickle".format(name)
     path = os.path.join(cache_path, pickle_name)
@@ -32,6 +34,22 @@ def load_cache(name):
         return pickle.load(open(path, "rb"))
     else:
         return None
+
+
+def dump_to_json(obj, name):
+    pickle_name = "{}.json".format(name)
+    path = os.path.join(json_cache_path, pickle_name)
+    return json.dump(obj, open(path, "w"))
+
+
+def load_json_cache(name):
+    pickle_name = "{}.json".format(name)
+    path = os.path.join(json_cache_path, pickle_name)
+    if os.path.exists(path):
+        return json.load(open(path, "r"))
+    else:
+        return None
+
 
 
 class StreamPickler:

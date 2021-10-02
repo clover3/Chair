@@ -6,10 +6,12 @@ from trainer.tf_train_module import init_session
 
 
 class Predictor:
-    def __init__(self, model_path, num_classes):
+    def __init__(self, model_path, num_classes, max_seq_length=None):
         self.voca_size = 30522
         load_names = ['bert', "output_bias", "output_weights"]
         self.hp = hyperparams.HPFAD()
+        if max_seq_length is not None:
+            self.hp.seq_max = max_seq_length
         self.model_dir = cpath.model_path
         self.task = transformer_logit(self.hp, num_classes, self.voca_size, False)
         self.sess = init_session()

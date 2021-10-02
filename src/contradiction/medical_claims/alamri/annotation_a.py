@@ -6,7 +6,7 @@ from list_lib import lfilter
 from tab_print import tab_print
 
 
-def enum_true_instance(sel_per_review=0) -> Iterable[Tuple[Claim, Claim, str]]:
+def enum_true_instance(sel_per_review=0) -> Iterable[Tuple[Claim, Claim]]:
     reviews: List[Review] = load_parsed()
 
     def rank_fn(e: Tuple[Claim, Claim]):

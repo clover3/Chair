@@ -1,6 +1,6 @@
 import sys
 
-from bert_api.client_lib import BERTClient
+from bert_api.client_lib import BERTClientMSMarco
 
 PORT_UKP = 8123
 
@@ -12,7 +12,7 @@ def load_inputs():
 
 
 def run_test():
-    client = BERTClient("http://localhost", PORT_UKP, 300)
+    client = BERTClientMSMarco("http://localhost", PORT_UKP, 300)
 
     data = list(load_inputs())
 

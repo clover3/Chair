@@ -1,6 +1,6 @@
 from typing import List, Tuple, NamedTuple, NewType, Dict, Callable
 
-from bert_api.client_lib import BERTClient
+from bert_api.client_lib import BERTClientMSMarco
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import right
 from misc_lib import split_window
@@ -13,19 +13,22 @@ class TokenizedText(NamedTuple):
     text: str
     tokens: List[str]
     sbword_tokens: List[str]
+    # idx of subword to idx of word
     sbword_mapping: List[int]
 
     @classmethod
-    def from_text(cls, text):
-        global g_tokenizer
-        if g_tokenizer is None:
-            g_tokenizer = get_tokenizer()
+    def from_text(cls, text, tokenizer=None):
+        if tokenizer is None:
+            global g_tokenizer
+            if g_tokenizer is None:
+                g_tokenizer = get_tokenizer()
+            tokenizer = g_tokenizer
 
         tokens = text.split()
         idx_mapping = []
         subword_list = []
         for idx, token in enumerate(tokens):
-            sb_tokens = g_tokenizer.tokenize(token)
+            sb_tokens = tokenizer.tokenize(token)
             idx_mapping.extend([idx] * len(sb_tokens))
             subword_list.extend(sb_tokens)
 
@@ -60,11 +63,11 @@ class DocumentScorerInput(NamedTuple):
 
 
 class DocumentScorer:
-    def __init__(self, client: BERTClient, max_seg_per_document=None):
+    def __init__(self, client: BERTClientMSMarco, max_seg_per_document=None):
         self.max_seq_length = 512
         self.tokenizer = get_tokenizer()
         self.pk: PromiseKeeper = PromiseKeeper(self.do_duty)
-        self.client: BERTClient = client
+        self.client: BERTClientMSMarco = client
         self.max_seg_per_document = max_seg_per_document
 
     def do_duty(self, l: List[DocumentScorerInput]) -> List[DocumentScorerOutputSbword]:

@@ -10,6 +10,8 @@ src_path = FilePath(os.path.join(project_root, 'src'))
 exist_or_mkdir(data_path)
 cache_path = FilePath(os.path.join(data_path, 'cache'))
 exist_or_mkdir(cache_path)
+json_cache_path = FilePath(os.path.join(data_path, 'json'))
+exist_or_mkdir(json_cache_path)
 output_path = FilePath(os.path.join(project_root, 'output'))
 log_path = FilePath(os.path.join(project_root, 'common.log'))
 

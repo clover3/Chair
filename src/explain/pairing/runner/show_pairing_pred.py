@@ -29,6 +29,8 @@ def main():
             return output_d[name][data_idx]
 
         tokens = tokenizer.convert_ids_to_tokens(get("input_ids"))
+        first_padding_loc = tokens.index("[PAD]")
+        display_len = first_padding_loc + 1
         ex_scores = get('ex_scores')
         probs = scipy.special.softmax(get('logits'))
 
@@ -37,22 +39,26 @@ def main():
         html.write_paragraph("Prediction: {}".format(pred_str))
         html.write_paragraph("gold label={}".format(get("label")))
 
-        row1 = [Cell("")] + list([Cell(t, int(s*100)) for t, s in zip(tokens, ex_scores)])
-        row2 = float_arr_to_cell("ex_prob", ex_scores)
+        text_rows = [Cell("")] + list([Cell(t, int(s*100)) for t, s in zip(tokens, ex_scores)])
+        text_rows = text_rows
+        ex_probs = float_arr_to_cell("ex_prob", ex_scores)
         for i, s in enumerate(ex_scores):
             if s > 0.5:
-                row2[i+1].highlight_score = 100
+                ex_probs[i+1].highlight_score = 100
 
-        rows = [row1, row2]
+        rows = [text_rows, ex_probs]
 
+        mid_pred_rows = []
         for layer_no in range(num_layers):
             layer_logit = logits_grouped_by_layer[layer_no][data_idx]
             probs = sigmoid(layer_logit)
             row = float_arr_to_cell("layer_{}".format(layer_no), probs[:, 1])
-            rows.append(row)
+            mid_pred_rows.append(row)
 
+        rows.extend(mid_pred_rows[::-1])
+
+        rows = [row[:display_len] for row in rows]
         html.write_table(rows)
-
 
 
 if __name__ == "__main__":

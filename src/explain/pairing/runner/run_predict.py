@@ -27,7 +27,7 @@ def do_predict(bert_hp, train_config, dev_batches,
     init_fn(sess)
 
     # make explain train_op does not increase global step
-    output_d = predict_fn(sess, dev_batches[:20], lms_model.logits, lms_model.loss_tensor, lms_model.ex_score_tensor,
+    output_d = predict_fn(sess, dev_batches, lms_model.logits, lms_model.loss_tensor, lms_model.ex_score_tensor,
                           lms_model.per_layer_logit_tensor, lms_model.batch2feed_dict)
     return output_d
 

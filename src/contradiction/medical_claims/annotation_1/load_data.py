@@ -32,3 +32,9 @@ def get_pair_dict() -> Dict[Tuple[int, int], Tuple[str, str]]:
     return d
 
 
+def get_dev_group_no():
+    return list(range(1, 13))
+
+
+def get_test_group_no():
+    return list(range(13, num_review))

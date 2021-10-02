@@ -320,6 +320,7 @@ def parallel_run(input_list, list_fn, split_n):
     return result
 
 
+# Get direct child file (not directory)
 def get_dir_files(dir_path) -> List[FilePath]:
     path_list = []
     for (dirpath, dirnames, filenames) in os.walk(dir_path):
@@ -619,6 +620,18 @@ def group_by(interable: Iterable[A], key_fn: Callable[[A], B]) -> Dict[B, List[A
             grouped[key] = list()
 
         grouped[key].append(elem)
+    return grouped
+
+
+def group_by_first(interable: Iterable[Tuple]) -> Dict:
+    grouped = {}
+    for elem in interable:
+        key = elem[0]
+        non_key = elem[1:]
+        if key not in grouped:
+            grouped[key] = list()
+
+        grouped[key].append(non_key)
     return grouped
 
 

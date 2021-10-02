@@ -1,10 +1,10 @@
-from bert_api.client_lib import BERTClient
+from bert_api.client_lib import BERTClientMSMarco
 
 PORT_UKP = 8123
 
 
 def run_test():
-    client = BERTClient("http://localhost", PORT_UKP, 300)
+    client = BERTClientMSMarco("http://localhost", PORT_UKP, 300)
 
     r = client.request_single("gun control", "when states passed concealed carry laws during the 19 years we studied ( 1977 to 1995 ) , the number of multiple-victim public shootings declined by 84 % .")
     print(r)

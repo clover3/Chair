@@ -7,7 +7,7 @@ from arg.bm25 import BM25
 from arg.counter_arg.header import Passage
 from arg.counter_arg.methods.bm25_predictor import BasicTF
 from arg.counter_arg.methods.tool import get_term_importance, sent_tokenize_newline
-from bert_api.client_lib import BERTClient
+from bert_api.client_lib import BERTClientMSMarco
 from list_lib import lmap, lmap_pairing, left
 from misc_lib import NamedNumber
 
@@ -42,7 +42,7 @@ def get_stance_check_candidate(text: str, bm25_module: BM25):
     return r
 
 
-def issue_query(client: BERTClient, raw_payload: List[Tuple[str, str]]):
+def issue_query(client: BERTClientMSMarco, raw_payload: List[Tuple[str, str]]):
     payload = []
     for sent, term in raw_payload:
         payload.append((term, sent))
