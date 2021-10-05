@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 from typing import List, Dict, Tuple
 
 from cpath import output_path
@@ -10,13 +9,18 @@ from trec.types import QRelsDict, DocID
 
 
 def main():
-    save_name = sys.argv[1]
-    info_path = sys.argv[2]
-    source_qrel_path = sys.argv[3]
+    info_path = os.path.join(output_path, "alamri_annotation1", "tfrecord", "biobert_alamri1.info")
+    qrel_path = os.path.join(output_path, "alamri_annotation1", "label", "worker_Q.qrel")
+    # tag_type = "mismatch"
+    tag_type = "conflict"
+    save_name = "annotator_q_" + tag_type
+    make_ranked_list(save_name, info_path, qrel_path, tag_type)
+
+
+def make_ranked_list(save_name, info_path, source_qrel_path, tag_type):
     qrel: QRelsDict = load_qrels_structured(source_qrel_path)
     run_name = "annotator"
     info_d = json.load(open(info_path, "r", encoding="utf-8"))
-    tag_type = "mismatch"
     save_path = os.path.join(output_path, "alamri_annotation1", "ranked_list", save_name + ".txt")
 
     all_ranked_list = []

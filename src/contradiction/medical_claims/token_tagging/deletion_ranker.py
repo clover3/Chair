@@ -1,22 +1,23 @@
 import json
 import os
-import sys
 from typing import List, Tuple
 
 from scipy.special import softmax
 
-from bert_api.doc_score_helper import TokenizedText
 from contradiction.medical_claims.biobert.voca_common import get_biobert_tokenizer
+from contradiction.medical_claims.token_tagging.token_tagging_common import get_split_score_to_pair_list_fn
 from cpath import output_path
 from data_generator.bert_input_splitter import get_sep_loc
-from explain.tf2.deletion_scorer import summarize_deletion_score_batch8, TokenExEntry
+from data_generator.tokenize_helper import TokenizedText
+from data_generator.tokenizer_wo_tf import get_tokenizer
+from explain.tf2.deletion_scorer import TokenExEntry, summarize_deletion_score
 from list_lib import lmap
 from misc_lib import group_by, get_first, get_second, get_third
 from trec.trec_parse import scores_to_ranked_list_entries, write_trec_ranked_list_entry
 from trec.types import TrecRankedListEntry
 
 
-def get_neural_prob(logit):
+def get_neutral_prob(logit):
     probs = softmax(logit)
     return probs[1]
 
@@ -44,35 +45,6 @@ def check_is_valid_token_subword(token, subword_tokens):
         print("Token is different from the subword: ", token.lower(), token_from_sbword)
 
 
-def get_split_score_to_pair_list_fn(merge_method):
-    # scores
-    def split_score_to_pair_list(scores, sent, t_text):
-        # Lookup token idx
-        e_list: List[Tuple[int, str, float]] = []
-        for idx, (sb_token, score) in enumerate(zip(sent, scores)):
-            token_idx = t_text.sbword_mapping[idx]
-            e = (token_idx, sb_token, score)
-            e_list.append(e)
-
-        # Group by token idx
-        # Transpose array
-        grouped = group_by(e_list, get_first)
-        doc_id_score_list = []
-        for idx, entries in grouped.items():
-            subword_tokens: List[str] = lmap(get_second, entries)
-            per_tokens_scores: List[float] = lmap(get_third, entries)
-            token = t_text.tokens[idx]
-            # Check token ans subword_tokens begin equal
-            token_from_sbword = "".join(subword_tokens)
-            token_from_sbword = token_from_sbword.replace("##", "")
-            if token.lower() != token_from_sbword:
-                print("Token is different from the subword: ", token.lower(), token_from_sbword)
-            doc_id_score_list.append((str(idx), merge_method(per_tokens_scores)))
-        return doc_id_score_list
-
-    return split_score_to_pair_list
-
-
 def group_sbword_scores(t_text, scores, sent):
     # Lookup token idx
     e_list = []
@@ -92,26 +64,27 @@ def group_sbword_scores(t_text, scores, sent):
     return output
 
 
-def main():
-    dir_path = sys.argv[1]
-    save_name = sys.argv[2]
-    info_path = sys.argv[3]
+def make_ranked_list(dir_path, save_name, info_path, tag_type, tokenizer):
     run_name = "deletion"
     info_d = json.load(open(info_path, "r", encoding="utf-8"))
     deletion_per_job = 20
     num_jobs = 10
-    tag_type = "mismatch"
     save_path = os.path.join(output_path, "alamri_annotation1", "ranked_list", save_name + ".txt")
-
     max_offset = num_jobs * deletion_per_job
-
+    batch_size = 8
     deletion_offset_list = list(range(0, max_offset, deletion_per_job))
+
+    signal_function = {
+        "conflict": get_cont_prob,
+        "mismatch": get_cont_prob
+    }
     summarized_result: List[TokenExEntry] = \
-        summarize_deletion_score_batch8(dir_path, deletion_per_job,
-                                        deletion_offset_list,
-                                        get_neural_prob,
-                                        )
-    tokenizer = get_biobert_tokenizer()
+        summarize_deletion_score(dir_path,
+                                 deletion_per_job,
+                                 batch_size,
+                                 deletion_offset_list,
+                                 signal_function[tag_type],
+                                 )
     all_ranked_list: List[TrecRankedListEntry] = []
     split_score_to_pair_list = get_split_score_to_pair_list_fn(merge_method=sum)
     seen_data_id = set()
@@ -173,5 +146,26 @@ def main():
     write_trec_ranked_list_entry(all_ranked_list, save_path)
 
 
+def main2():
+    tag_type = "mismatch"
+    # tag_type = "conflict"
+    dir_path = os.path.join(output_path, "bert_alamri1_deletion_8")
+    save_name = "deletion_" + tag_type
+    info_path = os.path.join(output_path, "alamri_annotation1", "tfrecord", "bert_alamri1.info")
+    tokenizer = get_tokenizer()
+    make_ranked_list(dir_path, save_name, info_path, tag_type, tokenizer)
+
+
+def main_for_biobert():
+    # tag_type = "mismatch"
+    tag_type = "conflict"
+    tokenizer = get_biobert_tokenizer()
+
+    dir_path = os.path.join(output_path, "biobert_alamri1_deletion")
+    save_name = "biobert_deletion_" + tag_type
+    info_path = os.path.join(output_path, "alamri_annotation1", "tfrecord", "biobert_alamri1.info")
+    make_ranked_list(dir_path, save_name, info_path, tag_type, tokenizer)
+
+
 if __name__ == "__main__":
-    main()
+    main_for_biobert()

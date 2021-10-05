@@ -1,21 +1,17 @@
 import json
 import os
 import random
-import sys
 from typing import List, Tuple
 
 from cpath import output_path
 from trec.trec_parse import scores_to_ranked_list_entries, write_trec_ranked_list_entry
 
 
-def main():
-    save_name = sys.argv[1]
-    info_path = sys.argv[2]
+def make_ranked_list(info_path, save_name, tag_type):
     run_name = "random"
     info_d = json.load(open(info_path, "r", encoding="utf-8"))
     deletion_per_job = 20
     num_jobs = 10
-    tag_type = "mismatch"
     save_path = os.path.join(output_path, "alamri_annotation1", "ranked_list", save_name + ".txt")
 
     max_offset = num_jobs * deletion_per_job
@@ -35,6 +31,13 @@ def main():
             all_ranked_list.extend(ranked_list)
 
     write_trec_ranked_list_entry(all_ranked_list, save_path)
+
+
+def main():
+    info_path = os.path.join(output_path, "alamri_annotation1", "tfrecord", "bert_alamri1.info")
+    tag_type = "conflict"
+    save_name = "random_" + tag_type
+    make_ranked_list(info_path, save_name, tag_type)
 
 
 if __name__ == "__main__":

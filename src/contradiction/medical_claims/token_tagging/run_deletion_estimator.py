@@ -9,7 +9,6 @@ from tlm.training.train_config import TrainConfigEx
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
 
-
 @report_run
 def main(_):
     input_files = get_input_files_from_flags(FLAGS)
