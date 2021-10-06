@@ -76,7 +76,7 @@ def make_ranked_list(dir_path, save_name, info_path, tag_type, tokenizer):
 
     signal_function = {
         "conflict": get_cont_prob,
-        "mismatch": get_cont_prob
+        "mismatch": get_neutral_prob,
     }
     summarized_result: List[TokenExEntry] = \
         summarize_deletion_score(dir_path,
@@ -146,9 +146,9 @@ def make_ranked_list(dir_path, save_name, info_path, tag_type, tokenizer):
     write_trec_ranked_list_entry(all_ranked_list, save_path)
 
 
-def main2():
-    tag_type = "mismatch"
-    # tag_type = "conflict"
+def main_for_bert():
+    # tag_type = "mismatch"
+    tag_type = "conflict"
     dir_path = os.path.join(output_path, "bert_alamri1_deletion_8")
     save_name = "deletion_" + tag_type
     info_path = os.path.join(output_path, "alamri_annotation1", "tfrecord", "bert_alamri1.info")
@@ -157,8 +157,8 @@ def main2():
 
 
 def main_for_biobert():
-    # tag_type = "mismatch"
-    tag_type = "conflict"
+    tag_type = "mismatch"
+    # tag_type = "conflict"
     tokenizer = get_biobert_tokenizer()
 
     dir_path = os.path.join(output_path, "biobert_alamri1_deletion")
@@ -168,4 +168,4 @@ def main_for_biobert():
 
 
 if __name__ == "__main__":
-    main_for_biobert()
+    main_for_bert()

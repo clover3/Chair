@@ -6,7 +6,7 @@ import scipy.special
 
 from contradiction.medical_claims.alamri.pairwise_gen import claim_text_to_info
 from contradiction.medical_claims.biobert.voca_common import get_biobert_tokenizer
-from contradiction.medical_claims.token_tagging.deletion_score_to_html import make_prediction_summary_str
+from contradiction.medical_claims.token_tagging.visualizer.deletion_score_to_html import make_prediction_summary_str
 from data_generator.bert_input_splitter import get_sep_loc
 from explain.tf2.deletion_scorer import TokenExEntry, summarize_deletion_score_batch8
 from misc_lib import get_second
@@ -22,7 +22,7 @@ def get_contradiction_probability(logit):
     return scipy.special.softmax(logit)[2]
 
 
-def write_deletion_score_to_html(out_file_name, summarized_table: List[TokenExEntry], info: Dict[int, Dict]):
+def write_deletion_score_to_html(out_file_name, summarized_table: List[TokenExEntry], info: Dict[str, Dict]):
     text_to_info = claim_text_to_info()
     html = HtmlVisualizer(out_file_name)
     tokenizer = get_biobert_tokenizer()
@@ -91,6 +91,7 @@ def write_deletion_score_to_html(out_file_name, summarized_table: List[TokenExEn
             assertion2 = claim2_info['assertion']
             original_prediction_summary = make_prediction_summary_str(base_probs)
             html.write_bar()
+            html.write_paragraph("{} {}".format(info_entry["group_no"], info_entry["inner_idx"]))
             html.write_paragraph("Question: {}".format(question))
             html.write_paragraph("Original prediction: " + original_prediction_summary)
             html.write_paragraph("Max drop")

@@ -1,19 +1,15 @@
 import json
+import sys
 
-import scipy.special
-
-from contradiction.medical_claims.token_tagging.deletion_score_to_html import write_deletion_score_to_html
+from contradiction.medical_claims.token_tagging.visualizer.deletion_score_to_html import write_deletion_score_to_html
 from explain.tf2.deletion_scorer import summarize_deletion_score_batch8
-
-
-def get_contradiction_probability(logit):
-    return scipy.special.softmax(logit)[2]
+from scipy_aux import logit_to_score_softmax
 
 
 def main():
-    dir_path = "C:\\work\\Code\\Chair\\output\\biobert_true_pairs_deletion"
-    save_name = "biobert_conflict"
-    info_path = "C:\\work\\Code\\Chair\\output\\alamri_tfrecord\\biobert_true_pairs.info"
+    dir_path = sys.argv[1]
+    save_name = sys.argv[2]
+    info_path = sys.argv[3]
     info = json.load(open(info_path, "r", encoding="utf-8"))
     deletion_per_job = 20
     num_jobs = 5
@@ -21,7 +17,7 @@ def main():
     deletion_offset_list = list(range(0, max_offset, deletion_per_job))
     summarized_result = summarize_deletion_score_batch8(dir_path, deletion_per_job,
                                                         deletion_offset_list,
-                                                        get_contradiction_probability,
+                                                        logit_to_score_softmax,
                                                         )
     out_file_name = "{}.html".format(save_name)
     write_deletion_score_to_html(out_file_name, summarized_result, info)

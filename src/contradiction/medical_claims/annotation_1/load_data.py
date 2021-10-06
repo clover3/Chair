@@ -2,6 +2,7 @@ import os
 from typing import Dict, Tuple, List
 
 from contradiction.medical_claims.annotation_1.annotation_html_gen import load_corpus
+from contradiction.medical_claims.load_corpus import Review, load_parsed
 from cpath import output_path
 
 
@@ -38,3 +39,23 @@ def get_dev_group_no():
 
 def get_test_group_no():
     return list(range(13, num_review))
+
+
+def load_reviews_dev_split():
+    reviews: List[Review] = load_parsed()
+    dev_group_no_list = get_dev_group_no()
+    output = []
+    for group_no, review in enumerate(reviews):
+        if group_no in dev_group_no_list:
+            output.append((group_no, review))
+    return output
+
+
+def load_dev_pairs():
+    dev_group_no_list = get_dev_group_no()
+
+    def is_dev(e):
+        group_no, _ = e
+        return group_no in dev_group_no_list
+
+    return list(filter(is_dev, load_alamri1_all()))
