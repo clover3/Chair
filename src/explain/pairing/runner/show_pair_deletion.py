@@ -1,7 +1,7 @@
 from typing import List
 
 from cache import load_from_pickle
-from contradiction.medical_claims.token_tagging.deletion_score_to_html import make_prediction_summary_str
+from contradiction.medical_claims.token_tagging.visualizer.deletion_score_to_html import make_prediction_summary_str
 from cpath import at_output_dir
 from explain.pairing.pair_deletion_common import summarize_pair_deletion_results, PerGroupSummary, load_p_h_pair_text
 from list_lib import lmap, left, right

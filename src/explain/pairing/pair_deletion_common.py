@@ -82,7 +82,6 @@ def summarize_pair_deletion_results(info_entries, output_d) -> List[PerGroupSumm
     logits_list = output_d['logits']
     target_idx = 1
 
-
     grouped = defaultdict(list)
     for info, logits in zip(info_entries, logits_list):
         info['logits'] = logits

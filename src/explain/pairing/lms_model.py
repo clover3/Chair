@@ -33,7 +33,6 @@ class LMSModel:
             ex_score_tensor = ex_model_.get_ex_scores(lms_config.target_idx)
             per_layer_logit_tensor = match_predictor.per_layer_logits
             self.match_predictor = match_predictor
-
         else:
             main_models, ex_models, match_predictor_list = zip(*get_multiple_models(build_model_fn, num_gpu))
             loss_tensor = get_avg_loss(match_predictor_list)

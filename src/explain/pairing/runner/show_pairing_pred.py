@@ -1,7 +1,7 @@
 import scipy.special
 
 from cache import load_from_pickle
-from contradiction.medical_claims.token_tagging.deletion_score_to_html import make_prediction_summary_str
+from contradiction.medical_claims.token_tagging.visualizer.deletion_score_to_html import make_prediction_summary_str
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap
 from misc_lib import two_digit_float
@@ -9,10 +9,10 @@ from trainer.np_modules import sigmoid
 from visualize.html_visual import HtmlVisualizer, Cell
 
 
-def main():
-    save_name = "alamri_mismatch_all"
-    output_d = load_from_pickle(save_name)
-    html = HtmlVisualizer("alamri_mismatch.html")
+def print_html(score_pickle_name, save_name):
+    output_d = load_from_pickle(score_pickle_name)
+
+    html = HtmlVisualizer(save_name)
     tokenizer = get_tokenizer()
     logits_grouped_by_layer = output_d["per_layer_logits"]
     num_layers = 12
@@ -59,6 +59,12 @@ def main():
 
         rows = [row[:display_len] for row in rows]
         html.write_table(rows)
+
+
+def main():
+    score_pickle_name = "alamri1_mismatch"
+    save_name = "alamri1_mismatch.html"
+    print_html(score_pickle_name, save_name)
 
 
 if __name__ == "__main__":
