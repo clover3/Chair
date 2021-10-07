@@ -44,18 +44,18 @@ class MatchPredictor:
         self.per_layer_logits = list([d.logits for d in per_layer_models])
 
 
-class LMSConfigI(ABC):
-    num_tags = None
+class ProbeConfigI(ABC):
+    num_labels = None
     target_idx = None
     use_embedding_out = None
     per_layer_component = None
 
 
-def build_model(ex_modeling_class, hparam, lms_model_config: LMSConfigI):
+def build_model(ex_modeling_class, hparam, lms_model_config: ProbeConfigI):
     main_model = transformer_pooled(hparam, hparam.vocab_size)
     ex_model = ex_modeling_class(main_model.model.sequence_output,
                                  hparam.seq_max,
-                                 lms_model_config.num_tags,
+                                 lms_model_config.num_labels,
                                  main_model.batch2feed_dict)
 
     match_predictor = MatchPredictor(main_model,
@@ -67,15 +67,15 @@ def build_model(ex_modeling_class, hparam, lms_model_config: LMSConfigI):
     return main_model, ex_model, match_predictor
 
 
-class LMSConfig(LMSConfigI):
-    num_tags = 3
+class LMSConfig(ProbeConfigI):
+    num_labels = 3
     target_idx = 2
     use_embedding_out = False
     per_layer_component = 'linear'
 
 
-class LMSConfig2(LMSConfigI):
-    num_tags = 3
+class LMSConfig2(ProbeConfigI):
+    num_labels = 3
     target_idx = 1
     use_embedding_out = True
     per_layer_component = 'linear'

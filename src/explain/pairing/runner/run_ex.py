@@ -2,8 +2,9 @@ import argparse
 import sys
 
 from data_generator.shared_setting import BertNLI
-from explain.pairing.match_predictor import LMSConfigI
-from explain.pairing.train_pairing import NLIPairingTrainConfig, train_LMS, HPCommon
+from explain.pairing.match_predictor import ProbeConfigI
+from explain.pairing.probe_train_common import NLIPairingTrainConfig, HPCommon
+from explain.pairing.train_pairing import train_LMS
 from explain.setups import init_fn_generic
 from explain.train_nli import get_nli_data
 from tf_util.tf_logging import tf_logging, set_level_debug, reset_root_log_handler
@@ -35,8 +36,8 @@ def main(start_model_path, start_type, save_dir,
     def init_fn(sess):
         return init_fn_generic(sess, start_type, start_model_path)
 
-    class LMSConfig2(LMSConfigI):
-        num_tags = 3
+    class LMSConfig2(ProbeConfigI):
+        num_labels = 3
         target_idx = target_idx_
         use_embedding_out = True
         per_layer_component = 'linear'

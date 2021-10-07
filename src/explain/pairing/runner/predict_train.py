@@ -8,8 +8,8 @@ from data_generator.shared_setting import BertNLI
 from explain.pairing.lms_model import LMSModel
 from explain.pairing.match_predictor import LMSConfig
 from explain.pairing.predict import predict_fn
+from explain.pairing.probe_train_common import NLIPairingTrainConfig
 from explain.pairing.runner.run_train import HPCommon
-from explain.pairing.train_pairing import NLIPairingTrainConfig
 from explain.runner.nli_ex_param import ex_arg_parser
 from explain.setups import init_fn_generic
 from explain.train_nli import get_nli_data

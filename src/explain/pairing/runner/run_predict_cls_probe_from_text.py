@@ -6,12 +6,10 @@ from cache import save_to_pickle
 from cpath import data_path
 from data_generator.light_dataloader import LightDataLoader
 from data_generator.shared_setting import BertNLI
-from explain.pairing.match_predictor import LMSConfig
-from explain.pairing.probe_train_common import NLIPairingTrainConfig
-from explain.pairing.runner.run_predict import do_predict
-from explain.pairing.runner.run_train import HPCommon
+from explain.pairing.probe_train_common import HPCommon, NLIPairingTrainConfig
+from explain.pairing.runner.run_predict_cls_probe import do_predict
+from explain.pairing.runner.run_train_cls_probe import ClsProbeConfig
 from explain.setups import init_fn_generic
-from tf_util.tf_logging import set_level_debug, reset_root_log_handler
 from trainer.np_modules import get_batches_ex
 
 
@@ -26,15 +24,16 @@ def main(start_model_path, modeling_option, input_path, save_name, num_gpu=1):
     num_gpu = int(num_gpu)
     hp = HPCommon()
     nli_setting = BertNLI()
-    set_level_debug()
-    reset_root_log_handler()
     train_config = NLIPairingTrainConfig()
     train_config.num_gpu = num_gpu
 
     def init_fn(sess):
         return init_fn_generic(sess, "as_is", start_model_path)
+    probe_config = ClsProbeConfig()
+    probe_config.per_layer_component = modeling_option
     batches = get_batches(input_path, nli_setting, HPCommon.batch_size)
-    output_d = do_predict(hp, train_config, batches, LMSConfig(), modeling_option, init_fn)
+    output_d = do_predict(hp, train_config, batches,
+                          probe_config, init_fn)
     save_to_pickle(output_d, save_name)
 
 

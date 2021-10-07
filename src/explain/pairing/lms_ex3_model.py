@@ -44,7 +44,7 @@ class LMSModel:
             per_layer_loss_list = [
                 get_avg_tensors_from_models(match_predictor_list,
                                             lambda match_predictor: match_predictor.per_layer_loss_list[i])
-                                            for i in range(lms_config.num_tags)
+                                            for i in range(lms_config.num_labels)
             ]
             batch2feed_dict = get_batch2feed_dict_for_multi_gpu(main_models)
             logits = get_concat_tensors_from_models(main_models, lambda model: model.logits)
@@ -57,7 +57,7 @@ class LMSModel:
                                                              lambda model: model.get_scores())
             per_layer_logit_list = [
                 get_concat_tensors_list_from_models(match_predictor_list, lambda model: model.per_layer_logit_list[i])
-                for i in range(lms_config.num_tags)
+                for i in range(lms_config.num_labels)
             ]
 
             self.match_predictor_list = match_predictor_list

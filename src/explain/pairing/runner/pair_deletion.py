@@ -9,8 +9,8 @@ from explain.pairing.lms_model import LMSModel
 from explain.pairing.match_predictor import LMSConfig
 from explain.pairing.pair_deletion_common import get_payload
 from explain.pairing.predict import predict_fn
+from explain.pairing.probe_train_common import NLIPairingTrainConfig
 from explain.pairing.runner.run_train import HPCommon
-from explain.pairing.train_pairing import NLIPairingTrainConfig
 from explain.setups import init_fn_generic
 from tf_util.tf_logging import set_level_debug, reset_root_log_handler
 from trainer.tf_train_module import init_session
