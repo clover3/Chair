@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 import tensorflow as tf
 
 from models.transformer import bert
@@ -5,7 +7,29 @@ from models.transformer.nli_base import ClassificationB
 from tf_v2_support import placeholder
 
 
-class transformer_pooled:
+class transformer_pooled_I(ABC):
+    @abstractmethod
+    def batch2feed_dict(self, batch):
+        pass
+
+    @abstractmethod
+    def get_all_encoder_layers(self):
+        pass
+
+    @abstractmethod
+    def get_embedding_output(self):
+        pass
+
+    @abstractmethod
+    def get_input_placeholders(self):
+        pass
+
+    @abstractmethod
+    def get_logits(self):
+        pass
+
+
+class transformer_pooled(transformer_pooled_I):
     def __init__(self, hp, voca_size, is_training=True):
         config = bert.BertConfig(vocab_size=voca_size,
                                  hidden_size=hp.hidden_units,
@@ -41,6 +65,18 @@ class transformer_pooled:
         self.loss = task.loss
         self.logits = task.logits
         self.acc = task.acc
+
+    def get_logits(self):
+        return self.logits
+
+    def get_input_placeholders(self):
+        return self.x_list
+
+    def get_all_encoder_layers(self):
+        return self.model.get_all_encoder_layers()
+
+    def get_embedding_output(self):
+        return self.model.get_embedding_output()
 
     def batch2feed_dict(self, batch):
         if len(batch) == 3:

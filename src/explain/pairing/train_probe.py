@@ -120,7 +120,7 @@ def train_probe(bert_hp, train_config, lms_config: ProbeConfigI, save_dir, nli_d
     max_steps = train_config.max_steps
     num_gpu = train_config.num_gpu
 
-    probe_model = ClsProbeModel(bert_hp, lms_config, num_gpu)
+    probe_model = ClsProbeModel(bert_hp, lms_config, num_gpu, True)
     train_cls = probe_model.get_train_op(bert_hp.lr, max_steps)
     global_step = tf.train.get_or_create_global_step()
 

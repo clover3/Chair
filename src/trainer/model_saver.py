@@ -181,5 +181,6 @@ def load_model_with_blacklist(sess, path, exclude_namespace, verbose=True):
     loader.restore(sess, path)
 
 
+
 def get_model_path(run_name, step_name):
     return os.path.join(model_path, 'runs', run_name, step_name)

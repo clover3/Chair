@@ -17,5 +17,9 @@ class LightDataLoader:
         for row in reader:
             s1 = row[0]
             s2 = row[1]
+            if len(row) > 2:
+                label = int(row[2])
+            else:
+                label = 0
             input_ids, input_mask, segment_ids = self.encoder_unit.encode_pair(s1, s2)
-            yield input_ids, input_mask, segment_ids, 0
+            yield input_ids, input_mask, segment_ids, label

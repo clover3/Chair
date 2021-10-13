@@ -269,7 +269,12 @@ class HtmlVisualizer(VisualizerCommon):
         elif color == "Gray":
             bg_color = ("%02x" % r) + ("%02x" % r) + ("%02x" % r)
         else:
-            assert False
+            try:
+                bytes.fromhex(color)
+                bg_color = color
+            except ValueError:
+                print("Color {} is not expected".format(color))
+                raise
         return bg_color
 
     def get_blue_d(self, r):

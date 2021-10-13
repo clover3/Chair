@@ -16,7 +16,7 @@ def do_predict(bert_hp, train_config, dev_batches,
                lms_config, init_fn,
                ):
     num_gpu = train_config.num_gpu
-    model = ClsProbeModel(bert_hp, lms_config, num_gpu)
+    model = ClsProbeModel(bert_hp, lms_config, num_gpu, False)
     sess = init_session()
     sess.run(tf.global_variables_initializer())
     init_fn(sess)

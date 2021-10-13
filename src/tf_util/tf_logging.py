@@ -23,6 +23,10 @@ def set_level_debug():
     tf_logging.setLevel(logging.DEBUG)
 
 
+def set_level_info():
+    tf_logging.setLevel(logging.INFO)
+
+
 def reset_root_log_handler():
     logging.root.handlers = logging.root.handlers[:1]
 

@@ -15,11 +15,22 @@ def print_html(score_pickle_name, save_name):
     tokenizer = get_tokenizer()
     logits_grouped_by_layer = output_d["per_layer_logits"]
     num_layers = 12 + 1
+    def layer_no_to_name(layer_no):
+        if layer_no == 0:
+            return "embed"
+        else:
+            return "layer_{}".format(layer_no-1)
 
     num_data = len(output_d['input_ids'])
     for data_idx in range(num_data)[:100]:
         def get(name):
-            return output_d[name][data_idx]
+            try:
+                return output_d[name][data_idx]
+            except KeyError:
+                if name == "label":
+                    return 0
+                else:
+                    raise
 
         tokens = tokenizer.convert_ids_to_tokens(get("input_ids"))
         first_padding_loc = tokens.index("[PAD]")
@@ -47,7 +58,7 @@ def print_html(score_pickle_name, save_name):
                     assert len(s) == 1
                     return s
 
-            row = [Cell("layer_{}".format(layer_no))]
+            row = [Cell(layer_no_to_name(layer_no))]
             for seq_idx in range(len(probs)):
                 case_probs = probs[seq_idx]
                 prob_digits: List[str] = list(map(prob_to_one_digit, case_probs))
@@ -73,6 +84,9 @@ def print_html(score_pickle_name, save_name):
 
 def main():
     score_pickle_name = "nli_probe_gove_site"
+    # score_pickle_name = "nli_probe_gove_site_middle_in"
+    # score_pickle_name = "nli_probe_replace_layer10_op2"
+    # score_pickle_name = "nli_probe_replace_layer11_op2"
     save_name = score_pickle_name + ".html"
     print_html(score_pickle_name, save_name)
 
