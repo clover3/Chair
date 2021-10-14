@@ -8,10 +8,10 @@ from arg.counter_arg_retrieval.build_dataset.ca_types import CaTopicv2
 from arg.counter_arg_retrieval.build_dataset.run1.load_resource import get_run1_resource
 from arg.counter_arg_retrieval.scorer.relevance_analysis import AnalyzedDocument, analyze_doc_wrt_ca_topic
 from bert_api.doc_score_helper import DocumentScorer, get_cache_doc_tokenizer
-from bert_api.doc_score_helper import TokenizedText
 from bert_api.msmarco_rerank import get_msmarco_client
 from cache import save_to_pickle
 from cpath import output_path
+from data_generator.tokenize_helper import TokenizedText
 
 
 def save_rel(topic, ad_list):

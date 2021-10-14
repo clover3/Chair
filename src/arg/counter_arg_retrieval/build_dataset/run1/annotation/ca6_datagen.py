@@ -46,23 +46,27 @@ def save_to_readable_entries(all_entries, duplicate_doc_ids, topics_ca_id_index)
         target_p_texts: List[str] = right(topic.target_p)
         other_p_texts: List[List[str]] = lmap(right, topic.other_ps)
 
-        p_text_rows.append("Topic {}".format(c_text))
+        p_text_rows.append("")
+        p_text_rows.append("Topic: {}".format(c_text))
+        p_text_rows.append("")
         for idx, p_texts in enumerate([target_p_texts] + other_p_texts):
-            p_text_rows.append(str(idx))
+            p_text_rows.append("Perspective cluster #{}".format(idx))
             for p_text in p_texts:
                 p_text_rows.append(p_text)
-
+            p_text_rows.append("")
         for doc_id in entries:
             if doc_id in duplicate_doc_ids:
                 continue
 
             row = [c_text, doc_id]
             doc_id_to_topic.append(row)
-    p_text_rows = [[r] for r in p_text_rows]
     save_path_doc_topic = os.path.join(output_path, "ca_building", "run1", "todo_ca6_doc_to_topic.txt")
     save_path_p_text = os.path.join(output_path, "ca_building", "run1", "todo_ca6_p_text.txt")
     save_csv_to_path(save_path_doc_topic, doc_id_to_topic)
-    save_csv_to_path(save_path_p_text, p_text_rows)
+
+    f = open(save_path_p_text, "w")
+    for l in p_text_rows:
+        f.write(l + "\n")
 
 
 def save_csv_to_path(save_path, output_rows):

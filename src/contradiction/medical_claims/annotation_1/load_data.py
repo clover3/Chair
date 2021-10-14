@@ -51,7 +51,7 @@ def load_reviews_dev_split():
     return output
 
 
-def load_dev_pairs():
+def load_dev_pairs() -> List[Tuple[int, List[Tuple[str, str]]]]:
     dev_group_no_list = get_dev_group_no()
 
     def is_dev(e):
@@ -59,3 +59,20 @@ def load_dev_pairs():
         return group_no in dev_group_no_list
 
     return list(filter(is_dev, load_alamri1_all()))
+
+
+def load_dev_sents() -> List[Tuple[int, List[str]]]:
+    pairs_grouped: List[Tuple[int, List[Tuple[str, str]]]] = load_dev_pairs()
+    output: List[Tuple[int, List[str]]] = []
+    for group_no, pairs in pairs_grouped:
+        sent_set = set()
+        for sent1, sent2 in pairs:
+            sent_set.add(sent1)
+            sent_set.add(sent2)
+        output.append((group_no, list(sent_set)))
+    return output
+
+
+#
+#
+#

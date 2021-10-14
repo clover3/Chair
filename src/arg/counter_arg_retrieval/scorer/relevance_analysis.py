@@ -1,7 +1,8 @@
 from typing import NamedTuple, List
 
 from arg.counter_arg_retrieval.build_dataset.ca_types import CaTopicv2
-from bert_api.doc_score_helper import DocumentScorerOutput, DocumentScorer, TokenizedText, DocumentScorerOutputSbword
+from bert_api.doc_score_helper import DocumentScorerOutput, DocumentScorer, DocumentScorerOutputSbword
+from data_generator.tokenize_helper import TokenizedText
 from list_lib import lmap
 from trainer.promise import MyFuture
 

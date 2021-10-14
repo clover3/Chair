@@ -2,7 +2,8 @@ from typing import List, Iterable
 
 from arg.counter_arg_retrieval.build_dataset.run1.load_resource import get_run1_resource
 from arg.counter_arg_retrieval.scorer.tids_aawd import get_aawd_tids_svm
-from bert_api.doc_score_helper import get_cache_doc_tokenizer, TokenizedText
+from bert_api.doc_score_helper import get_cache_doc_tokenizer
+from data_generator.tokenize_helper import TokenizedText
 from list_lib import get_max_idx
 from misc_lib import enum_segments
 
