@@ -18,7 +18,8 @@ def print_html(score_pickle_name, save_name):
     num_layers = 12
 
     def float_arr_to_cell(head, float_arr):
-        return [Cell(head)] + lmap(Cell, map(two_digit_float, float_arr))
+        score_str_list = map(two_digit_float, float_arr)
+        return [Cell(head)] + [Cell(score_str, score * 200) for score, score_str in zip(float_arr, score_str_list)]
 
     def float_arr_to_cell2(head, float_arr):
         return [Cell(head)] + lmap(Cell, map("{0:.4f}".format, float_arr))
@@ -39,7 +40,7 @@ def print_html(score_pickle_name, save_name):
         html.write_paragraph("Prediction: {}".format(pred_str))
         html.write_paragraph("gold label={}".format(get("label")))
 
-        text_rows = [Cell("")] + list([Cell(t, int(s*100)) for t, s in zip(tokens, ex_scores)])
+        text_rows = [Cell("")] + list([Cell(t, int(s*200)) for t, s in zip(tokens, ex_scores)])
         text_rows = text_rows
         ex_probs = float_arr_to_cell("ex_prob", ex_scores)
         for i, s in enumerate(ex_scores):
@@ -61,11 +62,18 @@ def print_html(score_pickle_name, save_name):
         html.write_table(rows)
 
 
-def main():
+def main2():
     score_pickle_name = "alamri1_mismatch"
     save_name = "alamri1_mismatch.html"
     print_html(score_pickle_name, save_name)
 
 
+def main():
+    score_pickle_name = "nli_pairing_4"
+    save_name = "nli_pairing_4.html"
+    print_html(score_pickle_name, save_name)
+
+
 if __name__ == "__main__":
     main()
+

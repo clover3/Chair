@@ -1,5 +1,7 @@
 import copy
 import csv
+from collections import Counter
+from typing import List, Iterable, Tuple
 
 from cache import *
 from data_generator.NLI.enlidef import *
@@ -10,7 +12,9 @@ from data_generator.text_encoder import SubwordTextEncoder, CLS_ID, SEP_ID
 from data_generator.tf_gfile_support import tf_gfile
 from data_generator.tokenizer_b import FullTokenizerWarpper, _truncate_seq_pair
 from data_generator.tokenizer_wo_tf import FullTokenizer
-from evaluation import *
+
+
+# from evaluation import *
 
 
 def get_modified_data_loader2(hp, nli_setting):

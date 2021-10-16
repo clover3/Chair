@@ -74,6 +74,13 @@ class LMSConfig(ProbeConfigI):
     per_layer_component = 'linear'
 
 
+class LMSConfigMLP(ProbeConfigI):
+    num_labels = 3
+    target_idx = 1
+    use_embedding_out = False
+    per_layer_component = 'mlp'
+
+
 class LMSConfig2(ProbeConfigI):
     num_labels = 3
     target_idx = 1

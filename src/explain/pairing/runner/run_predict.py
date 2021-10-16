@@ -4,7 +4,7 @@ import tensorflow as tf
 
 from cache import save_to_pickle
 from explain.pairing.lms_model import LMSModel
-from explain.pairing.match_predictor import LMSConfig2
+from explain.pairing.match_predictor import LMSConfig
 from explain.pairing.predict import predict_fn
 from explain.pairing.predict_on_dev_common import prepare_predict_setup
 from explain.runner.nli_ex_param import ex_arg_parser
@@ -33,7 +33,7 @@ def main(start_model_path, modeling_option, save_name, num_gpu=1):
     def init_fn(sess):
         return init_fn_generic(sess, "as_is", start_model_path)
 
-    output_d = do_predict(hp, train_config, dev_batches, LMSConfig2(), modeling_option, init_fn)
+    output_d = do_predict(hp, train_config, dev_batches[:50], LMSConfig(), modeling_option, init_fn)
     save_to_pickle(output_d, save_name)
 
 
