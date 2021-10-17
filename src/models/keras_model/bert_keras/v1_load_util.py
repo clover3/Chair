@@ -1,10 +1,10 @@
 import os
 
 import tensorflow as tf
-from tensorflow_core.python.keras.api._v2 import keras
+# from tensorflow_core.python.keras.api._v2 import keras
+from tensorflow import keras
 
 from cpath import data_path
-from explain.bert_components.test_modular_bert import ModelConfig
 from models.keras_model.bert_keras.modular_bert import BertClassifierLayer, define_bert_keras_inputs
 from tlm.model.base import BertConfig
 
@@ -67,15 +67,16 @@ def load_stock_weights(model, ckpt_path, ignore_unused_prefixes=[]):
     return skipped_weight_value_tuples  # (bert_weight, value_from_ckpt)
 
 
-def load_model(save_path):
+def load_model_from_v1_checkpoint(save_path, model_config):
     bert_config_file = os.path.join(data_path, "bert_config.json")
     bert_config = BertConfig.from_json_file(bert_config_file)
-    model_config = ModelConfig()
     bert_classifier_layer = BertClassifierLayer(bert_config, True, model_config.num_classes, False)
+
     max_seq_len = model_config.max_seq_length
     inputs = define_bert_keras_inputs(max_seq_len)
     cls_logits = bert_classifier_layer.call(inputs)
-    output = cls_logits
     load_stock_weights(bert_classifier_layer, save_path, ["optimizer"])
+
+    output = cls_logits
     model = tf.keras.Model(inputs=inputs, outputs=output)
-    return model, model_config
+    return model, bert_classifier_layer

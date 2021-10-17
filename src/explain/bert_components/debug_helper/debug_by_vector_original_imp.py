@@ -3,7 +3,7 @@ import sys
 import tensorflow as tf
 
 from data_generator.shared_setting import BertNLI
-from explain.bert_components.misc_debug_common import load_data, evaluate_acc_for_batches
+from explain.bert_components.debug_helper.misc_debug_common import load_data, evaluate_acc_for_batches
 from models.transformer import hyperparams
 from models.transformer.transformer_cls import transformer_pooled
 from trainer.model_saver import load_model

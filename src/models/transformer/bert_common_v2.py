@@ -1,7 +1,7 @@
 import collections
+import math
 import re
 
-import math
 import six
 import tensorflow as tf
 
@@ -503,7 +503,10 @@ def get_shape_list(tensor, expected_rank=None, name=None):
         as tf.Tensor scalars.
     """
     if name is None:
-        name = tensor.name
+        try:
+            name = tensor.name
+        except AttributeError:
+            name = None
 
     if expected_rank is not None:
         assert_rank(tensor, expected_rank, name)

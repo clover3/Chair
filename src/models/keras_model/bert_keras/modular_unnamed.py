@@ -1,12 +1,11 @@
 import math
+from typing import NamedTuple
 
 import tensorflow as tf
 
-from models.keras_model.bert_keras.bert_common_eager import reshape_from_matrix, get_shape_list_no_name, \
-    create_attention_mask_from_input_mask
 from models.transformer import bert_common_v2 as bc
-from models.transformer.bert_common_v2 import create_initializer, get_activation, reshape_to_matrix, \
-    dropout, get_shape_list2
+from models.transformer.bert_common_v2 import create_initializer, get_shape_list, get_activation, reshape_to_matrix, \
+    dropout, create_attention_mask_from_input_mask, get_shape_list2, reshape_from_matrix
 
 
 class MyLayer(tf.keras.layers.Layer):
@@ -234,6 +233,18 @@ class IntermediateLayer(MyLayer):
         return self.layer(inputs)
 
 
+class PerLayer(NamedTuple):
+    query: ProjectionLayer
+    key: ProjectionLayer
+    value: ProjectionLayer
+    attn_weight: AttentionWeightLayer
+    context: ContextLayer
+    attn_output: ProjectionLayer
+    attention_layer_norm: tf.keras.layers.LayerNormalization
+    intermediate: IntermediateLayer
+    output: ProjectionLayer
+    output_layer_norm: tf.keras.layers.LayerNormalization
+
 
 def apply_attention_mask(attention_scores, attention_mask):
     # `attention_mask` = [B, 1, F, T]
@@ -284,70 +295,9 @@ class ContribLayerNormalization(tf.keras.layers.Layer):
 
 
 def get_layer_norm(name):
+    # return ContribLayerNormalization(name)
     eps = 1e-12
     return tf.keras.layers.LayerNormalization(epsilon=eps, axis=-1, name=name)
-
-
-
-class OneTransformLayer(tf.keras.layers.Layer):
-    query: ProjectionLayer
-    key: ProjectionLayer
-    value: ProjectionLayer
-    attn_weight: AttentionWeightLayer
-    context: ContextLayer
-    attention_output: ProjectionDropoutLayer
-    attention_layer_norm: tf.keras.layers.LayerNormalization
-    intermediate: IntermediateLayer
-    output_project: ProjectionDropoutLayer
-    output_layer_norm: tf.keras.layers.LayerNormalization
-
-    def __init__(self, config):
-        super(OneTransformLayer, self).__init__()
-        with tf.compat.v1.variable_scope("attention"):
-            with tf.compat.v1.variable_scope("self") as name_scope:
-                def make_projection_layer(name):
-                    full_name = name_scope.name + "/" + name
-                    layer = ProjectionLayer(full_name, config)
-                    return layer
-                self.query = make_projection_layer('query')
-                self.key = make_projection_layer('key')
-                self.value = make_projection_layer('value')
-                self.attn_weight = AttentionWeightLayer(config)
-                self.context = ContextLayer(config)
-
-            with tf.compat.v1.variable_scope("output") as name_scope:
-                full_name = name_scope.name + "/dense"
-                self.attention_output = ProjectionDropoutLayer(full_name, config)
-                full_name = name_scope.name + "/LayerNorm"
-                self.attention_layer_norm = get_layer_norm(name=full_name)
-        with tf.compat.v1.variable_scope("intermediate") as name_scope:
-            full_name = name_scope.name + "/" + "dense"
-            self.intermediate = IntermediateLayer(full_name, config)
-        with tf.compat.v1.variable_scope("output") as name_scope:
-            full_name = name_scope.name + "/dense"
-            self.output_project = ProjectionDropoutLayer(full_name, config)
-            full_name = name_scope.name + "/LayerNorm"
-            layer_norm = get_layer_norm(name=full_name)
-            self.output_layer_norm = layer_norm
-
-    def call(self, inputs, **kwargs):
-        layer_input, (batch_size, seq_length, attention_mask) = inputs
-        query = self.query.call(layer_input)
-        key = self.key.call(layer_input)
-        value = self.value.call(layer_input)
-
-        inputs = query, key, batch_size, seq_length, seq_length
-        attention_scores = self.attn_weight.call(inputs)
-        attention_scores = apply_attention_mask(attention_scores, attention_mask)
-        attention_probs = tf.nn.softmax(attention_scores)
-        context_v = self.context.call((value, attention_probs))
-        attention_output = self.attention_output.call(context_v)
-        attention_output = self.attention_layer_norm(attention_output + layer_input)
-
-        intermediate_output = self.intermediate.call(attention_output)
-        layer_output = self.output_project.call(intermediate_output)
-        layer_output = self.output_layer_norm(layer_output + attention_output)
-        return layer_output
 
 
 class BertLayer(MyLayer):
@@ -363,14 +313,57 @@ class BertLayer(MyLayer):
             self.embedding_layer_norm = get_layer_norm(full_name)
             self.dummy_project = ProjectionLayer("dummy_projection", config)
 
+        attn_comp_names = ["query", "key", "value"]
 
         self.layers = []
+        self.layer_d_list = []
         with tf.compat.v1.variable_scope("encoder"):
             for layer_idx in range(config.num_hidden_layers):
+                layer_d = {}
                 with tf.compat.v1.variable_scope("layer_%d" % layer_idx):
-                    self.layers.append(OneTransformLayer(config))
+                    with tf.compat.v1.variable_scope("attention"):
+                        with tf.compat.v1.variable_scope("self") as name_scope:
+                            for name in attn_comp_names:
+                                full_name = name_scope.name + "/" + name
+                                layer = ProjectionLayer(full_name, config)
+                                layer_d[layer_idx, name] = layer
+                            layer_d[layer_idx, "attn_weight"] = AttentionWeightLayer(config)
+                            layer_d[layer_idx, "context"] = ContextLayer(config)
+
+                        with tf.compat.v1.variable_scope("output") as name_scope:
+                            full_name = name_scope.name + "/dense"
+                            layer_d[layer_idx, "attention_output"] = ProjectionDropoutLayer(full_name, config)
+                            full_name = name_scope.name + "/LayerNorm"
+                            layer_d[layer_idx, "attention_layer_norm"] \
+                                = get_layer_norm(name=full_name)
+                    with tf.compat.v1.variable_scope("intermediate") as name_scope:
+                        full_name = name_scope.name + "/" + "dense"
+                        layer_d[layer_idx, "intermediate"] = IntermediateLayer(full_name, config)
+                    with tf.compat.v1.variable_scope("output") as name_scope:
+                        full_name = name_scope.name + "/dense"
+                        layer = ProjectionDropoutLayer(full_name, config)
+                        layer_d[layer_idx, "output"] = layer
+                        full_name = name_scope.name + "/LayerNorm"
+                        layer_norm = get_layer_norm(name=full_name)
+                        layer_d[layer_idx, "output_layer_norm"] = layer_norm
+
+                layer_comps = PerLayer(layer_d[layer_idx, "query"],
+                                       layer_d[layer_idx, "key"],
+                                       layer_d[layer_idx, "value"],
+                                       layer_d[layer_idx, "attn_weight"],
+                                       layer_d[layer_idx, "context"],
+                                       layer_d[layer_idx, "attention_output"],
+                                       layer_d[layer_idx, "attention_layer_norm"],
+                                       layer_d[layer_idx, "intermediate"],
+                                       layer_d[layer_idx, "output"],
+                                       layer_d[layer_idx, "output_layer_norm"],
+                                       )
+                self.layers.append(layer_comps)
+                self.layer_d_list.append(layer_d)
 
     def build(self, input_shape):
+        self.layers[0].key.build(input_shape)
+
         super(BertLayer, self).build(input_shape)
 
     def call(self, inputs, **kwargs):
@@ -382,7 +375,7 @@ class BertLayer(MyLayer):
             self.embedding_output = embedding_output
 
         with tf.compat.v1.variable_scope("encoder"):
-            input_shape = get_shape_list_no_name(embedding_output)
+            input_shape = get_shape_list(embedding_output, expected_rank=3)
             batch_size = input_shape[0]
             seq_length = input_shape[1]
             prev_output = reshape_to_matrix(embedding_output)
@@ -393,10 +386,24 @@ class BertLayer(MyLayer):
             for layer_idx in range(self.config.num_hidden_layers):
                 layer = self.layers[layer_idx]
                 layer_input = prev_output
-                # layer_output = self.call_layer(layer, layer_input, batch_size, seq_length, attention_mask)
-                layer_output = layer((layer_input, (batch_size, seq_length, attention_mask)))
+                query = layer.query.call(layer_input)
+                key = layer.key.call(layer_input)
+                value = layer.value.call(layer_input)
+
+                inputs = query, key, batch_size, seq_length, seq_length
+                attention_scores = layer.attn_weight.call(inputs)
+                attention_scores = apply_attention_mask(attention_scores, attention_mask)
+                attention_probs = tf.nn.softmax(attention_scores)
+                context_v = layer.context.call((value, attention_probs))
+                attention_output = layer.attn_output.call(context_v)
+                attention_output = layer.attention_layer_norm(attention_output + layer_input)
+
+                intermediate_output = layer.intermediate.call(attention_output)
+                layer_output = layer.output.call(intermediate_output)
+                layer_output = layer.output_layer_norm(layer_output + attention_output)
                 prev_output = layer_output
                 all_layer_outputs.append(layer_output)
+
         return self.summarize_output(all_layer_outputs, input_shape)
 
     def summarize_output(self, all_layer_outputs, input_shape):
@@ -449,6 +456,21 @@ class BertClassifierLayer(MyLayer):
                                                     name=name_scope.name + "/dense"
                                                     )
 
+        # self.output_weights = tf.compat.v1.get_variable(
+        #     "output_weights", [num_classes, config.hidden_size],
+        #     initializer=tf.compat.v1.truncated_normal_initializer(stddev=0.02)
+        # )
+        shape = [self.num_classes, self.hidden_size]
+        initializer = tf.compat.v1.truncated_normal_initializer(stddev=0.02)
+        # self.output_weights = self.add_weight(name="output_weights", shape=shape,
+        #                                       initializer=initializer,
+        #                                       trainable=True
+        #                                       )
+        #
+        # self.output_bias = tf.compat.v1.get_variable(
+        #     "output_bias", [num_classes],
+        #     initializer=tf.compat.v1.zeros_initializer()
+        # )
         self.named_linear = NamedLinear(num_classes, config.hidden_size)
         self.is_training = is_training
 
@@ -464,6 +486,8 @@ class BertClassifierLayer(MyLayer):
             pooled = dropout(pooled, 0.1)
 
         logits = self.named_linear.call(pooled)
+        # logits = tf.matmul(text_rep, self.output_weights, transpose_b=True)
+        # logits = tf.nn.bias_add(logits, self.output_bias)
         return logits
 
 
@@ -473,4 +497,3 @@ def define_bert_keras_inputs(max_seq_len):
     l_token_type_ids = tf.keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="segment_ids")
     inputs = (l_input_ids, l_input_mask, l_token_type_ids)
     return inputs
-

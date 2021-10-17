@@ -5,14 +5,10 @@ import tensorflow as tf
 
 from cpath import output_path
 from data_generator.NLI import nli
-from explain.bert_components.misc_debug_common import evaluate_acc_for_batches
-from models.keras_model.bert_keras.v1_load_util import load_model
+from explain.bert_components.debug_helper.misc_debug_common import evaluate_acc_for_batches
+from explain.bert_components.nli300 import ModelConfig
+from models.keras_model.bert_keras.v1_load_util import load_model_from_v1_checkpoint
 from trainer.np_modules import get_batches_ex
-
-
-class ModelConfig:
-    max_seq_length = 300
-    num_classes = 3
 
 
 def load_data(seq_max, batch_size):
@@ -24,8 +20,8 @@ def load_data(seq_max, batch_size):
 
 def eval_accuracy():
     save_path = sys.argv[1]
-    model, model_config = load_model(save_path)
-
+    model_config = ModelConfig()
+    model, bert_classifier_layer = load_model_from_v1_checkpoint(save_path, model_config)
     dev_batches = load_data(model_config.max_seq_length, 80)
 
     ce = tf.keras.losses.SparseCategoricalCrossentropy(
@@ -43,14 +39,6 @@ def eval_accuracy():
     print("acc", acc)
 
 
-def save_to_v2_model():
-    save_path = sys.argv[1]
-    model, model_config = load_model(save_path)
-
-    save_path = os.path.join(output_path, "model", "runs", "standard_nli_v2_modular")
-    model.save(save_path)
-
-
 def load_v2_model():
     save_path = os.path.join(output_path, "model", "runs", "standard_nli_v2_modular")
     model = tf.keras.models.load_model(save_path)
@@ -58,5 +46,6 @@ def load_v2_model():
 
 
 
+
 if __name__ == "__main__":
-    load_v2_model()
+    eval_accuracy()
