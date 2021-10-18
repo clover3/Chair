@@ -4,14 +4,16 @@ import h5py
 import numpy as np
 import tensorflow as tf
 
-from cpath import output_path, data_path
+from cpath import output_path
 from data_generator.NLI import nli
+from data_generator.NLI.nli import get_modified_data_loader
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from models.keras_model.bert_keras.bert_common_eager import get_shape_list_no_name, \
     create_attention_mask_from_input_mask, reshape_from_matrix
-from models.keras_model.bert_keras.modular_bert import BertClassifierLayer, define_bert_keras_inputs
-from models.keras_model.bert_keras.v1_load_util import load_model_from_v1_checkpoint
+from models.keras_model.bert_keras.modular_bert import BertClsProbe
+from models.keras_model.bert_keras.v1_load_util import load_model_from_v1_checkpoint, \
+    load_model_cls_probe_from_v1_checkpoint
 from models.transformer.bert import reshape_to_matrix
-from tlm.model.base import BertConfig
 from trainer.np_modules import get_batches_ex
 
 
@@ -19,20 +21,6 @@ class ModelConfig:
     max_seq_length = 300
     num_classes = 3
 
-
-def load_model_from_weights(model_config):
-    bert_config_file = os.path.join(data_path, "bert_config.json")
-    bert_config = BertConfig.from_json_file(bert_config_file)
-    bert_classifier_layer = BertClassifierLayer(bert_config, True, model_config.num_classes, False)
-    max_seq_len = model_config.max_seq_length
-    inputs = define_bert_keras_inputs(max_seq_len)
-    cls_logits = bert_classifier_layer.call(inputs)
-    output = cls_logits
-    model = tf.keras.Model(inputs=inputs, outputs=output)
-    save_path = os.path.join(output_path, "model", "runs", "standard_nli_v2_weights")
-    model.load_weights(save_path, by_name=True)
-
-    return bert_classifier_layer, model
 
 
 def check_accuracy(model_config, model):
@@ -59,7 +47,7 @@ def load_common_300_model():
     save_path = os.path.join(output_path, "model", "runs", "standard_nli", "model-73630")
     model, bert_classifier_layer = load_model_from_v1_checkpoint(save_path, model_config)
     vocab_filename = "bert_voca.txt"
-    data_loader = nli.DataLoader(model_config.max_seq_length, vocab_filename, True)
+    data_loader = get_modified_data_loader(get_tokenizer(), model_config.max_seq_length, vocab_filename)
     dev_insts = data_loader.get_dev_data()
     return bert_classifier_layer, dev_insts
 
@@ -67,15 +55,17 @@ def load_common_300_model():
 def load_cls_probe():
     model_config = ModelConfig()
     save_path = os.path.join(output_path, "model", "runs", "nli_probe_cls3", "model-100000")
-    model, bert_classifier_layer = load_model_from_v1_checkpoint(save_path, model_config)
+    model, bert_cls_probe = load_model_cls_probe_from_v1_checkpoint(save_path, model_config)
     vocab_filename = "bert_voca.txt"
-    data_loader = nli.DataLoader(model_config.max_seq_length, vocab_filename, True)
+
+    data_loader = get_modified_data_loader(get_tokenizer(), model_config.max_seq_length, vocab_filename)
     dev_insts = data_loader.get_dev_data()
-    return bert_classifier_layer, dev_insts
+    return bert_cls_probe, dev_insts
 
 
-def partial_execution(bert_cls: BertClassifierLayer,
+def partial_execution(bert_cls: BertClsProbe,
                       X, Y):
+    tokenizer = get_tokenizer()
     input_ids, input_mask, segment_ids = X
     raw_embedding = bert_cls.bert_layer.embedding_layer((input_ids, segment_ids))
     attention_mask = create_attention_mask_from_input_mask(
@@ -97,6 +87,7 @@ def partial_execution(bert_cls: BertClassifierLayer,
     pooled = bert_cls.pooler(first_token_tensor)
     logits = bert_cls.named_linear(pooled)
     acc = logits_to_accuracy(logits, Y)
+
     print("accuracy", acc)
 
 
@@ -107,11 +98,11 @@ def logits_to_accuracy(logits, y):
 
 
 def main():
-    bert_classifier_layer, dev_insts = load_cls_probe()
+    bert_cls_probe, dev_insts = load_cls_probe()
     batches = get_batches_ex(dev_insts, 32, 4)
     x0, x1, x2, y = batches[0]
     X = (x0, x1, x2)
-    logits = bert_classifier_layer(X)
+    logits, probes = bert_cls_probe(X)
     acc = logits_to_accuracy(logits, y)
     print("logits from eager", logits)
     print("accuracy", acc)

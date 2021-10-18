@@ -284,9 +284,18 @@ class ContribLayerNormalization(tf.keras.layers.Layer):
 
 
 def get_layer_norm(name):
+    return ContribLayerNormalization(name)
     eps = 1e-12
     return tf.keras.layers.LayerNormalization(epsilon=eps, axis=-1, name=name)
 
+
+
+def define_bert_keras_inputs(max_seq_len):
+    l_input_ids = tf.keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="input_ids")
+    l_input_mask = tf.keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="input_mask")
+    l_token_type_ids = tf.keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="segment_ids")
+    inputs = (l_input_ids, l_input_mask, l_token_type_ids)
+    return inputs
 
 
 class OneTransformLayer(tf.keras.layers.Layer):
@@ -393,7 +402,6 @@ class BertLayer(MyLayer):
             for layer_idx in range(self.config.num_hidden_layers):
                 layer = self.layers[layer_idx]
                 layer_input = prev_output
-                # layer_output = self.call_layer(layer, layer_input, batch_size, seq_length, attention_mask)
                 layer_output = layer((layer_input, (batch_size, seq_length, attention_mask)))
                 prev_output = layer_output
                 all_layer_outputs.append(layer_output)
@@ -467,10 +475,74 @@ class BertClassifierLayer(MyLayer):
         return logits
 
 
-def define_bert_keras_inputs(max_seq_len):
-    l_input_ids = tf.keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="input_ids")
-    l_input_mask = tf.keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="input_mask")
-    l_token_type_ids = tf.keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="segment_ids")
-    inputs = (l_input_ids, l_input_mask, l_token_type_ids)
-    return inputs
+class ProbeLayer(tf.keras.layers.Layer):
+    def __init__(self, num_labels, per_layer_component):
+        super(ProbeLayer, self).__init__()
+        self.per_layer_component = per_layer_component
+        if self.per_layer_component == 'linear':
+            self.d2 = tf.keras.layers.Dense(num_labels)
+        elif self.per_layer_component == 'mlp':
+            self.d1 = tf.keras.layers.Dense(768, activation='relu')
+            self.d2 = tf.keras.layers.Dense(num_labels)
+        else:
+            assert False
 
+    def call(self, inputs, **kwargs):
+        if self.per_layer_component == 'linear':
+            return self.d2(inputs)
+        elif self.per_layer_component == 'mlp':
+            v = self.d1(inputs)
+            return self.d2(v)
+
+
+class BertClsProbe(MyLayer):
+    def __init__(self, config, use_one_hot_embeddings, num_classes, is_training=False):
+        super(BertClsProbe, self).__init__()
+        if not is_training:
+            config.hidden_dropout_prob = 0.0
+            config.attention_probs_dropout_prob = 0.0
+        self.hidden_size = config.hidden_size
+        self.num_classes = num_classes
+        with tf.compat.v1.variable_scope("bert"):
+            self.bert_layer = BertLayer(config, use_one_hot_embeddings, True)
+            with tf.compat.v1.variable_scope("pooler") as name_scope:
+                self.pooler = tf.keras.layers.Dense(config.hidden_size,
+                                                    activation=tf.keras.activations.tanh,
+                                                    kernel_initializer=create_initializer(config.initializer_range),
+                                                    name=name_scope.name + "/dense"
+                                                    )
+
+        self.named_linear = NamedLinear(num_classes, config.hidden_size)
+        self.is_training = is_training
+        num_probe = config.num_hidden_layers + 1
+        self.num_probe = num_probe
+        with tf.compat.v1.variable_scope("match_predictor"):
+            self.probe_layers = [ProbeLayer(num_classes, "mlp") for _ in range(num_probe)]
+
+    def call(self, inputs, **kwargs):
+        with tf.compat.v1.variable_scope("bert"):
+            sequence_output = self.bert_layer.call(inputs)
+            self.sequence_output = sequence_output
+            last_layer = sequence_output[-1]
+            first_token_tensor = tf.squeeze(last_layer[:, 0:1, :], axis=1)
+            pooled = self.pooler(first_token_tensor)
+        self.pooled_output = pooled
+        if self.is_training:
+            pooled = dropout(pooled, 0.1)
+
+        logits = self.named_linear.call(pooled)
+
+        hidden_v_list = [self.bert_layer.embedding_output] + sequence_output
+        probe_logit_list = []
+        for j in range(self.num_probe):
+            probe_logit = self.probe_layers[j](hidden_v_list[j])
+            probe_logit_list.append(probe_logit)
+        return logits, probe_logit_list
+
+
+def reshape_layers_to_3d(all_layer_outputs, input_shape):
+    final_outputs = []
+    for layer_output in all_layer_outputs:
+        final_output = reshape_from_matrix(layer_output, input_shape)
+        final_outputs.append(final_output)
+    return final_outputs

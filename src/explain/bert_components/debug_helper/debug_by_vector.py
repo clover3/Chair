@@ -6,7 +6,7 @@ import tensorflow as tf
 from cpath import data_path
 from data_generator.NLI import nli
 from models.keras_model.bert_keras.modular_bert import BertClassifierLayer, define_bert_keras_inputs
-from models.keras_model.bert_keras.v1_load_util import load_stock_weights
+from models.keras_model.bert_keras.v1_load_util import load_stock_weights, name_mapping_drop_colon
 from tlm.model.base import BertConfig
 from trainer.np_modules import get_batches_ex
 
@@ -33,7 +33,7 @@ def main():
     cls_logits = bert_classifier_layer.call(inputs)
     save_path = sys.argv[1]
 
-    load_stock_weights(bert_classifier_layer, save_path, ["optimizer"])
+    load_stock_weights(bert_classifier_layer, save_path, name_mapping_drop_colon, ["optimizer"])
     # last_layer_out = bert_classifier_layer.sequence_output[-1]
     # first_token_tensor = tf.squeeze(last_layer_out[:, 0:1, :], axis=1)
 

@@ -19,7 +19,7 @@ def show_vector():
     save_path = sys.argv[1]
     sess.run(tf.global_variables_initializer())
     load_model(sess, save_path)
-    dev_batches = load_data(300, 2)
+    dev_batches = load_data(300, 16)
     x0, x1, x2, y = dev_batches[0]
     out_value, = sess.run([task.logits],
              feed_dict={
@@ -27,7 +27,7 @@ def show_vector():
                  task.x_list[1]: x1,
                  task.x_list[2]: x2,
              })
-    print(list(out_value[0]))
+    print(list(out_value))
 
 
 def show_acc():
@@ -38,7 +38,7 @@ def show_acc():
     save_path = sys.argv[1]
     sess.run(tf.global_variables_initializer())
     load_model(sess, save_path)
-    dev_batches = load_data(300, 8)
+    dev_batches = load_data(300, 32)
 
     def batch_predict(batch):
         x0, x1, x2, y = batch
@@ -50,11 +50,9 @@ def show_acc():
                            })
         return logits, y
 
-    acc = evaluate_acc_for_batches(batch_predict, dev_batches)
-
+    acc = evaluate_acc_for_batches(batch_predict, dev_batches[:1])
     print("acc", acc)
 
 
-
 if __name__ == "__main__":
-    show_acc()
+    show_vector()

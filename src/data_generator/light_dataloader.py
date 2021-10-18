@@ -23,3 +23,13 @@ class LightDataLoader:
                 label = 0
             input_ids, input_mask, segment_ids = self.encoder_unit.encode_pair(s1, s2)
             yield input_ids, input_mask, segment_ids, label
+    def from_pairs(self, text_pair_lsit):
+        for row in text_pair_lsit:
+            s1 = row[0]
+            s2 = row[1]
+            if len(row) > 2:
+                label = int(row[2])
+            else:
+                label = 0
+            input_ids, input_mask, segment_ids = self.encoder_unit.encode_pair(s1, s2)
+            yield input_ids, input_mask, segment_ids, label
