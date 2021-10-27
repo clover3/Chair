@@ -1,5 +1,6 @@
 import os
 import re
+from typing import Tuple
 
 import tensorflow as tf
 # from tensorflow_core.python.keras.api._v2 import keras
@@ -78,7 +79,7 @@ def name_mapping_cls_probe(name):
     return name
 
 
-def load_model_from_v1_checkpoint(save_path, model_config):
+def load_model_from_v1_checkpoint(save_path, model_config) -> Tuple[tf.keras.Model, BertClassifierLayer]:
     bert_config_file = os.path.join(data_path, "bert_config.json")
     bert_config = BertConfig.from_json_file(bert_config_file)
     bert_classifier_layer = BertClassifierLayer(bert_config, True, model_config.num_classes, False)

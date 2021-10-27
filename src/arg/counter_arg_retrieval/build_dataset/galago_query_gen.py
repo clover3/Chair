@@ -3,6 +3,7 @@ from typing import List, Dict
 
 from arg.counter_arg_retrieval.build_dataset.resources import load_step1_claims
 from arg.perspectives.load import load_perspectrum_golds, PerspectiveCluster
+from clueweb.sydney_path import index_list
 from cpath import at_output_dir
 
 
@@ -46,22 +47,6 @@ def main():
 
     st = 0
     step = 100
-    index_list = ["/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk1_00.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk1_01.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk1_02.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk1_03.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk1_04.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk2_05.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk2_06.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk2_07.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk2_08.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk2_09.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk3.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk4_15.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk4_16.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk4_17.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk4_18.idx",
-                  "/mnt/lustre/godzilla/harding/ClueWeb12/idx/ClueWeb12-Disk4_19.idx"]
 
     while st < len(new_queries):
         target_queries = new_queries[st:st+step]

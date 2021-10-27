@@ -1,4 +1,5 @@
 import os
+import re
 import urllib.parse
 from typing import List, Dict
 
@@ -23,12 +24,12 @@ def write_htmls(rlg1,
                 rel_hint,
                 html_doc_root):
     def get_html_path(doc_id):
-        url = os.path.join(html_doc_root, "{}.html".format(doc_id))
+        url = html_doc_root + "{}.html".format(doc_id)
         return url
 
     for q_id in rlg1:
         print(q_id)
-        html_save_path = os.path.join(root_dir, "{}.html".format(q_id))
+        doc_list_html_path = os.path.join(root_dir,  "{}.html".format(q_id))
         if title_d is None:
             title_d = {}
 
@@ -42,8 +43,22 @@ def write_htmls(rlg1,
             url = get_html_path(e.doc_id)
             key = q_id, e.doc_id
             if rel_hint is not None and key in rel_hint:
-                hint_text = rel_hint[key][3:30]
-                print(hint_text)
+                st = 3
+                slide_len = 30
+                repeat = True
+                while repeat and st < len(rel_hint[key]):
+                    hint_text = rel_hint[key][st:st + slide_len]
+                    exclude_chars = ["\"", "’", "'"]
+                    repeat = False
+                    for c in exclude_chars:
+                        if c in hint_text:
+                            repeat = True
+
+                    if not repeat:
+                        hint_text = re.sub(r" ([/:\.\,\)])", r"\1", hint_text)
+                        hint_text = re.sub(r"([\$\(]) ", r"\1", hint_text)
+                        print(hint_text)
+                    st += slide_len
                 url_post_fix = "#:~:text=" + urllib.parse.quote(hint_text)
             else:
                 url_post_fix = ""
@@ -62,7 +77,7 @@ def write_htmls(rlg1,
                 row.append(rel_hint[key])
             return row
 
-        html = HtmlVisualizer(html_save_path,
+        html = HtmlVisualizer(doc_list_html_path,
                               script_include=[get_bootstrap_include_source()])
 
         lines = qid_to_headlines(q_id)
@@ -85,7 +100,6 @@ def write_htmls(rlg1,
         html.write_table_with_class(rows, "table", head)
         # if title_d:
         #     dump_to_json(title_d, title_cache)
-
 
 
 def main():

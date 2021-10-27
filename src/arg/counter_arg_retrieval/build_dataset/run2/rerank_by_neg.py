@@ -5,7 +5,7 @@ from typing import List, Dict, Tuple
 from arg.counter_arg_retrieval.build_dataset.ca_types import CaTopic
 from arg.counter_arg_retrieval.build_dataset.resources import ca_building_q_res_path, \
     load_step2_claims_as_ca_topic, load_run1_doc_indexed
-from arg.counter_arg_retrieval.build_dataset.run2.load_data import load_run2_topics, CAQuery
+from arg.counter_arg_retrieval.build_dataset.run2.load_data import load_my_run2_topics, CAQuery
 from arg.counter_arg_retrieval.build_dataset.run2.write_q_res_html import load_cached_title
 from bert_api.msmarco_rerank import rerank_with_msmarco
 from cache import save_to_pickle
@@ -53,7 +53,7 @@ def filter_rlg_by_title(rlg):
 
 
 def rerank_and_save(save_name, topic_to_query):
-    run2_topics = load_run2_topics()
+    run2_topics = load_my_run2_topics()
     topics: List[CaTopic] = load_step2_claims_as_ca_topic()
     QID = str
     Claim = str
@@ -94,5 +94,14 @@ def ca_only():
     rerank_and_save(save_name, topic_to_query)
 
 
+def pers_query():
+    def topic_to_query(topic: CAQuery):
+        query = topic.perspective
+        return topic.qid, query
+    save_name = "rerank_pers.txt"
+
+    rerank_and_save(save_name, topic_to_query)
+
+
 if __name__ == "__main__":
-    ca_only()
+    pers_query()

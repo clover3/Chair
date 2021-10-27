@@ -12,7 +12,7 @@ class CAQuery(NamedTuple):
     ca_query: str
 
 
-def load_run2_topics():
+def load_my_run2_topics():
     csv_path = os.path.join(output_path, "ca_building", "run2", "written_ca_query.csv")
     reader = csv.reader(open(csv_path, "r"))
 
@@ -27,7 +27,7 @@ def load_run2_topics():
 
 
 def main():
-    load_run2_topics()
+    load_my_run2_topics()
 
 
 if __name__ == "__main__":

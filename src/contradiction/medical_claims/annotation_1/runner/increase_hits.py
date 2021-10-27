@@ -41,7 +41,7 @@ def view_hits():
             res = mturk.list_hits(MaxResults=100)
         print("{} hits ".format(len(res["HITs"])))
         for hit in res["HITs"]:
-            if hit['HITTypeId'] == "34A9VSEXPFWA264TLZ2K15PC9BQ9JP":
+            if hit['HITTypeId'] == "3MOP54T9IQ4I11BF73KUIH37JB40YX":
                 hits_with_type.append(hit)
                 # print(hit['HITId'], hit[creation_time_key])
         if 'NextToken' in res:
@@ -51,15 +51,15 @@ def view_hits():
     print("{} hits ".format(len(hits_with_type)))
 
     counter_hit = Counter()
-    counter = Counter()
+    n_avail = 0
     for hit in hits_with_type:
-        print(hit['HITId'], hit['MaxAssignments'], hit['NumberOfAssignmentsAvailable'],
-              hit['NumberOfAssignmentsCompleted'],
-              hit['NumberOfAssignmentsPending'])
+        n_avail += hit['NumberOfAssignmentsAvailable']
+        if hit['NumberOfAssignmentsAvailable']:
+            print(hit['HITId'], hit['MaxAssignments'], hit['NumberOfAssignmentsAvailable'],
+                  hit['NumberOfAssignmentsCompleted'],
+                  hit['NumberOfAssignmentsPending'])
 
-
-    for key, cnt in counter.items():
-        print(key, cnt)
+    print("Total of {} assignments available".format(n_avail))
     print(counter_hit)
 
 
@@ -95,6 +95,23 @@ def add_hits(hit_id_list):
             break
 
 
+def change_hit_type():
+    hit_id_list = [
+        "3R6RZGK0XG8E4B3CG832IU17YZGYVM",
+        "3ZUE82NE0BXAT8Q43P041VAJHQQ8FV",
+        "3IH9TRB0FCVCSZ895CXAPI03JCC1IV",
+        "3OQQD2WO8J2822MOSGBTDBF0G643IM",
+        "3D5G8J4N5B0INP4I62G3AD9SI7CTVP",
+        "3RWB1RTQDKJMKLFYHSW9DPONI6R8PV",
+        "3X2YVV51PV0UTUSEUT1PQ99BXXNW1T",
+    ]
+    mturk = get_client()
+    new_hit_type_id = "3BHRGUFAIAS5Z7UMKDLPVWH7BFFCSY"
+    for hit_id in hit_id_list:
+        ret = mturk.update_hit_type_of_hit(HITId=hit_id, HITTypeId =new_hit_type_id)
+        print(ret)
+
+
 def get_client():
     active_url = 'https://mturk-requester.us-east-1.amazonaws.com'
     mturk = boto3.client('mturk',
@@ -104,4 +121,4 @@ def get_client():
 
 
 if __name__ == "__main__":
-    main()
+    change_hit_type()

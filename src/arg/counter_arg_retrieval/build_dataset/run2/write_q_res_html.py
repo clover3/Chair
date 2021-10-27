@@ -4,7 +4,7 @@ from typing import List, Dict
 from arg.counter_arg_retrieval.build_dataset.ca_types import CaTopic
 from arg.counter_arg_retrieval.build_dataset.resources import load_step2_claims_as_ca_topic
 from arg.counter_arg_retrieval.build_dataset.run1.write_q_res_html import write_htmls
-from arg.counter_arg_retrieval.build_dataset.run2.load_data import load_run2_topics, CAQuery
+from arg.counter_arg_retrieval.build_dataset.run2.load_data import load_my_run2_topics, CAQuery
 from cache import load_json_cache, load_from_pickle
 from cpath import output_path
 from misc_lib import exist_or_mkdir
@@ -12,8 +12,17 @@ from trec.trec_parse import load_ranked_list_grouped
 from trec.types import TrecRankedListEntry
 
 
+def gosford_url():
+    return "http://gosford.cs.umass.edu"
+
+
+def apache_dir_root():
+    return os.path.join("c:\\Bitnami", "redmine-4.0.4-1",
+                        "apache2", "htdocs")
+
+
 def main():
-    run2_topics: List[CAQuery] = load_run2_topics()
+    run2_topics: List[CAQuery] = load_my_run2_topics()
     topics: List[CaTopic] = load_step2_claims_as_ca_topic()
     query_gen_method = "ca"
     qid_to_topic = {t.qid: t for t in run2_topics}
@@ -25,12 +34,11 @@ def main():
                             save_name)
     rel_hint = load_from_pickle(save_name + '.rel_hint')
     # rel_hint = load_from_pickle('rel_hint')
-    html_doc_root = os.path.join(output_path, "ca_building", "run1", "html")
+    html_doc_root = "../../clueweb/"
     rlg: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranking1)
-    out_root = os.path.join(output_path,
-                            "ca_building",
-                            "run2",
-                            "doc_list_html_{}".format(query_gen_method))
+    out_root = os.path.join(apache_dir_root(),
+                            "doc_list", query_gen_method)
+    print(out_root)
     exist_or_mkdir(out_root)
     title_d_all = load_cached_title(topics)
 
