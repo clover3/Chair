@@ -1,11 +1,10 @@
-from taskman_client.wrapper import report_run
 from my_tf import tf
 from taskman_client.wrapper import report_run
 from tf_util.tf_logging import MuteEnqueueFilter
 from tf_util.tf_logging import tf_logging
 from tlm.model.mes_hinge import MES_hinge
 from tlm.model_cnfig import JsonConfig
-from tlm.training.classification_model_fn import get_init_fn
+from tlm.training.assignment_map import get_init_fn
 from tlm.training.flags_wrapper import get_input_files_from_flags, show_input_files
 from tlm.training.input_fn import input_fn_builder_pairwise
 from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments

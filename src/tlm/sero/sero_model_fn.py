@@ -2,6 +2,7 @@ from functools import partial
 
 import tensorflow as tf
 
+import tlm.training.assignment_map
 from data_generator.special_tokens import MASK_ID, EOW_ID, CLS_ID
 from models.transformer import optimization_v2 as optimization
 from models.transformer.bert_common_v2 import create_initializer, get_shape_list, get_shape_list2, dropout
@@ -10,7 +11,7 @@ from tf_util.tf_logging import tf_logging
 from tlm.model.lm_objective import get_masked_lm_output
 from tlm.model.masking import random_masking
 from tlm.sero.sero_core import split_and_append_sep, SeroDelta, SeroEpsilon, split_and_append_sep2
-from tlm.training import assignment_map, grad_accumulation, classification_model_fn
+from tlm.training import assignment_map, grad_accumulation
 from tlm.training.input_fn_common import format_dataset
 from tlm.training.model_fn_common import log_features, get_tpu_scaffold_or_init, log_var_assignments, get_init_fn, \
     Classification, reweight_zero
@@ -324,7 +325,7 @@ def model_fn_pooling_long_things(config, train_config, model_class, special_flag
         loss = tf.reduce_mean(input_tensor=loss_arr)
         tvars = tf.compat.v1.trainable_variables()
         if train_config.init_checkpoint:
-            initialized_variable_names, init_fn = classification_model_fn.get_init_fn(train_config, tvars)
+            initialized_variable_names, init_fn = tlm.training.assignment_map.get_init_fn(train_config, tvars)
             scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
 
         TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec

@@ -3,9 +3,11 @@ import re
 
 import tensorflow as tf
 
+import tlm.training
+from my_tf import tf
 from tf_util.tf_logging import tf_logging
 from tlm.model.dual_model_common import triple_model_prefix2, dual_model_prefix1, triple_model_prefix3, \
-    dual_model_prefix2
+    dual_model_prefix2, triple_model_prefix1
 
 
 def get_bert_assignment_map(tvars, lm_checkpoint):
@@ -927,3 +929,121 @@ def seg_sel_layer2_to_1(tvars, lm_checkpoint):
             initialized_variable_names[real_name + ":0"] = 1
 
     return assignment_map, initialized_variable_names
+
+
+def get_init_fn(train_config, tvars):
+    num_checkpoint = 1
+    if train_config.checkpoint_type.startswith("two_checkpoints"):
+        num_checkpoint = 2
+    elif train_config.checkpoint_type == "three_checkpoints":
+        num_checkpoint = 3
+
+    if num_checkpoint == 1:
+        assignment_fn = get_assignment_fn_from_checkpoint_type(train_config.checkpoint_type,
+                                                               train_config.init_checkpoint)
+        assignment_map, initialized_variable_names = assignment_fn(tvars, train_config.init_checkpoint)
+
+        def init_fn():
+            tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
+        return initialized_variable_names, init_fn
+    elif num_checkpoint == 2:
+        if train_config.checkpoint_type == "two_checkpoints":
+            return get_init_fn_for_two_checkpoints(train_config,
+                                                   tvars,
+                                                   train_config.init_checkpoint,
+                                                   dual_model_prefix1,
+                                                   train_config.second_init_checkpoint,
+                                                   dual_model_prefix2)
+        elif train_config.checkpoint_type == "two_checkpoints_cppnc_start":
+            return get_init_fn_for_cppnc_start(train_config,
+                                                       tvars,
+                                                       train_config.init_checkpoint,
+                                                       dual_model_prefix1,
+                                                       train_config.second_init_checkpoint,
+                                                       dual_model_prefix2)
+
+        elif train_config.checkpoint_type == "two_checkpoints_phase2_to_phase1":
+            return get_init_fn_for_phase2_phase1_remap(train_config,
+                                                           tvars,
+                                                           train_config.init_checkpoint,
+                                                           dual_model_prefix1,
+                                                           train_config.second_init_checkpoint,
+                                                           dual_model_prefix2)
+        elif train_config.checkpoint_type == "two_checkpoints_phase1_load_and_bert":
+            return get_init_fn_for_phase1_load_and_bert(train_config,
+                                                            tvars,
+                                                            train_config.init_checkpoint,
+                                                            dual_model_prefix1,
+                                                            train_config.second_init_checkpoint,
+                                                            dual_model_prefix2)
+        elif train_config.checkpoint_type == "two_checkpoints_phase1_load_and_bert":
+            return get_init_fn_for_phase1_load_and_bert(train_config,
+                                                            tvars,
+                                                            train_config.init_checkpoint,
+                                                            dual_model_prefix1,
+                                                            train_config.second_init_checkpoint,
+                                                            dual_model_prefix2)
+        else:
+            if train_config.checkpoint_type == "two_checkpoints_v1_v1":
+                first_from_v1 = True
+                second_from_v1 = True
+            elif train_config.checkpoint_type == "two_checkpoints_v1_v2":
+                first_from_v1 = True
+                second_from_v1 = False
+            elif train_config.checkpoint_type == "two_checkpoints_v2_v1":
+                first_from_v1 = False
+                second_from_v1 = True
+            elif train_config.checkpoint_type == "two_checkpoints_v2_v2":
+                first_from_v1 = False
+                second_from_v1 = False
+            else:
+                assert False
+
+            return get_init_fn_for_two_checkpoints_ex(first_from_v1, second_from_v1,
+                                                         tvars,
+                                                         train_config.init_checkpoint,
+                                                         dual_model_prefix1,
+                                                         train_config.second_init_checkpoint,
+                                                         dual_model_prefix2)
+
+    elif num_checkpoint == 3:
+        return get_init_fn_for_three_checkpoints(train_config,
+                                               tvars,
+                                               train_config.init_checkpoint,
+                                               triple_model_prefix1,
+                                               train_config.second_init_checkpoint,
+                                               triple_model_prefix2,
+                                               train_config.third_init_checkpoint,
+                                               triple_model_prefix3,
+                                                 )
+
+    else:
+        raise Exception("Unexpected num_checkpoint={}".format(num_checkpoint))
+
+
+def get_assignment_fn_from_checkpoint_type(checkpoint_type, init_checkpoint):
+    if checkpoint_type == "bert":
+        assignment_fn = tlm.training.assignment_map.get_bert_assignment_map
+    elif checkpoint_type == "v2":
+        assignment_fn = tlm.training.assignment_map.assignment_map_v2_to_v2
+    elif checkpoint_type == "bert_nli":
+        assignment_fn = tlm.training.assignment_map.get_bert_nli_assignment_map
+    elif checkpoint_type == "attention_bert":
+        assignment_fn = tlm.training.assignment_map.bert_assignment_only_attention
+    elif checkpoint_type == "attention_bert_v2":
+        assignment_fn = tlm.training.assignment_map.assignment_map_v2_to_v2_only_attention
+    elif checkpoint_type == "wo_attention_bert":
+        assignment_fn = tlm.training.assignment_map.bert_assignment_wo_attention
+    elif checkpoint_type == "as_is":
+        assignment_fn = tlm.training.assignment_map.get_assignment_map_as_is
+    elif checkpoint_type == "model_has_it":
+        pass
+    else:
+
+        if not init_checkpoint:
+            assignment_fn = None
+        elif not checkpoint_type:
+            raise Exception("init_checkpoint exists, but checkpoint_type is not specified")
+        else:
+            raise Exception("Unknown checkpoint_type : {}".format(checkpoint_type))
+    return assignment_fn

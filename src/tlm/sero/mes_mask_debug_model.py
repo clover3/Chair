@@ -3,7 +3,7 @@ import tensorflow as tf
 from models.transformer import optimization_v2 as optimization
 from my_tf import tf
 from tf_util.tf_logging import tf_logging
-from tlm.training.classification_model_fn import get_init_fn
+from tlm.training.assignment_map import get_init_fn
 from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments, classification_metric_fn
 
 

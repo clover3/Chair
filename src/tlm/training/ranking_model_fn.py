@@ -90,7 +90,6 @@ def model_fn_ranking(FLAGS):
     return model_fn
 
 
-
 def rank_predict_estimator_spec(logits, mode, scaffold_fn, predictions=None):
     TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
     if mode == tf.estimator.ModeKeys.PREDICT:

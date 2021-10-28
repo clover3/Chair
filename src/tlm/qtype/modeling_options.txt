@@ -1,0 +1,14 @@
+
+Option 1: Predict type embedding (pred_type_emb)
+       1-1 Feed directly, no table
+          out_qtype_embedding = pred_type_emb (Direct Gradient)
+       1-2 class_score = dot(pred_type_emb, qtype_emb_table)
+          out_qtype_embeddings = qtype_emb_table * class_score (Direct Gradient)
+       1-3: Feed nearest, supervise closest table_embedding
+          VQ-VAE (Oord et al)
+          out_qtype_embedding = pred_type_emb (Gradient by loss)
+
+Option 2: Predict type indices scores for type_embedding
+        2-1 : Multiply score matrix to embedding table (Direct Gradient, Not Sparse)
+        2-2 : Multiply with temperature dec (Direct Gradient, Soft Sparse)
+        2-3 : Select Argmax (Broken Gradient)

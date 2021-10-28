@@ -6,7 +6,7 @@ from models.transformer.optimization_v2 import create_simple_optimizer
 from my_tf import tf
 from tf_util.tf_logging import tf_logging
 from tlm.model.dual_model_common import dual_model_prefix1, dual_model_prefix2
-from tlm.training.classification_model_fn import get_init_fn
+from tlm.training.assignment_map import get_init_fn
 from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments
 
 

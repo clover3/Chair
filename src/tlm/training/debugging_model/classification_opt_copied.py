@@ -3,7 +3,7 @@ from models.transformer.optimization_v2 import AdamWeightDecayOptimizer
 from my_tf import tf
 from tf_util.tf_logging import tf_logging
 from tlm.model.base import BertModel
-from tlm.training.classification_model_fn import get_init_fn
+from tlm.training.assignment_map import get_init_fn
 from tlm.training.model_fn_common import get_tpu_scaffold_or_init, log_var_assignments, classification_metric_fn
 
 def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu, tvars=None):
