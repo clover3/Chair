@@ -8,6 +8,13 @@ from tlm.data_gen.base import get_basic_input_feature_as_list_all_ids
 from tlm.qtype.BertQType import shift_construct
 
 
+def expand_dims_for_three(input_ids, input_mask, segment_ids):
+    input_ids = tf.expand_dims(input_ids, 0)
+    input_mask = tf.expand_dims(input_mask, 0)
+    segment_ids = tf.expand_dims(segment_ids, 0)
+    return input_ids, input_mask, segment_ids
+
+
 class ShiftConstructTest(test.TestCase):
     #
     # def _testBitcast(self, x, datatype, shape):
@@ -34,9 +41,7 @@ class ShiftConstructTest(test.TestCase):
         self.assertEqual(input_mask[valid_input_len-1], 1)
         self.assertEqual(input_mask[valid_input_len], 0)
 
-        input_ids = tf.expand_dims(input_ids, 0)
-        input_mask = tf.expand_dims(input_mask, 0)
-        segment_ids = tf.expand_dims(segment_ids, 0)
+        input_ids, input_mask, segment_ids = expand_dims_for_three(input_ids, input_mask, segment_ids)
 
         hidden_dim = 728
         embedding_table = tf.Variable(np.random.rand(30222, hidden_dim), dtype=tf.float32)
@@ -61,6 +66,7 @@ class ShiftConstructTest(test.TestCase):
         self.assertEqual(shifted_input_mask[valid_input_len], 1)
         self.assertEqual(shifted_input_mask[valid_input_len+1], 0)
         self.assertEqual(shifted_segment_ids[valid_input_len], 1)
+
 
 
 if __name__ == "__main__":

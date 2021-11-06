@@ -1,7 +1,8 @@
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from epath import job_man_dir
 from job_manager.job_runner_with_server import JobRunnerS
 from tlm.data_gen.doc_encode_common import seg_selection_by_geo_sampling
-from tlm.data_gen.msmarco_doc_gen.gen_qtype.encoders import FromTextEncoderFWDrop
+from tlm.data_gen.msmarco_doc_gen.gen_qtype.encoders import FromTextEncoderFWDrop, DropTokensDecider
 from tlm.data_gen.msmarco_doc_gen.gen_qtype.generator import PairwiseGenWDropTokenFromText
 from tlm.data_gen.msmarco_doc_gen.gen_worker import MMDWorker
 from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResource10doc
@@ -13,7 +14,9 @@ if __name__ == "__main__":
     resource = ProcessedResource10doc(split)
     max_seq_length = 512
     fw_cls = FunctionWordClassifier()
-    document_encoder = FromTextEncoderFWDrop(max_seq_length, fw_cls.is_function_word,
+    tokenizer = get_tokenizer()
+    drop_token_decider = DropTokensDecider(fw_cls.is_function_word, tokenizer)
+    document_encoder = FromTextEncoderFWDrop(max_seq_length, drop_token_decider, tokenizer, 
                                              True, seg_selection_by_geo_sampling())
     generator = PairwiseGenWDropTokenFromText(resource, document_encoder, max_seq_length)
 

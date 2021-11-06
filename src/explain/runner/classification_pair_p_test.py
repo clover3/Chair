@@ -29,7 +29,6 @@ def pair_compare(run_A, run_B):
     print(acc(binary_A))
     print(acc(binary_B))
 
-    return `
 
 
 

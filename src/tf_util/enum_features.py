@@ -36,6 +36,7 @@ def get_single_record(fn):
         feature = example.features.feature
         return feature
 
+
 if version.parse(tf.__version__) < version.parse("1.99.9"):
     load_record = load_record_v1
 else:

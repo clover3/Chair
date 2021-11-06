@@ -219,3 +219,10 @@ flags.DEFINE_string("report_condition", None, "Report this condition ")
 
 flags.DEFINE_integer("max_query_len", 0, "")
 flags.DEFINE_integer("max_doc_len", 0, "")
+
+
+def model_config_flag_checking():
+    flags.mark_flag_as_required("input_file")
+    flags.mark_flag_as_required("model_config_file")
+    flags.mark_flag_as_required("output_dir")
+    flags.mark_flag_as_required("run_name")

@@ -1,4 +1,3 @@
-from nltk import sent_tokenize
 from typing import List, Callable, Tuple
 
 from nltk import sent_tokenize
@@ -49,11 +48,13 @@ class DropTokensDecider:
 class FromTextEncoderFWDrop:
     def __init__(self,
                  max_seq_length,
-                 drop_word_match_fn,
+                 drop_token_decider,
+                 tokenizer,
                  random_short=False,
                  seg_selection_fn=None,
                  max_seg_per_doc=999999,
                  trim_len=64):
+        self.tokenizer = tokenizer
         self.max_seq_length = max_seq_length
         self.tokenizer = get_tokenizer()
         self.title_token_max = trim_len
@@ -66,7 +67,7 @@ class FromTextEncoderFWDrop:
         self.seg_selection_fn = seg_selection_fn
         self.max_seg_per_doc = max_seg_per_doc
 
-        self.decider = DropTokensDecider(drop_word_match_fn, self.tokenizer)
+        self.decider = drop_token_decider
         self.drop_q_tokens: Callable[[List[str]], List[str]] = self.decider.drop
 
     def encode(self, query_tokens, title, body) -> List[Tuple[List, List, List, List]]:

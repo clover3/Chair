@@ -24,6 +24,15 @@ def checkpoint_init(assignment_fn, train_config):
     return scaffold_fn
 
 
+def pair_metric(y_pred):
+    """Computes the loss and accuracy of the model."""
+    is_correct = tf.cast(tf.less(0.0, y_pred), tf.int32)
+    acc = tf.compat.v1.metrics.accuracy(tf.ones_like(is_correct), is_correct)
+    return {
+        "pairwise_acc": acc,
+    }
+
+
 def ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_factory, prediction=None):
     TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
     if mode == tf.estimator.ModeKeys.TRAIN:
@@ -31,7 +40,10 @@ def ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_fa
         train_op = optimizer_factory(loss)
         output_spec = TPUEstimatorSpec(mode=mode, loss=loss, train_op=train_op, scaffold_fn=scaffold_fn)
     elif mode == tf.estimator.ModeKeys.EVAL:
-        output_spec = TPUEstimatorSpec(mode=mode, loss=loss, eval_metrics=None,
+        eval_metrics = (pair_metric, [
+            y_pred,
+        ])
+        output_spec = TPUEstimatorSpec(mode=mode, loss=loss, eval_metrics=eval_metrics,
                                        scaffold_fn=scaffold_fn)
     elif mode == tf.estimator.ModeKeys.PREDICT:
         if prediction is None:
@@ -75,7 +87,6 @@ def model_fn_ranking(FLAGS):
 
         loss, losses, y_pred = apply_loss_modeling(modeling_opt, pooled_output, features)
 
-
         assignment_fn = assignment_map.get_bert_assignment_map
         scaffold_fn = checkpoint_init(assignment_fn, train_config)
 
@@ -84,7 +95,8 @@ def model_fn_ranking(FLAGS):
         input_ids2 = tf.identity(features["input_ids2"])
         prediction = {
             "input_ids1": input_ids1,
-            "input_ids2": input_ids2
+            "input_ids2": input_ids2,
+            "y_pred": y_pred,
         }
         return ranking_estimator_spec(mode, loss, losses, y_pred, scaffold_fn, optimizer_factory, prediction)
     return model_fn
@@ -94,7 +106,7 @@ def rank_predict_estimator_spec(logits, mode, scaffold_fn, predictions=None):
     TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
     if mode == tf.estimator.ModeKeys.PREDICT:
         if predictions is None:
-            predictions ={"logits": logits}
+            predictions = {"logits": logits}
         output_spec = TPUEstimatorSpec(mode=mode, predictions=predictions,
                                        scaffold_fn=scaffold_fn)
     else:
@@ -141,8 +153,8 @@ def model_fn_rank_pred(FLAGS):
         predictions = None
         if modeling_opt == "multi_label_hinge":
             predictions = {
-                "input_ids":input_ids,
-                "logits":logits,
+                "input_ids": input_ids,
+                "logits": logits,
             }
         else:
             predictions = {

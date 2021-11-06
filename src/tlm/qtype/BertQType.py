@@ -6,7 +6,8 @@ from models.keras_model.bert_keras.bert_common_eager import get_shape_list_no_na
 from models.transformer.bert_common_v2 import *
 from models.transformer.bert_common_v2 import create_initializer
 from tlm.model.base import BertModelInterface, transformer_model, BertModel
-from tlm.qtype.qtype_embeddings import QTypeEmbeddingEmbPred, QTypeEmbeddingEmbPredDirect, QTypeEmbeddingWeightPred
+from tlm.qtype.qtype_embeddings import QTypeEmbeddingEmbPred, QTypeEmbeddingEmbPredDirect, QTypeEmbeddingWeightPred, \
+    QWordPredict
 
 
 def shift_construct(drop_embedding_output,
@@ -77,6 +78,7 @@ class MLP(tf.keras.layers.Layer):
         h = tf.reshape(inputs, [batch_size, seq_length, -1])
         for dense_layer in self.l_list:
             h = dense_layer(h)
+        h = tf.reduce_max(h, axis=1)
         return h
 
 
@@ -111,16 +113,39 @@ class Residual(tf.keras.layers.Layer):
             cur_layer = h[:, :, 1 + layer_no, :]
             layer_projection = self.projection_dense_list[layer_no](cur_layer)
             layer_projection = tf.nn.dropout(layer_projection, rate=self.dropout_prob)
-            added_rep = self.layer_norm_list_1[layer_no](prev_output + layer_projection)
+            added_rep = prev_output + layer_projection
+            added_rep = self.layer_norm_list_1[layer_no](added_rep)
             intermediate = self.transform_dense_1[layer_no](added_rep)
             layer_vector = self.transform_dense_2[layer_no](intermediate)
             layer_vector = tf.nn.dropout(layer_vector, rate=self.dropout_prob)
-            cur_output = self.layer_norm_list_2[layer_no](prev_output + layer_vector)
+            cur_output = prev_output + layer_vector
+            cur_output = self.layer_norm_list_2[layer_no](cur_output)
             prev_output = cur_output
 
         # reduce seq_length axis
         h = tf.reduce_sum(prev_output, axis=1)
         return h # [batch_size, 728]
+
+
+def build_bert(config, is_training, orig_input_ids, orig_input_mask, orig_token_type_ids,
+               use_one_hot_embeddings):
+    input_shape = get_shape_list(orig_input_ids, expected_rank=2)
+    batch_size = input_shape[0]
+    model_a = BertModel(config, is_training, orig_input_ids, orig_input_mask, orig_token_type_ids,
+                        use_one_hot_embeddings)
+    emb_layer = model_a.get_embedding_output()
+    layers = model_a.get_all_encoder_layers()
+    all_layers = tf.stack([emb_layer] + layers, 2)  # [batch_size, seq_length, num_layer+1, hidden_dim]
+    is_seg1 = tf.equal(orig_token_type_ids, 0)
+    is_seg1_mask = tf.cast(tf.reshape(is_seg1, [batch_size, -1, 1, 1]), tf.float32)
+    all_layers_seg1 = all_layers * is_seg1_mask
+    maybe_q_len_enough = 64
+    all_layers_seg1 = all_layers_seg1[:, :maybe_q_len_enough, :, :]
+    num_layer_plus_one = config.num_hidden_layers + 1
+    dim_per_token = num_layer_plus_one * config.hidden_size
+    flatten_all_layers = tf.reshape(all_layers_seg1, [batch_size, -1, dim_per_token])
+    return all_layers_seg1, model_a
+
 
 
 class BertQType(BertModelInterface):
@@ -142,7 +167,9 @@ class BertQType(BertModelInterface):
             'residual': Residual(model_config),
         }[inner_modeling]
         q_embedding_model: tf.keras.layers.Layer = q_modeling_class(model_config, inner_layer)
-        qtype_embeddings = q_embedding_model(all_layers_seg1)  # [batch_size, type_len, hidden_dim]
+        self.q_embedding_model = q_embedding_model
+        with tf.compat.v1.variable_scope("qtype_modeling"):
+            qtype_embeddings = q_embedding_model(all_layers_seg1)  # [batch_size, type_len, hidden_dim]
         input_shape = get_shape_list(drop_input_ids, expected_rank=2)
         with tf.compat.v1.variable_scope("bert"):
             with tf.compat.v1.variable_scope("embeddings"):
@@ -205,22 +232,225 @@ class BertQType(BertModelInterface):
 
     def build_tower1(self, config, is_training, orig_input_ids, orig_input_mask, orig_token_type_ids,
                      use_one_hot_embeddings):
-        input_shape = get_shape_list(orig_input_ids, expected_rank=2)
+        all_layers_seg1, model_a = build_bert(config, is_training, orig_input_ids, orig_input_mask,
+                                                   orig_token_type_ids, use_one_hot_embeddings)
+        self.pooled_output = model_a.pooled_output
+        self.all_encoder_layers = model_a.all_encoder_layers
+        return all_layers_seg1
+
+
+def duplicate_w_q_only_version(input_ids, input_mask, segment_ids):
+    is_seg1 = tf.logical_and(tf.equal(0, segment_ids), tf.cast(input_mask, tf.bool))
+    q_only_input_ids = input_ids * tf.cast(is_seg1, tf.int32)
+    q_only_input_mask = tf.cast(is_seg1, tf.int32)
+    q_only_segment_ids = tf.zeros_like(segment_ids, tf.int32)
+
+    concat_input_ids = tf.concat([q_only_input_ids, input_ids], axis=0)
+    concat_input_mask = tf.concat([q_only_input_mask, input_mask], axis=0)
+    concat_segment_ids = tf.concat([q_only_segment_ids, segment_ids], axis=0)
+    return concat_input_ids, concat_input_mask, concat_segment_ids
+
+
+class BertQTypeQOnly(BertModelInterface):
+    def __init__(self,
+                 ):
+        super(BertQTypeQOnly, self).__init__()
+
+    def build_tower2(self, model_config, model_config_predict, all_layers_seg1, drop_input_ids, drop_input_mask, drop_token_type_ids, is_training,
+                     sep_id, use_one_hot_embeddings):
+        embedding_modeling, inner_modeling = model_config.q_modeling.split("_")
+        q_modeling_class = {
+            'QTypeEmbeddingEmbPred': QTypeEmbeddingEmbPred,
+            'QTypeEmbeddingEmbPredDirect': QTypeEmbeddingEmbPredDirect,
+            'QTypeEmbeddingWeightPred': QTypeEmbeddingWeightPred,
+        }[embedding_modeling]
+        s = model_config.hidden_size
+        inner_layer: tf.keras.layers.Layer = {
+            'MLP': MLP(model_config, [s, s]),
+            'residual': Residual(model_config),
+        }[inner_modeling]
+        q_embedding_model: tf.keras.layers.Layer = q_modeling_class(model_config, inner_layer, is_training)
+        self.q_embedding_model = q_embedding_model
+        with tf.compat.v1.variable_scope("qtype_modeling"):
+            qtype_embeddings = q_embedding_model(all_layers_seg1)  # [batch_size, type_len, hidden_dim]
+
+        input_shape = get_shape_list(drop_input_ids, expected_rank=2)
+        with tf.compat.v1.variable_scope("bert"):
+            with tf.compat.v1.variable_scope("embeddings"):
+                # Perform embedding lookup on the word ids.
+                (drop_embedding_output, self.drop_embedding_table) = embedding_lookup(
+                    input_ids=drop_input_ids,
+                    vocab_size=model_config_predict.vocab_size,
+                    embedding_size=model_config_predict.hidden_size,
+                    initializer_range=model_config_predict.initializer_range,
+                    word_embedding_name="word_embeddings",
+                    use_one_hot_embeddings=use_one_hot_embeddings)
+
+                shifted_embedding, shifted_input_mask, shifted_segment_ids \
+                    = shift_construct(drop_embedding_output, qtype_embeddings, model_config.qtype_len,
+                                      drop_input_ids, drop_input_mask, drop_token_type_ids, sep_id)
+
+                # Add positional embeddings and token type embeddings, then layer
+                # normalize and perform dropout.
+                drop_embedding_output = embedding_postprocessor(
+                    input_tensor=shifted_embedding,
+                    use_token_type=True,
+                    token_type_ids=shifted_segment_ids,
+                    token_type_vocab_size=model_config_predict.type_vocab_size,
+                    token_type_embedding_name="token_type_embeddings",
+                    use_position_embeddings=True,
+                    position_embedding_name="position_embeddings",
+                    initializer_range=model_config_predict.initializer_range,
+                    max_position_embeddings=model_config_predict.max_position_embeddings,
+                    dropout_prob=model_config_predict.hidden_dropout_prob)
+
+            with tf.compat.v1.variable_scope("encoder"):
+                drop_attention_mask = create_attention_mask_from_input_mask(
+                    drop_embedding_output, shifted_input_mask)
+
+                self.drop_all_encoder_layers = transformer_model(
+                    input_tensor=drop_embedding_output,
+                    attention_mask=drop_attention_mask,
+                    input_mask=shifted_input_mask,
+                    hidden_size=model_config_predict.hidden_size,
+                    num_hidden_layers=model_config_predict.num_hidden_layers,
+                    num_attention_heads=model_config_predict.num_attention_heads,
+                    is_training=is_training,
+                    intermediate_size=model_config_predict.intermediate_size,
+                    intermediate_act_fn=get_activation(model_config_predict.hidden_act),
+                    hidden_dropout_prob=model_config_predict.hidden_dropout_prob,
+                    attention_probs_dropout_prob=model_config_predict.attention_probs_dropout_prob,
+                    initializer_range=model_config_predict.initializer_range,
+                    do_return_all_layers=True)
+
+            drop_sequence_output = self.drop_all_encoder_layers[-1]
+            with tf.compat.v1.variable_scope("pooler"):
+                first_token_tensor = tf.squeeze(drop_sequence_output[:, 0:1, :], axis=1)
+                drop_pooled_output = tf.keras.layers.Dense(model_config_predict.hidden_size,
+                                                           activation=tf.keras.activations.tanh,
+                                                           kernel_initializer=create_initializer(
+                                                               model_config_predict.initializer_range))(
+                    first_token_tensor)
+
+                self.drop_pooled_output = drop_pooled_output
+
+    def build_tower1(self, config, is_training, orig_input_ids, orig_input_mask, orig_token_type_ids,
+                     use_one_hot_embeddings):
+        input_shape = get_shape_list_no_name(orig_input_ids)
         batch_size = input_shape[0]
-        model_a = BertModel(config, is_training, orig_input_ids, orig_input_mask, orig_token_type_ids,
+        seq_length = input_shape[1]
+
+        idx_q_only = 0
+        idx_full = 1
+        concat_input_ids, concat_input_mask, concat_token_type_ids = \
+            duplicate_w_q_only_version(orig_input_ids, orig_input_mask, orig_token_type_ids)
+        model_a = BertModel(config, is_training, concat_input_ids, concat_input_mask, concat_token_type_ids,
                             use_one_hot_embeddings)
         emb_layer = model_a.get_embedding_output()
         layers = model_a.get_all_encoder_layers()
 
         all_layers = tf.stack([emb_layer] + layers, 2)  # [batch_size, seq_length, num_layer+1, hidden_dim]
+        all_layers_paired = tf.reshape(all_layers, [2, batch_size, seq_length, -1, config.hidden_size])
+        all_layers_qonly = all_layers_paired[idx_q_only]
         is_seg1 = tf.equal(orig_token_type_ids, 0)
         is_seg1_mask = tf.cast(tf.reshape(is_seg1, [batch_size, -1, 1, 1]), tf.float32)
-        all_layers_seg1 = all_layers * is_seg1_mask
+        # all_layers_seg1 = all_layers_seg1 * is_seg1_mask
         maybe_q_len_enough = 64
-        all_layers_seg1 = all_layers_seg1[:, :maybe_q_len_enough, :, :]
+        all_layers_qonly = all_layers_qonly[:, :maybe_q_len_enough, :, :]
+
         num_layer_plus_one = config.num_hidden_layers + 1
         dim_per_token = num_layer_plus_one * config.hidden_size
-        flatten_all_layers = tf.reshape(all_layers_seg1, [batch_size, -1, dim_per_token])
+        raw_pooled_output = model_a.pooled_output
+        paired_pooled_output = tf.reshape(raw_pooled_output, [2, batch_size, config.hidden_size])
+        all_layer_paired = tf.reshape(model_a.all_encoder_layers, [2, batch_size, -1, config.hidden_size])
+
+        self.pooled_output = paired_pooled_output[idx_full]
+        self.all_encoder_layers = all_layer_paired[idx_full]
+        return all_layers_qonly
+
+
+class BertQWordPred(BertModelInterface):
+    def __init__(self,
+                 ):
+        super(BertQWordPred, self).__init__()
+
+    def build_tower2(self, model_config, model_config_predict, all_layers_seg1, drop_input_ids, drop_input_mask, drop_token_type_ids, is_training,
+                     sep_id, use_one_hot_embeddings):
+        embedding_modeling, inner_modeling = model_config.q_modeling.split("_")
+        s = model_config.hidden_size
+        inner_layer: tf.keras.layers.Layer = {
+            'MLP': MLP(model_config, [s, s]),
+            'residual': Residual(model_config),
+        }[inner_modeling]
+        self.q_embedding_model = QWordPredict(model_config, inner_layer, is_training)
+
+        with tf.compat.v1.variable_scope("qtype_modeling"):
+            word_weights = self.q_embedding_model(all_layers_seg1)
+        input_shape = get_shape_list(drop_input_ids, expected_rank=2)
+        with tf.compat.v1.variable_scope("bert"):
+            with tf.compat.v1.variable_scope("embeddings"):
+                # Perform embedding lookup on the word ids.
+                (drop_embedding_output, self.drop_embedding_table) = embedding_lookup(
+                    input_ids=drop_input_ids,
+                    vocab_size=model_config_predict.vocab_size,
+                    embedding_size=model_config_predict.hidden_size,
+                    initializer_range=model_config_predict.initializer_range,
+                    word_embedding_name="word_embeddings",
+                    use_one_hot_embeddings=use_one_hot_embeddings)
+
+                qtype_embeddings = tf.expand_dims(tf.matmul(word_weights, self.drop_embedding_table), 1)
+                shifted_embedding, shifted_input_mask, shifted_segment_ids \
+                    = shift_construct(drop_embedding_output, qtype_embeddings, model_config.qtype_len,
+                                      drop_input_ids, drop_input_mask, drop_token_type_ids, sep_id)
+
+                # Add positional embeddings and token type embeddings, then layer
+                # normalize and perform dropout.
+                drop_embedding_output = embedding_postprocessor(
+                    input_tensor=shifted_embedding,
+                    use_token_type=True,
+                    token_type_ids=shifted_segment_ids,
+                    token_type_vocab_size=model_config_predict.type_vocab_size,
+                    token_type_embedding_name="token_type_embeddings",
+                    use_position_embeddings=True,
+                    position_embedding_name="position_embeddings",
+                    initializer_range=model_config_predict.initializer_range,
+                    max_position_embeddings=model_config_predict.max_position_embeddings,
+                    dropout_prob=model_config_predict.hidden_dropout_prob)
+
+            with tf.compat.v1.variable_scope("encoder"):
+                drop_attention_mask = create_attention_mask_from_input_mask(
+                    drop_embedding_output, shifted_input_mask)
+
+                self.drop_all_encoder_layers = transformer_model(
+                    input_tensor=drop_embedding_output,
+                    attention_mask=drop_attention_mask,
+                    input_mask=shifted_input_mask,
+                    hidden_size=model_config_predict.hidden_size,
+                    num_hidden_layers=model_config_predict.num_hidden_layers,
+                    num_attention_heads=model_config_predict.num_attention_heads,
+                    is_training=is_training,
+                    intermediate_size=model_config_predict.intermediate_size,
+                    intermediate_act_fn=get_activation(model_config_predict.hidden_act),
+                    hidden_dropout_prob=model_config_predict.hidden_dropout_prob,
+                    attention_probs_dropout_prob=model_config_predict.attention_probs_dropout_prob,
+                    initializer_range=model_config_predict.initializer_range,
+                    do_return_all_layers=True)
+
+            drop_sequence_output = self.drop_all_encoder_layers[-1]
+            with tf.compat.v1.variable_scope("pooler"):
+                first_token_tensor = tf.squeeze(drop_sequence_output[:, 0:1, :], axis=1)
+                drop_pooled_output = tf.keras.layers.Dense(model_config_predict.hidden_size,
+                                                           activation=tf.keras.activations.tanh,
+                                                           kernel_initializer=create_initializer(
+                                                               model_config_predict.initializer_range))(
+                    first_token_tensor)
+
+                self.drop_pooled_output = drop_pooled_output
+
+    def build_tower1(self, config, is_training, orig_input_ids, orig_input_mask, orig_token_type_ids,
+                     use_one_hot_embeddings):
+        all_layers_seg1, model_a = build_bert(config, is_training, orig_input_ids, orig_input_mask,
+                                              orig_token_type_ids, use_one_hot_embeddings)
         self.pooled_output = model_a.pooled_output
         self.all_encoder_layers = model_a.all_encoder_layers
         return all_layers_seg1

@@ -3,6 +3,7 @@ from typing import NamedTuple
 
 import tensorflow as tf
 
+from models.keras_model.bert_keras.bert_common_eager import get_shape_list_no_name
 from models.transformer import bert_common_v2 as bc
 from models.transformer.bert_common_v2 import create_initializer, get_shape_list, get_activation, reshape_to_matrix, \
     dropout, create_attention_mask_from_input_mask, get_shape_list2, reshape_from_matrix
@@ -294,6 +295,43 @@ class ContribLayerNormalization(tf.keras.layers.Layer):
         return res
 
 
+def get_shape_list(tensor, expected_rank):
+    return get_shape_list_no_name(tensor)
+
+
+def create_attention_mask_from_input_mask(from_tensor, to_mask):
+    """Create 3D attention mask from a 2D tensor mask.
+
+    Args:
+        from_tensor: 2D or 3D Tensor of shape [batch_size, from_seq_length, ...].
+        to_mask: int32 Tensor of shape [batch_size, to_seq_length].
+
+    Returns:
+        float Tensor of shape [batch_size, from_seq_length, to_seq_length].
+    """
+    from_shape = get_shape_list(from_tensor, expected_rank=[2, 3])
+    batch_size = from_shape[0]
+    from_seq_length = from_shape[1]
+
+    to_shape = get_shape_list(to_mask, expected_rank=2)
+    to_seq_length = to_shape[1]
+
+    to_mask = tf.cast(
+        tf.reshape(to_mask, [batch_size, 1, to_seq_length]), tf.float32)
+
+    # We don't assume that `from_tensor` is a mask (although it could be). We
+    # don't actually care if we attend *from* padding tokens (only *to* padding)
+    # tokens so we create a tensor of all ones.
+    #
+    # `broadcast_ones` = [batch_size, from_seq_length, 1]
+    broadcast_ones = tf.ones(
+        shape=[batch_size, from_seq_length, 1], dtype=tf.float32)
+
+    # Here we broadcast along two dimensions to create the mask.
+    mask = broadcast_ones * to_mask
+
+    return mask
+
 def get_layer_norm(name):
     # return ContribLayerNormalization(name)
     eps = 1e-12
@@ -375,7 +413,7 @@ class BertLayer(MyLayer):
             self.embedding_output = embedding_output
 
         with tf.compat.v1.variable_scope("encoder"):
-            input_shape = get_shape_list(embedding_output, expected_rank=3)
+            input_shape = get_shape_list_no_name(embedding_output)
             batch_size = input_shape[0]
             seq_length = input_shape[1]
             prev_output = reshape_to_matrix(embedding_output)
@@ -403,7 +441,6 @@ class BertLayer(MyLayer):
                 layer_output = layer.output_layer_norm(layer_output + attention_output)
                 prev_output = layer_output
                 all_layer_outputs.append(layer_output)
-
         return self.summarize_output(all_layer_outputs, input_shape)
 
     def summarize_output(self, all_layer_outputs, input_shape):

@@ -4,7 +4,6 @@ from bert_api.client_lib import BERTClientMSMarco
 
 PORT_UKP = 8123
 
-
 def load_inputs():
     for line in open(sys.argv[1], "r"):
         topic, sentence = line.split("\t")

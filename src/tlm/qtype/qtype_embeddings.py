@@ -16,6 +16,7 @@ class QTypeEmbedding(tf.keras.layers.Layer):
         self.embedding_table = self.add_weight(
             shape=(config.q_voca_size, embedding_size),
             initializer=create_initializer(config.initializer_range),
+            name="qtype_modeling/qtype_embedding",
             trainable=True
         )
 
@@ -36,13 +37,16 @@ def sample_gumbel(shape, eps=1e-20):
     return -tf.math.log(-tf.math.log(U + eps) + eps)
 
 
-def gumbel_softmax_sample(logits, temperature):
+def gumbel_softmax_sample(logits, temperature, is_training):
     """ Draw a sample from the Gumbel-Softmax distribution"""
-    y = logits + sample_gumbel(tf.shape(logits))
+    if is_training:
+        y = logits + sample_gumbel(tf.shape(logits))
+    else:
+        y = logits
     return tf.nn.softmax(y / temperature)
 
 
-def gumbel_softmax(logits, temperature, hard=False):
+def gumbel_softmax(logits, temperature, hard=False, is_training=True):
     """Sample from the Gumbel-Softmax distribution and optionally discretize.
     Args:
       logits: [batch_size, n_class] unnormalized log-probs
@@ -53,7 +57,7 @@ def gumbel_softmax(logits, temperature, hard=False):
       If hard=True, then the returned sample will be one-hot, otherwise it will
       be a probabilitiy distribution that sums to 1 across classes
     """
-    y = gumbel_softmax_sample(logits, temperature)
+    y = gumbel_softmax_sample(logits, temperature, is_training)
     if hard:
         k = tf.shape(logits)[-1]
         y_hard = tf.cast(tf.equal(y, tf.reduce_max(y, 1, keep_dims=True)), y.dtype)
@@ -61,25 +65,63 @@ def gumbel_softmax(logits, temperature, hard=False):
     return y
 
 
+def decay_fn(start_value, rate, step, decay_steps):
+    return start_value * tf.pow(rate,  (step / decay_steps))
+
+
 class QTypeEmbeddingWeightPred(QTypeEmbedding):
-    def __init__(self, config, inner_layer):
+    def __init__(self, config, inner_layer, is_training):
         super(QTypeEmbeddingWeightPred, self).__init__(config, inner_layer)
         self.temperature = None
         try:
-            temperature = tf.keras.optimizers.schedules.ExponentialDecay(
-                100, self.config.train_steps, 0.1, staircase=False, name=None
-            )
-        except KeyError:
-            temperature = tf.constant(1)
-
+            init_temperature = tf.constant(1.0)
+            current_step = tf.compat.v1.train.get_or_create_global_step()
+            temperature = decay_fn(init_temperature, 0.1, current_step, self.config.train_steps)
+        except AttributeError:
+            temperature = tf.constant(1.0)
+        self.weight_projection = tf.keras.layers.Dense(config.q_voca_size)
         self.temperature = temperature
+        self.is_training = is_training
 
     def call(self, inputs, **kwargs):
         raw_rep = inputs
-        qtype_logits = self.get_inner_layer()(raw_rep)
-        qtype_weights = gumbel_softmax(qtype_logits, self.temperature)
+        pred_type_emb = self.get_inner_layer()(raw_rep)
+        qtype_logits = self.weight_projection(pred_type_emb)
+        self.qtype_logits = qtype_logits
+        qtype_weights = gumbel_softmax(qtype_logits, self.temperature, False, self.is_training)
+        self.qtype_weights = qtype_weights
         qtype_embeddings = tf.matmul(qtype_weights, self.embedding_table)
         return self.reshape_embedding_out(qtype_embeddings)
+
+    def get_qtype_raw_logits(self):
+        return self.qtype_logits
+
+    def get_qtype_weights(self):
+        return self.qtype_weights
+
+
+class QWordPredict(QTypeEmbedding):
+    def __init__(self, config, inner_layer, is_training):
+        super(QWordPredict, self).__init__(config, inner_layer)
+        self.weight_projection = tf.keras.layers.Dense(config.q_voca_size)
+        self.temperature = tf.constant(1.0)
+        self.is_training = is_training
+
+    def call(self, inputs, **kwargs):
+        raw_rep = inputs
+        pred_type_emb = self.get_inner_layer()(raw_rep)
+        qtype_logits = self.weight_projection(pred_type_emb)
+        self.qtype_logits = qtype_logits
+        qtype_weights = gumbel_softmax(qtype_logits, self.temperature,
+                                       is_training=self.is_training)
+        self.qtype_weights = qtype_weights
+        return self.qtype_weights
+
+    def get_qtype_raw_logits(self):
+        return self.qtype_logits
+
+    def get_qtype_weights(self):
+        return self.qtype_weights
 
 
 @tf.custom_gradient
@@ -129,7 +171,12 @@ class QTypeEmbeddingEmbPred(QTypeEmbedding):
         raw_rep = inputs
         pred_type_emb = self.get_inner_layer()(raw_rep)
         table = self.get_qtype_embedding_table()
-        qtype_embeddings = nn_table_lookup(pred_type_emb, table)
+        self.pred_type_emb = pred_type_emb
+
+        max_idx = get_closest_from_table(pred_type_emb, table)
+        qtype_embeddings = tf.nn.embedding_lookup(params=table, ids=max_idx)  # [batch_size, hidden_dim]
+
+        # qtype_embeddings = nn_table_lookup(pred_type_emb, table)
 
         loss_a = tf.nn.l2_loss(tf.stop_gradient(pred_type_emb) - qtype_embeddings)
         loss_b = tf.nn.l2_loss(pred_type_emb - tf.stop_gradient(qtype_embeddings))
@@ -137,3 +184,12 @@ class QTypeEmbeddingEmbPred(QTypeEmbedding):
         self.add_loss(loss_a)
         self.add_loss(loss_b)
         return self.reshape_embedding_out(qtype_embeddings)
+
+    def get_qtype_weights(self):
+        v_ex = tf.expand_dims(self.pred_type_emb, 1)  # [batch_size, 1, hidden_dim]
+        table_ex = tf.expand_dims(self.get_qtype_embedding_table(), 0)  # [1, voca_size, hidden_dim]
+        scores = tf.matmul(v_ex, table_ex, transpose_b=True)  # [batch_size, 1, voca_size]
+        return scores
+
+    def get_qtype_raw_logits(self):
+        return self.get_qtype_weights()
