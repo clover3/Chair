@@ -45,7 +45,5 @@ def load_v2_model():
     model.summary()
 
 
-
-
 if __name__ == "__main__":
     eval_accuracy()

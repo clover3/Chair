@@ -6,12 +6,14 @@ from typing import Dict
 from typing import List, Tuple, NamedTuple, NewType
 
 from cache import load_pickle_from
+from cpath import data_path
 from epath import job_man_dir
 from list_lib import left, lmap
 from trec.trec_parse import load_ranked_list_grouped
 from trec.types import TrecRankedListEntry
 
 root_dir = "/mnt/nfs/work3/youngwookim/data/msmarco"
+root_dir = os.path.join(data_path, "msmarco")
 per_query_root = "/mnt/nfs/work3/youngwookim/data/msmarco/per_query"
 
 

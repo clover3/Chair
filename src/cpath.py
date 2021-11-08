@@ -69,6 +69,9 @@ def get_bert_full_path():
     return os.path.join(model_path, 'runs', "uncased_L-12_H-768_A-12", "bert_model.ckpt")
 
 
+def get_bert_config_path():
+    return os.path.join(data_path, 'bert_config.json')
+
 
 def open_pred_output(name):
     path = os.path.join(prediction_dir, name)

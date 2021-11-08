@@ -24,7 +24,7 @@ def build_save_qdf():
 
 def main():
     queries = load_queries("train")
-    n_list = [2, 3, 4]
+    n_list = [1, 2, 3, 4, 5]
     all_n_grams = {n: Counter() for n in n_list}
 
     df = Counter()
@@ -34,6 +34,7 @@ def main():
             ngram_list = nltk.ngrams(q_tokens, n)
             all_n_grams[n].update(ngram_list)
 
+    save_to_pickle(all_n_grams, "msmarco_ngram_qdf")
     # for token in set(q_tokens):
     #     df[token] += 1
 
