@@ -4,8 +4,8 @@ from typing import Iterator
 
 from arg.qck.decl import QCKQuery, QCKCandidate, get_light_qckquery, get_light_qckcandidate
 from tf_util.record_writer_wrap import write_records_w_encode_fn
-from tlm.data_gen.classification_common import QueryDocInstance, \
-    ClassificationInstanceWDataID, encode_classification_instance_w_data_id
+from tlm.data_gen.classification_common import ClassificationInstanceWDataID, encode_classification_instance_w_data_id
+from tlm.data_gen.rank_common import QueryDocInstance
 from tlm.data_gen.robust_gen.robust_generator_common import RobustGenCommon
 from tlm.data_gen.robust_gen.seg_lib.segment_composer import IDBasedEncoder
 

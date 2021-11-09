@@ -6,7 +6,7 @@ from data_generator.data_parser.robust import load_robust_04_query
 from data_generator.data_parser.robust2 import load_bm25_best
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from tf_util.record_writer_wrap import write_records_w_encode_fn
-from tlm.data_gen.classification_common import QueryDocInstance, encode_query_doc_instance
+from tlm.data_gen.rank_common import encode_query_doc_instance, QueryDocInstance
 from tlm.robust.load import load_robust_tokens_for_train, load_robust_tokens_for_predict
 from trec.qrel_parse import load_qrels_structured
 

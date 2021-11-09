@@ -1,11 +1,8 @@
-
-from typing import List, Dict
-
-from data_generator.job_runner import JobRunner
 from epath import job_man_dir
 from job_manager.job_runner_with_server import JobRunnerS
 from tlm.data_gen.adhoc_datagen import AllSegmentAsDoc
-from tlm.data_gen.msmarco_doc_gen.gen_worker import MMDWorker, PredictionAllPassageGenerator
+from tlm.data_gen.msmarco_doc_gen.gen_worker import PredictionAllPassageGenerator
+from tlm.data_gen.msmarco_doc_gen.mmd_worker import MMDWorker
 from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResourcePredict10
 
 if __name__ == "__main__":

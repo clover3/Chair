@@ -2,9 +2,9 @@ from arg.bm25 import BM25
 from cache import load_from_pickle
 from data_generator.job_runner import JobRunner
 from epath import job_man_dir
-from tlm.data_gen.msmarco_doc_gen.gen_worker import MMDWorker, PointwiseGen
 from tlm.data_gen.msmarco_doc_gen.max_sent_encode import MaxSentEncoder, BestSentGen
-from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResource, ProcessedResource10docMulti
+from tlm.data_gen.msmarco_doc_gen.mmd_worker import MMDWorker
+from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResource10docMulti
 
 
 def get_bm25_module():

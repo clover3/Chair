@@ -1,7 +1,7 @@
 import re
 from typing import List, Tuple, NamedTuple, Union
 
-from contradiction.medical_claims.annotation_1.read_batch import load_file_list
+from contradiction.medical_claims.annotation_1.analyze_result.read_batch import load_file_list
 from mturk.parse_util import HITScheme, Textbox, ColumnName, HitResult, parse_file
 
 

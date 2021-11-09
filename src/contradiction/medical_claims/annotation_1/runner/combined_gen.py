@@ -2,11 +2,13 @@ import json
 import os
 from typing import List
 
+from contradiction.medical_claims.annotation_1.reject_list import trusted_worker
+
 from contradiction.medical_claims.annotation_1.label_processor import combine_alamri1_annots, \
     convert_annots_to_json_serializable
 from contradiction.medical_claims.annotation_1.mturk_scheme import AlamriLabelUnit
 from contradiction.medical_claims.annotation_1.process_annotation import load_annots_w_processing, \
-    load_annots_for_worker, trusted_worker
+    load_annots_for_worker
 from cpath import output_path
 
 

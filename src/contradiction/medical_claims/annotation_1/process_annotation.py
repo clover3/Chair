@@ -2,7 +2,8 @@ from typing import List
 
 from contradiction.medical_claims.annotation_1.mturk_scheme import AlamriLabelUnit, load_all_annotation_w_reject, \
     load_all_annotation, parse_alamri_hit, MTurkOutputFormatError, parse_hit_with_indices_fix
-from contradiction.medical_claims.annotation_1.reject_list import get_worker_list_to_reject
+from contradiction.medical_claims.annotation_1.worker_id_info import get_worker_list_to_reject, workers_to_filter, \
+    trusted_worker
 from mturk.parse_util import HitResult
 
 
@@ -37,13 +38,6 @@ def load_annots_w_processing() -> List[AlamriLabelUnit]:
     print(f"add {len(added_annot)} annots by fixing")
     all_annots: List[AlamriLabelUnit] = annots + added_annot
     return all_annots
-
-
-workers_to_filter = [
-    'A2I2S3U4DRA8ZV',
-    'AWJR5JNXR57HY'
-]
-trusted_worker = ['A1J1MXAI07HGUT', 'A1QE4E0WPJZGEI']
 
 
 def load_annots_for_worker(target_worker) -> List[AlamriLabelUnit]:

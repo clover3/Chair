@@ -4,7 +4,7 @@ from job_manager.job_runner_with_server import JobRunnerS
 from tlm.data_gen.doc_encode_common import seg_selection_by_geo_sampling
 from tlm.data_gen.msmarco_doc_gen.gen_qtype.encoders import FromTextEncoderFWDrop, DropTokensDecider
 from tlm.data_gen.msmarco_doc_gen.gen_qtype.generator import PairwiseGenWDropTokenFromText
-from tlm.data_gen.msmarco_doc_gen.gen_worker import MMDWorker
+from tlm.data_gen.msmarco_doc_gen.mmd_worker import MMDWorker
 from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResource10doc
 from tlm.qtype.is_functionword import FunctionWordClassifier
 

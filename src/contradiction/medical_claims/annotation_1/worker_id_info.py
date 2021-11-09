@@ -23,3 +23,10 @@ def get_worker_list_to_reject():
         "A1WE7CII5F6VRR",
     ]
     return workers
+
+
+workers_to_filter = [
+    'A2I2S3U4DRA8ZV',
+    'AWJR5JNXR57HY'
+]
+trusted_worker = ['A1J1MXAI07HGUT', 'A1QE4E0WPJZGEI']

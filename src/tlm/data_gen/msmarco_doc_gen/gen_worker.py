@@ -1,25 +1,23 @@
-import json
-import os
 from collections import Counter
 from typing import List, Iterable, Dict, Tuple
 from typing import OrderedDict
 
 from arg.qck.decl import QCKQuery, QCKCandidate
-from data_generator.job_runner import WorkerInterface
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from misc_lib import DataIDManager, tprint, exist_or_mkdir, pick1, print_dict_tab
+from misc_lib import pick1, print_dict_tab
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from tlm.data_gen.adhoc_datagen import TitleRepeatInterface
 from tlm.data_gen.classification_common import ClassificationInstanceWDataID, \
     write_with_classification_instance_with_id, PairedInstance
 from tlm.data_gen.msmarco_doc_gen.misc_common import get_pos_neg_doc_ids_for_qid
+from tlm.data_gen.msmarco_doc_gen.mmd_gen_common import MMDGenI
 from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResourceI, ProcessedResourcePredict, \
     ProcessedResourceTitleBodyPredict, ProcessedResourceTitleBodyI
 from tlm.data_gen.pairwise_common import combine_features
 
 
-class PointwiseGen:
-    def  __init__(self, resource: ProcessedResourceI,
+class PointwiseGen(MMDGenI):
+    def __init__(self, resource: ProcessedResourceI,
                  basic_encoder,
                  max_seq_length):
         self.resource = resource
@@ -325,7 +323,7 @@ def memory_profile_print():
         print(len(d))
 
 
-class PredictionGenFromTitleBody:
+class PredictionGenFromTitleBody(MMDGenI):
     def __init__(self, resource: ProcessedResourceTitleBodyPredict,
                  basic_encoder: TitleRepeatInterface,
                  max_seq_length):
@@ -382,29 +380,5 @@ class PredictionGenFromTitleBody:
 
     def write(self, insts: Iterable[ClassificationInstanceWDataID], out_path: str):
         return write_with_classification_instance_with_id(self.tokenizer, self.max_seq_length, insts, out_path)
-
-
-class MMDWorker(WorkerInterface):
-    def __init__(self, query_group, generator, out_dir):
-        self.out_dir = out_dir
-        self.query_group = query_group
-        self.generator = generator
-        self.info_dir = os.path.join(self.out_dir + "_info")
-        exist_or_mkdir(self.info_dir)
-
-    def work(self, job_id):
-        qids = self.query_group[job_id]
-        data_bin = 1000000
-        data_id_st = job_id * data_bin
-        data_id_ed = data_id_st + data_bin
-        data_id_manager = DataIDManager(data_id_st, data_id_ed)
-        tprint("generating instances")
-        insts = self.generator.generate(data_id_manager, qids)
-        # tprint("{} instances".format(len(insts)))
-        out_path = os.path.join(self.out_dir, str(job_id))
-        self.generator.write(insts, out_path)
-
-        info_path = os.path.join(self.info_dir, "{}.info".format(job_id))
-        json.dump(data_id_manager.id_to_info, open(info_path, "w"))
 
 

@@ -1,22 +1,11 @@
-import json
-import os
-from collections import Counter
-from typing import List, Tuple, OrderedDict, Iterable
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Iterable, Dict, Tuple
 
-from arg.qck.decl import QCKQuery, QCKCandidate
-from data_generator.job_runner import WorkerInterface
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from dataset_specific.msmarco.common import load_per_query_docs, MSMarcoDoc
-from misc_lib import DataIDManager, tprint, exist_or_mkdir, pick1, print_dict_tab, TimeEstimator
-from tf_util.record_writer_wrap import write_records_w_encode_fn
-from tlm.data_gen.adhoc_datagen import TitleRepeatInterface
+from misc_lib import TimeEstimator
 from tlm.data_gen.adhoc_sent_tokenize import FromSentTokensListEncoderI
 from tlm.data_gen.classification_common import ClassificationInstanceWDataID, \
-    write_with_classification_instance_with_id, PairedInstance
-from tlm.data_gen.msmarco_doc_gen.misc_common import get_pos_neg_doc_ids_for_qid
+    write_with_classification_instance_with_id
 from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResourceTitleBodyTokensListI
-from tlm.data_gen.pairwise_common import combine_features
 
 
 class PointwiseGenFromTokensList:

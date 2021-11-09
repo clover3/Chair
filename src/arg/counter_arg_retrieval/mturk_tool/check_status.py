@@ -10,6 +10,7 @@ def get_client():
                          endpoint_url=active_url)
     return mturk
 
+
 def view_hits():
     mturk = get_client()
     hits_with_type = []

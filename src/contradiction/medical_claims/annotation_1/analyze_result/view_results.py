@@ -3,7 +3,7 @@ from collections import Counter
 from typing import List
 
 from arg.counter_arg_retrieval.build_dataset.verify_by_acess_log import parse_mturk_time
-from contradiction.medical_claims.annotation_1.read_batch import load_file_list
+from contradiction.medical_claims.annotation_1.analyze_result.read_batch import load_file_list
 from cpath import output_path
 from misc_lib import get_dir_files, group_by
 from mturk.parse_util import HITScheme, HitResult, parse_file
@@ -47,13 +47,7 @@ def summarize_workers(file_path_list):
 
 
 def summarize_done_state(file_path_list):
-    hit_scheme = HITScheme([], [])
-
-    all_hits = []
-    for file_path in file_path_list:
-        print(file_path)
-        hit_results: List[HitResult] = parse_file(file_path, hit_scheme)
-        all_hits.extend(hit_results)
+    all_hits = read_hits_empty_scheme(file_path_list)
 
     count_per_hit = Counter()
     for hit in all_hits:
@@ -65,6 +59,16 @@ def summarize_done_state(file_path_list):
 
     for key, cnt in done_distrib.items():
         print("{} Hits has {} done".format(cnt, key))
+
+
+def read_hits_empty_scheme(file_path_list):
+    hit_scheme = HITScheme([], [])
+    all_hits = []
+    for file_path in file_path_list:
+        print(file_path)
+        hit_results: List[HitResult] = parse_file(file_path, hit_scheme)
+        all_hits.extend(hit_results)
+    return all_hits
 
 
 def user_check(file_path_list):

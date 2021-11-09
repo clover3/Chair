@@ -1,14 +1,9 @@
 import os
-from typing import List, Dict
 
 from data_generator.job_runner import JobRunner, WorkerInterface
 from epath import job_man_dir
 from misc_lib import exist_or_mkdir
-from tlm.data_gen.adhoc_datagen import MultiWindow
-from tlm.data_gen.adhoc_sent_tokenize import SeroFromTextEncoder
 from tlm.data_gen.msmarco_doc_gen.fix_train_sero_A import do_fix
-from tlm.data_gen.msmarco_doc_gen.gen_worker import MMDWorker
-from tlm.data_gen.msmarco_doc_gen.gen_worker_sent_level import PointwiseGenFromText
 from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResource10doc
 
 

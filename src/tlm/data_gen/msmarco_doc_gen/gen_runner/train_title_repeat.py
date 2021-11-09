@@ -1,11 +1,9 @@
-from typing import List, Dict
-
 from data_generator.job_runner import JobRunner
 from dataset_specific.msmarco.common import load_candidate_doc_list_10
 from epath import job_man_dir
 from tlm.data_gen.adhoc_datagen import FirstAndRandomTitleRepeat
-from tlm.data_gen.msmarco_doc_gen.gen_worker import MMDWorker, PredictionGenFromTitleBody, \
-    PointwiseGen, GenerateFromTitleBody
+from tlm.data_gen.msmarco_doc_gen.gen_worker import GenerateFromTitleBody
+from tlm.data_gen.msmarco_doc_gen.mmd_worker import MMDWorker
 from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResourceTitleBodyTrain
 
 if __name__ == "__main__":

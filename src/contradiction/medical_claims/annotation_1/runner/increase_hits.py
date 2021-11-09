@@ -1,53 +1,18 @@
 from collections import Counter
 
-import boto3
-
 from cache import save_to_pickle, load_from_pickle
+from contradiction.medical_claims.mturk.mturk_api_common import get_client, ask_hit_id
 
 
-def ask_hit_id():
-    mturk = get_client()
-    creation_time_key = "CreationTime"
-
-    hits_with_type = []
-    next_token = ""
-    while True:
-        if next_token:
-            res = mturk.list_hits(MaxResults=100, NextToken=next_token)
-        else:
-            res = mturk.list_hits(MaxResults=100)
-        print("{} hits ".format(len(res["HITs"])))
-        for hit in res["HITs"]:
-            if hit['HITTypeId'] == "34A9VSEXPFWA264TLZ2K15PC9BQ9JP":
-                hits_with_type.append(hit)
-                # print(hit['HITId'], hit[creation_time_key])
-        if 'NextToken' in res:
-            next_token = res['NextToken']
-        else:
-            break
-
+def ask_save():
+    target_hit_type_id = "34A9VSEXPFWA264TLZ2K15PC9BQ9JP"
+    hits_with_type = ask_hit_id(target_hit_type_id)
     save_to_pickle(hits_with_type, "hits")
 
 
-
 def view_hits():
-    mturk = get_client()
-    hits_with_type = []
-    next_token = ""
-    while True:
-        if next_token:
-            res = mturk.list_hits(MaxResults=100, NextToken=next_token)
-        else:
-            res = mturk.list_hits(MaxResults=100)
-        print("{} hits ".format(len(res["HITs"])))
-        for hit in res["HITs"]:
-            if hit['HITTypeId'] == "3MOP54T9IQ4I11BF73KUIH37JB40YX":
-                hits_with_type.append(hit)
-                # print(hit['HITId'], hit[creation_time_key])
-        if 'NextToken' in res:
-            next_token = res['NextToken']
-        else:
-            break
+    hit_type_id = "3MOP54T9IQ4I11BF73KUIH37JB40YX"
+    hits_with_type = query_list_hits(hit_type_id)
     print("{} hits ".format(len(hits_with_type)))
 
     counter_hit = Counter()
@@ -61,6 +26,27 @@ def view_hits():
 
     print("Total of {} assignments available".format(n_avail))
     print(counter_hit)
+
+
+def query_list_hits(hit_type_id):
+    mturk = get_client()
+    hits_with_type = []
+    next_token = ""
+    while True:
+        if next_token:
+            res = mturk.list_hits(MaxResults=100, NextToken=next_token)
+        else:
+            res = mturk.list_hits(MaxResults=100)
+        print("{} hits ".format(len(res["HITs"])))
+        for hit in res["HITs"]:
+            if hit['HITTypeId'] == hit_type_id:
+                hits_with_type.append(hit)
+                # print(hit['HITId'], hit[creation_time_key])
+        if 'NextToken' in res:
+            next_token = res['NextToken']
+        else:
+            break
+    return hits_with_type
 
 
 def checkHits():
@@ -112,13 +98,6 @@ def change_hit_type():
         print(ret)
 
 
-def get_client():
-    active_url = 'https://mturk-requester.us-east-1.amazonaws.com'
-    mturk = boto3.client('mturk',
-                         region_name='us-east-1',
-                         endpoint_url=active_url)
-    return mturk
-
 
 if __name__ == "__main__":
-    change_hit_type()
+    checkHits()

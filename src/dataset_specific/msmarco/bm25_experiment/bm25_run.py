@@ -1,15 +1,10 @@
-import os
-
 from arg.bm25 import BM25
 from cache import load_from_pickle
 from cpath import at_output_dir
-from dataset_specific.msmarco.common import MSMarcoDataReader, at_working_dir, load_per_query_docs, MSMarcoDoc, \
+from dataset_specific.msmarco.common import at_working_dir, load_per_query_docs, MSMarcoDoc, \
     load_queries, QueryID
 from misc_lib import get_second, TimeEstimator
-from tlm.data_gen.msmarco_doc_gen.gen_worker import MMDWorker, PointwiseGen
-from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResource
-from trec.trec_parse import load_ranked_list, load_ranked_list_grouped, write_trec_ranked_list_entry
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from trec.trec_parse import load_ranked_list_grouped, write_trec_ranked_list_entry
 
 from trec.types import TrecRankedListEntry
 
