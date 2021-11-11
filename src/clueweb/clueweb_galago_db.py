@@ -113,8 +113,8 @@ def get_docs_in_db(save_name) -> Set:
 
     session = Session()
     print("execute join")
-    j = session.query(DocIdTable.key).join(TokenizedCluewebDocTable,
-                                           DocIdTable.key == TokenizedCluewebDocTable.key)
+    j = session.query(DocIdTable.key).join_two_segments(TokenizedCluewebDocTable,
+                                                        DocIdTable.key == TokenizedCluewebDocTable.key)
     print("issued now getting")
 
     doc_id_in_db = set()

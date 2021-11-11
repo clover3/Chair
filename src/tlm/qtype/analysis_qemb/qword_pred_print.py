@@ -2,10 +2,10 @@ from collections import Counter
 from typing import List
 
 import numpy as np
+from tlm.qtype.analysis.save_parsed import parse_q_weight_output
 
 from cpath import at_output_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from tlm.qtype.analysis.save_parsed import parse_q_weight_output
 from tlm.qtype.qtype_analysis import QTypeInstance
 
 

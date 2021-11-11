@@ -4,7 +4,7 @@ from cpath import at_output_dir
 from data_generator.bert_input_splitter import get_first_seg
 from data_generator.tokenizer_wo_tf import pretty_tokens
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
-from tlm.qtype.analysis.save_parsed import get_voca_list, convert_ids_to_tokens
+from tlm.qtype.analysis_qemb.save_parsed import get_voca_list, convert_ids_to_tokens
 from tlm.qtype.qtype_analysis import QTypeInstance
 
 

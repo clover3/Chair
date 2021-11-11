@@ -86,6 +86,9 @@ class BertConfig(object):
         """Serializes this instance to a JSON string."""
         return json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n"
 
+    def get_config(self):
+        return self.to_dict()
+
 
 class BertModelInterface(object):
     def __init__(self):

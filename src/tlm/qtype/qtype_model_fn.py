@@ -186,3 +186,5 @@ def model_fn_qtype_pairwise(FLAGS, model_class, qtype_options=[]):
         return output_spec
 
     return model_fn
+
+

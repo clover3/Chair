@@ -190,6 +190,10 @@ class ProcessedResource50doc(ProcessedResourceI):
     def get_label(self, qid: QueryID, doc_id):
         return self.qrel.get_label(qid, doc_id)
 
+    def get_query_text(self, qid: QueryID):
+        query_text = self.queires[qid]
+        return query_text
+
     def get_q_tokens(self, qid: QueryID):
         query_text = self.queires[qid]
         return self.tokenizer.tokenize(query_text)

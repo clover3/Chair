@@ -27,6 +27,12 @@ class TokensAndSegmentIds(NamedTuple):
     seg_ids: List[int]
 
 
+class InputAndSegmentIds(NamedTuple):
+    input_ids: List[int]
+    seg_ids: List[int]
+
+
+
 class ClassificationInstanceWDataID(NamedTuple):
     tokens: List[str]
     seg_ids: List[int]

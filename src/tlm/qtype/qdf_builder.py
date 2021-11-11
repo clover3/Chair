@@ -24,6 +24,7 @@ def build_save_qdf():
 
 def main():
     queries = load_queries("train")
+    print(len(queries))
     n_list = [1, 2, 3, 4, 5]
     all_n_grams = {n: Counter() for n in n_list}
 

@@ -4,7 +4,7 @@ from typing import List
 
 from cache import load_pickle_from, load_from_pickle
 from cpath import at_output_dir
-from tlm.qtype.analysis.visualize_q_weights import cluster_rep_by_tf_idf, cluster_q_term_counts
+from tlm.qtype.analysis_qemb.visualize_q_weights import cluster_rep_by_tf_idf, cluster_q_term_counts
 from tlm.qtype.qtype_analysis import QTypeInstance
 
 

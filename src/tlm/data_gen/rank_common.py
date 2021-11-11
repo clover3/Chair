@@ -3,7 +3,9 @@ from collections import OrderedDict
 from typing import NamedTuple, List
 
 from data_generator.create_feature import create_int_feature
+from data_generator.special_tokens import CLS_ID, SEP_ID
 from tlm.data_gen.base import get_basic_input_feature_as_list
+from tlm.data_gen.classification_common import TokensAndSegmentIds, InputAndSegmentIds
 
 
 class QueryDocInstance(NamedTuple):
@@ -18,6 +20,19 @@ class QueryDocPairInstance(NamedTuple):
     doc_tokens1: List[str]
     doc_tokens2: List[str]
     data_id: int
+
+
+def join_two_tokens(seg1, seg2) -> TokensAndSegmentIds:
+    input_tokens = ["[CLS]"] + seg1 + ["[SEP]"] + seg2 + ["[SEP]"]
+    segment_ids = [0] * (len(seg1) + 2) + [1] * (len(seg2) + 1)
+    return TokensAndSegmentIds(input_tokens, segment_ids)
+
+
+def join_two_input_ids(seg1, seg2) -> InputAndSegmentIds:
+    input_tokens = [CLS_ID] + seg1 + [SEP_ID] + seg2 + [SEP_ID]
+    segment_ids = [0] * (len(seg1) + 2) + [1] * (len(seg2) + 1)
+    return InputAndSegmentIds(input_tokens, segment_ids)
+
 
 
 def encode_query_doc_instance(tokenizer, doc_token_length, inst: QueryDocInstance) -> OrderedDict:
@@ -44,4 +59,5 @@ def encode_query_doc_pair_instance(tokenizer, inst: QueryDocPairInstance) -> Ord
     feature['doc2'] = token_to_feature(inst.doc_tokens2)
     feature['data_id'] = create_int_feature([inst.data_id])
     return feature
+
 

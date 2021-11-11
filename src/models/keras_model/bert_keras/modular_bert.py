@@ -8,10 +8,10 @@ from models.transformer import bert_common_v2 as bc
 from models.transformer.bert_common_v2 import create_initializer, get_activation, reshape_to_matrix, \
     dropout, get_shape_list2
 
-
-class MyLayer(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
-        super(MyLayer, self).__init__(kwargs)
+MyLayer = tf.keras.layers.Layer
+# class MyLayer(tf.keras.layers.Layer):
+#     def __init__(self, **kwargs):
+#         super(MyLayer, self).__init__(kwargs)
 
 
 def embedding_postprocessor(input_tensor, token_type_table, full_position_embeddings,
@@ -78,41 +78,60 @@ class Embedding(MyLayer):
         self.embedding_table = None
         self.config = config
         initializer = bc.create_initializer(config.initializer_range)
-        self.embedding_table = tf.compat.v1.get_variable(
-            name="word_embeddings",
-            shape=[config.vocab_size, config.hidden_size],
-            initializer=initializer)
-        self.token_type_table = tf.compat.v1.get_variable(
-            name="token_type_embeddings",
-            shape=[config.type_vocab_size, config.hidden_size],
-            initializer=initializer)
-        self.full_position_embeddings = tf.compat.v1.get_variable(
-            name="position_embeddings",
-            shape=[config.max_position_embeddings, config.hidden_size],
-            initializer=initializer)
+        # get_variable = tf.compat.v1.get_variable
+        get_variable = self.add_weight
+        # self.embedding_table = get_variable(
+        #     name="word_embeddings",
+        #     shape=[config.vocab_size, config.hidden_size],
+        #     initializer=initializer)
+        # self.token_type_table = get_variable(
+        #     name="token_type_embeddings",
+        #     shape=[config.type_vocab_size, config.hidden_size],
+        #     initializer=initializer)
+        # self.full_position_embeddings = get_variable(
+        #     name="position_embeddings",
+        #     shape=[config.max_position_embeddings, config.hidden_size],
+        #     initializer=initializer)
 
-        # Perform embedding lookup on the word ids.
+        self.embedding_table = tf.keras.layers.Embedding(
+            input_dim=config.vocab_size,
+            output_dim=config.hidden_size,
+            name="word_embeddings"
+        )
+        self.token_type_table = tf.keras.layers.Embedding(
+            input_dim=config.type_vocab_size,
+            output_dim=config.hidden_size,
+            name="token_type_embeddings"
+        )
+        self.full_position_embeddings = tf.keras.layers.Embedding(
+            input_dim=config.max_position_embeddings,
+            output_dim=config.hidden_size,
+            name="position_embeddings"
+        )
+    # Perform embedding lookup on the word ids.
     def call(self, inputs, **kwargs):
         input_ids, segment_ids = inputs
         config = self.config
-        (self.embedding_output, self.embedding_table) = bc.embedding_lookup2(
-            input_ids=input_ids,
-            embedding_table=self.embedding_table,
-            vocab_size=config.vocab_size,
-            embedding_size=config.hidden_size,
-            use_one_hot_embeddings=self.use_one_hot_embeddings)
+        # (self.embedding_output, self.embedding_table) = bc.embedding_lookup2(
+        #     input_ids=input_ids,
+        #     embedding_table=self.embedding_table,
+        #     vocab_size=config.vocab_size,
+        #     embedding_size=config.hidden_size,
+        #     use_one_hot_embeddings=self.use_one_hot_embeddings)
+        embedding_output = self.embedding_table(input_ids)
 
         self.location_less_embedding = self.embedding_output
-
-        self.embedding_output = embedding_postprocessor(
-            input_tensor=self.embedding_output,
-            token_type_table=self.token_type_table,
-            full_position_embeddings=self.full_position_embeddings,
-            use_token_type=True,
-            token_type_ids=segment_ids,
-            token_type_vocab_size=config.type_vocab_size,
-            use_position_embeddings=True,
-            max_position_embeddings=config.max_position_embeddings)
+        embedding_output += self.token_type_table(segment_ids)
+        self.embedding_output = embedding_output
+        # self.embedding_output = embedding_postprocessor(
+        #     input_tensor=self.embedding_output,
+        #     token_type_table=self.token_type_table,
+        #     full_position_embeddings=self.full_position_embeddings,
+        #     use_token_type=True,
+        #     token_type_ids=segment_ids,
+        #     token_type_vocab_size=config.type_vocab_size,
+        #     use_position_embeddings=True,
+        #     max_position_embeddings=config.max_position_embeddings)
         return self.embedding_output
 
 
@@ -419,20 +438,45 @@ class BertLayer(MyLayer):
             return final_output
 
 
+class Linear(tf.keras.layers.Layer):
+    def __init__(self, units=32, input_dim=32):
+        super(Linear, self).__init__()
+        self.w = self.add_weight(
+            shape=(input_dim, units), initializer="random_normal", trainable=True
+        )
+        self.b = self.add_weight(shape=(units,), initializer="zeros", trainable=True)
+
+    def call(self, inputs):
+        return tf.matmul(inputs, self.w) + self.b
+
+
 class NamedLinear(tf.keras.layers.Layer):
     def __init__(self, num_classes, hidden_size):
         super(NamedLinear, self).__init__()
         shape = [num_classes, hidden_size]
-        initializer = tf.compat.v1.truncated_normal_initializer(stddev=0.02)
+        self.num_classes = num_classes
+        self.hidden_size = hidden_size
+        initializer = tf.keras.initializers.TruncatedNormal(
+            mean=0.0, stddev=0.02, seed=None
+        )
         self.output_weights = self.add_weight(name="output_weights", shape=shape,
                                               initializer=initializer,
                                               trainable=True
                                               )
-
-        self.output_bias = tf.compat.v1.get_variable(
-            "output_bias", [num_classes],
+        self.output_bias = self.add_weight(
+            name="output_bias", shape=[num_classes],
             initializer=tf.compat.v1.zeros_initializer()
         )
+
+    def get_config(self):
+        return {"num_classes": self.num_classes,
+                "hidden_size": self.hidden_size,
+                }
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
 
     def call(self, inputs):
         logits = tf.matmul(inputs, self.output_weights, transpose_b=True)
@@ -446,7 +490,9 @@ class BertClassifierLayer(MyLayer):
         if not is_training:
             config.hidden_dropout_prob = 0.0
             config.attention_probs_dropout_prob = 0.0
+        self.config = config
         self.hidden_size = config.hidden_size
+        self.use_one_hot_embedding = use_one_hot_embeddings
         self.num_classes = num_classes
         with tf.compat.v1.variable_scope("bert"):
             self.bert_layer = BertLayer(config, use_one_hot_embeddings, True)
@@ -458,6 +504,8 @@ class BertClassifierLayer(MyLayer):
                                                     )
 
         self.named_linear = NamedLinear(num_classes, config.hidden_size)
+        self.named_linear_w = self.named_linear.output_weights
+        self.named_linear_b = self.named_linear.output_bias
         self.is_training = is_training
 
     def call(self, inputs, **kwargs):
@@ -473,6 +521,50 @@ class BertClassifierLayer(MyLayer):
 
         logits = self.named_linear.call(pooled)
         return logits
+
+    def get_config(self):
+        return {
+            "config": self.config,
+            "use_one_hot_embedding": self.use_one_hot_embedding,
+            "num_classes": self.num_classes
+        }
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+
+
+class BertPooledLayer(MyLayer):
+    def __init__(self, config, use_one_hot_embeddings, is_training=False):
+        super(BertPooledLayer, self).__init__()
+        if not is_training:
+            config.hidden_dropout_prob = 0.0
+            config.attention_probs_dropout_prob = 0.0
+        self.hidden_size = config.hidden_size
+        with tf.compat.v1.variable_scope("bert"):
+            self.bert_layer = BertLayer(config, use_one_hot_embeddings, True)
+            with tf.compat.v1.variable_scope("pooler") as name_scope:
+                self.pooler = tf.keras.layers.Dense(config.hidden_size,
+                                                    activation=tf.keras.activations.tanh,
+                                                    kernel_initializer=create_initializer(config.initializer_range),
+                                                    name=name_scope.name + "/dense"
+                                                    )
+
+        self.is_training = is_training
+
+    def call(self, inputs, **kwargs):
+        with tf.compat.v1.variable_scope("bert"):
+            sequence_output = self.bert_layer.call(inputs)
+            self.sequence_output = sequence_output
+            last_layer = sequence_output[-1]
+            first_token_tensor = tf.squeeze(last_layer[:, 0:1, :], axis=1)
+            pooled = self.pooler(first_token_tensor)
+        self.pooled_output = pooled
+        if self.is_training:
+            pooled = dropout(pooled, 0.1)
+
+        return pooled
 
 
 class ProbeLayer(tf.keras.layers.Layer):

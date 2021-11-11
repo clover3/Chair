@@ -73,6 +73,7 @@ def format_dataset(name_to_features, batch_size, is_training, flags,
         d = tf.data.TFRecordDataset(input_files)
 
         if repeat_for_eval:
+            print("repeat_for_eval",repeat_for_eval)
             d = d.repeat()
 
         if flags.max_pred_steps:

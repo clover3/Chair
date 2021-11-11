@@ -2,7 +2,6 @@ import os
 from collections import OrderedDict
 
 import tensorflow as tf
-from tensorflow.python.data import TFRecordDataset
 
 from cpath import output_path
 from data_generator.create_feature import create_int_feature
@@ -70,56 +69,108 @@ def get_var_int_ids_spec():
     return tf.io.FixedLenSequenceFeature([], tf.int64, allow_missing=True)
 
 
-def build_query_doc12_dataset(input_files, max_seq_length, batch_size) -> TFRecordDataset:
-    feature_specs = {
-        "query": get_var_int_ids_spec(),
-        "doc1": get_var_int_ids_spec(),
-        "doc2": get_var_int_ids_spec(),
+def join_two_segments(seg1, seg2, post_fix):
+    CLS = [CLS_ID]
+    SEP = [SEP_ID]
+    input_ids = tf.concat([CLS, seg1, SEP, seg2, SEP], axis=0)
+    input_mask = tf.ones_like(input_ids, tf.int32)
+    seg0_s = tf.zeros_like(seg1, tf.int32)
+    seg1_s = tf.ones_like(seg1, tf.int32)
+    segment_ids = tf.concat([[0], seg0_s, [0], seg1_s, [1]], axis=0)
+    return {
+        "input_ids" + post_fix: input_ids,
+        "input_mask" + post_fix: input_mask,
+        "segment_ids" + post_fix: segment_ids
     }
-    d = tf.data.TFRecordDataset(input_files)
-    output_buffer_size = batch_size * 1000
-    d = d.map(lambda x: _decode_record(x, feature_specs)).prefetch(output_buffer_size)
-    d = d.map(concat_vectors)
-    d = d.padded_batch(batch_size, tuple([max_seq_length] * 6))
-    d = d.map(tuple_to_dict)
-    return d
 
 
-def input_fn_builder(flags,
-                     dataset_builder,
-                     num_cpu_threads=4,
-                     max_pred_steps=0
-                     ):
+def extract_record_fn(data_record):
+    feature_names_in_file = {"query", "doc1", "doc2"}
+    features = {k: get_var_int_ids_spec() for k in feature_names_in_file}
+    feature = tf.io.parse_single_example(data_record, features)
+    query = feature["query"]
+    doc1 = feature["doc1"]
+    doc2 = feature["doc2"]
+    s1 = join_two_segments(query, doc1, "1")
+    s2 = join_two_segments(query, doc2, "2")
+    s1.update(s2)
+    return s1
+
+
+def input_fn_builder(flags, extract_record_fn):
+    """Creates an `input_fn` closure to be passed to TPUEstimator."""
     input_files = get_input_files_from_flags(flags)
     show_input_files(input_files)
     is_training = flags.do_train
-    max_seq_length = flags.max_seq_length
-
+    seq_length = flags.max_seq_length
+    max_eval_examples = flags.max_eval_steps
+    num_cpu_threads = 4
     def input_fn(params):
         batch_size = params["batch_size"]
-        d: TFRecordDataset = dataset_builder(input_files, batch_size, max_seq_length)
+        d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
+        d = d.apply(
+            tf.data.experimental.parallel_interleave(
+                tf.data.TFRecordDataset,
+                sloppy=is_training,
+                block_length=flags.block_length,
+                cycle_length=100))
         if is_training:
-            cycle_length = min(num_cpu_threads, len(input_files))
-            d = d.apply(
-                tf.data.experimental.parallel_interleave(
-                    tf.data.TFRecordDataset,
-                    sloppy=is_training,
-                    cycle_length=cycle_length))
             d = d.repeat()
-            d = d.shuffle(buffer_size=1000 * 1000)
-            cycle_length = min(num_cpu_threads, len(input_files))
-            # `sloppy` mode means that the interleaving is not exact. This adds
-            d = d.apply(
-                tf.data.experimental.parallel_interleave(
-                    tf.data.TFRecordDataset,
-                    sloppy=is_training,
-                    cycle_length=cycle_length))
-        else:
-            if max_pred_steps > 0:
-                d = d.take(max_pred_steps)
-
+            d = d.shuffle(buffer_size=1000)
+        d = d.map(extract_record_fn, num_parallel_calls=num_cpu_threads)
+        d = d.padded_batch(
+            batch_size=batch_size,
+            padded_shapes={k: [seq_length] for k in feature_names},
+            drop_remainder=True)
         return d
+    return input_fn
 
+
+def input_fn_builder2(flags, extract_record_fn):
+
+    def extract_record_fn(data_record):
+        feature_names_in_file = {"query", "doc1", "doc2"}
+        features = {k: get_var_int_ids_spec() for k in feature_names_in_file}
+        feature = tf.io.parse_single_example(data_record, features)
+        query = feature["query"]
+        doc1 = feature["doc1"]
+        doc2 = feature["doc2"]
+        s1 = join_two_segments(query, doc1, "1")
+        s2 = join_two_segments(query, doc2, "2")
+        s1.update(s2)
+        return s1
+
+    """Creates an `input_fn` closure to be passed to TPUEstimator."""
+    input_files = get_input_files_from_flags(flags)
+    show_input_files(input_files)
+    is_training = True
+    seq_length = flags.max_seq_length
+    num_cpu_threads = 4
+    def input_fn(params):
+        batch_size = params["batch_size"]
+        d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
+        d = d.apply(
+            tf.data.experimental.parallel_interleave(
+                tf.data.TFRecordDataset,
+                sloppy=is_training,
+                block_length=flags.block_length,
+                cycle_length=100))
+        d = d.prefetch(1000)
+        if is_training:
+            d = d.repeat()
+            d = d.shuffle(buffer_size=1000)
+        else:
+            # if max_eval_examples:
+            #     d = d.take(max_eval_examples)
+            # elif flags.max_pred_steps:
+            #     d = d.take(flags.max_pred_steps)
+            pass
+        d = d.map(extract_record_fn, num_parallel_calls=num_cpu_threads)
+        d = d.padded_batch(
+            batch_size=batch_size,
+            padded_shapes={k: [seq_length] for k in feature_names},
+            drop_remainder=True)
+        return d
     return input_fn
 
 

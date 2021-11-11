@@ -31,6 +31,7 @@ def reset_root_log_handler():
     logging.root.handlers = logging.root.handlers[:1]
 
 
+
 def check(point_name):
     print()
     print(point_name)
