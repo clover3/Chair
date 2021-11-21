@@ -1,7 +1,8 @@
 from typing import NamedTuple, List
 
 from arg.counter_arg_retrieval.build_dataset.ca_types import CaTopicv2
-from bert_api.doc_score_helper import DocumentScorerOutput, DocumentScorer, DocumentScorerOutputSbword
+from bert_api.doc_score_defs import DocumentScorerOutputSbword, DocumentScorerOutput
+from bert_api.doc_score_helper import RemoteDocumentScorer
 from data_generator.tokenize_helper import TokenizedText
 from list_lib import lmap
 from trainer.promise import MyFuture
@@ -19,7 +20,7 @@ class AnalyzedDocument(NamedTuple):
     dot_tokens: List[str]  # space tokenized
 
 
-def analyze_doc_wrt_ca_topic(document_scorer: DocumentScorer, topic: CaTopicv2, doc: TokenizedText) -> AnalyzedDocument:
+def analyze_doc_wrt_ca_topic(document_scorer: RemoteDocumentScorer, topic: CaTopicv2, doc: TokenizedText) -> AnalyzedDocument:
     # For each segment, score toward the claim and perspectives.
     # Promise[DocumentScorerOutput]
     sdp: MyFuture = document_scorer.score_relevance(topic.claim_text, doc)

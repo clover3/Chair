@@ -1,7 +1,8 @@
 import os
 from typing import List, Dict, Set
 
-from arg.counter_arg_retrieval.build_dataset.run2.load_data import load_my_run2_topics, CAQuery
+from arg.counter_arg_retrieval.build_dataset.ca_query import CAQuery
+from arg.counter_arg_retrieval.build_dataset.run2.load_data import load_my_run2_topics
 from cpath import output_path
 from list_lib import lmap
 from tab_print import print_table

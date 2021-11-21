@@ -7,7 +7,7 @@ from tqdm import tqdm
 from arg.counter_arg_retrieval.build_dataset.ca_types import CaTopicv2
 from arg.counter_arg_retrieval.build_dataset.run1.load_resource import get_run1_resource
 from arg.counter_arg_retrieval.scorer.relevance_analysis import AnalyzedDocument, analyze_doc_wrt_ca_topic
-from bert_api.doc_score_helper import DocumentScorer, get_cache_doc_tokenizer
+from bert_api.doc_score_helper import RemoteDocumentScorer, get_cache_doc_tokenizer
 from bert_api.msmarco_rerank import get_msmarco_client
 from cache import save_to_pickle
 from cpath import output_path
@@ -26,7 +26,7 @@ def main():
     rlg, topics_v2, docs_d = get_run1_resource()
 
     client = get_msmarco_client()
-    document_scorer = DocumentScorer(client, 20)
+    document_scorer = RemoteDocumentScorer(client, 20)
 
     print("After filtering")
 

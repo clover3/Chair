@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 import cpath
 from models.transformer import hyperparams
 from models.transformer.transfomer_logit import transformer_logit
@@ -19,7 +21,7 @@ class Predictor:
         self.load_model_white(model_path, load_names)
         self.batch_size = 64
 
-    def predict(self, triple_list):
+    def predict(self, triple_list: List[Tuple[List, List, List]]):
         def batch2feed_dict(batch):
             x0, x1, x2 = batch
             feed_dict = {
@@ -36,7 +38,7 @@ class Predictor:
                 logits,  = self.sess.run([self.task.sout, ],
                                                feed_dict=batch2feed_dict(batch))
                 logit_list.append(logits)
-            return np.concatenate(logit_list)
+            return np.concatenate(logit_list) if logit_list else np.array([])
 
         scores = forward_run(triple_list)
         return scores.tolist()

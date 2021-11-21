@@ -1,15 +1,8 @@
 import csv
 import os
-from typing import NamedTuple
 
+from arg.counter_arg_retrieval.build_dataset.ca_query import CAQuery
 from cpath import output_path
-
-
-class CAQuery(NamedTuple):
-    qid: str
-    claim: str
-    perspective: str
-    ca_query: str
 
 
 def load_my_run2_topics():

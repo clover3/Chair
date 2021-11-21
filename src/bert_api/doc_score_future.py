@@ -1,4 +1,5 @@
-from typing import List, Tuple, Dict, Callable
+
+from typing import List, Tuple
 
 from bert_api.client_lib_msmarco import BERTClientMSMarco
 from bert_api.doc_score_defs import DocumentScorerOutputSbword, DocumentScorerInput
@@ -9,7 +10,7 @@ from misc_lib import split_window
 from trainer.promise import PromiseKeeper, MyPromise, MyFuture
 
 
-class RemoteDocumentScorer:
+class DocumentScorer:
     def __init__(self, client: BERTClientMSMarco, max_seg_per_document=None):
         self.max_seq_length = 512
         self.tokenizer = get_tokenizer()
@@ -25,7 +26,7 @@ class RemoteDocumentScorer:
             output_list.append(output)
         return output_list
 
-    def score_relevance(self, query_text, doc: TokenizedText) -> MyFuture:
+    def score_relevance(self, query_text, doc: TokenizedText) -> MyFuture:  # DocumentScorerOutputSbword:
         q_tokens = self.tokenizer.tokenize(query_text)
         available_doc_len = self.max_seq_length - len(q_tokens) - 3
         segment_list: List[List[str]] = split_window(doc.sbword_tokens, available_doc_len)
@@ -46,12 +47,3 @@ class RemoteDocumentScorer:
         promise_input = DocumentScorerInput(window_start_loc, payload_list)
         promise = MyPromise(promise_input, self.pk)
         return promise.future()
-
-
-def get_cache_doc_tokenizer(docs_d: Dict[str, str]) -> Callable:
-    doc_payload_d = {}
-    def get_tokenized_doc(doc_id) -> TokenizedText:
-        if doc_id in doc_payload_d:
-            return doc_payload_d[doc_id]
-        return TokenizedText.from_text(docs_d[doc_id])
-    return get_tokenized_doc

@@ -1,10 +1,11 @@
 import os
 from typing import List, Dict
 
+from arg.counter_arg_retrieval.build_dataset.ca_query import CAQuery
 from arg.counter_arg_retrieval.build_dataset.ca_types import CaTopic
 from arg.counter_arg_retrieval.build_dataset.resources import load_step2_claims_as_ca_topic
 from arg.counter_arg_retrieval.build_dataset.run1.write_q_res_html import write_htmls
-from arg.counter_arg_retrieval.build_dataset.run2.load_data import load_my_run2_topics, CAQuery
+from arg.counter_arg_retrieval.build_dataset.run2.load_data import load_my_run2_topics
 from cache import load_json_cache, load_from_pickle
 from cpath import output_path
 from misc_lib import exist_or_mkdir

@@ -17,7 +17,7 @@ from typing import NamedTuple
 import pytz
 
 from misc_lib import group_by
-from mturk.parse_util import HitResult
+from mturk.parse_util import HitResult, parse_mturk_time
 
 
 # ('172.16.0.3', '25/Sep/2002:14:04:19 +0200', 'GET / HTTP/1.1', '401', '', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.1) Gecko/20020827')
@@ -292,21 +292,6 @@ def test_apache_time():
     print('parsed_time', time)
     print(now)
     print(now - time)
-
-
-def parse_mturk_time(s):
-    # return dateutil.parser.parse(s)
-    tzs = "PDT"
-    assert tzs in s
-    s = s.replace(tzs + " ", "")
-    # EDT = pytz.timezone('UTC-0400')
-    PDT = pytz.timezone('US/Pacific')
-    # "Sat Jul 03 23:28:53 PDT 2021"
-    time_wo_tz = datetime.datetime.strptime(s, "%a %b %d %H:%M:%S %Y")
-    time_w_tz = PDT.localize(time_wo_tz)
-    # t = time_wo_tz
-    # time_w_tz = datetime.datetime(t.year, t.month, t.day, t.hour, t.minute, t.second, tzinfo=PDT)
-    return time_w_tz
 
 
 def test_mturk_time():

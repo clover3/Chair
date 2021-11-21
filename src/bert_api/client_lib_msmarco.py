@@ -6,7 +6,7 @@ from bert_api.msmarco_tokenization import EncoderUnit
 from cpath import data_path
 
 
-# This version do not add [CLS] token in the beggining
+# This version do not add [CLS] token in the beginning
 class BERTClientMSMarco:
     def __init__(self, server_addr, port, seq_len=512):
         voca_path = os.path.join(data_path, "bert_voca.txt")

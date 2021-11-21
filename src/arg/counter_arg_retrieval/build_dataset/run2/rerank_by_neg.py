@@ -2,10 +2,11 @@ import os
 from collections import defaultdict
 from typing import List, Dict, Tuple
 
+from arg.counter_arg_retrieval.build_dataset.ca_query import CAQuery
 from arg.counter_arg_retrieval.build_dataset.ca_types import CaTopic
 from arg.counter_arg_retrieval.build_dataset.resources import ca_building_q_res_path, \
     load_step2_claims_as_ca_topic, load_run1_doc_indexed
-from arg.counter_arg_retrieval.build_dataset.run2.load_data import load_my_run2_topics, CAQuery
+from arg.counter_arg_retrieval.build_dataset.run2.load_data import load_my_run2_topics
 from arg.counter_arg_retrieval.build_dataset.run2.write_q_res_html import load_cached_title
 from bert_api.msmarco_rerank import rerank_with_msmarco
 from cache import save_to_pickle

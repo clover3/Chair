@@ -1,12 +1,14 @@
 import cpath
 from models.transformer import hyperparams
 from models.transformer.transformer_logit_v2 import transformer_logit
+from tf_v2_support import disable_eager_execution
 from trainer.tf_module import *
 from trainer.tf_train_module_v2 import init_session
 
 
 class Predictor:
     def __init__(self, model_path, num_classes, seq_len=None):
+        disable_eager_execution()
         self.voca_size = 30522
         load_names = ['bert', "output_bias", "output_weights"]
         self.hp = hyperparams.HPFAD()
@@ -60,3 +62,5 @@ class Predictor:
 
         self.loader = tf.compat.v1.train.Saver(max_to_keep=1)
         self.loader.restore(self.sess, path)
+
+

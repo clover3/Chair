@@ -56,7 +56,6 @@ def make_galago_query(queries):
     }
 
 
-
 def main():
     target_claim_ids = [47, 504]
     queries = generate_query(target_claim_ids)
@@ -67,5 +66,10 @@ def main():
     fout.close()
 
 
+def show_query():
+    target_claim_ids = [565]
+    queries = generate_query(target_claim_ids)
+
+
 if __name__ == "__main__":
-    main()
+    show_query()
