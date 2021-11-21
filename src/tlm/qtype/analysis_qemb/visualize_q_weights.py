@@ -5,10 +5,10 @@ from typing import List
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.neighbors import NearestNeighbors
+from tlm.qtype.analysis.save_parsed import parse_q_weight_output
 
 from cpath import at_output_dir
 from misc_lib import get_second
-from tlm.qtype.analysis.save_parsed import parse_q_weight_output
 from tlm.qtype.qtype_analysis import QTypeInstance
 
 

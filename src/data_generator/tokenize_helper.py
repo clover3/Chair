@@ -30,6 +30,28 @@ class TokenizedText(NamedTuple):
 
         return TokenizedText(text, tokens, subword_list, idx_mapping)
 
+    def conver_sbword_indice(self, idx):
+        st = self.sbword_mapping[idx]
+        return st
 
+
+# : Type[SubwordIndex]
 SbwordIdx = NewType('SubwordIndex', int)
 WordIdx = NewType('WordIdx', int)
+
+
+def get_duplicate(doc_list: List[TokenizedText]):
+    def para_hash(doc: TokenizedText):
+        return " ".join(doc.tokens)
+
+    hash_set = set()
+    duplicates = []
+    for idx, doc in enumerate(doc_list):
+        hash = para_hash(doc)
+        if hash in hash_set:
+            duplicates.append(idx)
+            continue
+
+        hash_set.add(hash)
+    return duplicates
+

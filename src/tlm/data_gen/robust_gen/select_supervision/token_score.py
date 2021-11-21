@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import List, Dict, Tuple
 from typing import NamedTuple
 
+import tlm.qtype.qe_de_res_parse
 from arg.qck.decl import get_format_handler
 from arg.qck.prediction_reader import load_combine_info_jsons
 from estimator_helper.output_reader import join_prediction_with_info
@@ -100,7 +101,7 @@ def load_scores(info_file_path, prediction_file_path):
     key_logit = "logits"
     tprint("Reading predictions...")
     data: List[Dict] = join_prediction_with_info(prediction_file_path, info, ["data_id", key_logit])
-    grouped: Dict[Tuple[str, str], List[Dict]] = group_by(data, f_handler.get_pair_id)
+    grouped: Dict[Tuple[str, str], List[Dict]] = group_by(data, tlm.qtype.qe_de_res_parse.get_pair_id)
     print("number of groups:", len(grouped))
     return grouped
 

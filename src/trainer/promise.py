@@ -1,5 +1,5 @@
 import time
-from typing import List, Callable
+from typing import List, Callable, Generic
 from typing import TypeVar
 
 A = TypeVar('A')
@@ -21,13 +21,16 @@ class PromiseKeeper:
             X.future().Y = y
 
 
-class MyFuture:
+T = TypeVar('T')
+
+
+class MyFuture(Generic[T]):
     def __init__(self):
         self.Y = None
 
     def get(self):
         if self.Y is None:
-            raise Exception("Please Wait")
+            raise Exception("Future is not ready.")
         return self.Y
 
 

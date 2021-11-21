@@ -1,3 +1,4 @@
+
 import os
 
 from cpath import output_path
@@ -9,10 +10,10 @@ if __name__ == "__main__":
     split = "train"
 
     def worker_factory(out_dir):
-        tfrecord_dir = os.path.join(job_man_dir, "MMD_50doc_train_first")
-        prediction_dir = os.path.join(output_path, "mmd_2M_preds")
+        tfrecord_dir = os.path.join(job_man_dir, "MMD_10doc_train_first")
+        prediction_dir = os.path.join(output_path, "MMD_10doc_train_first")
         return ScoreTokenJoin(tfrecord_dir, prediction_dir, out_dir)
 
     n_jobs = 367
-    runner = JobRunnerS(job_man_dir, n_jobs, "MMD_2M_pred_parse", ScoreTokenJoin)
+    runner = JobRunnerS(job_man_dir, n_jobs, "MMD_2M_10doc_parse", worker_factory)
     runner.start()

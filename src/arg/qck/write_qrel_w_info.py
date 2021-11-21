@@ -1,5 +1,6 @@
 from typing import Dict, Tuple
 
+import tlm.qtype.qe_de_res_parse
 from arg.qck.decl import get_format_handler
 from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.util import load_run_config
@@ -15,7 +16,7 @@ def main(info_path, input_type, label_dict_path, save_path):
 
     l = []
     for entry in info.values():
-        key = f_handler.get_pair_id(entry)
+        key = tlm.qtype.qe_de_res_parse.get_pair_id(entry)
         query_id, candidate_id = key
         if key in label_dict:
             correctness = label_dict[key]

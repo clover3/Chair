@@ -1,5 +1,6 @@
 from typing import Dict, Tuple, List, NamedTuple
 
+import tlm.qtype.qe_de_res_parse
 from arg.qck.decl import get_format_handler
 from arg.qck.prediction_reader import load_combine_info_jsons
 from cpath import at_output_dir
@@ -53,8 +54,8 @@ class PieceScoreParser:
             # for each query, doc pairs
             cur_info1 = self.info[d1['data_id']]
             cur_info2 = self.info[d2['data_id']]
-            query_doc_id1 = self.f_handler.get_pair_id(cur_info1)
-            query_doc_id2 = self.f_handler.get_pair_id(cur_info2)
+            query_doc_id1 = tlm.qtype.qe_de_res_parse.get_pair_id(cur_info1)
+            query_doc_id2 = tlm.qtype.qe_de_res_parse.get_pair_id(cur_info2)
 
             assert query_doc_id1 == query_doc_id2
 

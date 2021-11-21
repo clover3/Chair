@@ -311,3 +311,25 @@ def get_table_head_cell(s, width=0) -> HtmlCellStr:
         return HtmlCellStr("<th style=\"width:{}%\">{}</th>".format(width, s))
     else:
         return HtmlCellStr("<th>{}</th>".format(s))
+
+
+def apply_html_highlight(indices, tokens) -> str:
+    s_out = ""
+    inside_mark = False
+    mark_begin = "<mark>"
+    mark_end = "</mark>"
+    for idx, t in enumerate(tokens):
+        if idx in indices:
+            if inside_mark:
+                s_out += " " + t
+            else:
+                s_out += " " + mark_begin + t
+                inside_mark = True
+        else:
+            if inside_mark:
+                s_out += mark_end + " " + t
+                inside_mark = False
+            else:
+                s_out += " " + t
+
+    return s_out

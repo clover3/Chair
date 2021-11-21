@@ -18,8 +18,16 @@ class QDE(NamedTuple):
     q_e: TokensAndSegmentIds
     d_e: TokensAndSegmentIds
 
+
 class QDE_as_Ids(NamedTuple):
     q_e: InputAndSegmentIds
+    d_e: InputAndSegmentIds
+    score: float
+    data_id: int
+
+
+class QTypeDE_as_Ids(NamedTuple):
+    qtype_id: int
     d_e: InputAndSegmentIds
     score: float
     data_id: int
@@ -110,3 +118,25 @@ def encode_qde_ids_instance(
     feature['data_id'] = create_int_feature([inst.data_id])
     return feature
 
+
+def encode_qtype_de_ids_instance(
+        max_seq_length,
+        inst: QTypeDE_as_Ids) -> OrderedDict:
+    def pad_to_length(seq, pad_len):
+        seq = seq[:pad_len]
+        n_pad = pad_len - len(seq)
+        return seq + [0] * n_pad
+
+    def convert_pad_assign(qd: InputAndSegmentIds, pad_len):
+        input_ids = create_int_feature(pad_to_length(qd.input_ids, pad_len))
+        segment_ids = create_int_feature(pad_to_length(qd.seg_ids, pad_len))
+        return input_ids, segment_ids
+
+    feature = collections.OrderedDict()
+    feature['qtype_id'] = create_int_feature([inst.qtype_id])
+    input_ids, segment_ids = convert_pad_assign(inst.d_e, max_seq_length)
+    feature['d_e_input_ids'] = input_ids
+    feature['d_e_segment_ids'] = segment_ids
+    feature['label_ids'] = create_float_feature([inst.score])
+    feature['data_id'] = create_int_feature([inst.data_id])
+    return feature

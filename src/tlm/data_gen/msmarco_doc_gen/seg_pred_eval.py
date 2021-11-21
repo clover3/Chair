@@ -4,6 +4,7 @@ from typing import List, Dict, Tuple
 
 import scipy.special
 
+import tlm.qtype.qe_de_res_parse
 from arg.qck.decl import get_format_handler
 from arg.qck.prediction_reader import load_combine_info_jsons
 from estimator_helper.output_reader import join_prediction_with_info
@@ -48,7 +49,7 @@ def get_scores(info_file_path, input_type, pred_file_path, score_type):
         else:
             assert False
 
-    grouped: Dict[Tuple[str, str], List[Dict]] = group_by(data, f_handler.get_pair_id)
+    grouped: Dict[Tuple[str, str], List[Dict]] = group_by(data, tlm.qtype.qe_de_res_parse.get_pair_id)
     sc = SuccessCounter()
     for pair_id, items in grouped.items():
         label_idx = []

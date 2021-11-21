@@ -392,3 +392,33 @@ class ProcessedResourceTitleBodyTokensListTrain(ProcessedResourceTitleBodyTokens
 
     def query_in_qrel(self, query_id):
         return query_id in self.qrel.qrel_d
+
+
+class ProcessedResourceTitleBodyTokensListPredict(ProcessedResourceTitleBodyTokensListI):
+    def __init__(self, split):
+        query_group: List[List[QueryID]] = load_query_group(split)
+        candidate_docs_d: Dict[QueryID, List[str]] = top100_doc_ids(split)
+        qrel: SimpleQrel = load_msmarco_simple_qrels(split)
+        self.queires = dict(load_queries(split))
+        self.qrel = qrel
+        self.split = split
+        self.candidate_doc_d: Dict[QueryID, List[str]] = candidate_docs_d
+        self.tokenizer = get_tokenizer()
+        self.query_group = query_group
+
+    def get_doc_tokens_d(self, qid: QueryID) -> Dict[str, Tuple[List[str], List[List[str]]]]:
+        return load_token_d_sent_level(self.split, qid)
+
+    def get_label(self, qid: QueryID, doc_id):
+        return self.qrel.get_label(qid, doc_id)
+
+    def get_q_tokens(self, qid: QueryID):
+        query_text = self.queires[qid]
+        return self.tokenizer.tokenize(query_text)
+
+    def get_doc_for_query_d(self):
+        return self.candidate_doc_d
+
+    def query_in_qrel(self, query_id):
+        return query_id in self.qrel.qrel_d
+

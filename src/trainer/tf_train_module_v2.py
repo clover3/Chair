@@ -5,17 +5,17 @@ from models.transformer.optimization_v2 import AdamWeightDecayOptimizer
 
 
 def init_session():
-    config = tf.compat.v1.ConfigProto(allow_soft_placement=True,
+    config = tf1.ConfigProto(allow_soft_placement=True,
                             log_device_placement=False)
     config.gpu_options.allow_growth = True
 
-    return tf.compat.v1.Session(config=config)
+    return tf1.Session(config=config)
 
 
 def get_train_op(loss, lr, global_step = None, name='Adam',):
     if global_step is None:
         global_step = tf.Variable(0, name='global_step', trainable=False)
-    optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=lr, beta1=0.9, beta2=0.98, epsilon=1e-8,
+    optimizer = tf1.train.AdamOptimizer(learning_rate=lr, beta1=0.9, beta2=0.98, epsilon=1e-8,
                                        name=name)
     train_op = optimizer.minimize(loss, global_step=global_step)
     return train_op, global_step
@@ -24,7 +24,7 @@ def get_train_op(loss, lr, global_step = None, name='Adam',):
 class OomReportingHook(tf.estimator.SessionRunHook):
     def before_run(self, run_context):
         return tf.estimator.SessionRunArgs(fetches=[],  # no extra fetches
-                      options=tf.compat.v1.RunOptions(
+                      options=tf1.RunOptions(
                       report_tensor_allocations_upon_oom=True))
 
 
@@ -67,7 +67,7 @@ def get_learning_rate(global_step, lr, num_train_steps):
         learning_rate = tf.constant(value=lr, shape=[], dtype=tf.float32)
 
         # Implements linear decay of the learning rate.
-        learning_rate = tf.compat.v1.train.polynomial_decay(
+        learning_rate = tf1.train.polynomial_decay(
             learning_rate,
             global_step,
             num_train_steps,

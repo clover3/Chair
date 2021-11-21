@@ -1,7 +1,10 @@
 import csv
+import datetime
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 from typing import NamedTuple, NewType
+
+import pytz
 
 from list_lib import lmap
 
@@ -166,6 +169,12 @@ class HitResult:
     def get_input(self, input_name: ColumnName):
         return self.inputs[input_name]
 
+    def get_accept_time(self):
+        return parse_mturk_time(self.accept_time)
+
+    def get_submit_time(self):
+        return parse_mturk_time(self.submit_time)
+
     def get_repeated_entries_result(self, name, idx):
         return self.outputs[name][idx]
 
@@ -230,3 +239,18 @@ def remove_rejected(hit_results: List[HitResult]):
         if h.status != "Rejected":
             output.append(h)
     return output
+
+
+def parse_mturk_time(s):
+    # return dateutil.parser.parse(s)
+    tzs = "PDT"
+    assert tzs in s
+    s = s.replace(tzs + " ", "")
+    # EDT = pytz.timezone('UTC-0400')
+    PDT = pytz.timezone('US/Pacific')
+    # "Sat Jul 03 23:28:53 PDT 2021"
+    time_wo_tz = datetime.datetime.strptime(s, "%a %b %d %H:%M:%S %Y")
+    time_w_tz = PDT.localize(time_wo_tz)
+    # t = time_wo_tz
+    # time_w_tz = datetime.datetime(t.year, t.month, t.day, t.hour, t.minute, t.second, tzinfo=PDT)
+    return time_w_tz

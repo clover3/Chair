@@ -2,11 +2,10 @@ import os
 from collections import Counter
 from typing import List
 
-from arg.counter_arg_retrieval.build_dataset.verify_by_acess_log import parse_mturk_time
 from contradiction.medical_claims.annotation_1.analyze_result.read_batch import load_file_list
 from cpath import output_path
 from misc_lib import get_dir_files, group_by
-from mturk.parse_util import HITScheme, HitResult, parse_file
+from mturk.parse_util import HITScheme, HitResult, parse_file, parse_mturk_time
 
 
 class WorkerInfo:

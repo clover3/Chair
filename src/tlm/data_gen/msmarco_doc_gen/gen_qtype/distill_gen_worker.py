@@ -5,15 +5,15 @@ from typing import List, Dict
 
 from data_generator.job_runner import WorkerInterface
 from misc_lib import exist_or_mkdir, DataIDManager, tprint
-from tlm.data_gen.msmarco_doc_gen.gen_worker_qd import QueryDocEntityDistilGen
+from tlm.data_gen.msmarco_doc_gen.gen_worker_qd import QDDistillGenI
 
 
 class DistillGenWorker(WorkerInterface):
-    def __init__(self, generator: QueryDocEntityDistilGen,
+    def __init__(self, generator: QDDistillGenI,
                  query_group,
                  resource_path_format, out_dir):
         self.out_dir = out_dir
-        self.generator: QueryDocEntityDistilGen = generator
+        self.generator: QDDistillGenI = generator
         self.info_dir = os.path.join(self.out_dir + "_info")
         self.resource_path_format = resource_path_format
         exist_or_mkdir(self.info_dir)

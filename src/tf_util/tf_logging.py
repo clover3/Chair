@@ -53,10 +53,12 @@ class MyFormatter(logging.Formatter):
 
         critical_prefix = ''
         level = record.levelno
-
+        display_name = record.name
+        if display_name == "tensorflow":
+            display_name = "tf"
         return '%s %s [%02d:%02d:%02d %s:%d] %s' % (
             logging._levelToName[level],
-            record.name,
+            display_name,
           created_tuple.tm_hour,
           created_tuple.tm_min,
           created_tuple.tm_sec,
@@ -112,13 +114,13 @@ class CounterFilter(logging.Filter):
 
 class MuteEnqueueFilter(logging.Filter):
     targets = ["Dequeue next", "Enqueue next"]
-    seen = set()
+    seen_count = Counter()
 
     def filter(self, record):
         for pattern in self.targets:
             if pattern in record.msg:
-                if pattern in self.seen:
+                self.seen_count[pattern] += 1
+                if self.seen_count[pattern] > 3:
                     return False
-                self.seen.add(pattern)
                 return True
         return True

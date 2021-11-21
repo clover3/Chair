@@ -3,6 +3,7 @@ from typing import List, Dict, Tuple
 
 import numpy as np
 
+import tlm.qtype.qe_de_res_parse
 from arg.qck.decl import get_format_handler
 from arg.qck.prediction_reader import load_combine_info_jsons
 from cpath import at_output_dir, output_path
@@ -46,8 +47,8 @@ def main():
             # for each query, doc pairs
             cur_info1 = info[d1['data_id']]
             cur_info2 = info[d2['data_id']]
-            query_doc_id1 = f_handler.get_pair_id(cur_info1)
-            query_doc_id2 = f_handler.get_pair_id(cur_info2)
+            query_doc_id1 = tlm.qtype.qe_de_res_parse.get_pair_id(cur_info1)
+            query_doc_id2 = tlm.qtype.qe_de_res_parse.get_pair_id(cur_info2)
 
             assert query_doc_id1 == query_doc_id2
 

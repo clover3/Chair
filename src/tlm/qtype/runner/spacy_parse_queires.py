@@ -31,8 +31,8 @@ class QueryParseWorker(WorkerInterface):
         pickle.dump(output, open(save_path, "wb"))
 
 
-def main():
-    split = "train"
+
+def run_query_parse_jobs(split):
     queries = load_queries(split)
     n_per_job = 50 * 1000
     num_jobs = int(len(queries) / n_per_job) + 1
@@ -43,6 +43,11 @@ def main():
 
     runner = JobRunner(job_man_dir, num_jobs, "msmarco_spacy_query_parse_{}".format(split), factory)
     runner.start()
+
+
+def main():
+    split = "train"
+    run_query_parse_jobs(split)
 
 
 if __name__ == "__main__":

@@ -26,8 +26,9 @@ class PCTokenizer:
 
 
 class PCTokenizerEx:
-    def __init__(self):
+    def __init__(self, on_unicode_error="skip"):
         self.stemmer = Stemmer()
+        self.on_unicode_error = on_unicode_error
 
     def tokenize_stem(self, text: str) -> List[StemmedToken]:
         tokens = nltk.tokenize.word_tokenize(text)
@@ -36,8 +37,15 @@ class PCTokenizerEx:
             try:
                 t_: StemmedToken = StemmedToken(t, self.stemmer.stem(t))
                 stemmed_tokens.append(t_)
-            except:
-                pass
+            except UnicodeDecodeError:
+                if self.on_unicode_error == "skip":
+                    pass
+                elif self.on_unicode_error == "keep":
+                    stemmed_tokens.append(t)
+                elif self.on_unicode_error == "raise":
+                    raise
+                else:
+                    assert False
 
         return stemmed_tokens
 

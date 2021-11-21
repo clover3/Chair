@@ -110,10 +110,8 @@ def parse_save_content_tokens(qid_query_tokens_list):
     return save_obj
 
 
-def run_query_parsing():
-    num_jobs = 8
+def _run_query_parsing(num_jobs, split):
     qid_query_tokens_list = []
-    split = "train"
     for i in range(num_jobs):
         pickle_path = os.path.join(job_man_dir, "msmarco_spacy_query_parse_{}".format(split), "{}".format(i))
         qid_query_tokens_list.extend(load_pickle_from(pickle_path))
@@ -121,5 +119,23 @@ def run_query_parsing():
     save_to_pickle(save_obj, "mmd_query_parse_{}".format(split))
 
 
+def run_query_parsing_train():
+    num_jobs = 8
+    split = "train"
+    _run_query_parsing(num_jobs, split)
+
+
+def run_query_parsing_dev():
+    num_jobs = 2
+    split = "dev"
+    _run_query_parsing(num_jobs, split)
+
+
+def run_query_parsing_test():
+    num_jobs = 1
+    split = "test"
+    _run_query_parsing(num_jobs, split)
+
+
 if __name__ == "__main__":
-    run_query_parsing()
+    run_query_parsing_test()

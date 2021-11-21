@@ -15,7 +15,6 @@ def main(_):
                             process_feature,
                             get_mae_loss_modeling,
                             qtype_modeling_single_mlp,
-                            special_flags=FLAGS.special_flags.split(",")
                             )
     if FLAGS.do_predict:
         tf_logging.addFilter(MuteEnqueueFilter())

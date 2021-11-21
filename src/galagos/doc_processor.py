@@ -2,12 +2,14 @@ from __future__ import absolute_import
 
 import time
 from collections import Counter
+from typing import List, Tuple
 
 from boilerpipe.extract import Extractor
 from nltk import tokenize
 
 import datastore.interface
 import datastore.tool
+from data_generator.tokenize_helper import TokenizedText
 from datastore.table_names import *
 from galagos.parse import parse_doc_jsonl_line
 from galagos.tokenize_doc_and_save import bert_tokenize
@@ -57,4 +59,29 @@ def parse_doc_and_save(buffered_saver, doc_id, html, tokenize_fn):
     tf = Counter(tokens)
     buffered_saver.save(CluewebDocTF, doc_id, tf)
 
+
+class BoilerpipeException(Exception):
+    pass
+
+
+def jsonl_to_tokenized_text(line_itr, tokenizer, num_insts=0) -> List[Tuple[str, TokenizedText]]:
+    if num_insts:
+        ticker = TimeEstimator(num_insts)
+
+    output = []
+    for line in line_itr:
+        doc_id, html = parse_doc_jsonl_line(line)
+        if num_insts:
+            ticker.tick()
+        try:
+            extractor = Extractor(extractor='ArticleExtractor', html=html)
+            core_text = extractor.getText()
+        except Exception as e:
+            print("Exception at Extractor")
+            print(e)
+            continue
+        core_text = str(core_text)
+        tt: TokenizedText = TokenizedText.from_text(core_text, tokenizer)
+        output.append((doc_id, tt))
+    return output
 

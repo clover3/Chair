@@ -6,6 +6,7 @@ from typing import List, Dict
 import numpy as np
 import scipy.special
 
+import tlm.qtype.qe_de_res_parse
 from arg.qck.decl import get_format_handler
 from arg.qck.prediction_reader import load_combine_info_jsons
 from cache import save_to_pickle
@@ -67,7 +68,7 @@ def main(pred_file_path: str,
 
     data: List[Dict] = join_prediction_with_info(pred_file_path, info, ["data_id", key_logit])
 
-    grouped = group_by(data, f_handler.get_pair_id)
+    grouped = group_by(data, tlm.qtype.qe_de_res_parse.get_pair_id)
 
     cnt = Counter()
     for key, entries in grouped.items():
