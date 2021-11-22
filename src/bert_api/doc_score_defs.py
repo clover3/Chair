@@ -36,3 +36,5 @@ class DocumentScorerInputEx(NamedTuple):
     window_start_loc: List[SbwordIdx]
     payload_list: List[Tuple[List[str], List[str]]]
     doc: TokenizedText
+
+

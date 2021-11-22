@@ -13,6 +13,7 @@ from trainer.promise import MyFuture, MyPromise, PromiseKeeper
 
 DocumentScorerPromiseSpec = Tuple[DocumentScorerInput, TokenizedText]
 
+
 class DocumentScorer:
     def __init__(self, predictor: Predictor, max_seg_per_document=None):
         self.max_seq_length = 512
@@ -56,3 +57,6 @@ class DocumentScorer:
         promise_input: DocumentScorerInputEx = DocumentScorerInputEx(window_start_loc, payload_list, doc)
         promise = MyPromise(promise_input, self.pk)
         return promise.future()
+
+
+

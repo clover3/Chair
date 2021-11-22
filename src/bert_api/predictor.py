@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from abc import ABC, abstractmethod
 
 import cpath
 from models.transformer import hyperparams
@@ -21,7 +21,7 @@ class Predictor:
         self.load_model_white(model_path, load_names)
         self.batch_size = 64
 
-    def predict(self, triple_list: List[Tuple[List, List, List]]):
+    def predict(self, triple_list: List[Tuple[List, List, List]]) -> List[Tuple]:
         def batch2feed_dict(batch):
             x0, x1, x2 = batch
             feed_dict = {
@@ -73,3 +73,20 @@ class Predictor:
 
         self.loader = tf.train.Saver(variables_to_restore, max_to_keep=1)
         self.loader.restore(self.sess, path)
+
+
+
+class FloatPredictor(ABC):
+    @abstractmethod
+    def predict(self, triple_list: List[Tuple[List, List, List]]) -> List[float]:
+        pass
+
+
+class PredictorWrap(FloatPredictor):
+    def __init__(self, predictor: Predictor, get_fn: Callable[[Any], float]):
+        self.predictor = predictor
+        self.get_fn = get_fn
+
+
+    def predict(self, triple_list: List[Tuple[List, List, List]]) -> List[float]:
+        return list(map(self.get_fn, self.predictor.predict(triple_list)))

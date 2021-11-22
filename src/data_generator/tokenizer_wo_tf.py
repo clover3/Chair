@@ -564,6 +564,12 @@ class EncoderUnitPlain(EncoderUnit):
         d = super(EncoderUnitPlain, self).encode_pair(text1, text2)
         return d["input_ids"], d["input_mask"], d["segment_ids"]
 
+    def encode_token_pairs(self, tokens_a, tokens_b):
+        ids_1 = self.encoder.ft.convert_tokens_to_ids(tokens_a)
+        ids_2 = self.encoder.ft.convert_tokens_to_ids(tokens_b)
+        d = self.encode_inner(ids_1, ids_2)
+        return d["input_ids"], d["input_mask"], d["segment_ids"]
+
 
 def is_continuation(subword):
     return len(subword) > 2 and subword[:2] == "##"
