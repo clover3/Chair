@@ -94,3 +94,44 @@ def format_dataset(name_to_features, batch_size, is_training, flags,
             num_parallel_batches=num_cpu_threads,
             drop_remainder=True))
     return d
+
+
+
+def shuffle_predict(name_to_features, batch_size, is_training, flags,
+                    input_files,
+                    num_cpu_threads,
+                    repeat_for_eval=False,
+                    cycle_length=250):
+    d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
+    d = d.shuffle(buffer_size=flags.buffer_size)
+
+    # `cycle_length` is the number of parallel files that get read.
+    cycle_length = min(num_cpu_threads, len(input_files))
+    cycle_length = 100
+    # `sloppy` mode means that the interleaving is not exact. This adds
+    # even more randomness to the training pipeline.
+    d = d.apply(
+        tf.data.experimental.parallel_interleave(
+            tf.data.TFRecordDataset,
+            sloppy=is_training,
+            block_length=flags.block_length,
+            cycle_length=cycle_length))
+    d = d.shuffle(buffer_size=flags.buffer_size)
+    if flags.max_pred_steps:
+        n_predict = flags.eval_batch_size * flags.max_pred_steps
+        d = d.take(n_predict)
+
+        # Since we evaluate for a fixed number of steps we don't want to encounter
+        # out-of-range exceptions.
+        # d = d.repeat()
+    # We must `drop_remainder` on training because the TPU requires fixed
+    # size dimensions. For eval, we assume we are evaluating on the CPU or GPU
+    # and we *don't* want to drop the remainder, otherwise we wont cover
+    # every sample.
+    d = d.apply(
+        tf.data.experimental.map_and_batch(
+            lambda record: _decode_record(record, name_to_features),
+            batch_size=batch_size,
+            num_parallel_batches=num_cpu_threads,
+            drop_remainder=True))
+    return d

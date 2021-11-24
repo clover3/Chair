@@ -430,7 +430,7 @@ def model_fn_qde4(FLAGS,
         query_document_score2 = query_document_score1 + bias
         query_document_score3 = query_document_score2 + q_bias
         query_document_score = query_document_score3 + d_bias
-        bias2 = query_document_score2 -query_document_score1
+        bias2 = query_document_score2 - query_document_score1
         alpha = get_alpha_from_config(model_config, 1)
         loss, losses, y_pred = get_loss_modeling(query_document_score, features)
         tensor_dict = {

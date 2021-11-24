@@ -21,7 +21,7 @@ def run_for_prediction_split(split):
     def factory(out_dir):
         return MMDWorker(resource.query_group, generator, out_dir)
 
-    runner = JobRunnerS(job_man_dir, len(resource.query_group)-1, "MMD_{}_qe_de".format(split), factory)
+    runner = JobRunnerS(job_man_dir, len(resource.query_group), "MMD_{}_qe_de".format(split), factory)
     runner.start()
 
 

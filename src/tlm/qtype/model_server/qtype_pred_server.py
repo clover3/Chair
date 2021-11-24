@@ -1,5 +1,3 @@
-import tensorflow as tf
-
 import cpath
 import tlm.model.base as bert
 from cpath import output_path
@@ -41,7 +39,7 @@ class transformer_logit:
             use_one_hot_embeddings=use_one_hot_embeddings)
 
         pooled_output = self.model.get_pooled_output()
-        logits = tf.keras.layers.Dense(num_classes, name="cls_dense")(pooled_output)
+        logits = tf.keras.layers.Dense(num_classes)(pooled_output)
         loss_arr = tf.nn.sparse_softmax_cross_entropy_with_logits(
             logits=logits,
             labels=label_ids)
@@ -70,18 +68,16 @@ class transformer_logit:
 
 
 class Predictor:
-    def __init__(self, model_path, num_classes, seq_len=None):
+    def __init__(self, num_classes, seq_len=None):
         disable_eager_execution()
         self.voca_size = 30522
         self.hp = hyperparams.HPFAD()
-        load_names = ['bert', "cls_dense"]
         if seq_len is not None:
             self.hp.seq_max = seq_len
         self.model_dir = cpath.model_path
         self.task = transformer_logit(self.hp, num_classes, self.voca_size, False)
         self.sess = init_session()
         self.sess.run(tf.compat.v1.global_variables_initializer())
-        self.load_model_white(model_path, load_names)
         self.batch_size = 64
 
     def predict(self, triple_list):
@@ -106,34 +102,16 @@ class Predictor:
         scores = forward_run(triple_list)
         return scores.tolist()
 
-    def load_model_white(self, save_dir, include_namespace, verbose=True):
-        def get_last_id(save_dir):
-            last_model_id = None
-            for (dirpath, dirnames, filenames) in os.walk(save_dir):
-                for filename in filenames:
-                    if ".meta" in filename:
-                        print(filename)
-                        model_id = filename[:-5]
-                        if last_model_id is None:
-                            last_model_id = model_id
-                        else:
-                            last_model_id = model_id if model_id > last_model_id else last_model_id
-            return last_model_id
-
-        id = get_last_id(save_dir)
-        path = os.path.join(save_dir, "{}".format(id))
-
-        self.loader = tf.compat.v1.train.Saver(max_to_keep=1)
-        self.loader.restore(self.sess, path)
-
-
 
 def run_server():
-    save_path = os.path.join(output_path, "model", "runs", "mmd_2M")
-
+    save_path = os.path.join(output_path, "model", "runs", "qtype_A2A_rename", "model")
     disable_eager_execution()
+    num_classes = 2048
+    predictor = Predictor(num_classes, 128)
 
-    predictor = Predictor(save_path, 1, 512)
+    loader = tf.compat.v1.train.Saver(max_to_keep=1)
+    loader.restore(predictor.sess, save_path)
+
     def predict(payload):
         sout = predictor.predict(payload)
         return sout

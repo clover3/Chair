@@ -9,6 +9,7 @@ from misc.show_checkpoint_vars import load_checkpoint_vars
 from models.keras_model.bert_keras.modular_bert import define_bert_keras_inputs, BertLayer
 from models.keras_model.bert_keras.v1_load_util import load_model_from_v1_checkpoint
 from models.transformer.bert_common_v2 import create_initializer
+from tf_v2_support import disable_eager_execution
 from tlm.model.base import BertConfig
 from trainer.np_modules import get_batches_ex
 
@@ -112,6 +113,7 @@ def get_predictor():
     save_path = os.path.join(output_path, "model", "runs", "mmd_2M", "model.ckpt-200000")
 
     vars = load_checkpoint_vars(save_path)
+    print("Variables in {}".format(save_path))
     for name, val in vars.items():
         print(name, val.shape)
 
@@ -131,6 +133,7 @@ def get_predictor():
 
 
 def main():
+    disable_eager_execution()
     predict = get_predictor()
     while True:
         sent1 = input("Query: ")
