@@ -33,9 +33,9 @@ def process_feature_concat(features):
     def do_concat(input_ids1, segment_ids1, input_ids2, segment_ids2):
         input_mask1 = get_mask_from_input_ids(input_ids1)
         input_mask2 = get_mask_from_input_ids(input_ids2)
-        return (tf.concat([input_ids1, input_ids2], axis=0),
-                tf.concat([input_mask1, input_mask2], axis=0),
-                tf.concat([segment_ids1, segment_ids2], axis=0))
+        return InputTriplet(input_ids=tf.concat([input_ids1, input_ids2], axis=0),
+                            input_mask=tf.concat([input_mask1, input_mask2], axis=0),
+                            segment_ids=tf.concat([segment_ids1, segment_ids2], axis=0))
 
     qe_inputs = do_concat(features["q_e_input_ids1"], features["q_e_segment_ids1"],
                           features["q_e_input_ids2"], features["q_e_segment_ids2"],
@@ -241,6 +241,7 @@ def model_fn_qde3(FLAGS,
                                       kernel_initializer=create_initializer(config.initializer_range))
         return dense(vector)
 
+    special_flags = FLAGS.special_flags.split(",")
     model_config_o = JsonConfig.from_json_file(FLAGS.model_config_file)
     train_config = TrainConfigEx.from_flags(FLAGS)
     use_one_hot_embeddings = FLAGS.use_tpu
@@ -286,20 +287,36 @@ def model_fn_qde3(FLAGS,
         query_document_score += q_bias
         query_document_score += d_bias
 
+        query_document_score1 = tf.reduce_sum(tf.multiply(qtype_vector1, qtype_vector2), axis=1)
+        bias = tf.Variable(initial_value=0.0, trainable=True)
+        query_document_score2 = query_document_score1 + bias
+        query_document_score3 = query_document_score2 + q_bias
+        query_document_score = query_document_score3 + d_bias
+        bias2 = query_document_score2 -query_document_score1
+        alpha = get_alpha_from_config(model_config, 1)
         loss, losses, y_pred = get_loss_modeling(query_document_score, features)
-        l2_loss_1 = tf.nn.l2_loss(qtype_vector1)
-        l2_loss_2 = tf.nn.l2_loss(qtype_vector2)
-        l2_loss_total = l2_loss_1 + l2_loss_2
-        loss += l2_loss_total
-        prediction = {
+        tensor_dict = {
             "data_id": features["data_id"],
             "label_ids": features["label_ids"],
-            # "qe_input_ids": qe_input_ids,
-            # "de_input_ids": de_input_ids,
-            # "qtype_vector_qe": qtype_vector1,
-            # "qtype_vector_de": qtype_vector2,
+            "qtype_vector_qe": qtype_vector1,
+            "qtype_vector_de": qtype_vector2,
+            "de_input_ids": de_inputs.input_ids,
             "logits": query_document_score,
+            "bias": bias2,
+            "q_bias": q_bias,
+            "d_bias": d_bias
         }
+        if "predict_vector" in special_flags:
+            tensor_to_predict = ["data_id", "label_ids", "logits", "de_input_ids",
+                                 "qtype_vector_qe", "qtype_vector_de", "q_bias", "d_bias", "bias"]
+        else:
+            tensor_to_predict = ["data_id", "label_ids", "logits"]
+        prediction = {k: tensor_dict[k] for k in tensor_to_predict}
+
+        sparsity_loss_1 = get_l1_loss_w(qtype_vector1)
+        sparsity_loss_2 = get_l1_loss_w(qtype_vector2)
+        sparsity_loss_total = (sparsity_loss_1 + sparsity_loss_2) * alpha
+        loss += tf.reduce_mean(sparsity_loss_total)
 
         all_tvars = tf.compat.v1.trainable_variables()
         if train_config.init_checkpoint:
@@ -316,7 +333,7 @@ def model_fn_qde3(FLAGS,
             output_spec = TPUEstimatorSpec(mode=mode, loss=loss, train_op=train_op, scaffold_fn=scaffold_fn)
         elif mode == tf.estimator.ModeKeys.EVAL:
             eval_metrics = (qde_metric, [
-                y_pred, l2_loss_total
+                y_pred, sparsity_loss_total
             ])
             output_spec = TPUEstimatorSpec(mode=mode, loss=loss, eval_metrics=eval_metrics,
                                            scaffold_fn=scaffold_fn)
@@ -332,6 +349,7 @@ def model_fn_qde3(FLAGS,
         else:
             assert False
         return output_spec
+
 
 
     return model_fn
@@ -369,6 +387,8 @@ def model_fn_qde4(FLAGS,
     model_config_o = JsonConfig.from_json_file(FLAGS.model_config_file)
     train_config = TrainConfigEx.from_flags(FLAGS)
     use_one_hot_embeddings = FLAGS.use_tpu
+    special_flags = FLAGS.special_flags.split(",")
+
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
         log_features(features)
         de_inputs, qe_inputs = process_feature(features)
@@ -405,28 +425,36 @@ def model_fn_qde4(FLAGS,
             qtype_vector2 = get_qtype_modeling(model_config, pooled2)
             d_bias = single_bias_model(model_config, pooled2)
 
-        query_document_score = tf.reduce_sum(tf.multiply(qtype_vector1, qtype_vector2), axis=1)
+        query_document_score1 = tf.reduce_sum(tf.multiply(qtype_vector1, qtype_vector2), axis=1)
         bias = tf.Variable(initial_value=0.0, trainable=True)
-        query_document_score += bias
-        query_document_score += q_bias
-        query_document_score += d_bias
+        query_document_score2 = query_document_score1 + bias
+        query_document_score3 = query_document_score2 + q_bias
+        query_document_score = query_document_score3 + d_bias
+        bias2 = query_document_score2 -query_document_score1
         alpha = get_alpha_from_config(model_config, 1)
-
         loss, losses, y_pred = get_loss_modeling(query_document_score, features)
+        tensor_dict = {
+            "data_id": features["data_id"],
+            "label_ids": features["label_ids"],
+            "qtype_vector_qe": qtype_vector1,
+            "qtype_vector_de": qtype_vector2,
+            "de_input_ids": de_inputs.input_ids,
+            "logits": query_document_score,
+            "bias": bias2,
+            "q_bias": q_bias,
+            "d_bias": d_bias
+        }
+        if "predict_vector" in special_flags:
+            tensor_to_predict = ["data_id", "label_ids", "logits", "de_input_ids",
+                                 "qtype_vector_qe", "qtype_vector_de", "q_bias", "d_bias", "bias"]
+        else:
+            tensor_to_predict = ["data_id", "label_ids", "logits"]
+        prediction = {k: tensor_dict[k] for k in tensor_to_predict}
 
         sparsity_loss_1 = get_l1_loss_w(qtype_vector1)
         # sparsity_loss_2 = qtype_vector2
         sparsity_loss_total = sparsity_loss_1 * alpha
         loss += tf.reduce_mean(sparsity_loss_total)
-        prediction = {
-            "data_id": features["data_id"],
-            "label_ids": features["label_ids"],
-            # "qe_input_ids": qe_input_ids,
-            # "de_input_ids": de_input_ids,
-            # "qtype_vector_qe": qtype_vector1,
-            # "qtype_vector_de": qtype_vector2,
-            "logits": query_document_score,
-        }
 
         all_tvars = tf.compat.v1.trainable_variables()
         if train_config.init_checkpoint:

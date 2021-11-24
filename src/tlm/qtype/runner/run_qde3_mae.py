@@ -1,8 +1,8 @@
 from my_tf import tf
 from taskman_client.wrapper import report_run
 from tf_util.tf_logging import tf_logging, MuteEnqueueFilter
-from tlm.qtype.qde_model_fn import process_feature, get_mse_loss_modeling, qtype_modeling_single_mlp, \
-    model_fn_qde3
+from tlm.qtype.qde_model_fn import process_feature, qtype_modeling_single_mlp, \
+    model_fn_qde3, get_mae_loss_modeling
 from tlm.qtype.qtype_input_fn import input_fn_builder_qde_score
 from tlm.training.train_flags import *
 from trainer.tpu_estimator import run_estimator
@@ -14,9 +14,9 @@ def main(_):
                                           flags=FLAGS)
     model_fn = model_fn_qde3(FLAGS,
                              process_feature,
-                             get_mse_loss_modeling,
+                             get_mae_loss_modeling,
                              qtype_modeling_single_mlp,
-                            )
+                             )
     if FLAGS.do_predict:
         tf_logging.addFilter(MuteEnqueueFilter())
 

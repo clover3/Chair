@@ -26,8 +26,9 @@ def main():
 
         rl1.sort(key=lambda e: e.doc_id)
         rl2.sort(key=lambda e: e.doc_id)
-
-        assert len(rl1) == len(rl2)
+        if not len(rl1) == len(rl2):
+            print(len(rl1), len(rl2))
+            continue
         for e1, e2 in zip(rl1, rl2):
             assert e1.doc_id == e2.doc_id
 

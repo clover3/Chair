@@ -92,19 +92,20 @@ def parse_save_content_tokens(qid_query_tokens_list):
         if st is None:
             parsed_output = ">> Content word not found"
             parse_failed_qid.append(qid)
-        else:
-            content_span, functional_tokens, out_s_list = categorize_token(spacy_tokens, st, ed)
-            parsed_output = " ".join(out_s_list)
-            func_str = " ".join(functional_tokens)
-            d = {
-                'qid': qid,
-                'query': query,
-                'content_span': content_span,
-                'functional_tokens': functional_tokens,
-                'out_s_list': out_s_list
-            }
-            func_tokens_counter[func_str] += 1
-            parsed_queries.append(d)
+            st = 0
+            ed = len(spacy_tokens)
+        content_span, functional_tokens, out_s_list = categorize_token(spacy_tokens, st, ed)
+        parsed_output = " ".join(out_s_list)
+        func_str = " ".join(functional_tokens)
+        d = {
+            'qid': qid,
+            'query': query,
+            'content_span': content_span,
+            'functional_tokens': functional_tokens,
+            'out_s_list': out_s_list
+        }
+        func_tokens_counter[func_str] += 1
+        parsed_queries.append(d)
 
     save_obj = parsed_queries, func_tokens_counter
     return save_obj
@@ -138,4 +139,5 @@ def run_query_parsing_test():
 
 
 if __name__ == "__main__":
+    run_query_parsing_dev()
     run_query_parsing_test()
