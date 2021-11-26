@@ -4,7 +4,7 @@ import os
 from cpath import output_path
 from epath import job_man_dir
 from job_manager.job_runner_with_server import JobRunnerS
-from tlm.data_gen.msmarco_doc_gen.gen_qtype.distil_preprocessing_common import ScoreTokenJoin
+from tlm.qtype.gen_qtype.distil_preprocessing_common import ScoreTokenJoin
 
 if __name__ == "__main__":
     split = "train"

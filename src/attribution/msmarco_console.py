@@ -2,7 +2,7 @@ from bert_api.client_lib_msmarco import BERTClientMSMarco
 
 
 def main():
-    client = BERTClientMSMarco("http://localhost", 8122, 512)
+    client = BERTClientMSMarco("http://localhost", 8123, 512)
     sent1 = input("Query: ")
     while True:
         sent2 = input("Document: ")

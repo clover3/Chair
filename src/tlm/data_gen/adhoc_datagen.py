@@ -1,7 +1,6 @@
+import math
 from abc import ABC, abstractmethod
 from typing import Tuple
-
-import math
 
 from misc_lib import enum_passage, enum_passage_overlap
 from tlm.data_gen.doc_encode_common import enum_passage_random_short
@@ -50,6 +49,10 @@ class EncoderTokenCounter2Interface(ABC):
     def count(self, query, tokens) -> List[Tuple[List, List, int]]:
         # returns tokens, segmend_ids
         pass
+
+
+class EncoderWithTitleBodyTokensListInterface(ABC):
+    pass
 
 
 def get_combined_tokens_segment_ids(query_tokens, second_tokens) -> Tuple[Tokens, SegmentIDs]:
@@ -362,6 +365,15 @@ class FirstAndRandom(EncoderInterface):
         return insts
 
 
+class FirstAndTitle(TitleRepeatInterface):
+    def __init__(self, max_seq_length):
+        self.all_seg_repeat_encoder = AllSegmentRepeatTitle(max_seq_length)
+
+    def encode(self, query_tokens, title_tokens, body_tokens) -> List[Tuple[List, List]]:
+        insts = self.all_seg_repeat_encoder.encode(query_tokens, title_tokens, body_tokens)
+        return insts[:1]
+
+
 class FirstAndRandomTitleRepeat(TitleRepeatInterface):
     def __init__(self, max_seq_length):
         self.all_seg_repeat_encoder = AllSegmentRepeatTitle(max_seq_length)
@@ -611,6 +623,4 @@ class LeadingSegmentsCombined(EncoderInterface):
             tokens_extending.extend(out_tokens)
             segment_ids_extending.extend(segment_ids)
         return [(tokens_extending, segment_ids_extending)]
-
-
 

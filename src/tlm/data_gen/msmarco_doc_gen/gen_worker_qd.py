@@ -200,9 +200,9 @@ class QueryDocEntityConcatPointwisePredictionGen(MMDGenI):
         self.q_max_seq_length = q_max_seq_length
 
     def generate(self, data_id_manager, qids) -> Iterable[QDE_as_Ids]:
-        success_docs = 0
-        missing_cnt = 0
-        missing_doc_qid = []
+        self.success_docs = 0
+        self.missing_cnt = 0
+        self.missing_doc_qid = []
         for qid in TEL(qids):
             if qid not in self.resource.get_doc_for_query_d():
                 continue
@@ -242,13 +242,13 @@ class QueryDocEntityConcatPointwisePredictionGen(MMDGenI):
                                           label,
                                           data_id)
                         yield inst
-                    success_docs += 1
+                    self.success_docs += 1
                 except KeyError:
-                    missing_cnt += 1
-                    missing_doc_qid.append(qid)
-                    if missing_cnt > 10:
-                        print(missing_doc_qid)
-                        print("success: ", success_docs)
+                    self.missing_cnt += 1
+                    self.missing_doc_qid.append(qid)
+                    if self.missing_cnt > 10:
+                        print(self.missing_doc_qid)
+                        print("{} docs are missing while {} have suceed".format(self.missing_cnt, self.success_docs))
                         raise KeyError
 
     def write(self, insts: Iterable[QDE_as_Ids], out_path: str):

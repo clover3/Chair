@@ -6,10 +6,10 @@ from dataset_specific.msmarco.common import load_per_query_docs, MSMarcoDoc
 from misc_lib import pick1, TimeEstimator
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from tlm.data_gen.classification_common import PairedInstance
-from tlm.data_gen.msmarco_doc_gen.gen_qtype.encoders import DropException
 from tlm.data_gen.msmarco_doc_gen.misc_common import get_pos_neg_doc_ids_for_qid
 from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResourceI
 from tlm.data_gen.pairwise_common import combine_features
+from tlm.qtype.gen_qtype.encoders import DropException
 
 
 class PairwiseGenWDropTokenFromText:

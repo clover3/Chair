@@ -4,10 +4,10 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 from dataset_specific.msmarco.common import load_candidate_doc_list_10
 from epath import job_man_dir
 from job_manager.job_runner_with_server import JobRunnerS
-from tlm.data_gen.msmarco_doc_gen.gen_qtype.qtype_prediction_gen import QTypeIDPredictionGen
 from tlm.data_gen.msmarco_doc_gen.mmd_worker import MMDWorker
 from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResourceTitleBodyTokensListTrain
-from tlm.qtype.qid_to_content_tokens import get_qid_to_content_tokens, get_qid_to_qtype_id
+from tlm.qtype.content_functional_parsing.qid_to_content_tokens import get_qid_to_content_tokens, get_qid_to_qtype_id
+from tlm.qtype.gen_qtype.qtype_prediction_gen import QTypeIDPredictionGen
 
 if __name__ == "__main__":
     split = "train"

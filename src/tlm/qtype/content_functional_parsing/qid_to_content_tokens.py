@@ -1,22 +1,23 @@
 import csv
 import os
-from collections import Counter
-from typing import List, Dict, NamedTuple
+from collections import Counter, defaultdict
+from typing import List, Dict, NamedTuple, Tuple
 
 from cache import load_from_pickle, save_to_pickle
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
+from dataset_specific.msmarco.common import QueryID
 
 
 class QueryInfo(NamedTuple):
-    qid: str
+    qid: QueryID
     query: str
     content_span: str
     functional_tokens: List[str]
     out_s_list: List[str]
 
 
-def get_qid_to_content_tokens(split) -> Dict[str, List[str]]:
+def get_qid_to_content_tokens(split) -> Dict[QueryID, List[str]]:
     obj = load_from_pickle("mmd_query_parse_{}".format(split))
     parsed_queries: List[Dict] = obj[0]
     func_tokens_counter: Counter = obj[1]
@@ -38,7 +39,6 @@ def load_query_info_dict(split) -> Dict[str, QueryInfo]:
         qi = QueryInfo(d['qid'], d['query'], d['content_span'], d['functional_tokens'], d['out_s_list'])
         out_d[qi.qid] = qi
     return out_d
-
 
 
 def func_tokens_to_qtype_id(split):
@@ -125,7 +125,7 @@ def demo_parsing(split):
 def print_qtype():
     qtype_id_mapping: Dict[str, int] = load_from_pickle("qtype_id_mapping")
     part = list(qtype_id_mapping.items())[:2048]
-    f = open(os.path.join(output_path, "qtype", "qtype.csv"), "w", newline="")
+    f = open(os.path.join(output_path, "qtype", "../qtype.csv"), "w", newline="")
     writer = csv.writer(f)
     for text, qtype_id in part:
         writer.writerow([text, str(qtype_id)])
@@ -142,3 +142,20 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def structured_qtype_text(query_info_dict: Dict[str, QueryInfo]) -> Dict[str, Tuple[str, str]]:
+    mapping_counter = defaultdict(Counter)
+    for e in query_info_dict.values():
+        st = e.out_s_list.index("[")
+        ed = e.out_s_list.index("]")
+        func_rep = " ".join(e.functional_tokens)
+        head = " ".join(e.out_s_list[:st])
+        tail = " ".join(e.out_s_list[ed+1:])
+        mapping_counter[func_rep][(head, tail)] += 1
+
+    mapping = {}
+    for func_rep, counter in mapping_counter.items():
+        (head, tail), cnt = counter.most_common(1)[0]
+        mapping[func_rep] = (head, tail)
+    return mapping

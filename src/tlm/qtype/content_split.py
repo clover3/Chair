@@ -120,10 +120,26 @@ def _run_query_parsing(num_jobs, split):
     save_to_pickle(save_obj, "mmd_query_parse_{}".format(split))
 
 
+
+def _run_query_parsing_debug(num_jobs, split):
+    qid_query_tokens_list = []
+    key = '1000625'
+    for i in range(num_jobs):
+        pickle_path = os.path.join(job_man_dir, "msmarco_spacy_query_parse_{}".format(split), "{}".format(i))
+        l = load_pickle_from(pickle_path)
+        if key in [r[0] for r in l]:
+            print("key found at", i)
+        print("{} loaded from {}".format(len(l), i))
+        qid_query_tokens_list.extend(l)
+    save_obj = parse_save_content_tokens(qid_query_tokens_list)
+    save_to_pickle(save_obj, "mmd_query_parse_{}".format(split))
+
+
 def run_query_parsing_train():
     num_jobs = 8
     split = "train"
-    _run_query_parsing(num_jobs, split)
+    _run_query_parsing_debug(num_jobs, split)
+    # _run_query_parsing(num_jobs, split)
 
 
 def run_query_parsing_dev():
@@ -139,5 +155,6 @@ def run_query_parsing_test():
 
 
 if __name__ == "__main__":
-    run_query_parsing_dev()
-    run_query_parsing_test()
+    run_query_parsing_train()
+    # run_query_parsing_dev()
+    # run_query_parsing_test()

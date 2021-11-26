@@ -7,12 +7,13 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import pick1, print_dict_tab
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from tlm.data_gen.adhoc_datagen import TitleRepeatInterface
+from tlm.data_gen.adhoc_sent_tokenize import FromSentTokensListEncoderI
 from tlm.data_gen.classification_common import ClassificationInstanceWDataID, \
     write_with_classification_instance_with_id, PairedInstance
 from tlm.data_gen.msmarco_doc_gen.misc_common import get_pos_neg_doc_ids_for_qid
 from tlm.data_gen.msmarco_doc_gen.mmd_gen_common import MMDGenI
 from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResourceI, ProcessedResourcePredict, \
-    ProcessedResourceTitleBodyPredict, ProcessedResourceTitleBodyI
+    ProcessedResourceTitleBodyPredict, ProcessedResourceTitleBodyI, ProcessedResourceTitleBodyTokensListI
 from tlm.data_gen.pairwise_common import combine_features
 
 
@@ -66,7 +67,7 @@ class PointwiseGen(MMDGenI):
         return write_with_classification_instance_with_id(self.tokenizer, self.max_seq_length, insts, out_path)
 
 
-class GenerateFromTitleBody:
+class GenerateFromTitleBody(MMDGenI):
     def __init__(self, resource: ProcessedResourceTitleBodyI,
                  doc_encoder: TitleRepeatInterface,
                  max_seq_length):
@@ -377,6 +378,59 @@ class PredictionGenFromTitleBody(MMDGenI):
                         print("success: ", success_docs)
                         raise KeyError
         print(" {} of {} has long title".format(self.doc_encoder.long_title_cnt, self.doc_encoder.total_doc_cnt))
+
+    def write(self, insts: Iterable[ClassificationInstanceWDataID], out_path: str):
+        return write_with_classification_instance_with_id(self.tokenizer, self.max_seq_length, insts, out_path)
+
+
+class GenFromTitleBodyTokensList(MMDGenI):
+    def __init__(self, resource: ProcessedResourceTitleBodyTokensListI,
+                 basic_encoder: FromSentTokensListEncoderI,
+                 max_seq_length):
+        self.resource = resource
+        self.encoder = basic_encoder
+        self.tokenizer = get_tokenizer()
+        self.max_seq_length = max_seq_length
+
+    def generate(self, data_id_manager, qids):
+        missing_cnt = 0
+        success_docs = 0
+        n_passage = 0
+        for qid in qids:
+            if qid not in self.resource.get_doc_for_query_d():
+                continue
+
+            tokens_d: Dict[str, Tuple[List[str], List[List[str]]]] = self.resource.get_doc_tokens_d(qid)
+            q_tokens = self.resource.get_q_tokens(qid)
+            def iter_passages(doc_id):
+                title, body = tokens_d[doc_id]
+                insts: List[Tuple[List[str], List[str]]] = self.encoder.encode(q_tokens, title, body)
+                return insts
+
+            data_size_maybe = 0
+            for title_tokens, body_tokens in tokens_d.values():
+                data_size_maybe += len(title_tokens)
+                data_size_maybe += len(body_tokens)
+            for doc_id in self.resource.get_doc_for_query_d()[qid]:
+                label = self.resource.get_label(qid, doc_id)
+                for passage_idx, passage in enumerate(iter_passages(doc_id)):
+                    try:
+                            tokens_seg, seg_ids = passage
+                            assert type(tokens_seg[0]) == str
+                            assert type(seg_ids[0]) == int
+                            data_id = data_id_manager.assign({
+                                'query': QCKQuery(qid, ""),
+                                'candidate': QCKCandidate(doc_id, ""),
+                                'passage_idx': passage_idx,
+                            })
+                            inst = ClassificationInstanceWDataID(tokens_seg, seg_ids, label, data_id)
+                            n_passage += 1
+                            yield inst
+                    except KeyError:
+                        missing_cnt += 1
+                        if missing_cnt > 10:
+                            print("success: ", success_docs)
+                            raise KeyError
 
     def write(self, insts: Iterable[ClassificationInstanceWDataID], out_path: str):
         return write_with_classification_instance_with_id(self.tokenizer, self.max_seq_length, insts, out_path)

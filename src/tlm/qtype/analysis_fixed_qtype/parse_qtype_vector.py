@@ -1,4 +1,4 @@
-from collections import Counter, defaultdict
+from collections import Counter
 from typing import List, Dict
 from typing import NamedTuple, Iterator
 
@@ -55,7 +55,8 @@ def parse_q_weight_output(raw_prediction_path, data_info) -> List[QTypeInstance]
 
 from bert_api.client_lib_msmarco import BERTClientMSMarco
 from cache import load_from_pickle
-from tlm.qtype.qid_to_content_tokens import load_query_info_dict, QueryInfo
+from tlm.qtype.content_functional_parsing.qid_to_content_tokens import load_query_info_dict, QueryInfo, \
+    structured_qtype_text
 from scipy.special import softmax
 import numpy as np
 
@@ -72,23 +73,6 @@ class QDistClient:
         probs_arr = softmax(ret, axis=1)
         probs = probs_arr[0]
         return probs
-
-
-def structured_qtype_text(query_info_dict: Dict[str, QueryInfo]):
-    mapping_counter = defaultdict(Counter)
-    for e in query_info_dict.values():
-        st = e.out_s_list.index("[")
-        ed = e.out_s_list.index("]")
-        func_rep = " ".join(e.functional_tokens)
-        head = " ".join(e.out_s_list[:st])
-        tail = " ".join(e.out_s_list[ed+1:])
-        mapping_counter[func_rep][(head, tail)] += 1
-
-    mapping = {}
-    for func_rep, counter in mapping_counter.items():
-        (head, tail), cnt = counter.most_common(1)[0]
-        mapping[func_rep] = (head, tail)
-    return mapping
 
 
 def run_qtype_analysis(raw_prediction_path, info_file_path, split):

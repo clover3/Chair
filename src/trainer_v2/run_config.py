@@ -22,6 +22,7 @@ class RunConfigEx:
         self.init_checkpoint = init_checkpoint
         self.checkpoint_type = checkpoint_type
 
+
 def get_run_config() -> RunConfigEx:
     parser = argparse.ArgumentParser(description='File should be stored in ')
     parser.add_argument("--model_save_path")

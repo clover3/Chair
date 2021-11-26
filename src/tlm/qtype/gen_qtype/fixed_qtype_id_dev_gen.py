@@ -7,7 +7,7 @@ from tlm.data_gen.msmarco_doc_gen.gen_worker_qd import FixedQTypeIDPredictionGen
 from tlm.data_gen.msmarco_doc_gen.mmd_worker import MMDWorker
 from tlm.data_gen.msmarco_doc_gen.processed_resource import ProcessedResourceTitleBodyTokensListPredict
 from tlm.data_gen.query_document_encoder import QueryDocumentEncoder
-from tlm.qtype.qid_to_content_tokens import get_qid_to_content_tokens, get_qid_to_qtype_id
+from tlm.qtype.content_functional_parsing.qid_to_content_tokens import get_qid_to_content_tokens, get_qid_to_qtype_id
 
 
 def run_for_prediction_split(split):

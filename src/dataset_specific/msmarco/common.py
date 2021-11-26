@@ -98,6 +98,10 @@ train_query_group_len = 367
 
 
 def load_query_group(split) -> List[List[QueryID]]:
+    """
+
+    :rtype: object
+    """
     qids = left(load_queries(split))
     if split == "train":
         n_per_group = 1000

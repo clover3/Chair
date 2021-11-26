@@ -18,6 +18,8 @@ log_path = FilePath(os.path.join(project_root, 'common.log'))
 model_path = FilePath(os.path.join(output_path, 'model'))
 prediction_dir = FilePath(os.path.join(output_path, "prediction"))
 
+qtype_root_dir = FilePath(os.path.join(output_path, "qtype"))
+
 
 def pjoin(file_path: FilePath, file_name) -> FilePath:
     return FilePath(os.path.join(file_path, file_name))

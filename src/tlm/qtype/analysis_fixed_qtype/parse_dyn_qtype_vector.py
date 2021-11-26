@@ -12,7 +12,7 @@ from list_lib import left, right
 from misc_lib import group_by
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 from tlm.qtype.analysis_qemb.save_parsed import get_voca_list, convert_ids_to_tokens
-from tlm.qtype.qid_to_content_tokens import load_query_info_dict, QueryInfo
+from tlm.qtype.content_functional_parsing.qid_to_content_tokens import load_query_info_dict, QueryInfo
 
 
 class QTypeInstance(NamedTuple):

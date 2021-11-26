@@ -1,20 +1,30 @@
-from data_generator.job_runner import JobRunner
-from dataset_specific.msmarco.common import load_query_group, load_candidate_doc_list_10, load_candidate_doc_top50
-from dataset_specific.msmarco.tokenize_worker_w_nltk import SentLevelTokenizeWorker
+from dataset_specific.msmarco.common import load_query_group
+from dataset_specific.msmarco.tokenize_worker_w_nltk import SentLevelTokenizeWorker2
 from epath import job_man_dir
 from job_manager.job_runner_with_server import JobRunnerS
 
 
 def run_tokenize_jobs_for_train_split(split):
     query_group = load_query_group(split)
-    candidate_docs = load_candidate_doc_list_10(split)
+
+    def factory(out_dir):
+        return SentLevelTokenizeWorker2(split, query_group, out_dir)
+
+    runner = JobRunnerS(job_man_dir, len(query_group),
+                        "MSMARCO_{}_sent_tokens_all".format(split),
+                        factory)
+    runner.start()
+
+
+def run_tokenize_jobs_for_train_split_10docs(split):
+    query_group = load_query_group(split)
 
 
     def factory(out_dir):
-        return SentLevelTokenizeWorker(split, query_group, candidate_docs, out_dir)
+        return SentLevelTokenizeWorker2(split, query_group, out_dir)
 
     runner = JobRunnerS(job_man_dir, len(query_group),
-                        "MSMARCO_{}_sent_tokens".format(split),
+                        "MSMARCO_{}_sent_tokens_10docs".format(split),
                         factory)
     runner.start()
 
