@@ -77,3 +77,4 @@ def get_ca_run1_scheme2():
     answer_units.append(RadioButtonGroup("Q14.", lmap(str, range(4)), True))
     hit_scheme = HITScheme(inputs, answer_units)
     return hit_scheme
+

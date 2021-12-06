@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    .passage {
+      border: 1px solid black;
+      padding: 10px;
+      margin: 5px;
+    }
+  </style>
+  <title>Title</title>
+</head>
+<body>
+<!-- You must include this JavaScript file -->
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+
+<!-- For the full list of available Crowd HTML Elements and their input/output passageation,
+      please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->
+
+<!-- You must include crowd-form so that your task submits answers to MTurk -->
+<crowd-form answer-format="flatten-objects">
+
+  <!-- The crowd-classifier element will create a tool for the Worker to select the
+         correct answer to your question -->
+  <div style="display: none;">${qid} ${doc_id} ${passage_idx}</div>
+  <classification-target>
+    <h4>Answer the questions that asks about the relation between the given conclusion, premise and the passage.</h4>
+    <p>
+    </p>
+    <div style="display: flex;">
+
+      <div style="width: 50%">
+        <p>
+          <strong>Claim: </strong>
+          ${p_text}
+        </p>
+        <p>
+          <strong>Conclusion: </strong>
+          ${c_text}
+        </p>
+        <p>
+
+        <div><crowd-checkbox name="Q1">Q1. The premise supports the conclusion. </crowd-checkbox></div>
+        <div><crowd-checkbox name="Q2">Q2. The premise opposes the conclusion. </crowd-checkbox></div>
+
+        </p>
+        <p>
+        <h4>Passage: </h4>
+        <div class="passage">
+        ${passage}
+        </div>
+        </p>
+        <table style="border: 1px solid black; text-align: center;">
+          <tr>
+            <th></th>
+            <th>Conclusion</th>
+            <th>Premise</th>
+          </tr>
+          <tr>
+            <td>Related</td>
+            <td colspan="2">
+              <span>Q3</span>
+              <crowd-checkbox name="Q3"></crowd-checkbox>
+            </td>
+          </tr>
+          <tr>
+            <td>Mention</td>
+            <td>
+              <span>Q4</span>
+              <crowd-checkbox name="Q4"></crowd-checkbox>
+            </td>
+            <td>
+              <span>Q5</span>
+              <crowd-checkbox name="Q5"></crowd-checkbox>
+            </td>
+          </tr>
+          <tr>
+            <td>Argument:support</td>
+            <td>
+              <span>Q6</span>
+              <crowd-checkbox name="Q6"></crowd-checkbox>
+            </td>
+            <td>
+              <span>Q8</span>
+              <crowd-checkbox name="Q8"></crowd-checkbox>
+            </td>
+          </tr>
+          <tr>
+            <td>Argument:oppose</td>
+            <td>
+              <span>Q7</span>
+              <crowd-checkbox name="Q7"></crowd-checkbox>
+            </td>
+            <td>
+              <span>Q9</span>
+              <crowd-checkbox name="Q9"></crowd-checkbox>
+            </td>
+          </tr>
+          <tr>
+            <td>Information:support</td>
+            <td>
+              <span>Q10</span>
+              <crowd-checkbox name="Q10"></crowd-checkbox>
+            </td>
+            <td>
+              <span>Q12</span>
+              <crowd-checkbox name="Q12"></crowd-checkbox>
+            </td>
+          </tr>
+          <tr>
+            <td>Information:oppose</td>
+            <td>
+              <span>Q11</span>
+              <crowd-checkbox name="Q11"></crowd-checkbox>
+            </td>
+            <td>
+              <span>Q13</span>
+              <crowd-checkbox name="Q13"></crowd-checkbox>
+            </td>
+          </tr>
+        </table>
+
+        <crowd-radio-group>
+          <span>Q14. Useful?</span>
+          <crowd-radio-button name="Q14.3">3</crowd-radio-button>
+          <crowd-radio-button name="Q14.2">2</crowd-radio-button>
+          <crowd-radio-button name="Q14.1">1</crowd-radio-button>
+          <crowd-radio-button name="Q14.0">0</crowd-radio-button>
+        </crowd-radio-group>
+      </div>
+
+<div style="width: 50%;  overflow: scroll;">
+  <p>Q1,2: Does the premise support/oppose the conclusion? </p>
+  <p>Q3: Is the passage somehow <b>related</b> to the <u>conclusion</u> or the <u>premise</u>? </p>
+  <p>&nbsp;&nbsp; ∘ If not, the answers for all the followings questions would be 'No' (probably). </p>
+  <p>Q4: Does the passage <b>mention</b> the given <u>conclusion</u>? </p>
+  <p>&nbsp;&nbsp; ∘ If the passage mentions the premise, the reader of the passage would think about the conclusion when reading the passage. </p>
+  <p>Q5: Does the passage <b>mention</b> the given <u>premise</u>? </p>
+  <p>Q6,7: Does the passage contain <b>arguments</b> that supports/opposes the <u>conclusion</u>?</p>
+  <p>Q8,9: Does the passage contain <b>arguments</b> that supports/opposes the <u>premise</u>?</p>
+  <p>Q10,11: Does the passage contain <b>information</b> that can be used to support/oppose the <u>conclusion</u>?</p>
+  <p>Q12,13: Does the passage contain <b>information</b> that can be used to support/oppose the <u>premise</u>?</p>
+  <p>Q14: Overall, is the passage useful to be recommended to the readers who want to know more about the <u>conclusion</u> or <u>premise</u>?</p>
+  <ul>
+    <li> 3. Very useful, the passage is providing new critical and surprising information which would be important to be recommended to people who know the conclusion and the premise.</li>
+    <li> 2. Useful, The passage mentions some new information that is closely related to the conclusion or the premise. </li>
+    <li> 1. The passage has some related information, but that is mostly trivial repetition of the conclusion or the premise.</li>
+    <li> 0. The passage is not useful at all. </li>
+
+  </ul>
+</div>
+</div>
+</classification-target>
+</crowd-form>
+</crowd-form>
+</body>
+</html>
