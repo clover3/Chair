@@ -17,7 +17,7 @@ def main():
     print("Read done")
     # iter = file_iterator_interval(f, 0, 100)
     iter = f
-    output: List[Tuple[str, SegmentwiseTokenizedText]]  = jsonl_to_swtt(iter, get_tokenizer(), 20000)
+    output: List[Tuple[str, SegmentwiseTokenizedText]] = jsonl_to_swtt(iter, get_tokenizer(), 20000)
     save_to_pickle(output, "ca_run3_swtt")
 
 
@@ -34,9 +34,6 @@ def size_check():
         averager.append(n_window)
 
     print("Total {} runs, avg {}".format(sum(averager.history), averager.get_average()))
-
-
-
 
 
 if __name__ == "__main__":

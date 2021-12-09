@@ -1,8 +1,9 @@
 import os
+import pickle
 from collections import Counter, defaultdict
 from typing import Dict, Tuple
 
-from cache import save_to_pickle, load_from_pickle
+from cache import save_to_pickle, load_from_pickle, load_pickle_from
 from cpath import data_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
 
@@ -23,7 +24,7 @@ def load_clueweb12_B13_termstat():
 
 
 cdf = 50 * 1000 * 1000
-
+clueweb12aa_collection_length = 25601339619
 
 def load_clueweb12_B13_termstat_stemmed() -> Tuple[Dict, Dict]:
     from krovetzstemmer import Stemmer
@@ -53,6 +54,15 @@ def load_clueweb12_B13_termstat_stemmed() -> Tuple[Dict, Dict]:
     return new_tf, new_df
 
 
+def save_clueweb12_B13_termstat_stemmed():
+    obj = load_clueweb12_B13_termstat_stemmed()
+    pickle.dump(obj, open(os.path.join(data_path, "clueweb12_B13_termstat_stemmed.txt"), "wb"))
+
+
+def load_clueweb12_B13_termstat_stemmed_from_pickle():
+    return load_pickle_from(os.path.join(data_path, "clueweb12_B13_termstat_stemmed.pickle"))
+
+
 def translate_word_tf_to_subword_tf(word_tf):
     tokenizer = get_tokenizer()
 
@@ -71,7 +81,7 @@ def load_subword_term_stat():
     return load_from_pickle(TERMSTAT_SUBWORD)
 
 
-if __name__ == "__main__":
+def save_subword_termstat():
     tf, df = load_clueweb12_B13_termstat()
     print("tf[hi]", tf['hi'])
     print("df[hi]", df['hi'])
@@ -85,3 +95,7 @@ if __name__ == "__main__":
     print("Subword:")
     print("tf[hi]", tf['hi'])
     print("df[hi]", df['hi'])
+
+
+if __name__ == "__main__":
+    save_clueweb12_B13_termstat_stemmed()

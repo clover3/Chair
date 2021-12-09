@@ -6,12 +6,17 @@ from arg.counter_arg_retrieval.build_dataset.run3.misc_qid import CA3QueryIDGen
 from arg.counter_arg_retrieval.build_dataset.run3.swtt.print_to_csv import load_entries_from_run3_dir
 from bert_api.swtt.swtt_scorer_def import SWTTScorerOutput
 from cpath import output_path
+from trec.ranked_list_util import assign_rank
 from trec.trec_parse import write_trec_ranked_list_entry
-from trec.types import TrecRankedListEntry, assign_rank
+from trec.types import TrecRankedListEntry
 
 
 def main():
     run_name = "PQ_1"
+    read_pickled_predictions_and_save(run_name)
+
+
+def read_pickled_predictions_and_save(run_name):
     prediction_entries: List[Tuple[CAQuery, List[Tuple[str, SWTTScorerOutput]]]] = \
         load_entries_from_run3_dir(run_name)
     query_id_gen = CA3QueryIDGen()
@@ -26,7 +31,6 @@ def main():
                 per_qid_ranked_list.append(out_e)
         ranked_list: List[TrecRankedListEntry] = assign_rank(per_qid_ranked_list)
         flat_entries.extend(ranked_list)
-
     save_path = os.path.join(output_path, "ca_building", "run3", "passage_ranked_list", "{}.txt".format(run_name))
     write_trec_ranked_list_entry(flat_entries, save_path)
 

@@ -14,7 +14,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 
 def read_data():
     filename = os.path.join(corpus_dir, "dev_matched.tsv")
-    label_list = ["entailment", "neutral", "contradiction",]
+    label_list = ["entailment", "neutral", "contradiction"]
     for idx, line in enumerate(open(filename, "rb")):
         if idx == 0: continue  # skip header
         line = line.strip().decode("utf-8")
@@ -25,12 +25,12 @@ def read_data():
         yield (s1, s2), l
 
 
-
 def main():
     model_path = sys.argv[1]
-    inner_predictor = Predictor(model_path, 3, 300)
+    max_seq_length = 512
+    inner_predictor = Predictor(model_path, 3, max_seq_length)
     predictor: FloatPredictor = PredictorWrap(inner_predictor, lambda x: x[2])
-    document_scorer = DocumentScorerSWTT(predictor, EncoderForNLI, 300)
+    document_scorer = DocumentScorerSWTT(predictor, EncoderForNLI, max_seq_length)
     tokenizer = get_tokenizer()
     n_target = 10
     n_inst = 0
