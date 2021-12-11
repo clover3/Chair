@@ -37,6 +37,24 @@ class TokenizedText(NamedTuple):
     # idx of subword to idx of word
     sbword_mapping: List[WordIdx]
 
+    def to_json(self):
+        return {
+            'text': self.text,
+            "tokens": self.tokens,
+            'sbword_tokens': self.sbword_tokens,
+            'sbword_mapping': self.sbword_mapping
+        }
+
+    @classmethod
+    def from_json(cls, j):
+        sbword_mapping: List[WordIdx] = [WordIdx(e) for e in j['sbword_mapping']]
+        return TokenizedText(
+            j['text'],
+            j['tokens'],
+            j['sbword_tokens'],
+            sbword_mapping
+        )
+
     @classmethod
     def from_text(cls, text, tokenizer=None):
         if tokenizer is None:

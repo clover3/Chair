@@ -541,7 +541,7 @@ class EncoderUnit:
 
         return {
             "input_ids": input_ids,
-            "input_mask":input_mask,
+            "input_mask": input_mask,
             "segment_ids": segment_ids
         }
 

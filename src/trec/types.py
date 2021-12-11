@@ -24,3 +24,5 @@ class TrecRelevanceJudgementEntry(NamedTuple):
     query_id: str
     doc_id: str
     relevance: int
+
+

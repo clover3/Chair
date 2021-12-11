@@ -76,25 +76,35 @@ def group_results(batch_size,
     data_bucket: List[List[Tuple[int, Logits]]] = [list() for _ in range(num_real_data)]
     input_id_dict = {}
     global_data_idx_to_data_id = {}
+    print(f"batch_size={batch_size}")
+    print(f"n_trial={n_trial}")
+    print(f"num_batch={num_batch}")
 
     def check_assert(data_id, global_data_idx):
         if global_data_idx not in global_data_idx_to_data_id:
             global_data_idx_to_data_id[global_data_idx] = data_id
         else:
-            assert global_data_idx_to_data_id[global_data_idx] == data_id
+            if not global_data_idx_to_data_id[global_data_idx] == data_id:
+                print(global_data_idx, global_data_idx_to_data_id[global_data_idx], data_id)
+                raise Exception()
 
     for batch_idx in range(num_batch):
+        maybe_last = False
         for shift_idx, shift in enumerate(shift_list):
             cur_data = data_list[shift_idx][batch_idx]
             logits = cur_data["logits"]  # [batch_size * (n+1),
+
             input_ids = cur_data["input_ids"]
             data_id_l = cur_data["data_id"]
 
-            batch_size_temp = len(input_ids)
-            assert batch_size_temp == batch_size
-            batch_size = len(input_ids)
+            local_batch_size = len(input_ids)
+            if not local_batch_size == batch_size:
+                if not maybe_last:
+                    maybe_last = True
+                else:
+                    raise Exception()
             row_idx = 0
-            for inside_batch_idx in range(batch_size):
+            for inside_batch_idx in range(local_batch_size):
                 global_data_idx = batch_idx * batch_size + inside_batch_idx
                 check_assert(data_id_l[inside_batch_idx], global_data_idx)
                 input_id_dict[global_data_idx] = input_ids[inside_batch_idx]

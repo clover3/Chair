@@ -1,5 +1,4 @@
-from data_generator.job_runner import JobRunner
-from dataset_specific.msmarco.common import load_query_group, load_candidate_doc_list_10, load_candidate_doc_top50
+from dataset_specific.msmarco.common import load_query_group, load_candidate_doc_list_10
 from dataset_specific.msmarco.tokenize_worker import TokenizeDocTitleBodyWorker
 from epath import job_man_dir
 from job_manager.job_runner_with_server import JobRunnerS

@@ -132,18 +132,6 @@ def print_qtype():
 
 
 
-
-def main():
-    print_qtype()
-    # demo_parsing("train")
-    # return demo_frequency("train")
-    # save_qtype_id()
-
-
-if __name__ == "__main__":
-    main()
-
-
 def structured_qtype_text(query_info_dict: Dict[str, QueryInfo]) -> Dict[str, Tuple[str, str]]:
     mapping_counter = defaultdict(Counter)
     for e in query_info_dict.values():
@@ -159,3 +147,14 @@ def structured_qtype_text(query_info_dict: Dict[str, QueryInfo]) -> Dict[str, Tu
         (head, tail), cnt = counter.most_common(1)[0]
         mapping[func_rep] = (head, tail)
     return mapping
+
+
+def main():
+    print_qtype()
+    # demo_parsing("train")
+    # return demo_frequency("train")
+    # save_qtype_id()
+
+
+if __name__ == "__main__":
+    main()

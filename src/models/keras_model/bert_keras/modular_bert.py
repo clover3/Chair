@@ -8,10 +8,11 @@ from models.transformer import bert_common_v2 as bc
 from models.transformer.bert_common_v2 import create_initializer, get_activation, reshape_to_matrix, \
     dropout, get_shape_list2
 
-MyLayer = tf.keras.layers.Layer
-# class MyLayer(tf.keras.layers.Layer):
-#     def __init__(self, **kwargs):
-#         super(MyLayer, self).__init__(kwargs)
+
+# MyLayer = tf.keras.layers.Layer
+class MyLayer(tf.keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(MyLayer, self).__init__(kwargs)
 
 
 def embedding_postprocessor(input_tensor, token_type_table, full_position_embeddings,

@@ -27,7 +27,7 @@ def main():
         print(line1)
         print(line2)
 
-    get_qtype_weights_summary(e1.qtype_weights_q)
+    get_qtype_weights_summary(e1.qtype_weights_qe)
 
 
 if __name__ == "__main__":

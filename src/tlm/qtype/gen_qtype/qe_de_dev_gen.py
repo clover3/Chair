@@ -14,7 +14,7 @@ def run_for_prediction_split(split):
     max_seq_length = 512
     encoder = QueryDocumentEncoder(max_seq_length, True, seg_selection_by_geo_sampling())
     qid_to_entity_tokens = get_qid_to_content_tokens(split)
-    generator = QueryDocEntityConcatPointwisePredictionGen(resource, encoder, max_seq_length,
+    generator = QueryDocEntityConcatPointwisePredictionGen(resource, encoder.encode, max_seq_length,
                                                            q_max_seq_length,
                                                            qid_to_entity_tokens)
 

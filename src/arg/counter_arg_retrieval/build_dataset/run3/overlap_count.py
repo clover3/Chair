@@ -6,11 +6,10 @@ from trec.types import TrecRankedListEntry
 
 
 def main():
-
-    rlg_path = os.path.join(output_path, "ca_building", "run3", "q_res_2.txt")
-    rlg1 = load_ranked_list_grouped(rlg_path)
-    rlg_path = os.path.join(output_path, "ca_building", "run3", "pc_res.txt")
-    rlg2 = load_ranked_list_grouped(rlg_path)
+    rlg_path1 = os.path.join(output_path, "ca_building", "run3", "q_res_2.txt")
+    rlg1 = load_ranked_list_grouped(rlg_path1)
+    rlg_path2 = os.path.join(output_path, "ca_building", "run3", "pc_res.txt")
+    rlg2 = load_ranked_list_grouped(rlg_path2)
 
     for qid in rlg2:
         cid, pid = qid.split("_")
@@ -18,7 +17,8 @@ def main():
         rl2 = rlg2[qid]
         doc_ids1 = set(map(TrecRankedListEntry.get_doc_id, rl1))
         doc_ids2 = set(map(TrecRankedListEntry.get_doc_id, rl2))
-        n_common = len(doc_ids1.intersection(doc_ids2))
+        common = doc_ids1.intersection(doc_ids2)
+        n_common = len(common)
         print(qid, n_common, len(rl1), len(rl2))
 
 

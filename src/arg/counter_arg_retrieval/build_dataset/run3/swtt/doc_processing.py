@@ -20,6 +20,18 @@ def main():
     output: List[Tuple[str, SegmentwiseTokenizedText]] = jsonl_to_swtt(iter, get_tokenizer(), 20000)
     save_to_pickle(output, "ca_run3_swtt")
 
+def parse_for_pc():
+    file_path = os.path.join(output_path, "ca_building", "run3", "pc_res.txt.docs.jsonl")
+    print("Reading documents")
+    f = open(file_path, "r")
+    print("Read done")
+    # iter = file_iterator_interval(f, 0, 100)
+    num_lines = 70000
+    iter = f
+    output: List[Tuple[str, SegmentwiseTokenizedText]] = jsonl_to_swtt(iter, get_tokenizer(), num_lines)
+    save_to_pickle(output, "ca_run3_swtt_pc")
+
+
 
 def size_check():
     print("Loading ca_run3_swtt")
@@ -37,4 +49,4 @@ def size_check():
 
 
 if __name__ == "__main__":
-    size_check()
+    parse_for_pc()

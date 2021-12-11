@@ -23,8 +23,8 @@ class QTypeInstance2(NamedTuple):
     query: List[str]
     content_words: List[str]
     doc: List[str]
-    qtype_weights_q: np.array
-    qtype_weights_e: np.array
+    qtype_weights_qe: np.array
+    qtype_weights_de: np.array
     label: int
 
     def get_function_terms(self):

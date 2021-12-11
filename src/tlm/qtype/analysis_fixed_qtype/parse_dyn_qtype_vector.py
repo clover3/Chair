@@ -1,6 +1,7 @@
-from collections import Counter
+import random
+from collections import Counter, defaultdict
+from typing import Iterator
 from typing import List, Dict, Tuple
-from typing import NamedTuple, Iterator
 
 import numpy as np
 
@@ -9,24 +10,13 @@ from arg.qck.prediction_reader import load_combine_info_jsons
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
 from data_generator.tokenizer_wo_tf import pretty_tokens, get_tokenizer
 from list_lib import left, right
-from misc_lib import group_by
+from misc_lib import group_by, get_second
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
+from tlm.qtype.analysis_qde.analysis_common import get_avg_vector
 from tlm.qtype.analysis_qemb.save_parsed import get_voca_list, convert_ids_to_tokens
-from tlm.qtype.content_functional_parsing.qid_to_content_tokens import load_query_info_dict, QueryInfo
-
-
-class QTypeInstance(NamedTuple):
-    qid: str
-    doc_id: str
-    passage_idx: str
-    de_input_ids: np.array
-    qtype_weights_qe: np.array
-    qtype_weights_de: np.array
-    label: int
-    logits: float
-    bias: float
-    q_bias: float
-    d_bias: float
+from tlm.qtype.content_functional_parsing.qid_to_content_tokens import load_query_info_dict, QueryInfo, \
+    structured_qtype_text
+from tlm.qtype.qtype_instance import QTypeInstance
 
 
 def parse_q_weight_output(raw_prediction_path, data_info) -> List[QTypeInstance]:
@@ -42,7 +32,11 @@ def parse_q_weight_output(raw_prediction_path, data_info) -> List[QTypeInstance]
         info_entry = data_info[str(data_id)]
         query_id = info_entry['query'].query_id
         doc_id = info_entry['candidate'].id
-        passage_idx = info_entry['passage_idx']
+        try:
+            passage_idx = info_entry['passage_idx']
+        except KeyError:
+            passage_idx = -1
+
         inst = QTypeInstance(query_id, doc_id, passage_idx,
                              de_input_ids, qtype_vector_qe, qtype_vector_de,
                              label_ids, logits,
@@ -70,7 +64,6 @@ def build_qtype_desc(qtype_entries: Iterator[QTypeInstance], query_info_dict: Di
     return qtype_embedding, n_query
 
 
-
 def show_vector_distribution(v):
     step = 0.1
     st = -1
@@ -82,23 +75,84 @@ def show_vector_distribution(v):
         st += step
 
 
+def avg_vector_from_qtype_entries(qtype_entries):
+    vector_list = []
+    for e in qtype_entries:
+        vector_list.append(e.qtype_weights_qe)
 
-def run_qtype_analysis(raw_prediction_path, info_file_path, split):
+    return get_avg_vector(vector_list, vector_list[0])
+
+
+def show_qtype_embeddings(qtype_entries, query_info_dict, split):
+    print("Building qtype desc")
+    qtype_embedding_paired, n_query = build_qtype_desc(qtype_entries, query_info_dict)
+    random.shuffle(qtype_entries)
+    g_avg_vector = avg_vector_from_qtype_entries(qtype_entries[:10000 * 10])
+
+    qtype_embedding_paired: List[Tuple[str, np.array]] = qtype_embedding_paired
+    query_info_dict: Dict[str, QueryInfo] = load_query_info_dict(split)
+    mapping = structured_qtype_text(query_info_dict)
+    qtype_embedding_paired_new = []
+    for func_str, avg_vector in qtype_embedding_paired:
+        head, tail = mapping[func_str]
+        if head and tail:
+            s = "{0} [] {1}".format(head, tail)
+        else:
+            s = head + tail
+        qtype_embedding_paired_new.append((s, avg_vector))
+
+    qtype_embedding_paired = qtype_embedding_paired_new
+    dim_printed_counter = Counter()
+    grouped_by_dim = defaultdict(list)
+    scaling = 100
+    for func_str, avg_vector in qtype_embedding_paired:
+        rank = np.argsort(avg_vector)[::-1]
+        rep = ""
+        cut = np.max(avg_vector) * 0.3
+        for d_idx in rank[:5]:
+            v = avg_vector[d_idx]
+            if v > cut:
+                dim_printed_counter[d_idx] += 1
+                rep += "{0}: {1:.2f} /".format(d_idx, v)
+                grouped_by_dim[d_idx].append((func_str, v))
+        print(func_str, rep)
+
+    for dim_idx, cnt in dim_printed_counter.most_common(100):
+        print("Dim {} appeared {}".format(dim_idx, cnt))
+
+    keys = list(grouped_by_dim.keys())
+    keys.sort(key=lambda k: len(grouped_by_dim[k]))
+    for k in keys:
+        items = grouped_by_dim[k]
+        items.sort(key=get_second, reverse=True)
+        n_items = len(items)
+        items = items[:30]
+        print("Dim {} : {} func_str".format(k, n_items))
+        print(" / ".join(["{0} ({1:.2f})".format(func_str, v * 100) for func_str, v in items]))
+    known_qtype_ids = keys
+    return known_qtype_ids
+
+
+def run_qtype_analysis(qtype_entries: List[QTypeInstance], query_info_dict, known_qtype_ids):
     tokenizer = get_tokenizer()
     voca_list = get_voca_list(tokenizer)
-    f_handler = get_format_handler("qc")
-    print("Reading info...")
-    info: Dict = load_combine_info_jsons(info_file_path, f_handler.get_mapping(), f_handler.drop_kdp())
-    print("Parsing predictions...")
-    query_info_dict: Dict[str, QueryInfo] = load_query_info_dict(split)
-    print("Reading QType Entries")
-    qtype_entries: List[QTypeInstance] = list(parse_q_weight_output(raw_prediction_path, info))
     print("Building qtype desc")
     qtype_embedding_paired, n_query = build_qtype_desc(qtype_entries, query_info_dict)
     print("Done")
     n_func_word = len(qtype_embedding_paired)
-    func_type_id_to_text = left(qtype_embedding_paired)
+    func_type_id_to_text: List[str] = left(qtype_embedding_paired)
     qtype_embedding_np = np.stack(right(qtype_embedding_paired), axis=0)
+    threshold = 0.05
+    def print_by_dimension(v):
+        rank = np.argsort(v)[::-1]
+        for i in rank:
+            value = v[i]
+            if value < threshold:
+                break
+            else:
+                if i in known_qtype_ids:
+                    print("{0}: {1:.2f}".format(i, value))
+
     class RowPrinter:
         def __init__(self, func_word_weights):
             self.r_unit = 0.1
@@ -116,6 +170,7 @@ def run_qtype_analysis(raw_prediction_path, info_file_path, split):
                 if self.text_for_cur_line:
                     self.pop()
                 self.cur_range = self.cur_range - self.r_unit
+
             self.text_for_cur_line.append("[{}]{}".format(idx, func_text))
 
         def pop(self):
@@ -127,32 +182,45 @@ def run_qtype_analysis(raw_prediction_path, info_file_path, split):
     for e_idx, e in enumerate(qtype_entries):
         display = False
         if e_idx % 10 and print_per_qid[e.qid] < 4:
-            display = True
+            # display = True
+            pass
         #  : Show qid/query text
         #  : Show non-zero score of document
-        if e.logits > 1:
+        if e.logits > 3 or e.d_bias > 3:
+            why_display = "Display by high logits"
             display = True
         if e.label:
+            why_display = "Display by true label"
             display = True
-
         if not display:
             continue
-
         print_per_qid[e.qid] += 1
-        n_print += 1
-        if n_print % 10 == 0:
-            dummy = input("Enter something ")
-        print()
+
         q_rep = " ".join(query_info_dict[e.qid].out_s_list)
 
         def cossim(nd2, nd1):
             a =  np.matmul(nd2, nd1)
             b = (np.linalg.norm(nd2, axis=1) * np.linalg.norm(nd1))
             return a / b
-
         func_word_weights_q = cossim(qtype_embedding_np, e.qtype_weights_qe)
         func_word_weights_d = cossim(qtype_embedding_np, e.qtype_weights_de)
 
+        scale = np.max(e.qtype_weights_qe)
+        scale = 1/100
+        scaled_query_qtype = e.qtype_weights_qe / scale
+        scaled_document_qtype = e.qtype_weights_de * scale
+        display = False
+        for key in known_qtype_ids:
+            if scaled_document_qtype[key] > threshold:
+                display = True
+        if not display:
+            continue
+        n_print += 1
+        if n_print % 5 == 0:
+            dummy = input("Enter something ")
+
+        print("---------------------------------")
+        print()
         print(e.qid, q_rep)
         print("{} - {}".format(e.doc_id, "Relevant" if e.label else "Non-relevant"))
         print("Score bias q_bias d_bias")
@@ -164,9 +232,8 @@ def run_qtype_analysis(raw_prediction_path, info_file_path, split):
         row_printer.pop()
         print("Raw QWeights")
 
-        scale = np.max(e.qtype_weights_qe)
-        show_vector_distribution(e.qtype_weights_qe / scale)
-
+        show_vector_distribution(scaled_query_qtype)
+        print_by_dimension(scaled_query_qtype)
         print("Top QType from Doc")
         print(n_func_word)
         row_printer = RowPrinter(func_word_weights_d)
@@ -179,10 +246,23 @@ def run_qtype_analysis(raw_prediction_path, info_file_path, split):
         row_printer.pop()
 
         print("Raw DWeights")
-        show_vector_distribution(e.qtype_weights_de * scale)
+        show_vector_distribution(scaled_document_qtype)
+        print_by_dimension(scaled_document_qtype)
+
         print(e.qtype_weights_de)
         seg1, seg2 = split_p_h_with_input_ids(e.de_input_ids, e.de_input_ids)
         seg2_tokens = convert_ids_to_tokens(voca_list, seg2)
 
         passage: str = pretty_tokens(seg2_tokens, True)
         print(passage)
+
+
+def load_parse(info_file_path, raw_prediction_path, split):
+    f_handler = get_format_handler("qc")
+    print("Reading info...")
+    info: Dict = load_combine_info_jsons(info_file_path, f_handler.get_mapping(), f_handler.drop_kdp())
+    print("Parsing predictions...")
+    query_info_dict: Dict[str, QueryInfo] = load_query_info_dict(split)
+    print("Reading QType Entries")
+    qtype_entries: List[QTypeInstance] = list(parse_q_weight_output(raw_prediction_path, info))
+    return qtype_entries, query_info_dict

@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 
 from base_type import FilePath
 from cache import *
-from misc_lib import exist_or_mkdir
 from job_manager.marked_task_manager import MarkedTaskManager
+from misc_lib import exist_or_mkdir
 
 # JobRunner is responsible for recording which job is done and assigning jobs
 # Worker is responsible for actually doing job
@@ -69,3 +69,13 @@ class JobRunner:
 #     runner.start()
 #
 
+class ListWorker(WorkerInterface):
+    def __init__(self, work_fn, todo, out_dir):
+        self.work_fn = work_fn
+        self.todo = todo
+        self.out_dir = out_dir
+
+    def work(self, job_id):
+        save_path = os.path.join(self.out_dir, str(job_id))
+        output = self.work_fn(self.todo[job_id:job_id+1])
+        pickle.dump(output, open(save_path, "wb"))

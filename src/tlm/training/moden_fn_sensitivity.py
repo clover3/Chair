@@ -40,7 +40,6 @@ def delete_tokens(input_ids, n_trial, shift):
     return masked_input_ids
 
 
-
 def model_fn_sensitivity(bert_config, train_config, model_class, special_flags=[], override_prediction_fn=None):
     """Returns `model_fn` closure for TPUEstimator."""
     shift_str = special_flags[0]

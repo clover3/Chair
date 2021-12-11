@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple, Dict
 
 from arg.counter_arg_retrieval.build_dataset.run3.run_interface.split_documents import PassageRange
-from bert_api.swtt.segmentwise_tokenized_text import SegmentwiseTokenizedText
+from bert_api.swtt.segmentwise_tokenized_text import SegmentwiseTokenizedText, SWTTIndex
 from bert_api.swtt.swtt_scorer_def import SWTTScorerOutput, SWTTTokenScorerInput
 from misc_lib import TEL
 from trainer.promise import MyFuture, MyPromise, PromiseKeeper
@@ -33,7 +33,8 @@ class FutureScorerTokenBased(FutureScorerI):
         for e in TEL(l):
             payload_list: List[Tuple[str, List[List[str]]]] = e.payload_list
             scores: List[float] = self.predictor.predict(payload_list)
-            output: SWTTScorerOutput = SWTTScorerOutput(e.windows_st_ed_list,
+            windows_st_ed_list: List[Tuple[SWTTIndex, SWTTIndex]] = e.windows_st_ed_list
+            output: SWTTScorerOutput = SWTTScorerOutput(windows_st_ed_list,
                                                         scores,
                                                         e.doc)
             output_list.append(output)
@@ -60,7 +61,7 @@ def rerank_passages(doc_passage_d: Dict[DocID, Tuple[SegmentwiseTokenizedText, L
                     query_list: List[Tuple[str, str]],
                     scorer: FutureScorerI,
                     ) \
-        -> List[Tuple[str, SWTTScorerOutput]]:
+        -> List[Tuple[str, List[Tuple[str, MyFuture]]]]:
     output: List[Tuple[str, List[Tuple[str, MyFuture]]]] = []
     for qid, query_text in query_list:
         ranked_list = ranked_list_groups[qid]

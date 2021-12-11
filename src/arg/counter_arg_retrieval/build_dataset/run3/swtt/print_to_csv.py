@@ -108,6 +108,16 @@ def load_entries_from_run3_dir(run_name):
     return prediction_entries
 
 
+def load_json_entries_from_run3_dir(run_name, parse_fn):
+    prediction_entries: List[Tuple[CAQuery, List[Tuple[str, SWTTScorerOutput]]]] = []
+    save_dir = os.path.join(output_path, "ca_building", "run3", run_name)
+    for file_path in get_dir_files(save_dir):
+        if file_path.endswith(".json"):
+            prediction_entries.extend(parse_fn(file_path))
+    return prediction_entries
+
+
+
 def main():
     read_save_default("PQ_1")
 

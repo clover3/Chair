@@ -10,6 +10,11 @@ from trainer.promise import PromiseKeeper, MyFuture, MyPromise
 
 
 class DocumentScorerSWTT:
+    # This class does three things
+    # 1. Splitting SWTT into passages
+    # 2. Convert SWTTScorerInput into score input
+    # 3. Combine structured output
+
     def __init__(self,
                  predictor: FloatPredictor,
                  encoder_factory,

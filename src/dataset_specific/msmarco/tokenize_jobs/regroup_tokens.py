@@ -42,14 +42,13 @@ def main():
         for line in read_f:
             idx = line.index("\t")
             doc_id = line[:idx]
-            print(doc_id)
             for job_id in doc_id_to_job_id_list[doc_id]:
                 f = file_ptr_list[job_id]
                 f.write(line)
 
-
     for f in file_ptr_list:
         f.close()
+
 
 if __name__ == "__main__":
     main()

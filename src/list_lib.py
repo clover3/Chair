@@ -134,3 +134,10 @@ def list_join(l_list: Iterable[Iterable], sep: List) -> List:
         is_first = False
 
     return output
+
+
+def idx_by_fn(func: Callable[[A], B], z: Iterable[A]) -> Dict[B, A]:
+    d_out: Dict[B, A] = {}
+    for e in z:
+        d_out[func(e)] = e
+    return d_out

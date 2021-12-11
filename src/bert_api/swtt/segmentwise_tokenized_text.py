@@ -1,6 +1,7 @@
 from typing import NamedTuple, List, Tuple
 
 from data_generator.tokenize_helper import TokenizedText
+from list_lib import lmap
 from misc_lib import get_duplicate_list
 
 
@@ -29,15 +30,31 @@ class IntTuple:
     def __str__(self):
         return "({}, {})".format(self.idx1, self.idx2)
 
+    def to_json(self):
+        return (self.idx1, self.idx2)
+
+    @classmethod
+    def from_json(cls, j):
+        idx1, idx2 = j
+        return IntTuple(idx1, idx2)
+
 
 class SegmentwiseTokenizedText(NamedTuple):
     segments: List[TokenizedText]
-    Index = IntTuple
+    def to_json(self):
+        return {
+            'segments': [s.to_json() for s in self.segments]
+        }
+
+    @classmethod
+    def from_json(cls, j):
+        return SegmentwiseTokenizedText(lmap(TokenizedText.from_json, j['segments']))
+
     def get_begin(self) -> IntTuple:
-        return SegmentwiseTokenizedText.Index(0, 0)
+        return IntTuple(0, 0)
 
     def get_end(self) -> IntTuple:
-        return SegmentwiseTokenizedText.Index(len(self.segments), 0)
+        return IntTuple(len(self.segments), 0)
 
     def get_all_segment_lengths(self):
         return [s.get_sb_len() for s in self.segments]
@@ -55,7 +72,7 @@ class SegmentwiseTokenizedText(NamedTuple):
             idx2 = idx1
             rev = True
 
-        ptr: SegmentwiseTokenizedText.Index = idx1.copy()
+        ptr: IntTuple = idx1.copy()
         d = 0
         while ptr < idx2:
             to_add = self.segments[ptr.idx1].get_sb_len() - ptr.idx2
@@ -69,7 +86,7 @@ class SegmentwiseTokenizedText(NamedTuple):
 
     def get_window_sb_tokens(self, window: Tuple[IntTuple, IntTuple]):
         st, ed = window
-        ptr: SegmentwiseTokenizedText.Index = st.copy()
+        ptr: IntTuple = st.copy()
         out_tokens = []
         while ptr < ed:
             if ptr.idx1 == ed.idx1:
@@ -81,8 +98,8 @@ class SegmentwiseTokenizedText(NamedTuple):
             ptr = ptr.get_next_segment()
         return out_tokens
 
-    def get_word_tokens_grouped(self, st: IntTuple, ed: IntTuple):
-        ptr: SegmentwiseTokenizedText.Index = st.copy()
+    def get_word_tokens_grouped(self, st: IntTuple, ed: IntTuple) -> List[List[str]]:
+        ptr: IntTuple = st.copy()
         out_tokens = []
         while ptr < ed:
             cur_segment = self.segments[ptr.idx1]
@@ -97,8 +114,6 @@ class SegmentwiseTokenizedText(NamedTuple):
                 out_tokens.append(tokens)
             ptr = ptr.get_next_segment()
         return out_tokens
-
-
 
     @classmethod
     def from_text_list(cls, text_list: List[str], tokenizer):
@@ -115,6 +130,6 @@ class SegmentwiseTokenizedText(NamedTuple):
         return get_duplicate_list(map(para_hash, doc_list))
 
 
-SWTTIndex = SegmentwiseTokenizedText.Index
+SWTTIndex = IntTuple
 
 

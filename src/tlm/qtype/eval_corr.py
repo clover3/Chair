@@ -36,8 +36,8 @@ def main():
         scores2 = list(map(lambda x: x.score, rl2))
         r, p = pearsonr(scores1, scores2)
         pearson_averager.append(r)
-    print("pearson", pearson_averager.get_average())
-    print("mrr", mrr_averager.get_average())
+    print("pearson\t{}".format(pearson_averager.get_average()))
+    print("mrr\t{}".format(mrr_averager.get_average()))
 
 
 if __name__ == "__main__":

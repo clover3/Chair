@@ -22,8 +22,7 @@ class QDEResource(ProcessedResourceTitleBodyTokensListI):
 
         self.qid_mapping = query_set.query_mapping_fn
         print("Mapping docs...")
-        self.candidate_doc_d: Dict[QueryID, List[str]] = \
-            query_set.extend_query_id_based_dict(self.resource_inner.candidate_doc_d)
+        self.candidate_doc_d: Dict[QueryID, List[str]] = None
 
     def get_doc_tokens_d(self, qid: QueryID) -> Dict[str, Tuple[List[str], List[List[str]]]]:
         orig_qid = self.qid_mapping(qid)
@@ -36,6 +35,9 @@ class QDEResource(ProcessedResourceTitleBodyTokensListI):
         return self.resource_inner.tokenizer.tokenize(self.query_set.get_query(qid))
 
     def get_doc_for_query_d(self):
+        if self.candidate_doc_d is None:
+            self.candidate_doc_d: Dict[QueryID, List[str]] = \
+                self.query_set.extend_query_id_based_dict(self.resource_inner.get_doc_for_query_d())
         return self.candidate_doc_d
 
     def query_in_qrel(self, query_id):

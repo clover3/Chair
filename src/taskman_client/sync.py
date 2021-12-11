@@ -47,7 +47,6 @@ class JsonTiedDict:
 
     def save(self):
         with open(self.file_path, "w") as f:
-            print(self.to_dict())
             json.dump(self.to_dict(), f)
 
     def set(self, key, value):

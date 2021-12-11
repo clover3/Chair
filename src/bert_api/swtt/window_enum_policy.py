@@ -110,3 +110,16 @@ class WindowEnumPolicyMinPop(WindowEnumPolicyI):
             window_list = window_list[:self.max_window_per_document]
 
         return window_list
+
+
+class WindowEnumPolicyFixedLimit(WindowEnumPolicyI):
+    def __init__(self, limit_in_subword, min_length=100, max_window_per_document=None):
+        self.limit_in_subword = limit_in_subword
+        self.inner_enum = WindowEnumPolicyMinPop(min_length, max_window_per_document)
+
+    def window_enum(self, doc: SegmentwiseTokenizedText) -> List[Tuple[SWTTIndex, SWTTIndex]]:
+        return self.inner_enum.window_enum(doc, self.limit_in_subword)
+
+
+def get_run3_enum_policy():
+    return WindowEnumPolicyFixedLimit(400, 30, 50)

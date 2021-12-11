@@ -20,6 +20,7 @@ class DistillGenWorker(WorkerInterface):
         self.query_group = query_group
 
     def work(self, job_id):
+        print("work", job_id)
         qids = self.query_group[job_id]
         data_bin = 1000000
         data_id_st = job_id * data_bin
@@ -29,6 +30,7 @@ class DistillGenWorker(WorkerInterface):
 
         if not os.path.exists(parsed_data_path):
             return
+        tprint("Loading pickle from {}".format(parsed_data_path))
         entries: List[Dict] = pickle.load(open(parsed_data_path, "rb"))
         tprint("generating instances")
         insts = self.generator.generate(data_id_manager, qids, entries)

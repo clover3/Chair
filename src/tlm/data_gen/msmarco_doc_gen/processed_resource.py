@@ -7,8 +7,9 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 from dataset_specific.msmarco.common import QueryID, load_query_group, load_candidate_doc_list_1, SimpleQrel, \
     load_msmarco_simple_qrels, load_queries, load_token_d_1, load_candidate_doc_list_10, load_token_d_10doc, \
     load_candidate_doc_top50, load_token_d_50doc, top100_doc_ids, load_token_d_title_body, load_multiple_resource, \
-    load_token_d_sent_level
+    load_token_d_sent_level, load_token_d_corpuswise_from_tsv
 from list_lib import lfilter
+from misc_lib import tprint
 
 
 class ProcessedResourceI(ABC):
@@ -397,17 +398,68 @@ class ProcessedResourceTitleBodyTokensListTrain(ProcessedResourceTitleBodyTokens
 class ProcessedResourceTitleBodyTokensListPredict(ProcessedResourceTitleBodyTokensListI):
     def __init__(self, split):
         query_group: List[List[QueryID]] = load_query_group(split)
-        candidate_docs_d: Dict[QueryID, List[str]] = top100_doc_ids(split)
         qrel: SimpleQrel = load_msmarco_simple_qrels(split)
         self.queires = dict(load_queries(split))
         self.qrel = qrel
         self.split = split
-        self.candidate_doc_d: Dict[QueryID, List[str]] = candidate_docs_d
         self.tokenizer = get_tokenizer()
         self.query_group = query_group
+        self.candidate_doc_d = None
 
     def get_doc_tokens_d(self, qid: QueryID) -> Dict[str, Tuple[List[str], List[List[str]]]]:
         return load_token_d_sent_level(self.split, qid)
+
+    def load_candidate_docs_d(self):
+        candidate_docs_d: Dict[QueryID, List[str]] = top100_doc_ids(self.split)
+        self.candidate_doc_d: Dict[QueryID, List[str]] = candidate_docs_d
+
+    def get_label(self, qid: QueryID, doc_id):
+        return self.qrel.get_label(qid, doc_id)
+
+    def get_q_tokens(self, qid: QueryID):
+        query_text = self.queires[qid]
+        return self.tokenizer.tokenize(query_text)
+
+    def get_doc_for_query_d(self):
+        if self.candidate_doc_d is None:
+            self.load_candidate_docs_d()
+        return self.candidate_doc_d
+
+    def query_in_qrel(self, query_id):
+        return query_id in self.qrel.qrel_d
+
+
+class ProcessedResourceTitleBodyCorpusWise(ProcessedResourceTitleBodyI):
+    def __init__(self, candidate_docs_d, split):
+        query_group: List[List[QueryID]] = load_query_group(split)
+        qrel: SimpleQrel = load_msmarco_simple_qrels(split)
+
+        self.split = split
+        self.queires = dict(load_queries(split))
+        self.query_group = query_group
+        self.tokenizer = get_tokenizer()
+        self.candidate_doc_d: Dict[QueryID, List[str]] = candidate_docs_d
+        self.qrel = qrel
+        self.tokenizer = get_tokenizer()
+        self.tokens_d_per_job_id = {}
+
+    def get_job_id_from_qid(self, qid):
+        for job_id, qids in enumerate(self.query_group):
+            if qid in qids:
+                return job_id
+
+        raise KeyError("QID {} not found".format(qid))
+
+    def get_doc_tokens_d(self, qid: QueryID) -> Dict[str, Tuple[List[str], List[str]]]:
+        job_id = self.get_job_id_from_qid(qid)
+        if job_id in self.tokens_d_per_job_id:
+            return self.tokens_d_per_job_id[job_id]
+        tprint("load_token_d_corpuswise_from_tsv START for job_id={}".format(job_id))
+        tokens_d = load_token_d_corpuswise_from_tsv(self.split, job_id)
+        tprint("load_token_d_corpuswise_from_tsv DONE for job_id={}".format(job_id))
+        self.tokens_d_per_job_id = {}
+        self.tokens_d_per_job_id[job_id] = tokens_d
+        return tokens_d
 
     def get_label(self, qid: QueryID, doc_id):
         return self.qrel.get_label(qid, doc_id)
@@ -421,4 +473,3 @@ class ProcessedResourceTitleBodyTokensListPredict(ProcessedResourceTitleBodyToke
 
     def query_in_qrel(self, query_id):
         return query_id in self.qrel.qrel_d
-

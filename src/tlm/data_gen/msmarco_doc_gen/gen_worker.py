@@ -1,3 +1,4 @@
+import random
 from collections import Counter
 from typing import List, Iterable, Dict, Tuple
 from typing import OrderedDict
@@ -88,6 +89,61 @@ class GenerateFromTitleBody(MMDGenI):
             tokens_d: Dict[str, Tuple[List[str], List[str]]] = self.resource.get_doc_tokens_d(qid)
             q_tokens = self.resource.get_q_tokens(qid)
             for doc_id in self.resource.get_doc_for_query_d()[qid]:
+                label = self.resource.get_label(qid, doc_id)
+                try:
+                    title_tokens, body_tokens = tokens_d[doc_id]
+                    insts: List[Tuple[List, List]] = self.doc_encoder.encode(q_tokens, title_tokens, body_tokens)
+
+                    for passage_idx, passage in enumerate(insts):
+                        tokens_seg, seg_ids = passage
+                        assert type(tokens_seg[0]) == str
+                        assert type(seg_ids[0]) == int
+                        data_id = data_id_manager.assign({
+                            'doc_id': doc_id,
+                            'passage_idx': passage_idx,
+                            'label': label,
+                        })
+                        inst = ClassificationInstanceWDataID(tokens_seg, seg_ids, label, data_id)
+                        yield inst
+                    success_docs += 1
+                except KeyError:
+                    missing_cnt += 1
+                    missing_doc_qid.append(qid)
+                    if missing_cnt > 10:
+                        print(missing_doc_qid)
+                        print("success: ", success_docs)
+                        raise KeyError
+
+    def write(self, insts: List[ClassificationInstanceWDataID], out_path: str):
+        return write_with_classification_instance_with_id(self.tokenizer, self.max_seq_length, insts, out_path)
+
+
+class GenerateFromTitleBody2(MMDGenI):
+    def __init__(self, resource: ProcessedResourceTitleBodyI,
+                 doc_encoder: TitleRepeatInterface,
+                 max_seq_length,
+                 skip_rate=0.0
+                 ):
+        self.resource = resource
+        self.doc_encoder = doc_encoder
+        self.tokenizer = get_tokenizer()
+        self.max_seq_length = max_seq_length
+        self.skip_rate = skip_rate
+
+    def generate(self, data_id_manager, qids):
+        missing_cnt = 0
+        success_docs = 0
+        missing_doc_qid = []
+        for qid in qids:
+            if qid not in self.resource.get_doc_for_query_d():
+                assert not self.resource.query_in_qrel(qid)
+                continue
+
+            tokens_d: Dict[str, Tuple[List[str], List[str]]] = self.resource.get_doc_tokens_d(qid)
+            q_tokens = self.resource.get_q_tokens(qid)
+            for doc_id in self.resource.get_doc_for_query_d()[qid]:
+                if random.random() < self.skip_rate:
+                    continue
                 label = self.resource.get_label(qid, doc_id)
                 try:
                     title_tokens, body_tokens = tokens_d[doc_id]

@@ -24,7 +24,7 @@ def run_for_prediction_split(split):
     qid_to_entity_tokens: Dict[QueryID, List[str]] = get_qid_to_content_tokens(split)
     qid_to_entity_tokens = query_set.extend_query_id_based_dict(qid_to_entity_tokens)
 
-    generator = QueryDocEntityConcatPointwisePredictionGen(resource, encoder, max_seq_length,
+    generator = QueryDocEntityConcatPointwisePredictionGen(resource, encoder.encode, max_seq_length,
                                                            q_max_seq_length,
                                                            qid_to_entity_tokens
                                                            )

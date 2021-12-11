@@ -1,6 +1,7 @@
+import random
 from abc import abstractmethod, ABC
 from collections import Counter
-from typing import List, Dict, Tuple, Iterable
+from typing import List, Dict, Tuple, Iterable, Callable, TypeVar
 
 from arg.qck.decl import QCKQuery, QCKCandidate
 from data_generator.tokenizer_wo_tf import get_tokenizer
@@ -185,15 +186,18 @@ class QueryDocEntityConcatGen(MMDGenI):
         return write_records_w_encode_fn(out_path, encode_fn, insts)
 
 
+Title = TypeVar('Title')
+Body = TypeVar('Body')
+
 class QueryDocEntityConcatPointwisePredictionGen(MMDGenI):
     def __init__(self, resource: ProcessedResourceTitleBodyTokensListI,
-                 encoder: QueryDocumentEncoderI,
+                 encode_fn: Callable[[List[str], Title, Body], List[Tuple[List, List]]],
                  max_seq_length,
                  q_max_seq_length,
                  qid_to_entity_tokens: Dict[str, List[str]]
                  ):
         self.resource = resource
-        self.encoder = encoder
+        self.encode_fn = encode_fn
         self.tokenizer = get_tokenizer()
         self.qid_to_entity_tokens: Dict[str, List[str]] = qid_to_entity_tokens
         self.max_seq_length = max_seq_length
@@ -209,8 +213,9 @@ class QueryDocEntityConcatPointwisePredictionGen(MMDGenI):
 
             if qid not in self.qid_to_entity_tokens:
                 continue
-
-            tokens_d: Dict[str, Tuple[List[str], List[List[str]]]] = self.resource.get_doc_tokens_d(qid)
+            Title = List[str]
+            Body = List[List[str]]
+            tokens_d: Dict[str, Tuple[Title, Body]] = self.resource.get_doc_tokens_d(qid)
             q_tokens = self.resource.get_q_tokens(qid)
             q_tokens_ids = self.tokenizer.convert_tokens_to_ids(q_tokens)
             entity_tokens = self.qid_to_entity_tokens[qid]
@@ -219,8 +224,7 @@ class QueryDocEntityConcatPointwisePredictionGen(MMDGenI):
             def iter_passages(doc_id):
                 title, body = tokens_d[doc_id]
                 # Pair of [Query, Content]
-                insts: List[Tuple[List, List]] = self.encoder.encode(q_tokens, title, body)
-                # We will only use content parts
+                insts: List[Tuple[List, List]] = self.encode_fn(q_tokens, title, body)
                 return insts
             for doc_id in self.resource.get_doc_for_query_d()[qid]:
                 label = self.resource.get_label(qid, doc_id)
@@ -232,7 +236,6 @@ class QueryDocEntityConcatPointwisePredictionGen(MMDGenI):
                             'candidate': QCKCandidate(doc_id, ""),
                             'passage_idx': passage_idx,
                             'label': label,
-
                         })
                         entity_tokens: List[str] = self.qid_to_entity_tokens[qid]
                         d_tokens_ids = self.tokenizer.convert_tokens_to_ids(d_tokens)
@@ -255,6 +258,22 @@ class QueryDocEntityConcatPointwisePredictionGen(MMDGenI):
         def encode_fn(inst: QDE_as_Ids):
             return encode_qde_ids_instance(self.max_seq_length, self.q_max_seq_length, inst)
         return write_records_w_encode_fn(out_path, encode_fn, insts)
+
+
+class RandomDropGenerator(MMDGenI):
+    def __init__(self, inner_generator: MMDGenI, skip_rate):
+        self.inner_generator = inner_generator
+        self.skip_rate = skip_rate
+
+    def generate(self, data_id_manager, qids):
+        for e in self.inner_generator.generate(data_id_manager, qids):
+            if random.random() < self.skip_rate:
+                continue
+            else:
+                yield e
+
+    def write(self, insts, out_path):
+        return self.inner_generator.write(insts, out_path)
 
 
 class QDDistillGenI(ABC):
@@ -321,7 +340,8 @@ class QueryDocEntityDistilGen(QDDistillGenI):
                                   data_id)
                 yield inst
                 success_docs += 1
-            except KeyError:
+            except KeyError as e:
+                print(e)
                 missing_cnt += 1
                 if missing_cnt > 100 and missing_cnt % 100 == 1:
                     print("Fail rate {} of {}".format(missing_cnt, success_docs))

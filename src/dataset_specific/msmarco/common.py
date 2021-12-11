@@ -135,6 +135,20 @@ def load_token_d_title_body(split, query_id) -> Dict[str, Tuple[List[str], List[
     return load_pickle_from(save_path)
 
 
+def load_token_d_corpuswise_from_tsv(split, job_id) -> Dict[str, Tuple[List[str], List[str]]]:
+    save_path = os.path.join(job_man_dir,
+                             "MSMARCO_{}_title_body_tokens_working".format(split),
+                             str(job_id))
+    return load_tsv_format_tokens(save_path)
+
+
+def load_tokens_d_corpuswise_pickled(split, job_id):
+    save_path = os.path.join(job_man_dir,
+                             "MMD_{}_corpuswise_tokens".format(split),
+                             str(job_id))
+    return load_pickle_from(save_path)
+
+
 def load_token_d_10doc(split, query_id) -> Dict[str, List[str]]:
     save_path = os.path.join(job_man_dir, "MSMARCO_{}_doc10_tokens".format(split), query_id)
     return load_pickle_from(save_path)
@@ -162,7 +176,6 @@ def load_token_d_sent_level(split, query_id)\
 def load_token_d_bm25_tokenize(split, query_id) -> Dict[str, List[str]]:
     save_path = os.path.join(job_man_dir, "MSMARCO_{}_bm25_tokenize".format(split), query_id)
     return load_pickle_from(save_path)
-
 
 
 def load_msmarco_qrel_from_gz(qrel_path) -> Dict[QueryID, List[str]]:
@@ -229,6 +242,16 @@ def top100_doc_ids(split) -> Dict[QueryID, List[str]]:
     for qid, entries in rlg.items():
         doc_ids = lmap(TrecRankedListEntry.get_doc_id, entries)
         out_d[QueryID(qid)] = doc_ids
+    return out_d
+
+
+def load_tsv_format_tokens(save_path) -> Dict[str, Tuple[List[str], List[str]]]:
+    f = open(save_path, "r")
+    out_d = {}
+    for line in f.readlines():
+        docid, url, title_tokens_s, body_tokens_s = line.split("\t")
+        out_d[docid] = title_tokens_s.split(), body_tokens_s.split()
+    f.close()
     return out_d
 
 
