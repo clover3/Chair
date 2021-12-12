@@ -87,7 +87,11 @@ def show_qtype_embeddings(qtype_entries, query_info_dict, split):
     print("Building qtype desc")
     qtype_embedding_paired, n_query = build_qtype_desc(qtype_entries, query_info_dict)
     random.shuffle(qtype_entries)
-    g_avg_vector = avg_vector_from_qtype_entries(qtype_entries[:10000 * 10])
+
+    n_sample = 10000 * 10
+    print("Sample {} from {}".format(n_sample, len(qtype_entries)))
+    qtype_entries = qtype_entries[:n_sample]
+    g_avg_vector = avg_vector_from_qtype_entries(qtype_entries)
 
     qtype_embedding_paired: List[Tuple[str, np.array]] = qtype_embedding_paired
     query_info_dict: Dict[str, QueryInfo] = load_query_info_dict(split)
@@ -111,11 +115,11 @@ def show_qtype_embeddings(qtype_entries, query_info_dict, split):
         cut = np.max(avg_vector) * 0.3
         for d_idx in rank[:5]:
             v = avg_vector[d_idx]
-            if v > cut:
+            if abs(v) > 1:
                 dim_printed_counter[d_idx] += 1
                 rep += "{0}: {1:.2f} /".format(d_idx, v)
                 grouped_by_dim[d_idx].append((func_str, v))
-        print(func_str, rep)
+        # print(func_str, rep)
 
     for dim_idx, cnt in dim_printed_counter.most_common(100):
         print("Dim {} appeared {}".format(dim_idx, cnt))

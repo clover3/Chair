@@ -18,23 +18,24 @@ def main():
     n_queries = 7
     queries = list(rlg_list[0].keys())
     assert len(queries) == n_queries
-    top_k = 20
+    for top_k in [20, 50, 100]:
+        n_docs_per_query = []
+        for qid in queries:
+            doc_ids_per_query = set()
+            for rlg in rlg_list:
+                sliced = rlg[qid][:top_k]
+                doc_ids = list(map(TrecRankedListEntry.get_doc_id, sliced))
+                doc_ids_per_query.update(doc_ids)
+            n_docs_per_query.append(len(doc_ids_per_query))
 
-    num_doc_per_qid = {}
-    all_doc_ids = set()
-    for qid in queries:
-        for rlg in rlg_list:
-            sliced = rlg[qid][:top_k]
-            doc_ids = list(map(TrecRankedListEntry.get_doc_id, sliced))
-            all_doc_ids.update(doc_ids)
-        num_doc_per_qid[qid] = len(all_doc_ids)
+        n_num_doc_max = n_queries * top_k * len(rlg_list)
 
-    num_all_docs = len(all_doc_ids)
-    n_num_doc_max = n_queries * top_k * len(rlg_list)
-
-    print(f"num_queries={n_queries} top-k={top_k} num_runs={len(rlg_list)}")
-    print("{} docs".format(num_all_docs))
-    print("(Max {})".format(n_num_doc_max))
+        run_overlap = sum(n_docs_per_query)
+        print(f"num_queries={n_queries} top-k={top_k} num_runs={len(rlg_list)}")
+        print("Query overlap {0} ({1:.2f})".
+              format(run_overlap, run_overlap / n_num_doc_max))
+        print(n_docs_per_query)
+        print("(Max {})".format(n_num_doc_max))
 
 
 if __name__ == "__main__":
