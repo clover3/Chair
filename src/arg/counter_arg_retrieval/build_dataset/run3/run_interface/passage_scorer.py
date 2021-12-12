@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Dict
 
-from arg.counter_arg_retrieval.build_dataset.run3.run_interface.split_documents import PassageRange
+from arg.counter_arg_retrieval.build_dataset.passage_scoring.split_passages import PassageRange
 from bert_api.swtt.segmentwise_tokenized_text import SegmentwiseTokenizedText, SWTTIndex
 from bert_api.swtt.swtt_scorer_def import SWTTScorerOutput, SWTTTokenScorerInput
 from misc_lib import TEL

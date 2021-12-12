@@ -2,7 +2,7 @@ import json
 import os
 from typing import List, Tuple
 
-from arg.counter_arg_retrieval.build_dataset.run3.run_interface.run3_util import json_to_scoring_output
+from arg.counter_arg_retrieval.build_dataset.passage_scoring.passage_scoring import json_to_scoring_output
 from arg.counter_arg_retrieval.build_dataset.run3.swtt.print_to_csv import load_entries_from_run3_dir, \
     load_json_entries_from_run3_dir
 from bert_api.swtt.swtt_scorer_def import SWTTScorerOutput

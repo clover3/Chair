@@ -29,11 +29,11 @@ class Worker(WorkerInterface):
 
 
 def main():
-    json_path = os.path.join(output_path, "ca_building", "run3", "pc_res.txt.docs.jsonl")
+    json_path = os.path.join(output_path, "ca_building", "run4", "pc_res.txt.docs.jsonl")
     def factory(out_dir):
         return Worker(json_path, out_dir)
 
-    root_dir = os.path.join(output_path, "ca_building", "run3")
+    root_dir = os.path.join(output_path, "ca_building", "run4")
 
     max_job = 70
     runner = JobRunnerS(root_dir, max_job, "pc_res_doc_jsonl_parsing", factory)

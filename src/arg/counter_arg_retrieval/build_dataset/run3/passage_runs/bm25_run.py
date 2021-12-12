@@ -8,7 +8,8 @@ from arg.counter_arg_retrieval.build_dataset.run3.run_interface.bm25_interface i
 from arg.counter_arg_retrieval.build_dataset.run3.run_interface.passage_scorer import FutureScorerTokenBased, \
     FutureScorerI
 from arg.counter_arg_retrieval.build_dataset.run3.run_interface.run3_util import Run3PassageScoring, \
-    load_premise_queries, scoring_output_to_json, run_job_runner_json
+    load_premise_queries, run_job_runner_json
+from arg.counter_arg_retrieval.build_dataset.passage_scoring.passage_scoring import scoring_output_to_json
 from arg.counter_arg_retrieval.build_dataset.run3.swtt.save_trec_style import read_pickled_predictions_and_save
 from cpath import output_path, cache_path
 

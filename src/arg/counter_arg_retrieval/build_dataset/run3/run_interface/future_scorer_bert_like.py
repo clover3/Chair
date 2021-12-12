@@ -2,7 +2,7 @@ import os
 from typing import List, Tuple
 
 from arg.counter_arg_retrieval.build_dataset.run3.run_interface.passage_scorer import FutureScorerI
-from arg.counter_arg_retrieval.build_dataset.run3.run_interface.split_documents import PassageRange
+from arg.counter_arg_retrieval.build_dataset.passage_scoring.split_passages import PassageRange
 from bert_api.predictor import FloatPredictor
 from bert_api.swtt.segmentwise_tokenized_text import SegmentwiseTokenizedText
 from bert_api.swtt.swtt_scorer_def import SWTTScorerInput, SWTTScorerOutput
