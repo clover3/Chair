@@ -176,7 +176,11 @@ def dimension_normalization(qtype_entries):
     return factor
 
 
-def run_qtype_analysis(qtype_entries: List[QTypeInstance], query_info_dict, known_qtype_ids):
+def run_qtype_analysis(qtype_entries: List[QTypeInstance],
+                       query_info_dict,
+                       known_qtype_ids,
+                       scale_factor_list):
+    scale_factor = np.array(scale_factor_list)
     tokenizer = get_tokenizer()
     voca_list = get_voca_list(tokenizer)
     print("Building qtype desc")
@@ -248,10 +252,8 @@ def run_qtype_analysis(qtype_entries: List[QTypeInstance], query_info_dict, know
         func_word_weights_q = cossim(qtype_embedding_np, e.qtype_weights_qe)
         func_word_weights_d = cossim(qtype_embedding_np, e.qtype_weights_de)
 
-        scale = np.max(e.qtype_weights_qe)
-        scale = 1/100
-        scaled_query_qtype = e.qtype_weights_qe / scale
-        scaled_document_qtype = e.qtype_weights_de * scale
+        scaled_query_qtype = e.qtype_weights_qe / scale_factor
+        scaled_document_qtype = e.qtype_weights_de * scale_factor
         display = False
         for key in known_qtype_ids:
             if scaled_document_qtype[key] > threshold:

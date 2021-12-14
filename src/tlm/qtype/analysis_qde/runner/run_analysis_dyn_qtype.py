@@ -7,6 +7,7 @@ from cpath import output_path
 from misc_lib import tprint
 from tlm.qtype.analysis_fixed_qtype.parse_dyn_qtype_vector import show_qtype_embeddings, load_parse, \
     dimension_normalization
+from tlm.qtype.analysis_fixed_qtype.parse_qtype_vector import run_qtype_analysis
 from tlm.qtype.content_functional_parsing.qid_to_content_tokens import QueryInfo, load_query_info_dict
 
 
@@ -19,10 +20,12 @@ def main():
     # save_to_pickle(obj, "run_analysis_dyn_qtype")
     tprint("Loading pickle...")
     qtype_entries, query_info_dict = load_from_pickle("run_analysis_dyn_qtype")
-    factor_list = dimension_normalization(qtype_entries)
-    save_to_pickle(factor_list, "factor_list")
-    # known_qtype_ids = show_qtype_embeddings(qtype_entries, query_info_dict, split)
-    # run_qtype_analysis(qtype_entries, query_info_dict, known_qtype_ids)
+    # factor_list = dimension_normalization(qtype_entries)
+    # save_to_pickle(factor_list, "factor_list")
+    # factor_list = load_from_pickle("factor_list")
+    factor_list = [1 for _ in range(2048)]
+    known_qtype_ids = show_qtype_embeddings(qtype_entries, query_info_dict, split)
+    run_qtype_analysis(qtype_entries, query_info_dict, known_qtype_ids, factor_list)
 
 
 def qtype_2U_train():

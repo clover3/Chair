@@ -9,7 +9,8 @@ from arg.qck.prediction_reader import load_combine_info_jsons
 from bert_api.client_lib import BERTClient
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
 from data_generator.tokenizer_wo_tf import pretty_tokens
-from dataset_specific.msmarco.common import load_queries, QueryID
+from dataset_specific.msmarco.common import load_queries
+from galagos.types import QueryID
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 from tlm.qtype.analysis_qemb.save_parsed import get_voca_list, convert_ids_to_tokens
 
