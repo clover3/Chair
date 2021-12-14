@@ -1,8 +1,9 @@
 import os
 
+from arg.counter_arg_retrieval.build_dataset.job_running import run_job_runner
 from arg.counter_arg_retrieval.build_dataset.run3.run_interface.future_scorer_bert_like import FutureScorerBertLike
 from arg.counter_arg_retrieval.build_dataset.run3.run_interface.passage_scorer import FutureScorerI
-from arg.counter_arg_retrieval.build_dataset.run3.run_interface.run3_util import load_premise_queries, run_job_runner, \
+from arg.counter_arg_retrieval.build_dataset.run3.run_interface.run3_util import load_premise_queries, \
     Run3PassageScoring
 from arg.counter_arg_retrieval.build_dataset.run3.swtt.nli_common import EncoderForNLI
 from bert_api.predictor import Predictor, PredictorWrap

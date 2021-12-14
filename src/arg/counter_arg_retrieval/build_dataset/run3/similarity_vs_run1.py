@@ -38,6 +38,5 @@ def main():
     print_table(rows)
 
 
-
 if __name__ == "__main__":
     main()

@@ -8,7 +8,7 @@ from arg.counter_arg_retrieval.build_dataset.passage_scoring.split_passages impo
 from arg.counter_arg_retrieval.build_dataset.run4.run4_util import run4_rlg_filtered
 from bert_api.swtt.segmentwise_tokenized_text import SegmentwiseTokenizedText
 from bert_api.swtt.window_enum_policy import get_run3_enum_policy
-from cache import load_from_pickle, save_to_pickle
+from cache import save_to_pickle
 from cpath import output_path
 from trec.trec_parse import load_ranked_list_grouped
 
@@ -29,8 +29,12 @@ def load_run4_swtt():
 def main():
     enum_policy = get_run3_enum_policy()
     docs: List[Tuple[str, SegmentwiseTokenizedText]] = load_run4_swtt()
+    print("Loaed {} docs".format(len(docs)))
     rlg_path = run4_rlg_filtered()
     rlg = load_ranked_list_grouped(rlg_path)
+
+    rlg_size = sum(map(len, rlg.values()))
+    print(f"{rlg_size} ranked list entries")
     doc_as_passage_dict = split_passages(docs, rlg, enum_policy)
     save_to_pickle(doc_as_passage_dict, "ca_run4_swtt_passages")
 
