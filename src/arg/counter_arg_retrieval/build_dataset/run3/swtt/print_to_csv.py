@@ -94,7 +94,8 @@ def get_word_tokens_to_html(word_tokens_grouped):
 def read_save_default(run_name):
     csv_save_path = os.path.join(output_path, "ca_building", "run3", "csv", "{}.csv".format(run_name))
     prediction_entries = load_entries_from_jobs_dir(run_name)
-    sliced_ranked_list_path = os.path.join(output_path, "ca_building", "run3", "passage_ranked_list_sliced",
+    sliced_ranked_list_path = os.path.join(output_path, "ca_building",
+                                           "run3", "passage_ranked_list_sliced",
                                            "{}.txt".format(run_name))
     ranked_list_d = load_ranked_list_grouped(sliced_ranked_list_path)
     read_save(prediction_entries, ranked_list_d, csv_save_path)
@@ -115,7 +116,6 @@ def load_json_entries_from_jobs_dir(run_name, parse_fn):
         if file_path.endswith(".json"):
             prediction_entries.extend(parse_fn(file_path))
     return prediction_entries
-
 
 
 def main():

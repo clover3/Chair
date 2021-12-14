@@ -15,6 +15,9 @@ class IntTuple:
     
     def equal(self, idx):
         return self.idx1 == idx.idx1 and self.idx2 == idx.idx2
+
+    def __eq__(self, other):
+        return self.equal(other)
     
     def __lt__(self, idx):
         if self.idx1 < idx.idx1:

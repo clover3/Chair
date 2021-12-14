@@ -1,6 +1,7 @@
 import os
 from typing import List, Dict
 
+from arg.counter_arg_retrieval.build_dataset.path_helper import load_sliced_passage_ranked_list
 from cpath import output_path
 from trec.trec_parse import load_ranked_list_grouped, write_trec_ranked_list_entry
 from trec.types import TrecRankedListEntry
@@ -15,8 +16,7 @@ def slice_for_run(run_name, k):
     for key, value in rl.items():
         new_ranked_list.extend(value[:k])
 
-    save_path = os.path.join(output_path, "ca_building",
-                                    "passage_ranked_list_sliced", '{}.txt'.format(run_name))
+    save_path = load_sliced_passage_ranked_list(run_name)
 
     write_trec_ranked_list_entry(new_ranked_list, save_path)
 
