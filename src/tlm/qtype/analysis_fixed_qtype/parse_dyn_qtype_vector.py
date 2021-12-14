@@ -10,7 +10,7 @@ from arg.qck.prediction_reader import load_combine_info_jsons
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
 from data_generator.tokenizer_wo_tf import pretty_tokens, get_tokenizer
 from list_lib import left, right
-from misc_lib import group_by, get_second
+from misc_lib import group_by, get_second, tprint, TimeEstimator
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 from tlm.qtype.analysis_qde.analysis_common import get_avg_vector
 from tlm.qtype.analysis_qemb.save_parsed import get_voca_list, convert_ids_to_tokens
@@ -135,6 +135,45 @@ def show_qtype_embeddings(qtype_entries, query_info_dict, split):
         print(" / ".join(["{0} ({1:.2f})".format(func_str, v * 100) for func_str, v in items]))
     known_qtype_ids = keys
     return known_qtype_ids
+
+
+
+def dimension_normalization(qtype_entries):
+    tprint("dimension_normalization")
+    n_dim = len(qtype_entries[0].qtype_weights_qe)
+    factor_list = []
+    ticker = TimeEstimator(n_dim)
+    for dim_id in range(n_dim):
+        v_list = []
+        ticker.tick()
+        for e in qtype_entries:
+            v = e.qtype_weights_qe[dim_id]
+            v_list.append(v)
+        v_list.sort()
+
+        n_step = 10
+        head_step = 1
+        tail_step = n_step - 1
+        head_idx = int((head_step / n_step) * len(v_list))
+        head_v = v_list[head_idx]
+        tail_idx = int((tail_step / n_step) * len(v_list))
+        tail_v = v_list[tail_idx]
+        if abs(head_v) > abs(tail_v):
+            factor = head_v
+        else:
+            factor = tail_v
+        factor_list.append(factor)
+        out_s = ""
+        for step in range(n_step):
+            idx = int((step / n_step) * len(v_list))
+            v = v_list[idx] / (factor + 1e-8)
+            out_s += "{0}: {1:.2f} ".format(step, v)
+
+        v = v_list[-1] / (factor + 1e-8)
+        out_s += "{0}: {1:.2f} ".format(-1, v)
+
+        # print("{0} {1} ".format(dim_id, out_s))
+    return factor
 
 
 def run_qtype_analysis(qtype_entries: List[QTypeInstance], query_info_dict, known_qtype_ids):

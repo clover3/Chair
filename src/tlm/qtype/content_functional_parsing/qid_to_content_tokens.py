@@ -6,7 +6,7 @@ from typing import List, Dict, NamedTuple, Tuple
 from cache import load_from_pickle, save_to_pickle
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from dataset_specific.msmarco.common import QueryID
+from trec.types import QueryID
 
 
 class QueryInfo(NamedTuple):
