@@ -79,6 +79,14 @@ def get_mae_loss_modeling(query_document_score, feature):
     return loss, losses, query_document_score
 
 
+def get_sigmoid_loss_modeling(query_document_score, feature):
+    label_ids = feature["label_ids"]
+    losses = tf.nn.sigmoid_cross_entropy_with_logits(label_ids, query_document_score)
+    loss = tf.reduce_mean(losses)
+    return loss, losses, query_document_score
+
+
+
 def get_pairwise_loss_modeling(query_document_score, feature):
     paired_scores = tf.reshape(query_document_score, [2, -1])
     scores_pos = paired_scores[0]
@@ -726,6 +734,127 @@ def model_fn_qde6(FLAGS,
             return losses
 
         sparsity_loss_1 = get_sparsity_loss(qtype_vector1)
+        sparsity_loss_total = sparsity_loss_1 * alpha
+        loss += tf.reduce_mean(sparsity_loss_total)
+
+        all_tvars = tf.compat.v1.trainable_variables()
+        if train_config.init_checkpoint:
+            initialized_variable_names, init_fn = get_init_fn(train_config, all_tvars)
+            log_var_assignments(all_tvars, initialized_variable_names)
+        else:
+            init_fn = dummy_fn
+        scaffold_fn = get_tpu_scaffold_or_init(init_fn, train_config.use_tpu)
+        optimizer_factory = lambda x: create_optimizer_from_config(x, train_config)
+        TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
+        if mode == tf.estimator.ModeKeys.TRAIN:
+            tf_logging.info("Using single lr ")
+            train_op = optimizer_factory(loss)
+            output_spec = TPUEstimatorSpec(mode=mode, loss=loss, train_op=train_op, scaffold_fn=scaffold_fn)
+        elif mode == tf.estimator.ModeKeys.EVAL:
+            eval_metrics = (qde_metric, [
+                y_pred, sparsity_loss_total
+            ])
+            output_spec = TPUEstimatorSpec(mode=mode, loss=loss, eval_metrics=eval_metrics,
+                                           scaffold_fn=scaffold_fn)
+        elif mode == tf.estimator.ModeKeys.PREDICT:
+            if prediction is None:
+                prediction = {
+                    "y_pred": y_pred,
+                    "losses": losses,
+                }
+            output_spec = TPUEstimatorSpec(mode=mode, loss=loss,
+                                           predictions=prediction,
+                                           scaffold_fn=scaffold_fn)
+        else:
+            assert False
+        return output_spec
+
+    return model_fn
+
+
+
+
+def model_fn_qde4(FLAGS,
+                  process_feature,
+                  get_loss_modeling,
+                  get_qtype_modeling,
+                  ):
+    def single_bias_model(config, vector):
+        dense = tf.keras.layers.Dense(1, activation=tf.keras.activations.tanh,
+                                      kernel_initializer=create_initializer(config.initializer_range))
+        v = dense(vector)
+        return tf.reshape(v, [-1])
+
+    model_config_o = JsonConfig.from_json_file(FLAGS.model_config_file)
+    train_config = TrainConfigEx.from_flags(FLAGS)
+    use_one_hot_embeddings = FLAGS.use_tpu
+    special_flags = FLAGS.special_flags.split(",")
+
+    def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
+        log_features(features)
+        de_inputs, qe_inputs = process_feature(features)
+
+        is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+        if not is_training:
+            model_config = set_dropout_to_zero(model_config_o)
+        else:
+            model_config = model_config_o
+
+        with tf.compat.v1.variable_scope(dual_model_prefix1):
+            model_1 = BertModel(
+                config=model_config,
+                is_training=is_training,
+                input_ids=qe_inputs.input_ids,
+                input_mask=qe_inputs.input_mask,
+                token_type_ids=qe_inputs.segment_ids,
+                use_one_hot_embeddings=use_one_hot_embeddings,
+            )
+            pooled1 = model_1.get_pooled_output() # [batch_size * 2, hidden_size]
+            qtype_vector1 = get_qtype_modeling(model_config, pooled1)  # [batch_size * 2, qtype_length]
+            q_bias = single_bias_model(model_config, pooled1)
+
+        with tf.compat.v1.variable_scope(dual_model_prefix2):
+            model_2 = BertModel(
+                config=model_config,
+                is_training=is_training,
+                input_ids=de_inputs.input_ids,
+                input_mask=de_inputs.input_mask,
+                token_type_ids=de_inputs.segment_ids,
+                use_one_hot_embeddings=use_one_hot_embeddings,
+            )
+            pooled2 = model_2.get_pooled_output()
+            qtype_vector2 = get_qtype_modeling(model_config, pooled2)
+            d_bias = single_bias_model(model_config, pooled2)
+
+        query_document_score1 = tf.reduce_sum(tf.multiply(qtype_vector1, qtype_vector2), axis=1)
+        bias = tf.Variable(initial_value=0.0, trainable=True)
+        query_document_score2 = query_document_score1 + bias
+        query_document_score3 = query_document_score2 + q_bias
+        query_document_score = query_document_score3 + d_bias
+        bias2 = query_document_score2 - query_document_score1
+        alpha = get_alpha_from_config(model_config, 1)
+        loss, losses, y_pred = get_loss_modeling(query_document_score, features)
+        tensor_dict = {
+            "data_id": features["data_id"],
+            "label_ids": features["label_ids"],
+            "qtype_vector_qe": qtype_vector1,
+            "qtype_vector_de": qtype_vector2,
+            "de_input_ids": de_inputs.input_ids,
+            "logits": query_document_score,
+            "bias": bias2,
+            "q_bias": q_bias,
+            "d_bias": d_bias
+        }
+        if "predict_vector" in special_flags:
+            tensor_to_predict = ["data_id", "label_ids", "logits", "de_input_ids",
+                                 "qtype_vector_qe", "qtype_vector_de", "q_bias", "d_bias", "bias"]
+        else:
+            tensor_to_predict = ["data_id", "label_ids", "logits"]
+        prediction = {k: tensor_dict[k] for k in tensor_to_predict}
+        # prediction['temperature'] = get_temperature()
+
+        sparsity_loss_1 = get_l1_loss_w(qtype_vector1)
+        # sparsity_loss_2 = qtype_vector2
         sparsity_loss_total = sparsity_loss_1 * alpha
         loss += tf.reduce_mean(sparsity_loss_total)
 

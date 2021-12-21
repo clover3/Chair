@@ -129,6 +129,7 @@ class ModelConfig:
     q_type_voca = 2048
     q_max_seq_length = 128
 
+
 def run_server():
     save_path = os.path.join(output_path, "model", "runs", "qtype_2T", "model.ckpt-200000")
     disable_eager_execution()
@@ -147,7 +148,7 @@ def run_server():
 
     server = BertLikeServer(predict)
     print("server started")
-    server.start(8126)
+    server.start(8128)
 
 
 if __name__ == "__main__":

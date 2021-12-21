@@ -1,6 +1,7 @@
 import os
 from typing import List, Dict, Tuple
 
+from arg.counter_arg_retrieval.build_dataset.ca_query import load_ca_task_from_csv
 from arg.counter_arg_retrieval.build_dataset.passage_scoring.passage_scoring import PassageScoringInner
 from arg.counter_arg_retrieval.build_dataset.passage_scoring.split_passages import PassageRange
 from arg.counter_arg_retrieval.build_dataset.run3.run_interface.passage_scorer import FutureScorerI
@@ -17,6 +18,11 @@ def run4_rlg_filtered():
 
 def load_run4_swtt_passage() -> Dict[DocID, Tuple[SegmentwiseTokenizedText, List[PassageRange]]]:
     return load_from_pickle("ca_run4_swtt_passages")
+
+
+def load_ca4_tasks():
+    save_path = os.path.join(output_path, "ca_building", "run4", "ca_task.csv")
+    return load_ca_task_from_csv(save_path)
 
 
 def show_run4_swtt_count():

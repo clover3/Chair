@@ -13,6 +13,7 @@ from cpath import output_path
 from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
 from misc_lib import exist_or_mkdir, group_by, average, tprint
+from trainer.np_modules import sigmoid
 from trec.trec_parse import write_trec_ranked_list_entry
 
 
@@ -37,6 +38,11 @@ def select_first(items):
     return items[0]
 
 
+def logit_to_score_softmax(logit):
+    return scipy.special.softmax(logit)[1]
+
+
+
 def summarize_score(info: Dict,
                     prediction_file_path: str,
                     f_handler: FormatHandler,
@@ -57,6 +63,8 @@ def summarize_score(info: Dict,
             return entry[key_logit]
         elif score_type == "tuple":
             return entry[key_logit][1]
+        elif score_type == "sigmoid":
+            return sigmoid(entry[key_logit])
         else:
             assert False
 

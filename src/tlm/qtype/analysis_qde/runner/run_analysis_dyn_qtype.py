@@ -4,10 +4,14 @@ from typing import Dict
 
 from cache import load_from_pickle, save_to_pickle
 from cpath import output_path
+from epath import job_man_dir
 from misc_lib import tprint
-from tlm.qtype.analysis_fixed_qtype.parse_dyn_qtype_vector import show_qtype_embeddings, load_parse, \
-    dimension_normalization
-from tlm.qtype.analysis_fixed_qtype.parse_qtype_vector import run_qtype_analysis
+from tlm.qtype.analysis_fixed_qtype.parse_dyn_qtype_vector import show_func_word_avg_embeddings, load_parse, \
+    build_qtype_desc
+from tlm.qtype.analysis_qde.analysis_a import run_qtype_analysis, enum_queries, cluster_avg_embeddings
+from tlm.qtype.analysis_qde.analysis_b import analysis_b
+from tlm.qtype.analysis_qde.analysis_c import run_qtype_analysis_c
+from tlm.qtype.analysis_qde.variance_analysis import print_variance
 from tlm.qtype.content_functional_parsing.qid_to_content_tokens import QueryInfo, load_query_info_dict
 
 
@@ -22,10 +26,54 @@ def main():
     qtype_entries, query_info_dict = load_from_pickle("run_analysis_dyn_qtype")
     # factor_list = dimension_normalization(qtype_entries)
     # save_to_pickle(factor_list, "factor_list")
-    # factor_list = load_from_pickle("factor_list")
-    factor_list = [1 for _ in range(2048)]
-    known_qtype_ids = show_qtype_embeddings(qtype_entries, query_info_dict, split)
-    run_qtype_analysis(qtype_entries, query_info_dict, known_qtype_ids, factor_list)
+    factor_list = load_from_pickle("factor_list")
+    pos_known, neg_known = show_func_word_avg_embeddings(qtype_entries, query_info_dict, factor_list, split)
+    print("{}/{} dimensions are described".format(len(pos_known), len(neg_known)))
+    analysis_b(qtype_entries, query_info_dict, (pos_known, neg_known), factor_list)
+
+def run_save_to_pickle():
+    pred_path = os.path.join(output_path, "qtype", "qtype_2T_v_train")
+    info_path = os.path.join(job_man_dir, )
+    split = "train"
+    qtype_entries, query_info_dict = load_parse(info_path, pred_path, split)
+    obj = qtype_entries, query_info_dict
+    save_to_pickle(obj, "run_analysis_dyn_qtype")
+
+
+def run_print_variance():
+    qtype_entries, query_info_dict = load_from_pickle("run_analysis_dyn_qtype")
+    print_variance(qtype_entries, query_info_dict)
+
+
+def run_analysis_a():
+    split = "train"
+    tprint("Loading pickle...")
+    qtype_entries, query_info_dict = load_from_pickle("run_analysis_dyn_qtype")
+    # enum_queries(qtype_entries, query_info_dict)
+    factor_list = load_from_pickle("factor_list")
+    # pos_known, neg_known = show_func_word_avg_embeddings(qtype_entries, query_info_dict, factor_list, split)
+    # print("{}/{} dimensions are described".format(len(pos_known), len(neg_known)))
+    run_qtype_analysis(qtype_entries, query_info_dict, factor_list)
+
+
+def run_analysis_c():
+    tprint("Loading pickle...")
+    qtype_entries, query_info_dict = load_from_pickle("run_analysis_dyn_qtype")
+    run_qtype_analysis_c(qtype_entries, query_info_dict)
+
+
+def run_clustering():
+    split = "train"
+    tprint("Loading pickle...")
+    qtype_entries, query_info_dict = load_from_pickle("run_analysis_dyn_qtype")
+    print("{} entries, {} info entries".format(len(qtype_entries), len(query_info_dict)))
+    qtype_embedding_paired, n_query = build_qtype_desc(qtype_entries, query_info_dict)
+    cluster_avg_embeddings(qtype_embedding_paired)
+
+
+def run_enum_queries():
+    qtype_entries, query_info_dict = load_from_pickle("run_analysis_dyn_qtype")
+    enum_queries(qtype_entries, query_info_dict)
 
 
 def qtype_2U_train():
@@ -54,9 +102,9 @@ def qtype_2U_train_cached():
     qtype_entries.extend(load("run_analysis_qtype_2U_v_train_tail"))
     query_info_dict: Dict[str, QueryInfo] = load_query_info_dict(split)
     # qtype_entries, query_info_dict = load_from_pickle("run_analysis_qtype_2U_v_train")
-    known_qtype_ids = show_qtype_embeddings(qtype_entries, query_info_dict, split)
+    known_qtype_ids = show_func_word_avg_embeddings(qtype_entries, query_info_dict, split)
     # run_qtype_analysis(qtype_entries, query_info_dict, known_qtype_ids)
 
 
 if __name__ == "__main__":
-    main()
+    run_analysis_c()
