@@ -26,7 +26,13 @@ class QDEResource(ProcessedResourceTitleBodyTokensListI):
 
     def get_doc_tokens_d(self, qid: QueryID) -> Dict[str, Tuple[List[str], List[List[str]]]]:
         orig_qid = self.qid_mapping(qid)
-        return self.resource_inner.get_doc_tokens_d(orig_qid)
+        d = self.resource_inner.get_doc_tokens_d(orig_qid)
+
+        for title, body in d.values():
+            if len(title):
+                assert type(title[0]) == str
+
+        return d
 
     def get_label(self, qid: QueryID, doc_id):
         return 0

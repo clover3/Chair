@@ -16,6 +16,25 @@ class QueryInfo(NamedTuple):
     functional_tokens: List[str]
     out_s_list: List[str]
 
+    def get_head_tail(self):
+        state = "head"
+        head = []
+        tail = []
+        body = []
+        for token in self.out_s_list:
+            if token == "[":
+                state = "middle"
+            elif token == "]":
+                state = "tail"
+            else:
+                if state == "head":
+                    head.append(str(token))
+                elif state == "tail":
+                    tail.append(str(token))
+                elif state == "middle":
+                    body.append(str(token))
+        return head, tail
+
 
 def get_qid_to_content_tokens(split) -> Dict[QueryID, List[str]]:
     obj = load_from_pickle("mmd_query_parse_{}".format(split))

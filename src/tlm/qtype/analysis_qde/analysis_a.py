@@ -3,14 +3,13 @@ from typing import List, Dict, Tuple
 
 import numpy as np
 import sklearn.cluster
+import spacy
 
 from cache import load_from_pickle
-from data_generator.bert_input_splitter import split_p_h_with_input_ids
-from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens
 from list_lib import left, right
 from misc_lib import group_by
 from tlm.qtype.analysis_fixed_qtype.parse_dyn_qtype_vector import build_qtype_desc, show_vector_distribution
-from tlm.qtype.analysis_qemb.save_parsed import get_voca_list, convert_ids_to_tokens
+from tlm.qtype.analysis_qde.analysis_common import get_passsage_fn
 from tlm.qtype.content_functional_parsing.qid_to_content_tokens import structured_qtype_text
 from tlm.qtype.qtype_instance import QTypeInstance
 
@@ -23,19 +22,6 @@ def enum_queries(qtype_entries: List[QTypeInstance], query_info_dict):
         if q_rep not in seen:
             print(q_rep)
             seen.add(q_rep)
-
-
-def get_passsage_fn():
-    tokenizer = get_tokenizer()
-    voca_list = get_voca_list(tokenizer)
-    def get_passage(input_ids):
-        seg1, seg2 = split_p_h_with_input_ids(input_ids, input_ids)
-        seg2_tokens = convert_ids_to_tokens(voca_list, seg2)
-        passage: str = pretty_tokens(seg2_tokens, True)
-        return passage
-
-    return get_passage
-
 
 
 class RangeGrouping:
@@ -57,9 +43,9 @@ class RangeGrouping:
         self.cur_group_idx = []
 
 
-def run_qtype_analysis(qtype_entries: List[QTypeInstance],
-                       query_info_dict,
-                       scale_factor_list):
+def qtype_analysis_a(qtype_entries: List[QTypeInstance],
+                     query_info_dict,
+                     scale_factor_list):
     scale_factor = np.array(scale_factor_list)
     get_passage = get_passsage_fn()
     print("Building qtype desc")
@@ -72,6 +58,21 @@ def run_qtype_analysis(qtype_entries: List[QTypeInstance],
     n_func_word = len(qtype_embedding_paired)
     func_type_id_to_text: List[str] = left(qtype_embedding_paired)
     qtype_embedding_np = np.stack(right(qtype_embedding_paired), axis=0)
+    nlp = spacy.load("en_core_web_sm")
+
+    is_person_query_d = {}
+    def is_person_query(info):
+        query = info.query
+        if query not in is_person_query_d:
+            doc = nlp(query)
+            appropriate = False
+            for e in doc.ents:
+                if e.text == info.content_span and e.label_ == "PERSON":
+                    appropriate = True
+            is_person_query_d[query] = appropriate
+
+        return is_person_query_d[query]
+
 
     class RowPrinter:
         def __init__(self, func_word_weights):
@@ -117,22 +118,25 @@ def run_qtype_analysis(qtype_entries: List[QTypeInstance],
         if e_idx % 10 and print_per_qid[e.qid] < 4:
             pass
 
-        f_high_logit = e.logits > 3 or e.d_bias > 3
+        f_high_logit = e.logits > 0 or e.d_bias > 0
         f_relevant = e.label
-        f_target_keyword = query_info_dict[e.qid].content_span in target_content_words
-        content_tokens = query_info_dict[e.qid].content_span.split()
+        info = query_info_dict[e.qid]
+
+        display = is_person_query(info)
+        f_target_keyword = info.content_span in target_content_words
+        content_tokens = info.content_span.split()
         f_short_content = len(content_tokens) < 3
-
-        display = f_short_content and f_high_logit
-        if not display:
-            continue
-
         print_per_qid[e.qid] += 1
-        q_rep = " ".join(query_info_dict[e.qid].out_s_list)
+        q_rep = " ".join(info.out_s_list)
         func_word_weights_q = np.matmul(qtype_embedding_np, e.qtype_weights_qe)
         func_word_weights_d = np.matmul(qtype_embedding_np, e.qtype_weights_de)
 
         scaled_document_qtype = e.qtype_weights_de * scale_factor
+        max_idx = np.argmax(func_word_weights_d)
+        # if max(func_word_weights_d) < 2:
+        #     display = False
+        if not display:
+            continue
 
         n_print += 1
         if n_print % 5 == 0:
@@ -144,19 +148,19 @@ def run_qtype_analysis(qtype_entries: List[QTypeInstance],
         print("{}:{} - {}".format(e.doc_id, e.passage_idx, "Relevant" if e.label else "Non-relevant"))
         print("Score bias q_bias d_bias")
         print(" ".join(map("{0:.2f}".format, [e.logits, e.bias, e.q_bias, e.d_bias])))
-        print("Similar func_word - Query ")
-        row_printer = RowPrinter(func_word_weights_q)
-        for i in range(20):
-            row_printer.do(i)
-        row_printer.pop()
-
+        # print("Similar func_word - Query ")
+        # row_printer = RowPrinter(func_word_weights_q)
+        # for i in range(20):
+        #     row_printer.do(i)
+        # row_printer.pop()
+        print("Max {} at {}".format(func_word_weights_d[max_idx], max_idx))
         print("QWeights")
         print("Similar func_word - Doc")
         print(n_func_word)
         grouping = RangeGrouping()
         rank = np.argsort(func_word_weights_d)[::-1]
         for i in rank:
-            grouping.do(rank[i], func_word_weights_d[rank[i]])
+            grouping.do(i, func_word_weights_d[i])
         grouping.pop()
 
         seen_cluster = set()
@@ -184,8 +188,8 @@ def run_qtype_analysis(qtype_entries: List[QTypeInstance],
 
 
 def cluster_avg_embeddings(qtype_embedding_paired):
-    cluster_model = sklearn.cluster.KMeans(n_clusters=100, tol=1e-7)
-    cluster_model = sklearn.cluster.AgglomerativeClustering(n_clusters=None, distance_threshold=1e-1,
+    # cluster_model = sklearn.cluster.KMeans(n_clusters=100, tol=1e-7)
+    cluster_model = sklearn.cluster.AgglomerativeClustering(n_clusters=None, distance_threshold=1,
                                                             )
     print("Start clustering")
     n_func_word = len(qtype_embedding_paired)

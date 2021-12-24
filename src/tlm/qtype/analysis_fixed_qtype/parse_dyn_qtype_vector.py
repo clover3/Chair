@@ -18,29 +18,31 @@ from tlm.qtype.qtype_instance import QTypeInstance
 def parse_q_weight_output(raw_prediction_path, data_info) -> List[QTypeInstance]:
     viewer = EstimatorPredictionViewer(raw_prediction_path)
     for e in viewer:
-        data_id = e.get_vector("data_id")[0]
-        label_ids = e.get_vector("label_ids")[0]
-        de_input_ids = e.get_vector("de_input_ids")
-        logits = e.get_vector("logits")
-        qtype_vector_qe = e.get_vector("qtype_vector_qe")
-        qtype_vector_de = e.get_vector("qtype_vector_de")
+        yield parse_q_weight_inner(data_info, e)
 
-        info_entry = data_info[str(data_id)]
-        query_id = info_entry['query'].query_id
-        doc_id = info_entry['candidate'].id
-        try:
-            passage_idx = info_entry['passage_idx']
-        except KeyError:
-            passage_idx = -1
 
-        inst = QTypeInstance(query_id, doc_id, passage_idx,
-                             de_input_ids, qtype_vector_qe, qtype_vector_de,
-                             label_ids, logits,
-                             e.get_vector("bias"),
-                             e.get_vector("q_bias"),
-                             e.get_vector("d_bias"),
-                             )
-        yield inst
+def parse_q_weight_inner(data_info, e):
+    data_id = e.get_vector("data_id")[0]
+    label_ids = e.get_vector("label_ids")[0]
+    de_input_ids = e.get_vector("de_input_ids")
+    logits = e.get_vector("logits")
+    qtype_vector_qe = e.get_vector("qtype_vector_qe")
+    qtype_vector_de = e.get_vector("qtype_vector_de")
+    info_entry = data_info[str(data_id)]
+    query_id = info_entry['query'].query_id
+    doc_id = info_entry['candidate'].id
+    try:
+        passage_idx = info_entry['passage_idx']
+    except KeyError:
+        passage_idx = -1
+    inst = QTypeInstance(query_id, doc_id, passage_idx,
+                         de_input_ids, qtype_vector_qe, qtype_vector_de,
+                         label_ids, logits,
+                         e.get_vector("bias"),
+                         e.get_vector("q_bias"),
+                         e.get_vector("d_bias"),
+                         )
+    return inst
 
 
 def build_qtype_desc(qtype_entries: Iterator[QTypeInstance], query_info_dict: Dict[str, QueryInfo])\
@@ -58,6 +60,56 @@ def build_qtype_desc(qtype_entries: Iterator[QTypeInstance], query_info_dict: Di
         n_query[func_str] = len(items)
 
     return qtype_embedding, n_query
+
+
+def merge_vectors_by_frequency(embedding_list):
+    def get_vector_diff(v1, v2):
+        mag = (sum(np.abs(v1)) + sum(np.abs(v2))) / 2
+        error = np.sum(np.abs(v1 - v2))
+        rel_error = error / mag
+        return error, rel_error
+
+
+    def sig(embedding):
+        return np.sum(np.abs(embedding))
+    embedding_list.sort(key=sig)
+    prev_v = None
+    v_idx = 0
+    v_list = []
+    cnt = Counter()
+    for e in embedding_list:
+        if prev_v is not None:
+            error, rel_error = get_vector_diff(prev_v, e)
+            if rel_error < 1e-2:
+                cnt[v_idx] += 1
+            else:
+                prev_v = e
+                v_idx += 1
+                v_list.append(e)
+                cnt[v_idx] += 1
+        else:
+            prev_v = e
+            v_list.append(prev_v)
+            cnt[v_idx] += 1
+
+    for key, _ in cnt.most_common(1):
+        return v_list[key]
+
+    raise Exception()
+
+
+def build_qtype_embedding_old(qtype_entries: Iterator[QTypeInstance], query_info_dict: Dict[str, QueryInfo]) \
+        -> Dict[str, np.array]:
+    func_str_to_vector = {}
+    seen = set()
+    for e in qtype_entries:
+        func_str = " ".join(query_info_dict[e.qid].functional_tokens)
+        if func_str in seen:
+            continue
+
+        seen.add(func_str)
+        func_str_to_vector[func_str] = e.qtype_weights_qe
+    return func_str_to_vector
 
 
 def show_vector_distribution(v):

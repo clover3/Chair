@@ -5,8 +5,9 @@ from typing import List
 import numpy as np
 
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
-from data_generator.tokenizer_wo_tf import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens
 from misc_lib import tprint, TEL, TimeEstimator
+from tlm.qtype.analysis_qemb.save_parsed import get_voca_list, convert_ids_to_tokens
 from tlm.qtype.qtype_analysis import QTypeInstance2
 from tlm.qtype.qtype_instance import QTypeInstance
 
@@ -156,3 +157,14 @@ def doc_side_analysis(all_insts: List[QTypeInstance]):
         else:
             print("{}\t{}\t{}".format(dim_idx, num_sbword_per_dim[dim_idx], sbword_items))
 
+
+def get_passsage_fn():
+    tokenizer = get_tokenizer()
+    voca_list = get_voca_list(tokenizer)
+    def get_passage(input_ids):
+        seg1, seg2 = split_p_h_with_input_ids(input_ids, input_ids)
+        seg2_tokens = convert_ids_to_tokens(voca_list, seg2)
+        passage: str = pretty_tokens(seg2_tokens, True)
+        return passage
+
+    return get_passage

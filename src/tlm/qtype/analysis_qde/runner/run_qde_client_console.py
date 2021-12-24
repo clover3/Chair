@@ -1,11 +1,12 @@
 from bert_api.client_lib import BERTClient
-from cpath import pjoin, data_path
+from cpath import pjoin, data_path, QDE_PORT
 from data_generator.tokenizer_wo_tf import EncoderUnitPlain
+
 
 
 def qde_console():
     max_seq_length = 512
-    client = BERTClient("http://localhost", 8128, max_seq_length)
+    client = BERTClient("http://localhost", QDE_PORT, max_seq_length)
 
     voca_path = pjoin(data_path, "bert_voca.txt")
     q_encoder = EncoderUnitPlain(128, voca_path)

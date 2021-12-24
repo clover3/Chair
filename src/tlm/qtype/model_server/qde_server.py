@@ -147,8 +147,8 @@ def run_server():
         return predictor.predict(payload)
 
     server = BertLikeServer(predict)
-    print("server started")
-    server.start(8128)
+    print("server started with port {}".format(cpath.QDE_PORT))
+    server.start(cpath.QDE_PORT)
 
 
 if __name__ == "__main__":

@@ -1,12 +1,14 @@
+from collections import defaultdict
 from typing import List, Dict, Tuple
 
 import numpy as np
 
 from cache import load_from_pickle
 from list_lib import left, right
+from misc_lib import find_max_idx
 from tlm.qtype.analysis_fixed_qtype.parse_dyn_qtype_vector import build_qtype_desc
 from tlm.qtype.analysis_fixed_qtype.parse_qtype_vector import QDistClient
-from tlm.qtype.analysis_qde.analysis_a import get_passsage_fn
+from tlm.qtype.analysis_qde.analysis_common import get_passsage_fn
 from tlm.qtype.content_functional_parsing.qid_to_content_tokens import structured_qtype_text, QueryInfo
 from tlm.qtype.qtype_instance import QTypeInstance
 
@@ -23,7 +25,12 @@ def run_qtype_analysis_c(qtype_entries: List[QTypeInstance],
     # print("Clustering...")
     # clusters = cluster_avg_embeddings(qtype_embedding_paired)
     # save_to_pickle(clusters, "run_analysis_dyn_qtype_cluster")
-    clusters = load_from_pickle("run_analysis_dyn_qtype_cluster")
+    clusters: Dict[int, int] = load_from_pickle("run_analysis_dyn_qtype_cluster")
+    cluster_member_list = defaultdict(list)
+    for type_idx, cluster_idx in enumerate(clusters):
+        cluster_member_list[cluster_idx].append(type_idx)
+
+
     n_func_word = len(qtype_embedding_paired)
     func_type_id_to_text: List[str] = left(qtype_embedding_paired)
     qtype_embedding_np = np.stack(right(qtype_embedding_paired), axis=0)
@@ -85,7 +92,7 @@ def run_qtype_analysis_c(qtype_entries: List[QTypeInstance],
     threshold_2 = 0
     func_likely_base = np.log(1 / qtype_pred_n_class)
     for e_idx, e in enumerate(qtype_entries):
-        f_high_logit = e.logits > 3 or e.d_bias > 3
+        f_high_logit = e.logits > 0 or e.d_bias > 3
         if not f_high_logit:
             continue
 
@@ -110,8 +117,14 @@ def run_qtype_analysis_c(qtype_entries: List[QTypeInstance],
         print("Score bias q_bias d_bias")
         print(" ".join(map("{0:.2f}".format, [e.logits, e.bias, e.q_bias, e.d_bias])))
         rank = np.argsort(combined_score)[::-1]
-        for i in range(20):
+        seen_cluster = set()
+        for i in range(100):
             type_i = rank[i]
+            cluster_idx = clusters[type_i]
+            if cluster_idx in seen_cluster:
+                continue
+
+            seen_cluster.add(cluster_idx)
             func_text = func_type_id_to_text[type_i]
             s = "{0} {1:.2f} = {2:.2f} + {3:.2f}".format(
                 func_word_structured_d[func_text],
@@ -119,5 +132,16 @@ def run_qtype_analysis_c(qtype_entries: List[QTypeInstance],
                 func_word_weights_d[type_i],
                 log_func_word_likely[type_i])
             print(s)
+            best_type_i = find_max_idx(cluster_member_list[cluster_idx], lambda type_j: log_func_word_likely[type_j])
+            func_text = func_type_id_to_text[best_type_i]
+            s = "{0} {1:.2f} = {2:.2f} + {3:.2f}".format(
+                func_word_structured_d[func_text],
+                combined_score[best_type_i],
+                func_word_weights_d[best_type_i],
+                log_func_word_likely[best_type_i])
+            print(s)
+
+            if len(seen_cluster) > 20:
+                break
         print(get_passage(e.de_input_ids))
 

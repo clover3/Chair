@@ -81,6 +81,7 @@ def get_mae_loss_modeling(query_document_score, feature):
 
 def get_sigmoid_loss_modeling(query_document_score, feature):
     label_ids = feature["label_ids"]
+    label_ids = tf.reshape(label_ids, [-1])
     losses = tf.nn.sigmoid_cross_entropy_with_logits(label_ids, query_document_score)
     loss = tf.reduce_mean(losses)
     return loss, losses, query_document_score
