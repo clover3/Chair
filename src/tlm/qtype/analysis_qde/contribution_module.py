@@ -4,9 +4,10 @@ import numpy as np
 
 from bert_api.client_lib import BERTClient
 from cache import load_from_pickle
-from cpath import QDE_PORT, data_path, pjoin
+from cpath import data_path, pjoin
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
 from data_generator.tokenizer_wo_tf import convert_ids_to_tokens, get_tokenizer, EncoderUnitPlain, pretty_tokens
+from port_info import QDE_PORT
 from tlm.data_gen.doc_encode_common import split_by_window
 from tlm.qtype.analysis_qemb.save_parsed import get_voca_list
 from tlm.qtype.qtype_instance import QTypeInstance

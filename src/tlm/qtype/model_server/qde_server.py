@@ -1,4 +1,5 @@
 import cpath
+import port_info
 from cpath import output_path
 from models.transformer.bert_common_v2 import create_initializer
 from rpc.bert_like_server import BertLikeServer
@@ -147,8 +148,8 @@ def run_server():
         return predictor.predict(payload)
 
     server = BertLikeServer(predict)
-    print("server started with port {}".format(cpath.QDE_PORT))
-    server.start(cpath.QDE_PORT)
+    print("server started with port {}".format(port_info.QDE_PORT))
+    server.start(port_info.QDE_PORT)
 
 
 if __name__ == "__main__":

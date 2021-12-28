@@ -407,7 +407,11 @@ class ProcessedResourceTitleBodyTokensListPredict(ProcessedResourceTitleBodyToke
         self.candidate_doc_d = None
 
     def get_doc_tokens_d(self, qid: QueryID) -> Dict[str, Tuple[List[str], List[List[str]]]]:
-        return load_token_d_sent_level(self.split, qid)
+        d = load_token_d_sent_level(self.split, qid)
+        for title, body in d.values():
+            if len(title):
+                assert type(title[0]) == str
+        return d
 
     def load_candidate_docs_d(self):
         candidate_docs_d: Dict[QueryID, List[str]] = top100_doc_ids(self.split)

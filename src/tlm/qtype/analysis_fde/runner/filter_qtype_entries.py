@@ -29,23 +29,21 @@ def load_parse(info, raw_prediction_path, split):
     return qtype_entries, query_info_dict
 
 
-def run_parse_sample():
+def run_parse_sample(run_name, info_path):
     # MMD_train_qe_de_distill_base_prob
-    run_name = "qtype_2X_v_train_200000"
     sample_save_dir = os.path.join(output_path, "qtype", run_name + '_sample')
     exist_or_mkdir(sample_save_dir)
     split = "train"
-    info_path = os.path.join(job_man_dir, "MMD_train_qe_de_distill_base_prob_info2")
     f_handler = get_format_handler("qc")
     print("Reading info...")
     info: Dict = load_combine_info_jsons(info_path, f_handler.get_mapping(), f_handler.drop_kdp())
 
-    for job_id in range(14, 37):
+    for job_id in range(0, 37):
         print(job_id)
         try:
             pred_path = os.path.join(output_path, "qtype", run_name, str(job_id))
             if not os.path.exists(pred_path):
-                print(pred_path + "NOT FOUND")
+                print(pred_path, "NOT FOUND")
                 continue
             qtype_entries, query_info_dict = load_parse(info, pred_path, split)
             obj = qtype_entries, query_info_dict
@@ -55,11 +53,17 @@ def run_parse_sample():
             print(e)
 
 
-
-
 def main():
-    run_parse_sample()
+    run_name = "qtype_2X_v_train_200000"
+    info_path = os.path.join(job_man_dir, "MMD_train_qe_de_distill_base_prob_info2")
+    run_parse_sample(run_name, info_path)
+
+
+def parse_for_2Y():
+    run_name = "qtype_2Y_v_train_120000"
+    info_path = os.path.join(job_man_dir, "MMD_train_f_de_distill2_info")
+    run_parse_sample(run_name, info_path)
 
 
 if __name__ == "__main__":
-    main()
+    parse_for_2Y()

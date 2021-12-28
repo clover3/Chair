@@ -6,13 +6,14 @@ import numpy as np
 from bert_api.client_lib import BERTClient
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
 from data_generator.tokenizer_wo_tf import get_tokenizer
+from port_info import QDE_PORT
 from tlm.data_gen.doc_encode_common import join_tokens
 
 
 def iter_de_tokens(records):
     max_seq_length = 512
     tokenizer = get_tokenizer()
-    client = BERTClient("http://localhost", 8126, max_seq_length)
+    client = BERTClient("http://localhost", QDE_PORT, max_seq_length)
 
     def sent_payload(payload_np_list):
         def conv(t):
@@ -56,6 +57,7 @@ def iter_de_tokens(records):
 
         text = " ".join(document_tokens)
         sents = nltk.sent_tokenize(text)
+        print("{} sents".format(len(sents)))
         def build_payload(s):
             new_doc_tokens = tokenizer.tokenize(s)
             joined_tokens, new_segment_ids = join_tokens(content_tokens, new_doc_tokens)

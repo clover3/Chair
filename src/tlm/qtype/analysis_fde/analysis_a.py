@@ -6,11 +6,12 @@ import numpy as np
 from scipy.special import softmax
 
 from bert_api.client_lib import BERTClient
-from cpath import pjoin, data_path, MMD_Z_PORT, output_path
+from cpath import pjoin, data_path, output_path
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
 from data_generator.tokenizer_wo_tf import EncoderUnitPlain, get_tokenizer
 from list_lib import left
 from misc_lib import NamedAverager, TimeEstimator
+from port_info import MMD_Z_PORT
 from tlm.qtype.analysis_qde.analysis_common import get_passsage_fn
 from tlm.qtype.content_functional_parsing.qid_to_content_tokens import QueryInfo
 from tlm.qtype.qtype_instance import QTypeInstance

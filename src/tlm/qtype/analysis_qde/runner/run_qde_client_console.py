@@ -1,7 +1,7 @@
 from bert_api.client_lib import BERTClient
-from cpath import pjoin, data_path, QDE_PORT
+from cpath import pjoin, data_path
 from data_generator.tokenizer_wo_tf import EncoderUnitPlain
-
+from port_info import QDE_PORT
 
 
 def qde_console():

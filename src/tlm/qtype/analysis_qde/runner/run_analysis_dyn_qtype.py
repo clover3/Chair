@@ -32,6 +32,7 @@ def main():
     print("{}/{} dimensions are described".format(len(pos_known), len(neg_known)))
     analysis_b(qtype_entries, query_info_dict, (pos_known, neg_known), factor_list)
 
+
 def run_save_to_pickle():
     pred_path = os.path.join(output_path, "qtype", "qtype_2T_v_train")
     info_path = os.path.join(job_man_dir, )
@@ -55,8 +56,6 @@ def run_analysis_a():
     # pos_known, neg_known = show_func_word_avg_embeddings(qtype_entries, query_info_dict, factor_list, split)
     # print("{}/{} dimensions are described".format(len(pos_known), len(neg_known)))
     qtype_analysis_a(qtype_entries, query_info_dict, factor_list)
-
-
 
 
 def run_analysis_c():

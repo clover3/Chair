@@ -1,4 +1,5 @@
 import cpath
+import port_info
 import tlm.model.base as bert
 from cpath import output_path
 from models.transformer import hyperparams
@@ -139,7 +140,7 @@ def run_server():
 
     server = BertLikeServer(predict)
     print("server started")
-    server.start(8126)
+    server.start(port_info.MMD_PORT)
 
 
 if __name__ == "__main__":

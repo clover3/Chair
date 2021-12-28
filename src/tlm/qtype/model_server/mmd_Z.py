@@ -1,4 +1,5 @@
-from cpath import output_path, MMD_Z_PORT
+from cpath import output_path
+from port_info import MMD_Z_PORT
 from rpc.bert_like_server import BertLikeServer
 from tf_v2_support import disable_eager_execution
 from tlm.qtype.model_server.mmd_server import PredictorClsDense

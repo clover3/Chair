@@ -7,7 +7,7 @@ import spacy
 
 from cache import load_from_pickle
 from list_lib import left, right
-from misc_lib import group_by
+from misc_lib import group_by, tprint
 from tlm.qtype.analysis_fixed_qtype.parse_dyn_qtype_vector import build_qtype_desc, show_vector_distribution
 from tlm.qtype.analysis_qde.analysis_common import get_passsage_fn
 from tlm.qtype.content_functional_parsing.qid_to_content_tokens import structured_qtype_text
@@ -189,22 +189,24 @@ def qtype_analysis_a(qtype_entries: List[QTypeInstance],
 
 def cluster_avg_embeddings(qtype_embedding_paired):
     # cluster_model = sklearn.cluster.KMeans(n_clusters=100, tol=1e-7)
-    cluster_model = sklearn.cluster.AgglomerativeClustering(n_clusters=None, distance_threshold=1,
-                                                            )
-    print("Start clustering")
+    cluster_model = sklearn.cluster.AgglomerativeClustering(n_clusters=None, distance_threshold=1)
     n_func_word = len(qtype_embedding_paired)
+    tprint("Start clustering with {} functional spans".format(n_func_word))
     func_type_id_to_text: List[str] = left(qtype_embedding_paired)
     qtype_embedding_np = np.stack(right(qtype_embedding_paired), axis=0)
     res = cluster_model.fit(qtype_embedding_np)
     maybe_n_cluster = max(res.labels_)+1
-    print("{} cluster found".format(maybe_n_cluster))
+    tprint("{} cluster found".format(maybe_n_cluster))
+
     def get_group(idx):
         return res.labels_[idx]
 
     grouped = group_by(list(range(n_func_word)), get_group)
-    for key, items in grouped.items():
+    keys = list(grouped.keys())
+    keys.sort(key=lambda k: len(grouped[k]), reverse=True)
+    for key in keys:
+        items = grouped[key]
         print("Cluster {} : {} items".format(key, len(items)))
-
         func_texts_for_cluster = [func_type_id_to_text[j] for j in items]
         func_texts_for_cluster.sort(key=len)
         rep = " / ".join(func_texts_for_cluster)

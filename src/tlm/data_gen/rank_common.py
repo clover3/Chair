@@ -34,6 +34,11 @@ def join_two_input_ids(seg1, seg2) -> InputAndSegmentIds:
     return InputAndSegmentIds(input_tokens, segment_ids)
 
 
+def format_single_input_ids(seg) -> InputAndSegmentIds:
+    input_tokens = [CLS_ID] + seg + [SEP_ID]
+    segment_ids = [0] * (len(seg) + 2)
+    return InputAndSegmentIds(input_tokens, segment_ids)
+
 
 def encode_query_doc_instance(tokenizer, doc_token_length, inst: QueryDocInstance) -> OrderedDict:
     doc_segment_ids = [1] * len(inst.doc_tokens)
