@@ -10,7 +10,7 @@ from cpath import pjoin, data_path, output_path
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
 from data_generator.tokenizer_wo_tf import EncoderUnitPlain, get_tokenizer
 from list_lib import left
-from misc_lib import NamedAverager, TimeEstimator
+from misc_lib import NamedAverager, TimeEstimator, group_by, average
 from port_info import MMD_Z_PORT
 from tlm.qtype.analysis_qde.analysis_common import get_passsage_fn
 from tlm.qtype.content_functional_parsing.qid_to_content_tokens import QueryInfo
@@ -39,6 +39,8 @@ def enum_count_query(qtype_entries: List[QTypeInstance],
 def run_qtype_analysis_a(qtype_entries: Iterable[QTypeInstance],
                          query_info_dict: Dict[str, QueryInfo],
                          q_embedding_d: Dict[str, np.array],
+                         q_bias_d: Dict[str, np.array],
+                         cluster,
                          apply_sigmoid=False,
                          ):
     get_passage = get_passsage_fn()
@@ -48,10 +50,13 @@ def run_qtype_analysis_a(qtype_entries: Iterable[QTypeInstance],
 
     func_span_list = []
     qtype_embedding_flat = []
+    q_bias_flat = []
     for idx, key in enumerate(q_embedding_d.keys()):
         func_span_list.append(key)
         qtype_embedding_flat.append(q_embedding_d[key])
+        q_bias_flat.append(q_bias_d[key])
 
+    q_bias_np = np.stack(q_bias_flat, axis=0)
     qtype_embedding_np = np.stack(qtype_embedding_flat, axis=0)
     threshold_1 = 3
     threshold_2 = 0
@@ -64,10 +69,10 @@ def run_qtype_analysis_a(qtype_entries: Iterable[QTypeInstance],
 
         if not f_high_logit:
             continue
-
         cur_q_info = query_info_dict[e.qid]
         q_rep = " ".join(cur_q_info.out_s_list)
-        func_word_weights_d = np.matmul(qtype_embedding_np, e.qtype_weights_de)
+        func_word_weights_d = np.matmul(qtype_embedding_np, e.qtype_weights_de) + q_bias_np
+
 
         n_promising_func_word = np.count_nonzero(np.less(threshold_1, func_word_weights_d))
         if not n_promising_func_word:
@@ -87,22 +92,55 @@ def run_qtype_analysis_a(qtype_entries: Iterable[QTypeInstance],
         print("{}:{} - {}".format(e.doc_id, e.passage_idx, "Relevant" if e.label else "Non-relevant"))
         print("Score bias q_bias d_bias")
         print(" ".join(map("{0:.2f}".format, [e.logits, e.bias, e.q_bias, e.d_bias])))
-        rank = np.argsort(combined_score)[::-1]
-        seen_cluster = set()
-        for i in range(100):
-            type_i = rank[i]
-            score = combined_score[type_i]
-            if score < 0:
-                break
-            func_span = func_span_list[type_i]
-            s = "{0} {1:.2f} = {2:.2f}".format(
-                func_span,
-                score,
-                func_word_weights_d[type_i])
-            print(s)
-            if len(seen_cluster) > 20:
-                break
+        # print_combined_score_info(cluster, combined_score, func_span_list, func_word_weights_d)
+        print_combined_score_info2(cluster, combined_score, func_span_list, prob)
         print(get_passage(e.de_input_ids))
+
+
+def print_combined_score_info(cluster, combined_score, func_span_list, func_word_weights_d):
+    rank = np.argsort(combined_score)[::-1]
+    seen_cluster = set()
+    for i in range(100):
+        type_i = rank[i]
+        cluster_i = cluster[type_i]
+        seen_cluster.add(cluster_i)
+        score = combined_score[type_i]
+        if score < 0:
+            break
+        func_span = func_span_list[type_i]
+        s = "{0} {1:.2f} = {2:.2f}".format(
+            func_span,
+            score,
+            func_word_weights_d[type_i])
+        print(s)
+        if len(seen_cluster) > 20:
+            break
+
+
+def print_combined_score_info2(cluster, combined_score, func_span_list, threshold):
+    cluster_size = Counter()
+    for cluster_id in cluster:
+        cluster_size[cluster_id] += 1
+
+    TypeID = int
+    ClusterID = int
+    over_threshold: List[TypeID] = []
+    for type_i, s in enumerate(combined_score):
+        if s >= threshold:
+            over_threshold.append(type_i)
+
+    print("{} functional spans matched. (Threshold={})".format(len(over_threshold), threshold))
+    grouped: Dict[ClusterID, List[TypeID]] = group_by(over_threshold, lambda i: cluster[i])
+
+    for cluster_idx in grouped:
+        members: List[TypeID] = grouped[cluster_idx]
+
+        avg = average([combined_score[type_i] for type_i in members])
+        s1 = f"Cluster {cluster_idx}. {len(members)} of {cluster_size[cluster_idx]} members matched. Avg={avg}"
+        spans = " / ".join([func_span_list[type_i] for type_i in members[:30]])
+        print(s1)
+        print("\t" + spans)
+
 
 
 def get_mmd_client_wrap():

@@ -7,16 +7,18 @@ from cache import load_from_pickle, load_pickle_from
 from cpath import output_path
 from misc_lib import tprint
 from tlm.qtype.analysis_fde.analysis_a import run_qtype_analysis_a, enum_count_query
-from tlm.qtype.analysis_fde.runner.build_q_emb_from_samples import load_q_emb_qtype
+from tlm.qtype.analysis_fde.runner.build_q_emb_from_samples import load_q_emb_qtype, load_q_bias
 
 
 def run_analysis_a(run_name):
     tprint("Loading pickle...")
     job_id = 0
     q_embedding_d: Dict[str, np.array] = load_q_emb_qtype(run_name)
+    q_bias_d: Dict[str, np.array] = load_q_bias(run_name)
     save_path = os.path.join(output_path, "qtype", run_name + '_sample', str(job_id))
     qtype_entries, query_info_dict = load_pickle_from(save_path)
-    run_qtype_analysis_a(qtype_entries, query_info_dict, q_embedding_d, True)
+    cluster = load_from_pickle("{}_clusters".format(run_name))
+    run_qtype_analysis_a(qtype_entries, query_info_dict, q_embedding_d, q_bias_d, cluster, True)
 
 
 def run_show_enum_queries():

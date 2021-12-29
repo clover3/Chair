@@ -28,6 +28,6 @@ def build_qtype_embedding(qtype_entries: Iterator[QTypeInstance], query_info_dic
     return out_d
 
 
-def apply_merge(func_str_to_vector) -> Dict[Tuple[str, str], np.array]:
+def apply_merge(func_str_to_vector) -> Dict[Tuple[str], np.array]:
     out_d = {k: merge_vectors_by_frequency(v) for k, v in func_str_to_vector.items()}
     return out_d
