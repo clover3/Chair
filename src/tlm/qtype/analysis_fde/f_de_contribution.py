@@ -1,24 +1,29 @@
-from typing import List
+import os
+from typing import Dict
 
 import numpy as np
 
 from bert_api.client_lib import BERTClient
-from cache import load_from_pickle
+from cache import load_pickle_from
 from cpath import data_path, pjoin
+from cpath import output_path
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
 from data_generator.tokenizer_wo_tf import convert_ids_to_tokens, get_tokenizer, EncoderUnitPlain, pretty_tokens
-from port_info import QDE_PORT, MMD_Z_PORT
+from port_info import FDE_PORT
 from tlm.data_gen.doc_encode_common import split_by_window
+from tlm.qtype.analysis_fde.analysis_a import embeddings_to_list
+from tlm.qtype.analysis_fde.runner.build_q_emb_from_samples import load_q_emb_qtype_2X_v_train_200000, load_q_bias
+from tlm.qtype.analysis_qde.contribution_module import print_base_info
 from tlm.qtype.analysis_qemb.save_parsed import get_voca_list
-from tlm.qtype.contribution_common import contribution_by_change, enum_window_drop
-from tlm.qtype.enum_util import enum_interesting_entries
-from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import softmax_rev_sigmoid
+from tlm.qtype.content_functional_parsing.qid_to_content_tokens import QueryInfo
+from tlm.qtype.contribution_common import enum_window_drop, contribution_by_change
+from tlm.qtype.enum_util import enum_samples, enum_interesting_entries
 
 
-class QDEClientWrap:
+class FDEClientWrap:
     def __init__(self):
         max_seq_length = 512
-        self.client = BERTClient("http://localhost", QDE_PORT, max_seq_length)
+        self.client = BERTClient("http://localhost", FDE_PORT, max_seq_length)
 
         voca_path = pjoin(data_path, "bert_voca.txt")
         self.q_encoder = EncoderUnitPlain(128, voca_path)
@@ -36,86 +41,49 @@ class QDEClientWrap:
         return ret
 
 
-class MMD_Z:
-    def __init__(self):
-        max_seq_length = 512
-        self.client = BERTClient("http://localhost", MMD_Z_PORT, max_seq_length)
-
-        voca_path = pjoin(data_path, "bert_voca.txt")
-        self.encoder = EncoderUnitPlain(max_seq_length, voca_path)
-
-    def request(self, seg1: List[int], seg2: List[int]):
-        def flat(d):
-            return d["input_ids"], d["input_mask"], d["segment_ids"]
-
-        one_inst = flat(self.encoder.encode_inner(seg1, seg2))
-        payload_list = [one_inst]
-        ret = self.client.send_payload(payload_list)
-        return ret
-
-
-class MMD_Z_RevSigmoid:
-    def __init__(self):
-        self.inner = MMD_Z()
-
-    def request(self, seg1: List[int], seg2: List[int]):
-        ret = self.inner.request(seg1, seg2)
-        return softmax_rev_sigmoid(ret)[0]
-
-
-def run_contribution_analysis(qtype_entries, query_info_dict):
+def run_contribution_analysis(qtype_entries,
+                              query_info_dict: Dict[str, QueryInfo],
+                              q_embedding_d: Dict[str, np.array],
+                              q_bias_d: Dict[str, np.array],
+                              ):
     tokenizer = get_tokenizer()
     voca_list = get_voca_list(tokenizer)
     unknown_token = tokenizer.convert_tokens_to_ids(["[UNK]"])[0]
     window_size = 20
-    qde_client = QDEClientWrap()
-    mmd_client = MMD_Z_RevSigmoid()
+    fde_client = FDEClientWrap()
+    empty_func_span = "[MASK]"
+    func_span_list, qtype_embedding_np = embeddings_to_list(q_embedding_d)
 
-    def qde_forward_run(seg1, seg2) -> float:
-        ret = qde_client.request(seg1, seg2)
-        empty_qtype_vector1 = ret['qtype_vector1']
-        qtype_vector2 = ret['qtype_vector2']
-        score = np.dot(e.qtype_weights_qe, qtype_vector2)
-        return float(score)
+    def compute_score(func_span, q_bias_d, seg1_np, seg2):
+        ret = fde_client.request(seg1_np, seg2)
+        doc_vector = ret['qtype_vector2']
+        d_bias = ret['d_bias']
+        empty_q_vector = q_embedding_d[empty_func_span]
+        target_q_vector = q_embedding_d[func_span]
+        score = np.dot(target_q_vector, doc_vector) + d_bias + q_bias_d[func_span]
+        score_type_less = np.dot(empty_q_vector, doc_vector) + d_bias + q_bias_d[empty_func_span]
+        return score, score_type_less
 
-    def qde_forward_run_typeless(seg1, seg2) -> float:
-        ret = qde_client.request(seg1, seg2)
-        empty_qtype_vector1 = ret['qtype_vector1']
-        qtype_vector2 = ret['qtype_vector2']
-        score = np.dot(empty_qtype_vector1, qtype_vector2)
-        return float(score)
-
-    def mmd_forward_run(seg1, seg2) -> float:
-        ret = mmd_client.request(seg1, seg2)
-        return ret
-
-    forward_run = mmd_forward_run
     for e in enum_interesting_entries(qtype_entries, query_info_dict):
         info = query_info_dict[e.qid]
-
         input_ids = e.de_input_ids
         seg1_np, seg2_np = split_p_h_with_input_ids(input_ids, input_ids)
+        seg1 = seg1_np.tolist()
         seg2 = seg2_np.tolist()
 
-        def tokenize(text):
-            return tokenizer.convert_tokens_to_ids(tokenizer.tokenize(text))
-
-        seg1 = tokenize(info.query)
-        seg1_no_func = tokenize(info.content_span)
-
-        if not len(seg1_no_func) < len(seg1):
-            print("WARNING {} < {}".format(len(seg1_no_func), len(seg1)))
-        base_score = forward_run(seg1, seg2)
-        base_score_typeless = forward_run(seg1_no_func, seg2)
-
+        func_span = info.get_func_span_rep()
+        if func_span not in q_embedding_d:
+            print(func_span, "NOT FOUND")
+            continue
+        base_score, base_score_typeless = compute_score(func_span, q_bias_d, seg1, seg2)
         single_sent_list = list(split_by_window(seg2, window_size))
         dropped_seg2s = list(enum_window_drop(seg2, unknown_token, window_size))
 
-        sent_drop_result = [forward_run(seg1, window) for window in dropped_seg2s]
-        sent_drop_result_typeless = [forward_run(seg1_no_func, window) for window in dropped_seg2s]
+        sent_drop_result_pairs = [compute_score(func_span, q_bias_d, seg1, window) for window in dropped_seg2s]
+        single_sent_result_pairs = [compute_score(func_span, q_bias_d, seg1, window) for window in single_sent_list]
 
-        single_sent_result = [forward_run(seg1, window) for window in single_sent_list]
-        single_sent_result_typeless = [forward_run(seg1_no_func, window) for window in single_sent_list]
+        sent_drop_result, sent_drop_result_typeless = zip(*sent_drop_result_pairs)
+        single_sent_result, single_sent_result_typeless = zip(*single_sent_result_pairs)
 
         contrib_single = contribution_by_change(base_score,
                                                 single_sent_result)
@@ -142,22 +110,21 @@ def run_contribution_analysis(qtype_entries, query_info_dict):
                 contrib_drop[window_idx],
                 contrib_drop_type_less[window_idx],
                 contrib_drop[window_idx] - contrib_drop_type_less[window_idx],
-            ]
+                ]
             s = "\t".join(["{0:.2f}".format(v) for v in numbers]) + "\t" + passage
             print(s)
         print("")
 
 
-def print_base_info(e, query_info_dict):
-    info = query_info_dict[e.qid]
-    q_rep = " ".join(info.out_s_list)
-    print(e.qid, q_rep)
-    print("{}:{} - {}".format(e.doc_id, e.passage_idx, "Relevant" if e.label else "Non-relevant"))
-
-
 def main():
-    qtype_entries, query_info_dict = load_from_pickle("run_analysis_dyn_qtype")
-    run_contribution_analysis(qtype_entries, query_info_dict)
+    # run_name = "qtype_2X_v_train_200000"
+    run_name = "qtype_2Y_v_train_120000"
+    q_embedding_d: Dict[str, np.array] = load_q_emb_qtype_2X_v_train_200000()
+    save_dir = os.path.join(output_path, "qtype", run_name + '_sample')
+    _, query_info_dict = load_pickle_from(os.path.join(save_dir, "0"))
+    qtype_entries = enum_samples(save_dir)
+    q_bias_d: Dict[str, np.array] = load_q_bias(run_name)
+    run_contribution_analysis(qtype_entries, query_info_dict, q_embedding_d, q_bias_d)
 
 
 if __name__ == "__main__":

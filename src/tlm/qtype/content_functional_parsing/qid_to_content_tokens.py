@@ -17,6 +17,10 @@ class QueryInfo(NamedTuple):
     out_s_list: List[str]
 
     def get_head_tail(self):
+        head, body, tail = self.get_head_body_tail()
+        return head, tail
+
+    def get_head_body_tail(self):
         state = "head"
         head = []
         tail = []
@@ -33,7 +37,22 @@ class QueryInfo(NamedTuple):
                     tail.append(str(token))
                 elif state == "middle":
                     body.append(str(token))
-        return head, tail
+        return head, body, tail
+
+    def get_func_span_rep(self):
+        return self.query.replace(self.content_span, "[MASK]", 1)
+
+    def get_q_seg_indices(self):
+        head, body, tail = self.get_head_body_tail()
+        seg2_start = len(head)
+        seg1_tail_start = seg2_start + len(body)
+
+        seg1_head_indice = [i for i, _ in enumerate(head)]
+        seg1_tail_indice = [i + seg1_tail_start for i, _ in enumerate(tail)]
+        q_seg1_indice = seg1_head_indice + seg1_tail_indice
+        seg2_indices = [i + seg2_start for i, _ in enumerate(body)]
+        q_seg_indices = [q_seg1_indice, seg2_indices]
+        return q_seg_indices
 
 
 def get_qid_to_content_tokens(split) -> Dict[QueryID, List[str]]:
@@ -148,7 +167,6 @@ def print_qtype():
     writer = csv.writer(f)
     for text, qtype_id in part:
         writer.writerow([text, str(qtype_id)])
-
 
 
 def structured_qtype_text(query_info_dict: Dict[str, QueryInfo]) -> Dict[str, Tuple[str, str]]:

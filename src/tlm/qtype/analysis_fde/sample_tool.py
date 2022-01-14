@@ -11,5 +11,5 @@ def enum_sample_entries(run_name, job_id):
 
     for e in qtype_entries:
         info: QueryInfo = query_info_dict[e.qid]
-        func_span_rep = info.query.replace(info.content_span, "[MASK]", 1)
+        func_span_rep = info.get_func_span_rep()
         yield e, info, func_span_rep

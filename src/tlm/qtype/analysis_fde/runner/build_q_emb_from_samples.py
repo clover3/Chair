@@ -58,6 +58,11 @@ def load_q_emb_qtype_2X_v_train_200000() -> Dict[str, np.array]:
     return load_from_pickle("qtype_2X_v_train_200000_q_embedding")
 
 
+def load_q_emb_qtype_2Y_v_train_120000() -> Dict[str, np.array]:
+    return load_from_pickle("qtype_2Y_v_train_120000_q_embedding")
+
+
+
 def load_q_emb_qtype(run_name) -> Dict[str, np.array]:
     return load_from_pickle("{}_q_embedding".format(run_name))
 
@@ -68,7 +73,7 @@ def load_q_bias(run_name) -> Dict[str, np.array]:
 
 def build_for_qtype_2X_v_train_200000():
     run_name = "qtype_2X_v_train_200000"
-    build_save_q_emb_from_samples(run_name)
+    build_save_bias_from_samples(run_name)
 
 
 def main():
@@ -80,4 +85,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    build_for_qtype_2X_v_train_200000()

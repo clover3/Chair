@@ -28,6 +28,11 @@ def run_show_enum_queries():
     enum_count_query(qtype_entries, query_info_dict)
 
 
+def show_qtypes():
+    run_name = "qtype_2X_v_train_200000"
+    q_embedding_d: Dict[str, np.array] = load_q_emb_qtype(run_name)
+    for key in q_embedding_d:
+        print(key)
 
 
 def main():

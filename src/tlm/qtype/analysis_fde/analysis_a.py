@@ -58,21 +58,24 @@ def run_qtype_analysis_a(qtype_entries: Iterable[QTypeInstance],
 
     q_bias_np = np.stack(q_bias_flat, axis=0)
     qtype_embedding_np = np.stack(qtype_embedding_flat, axis=0)
-    threshold_1 = 3
+    threshold_1 = 0
     threshold_2 = 0
     for e_idx, e in enumerate(qtype_entries):
+        f_high_model_score = e.label > 0.5
+        cur_q_info = query_info_dict[e.qid]
+        print(cur_q_info.query)
+        if e_idx % 10 == 0:
+            dummy = input("Press enter to continue")
         if apply_sigmoid:
             prob = sigmoid(e.logits)
         else:
             prob = e.logits
-        f_high_logit = prob > 0.3
+        f_high_logit = prob > 0.5
 
-        if not f_high_logit:
+        if f_high_model_score:
             continue
-        cur_q_info = query_info_dict[e.qid]
         q_rep = " ".join(cur_q_info.out_s_list)
         func_word_weights_d = np.matmul(qtype_embedding_np, e.qtype_weights_de) + q_bias_np
-
 
         n_promising_func_word = np.count_nonzero(np.less(threshold_1, func_word_weights_d))
         if not n_promising_func_word:
@@ -182,13 +185,7 @@ def run_qtype_analysis_b(qtype_entries: Iterable[QTypeInstance],
     n_func_word = len(q_embedding_d)
     print("{} func_spans are found".format(n_func_word))
     query_multiple = get_mmd_client_wrap()
-    func_span_list = []
-    qtype_embedding_flat = []
-    for idx, key in enumerate(q_embedding_d.keys()):
-        func_span_list.append(key)
-        qtype_embedding_flat.append(q_embedding_d[key])
-    relevant_threshold = 0.5
-    qtype_embedding_np = np.stack(qtype_embedding_flat, axis=0)
+    func_span_list, qtype_embedding_np = embeddings_to_list(q_embedding_d)
 
     f_log = open(os.path.join(output_path, "qtype", "log.txt"), "w")
     avg = NamedAverager()
@@ -267,3 +264,14 @@ def run_qtype_analysis_b(qtype_entries: Iterable[QTypeInstance],
 
     for k, v in avg.get_average_dict().items():
         print(k, v)
+
+
+def embeddings_to_list(q_embedding_d):
+    func_span_list = []
+    qtype_embedding_flat = []
+    for idx, key in enumerate(q_embedding_d.keys()):
+        func_span_list.append(key)
+        qtype_embedding_flat.append(q_embedding_d[key])
+    relevant_threshold = 0.5
+    qtype_embedding_np = np.stack(qtype_embedding_flat, axis=0)
+    return func_span_list, qtype_embedding_np
