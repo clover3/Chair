@@ -7,7 +7,7 @@ from cpath import data_path
 from data_generator import text_encoder
 from data_generator import tokenizer
 from data_generator.tokenizer_b import FullTokenizerWarpper
-from data_generator.tokenizer_wo_tf import EncoderUnit, FullTokenizer
+from data_generator.tokenizer_wo_tf import EncoderUnitOld, FullTokenizer
 
 _EXAMPLES_FILE = 'examples.txt'
 
@@ -37,7 +37,7 @@ def get_encoder():
 
 def get_encoder_unit(seq_length, modified=True):
     voca_path = os.path.join(data_path, "bert_voca.txt")
-    encoder_unit = EncoderUnit(seq_length, voca_path)
+    encoder_unit = EncoderUnitOld(seq_length, voca_path)
     if modified:
         CLS_ID = encoder_unit.encoder.ft.convert_tokens_to_ids(["[CLS]"])[0]
         SEP_ID = encoder_unit.encoder.ft.convert_tokens_to_ids(["[SEP]"])[0]

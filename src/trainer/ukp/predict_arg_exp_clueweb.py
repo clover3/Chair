@@ -8,7 +8,7 @@ from galagos.basic import load_galago_ranked_list
 
 import cpath
 import data_generator.argmining.ukp_header
-from data_generator.tokenizer_wo_tf import EncoderUnit, get_tokenizer
+from data_generator.tokenizer_wo_tf import EncoderUnitOld, get_tokenizer
 from models.transformer import hyperparams
 from models.transformer.tranformer_nli import transformer_nli
 from trainer.model_saver import load_model_w_scope
@@ -85,7 +85,7 @@ def run(token_path, ranked_list_path, start_model_path, output_path):
     voca_path = os.path.join(cpath.data_path, vocab_filename)
     batch_size = 256
 
-    encoder = EncoderUnit(hp.seq_max, voca_path)
+    encoder = EncoderUnitOld(hp.seq_max, voca_path)
     seg_b = encoder.encoder.encode(target_topic + " is good")
 
     def encode(tokens):

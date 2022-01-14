@@ -1,9 +1,4 @@
-import os
-import pickle
-
 import tensorflow as tf
-
-from cpath import output_path
 
 
 def read_tfrecord(input_files, max_seq_length):
@@ -24,27 +19,20 @@ def read_tfrecord(input_files, max_seq_length):
     return parsed_dataset
 
 
-def read_tfrecord_as_triples(file_path, batch_size):
-    max_seq_length = 300
-    dataset = read_tfrecord([file_path], max_seq_length)
+def read_tfrecord_as_triples(input_files, max_seq_length, batch_size, shuffle):
+    dataset = read_tfrecord(input_files, max_seq_length)
 
     def d_to_triple(e):
         return e['input_ids'], e['input_mask'], e['segment_ids']
 
     dataset = dataset.map(d_to_triple)
+    if shuffle:
+        dataset.shuffle(100)
     return dataset.batch(batch_size)
 
 
-def main():
-    max_seq_length = 300
-
-    file_path = os.path.join(output_path, "alamri_annotation1", "tfrecord", "bert_alamri1")
-    dataset = read_tfrecord([file_path], max_seq_length)
-
-    dataset_numpy = list(dataset.as_numpy_iterator())
-    file_path = os.path.join(output_path, "alamri_annotation1", "tfrecord", "bert_alamri1.pickle")
-    pickle.dump(dataset_numpy, open(file_path, "wb"))
-
-
-if __name__ == "__main__":
-    main()
+def expand_input_files(input_file_str):
+    input_files = []
+    for input_pattern in input_file_str.split(","):
+        input_files.extend(tf.io.gfile.glob(input_pattern))
+    return input_files

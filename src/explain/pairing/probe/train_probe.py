@@ -9,12 +9,12 @@ import tensorflow as tf
 from evals.basic_func import get_acc_prec_recall
 from explain.nli_common import save_fn_factory
 from explain.pairing.match_predictor import ProbeConfigI
-from explain.pairing.probe_model import ClsProbeModel
+from explain.pairing.probe.probe_model import ClsProbeModel
 from explain.pairing.probe_train_common import find_padding, find_seg2, train_fn_factory
 from misc_lib import average
 from tf_util.tf_logging import tf_logging
 from trainer.model_saver import setup_summary_writer
-from trainer.tf_module import step_runner
+from trainer.tf_module import step_runner_itr
 from trainer.tf_train_module import init_session
 
 
@@ -115,8 +115,7 @@ def eval_fn_factory(sess, dev_batches,
 def train_probe(bert_hp, train_config, lms_config: ProbeConfigI, save_dir, nli_data,
                 init_fn):
     tf_logging.info("train_probe ENTRY")
-    train_batches, dev_batches = nli_data
-
+    train_batches, small_dev_batches = nli_data
     max_steps = train_config.max_steps
     num_gpu = train_config.num_gpu
 
@@ -144,7 +143,7 @@ def train_probe(bert_hp, train_config, lms_config: ProbeConfigI, save_dir, nli_d
                                    probe_model.per_layer_loss,
                                    train_cls,
                                    probe_model.batch2feed_dict)
-    eval_acc = partial(eval_fn_factory, sess, dev_batches[:20],
+    eval_acc = partial(eval_fn_factory, sess, small_dev_batches,
                        probe_model.loss_tensor,
                        probe_model.per_layer_loss,
                        probe_model.per_layer_logit_tensor,
@@ -167,12 +166,16 @@ def train_probe(bert_hp, train_config, lms_config: ProbeConfigI, save_dir, nli_d
     def valid_fn():
         eval_acc()
     tf_logging.info("Initialize step to {}".format(init_step))
-    tf_logging.info("{} train batches".format(len(train_batches)))
+    try:
+        tf_logging.info("{} train batches".format(len(train_batches)))
+    except TypeError:
+        tf_logging.info("Unknown length train")
+
     valid_freq = 100
     save_interval = 600
-    loss, _ = step_runner(train_batches, train_fn, init_step,
-                          valid_fn, valid_freq,
-                          save_fn, save_interval, max_steps)
+    loss, _ = step_runner_itr(train_batches, train_fn, init_step,
+                              valid_fn, valid_freq,
+                              save_fn, save_interval, max_steps)
     return save_fn()
 
 

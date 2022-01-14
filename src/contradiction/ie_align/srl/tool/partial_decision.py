@@ -1,5 +1,5 @@
 from contradiction.ie_align.srl.tool.get_nli_predictor_common import get_nli_predictor
-from contradiction.medical_claims.token_tagging.visualizer.deletion_score_to_html import make_prediction_summary_str
+from contradiction.medical_claims.token_tagging.visualizer.deletion_score_to_html import make_nli_prediction_summary_str
 
 
 def main():
@@ -13,7 +13,7 @@ def main():
 
         for t1, t2 in zip(tokens1, tokens2):
             probs = predict(t1, t2)
-            pred_summary = make_prediction_summary_str(probs)
+            pred_summary = make_nli_prediction_summary_str(probs)
             print("{} / {} / {}".format(pred_summary, t1, t2))
 
 

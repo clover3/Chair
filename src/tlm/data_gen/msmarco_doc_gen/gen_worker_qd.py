@@ -190,6 +190,7 @@ class QueryDocEntityConcatGen(MMDGenI):
 Title = TypeVar('Title')
 Body = TypeVar('Body')
 
+
 class QueryDocEntityConcatPointwisePredictionGen(MMDGenI):
     def __init__(self, resource: ProcessedResourceTitleBodyTokensListI,
                  encode_fn: Callable[[List[str], Title, Body], List[Tuple[List, List]]],

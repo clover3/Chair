@@ -1,7 +1,7 @@
 import scipy.special
 
 from cache import load_from_pickle
-from contradiction.medical_claims.token_tagging.visualizer.deletion_score_to_html import make_prediction_summary_str
+from contradiction.medical_claims.token_tagging.visualizer.deletion_score_to_html import make_nli_prediction_summary_str
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap
 from misc_lib import two_digit_float
@@ -35,7 +35,7 @@ def print_html(score_pickle_name, save_name):
         ex_scores = get('ex_scores')
         probs = scipy.special.softmax(get('logits'))
 
-        pred_str = make_prediction_summary_str(probs)
+        pred_str = make_nli_prediction_summary_str(probs)
 
         html.write_paragraph("Prediction: {}".format(pred_str))
         html.write_paragraph("gold label={}".format(get("label")))

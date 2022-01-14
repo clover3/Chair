@@ -2,9 +2,9 @@ import sys
 
 from data_generator.shared_setting import BertNLI
 from explain.pairing.match_predictor import ProbeConfigI
+from explain.pairing.probe.train_probe import train_probe
 from explain.pairing.probe_train_common import NLIPairingTrainConfig
 from explain.pairing.runner.run_train import HPCommon
-from explain.pairing.train_probe import train_probe
 from explain.runner.nli_ex_param import ex_arg_parser
 from explain.setups import init_fn_generic
 from explain.train_nli import get_nli_data
@@ -31,6 +31,8 @@ def main(start_model_path, start_type, save_dir, modeling_option,
 
     tf_logging.info("loading batches")
     data = get_nli_data(hp, nli_setting)
+    train, eval = data
+    data = train, eval[:20]
 
     def init_fn(sess):
         return init_fn_generic(sess, start_type, start_model_path)

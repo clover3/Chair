@@ -37,8 +37,8 @@ RESERVED_TOKENS = [PAD, EOS, C_MASK, C_CLS, C_SEP, SPEC_4]
 NUM_RESERVED_TOKENS = len(RESERVED_TOKENS)
 PAD_ID = RESERVED_TOKENS.index(PAD)  # Normally 0
 EOS_ID = RESERVED_TOKENS.index(EOS)  # Normally 1
-CLS_ID = RESERVED_TOKENS.index(C_CLS)
-SEP_ID = RESERVED_TOKENS.index(C_SEP)
+CLS_ID_3 = RESERVED_TOKENS.index(C_CLS)
+SEP_ID_4 = RESERVED_TOKENS.index(C_SEP)
 OOV_ID = RESERVED_TOKENS.index(SPEC_4)
 
 
@@ -440,12 +440,12 @@ def _is_punctuation(char):
   return False
 
 
-class EncoderUnit:
+class EncoderUnitOld:
     def __init__(self, max_sequence, voca_path):
         self.encoder = FullTokenizerWarpper(voca_path)
         self.max_seq = max_sequence
-        self.CLS_ID = CLS_ID
-        self.SEP_ID = SEP_ID
+        self.CLS_ID = CLS_ID_3
+        self.SEP_ID = SEP_ID_4
 
     def encode_long_text(self, query, text):
         tokens_a = self.encoder.encode(query)
@@ -551,7 +551,7 @@ class EncoderUnit:
         return self.encode_inner(tokens_a, tokens_b)
 
 
-class EncoderUnitPlain(EncoderUnit):
+class EncoderUnitPlain(EncoderUnitOld):
     def __init__(self, max_sequence, voca_path):
         super(EncoderUnitPlain, self).__init__(max_sequence, voca_path)
         CLS_ID = self.encoder.ft.convert_tokens_to_ids(["[CLS]"])[0]
@@ -623,3 +623,51 @@ def get_word_level_location(tokenizer, input_ids):
     if end > start:
         intervals.append((start, end))
     return intervals
+
+
+class JoinEncoder:
+    def __init__(self, max_sequence):
+        self.max_seq = max_sequence
+        self.CLS_ID = 101
+        self.SEP_ID = 102
+
+    def join_as_d(self, tokens_a, tokens_b):
+        _truncate_seq_pair(tokens_a, tokens_b, self.max_seq - 3)
+        tokens = []
+        segment_ids = []
+        tokens.append(self.CLS_ID)
+        segment_ids.append(0)
+        for token in tokens_a:
+            tokens.append(token)
+            segment_ids.append(0)
+        tokens.append(self.SEP_ID)
+        segment_ids.append(0)
+
+        if tokens_b:
+            for token in tokens_b:
+                tokens.append(token)
+                segment_ids.append(1)
+            tokens.append(self.SEP_ID)
+            segment_ids.append(1)
+
+        input_ids = tokens
+        input_mask = [1] * len(input_ids)
+
+        while len(input_ids) < self.max_seq:
+            input_ids.append(0)
+            input_mask.append(0)
+            segment_ids.append(0)
+
+        assert len(input_ids) == self.max_seq
+        assert len(input_mask) == self.max_seq
+        assert len(segment_ids) == self.max_seq
+
+        return {
+            "input_ids": input_ids,
+            "input_mask": input_mask,
+            "segment_ids": segment_ids
+        }
+
+    def join(self, tokens_a, tokens_b):
+        d = self.join_as_d(tokens_a, tokens_b)
+        return d["input_ids"], d["input_mask"], d["segment_ids"]

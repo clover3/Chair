@@ -35,3 +35,13 @@ class BERTClient:
         for tokens_a, tokens_b in payload_list:
             conv_payload_list.append(self.encoder.encode_token_pairs(tokens_a, tokens_b))
         return self.send_payload(conv_payload_list)
+
+    def request_multiple_from_ids(self, payload_list: List[Tuple[List[int], List[int]]]):
+        conv_payload_list = []
+        for tokens_a, tokens_b in payload_list:
+            e = self.encoder.encode_inner(tokens_a, tokens_b)
+            def flat(d):
+                return d["input_ids"], d["input_mask"], d["segment_ids"]
+
+            conv_payload_list.append(flat(e))
+        return self.send_payload(conv_payload_list)

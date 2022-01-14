@@ -20,9 +20,9 @@ def work(model_path, save_path):
 
             var_value = model[key]
             if new_name == "output_weights":
-                print(var_value.shape)
                 var_value = np.transpose(var_value, [1, 0])
 
+            print("Rename {} -> {}".format(key, new_name))
             new_var = tf.Variable(var_value, name=new_name)
             var_list.append(new_var)
 

@@ -74,7 +74,7 @@ def tutorial():
 
     print("defining generator")
     train_generator = mz.PairDataGenerator(train_processed, num_dup=1, num_neg=4, batch_size=64, shuffle=True)
-    valid_x, valid_y = valid_processed.unpack()
+    valid_x, valid_y = valid_processed.conv_to_np()
     evaluate = mz.callbacks.EvaluateAllMetrics(model, x=valid_x, y=valid_y, batch_size=len(valid_x))
     print("fitting")
     history = model.fit_generator(train_generator, epochs=20, callbacks=[evaluate], workers=5,
@@ -129,7 +129,7 @@ def tutorial_drmm():
     train_generator = mz.DataGenerator(train_processed, mode='pair', num_dup=5, num_neg=10, batch_size=20,
                                        callbacks=[hist_callback])
 
-    valid_x, valid_y = valid_processed.unpack()
+    valid_x, valid_y = valid_processed.conv_to_np()
     evaluate = mz.callbacks.EvaluateAllMetrics(model, x=valid_x, y=valid_y, batch_size=len(valid_x))
     print("fitting")
     history = model.fit_generator(train_generator, epochs=20, callbacks=[evaluate], workers=5,

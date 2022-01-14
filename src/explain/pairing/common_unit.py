@@ -34,7 +34,13 @@ def per_layer_modeling(layer_output, ex_scores_raw, input_mask, network):
     return PerLayerModel(loss, losses, logits, error)
 
 
-def probe_modeling(layer_output, prob_v, input_mask, network):
+def probability_mae(true_y, logits):
+    pred_prob = tf.nn.softmax(logits, axis=-1)
+    error = tf.abs(pred_prob - true_y)
+    return error
+
+
+def probe_modeling(layer_output, prob_v, input_mask, network, loss_fn=probability_mae):
     true_y = tf.stop_gradient(prob_v)
     layer_output_fixed = tf.stop_gradient(layer_output)
     logits = network(layer_output_fixed)
@@ -44,8 +50,7 @@ def probe_modeling(layer_output, prob_v, input_mask, network):
     input_mask_float = tf.cast(input_mask, tf.float32)
     per_token_losses = per_token_losses * input_mask_float # [batch, seq_length]
     num_valid = tf.reduce_sum(input_mask_float, axis=1) + 1e-6
-    pred_prob = tf.nn.softmax(logits, axis=-1)
-    error = tf.abs(pred_prob - true_y)
+    error = loss_fn(true_y, logits)
     losses = tf.reduce_sum(per_token_losses, axis=1) / num_valid
     loss = tf.reduce_mean(losses)
     return PerLayerModel(loss, losses, logits, error)

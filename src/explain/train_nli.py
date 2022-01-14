@@ -1,4 +1,5 @@
 from functools import partial
+from typing import Tuple
 
 import tensorflow as tf
 
@@ -14,6 +15,7 @@ from trainer.get_param_num import get_param_num
 from trainer.model_saver import save_model_to_dir_path, load_bert_v2, tf_logger
 from trainer.multi_gpu_support import get_multiple_models, get_averaged_gradients, get_avg_loss, \
     get_avg_tensors_from_models
+from trainer.np_modules import Batches
 from trainer.tf_module import get_nli_batches_from_data_loader, step_runner
 from trainer.tf_train_module import get_train_op2, init_session, get_train_op_from_grads_and_tvars
 
@@ -156,7 +158,7 @@ def train_nil_from(save_dir, model_path, load_fn, max_steps):
     train_nli(hp, nli_setting, save_dir, max_steps, data, model_path, load_fn)
 
 
-def get_nli_data(hp, nli_setting):
+def get_nli_data(hp, nli_setting) -> Tuple[Batches, Batches]:
     data_loader = nli.DataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     tokenizer = get_tokenizer()
     CLS_ID = tokenizer.convert_tokens_to_ids(["[CLS]"])[0]

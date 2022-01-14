@@ -6,6 +6,7 @@ from typing import List, Dict, Tuple
 from cache import load_from_pickle, load_pickle_from
 from cpath import data_path
 from dataset_specific.msmarco.common import QueryID, load_query_group
+from dataset_specific.msmarco.misc_tool import get_qid_to_job_id
 from dataset_specific.msmarco.passage_common import enum_passage_corpus
 from misc_lib import tprint, TimeEstimator, group_by, get_first
 
@@ -29,10 +30,7 @@ def main():
 
     tprint("{} passages to find".format(len(passage_to_qid)))
     query_group: List[List[QueryID]] = load_query_group("train")
-    qid_to_job_id = {}
-    for job_id, qids in enumerate(query_group):
-        for qid in qids:
-            qid_to_job_id[qid] = job_id
+    qid_to_job_id = get_qid_to_job_id(query_group)
 
     tprint("Enumerating corpus")
     job_grouped: Dict[int, List[Tuple[QueryID, PassageID, str]]] = defaultdict(list)

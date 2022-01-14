@@ -8,8 +8,8 @@ from cache import save_to_pickle
 from cpath import data_path
 from data_generator.light_dataloader import LightDataLoader
 from data_generator.shared_setting import BertNLI
-from explain.pairing.predict_middle_out import predict_middle_out
-from explain.pairing.probe_model_middle_in import ClsProbeMiddleIn
+from explain.pairing.probe.predict_middle_out import predict_middle_out
+from explain.pairing.probe.probe_model_middle_in import ClsProbeMiddleIn
 from explain.pairing.probe_train_common import HPCommon, NLIPairingTrainConfig
 from explain.pairing.runner.run_train_cls_probe import ClsProbeConfig
 from explain.setups import init_fn_generic

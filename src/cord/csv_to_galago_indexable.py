@@ -17,7 +17,7 @@ def read_csv_as_dict(csv_path) -> List[Dict]:
     reader = csv.reader(f)
     data = []
     for g_idx, row in enumerate(reader):
-        if g_idx ==0 :
+        if g_idx == 0 :
             columns = row
         else:
             entry = {}

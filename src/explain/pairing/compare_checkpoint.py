@@ -1,4 +1,5 @@
 import os
+import sys
 
 import numpy as np
 
@@ -9,6 +10,8 @@ from misc.show_checkpoint_vars import load_checkpoint_vars
 def main():
     start = os.path.join(output_path, "model", "runs", "nli_ex_21", "model-73630")
     modified = os.path.join(output_path, "model", "runs", "nli_pairing_1", "model-11171")
+    start = sys.argv[1]
+    modified = sys.argv[2]
 
     var_d1 = load_checkpoint_vars(start)
     var_d2 = load_checkpoint_vars(modified)

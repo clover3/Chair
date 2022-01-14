@@ -10,8 +10,8 @@ import tensorflow as tf
 
 from cache import save_to_pickle
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from explain.pairing.predict_middle_out import predict_middle_in
-from explain.pairing.probe_model_middle_in import ClsProbeMiddleIn
+from explain.pairing.probe.predict_middle_out import predict_middle_in
+from explain.pairing.probe.probe_model_middle_in import ClsProbeMiddleIn
 from explain.pairing.probe_train_common import HPCommon, NLIPairingTrainConfig
 from explain.pairing.runner.run_train_cls_probe import ClsProbeConfig
 from explain.setups import init_fn_generic

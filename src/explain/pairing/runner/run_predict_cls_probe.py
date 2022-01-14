@@ -5,7 +5,7 @@ import tensorflow as tf
 from cache import save_to_pickle
 from explain.pairing.predict import predict_fn
 from explain.pairing.predict_on_dev_common import prepare_predict_setup
-from explain.pairing.probe_model import ClsProbeModel
+from explain.pairing.probe.probe_model import ClsProbeModel
 from explain.pairing.runner.run_train_cls_probe import ClsProbeConfig
 from explain.runner.nli_ex_param import ex_arg_parser
 from explain.setups import init_fn_generic

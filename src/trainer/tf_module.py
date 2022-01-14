@@ -100,6 +100,44 @@ def step_runner(batches, step_fn, init_step=0,
 
     return average(l_loss), average(l_acc)
 
+
+def step_runner_itr(batches, step_fn, init_step=0,
+                dev_fn=None, valid_freq = 1000,
+                save_fn=None, save_interval=10000,
+                steps=999999,
+                shuffle=True):
+    l_loss = []
+    l_acc = []
+    last_save = time.time()
+    if shuffle:
+        try:
+            np.random.shuffle(batches)
+        except TypeError:
+            print("np.random.shuffle failed")
+
+
+    step_i = init_step
+    batches_itr = batches
+    for batch in batches_itr:
+        step_i += 1
+        if dev_fn is not None:
+            if step_i % valid_freq == 0:
+                dev_fn()
+
+        if save_fn is not None:
+            if time.time() - last_save > save_interval:
+                save_fn()
+                last_save = time.time()
+
+        loss, acc = step_fn(batch, step_i)
+        l_acc.append(acc)
+        l_loss.append(loss)
+        if step_i > steps:
+            break
+
+    return average(l_loss), average(l_acc)
+
+
 def get_loss_from_batches(batches, step_fn):
     l_loss = []
     for step_i, batch in enumerate(batches):

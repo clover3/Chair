@@ -17,4 +17,4 @@ def extract_stream(fn):
         yield input_ids, input_mask, segment_ids
 
 
-extract_stream("C:\work\Code\Chair\data\\tf\\0")
+# extract_stream("C:\work\Code\Chair\data\\tf\\0")

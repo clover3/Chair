@@ -7,7 +7,7 @@ from functools import partial
 import tensorflow as tf
 
 import cpath
-from data_generator.tokenizer_wo_tf import EncoderUnit
+from data_generator.tokenizer_wo_tf import EncoderUnitOld
 from models.transformer import hyperparams
 from models.transformer.transformer_weight import transformer_weight
 from trainer.model_saver import load_model_w_scope
@@ -51,7 +51,7 @@ def run(token_path, ranked_list_path, start_model_path, output_path):
     voca_path = os.path.join(cpath.data_path, vocab_filename)
     batch_size = 256
 
-    encoder = EncoderUnit(hp.seq_max, voca_path)
+    encoder = EncoderUnitOld(hp.seq_max, voca_path)
 
     def encode(tokens):
         seg_a = encoder.encoder.ft.convert_tokens_to_ids(tokens)

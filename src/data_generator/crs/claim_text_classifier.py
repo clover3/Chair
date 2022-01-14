@@ -6,7 +6,7 @@ from elasticsearch import Elasticsearch
 
 import cpath
 from crs.load_stance_annotation import load_stance_verify_annot
-from data_generator.tokenizer_wo_tf import EncoderUnit
+from data_generator.tokenizer_wo_tf import EncoderUnitOld
 from elastic import retrieve
 
 
@@ -20,7 +20,7 @@ class DataGenerator:
         vocab_filename = "bert_voca.txt"
         voca_path = os.path.join(cpath.data_path, vocab_filename)
         self.lower_case = True
-        self.encoder = EncoderUnit(256, voca_path)
+        self.encoder = EncoderUnitOld(256, voca_path)
 
     def split_train_dev(self, data):
         group_by_statement = {}

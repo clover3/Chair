@@ -1,7 +1,7 @@
-from data_generator.tokenizer_wo_tf import EncoderUnit
+from data_generator.tokenizer_wo_tf import EncoderUnitOld
 
 
-class EncoderForNLI(EncoderUnit):
+class EncoderForNLI(EncoderUnitOld):
     def __init__(self, max_sequence, voca_path):
         super(EncoderForNLI, self).__init__(max_sequence, voca_path)
         CLS_ID = self.encoder.ft.convert_tokens_to_ids(["[CLS]"])[0]

@@ -1,6 +1,6 @@
 import math
 import random
-from typing import List, Iterable, Callable, Dict, Tuple, Set, Any
+from typing import List, Iterable, Any
 
 def split_by_window(tokens, window_size):
     cursor = 0
@@ -53,3 +53,13 @@ def enum_passage_random_short(tokens: List[Any], window_size: int) -> Iterable[L
         cursor += current_window_size
         yield second_tokens
 
+
+def split_window_get_length(d_tokens_ids, window_size):
+    cursor = 0
+    d_seg_len_list = []
+    while cursor < len(d_tokens_ids):
+        remain = len(d_tokens_ids) - cursor
+        l = min(remain, window_size)
+        d_seg_len_list.append(l)
+        cursor += window_size
+    return d_seg_len_list

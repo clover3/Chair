@@ -30,8 +30,8 @@ def modify_data_loader(data_loader):
     tokenizer = get_tokenizer()
     CLS_ID = tokenizer.convert_tokens_to_ids(["[CLS]"])[0]
     SEP_ID = tokenizer.convert_tokens_to_ids(["[SEP]"])[0]
-    data_loader.CLS_ID = CLS_ID
-    data_loader.SEP_ID = SEP_ID
+    data_loader.CLS_ID_3 = CLS_ID
+    data_loader.SEP_ID_4 = SEP_ID
     return data_loader
 
 

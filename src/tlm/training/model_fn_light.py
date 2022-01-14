@@ -1,3 +1,5 @@
+import abc
+from collections import Callable
 
 from models.transformer import optimization_v2 as optimization
 from my_tf import tf
@@ -10,8 +12,17 @@ def metric_fn(log_probs, ):
     return {}
 
 
+class ModelLight(abc.ABC):
+    @abc.abstractmethod
+    def get_logits(self):
+        pass
 
-def model_fn_with_loss(model_config, train_config, model_class):
+    @abc.abstractmethod
+    def get_loss(self):
+        pass
+
+
+def model_fn_with_loss(model_config, train_config, model_class: Callable[ModelLight]):
     """Returns `model_fn` closure for TPUEstimator."""
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
         """The `model_fn` for TPUEstimator."""
@@ -20,7 +31,7 @@ def model_fn_with_loss(model_config, train_config, model_class):
             tf_logging.info("  name = %s, shape = %s" % (name, features[name].shape))
         is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
-        model = model_class(
+        model: ModelLight = model_class(
             config=model_config,
             is_training=is_training,
             use_one_hot_embeddings=train_config.use_one_hot_embeddings,

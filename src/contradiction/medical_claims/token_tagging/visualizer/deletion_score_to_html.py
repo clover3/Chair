@@ -64,7 +64,7 @@ def write_deletion_score_to_html(out_file_name, summarized_table: List[TokenExEn
             assertion1 = claim1_info['assertion']
             assertion2 = claim2_info['assertion']
             html.write_paragraph("Question: {}".format(question))
-            original_prediction_summary = make_prediction_summary_str(base_probs)
+            original_prediction_summary = make_nli_prediction_summary_str(base_probs)
             html.write_bar()
             html.write_paragraph("Original prediction: " + original_prediction_summary)
             html.write_paragraph("Question: {}".format(question))
@@ -72,7 +72,7 @@ def write_deletion_score_to_html(out_file_name, summarized_table: List[TokenExEn
             min_token = tokens[max_drop_idx]
             html.write_paragraph("> \"{}\": {} ".format(min_token, max_drop))
             max_drop_case_prob = scipy.special.softmax(max_drop_case_logit)
-            max_drop_prediction_summary = make_prediction_summary_str(max_drop_case_prob)
+            max_drop_prediction_summary = make_nli_prediction_summary_str(max_drop_case_prob)
             html.write_paragraph("> " + max_drop_prediction_summary)
             p = [Cell("Claim1 ({}):".format(assertion1))] + cells[1:idx_sep1]
             h = [Cell("Claim2 ({}):".format(assertion2))] + cells[idx_sep1 + 1:idx_sep2]
@@ -83,7 +83,7 @@ def write_deletion_score_to_html(out_file_name, summarized_table: List[TokenExEn
     print("printed {} of {}".format(num_print, len(summarized_table)))
 
 
-def make_prediction_summary_str(base_probs):
+def make_nli_prediction_summary_str(base_probs):
     pred = np.argmax(base_probs)
     orignal_prediction_str = ['entailment', 'neutral', 'contradiction'][pred]
     original_prediction_summary = "{} ({}, {}, {})".format(orignal_prediction_str,

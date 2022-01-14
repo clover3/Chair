@@ -1,5 +1,7 @@
+from typing import List, Tuple
 
 import numpy as np
+
 
 def label2logit(label, size):
     r = np.zeros([size,])
@@ -87,3 +89,6 @@ def over_zero(np_arr):
 def sigmoid(x):
     z = 1 / (1 + np.exp(-x))
     return z
+
+
+Batches = List[Tuple[np.array, np.array, np.array, np.array]]

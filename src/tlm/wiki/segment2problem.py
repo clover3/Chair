@@ -3,14 +3,15 @@ from collections import Counter
 
 from galagos.basic import load_df, write_query_json, clean_query
 
+import arg.counter_arg_retrieval.build_dataset.data_prep.pc_query_gen
 from adhoc.bm25 import BM25_3_q_weight
 from cache import *
 from cpath import data_path
 from data_generator import tokenizer_wo_tf as tokenization
+from job_manager.marked_task_manager import ReadyMarkTaskManager
 from list_lib import flatten, left
 from misc_lib import TimeEstimator
 from models.classic.stopword import load_stopwords
-from job_manager.marked_task_manager import ReadyMarkTaskManager
 from tlm.retrieve_lm.retreive_candidates import get_visible
 from tlm.retrieve_lm.stem import CacheStemmer
 
@@ -117,7 +118,7 @@ def work(job_id, pm):
 
     for idx, inst in enumerate(in_data):
         mask_inst = pm.generate_mask(inst, max_num_tokens, masked_lm_prob, short_seq_prob, rng)
-        query = pm.generate_query(mask_inst)
+        query = arg.counter_arg_retrieval.build_dataset.data_prep.pc_query_gen.generate_query(mask_inst)
         qid = job_id * problem_per_job + idx
         queries.append((qid, query))
         out_data.append(mask_inst)

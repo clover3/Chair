@@ -5,7 +5,7 @@ import numpy as np
 import scipy.special
 import tensorflow as tf
 
-from contradiction.medical_claims.token_tagging.visualizer.deletion_score_to_html import make_prediction_summary_str
+from contradiction.medical_claims.token_tagging.visualizer.deletion_score_to_html import make_nli_prediction_summary_str
 from cpath import output_path
 from data_generator.NLI.nli import get_modified_data_loader
 from data_generator.tokenizer_wo_tf import get_tokenizer
@@ -37,7 +37,7 @@ def write_html(html, input_ids, logits, probe_logits, y):
         tokens = tokenizer.convert_ids_to_tokens(input_ids[data_idx])
         first_padding_loc = tokens.index("[PAD]")
         display_len = first_padding_loc + 1
-        pred_str = make_prediction_summary_str(probs_arr[data_idx])
+        pred_str = make_nli_prediction_summary_str(probs_arr[data_idx])
         html.write_paragraph("Prediction: {}".format(pred_str))
         html.write_paragraph("gold label={}".format(y[data_idx]))
         text_rows = [Cell("")] + cells_from_tokens(tokens)
