@@ -1,6 +1,7 @@
 import os
 import sys
 
+from data_generator.job_runner import WorkerInterface
 from misc_lib import exist_or_mkdir
 from taskman_client.task_proxy import get_task_manager_proxy, get_local_machine_name
 
@@ -41,3 +42,20 @@ class JobRunnerS:
     def run_one_job(self):
         worker = self.worker_factory(self.out_path)
         worker.work(int(sys.argv[1]))
+
+
+class DummyWorker(WorkerInterface):
+    def __init__(self, out_dir, work_fn):
+        self.out_dir = out_dir
+        self.work_fn = work_fn
+
+    def work(self, job_id):
+        return self.work_fn(job_id)
+
+
+class JobRunnerF(JobRunnerS):
+    # worker_factory : gets output_path to as argument, returns object
+    def __init__(self, working_path: str, max_job: int, job_name: str, work_fn):
+        def factor(out_dir):
+            return DummyWorker(out_dir, work_fn)
+        super(JobRunnerF, self).__init__(working_path, max_job, job_name, factor)

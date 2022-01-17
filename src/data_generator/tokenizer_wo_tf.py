@@ -671,3 +671,8 @@ class JoinEncoder:
     def join(self, tokens_a, tokens_b):
         d = self.join_as_d(tokens_a, tokens_b)
         return d["input_ids"], d["input_mask"], d["segment_ids"]
+
+
+def ids_to_text(tokenizer, ids: List[int]) -> str:
+    tokens = tokenizer.convert_ids_to_tokens(ids)
+    return pretty_tokens(tokens, True)

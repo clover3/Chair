@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import NamedTuple, List, NewType
+from typing import NamedTuple, List, NewType, Dict
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
 
@@ -37,7 +37,7 @@ class TokenizedText(NamedTuple):
     # idx of subword to idx of word
     sbword_mapping: List[WordIdx]
 
-    def to_json(self):
+    def to_json(self) -> Dict:
         return {
             'text': self.text,
             "tokens": self.tokens,
