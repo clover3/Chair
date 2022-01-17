@@ -183,15 +183,14 @@ def assign_tpu_anonymous(wait=True):
 
 def get_applicable_tpu_condition():
     machine = get_local_machine_name()
-    if machine == "lesterny":
+    if machine in ["lesterny", "instance-5", "us-1"]:
         condition = "v2"
     elif machine == "instance-3":
         condition = "v3"
     elif machine == "instance-4":
         condition = "v3"
-    elif machine == "instance-5":
-        condition = "v2"
     else:
+        print("Warning TPU condition not indicated")
         condition = None
     return condition
 
