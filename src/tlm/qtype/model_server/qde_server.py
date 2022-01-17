@@ -81,7 +81,7 @@ class Predictor:
         self.sess.run(tf.compat.v1.global_variables_initializer())
         self.batch_size = 64
 
-    def predict(self, triple_list):
+    def predict(self, triple_list) -> List[Dict]:
         def batch2feed_dict(batch):
             x_list = list(batch)
             feed_dict = {}
@@ -89,7 +89,7 @@ class Predictor:
                 feed_dict[tensor] = value
             return feed_dict
 
-        def forward_run(inputs):
+        def forward_run(inputs) -> List[Dict]:
             batches = get_batches_ex(inputs, self.batch_size, 6)
             tensor_d = {
                 'logits': self.task.logits,
@@ -121,7 +121,7 @@ class Predictor:
                 output.append(cur_d)
             return output
 
-        scores = forward_run(triple_list)
+        scores: List[Dict] = forward_run(triple_list)
         return scores
 
 

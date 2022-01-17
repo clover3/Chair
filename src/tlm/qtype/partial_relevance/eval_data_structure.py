@@ -3,6 +3,7 @@ from typing import NamedTuple, List, Iterator, Dict, Tuple, Callable, Any
 
 import numpy as np
 
+from data_generator.tokenizer_wo_tf import pretty_tokens
 from tlm.qtype.content_functional_parsing.qid_to_content_tokens import QueryInfo
 
 
@@ -118,8 +119,16 @@ class SegmentedText(NamedTuple):
     def enum_seg_idx(self):
         yield from range(self.get_seg_len())
 
+    def get_empty_seg_mask(self):
+        return np.zeros([self.get_seg_len()], np.int)
 
-class SegmentedInstance(NamedTuple):
+    def enum_token_idx_from_seg_idx(self, seg_idx) -> Iterator[int]:
+        yield from self.seg_token_indices[seg_idx]
+
+    def get_tokens_for_seg(self, seg_idx):
+        return [self.tokens_ids[i] for i in self.seg_token_indices[seg_idx]]
+
+class SegmentedInstanceOld(NamedTuple):
     text1_tokens_ids: List  # This is supposed to be shorter one. (Query)
     text2_tokens_ids: List  # This is longer one (Document)
     text1_seg_indices: List[List[int]]
@@ -222,7 +231,7 @@ class SegmentedInstance(NamedTuple):
                     new_seg2.append(i)
                 new_seg2_indices.append(list(self.enum_token_idx_from_seg2_idx(seg_idx)))
 
-        return SegmentedInstance(self.text1_tokens_ids,
+        return SegmentedInstanceOld(self.text1_tokens_ids,
                                  new_seg2,
                                  self.text1_seg_indices,
                                  new_seg2_indices,
@@ -230,10 +239,124 @@ class SegmentedInstance(NamedTuple):
                                  )
 
 
+
+class SegmentedInstance(NamedTuple):
+    text1: SegmentedText
+    text2: SegmentedText
+    score: float
+
+    def enum_seg_indice_pairs(self):
+        for seg1_idx in range(self.text1.get_seg_len()):
+            for seg2_idx in range(self.text2.get_seg_len()):
+                yield seg1_idx, seg2_idx
+
+    def get_drop_mask(self, seg1_idx, seg2_idx) -> np.ndarray:
+        drop_mask_per_q_seg = self.text2.get_empty_seg_mask()
+        drop_mask_per_q_seg[seg2_idx] = 1
+        drop_mask = [self.text2.get_empty_seg_mask() for _ in range(self.text1.get_seg_len())]
+        drop_mask[seg1_idx] = drop_mask_per_q_seg
+        drop_mask = np.stack(drop_mask)
+        return drop_mask
+
+    def get_empty_mask(self) -> np.ndarray:
+        return np.stack([self.text2.get_empty_seg_mask() for _ in range(self.text1.get_seg_len())])
+
+    def enum_token_idx_from_seg1_idx(self, seg_idx) -> Iterator[int]:
+        yield from self.text1.seg_token_indices[seg_idx]
+
+    def enum_token_idx_from_seg2_idx(self, seg_idx) -> Iterator[int]:
+        yield from self.text2.seg_token_indices[seg_idx]
+
+    def translate_mask(self, drop_mask) -> Dict[Tuple[int, int], int]:
+        new_mask = {}
+        for q_seg_idx in range(self.text1.get_seg_len()):
+            for d_seg_idx in range(self.text2.get_seg_len()):
+                v = drop_mask[q_seg_idx, d_seg_idx]
+                if v:
+                    for q_token_idx in self.text1.enum_token_idx_from_seg_idx(q_seg_idx):
+                        for d_token_idx in self.enum_token_idx_from_seg2_idx(d_seg_idx):
+                            k = q_token_idx, d_token_idx
+                            new_mask[k] = int(v)
+        return new_mask
+
+    def accumulate_over(self, raw_scores, accumulate_method: Callable[[List[float]], float]):
+        scores_d = defaultdict(list)
+        for q_seg_idx in range(self.text1.get_seg_len()):
+            for d_seg_idx in range(self.text2.get_seg_len()):
+                key = q_seg_idx, d_seg_idx
+                for q_token_idx in self.text1.enum_token_idx_from_seg_idx(q_seg_idx):
+                    for d_token_idx in self.text2.enum_token_idx_from_seg_idx(d_seg_idx):
+                        v = raw_scores[q_token_idx, d_token_idx]
+                        scores_d[key].append(v)
+
+        out_d = {}
+        for q_seg_idx in range(self.text1.get_seg_len()):
+            for d_seg_idx in range(self.text2.get_seg_len()):
+                key = q_seg_idx, d_seg_idx
+                scores = scores_d[key]
+                out_d[key] = accumulate_method(scores)
+        return out_d
+
+    def score_d_to_table(self, contrib_score_d: Dict[Tuple[int, int], Any]):
+        return self._score_d_to_table(contrib_score_d)
+
+    def _score_d_to_table(self, contrib_score_table):
+        table = []
+        for q_seg_idx in range(self.text1.get_seg_len()):
+            row = []
+            for d_seg_idx in range(self.text2.get_seg_len()):
+                key = q_seg_idx, d_seg_idx
+                row.append(contrib_score_table[key])
+            table.append(row)
+        return table
+
+    def score_np_table_to_table(self, contrib_score_table):
+        return self._score_d_to_table(contrib_score_table)
+
+    def get_seg2_dropped_instances(self, drop_indices):
+        new_seg2 = []
+        new_seg2_indices = []
+        for seg_idx in range(self.text2.get_seg_len()):
+            if seg_idx in drop_indices:
+                pass
+            else:
+                for i in self.text2.enum_token_idx_from_seg_idx(seg_idx):
+                    new_seg2.append(i)
+                new_seg2_indices.append(list(self.text2.enum_token_idx_from_seg_idx(seg_idx)))
+
+        return SegmentedInstance(SegmentedText(self.text1.tokens_ids, self.text1.seg_token_indices),
+                                 SegmentedText(new_seg2, new_seg2_indices),
+                                 self.score
+                                 )
+    @classmethod
+    def from_flat_args(cls,
+                       text1_tokens_ids,
+                       text2_tokens_ids,
+                       text1_seg_indices,
+                       text2_seg_indices,
+                       score
+                       ):
+        return SegmentedInstance(SegmentedText(text1_tokens_ids, text1_seg_indices),
+                                 SegmentedText(text2_tokens_ids, text2_seg_indices),
+                                 score)
+
+
 class RelatedEvalInstance(NamedTuple):
     problem_id: str
     query_info: QueryInfo
     seg_instance: SegmentedInstance
+
+
+def rei_to_text(tokenizer, rei: RelatedEvalInstance):
+    def seg_to_text(segment: SegmentedText) -> str:
+        ids: List[int] = segment.tokens_ids
+        tokens = tokenizer.convert_ids_to_tokens(ids)
+        return pretty_tokens(tokens, True)
+
+    seg1_text = seg_to_text(rei.seg_instance.text1)
+    seg2_text = seg_to_text(rei.seg_instance.text2)
+    return f"RelatedEvalInstance({rei.problem_id}, {seg1_text})\n" \
+           + "Doc: " + seg2_text
 
 
 class RelatedEvalAnswer(NamedTuple):

@@ -1,5 +1,5 @@
 import os
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
 
@@ -29,7 +29,7 @@ class FDEModule:
         self.q_embedding_d = q_embedding_d
         self.q_bias_d = q_bias_d
         func_span_list, qtype_embedding_np = embeddings_to_list(q_embedding_d)
-        self.func_span_list = func_span_list
+        self.func_span_list: List[str] = func_span_list
         print(len(func_span_list), len(q_bias_d))
         self.qtype_embedding_np = qtype_embedding_np
         self.q_bias_list = np.stack([q_bias_d[s] for s in func_span_list])
@@ -42,23 +42,34 @@ class FDEModule:
         de_input_ids, de_input_mask, de_segment_ids = flat(self.d_encoder.encode_inner(seg1_input_ids, seg2_input_ids))
         one_inst = qe_input_ids, qe_input_mask, qe_segment_ids, de_input_ids, de_input_mask, de_segment_ids
         payload_list = [one_inst]
-        ret = self.client.send_payload(payload_list)[0]
+        ret: Dict = self.client.send_payload(payload_list)[0]
+        assert type(ret) == dict
         return ret
 
     def compute_score(self, ct: str, doc: str):
         def encode(s):
             return self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(s))
+        return self.compute_score_from_ids(encode(ct), encode(doc))
 
-        ret = self.request(encode(ct), encode(doc))
+    def compute_score_from_ids(self, ct: List[int], doc: List[int]):
+        ret: Dict = self.request(ct, doc)
         doc_vector = ret['qtype_vector2']
         d_bias = ret['d_bias']
-        score = np.dot(self.qtype_embedding_np, doc_vector) + d_bias + self.q_bias_list
+        score: np.array = np.dot(self.qtype_embedding_np, doc_vector) + d_bias + self.q_bias_list
         return score
 
-    def get_promising(self, ct, doc, threshold=0.5):
-        scores = self.compute_score(ct, doc)
-        probs = sigmoid(scores)
+    def get_promising_from_ids(self, ct: List[int], doc: List[int], threshold=0.5) -> List[str]:
+        scores = self.compute_score_from_ids(ct, doc)
+        output = self._filter_promising(scores, threshold)
+        return output
 
+    def get_promising(self, ct, doc, threshold=0.5) -> List[str]:
+        scores = self.compute_score(ct, doc)
+        output = self._filter_promising(scores, threshold)
+        return output
+
+    def _filter_promising(self, scores, threshold) -> List[str]:
+        probs = sigmoid(scores)
         relevant = np.less(threshold, probs)
         output = []
         if np.count_nonzero(relevant):

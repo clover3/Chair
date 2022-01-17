@@ -41,7 +41,7 @@ def do_search_job(client: BERTClient,
         if found_ft:
             payload = []
             print("{} ft founds by fde".format(len(found_ft)))
-            found_ft = found_ft[:10]
+            found_ft: List[str] = found_ft[:10]
             for ft_rep in found_ft:
                 new_query = ft_rep.replace("[MASK]", inst.ct)
                 seg1 = to_token_ids(new_query)

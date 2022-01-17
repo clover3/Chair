@@ -14,9 +14,12 @@ def get_mmd_client_wrap() -> Callable[[List[SegmentedInstance]], List[float]]:
     join_encoder = JoinEncoder(max_seq_length)
 
     def query_multiple(items: List[SegmentedInstance]) -> List[float]:
+        if len(items) == 0:
+            return []
         def encode(item: SegmentedInstance):
-            return join_encoder.join(item.text1_tokens_ids, item.text2_tokens_ids)
+            return join_encoder.join(item.text1.tokens_ids, item.text2.tokens_ids)
         ret = client.send_payload(list(map(encode, items)))
+        print(ret.shape)
         probs = softmax(ret, axis=1)[:, 1]
         return probs
     return query_multiple
