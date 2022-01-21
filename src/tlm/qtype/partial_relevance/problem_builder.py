@@ -35,7 +35,6 @@ def get_word_level_location_w_ids(tokenizer, input_ids) -> List[List[int]]:
     return intervals
 
 
-
 def word_segment_w_indices(tokenizer, input_ids) -> Tuple[List[int], List[List[int]]]:
     word_location_list = get_word_level_location_w_ids(tokenizer, input_ids)
     return input_ids, word_location_list

@@ -1,6 +1,9 @@
 import abc
 from typing import List, Dict, Tuple
 
+import numpy as np
+from scipy.special import softmax
+
 INPUT_IDS = List[int]
 INPUT_MASK = List[int]
 SEGMENT_IDS = List[int]
@@ -38,3 +41,16 @@ class BERTMaskIF(abc.ABC):
     @abc.abstractmethod
     def predict(self, items: List[SinglePayload]):
         pass
+
+
+def logits_to_score(logits):
+    return softmax(logits)[1]
+
+
+
+def later_score_prob(base, after):
+    return logits_to_score(after)
+
+
+def dist_l2(base, after):
+    return np.linalg.norm(np.array(base) - np.array(after))

@@ -1,17 +1,16 @@
-import json
 from typing import List, Callable, Tuple
-import numpy as np
+
 from tlm.qtype.partial_relevance.attention_based.mmd_z_client import get_mmd_client_wrap
+from tlm.qtype.partial_relevance.complement_path_data_helper import load_complements
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_search import FuncContentSegJoinPolicy
-from tlm.qtype.partial_relevance.eval_metric.eval_by_erasure import EvalMetricByErasure
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance
+from tlm.qtype.partial_relevance.eval_metric.doc_modify_fns import DocModFunc, get_top_k_fn
+from tlm.qtype.partial_relevance.eval_metric.eval_by_erasure import EvalMetricByErasure
 from tlm.qtype.partial_relevance.eval_metric.partial_relevant import EvalMetricPartialRelevant
 from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result
 from tlm.qtype.partial_relevance.eval_utils import partial_related_eval
-from tlm.qtype.partial_relevance.eval_metric.doc_modify_fns import DocModFunc, get_top_k_fn
-from tlm.qtype.partial_relevance.complement_path_data_helper import load_complements
-from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_related_eval_answer
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
+from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_related_eval_answer
 
 
 def get_top_02_drop_fn():
@@ -65,4 +64,4 @@ def main_erasure():
 
 
 if __name__ == "__main__":
-    main_erasure()
+    main_partial_relevant()

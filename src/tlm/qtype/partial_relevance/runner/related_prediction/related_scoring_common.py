@@ -1,3 +1,4 @@
+import xmlrpc.client
 from typing import List
 
 from misc_lib import TEL
@@ -10,7 +11,11 @@ from tlm.qtype.partial_relevance.related_answer_data_path_helper import save_rel
 def run_scoring(problems: List[RelatedEvalInstance], scorer: AttentionMaskScorerIF) -> List[RelatedEvalAnswer]:
     answer_list: List[RelatedEvalAnswer] = []
     for p in TEL(problems):
-        c: ContributionSummary = scorer.eval_contribution(p.seg_instance)
+        try:
+            c: ContributionSummary = scorer.eval_contribution(p.seg_instance)
+        except xmlrpc.client.Fault:
+            print(p.seg_instance.to_json())
+            raise
         answer = RelatedEvalAnswer(p.problem_id, c)
         answer_list.append(answer)
     return answer_list

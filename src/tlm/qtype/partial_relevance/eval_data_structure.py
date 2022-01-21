@@ -290,7 +290,7 @@ class SegmentedInstance(NamedTuple):
             for seg2_idx in range(self.text2.get_seg_len()):
                 yield seg1_idx, seg2_idx
 
-    def get_drop_mask(self, seg1_idx, seg2_idx) -> np.ndarray:
+    def get_drop_mask(self, seg1_idx, seg2_idx) -> np.array:
         drop_mask_per_q_seg = self.text2.get_empty_seg_mask()
         drop_mask_per_q_seg[seg2_idx] = 1
         drop_mask = [self.text2.get_empty_seg_mask() for _ in range(self.text1.get_seg_len())]
@@ -307,7 +307,7 @@ class SegmentedInstance(NamedTuple):
     def enum_token_idx_from_seg2_idx(self, seg_idx) -> Iterator[int]:
         yield from self.text2.seg_token_indices[seg_idx]
 
-    def translate_mask(self, drop_mask) -> Dict[Tuple[int, int], int]:
+    def translate_mask(self, drop_mask: np.array) -> Dict[Tuple[int, int], int]:
         new_mask = {}
         for q_seg_idx in range(self.text1.get_seg_len()):
             for d_seg_idx in range(self.text2.get_seg_len()):

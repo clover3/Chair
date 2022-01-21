@@ -14,6 +14,7 @@ from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import Eval
 from tlm.qtype.partial_relevance.attention_based.attention_mask_gradient import AttentionGradientScorer, \
     PredictorAttentionMaskGradient
 from tlm.qtype.partial_relevance.attention_based.bert_masking_client import get_localhost_bert_mask_client
+from tlm.qtype.partial_relevance.attention_based.bert_masking_common import dist_l2
 from tlm.qtype.partial_relevance.attention_based.perturbation_scorer import PerturbationScorer
 from tlm.qtype.partial_relevance.eval_data_structure import QDSegmentedInstance
 from tlm.qtype.qtype_instance import QTypeInstance
@@ -67,7 +68,7 @@ def main():
     max_seq_length = 512
     attention_mask_gradient = PredictorAttentionMaskGradient(2, max_seq_length)
     predictor = get_localhost_bert_mask_client()
-    scorer = PerturbationScorer(predictor, max_seq_length)
+    scorer = PerturbationScorer(predictor, max_seq_length, dist_l2)
     scorer2 = AttentionGradientScorer(attention_mask_gradient, max_seq_length)
 
     contrib_score_list = [scorer, scorer2]
