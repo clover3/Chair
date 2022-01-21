@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="annotApp">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+
+  <script src="angular.js"></script>
+  <script src="app.js?1"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+  <style>
+    input {width: 20px; height: 20px;}
+  </style>
+</head>
+<body>
+
+<div ng-controller="annotController" ng-init="task_no=PlaceHolderForTaskNo;p_stance='PlaceHolderForPStance';c_stance='PlaceHolderForCStance'"
+class="container">
+  <h4>Instance {{task_no}}</h4>
+<div>
+  <table class="table-bordered">
+    <tr>
+      <td><b>Premise: </b></td>
+      <td><span> PlaceHolderForPremise </span></td>
+      <td ng-class="p_stance == 'against' ? 'table-danger' : 'table-primary'  "> {{p_stance}} </td>
+      <td> PlaceHolderForEntity </td>
+    </tr>
+    <tr>
+      <td><b>Conclusion: </b></td>
+      <td><span> PlaceHolderForConclusion </span></td>
+      <td ng-class="c_stance == 'against' ? 'table-danger' : 'table-primary'  "> {{c_stance}} </td>
+      <td> PlaceHolderForEntity </td>
+    </tr>
+  </table>
+</div>
+
+<h4>Passage: </h4>
+  <div class="passage">
+    PlaceHolderForPassage
+  </div>
+  <table style="border: 1px solid black; text-align: center;">
+    <tr>
+      <th></th>
+      <th>Conclusion</th>
+      <th>Premise</th>
+    </tr>
+    <tr>
+      <td>Related</td>
+      <td colspan="2">
+        <span>Q3</span>
+        <input class="big-checkbox" type="checkbox" name="Q3" ng-model="q3" ng-init="q3=false"></input>
+      </td>
+    </tr>
+
+    <tr>
+      <td>Information:support</td>
+      <td>
+        <span>Q10</span>
+        <input type="checkbox" name="Q10" ng-model="q10" ng-init="q10=false"></input>
+      </td>
+      <td>
+        <span>Q12</span>
+        <input type="checkbox" name="Q12" ng-model="q12" ng-init="q12=false"></input>
+      </td>
+    </tr>
+    <tr>
+      <td>Information:oppose</td>
+      <td>
+        <span>Q11</span>
+        <input type="checkbox" name="Q11" ng-model="q11" ng-init="q11=false"></input>
+      </td>
+      <td>
+        <span>Q13</span>
+        <input type="checkbox" name="Q13" ng-model="q13" ng-init="q13=false"></input>
+      </td>
+    </tr>
+  </table>
+
+  <div>
+    <h4>Annotation</h4>
+    <span name="annotations">{{task_no}} {{q3}} {{q10}} {{q11}} {{q12}} {{q13}} </span>
+  </div>
+  <button class="btn btn-primary" ng-click="copy()">Copy</button>
+
+  <div>
+    <a href="./{{task_no-1}}.html" class="btn btn-link" >&larr; Prev</a> &nbsp;&nbsp; <a href="./{{task_no+1}}.html" class="btn btn-link" style="float:right;">Next &rarr; </a>
+  </div>
+
+</div>
+
+</div>
+</body>
+</html>

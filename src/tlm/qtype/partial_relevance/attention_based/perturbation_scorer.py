@@ -4,7 +4,7 @@ from data_generator.tokenizer_wo_tf import JoinEncoder
 from list_lib import lmap, left
 from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import AttentionMaskScorerIF
 from tlm.qtype.partial_relevance.attention_based.bert_masking_common import BERTMaskIF
-from tlm.qtype.partial_relevance.eval_data_structure import QDSegmentedInstance, ContributionSummary
+from tlm.qtype.partial_relevance.eval_data_structure import ContributionSummary, SegmentedInstance
 
 
 class PerturbationScorer(AttentionMaskScorerIF):
@@ -14,7 +14,7 @@ class PerturbationScorer(AttentionMaskScorerIF):
         self.join_encoder = JoinEncoder(max_seq_length)
         self.dist_fn = dist_fn
 
-    def eval_contribution(self, inst: QDSegmentedInstance) -> ContributionSummary:
+    def eval_contribution(self, inst: SegmentedInstance) -> ContributionSummary:
         # print("PerturbationScorer::eval_contribution ENTRY")
         core_payload = []
         for q_seg_idx, d_seg_idx in inst.enum_seg_indice_pairs():
@@ -26,7 +26,7 @@ class PerturbationScorer(AttentionMaskScorerIF):
             k, v = k_v
             drop_mask = v
             new_mask: Dict = inst.translate_mask(drop_mask)
-            x0, x1, x2 = self.join_encoder.join(inst.text1_tokens_ids, inst.text2_tokens_ids)
+            x0, x1, x2 = self.join_encoder.join(inst.text1.tokens_ids, inst.text2.tokens_ids)
             new_payload = x0, x1, x2, new_mask
             return new_payload
 

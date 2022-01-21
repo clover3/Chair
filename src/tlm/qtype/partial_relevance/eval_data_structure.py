@@ -3,7 +3,8 @@ from typing import NamedTuple, List, Iterator, Dict, Tuple, Callable, Any
 
 import numpy as np
 
-from data_generator.tokenizer_wo_tf import pretty_tokens
+from cache import named_tuple_to_json
+from data_generator.tokenizer_wo_tf import pretty_tokens, ids_to_text
 from tlm.qtype.content_functional_parsing.qid_to_content_tokens import QueryInfo
 
 
@@ -12,7 +13,6 @@ class ContributionSummary(NamedTuple):
 
 
 ContributionSummaryDict = Dict[str, List[float]]
-
 
 
 class QDSegmentedInstance(NamedTuple):
@@ -125,8 +125,51 @@ class SegmentedText(NamedTuple):
     def enum_token_idx_from_seg_idx(self, seg_idx) -> Iterator[int]:
         yield from self.seg_token_indices[seg_idx]
 
+    def get_token_idx_as_head_tail(self, seg_idx) -> Tuple[List[int], List[int]]:
+        indice = self.seg_token_indices[seg_idx]
+        prev_idx = None
+        split_idx = len(indice)
+        for j, idx in enumerate(indice):
+            if prev_idx is not None:
+                if prev_idx == idx-1:
+                    pass
+                else:
+                    split_idx = j
+
+        return indice[:split_idx], indice[split_idx:]
+
     def get_tokens_for_seg(self, seg_idx):
         return [self.tokens_ids[i] for i in self.seg_token_indices[seg_idx]]
+
+    def get_dropped_text(self, drop_indices):
+        new_seg = []
+        new_seg_indices = []
+        offset = 0
+        for seg_idx in range(self.get_seg_len()):
+            if seg_idx in drop_indices:
+                offset = offset - len(self.seg_token_indices[seg_idx])
+            else:
+                for i in self.enum_token_idx_from_seg_idx(seg_idx):
+                    new_seg.append(self.tokens_ids[i])
+
+                new_indices = [idx + offset for idx in self.enum_token_idx_from_seg_idx(seg_idx)]
+                new_seg_indices.append(new_indices)
+        return SegmentedText(new_seg, new_seg_indices)
+
+    def to_json(self):
+        return named_tuple_to_json(self)
+
+    @classmethod
+    def from_json(cls, j):
+        return SegmentedText(j['tokens_ids'], j['seg_token_indices'])
+
+
+def print_segment_text(tokenizer, text: SegmentedText):
+    for i in range(text.get_seg_len()):
+        tokens = text.get_tokens_for_seg(i)
+        s = ids_to_text(tokenizer, tokens)
+        print("{}:\t{}".format(i, s))
+
 
 class SegmentedInstanceOld(NamedTuple):
     text1_tokens_ids: List  # This is supposed to be shorter one. (Query)
@@ -230,7 +273,6 @@ class SegmentedInstanceOld(NamedTuple):
                 for i in self.enum_token_idx_from_seg2_idx(seg_idx):
                     new_seg2.append(i)
                 new_seg2_indices.append(list(self.enum_token_idx_from_seg2_idx(seg_idx)))
-
         return SegmentedInstanceOld(self.text1_tokens_ids,
                                  new_seg2,
                                  self.text1_seg_indices,
@@ -239,11 +281,9 @@ class SegmentedInstanceOld(NamedTuple):
                                  )
 
 
-
 class SegmentedInstance(NamedTuple):
     text1: SegmentedText
     text2: SegmentedText
-    score: float
 
     def enum_seg_indice_pairs(self):
         for seg1_idx in range(self.text1.get_seg_len()):
@@ -314,19 +354,8 @@ class SegmentedInstance(NamedTuple):
         return self._score_d_to_table(contrib_score_table)
 
     def get_seg2_dropped_instances(self, drop_indices):
-        new_seg2 = []
-        new_seg2_indices = []
-        for seg_idx in range(self.text2.get_seg_len()):
-            if seg_idx in drop_indices:
-                pass
-            else:
-                for i in self.text2.enum_token_idx_from_seg_idx(seg_idx):
-                    new_seg2.append(i)
-                new_seg2_indices.append(list(self.text2.enum_token_idx_from_seg_idx(seg_idx)))
-
         return SegmentedInstance(SegmentedText(self.text1.tokens_ids, self.text1.seg_token_indices),
-                                 SegmentedText(new_seg2, new_seg2_indices),
-                                 self.score
+                                 self.text2.get_dropped_text(drop_indices),
                                  )
     @classmethod
     def from_flat_args(cls,
@@ -334,17 +363,45 @@ class SegmentedInstance(NamedTuple):
                        text2_tokens_ids,
                        text1_seg_indices,
                        text2_seg_indices,
-                       score
                        ):
         return SegmentedInstance(SegmentedText(text1_tokens_ids, text1_seg_indices),
                                  SegmentedText(text2_tokens_ids, text2_seg_indices),
-                                 score)
+                                 )
+
+    def to_json(self):
+        return {
+            'text1': self.text1.to_json(),
+            'text2': self.text2.to_json(),
+        }
+
+    @classmethod
+    def from_json(cls, j):
+        return SegmentedInstance(SegmentedText.from_json(j['text1']),
+                                 SegmentedText.from_json(j['text2']),
+                                 )
 
 
 class RelatedEvalInstance(NamedTuple):
     problem_id: str
     query_info: QueryInfo
     seg_instance: SegmentedInstance
+    score: float
+
+    def to_json(self):
+        return {
+            'problem_id': self.problem_id,
+            'query_info': self.query_info.to_json(),
+            'seg_instance': self.seg_instance.to_json(),
+            'score': self.score
+        }
+
+    @classmethod
+    def from_json(cls, j):
+        return RelatedEvalInstance(j['problem_id'],
+                                   QueryInfo.from_json(j['query_info']),
+                                   SegmentedInstance.from_json(j['seg_instance']),
+                                   j['score']
+                                   )
 
 
 def rei_to_text(tokenizer, rei: RelatedEvalInstance):
@@ -362,3 +419,4 @@ def rei_to_text(tokenizer, rei: RelatedEvalInstance):
 class RelatedEvalAnswer(NamedTuple):
     problem_id: str
     contribution: ContributionSummary
+

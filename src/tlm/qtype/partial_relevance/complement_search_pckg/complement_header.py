@@ -1,8 +1,8 @@
 import abc
-from typing import List, Tuple
+from typing import List, Tuple, NamedTuple
 
 from data_generator.tokenizer_wo_tf import ids_to_text
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
+from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance, SegmentedText
 
 
 class PartialSegment:
@@ -27,6 +27,16 @@ class PartialSegment:
         else:
             raise Exception("n_seg > 2 is not expected")
 
+    def to_json(self) -> Tuple[List[int], List[int]]:
+        if self.n_seg == 1:
+            return self.data, []
+        elif self.n_seg == 2:
+            return self.data
+
+    @classmethod
+    def from_json(cls, j):
+        return PartialSegment(j, 2)
+
 
 class ComplementCandidateGenIF(abc.ABC):
     @abc.abstractmethod
@@ -42,5 +52,26 @@ class SearchComplementIF(abc.ABC):
 
 class SegJoinPolicyIF(abc.ABC):
     @abc.abstractmethod
-    def join_tokens(self, si: SegmentedInstance, new_tokens: PartialSegment, preserve_seg_idx):
+    def join_tokens(self, si: SegmentedText, new_tokens: PartialSegment, preserve_seg_idx):
         pass
+
+
+class ComplementSearchOutput(NamedTuple):
+    problem_id: str
+    target_seg_idx: int
+    complement_list: List[PartialSegment]
+
+    def to_json(self):
+        complement_list_j = [c.to_json() for c in self.complement_list]
+        return {
+            'problem_id': self.problem_id,
+            'target_seg_idx': self.target_seg_idx,
+            'complement_list': complement_list_j
+        }
+
+    @classmethod
+    def from_json(cls, j):
+        return ComplementSearchOutput(j['problem_id'],
+                             j['target_seg_idx'],
+                             list(map(PartialSegment.from_json, j['complement_list']))
+                             )

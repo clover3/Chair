@@ -3,7 +3,10 @@ from typing import List, Tuple
 import numpy as np
 
 from data_generator.tokenizer_wo_tf import JoinEncoder
+from list_lib import left
 from misc_lib import get_second
+from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import indices_to_mask_dict
+from tlm.qtype.partial_relevance.attention_based.bert_masking_common import BERTMaskIF
 from tlm.qtype.partial_relevance.eval_data_structure import ContributionSummary, SegmentedInstance
 
 
@@ -14,16 +17,16 @@ class EvalPerQSeg:
         self.join_encoder = JoinEncoder(max_seq_length)
 
     def eval(self, inst: SegmentedInstance, contrib: ContributionSummary) -> List[float]:
-        x0, x1, x2 = self.join_encoder.join(inst.text1_tokens_ids, inst.text2_tokens_ids)
+        x0, x1, x2 = self.join_encoder.join(inst.text1.tokens_ids, inst.text2.tokens_ids)
         auc_list = []
-        for q_idx in range(inst.get_seg1_len()):
+        for q_idx in range(inst.text1.get_seg_len()):
             l = []
-            for d_idx in range(inst.get_seg2_len()):
+            for d_idx in range(inst.text2.get_seg_len()):
                 k = q_idx, d_idx
                 v = contrib.table[q_idx][d_idx]
                 l.append((k, v))
             l.sort(key=get_second, reverse=True)
-            total_item = inst.get_seg2_len()
+            total_item = inst.text2.get_seg_len()
             payload = []
             num_step = 10
             for i in range(num_step):

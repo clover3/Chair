@@ -90,7 +90,6 @@ class PredictorClsDense:
             traceback.print_exc()
             raise
 
-
     def _predict(self, triple_list):
         print("Processing {} items".format(len(triple_list)))
         def batch2feed_dict(batch):

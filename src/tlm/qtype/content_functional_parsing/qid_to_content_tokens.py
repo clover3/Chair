@@ -3,7 +3,7 @@ import os
 from collections import Counter, defaultdict
 from typing import List, Dict, NamedTuple, Tuple
 
-from cache import load_from_pickle, save_to_pickle
+from cache import load_from_pickle, save_to_pickle, named_tuple_to_json
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from trec.types import QueryID
@@ -53,6 +53,13 @@ class QueryInfo(NamedTuple):
         seg2_indices = [i + seg2_start for i, _ in enumerate(body)]
         q_seg_indices = [q_seg1_indice, seg2_indices]
         return q_seg_indices
+
+    def to_json(self):
+        return named_tuple_to_json(self)
+
+    @classmethod
+    def from_json(cls, j):
+        return QueryInfo(j['qid'], j['query'], j['content_span'], j['functional_tokens'], j['out_s_list'])
 
 
 def get_qid_to_content_tokens(split) -> Dict[QueryID, List[str]]:

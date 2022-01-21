@@ -113,8 +113,11 @@ class PredictorAttentionMask(BERTMaskIF):
         self.sess = init_session()
         self.sess.run(tf.compat.v1.global_variables_initializer())
         self.batch_size = 64
+        self.model_loaded = False
 
     def predict(self, payload):
+        if not self.model_loaded:
+            print("WARNING model has not been loaded")
         def forward_run(inputs):
             batches = get_batches_ex(inputs, self.batch_size, 4)
             logit_list = []
@@ -153,9 +156,10 @@ class PredictorAttentionMask(BERTMaskIF):
 
         id = get_last_id(save_dir)
         path = os.path.join(save_dir, "{}".format(id))
-
+        print("load_model")
         self.loader = tf.compat.v1.train.Saver(max_to_keep=1)
         self.loader.restore(self.sess, path)
+        self.model_loaded = True
 
 
 def get_bert_mask_predictor():

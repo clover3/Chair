@@ -1,6 +1,9 @@
+import os
+
 import numpy as np
 import tensorflow as tf
 
+from cpath import output_path
 from data_generator.tokenizer_wo_tf import JoinEncoder
 from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import AttentionMaskScorerIF
 from tlm.qtype.partial_relevance.attention_based.bert_mask_predictor import PredictorAttentionMask, get_batches_ex
@@ -39,10 +42,17 @@ class AttentionGradientScorer(AttentionMaskScorerIF):
         self.join_encoder = JoinEncoder(max_seq_length)
 
     def eval_contribution(self, inst: SegmentedInstance) -> ContributionSummary:
-        x0, x1, x2 = self.join_encoder.join(inst.text1_tokens_ids, inst.text2_tokens_ids)
+        x0, x1, x2 = self.join_encoder.join(inst.text1.tokens_ids, inst.text2.tokens_ids)
         payload_inst = x0, x1, x2, {}
         logits, grads = self.client.predict([payload_inst])
         grad_mag = np.sum(np.abs(grads), axis=3)
         assert len(grad_mag) == 1
         table = inst.score_np_table_to_table(grad_mag[0])
         return ContributionSummary(table)
+
+
+def get_attention_mask_predictor():
+    save_path = os.path.join(output_path, "model", "runs", "mmd_Z")
+    predictor = PredictorAttentionMaskGradient(2, 512)
+    predictor.load_model(save_path)
+    return predictor

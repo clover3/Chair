@@ -39,7 +39,8 @@ class CheckComplementCandidate:
             -> List[SegmentedInstance]:
         payload_list: List[SegmentedInstance] = []
         for c in candidates:
-            new_si: SegmentedInstance = self.seg_join_policy.join_tokens(si, c, seg_index_to_keep)
+            new_text1 = self.seg_join_policy.join_tokens(si.text1, c, seg_index_to_keep)
+            new_si: SegmentedInstance = SegmentedInstance(new_text1, si.text2)
             payload_list.append(new_si)
         return payload_list
 

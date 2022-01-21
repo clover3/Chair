@@ -1,5 +1,6 @@
 from typing import List, Callable
 
+import numpy as np
 from scipy.special import softmax
 
 from bert_api.client_lib import BERTClient
@@ -19,7 +20,7 @@ def get_mmd_client_wrap() -> Callable[[List[SegmentedInstance]], List[float]]:
         def encode(item: SegmentedInstance):
             return join_encoder.join(item.text1.tokens_ids, item.text2.tokens_ids)
         ret = client.send_payload(list(map(encode, items)))
-        print(ret.shape)
+        ret = np.array(ret)
         probs = softmax(ret, axis=1)[:, 1]
         return probs
     return query_multiple
