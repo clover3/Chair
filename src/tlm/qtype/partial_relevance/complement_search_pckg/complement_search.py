@@ -12,8 +12,12 @@ class FuncContentSegJoinPolicy(SegJoinPolicyIF):
     def join_tokens(self, st: SegmentedText, new_tokens: PartialSegment, preserve_seg_idx) -> SegmentedText:
         if preserve_seg_idx == 0: # Preserve func_tokens
             if new_tokens.n_seg > 1:
-                raise Exception("preserve_seg_idx == 0 and new_tokens.n_seg > 1 is not expected")
-            return self.join_new_content(st, new_tokens.data)
+                data, tail = new_tokens.data
+                if tail:
+                    raise ValueError("Tail should be empty when preserve_seg_idx == 0")
+            else:
+                data = new_tokens.data
+            return self.join_new_content(st, data)
         elif preserve_seg_idx == 1:
             if new_tokens.n_seg == 1:
                 head = new_tokens.data

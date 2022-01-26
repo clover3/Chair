@@ -1,9 +1,10 @@
+from typing import List, Callable, Dict, Tuple
+
 from list_lib import index_by_fn
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricIF
 from trainer.promise import MyPromise, PromiseKeeper
-from typing import List, Callable, Dict, Tuple
 
 
 #  candidate metric
@@ -42,7 +43,6 @@ def related_eval(answer_list: List[RelatedEvalAnswer],
             new_prediction = future_prediction.get()
             original_prediction = problem.score
             eval_score = original_prediction - new_prediction  # Higher the better
-            print("{0:.2f} -> {1:.2f}".format(original_prediction, new_prediction))
             eval_score_list.append(eval_score)
     return eval_score_list
 

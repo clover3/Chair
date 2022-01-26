@@ -60,12 +60,9 @@ class PerturbationScorer(AttentionMaskScorerIF):
         full_payload = lmap(enrich, core_payload)
         try:
             output = self.client.predict(full_payload)
-            # output = np.zeros([len(full_payload), 2])
             for x0, x1, x2, mask in full_payload:
                 mask_dict_assert(mask, self.max_seq_length)
-
         except Exception:
-            print(full_payload)
             raise
 
         keys = left(core_payload)

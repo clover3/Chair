@@ -1,31 +1,18 @@
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput, PartialSegment
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance, \
-    SegmentedText
+from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance
 from tlm.qtype.partial_relevance.eval_metric.doc_modify_fns import DocModFunc
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricIF, TupleOfListFuture
 from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 
 
-class EvalMetricByErasure(EvalMetricIF):
-    def __init__(self, forward_fn, seg_join_policy, preserve_seg_idx, doc_modify_fn: DocModFunc):
+class EvalMetricByErasureNoSeg(EvalMetricIF):
+    def __init__(self, forward_fn, seg_join_policy, target_seg_idx, doc_modify_fn: DocModFunc):
         self.seg_join_policy = seg_join_policy
         self.pk = PromiseKeeper(forward_fn)
-        self.preserve_seg_idx = preserve_seg_idx
+        self.target_seg_idx = target_seg_idx
         self.tokenizer = get_tokenizer()
         self.doc_modify_fn: DocModFunc = doc_modify_fn
-
-    def drop_core(self, text: SegmentedText) -> SegmentedText:
-        complement = PartialSegment(([]), 1)
-
-        if self.preserve_seg_idx == 1:
-            keep_seg_idx = 0
-        elif self.preserve_seg_idx == 0:
-            keep_seg_idx = 1
-        else:
-            raise ValueError
-
-        return self.seg_join_policy.join_tokens(text, complement, keep_seg_idx)
 
     def seg_to_future(self, seg: SegmentedInstance) -> MyFuture:
         return MyPromise(seg, self.pk).future()
@@ -39,30 +26,25 @@ class EvalMetricByErasure(EvalMetricIF):
 
         full_query = problem.seg_instance.text1
 
-        drop_query: SegmentedText = self.drop_core(problem.seg_instance.text1)
         drop_doc = self.doc_modify_fn(problem.seg_instance.text2,
-                                        answer.contribution.table[self.preserve_seg_idx],
-                                )
+                                      answer.contribution.table[self.target_seg_idx],
+                                      )
 
         qd = get_future(full_query, problem.seg_instance.text2)
-        drop_q_d = get_future(drop_query, problem.seg_instance.text2)
-        before_futures = [qd, drop_q_d]
+        before_futures = [qd]
 
         drop_d = get_future(full_query, drop_doc)
-        drop_q_drop_d = get_future(drop_query, drop_doc)
-        after_futures = [drop_d, drop_q_drop_d]
+        after_futures = [drop_d]
 
         future_predictions = before_futures, after_futures
         return future_predictions
 
     def convert_future_to_score(self, future_prediction_list) -> float:
         before, after = future_prediction_list
-        qd, drop_q = list_future(before)
-        drop_d, drop_q_drop_d = list_future(after)
+        qd, = list_future(before)
+        drop_d, = list_future(after)
         change_w_full_q = qd - drop_d
-        change_w_drop_q = drop_q-drop_q_drop_d
-        eval_score = change_w_full_q - change_w_drop_q
-        return eval_score
+        return change_w_full_q
 
     def do_duty(self):
         n_item = len(self.pk.X_list)
@@ -71,4 +53,3 @@ class EvalMetricByErasure(EvalMetricIF):
         if expected_time > 10:
             print("Expected time: {0:.0f}sec".format(expected_time))
         self.pk.do_duty(log_size=True)
-

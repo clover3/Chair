@@ -51,7 +51,7 @@ class AttentionGradientScorer(AttentionMaskScorerIF):
         return ContributionSummary(table)
 
 
-def get_attention_mask_predictor():
+def get_attention_mask_gradient_predictor():
     save_path = os.path.join(output_path, "model", "runs", "mmd_Z")
     predictor = PredictorAttentionMaskGradient(2, 512)
     predictor.load_model(save_path)

@@ -3,10 +3,12 @@ from typing import List, Tuple
 
 import numpy as np
 import scipy.special
+from scipy.special import softmax
 
 from data_generator.tokenizer_wo_tf import JoinEncoder
 from list_lib import left
-from misc_lib import get_second
+from misc_lib import get_second, two_digit_float
+from tab_print import tab_print
 from tlm.qtype.partial_relevance.attention_based.bert_masking_common import BERTMaskIF
 from tlm.qtype.partial_relevance.eval_data_structure import QDSegmentedInstance, ContributionSummary, SegmentedInstance
 
@@ -69,17 +71,17 @@ class EvalPerQSeg:
         self.max_seq_length = max_seq_length
         self.join_encoder = JoinEncoder(max_seq_length)
 
-    def eval(self, inst: QDSegmentedInstance, contrib: ContributionSummary) -> List[float]:
-        x0, x1, x2 = self.join_encoder.join(inst.text1_tokens_ids, inst.text2_tokens_ids)
+    def eval(self, inst: SegmentedInstance, contrib: ContributionSummary) -> List[float]:
+        x0, x1, x2 = self.join_encoder.join(inst.text1.tokens_ids, inst.text2.tokens_ids)
         auc_list = []
-        for q_idx in range(inst.get_seg1_len()):
+        for q_idx in range(inst.text1.get_seg_len()):
             l = []
-            for d_idx in range(inst.get_seg2_len()):
+            for d_idx in range(inst.text2.get_seg_len()):
                 k = q_idx, d_idx
                 v = contrib.table[q_idx][d_idx]
                 l.append((k, v))
             l.sort(key=get_second, reverse=True)
-            total_item = inst.get_seg2_len()
+            total_item = inst.text2.get_seg_len()
             payload = []
             num_step = 10
             for i in range(num_step):
@@ -102,6 +104,43 @@ class EvalPerQSeg:
             auc = sum(l2_error) / num_step
             auc_list.append(auc)
         return auc_list
+
+    def verbose_print(self, inst: SegmentedInstance, contrib: ContributionSummary):
+        x0, x1, x2 = self.join_encoder.join(inst.text1.tokens_ids, inst.text2.tokens_ids)
+        for q_idx in range(inst.text1.get_seg_len()):
+            l = []
+            for d_idx in range(inst.text2.get_seg_len()):
+                k = q_idx, d_idx
+                v = contrib.table[q_idx][d_idx]
+                l.append((k, v))
+            l.sort(key=get_second, reverse=True)
+            total_item = inst.text2.get_seg_len()
+            payload = []
+            num_step = 10
+
+            keep_portion_list = [i / num_step for i in range(num_step)]
+            n_item_list = [int(total_item * keep_portion) for keep_portion in keep_portion_list]
+
+            for n_item in n_item_list:
+                drop_indices: List[Tuple[int, int]] = left(l[n_item:])
+                mask_d = indices_to_mask_dict(drop_indices)
+                payload_item = x0, x1, x2, mask_d
+                payload.append(payload_item)
+
+            base_item = x0, x1, x2, {}
+            payload_ex = [base_item] + payload
+            output = self.client.predict(payload_ex)
+            print(output)
+            points = output[1:]
+            base_point = output[0]
+            def get_prob(logits):
+                return softmax(logits, axis=-1)[1]
+
+            print("Base prob", get_prob(base_point))
+            prob_list = list(map(get_prob, points))
+            tab_print("prob", "keep_portion", "n_item")
+            for prob, keep_portion, n_item in zip(prob_list, keep_portion_list, n_item_list):
+                tab_print(two_digit_float(prob), keep_portion, n_item)
 
 
 class AttentionMaskScorerIF(abc.ABC):

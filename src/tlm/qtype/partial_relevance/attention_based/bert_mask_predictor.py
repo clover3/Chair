@@ -112,7 +112,7 @@ class PredictorAttentionMask(BERTMaskIF):
         self.task = transformer_attn_mask(self.hp, num_classes, self.voca_size, False)
         self.sess = init_session()
         self.sess.run(tf.compat.v1.global_variables_initializer())
-        self.batch_size = 64
+        self.batch_size = 32
         self.model_loaded = False
 
     def predict(self, payload):

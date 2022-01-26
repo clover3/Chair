@@ -4,6 +4,7 @@ import nltk
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import flatten
+from misc_lib import get_duplicate_list
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementCandidateGenIF, \
     PartialSegment
 from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
@@ -25,5 +26,11 @@ class ComplementGenBySpanIter(ComplementCandidateGenIF):
                 locations = list(flatten(n_gram))
                 candidate: List[int] = [si.text2.tokens_ids[i] for i in locations]
                 candidates.append(PartialSegment(candidate, 1))
+
+        def get_sig(ps: PartialSegment) -> str:
+            return str(ps.data)
+
+        duplicate_indices = get_duplicate_list(map(get_sig, candidates))
+        candidates = [c for idx, c in enumerate(candidates) if idx not in duplicate_indices]
         return candidates
 

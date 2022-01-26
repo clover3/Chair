@@ -1,13 +1,13 @@
+from typing import List
+
 import numpy as np
 
 from data_generator.tokenizer_wo_tf import get_tokenizer, JoinEncoder, pretty_tokens
 from tlm.data_gen.doc_encode_common import split_by_window, split_window_get_length
 from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import softmax_rev_sigmoid, EvalPerQSeg
-from tlm.qtype.partial_relevance.attention_based.attention_mask_gradient import AttentionGradientScorer, \
-    PredictorAttentionMaskGradient
 from tlm.qtype.partial_relevance.attention_based.bert_masking_client import get_localhost_bert_mask_client
 from tlm.qtype.partial_relevance.attention_based.perturbation_scorer import PerturbationScorer
-from tlm.qtype.partial_relevance.eval_data_structure import QDSegmentedInstance
+from tlm.qtype.partial_relevance.eval_data_structure import SegmentedText, SegmentedInstance
 
 
 def cal2(predictor, inst):
@@ -46,19 +46,20 @@ def main():
     d_tokens_ids = tokenizer.convert_tokens_to_ids(d_tokens)
 
     assert len(q_tokens_ids) == 5
-    q_seg_indices = [[0, 1, 3, 4], [2]]
+    q_seg_indices: List[List[int]] = [[0, 1, 3, 4], [2]]
     window_size = 10
     list(split_by_window(d_tokens_ids, window_size))
     d_seg_len_list = split_window_get_length(d_tokens_ids, window_size)
-
-    inst = QDSegmentedInstance(q_tokens_ids, d_tokens_ids, 1,
-                               len(d_seg_len_list), 2,
-                               d_seg_len_list, q_seg_indices)
-    # predictor = get_bert_mask_predictor()
+    st = 0
+    d_seg_indices = []
+    for l in d_seg_len_list:
+        ed = st + l
+        d_seg_indices.append(list(range(st, ed)))
+        st = ed
+    text1 = SegmentedText(q_tokens_ids, q_seg_indices)
+    text2 = SegmentedText(d_tokens_ids, d_seg_indices)
+    inst = SegmentedInstance(text1, text2)
     predictor = get_localhost_bert_mask_client()
-
-    attention_mask_gradient = PredictorAttentionMaskGradient(2, max_seq_length)
-    scorer2 = AttentionGradientScorer(attention_mask_gradient, max_seq_length)
     scorer = PerturbationScorer(predictor, max_seq_length, dist_l2)
 
     # res = scorer.eval_contribution(inst)
@@ -78,6 +79,7 @@ def main():
 
     auc = eval_model.eval(inst, res)
     print('auc', auc)
+    eval_model.verbose_print(inst, res)
 
 
 if __name__ == "__main__":

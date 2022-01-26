@@ -5,11 +5,24 @@ import numpy as np
 
 from cache import named_tuple_to_json
 from data_generator.tokenizer_wo_tf import pretty_tokens, ids_to_text
+from list_lib import index_by_fn
 from tlm.qtype.content_functional_parsing.qid_to_content_tokens import QueryInfo
 
 
 class ContributionSummary(NamedTuple):
     table: List[List[float]]
+
+    @classmethod
+    def from_single_array(self, arr: List[float], target_seg_idx, n_seg):
+        output = []
+        for i in range(n_seg):
+            if i == target_seg_idx:
+                output.append(arr)
+            else:
+                output.append([])
+        return ContributionSummary(output)
+
+
 
 
 ContributionSummaryDict = Dict[str, List[float]]
@@ -420,3 +433,25 @@ class RelatedEvalAnswer(NamedTuple):
     problem_id: str
     contribution: ContributionSummary
 
+
+class RelatedBinaryAnswer(NamedTuple):
+    problem_id: str
+    indices_list: List[List[int]]
+
+
+def join_p_withother(problems: List[RelatedEvalInstance],
+                     obj_list: List) -> List[Tuple[RelatedEvalInstance, Any]]:
+    pid_to_obj = index_by_fn(lambda e: e.problem_id, obj_list)
+    output = []
+    for p in problems:
+        c = pid_to_obj[p.problem_id]
+        output.append((p, c))
+    return output
+
+
+def get_highlighted_text(tokenizer, drop_indices, text2):
+    all_words = [ids_to_text(tokenizer, text2.get_tokens_for_seg(i)) for i in range(text2.get_seg_len())]
+    for i in drop_indices:
+        all_words[i] = "[{}]".format(all_words[i])
+    text = " ".join(all_words)
+    return text
