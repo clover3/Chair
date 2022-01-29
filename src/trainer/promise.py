@@ -7,19 +7,37 @@ B = TypeVar('B')
 
 
 class PromiseKeeper:
-    def __init__(self, list_fn: Callable[[A], B]):
+    def __init__(self,
+                 list_fn: Callable[[A], B],
+                 time_estimate=None
+                 ):
         self.X_list = []
         self.list_fn = list_fn
+        self.time_estimate = time_estimate
 
     def do_duty(self, log_size=False):
         x_list = list([X.X for X in self.X_list])
+        if self.time_estimate is not None:
+            estimate = self.time_estimate * len(x_list)
+            if estimate > 10:
+                print("Expected time: {0:.0f}sec".format(estimate))
+
         if log_size:
             print("{} items".format(len(x_list)))
 
+        st = time.time()
         y_list = self.list_fn(x_list)
         for X, y in zip(self.X_list, y_list):
             X.future().Y = y
 
+        ed = time.time()
+        if log_size:
+            elapsed = ed - st
+            s_per_inst = elapsed / len(x_list) if len(x_list) else 0
+            print(f"finished in {elapsed}s. {s_per_inst} per item")
+
+    def reset(self):
+        self.X_list = []
 
 T = TypeVar('T')
 
@@ -59,7 +77,6 @@ def list_future(futures):
 
 def promise_to_items(promises: List[MyPromise]):
     return list_future([p.future() for p in promises])
-
 
 
 if __name__ == '__main__':

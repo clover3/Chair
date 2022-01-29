@@ -20,8 +20,10 @@ def save_related_eval_answer(answers: List[RelatedEvalAnswer], dataset_name, met
 def parse_related_eval_answer_from_json(raw_json) -> List[RelatedEvalAnswer]:
     def parse_entry(e) -> RelatedEvalAnswer:
         problem_id = e[0]
+        assert type(problem_id) == str
         score_array_wrap = e[1]
         score_array = score_array_wrap[0]
+        assert type(score_array) == list
         score_type = type(score_array[0][0])
         assert score_type == float or score_type == int
         return RelatedEvalAnswer(problem_id, ContributionSummary(score_array))

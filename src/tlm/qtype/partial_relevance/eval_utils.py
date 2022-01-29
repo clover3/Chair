@@ -3,7 +3,7 @@ from typing import List, Callable, Dict, Tuple
 from list_lib import index_by_fn
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance
-from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricIF
+from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricWCIF
 from trainer.promise import MyPromise, PromiseKeeper
 
 
@@ -50,7 +50,7 @@ def related_eval(answer_list: List[RelatedEvalAnswer],
 def partial_related_eval(answer_list: List[RelatedEvalAnswer],
                          problem_list: List[RelatedEvalInstance],
                          complement_list: List[ComplementSearchOutput],
-                         eval_policy: EvalMetricIF,
+                         eval_policy: EvalMetricWCIF,
                          ) -> List[Tuple[str, float]]:
     pid_to_p: Dict[str, RelatedEvalInstance] = index_by_fn(lambda e: e.problem_id, problem_list)
     pid_to_c: Dict[str, ComplementSearchOutput] = index_by_fn(lambda e: e.problem_id, complement_list)
@@ -67,7 +67,7 @@ def partial_related_eval_inner(
         a_p_c_list: List[Tuple[RelatedEvalAnswer,
                                RelatedEvalInstance,
                                ComplementSearchOutput]],
-        eval_policy: EvalMetricIF,
+        eval_policy: EvalMetricWCIF,
         ) -> List[Tuple[str, float]]:
 
     def get_predictions_for_case(a_p_c: Tuple[RelatedEvalAnswer,

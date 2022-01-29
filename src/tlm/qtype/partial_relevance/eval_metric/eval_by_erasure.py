@@ -3,14 +3,14 @@ from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance, \
     SegmentedText
 from tlm.qtype.partial_relevance.eval_metric.doc_modify_fns import DocModFunc
-from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricIF, TupleOfListFuture
+from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricWCIF, TupleOfListFuture
 from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 
 
-class EvalMetricByErasure(EvalMetricIF):
+class EvalMetricByErasure(EvalMetricWCIF):
     def __init__(self, forward_fn, seg_join_policy, preserve_seg_idx, doc_modify_fn: DocModFunc):
         self.seg_join_policy = seg_join_policy
-        self.pk = PromiseKeeper(forward_fn)
+        self.pk = PromiseKeeper(forward_fn, 0.035)
         self.preserve_seg_idx = preserve_seg_idx
         self.tokenizer = get_tokenizer()
         self.doc_modify_fn: DocModFunc = doc_modify_fn
@@ -65,10 +65,5 @@ class EvalMetricByErasure(EvalMetricIF):
         return eval_score
 
     def do_duty(self):
-        n_item = len(self.pk.X_list)
-        n_per_second = 0.035
-        expected_time = n_item * n_per_second
-        if expected_time > 10:
-            print("Expected time: {0:.0f}sec".format(expected_time))
         self.pk.do_duty(log_size=True)
 

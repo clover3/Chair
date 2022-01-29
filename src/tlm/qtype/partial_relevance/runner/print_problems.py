@@ -7,7 +7,7 @@ from tlm.qtype.partial_relevance.loader import load_mmde_problem
 
 
 def exact_match_check():
-    problems: List[RelatedEvalInstance] = load_mmde_problem("dev_word")
+    problems: List[RelatedEvalInstance] = load_mmde_problem("dev_sent")
     problems = problems
     tokenizer = get_tokenizer()
     n_relevant = 0
@@ -33,6 +33,7 @@ def exact_match_check():
                 print("-----------------------------")
 
     print("{} of {} has non-exact match".format(n_not_found, n_relevant))
+
 
 def main():
     problems: List[RelatedEvalInstance] = load_mmde_problem("dev_word")

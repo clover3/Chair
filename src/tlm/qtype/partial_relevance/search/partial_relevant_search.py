@@ -15,7 +15,7 @@ FutureForCase = Tuple[List[MyFuture], List[Tuple[DMC, List[MyFuture]]]]
 class SearchPartialRelevant:
     def __init__(self, forward_fn, seg_join_policy, doc_modify_fn, preserve_seg_idx):
         self.seg_join_policy = seg_join_policy
-        self.pk = PromiseKeeper(forward_fn)
+        self.pk = PromiseKeeper(forward_fn, 0.035)
         self.preserve_seg_idx = preserve_seg_idx
         self.tokenizer = get_tokenizer()
         self.doc_modify_fn: DocModFunc = doc_modify_fn

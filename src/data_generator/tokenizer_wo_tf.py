@@ -167,9 +167,8 @@ def pretty_tokens(tokens, drop_sharp=False) -> str:
             if drop_sharp:
                 t = t[2:]
             pass
-        else:
+        elif s:
             s += " "
-
 
         if t == "[MASK]":
             after_mask = True

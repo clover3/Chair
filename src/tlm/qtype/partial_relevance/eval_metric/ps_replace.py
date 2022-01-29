@@ -1,0 +1,55 @@
+
+from typing import List, Callable
+
+from data_generator.tokenizer_wo_tf import get_tokenizer
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance
+from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricIF
+from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
+
+
+# Paired-span Replacement
+# Replace paired parts of query and document
+# For some new word w
+# If F(q, d) then F(q-qt+w, d-dt+w)
+# Take maximum of tested w
+
+class PSReplace(EvalMetricIF):
+    def __init__(self,
+                 forward_fn,
+                 pair_modify_fn: Callable[[RelatedEvalAnswer, RelatedEvalInstance, List[int]], SegmentedInstance],
+                 get_word_pool: Callable[[str], List[List[int]]]
+                 ):
+        self.pk = PromiseKeeper(forward_fn, 0.035)
+        self.tokenizer = get_tokenizer()
+        self.pair_modify_fn = pair_modify_fn
+        self.get_word_pool: Callable[[str], List[List[int]]] = get_word_pool
+
+    def seg_to_future(self, seg: SegmentedInstance) -> MyFuture:
+        return MyPromise(seg, self.pk).future()
+
+    def get_predictions_for_case(self,
+                                 problem: RelatedEvalInstance,
+                                 answer: RelatedEvalAnswer,
+                                 ):
+        key = problem.problem_id
+        word_pool: List[List[int]] = self.get_word_pool(key)
+        if not word_pool:
+            raise IndexError()
+        future_list: List[MyFuture] = []
+        for word in word_pool:
+            seg: SegmentedInstance = self.pair_modify_fn(answer, problem, word)
+            new_qd_future: MyFuture = self.seg_to_future(seg)
+            future_list.append(new_qd_future)
+        return future_list
+
+    def convert_future_to_score(self, future_list) -> float:
+        scores = list_future(future_list)
+        pos_indices: List[int] = [idx for idx, s in enumerate(scores) if s > 0.5]
+        pos_rate = len(pos_indices) / len(scores)
+        return pos_rate
+
+    def do_duty(self):
+        self.pk.do_duty()
+
+    def reset(self):
+        self.pk.reset()

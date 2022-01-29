@@ -6,14 +6,14 @@ from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedText, \
     SegmentedInstance
 from tlm.qtype.partial_relevance.eval_metric.doc_modify_fns import DocModFunc
-from tlm.qtype.partial_relevance.eval_metric.ep_common import TupleOfListFuture, EvalMetricIF
+from tlm.qtype.partial_relevance.eval_metric.ep_common import TupleOfListFuture, EvalMetricWCIF
 from trainer.promise import PromiseKeeper, MyFuture, MyPromise, list_future
 
 
-class EvalMetricPartialRelevant(EvalMetricIF):
+class EvalMetricPartialRelevant(EvalMetricWCIF):
     def __init__(self, forward_fn, seg_join_policy, preserve_seg_idx, doc_modify_fn: DocModFunc):
         self.seg_join_policy = seg_join_policy
-        self.pk = PromiseKeeper(forward_fn)
+        self.pk = PromiseKeeper(forward_fn, 0.035)
         self.preserve_seg_idx = preserve_seg_idx
         self.tokenizer = get_tokenizer()
         self.doc_modify_fn: DocModFunc = doc_modify_fn
@@ -37,15 +37,6 @@ class EvalMetricPartialRelevant(EvalMetricIF):
         new_text2 = self.doc_modify_fn(problem.seg_instance.text2,
                                        answer.contribution.table[self.preserve_seg_idx],
                                        )
-
-        # if not complement.complement_list:
-        #     print("No complement for ", problem.problem_id)
-        # else:
-        #     print("Problem: {0}  initial_score={1:.2f}".format(problem.problem_id, problem.score))
-            # print("Before")
-            # print_segment_text(self.tokenizer, problem.seg_instance.text2)
-            # print("After")
-            # print_segment_text(self.tokenizer, new_text2)
 
         after_futures = []
         for c in complement.complement_list:
@@ -107,17 +98,17 @@ class FuturePerCase(NamedTuple):
     after_wo_target_queries: List[MyFuture]
 
 
-class EvalMetricPartialRelevant2(EvalMetricIF):
+class EvalMetricPartialRelevant2(EvalMetricWCIF):
     def __init__(self, forward_fn, seg_join_policy, target_seg_idx, doc_modify_fn: DocModFunc):
         self.seg_join_policy = seg_join_policy
-        self.pk = PromiseKeeper(forward_fn)
+        self.pk = PromiseKeeper(forward_fn, 0.035)
         self.target_seg_idx = target_seg_idx
         self.tokenizer = get_tokenizer()
         self.doc_modify_fn: DocModFunc = doc_modify_fn
 
     def combine_fn(self, text: SegmentedText, complement: PartialSegment) -> SegmentedText:
-        keep_seg_idx = 1 - self.target_seg_idx
-        return self.seg_join_policy.join_tokens(text, complement, keep_seg_idx)
+        drop_seg_idx = 1 - self.target_seg_idx
+        return self.seg_join_policy.join_tokens(text, complement, drop_seg_idx)
 
     def seg_to_future(self, seg: SegmentedInstance) -> MyFuture:
         return MyPromise(seg, self.pk).future()

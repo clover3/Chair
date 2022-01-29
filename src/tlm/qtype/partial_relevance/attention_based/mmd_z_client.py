@@ -19,7 +19,9 @@ def get_mmd_client_wrap() -> Callable[[List[SegmentedInstance]], List[float]]:
             return []
         def encode(item: SegmentedInstance):
             return join_encoder.join(item.text1.tokens_ids, item.text2.tokens_ids)
-        ret = client.send_payload(list(map(encode, items)))
+
+        payload = list(map(encode, items))
+        ret = client.send_payload(payload)
         ret = np.array(ret)
         probs = softmax(ret, axis=1)[:, 1]
         return probs

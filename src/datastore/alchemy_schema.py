@@ -52,7 +52,6 @@ class QueryResultTable(Base, KeyValueBase):
 
 
 from sqlalchemy import create_engine
-
 engine = create_engine(sydney_mysql_path)
 
 

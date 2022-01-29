@@ -7,10 +7,9 @@ from misc_lib import get_second
 from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import indices_to_mask_dict
 from tlm.qtype.partial_relevance.attention_based.bert_mask_predictor import get_bert_mask_predictor
 from tlm.qtype.partial_relevance.attention_based.bert_masking_common import BERTMaskIF, logits_to_score
-from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
 from tlm.qtype.partial_relevance.eval_data_structure import ContributionSummary
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance
-from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricIF, TupleOfListFuture
+from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricWCIF, TupleOfListFuture, EvalMetricIF
 from trainer.promise import MyPromise, PromiseKeeper
 
 
@@ -18,18 +17,17 @@ class EvalMetricByAttentionDrop(EvalMetricIF):
     def __init__(self,
                  forward_fn: Callable[[List[Tuple[SegmentedInstance, Dict]]], List[float]],
                  drop_k, preserve_seg_idx):
-        self.pk = PromiseKeeper(forward_fn)
+        self.pk = PromiseKeeper(forward_fn, 0.035)
         self.preserve_seg_idx = preserve_seg_idx
         self.drop_k = drop_k
 
     def get_predictions_for_case(self,
                                  problem: RelatedEvalInstance,
                                  answer: RelatedEvalAnswer,
-                                 complement: ComplementSearchOutput) -> TupleOfListFuture:
+                                 ) -> TupleOfListFuture:
         def get_future(seg: SegmentedInstance, mask: Dict):
             item = seg, mask
             return MyPromise(item, self.pk).future()
-
         mask_d = get_mask(answer.contribution,
                           self.drop_k,
                           problem.seg_instance,
@@ -52,6 +50,13 @@ class EvalMetricByAttentionDrop(EvalMetricIF):
 
     def do_duty(self):
         self.pk.do_duty(log_size=True)
+
+
+class EvalMetricByAttentionDropWC(EvalMetricWCIF):
+    def __init__(self, forward_fn: Callable[[List[Tuple[SegmentedInstance, Dict]]], List[float]],
+                 drop_k, preserve_seg_idx):
+        inner = EvalMetricByAttentionDrop(forward_fn, drop_k, preserve_seg_idx)
+        super(EvalMetricByAttentionDropWC, self).__init__(inner)
 
 
 class AttentionEvalCore:
