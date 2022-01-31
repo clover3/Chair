@@ -16,7 +16,7 @@ from tlm.qtype.partial_relevance.attention_based.attention_mask_gradient import 
 from tlm.qtype.partial_relevance.attention_based.bert_masking_client import get_localhost_bert_mask_client
 from tlm.qtype.partial_relevance.attention_based.bert_masking_common import dist_l2
 from tlm.qtype.partial_relevance.attention_based.perturbation_scorer import PerturbationScorer
-from tlm.qtype.partial_relevance.eval_data_structure import QDSegmentedInstance
+from tlm.qtype.partial_relevance.qd_segmented_instance import QDSegmentedInstance
 from tlm.qtype.qtype_instance import QTypeInstance
 
 

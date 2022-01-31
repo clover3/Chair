@@ -5,11 +5,11 @@ from tlm.qtype.partial_relevance.attention_based.mmd_z_client import get_mmd_cli
 from tlm.qtype.partial_relevance.complement_path_data_helper import load_complements
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_search import FuncContentSegJoinPolicy
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance
-from tlm.qtype.partial_relevance.eval_metric.doc_modify_fns import DocModFunc, get_top_k_fn
 from tlm.qtype.partial_relevance.eval_metric.eval_by_attn import EvalMetricByAttentionDrop, get_attn_mask_forward_fn
 from tlm.qtype.partial_relevance.eval_metric.eval_by_erasure import EvalMetricByErasure
 from tlm.qtype.partial_relevance.eval_metric.partial_relevant import EvalMetricPartialRelevant, \
     EvalMetricPartialRelevant2
+from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFunc, get_top_k_fn
 from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result
 from tlm.qtype.partial_relevance.eval_utils import partial_related_eval
 from tlm.qtype.partial_relevance.loader import load_mmde_problem

@@ -36,7 +36,7 @@ def exact_match_check():
 
 
 def main():
-    problems: List[RelatedEvalInstance] = load_mmde_problem("dev_word")
+    problems: List[RelatedEvalInstance] = load_mmde_problem("dev_sent")
     problems = problems
     predictor = get_localhost_bert_mask_client()
     max_seq_length = 512
@@ -50,6 +50,7 @@ def main():
         if query not in seen_query:
             input("Enter to continue")
             seen_query.add(query)
+        print("PID: ", p.problem_id)
         print("Query: " + query)
         print("Score: {0:.2f}".format(p.score))
         print("Document: ", doc)
@@ -57,4 +58,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exact_match_check()
+    main()

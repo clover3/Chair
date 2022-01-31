@@ -1,9 +1,10 @@
 
 import copy
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Tuple
 
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedText
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
+from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 
 
 def backtracking(deletion_array: List[bool], max_segment, is_flip) -> List[Tuple[List[bool], List[bool]]]:

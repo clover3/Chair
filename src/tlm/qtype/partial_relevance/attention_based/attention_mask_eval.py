@@ -10,7 +10,8 @@ from list_lib import left
 from misc_lib import get_second, two_digit_float
 from tab_print import tab_print
 from tlm.qtype.partial_relevance.attention_based.bert_masking_common import BERTMaskIF
-from tlm.qtype.partial_relevance.eval_data_structure import QDSegmentedInstance, ContributionSummary, SegmentedInstance
+from tlm.qtype.partial_relevance.eval_data_structure import ContributionSummary, SegmentedInstance
+from tlm.qtype.partial_relevance.qd_segmented_instance import QDSegmentedInstance
 
 
 def softmax_rev_sigmoid(logits):

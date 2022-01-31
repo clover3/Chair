@@ -2,7 +2,6 @@ from typing import Callable, List
 
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_search import FuncContentSegJoinPolicy
 from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
-from tlm.qtype.partial_relevance.eval_metric.doc_modify_fns import DocModFunc, get_drop_non_zero, get_drop_zero
 from tlm.qtype.partial_relevance.eval_metric.dt_deletion import DTDeletion, EvalMetricLeaveOneWC, \
     EvalMetricByErasureNoSegWC
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricWCIF, EvalMetricIF
@@ -11,6 +10,7 @@ from tlm.qtype.partial_relevance.eval_metric.eval_by_attn import EvalMetricByAtt
 from tlm.qtype.partial_relevance.eval_metric.eval_by_erasure import EvalMetricByErasure
 from tlm.qtype.partial_relevance.eval_metric.partial_relevant import EvalMetricPartialRelevant, \
     EvalMetricPartialRelevant2
+from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFunc, get_drop_non_zero, get_drop_zero
 from tlm.qtype.partial_relevance.runner.run_eval.run_partial_related_full_eval import get_mmd_client
 
 

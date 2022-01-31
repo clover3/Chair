@@ -105,5 +105,19 @@ def main2():
     # print_paired_binary(dataset_list, method_list, metric_list)
 
 
+def main3():
+    dataset_list = ["dev_sent"]
+    method_list = ["exact_match", "exact_match_noise0.1", ]
+    for option in ["precision", "recall"]:
+        for target_idx in [0, 1]:
+            metric_list = []
+            for wordset in ["emptyword", "100words"]:
+                metric = f"replace_{option}_{wordset}_{target_idx}"
+                metric_list.append(metric)
+            print_paired_ttest(dataset_list, method_list, metric_list)
+    # print_paired_binary(dataset_list, method_list, metric_list)
+
+
+
 if __name__ == "__main__":
-    main2()
+    main3()

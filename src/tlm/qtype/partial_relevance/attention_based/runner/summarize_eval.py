@@ -3,7 +3,7 @@ from typing import List, Tuple
 from cache import load_from_pickle
 from misc_lib import average
 from tab_print import print_table
-from tlm.qtype.partial_relevance.eval_data_structure import QDSegmentedInstance
+from tlm.qtype.partial_relevance.qd_segmented_instance import QDSegmentedInstance
 
 
 def get_all_avg(auc_list: List[Tuple[QDSegmentedInstance, List[float]]]) -> float:

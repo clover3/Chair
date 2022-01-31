@@ -3,10 +3,10 @@ from typing import Tuple, List, NamedTuple
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import get_max_idx
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput, PartialSegment
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedText, \
-    SegmentedInstance
-from tlm.qtype.partial_relevance.eval_metric.doc_modify_fns import DocModFunc
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import TupleOfListFuture, EvalMetricWCIF
+from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFunc
+from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 from trainer.promise import PromiseKeeper, MyFuture, MyPromise, list_future
 
 

@@ -7,7 +7,8 @@ from data_generator.tokenizer_wo_tf import is_continuation, get_tokenizer
 from scipy_aux import logit_to_score_softmax
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 from tlm.qtype.content_functional_parsing.qid_to_content_tokens import QueryInfo, load_query_info_dict
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance, RelatedEvalInstance, SegmentedText
+from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance, RelatedEvalInstance
+from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 
 
 def get_word_level_location_w_ids(tokenizer, input_ids) -> List[List[int]]:

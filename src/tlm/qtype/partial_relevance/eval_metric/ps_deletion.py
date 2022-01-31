@@ -2,10 +2,10 @@
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import PartialSegment
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance, \
-    SegmentedText
-from tlm.qtype.partial_relevance.eval_metric.doc_modify_fns import DocModFunc
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import TupleOfListFuture, EvalMetricIF
+from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFunc
+from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 
 

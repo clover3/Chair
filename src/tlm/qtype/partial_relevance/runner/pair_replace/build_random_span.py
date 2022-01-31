@@ -41,8 +41,7 @@ def get_syntactic_tag(tokens):
         return covering_root.dep_
 
 
-# TODO
-#   given (qt,dt), find n-gram vocabulary that are 'comparable' to dt.
+#  given (qt,dt), find n-gram vocabulary that are 'comparable' to dt.
 #
 # Example dt spans
 #   found in soil and dust?

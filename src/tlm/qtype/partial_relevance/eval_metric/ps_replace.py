@@ -13,16 +13,29 @@ from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 # If F(q, d) then F(q-qt+w, d-dt+w)
 # Take maximum of tested w
 
+def discretized_average(scores):
+    pos_indices: List[int] = [idx for idx, s in enumerate(scores) if s > 0.5]
+    pos_rate = len(pos_indices) / len(scores)
+    return pos_rate
+
+
+def discretized_average_minus(scores):
+    pos_rate = discretized_average(scores)
+    return 1 - pos_rate
+
+
 class PSReplace(EvalMetricIF):
     def __init__(self,
                  forward_fn,
                  pair_modify_fn: Callable[[RelatedEvalAnswer, RelatedEvalInstance, List[int]], SegmentedInstance],
-                 get_word_pool: Callable[[str], List[List[int]]]
+                 get_word_pool: Callable[[str], List[List[int]]],
+                 score_combine_fn: Callable[[List[float]], float]
                  ):
         self.pk = PromiseKeeper(forward_fn, 0.035)
         self.tokenizer = get_tokenizer()
         self.pair_modify_fn = pair_modify_fn
         self.get_word_pool: Callable[[str], List[List[int]]] = get_word_pool
+        self.score_combine_fn = score_combine_fn
 
     def seg_to_future(self, seg: SegmentedInstance) -> MyFuture:
         return MyPromise(seg, self.pk).future()
@@ -44,8 +57,7 @@ class PSReplace(EvalMetricIF):
 
     def convert_future_to_score(self, future_list) -> float:
         scores = list_future(future_list)
-        pos_indices: List[int] = [idx for idx, s in enumerate(scores) if s > 0.5]
-        pos_rate = len(pos_indices) / len(scores)
+        pos_rate = self.score_combine_fn(scores)
         return pos_rate
 
     def do_duty(self):

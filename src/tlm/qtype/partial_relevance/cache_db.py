@@ -6,7 +6,6 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from cpath import at_output_dir
 from datastore.cache_sql import get_engine_from_sqlite_path, CacheTable, Base, index_table
-from misc_lib import tprint
 
 
 def get_cache_sqlite_path():
@@ -23,13 +22,7 @@ def has_key(session, table_class, key):
 
 
 def bulk_save(sqlite_path, key_and_value_list):
-    # old_path = sqlite_path + ".old"
-    # if os.path.exists(old_path):
-    #     os.remove(old_path)
-    # os.rename(sqlite_path, sqlite_path + ".old")
-    #
-    # build_db(sqlite_path)
-    tprint("bulk_save ENTRY")
+    # tprint("bulk_save ENTRY")
     engine = get_engine_from_sqlite_path(sqlite_path)
     session_maker = sessionmaker(bind=engine)
     session = session_maker()
@@ -39,7 +32,7 @@ def bulk_save(sqlite_path, key_and_value_list):
             session.add(e)
             session.flush()
     session.commit()
-    tprint("bulk_save EXIT")
+    # tprint("bulk_save EXIT")
 
 
 def read_cache_from_sqlite(sqlite_path) -> Dict:

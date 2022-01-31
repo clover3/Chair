@@ -14,7 +14,7 @@ FUNC_SIG = Callable[[List[SegmentedInstance]], List[float]]
 
 
 class MMDCacheClient:
-    def __init__(self, forward_fn, save_path=None):
+    def __init__(self, forward_fn, save_path=None, save_per_prediction=False):
         if save_path is None:
             save_path = get_cache_sqlite_path()
         try:
@@ -34,9 +34,13 @@ class MMDCacheClient:
             overhead_calc
         )
         self.save_path = save_path
+        self.save_per_prediction = save_per_prediction
 
     def predict(self, segs: List[SegmentedInstance]) -> List[float]:
-        return self.inner_cache_client.predict(segs)
+        ret = self.inner_cache_client.predict(segs)
+        if self.save_per_prediction:
+            self.save_cache()
+        return ret
 
     def save_cache(self):
         bulk_save(self.save_path, self.inner_cache_client.get_new_items())
@@ -47,6 +51,10 @@ class MMDCacheClient:
 
 
 def get_mmd_cache_client(option) -> MMDCacheClient:
+    """
+
+    :rtype: object
+    """
     forward_fn = get_mmd_client(option)
     cache_client = MMDCacheClient(forward_fn, get_cache_sqlite_path())
     return cache_client
