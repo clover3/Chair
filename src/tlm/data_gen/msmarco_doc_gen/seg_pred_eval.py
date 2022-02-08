@@ -53,7 +53,7 @@ def get_scores(info_file_path, input_type, pred_file_path, score_type):
     sc = SuccessCounter()
     for pair_id, items in grouped.items():
         label_idx = []
-        max_score_idx = find_max_idx(items, get_score)
+        max_score_idx = find_max_idx(get_score, items)
         max_item = items[max_score_idx]
         for item in items:
             if item['label']:

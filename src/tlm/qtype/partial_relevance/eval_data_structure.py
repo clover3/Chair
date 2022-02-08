@@ -50,6 +50,20 @@ class SegmentedInstance(NamedTuple):
                             new_mask[k] = int(v)
         return new_mask
 
+    def translate_mask_d(self, drop_mask) -> Dict[Tuple[int, int], int]:
+        new_mask = {}
+        for q_seg_idx in range(self.text1.get_seg_len()):
+            for d_seg_idx in range(self.text2.get_seg_len()):
+                try:
+                    v = drop_mask[q_seg_idx, d_seg_idx]
+                    if v:
+                        for q_token_idx in self.text1.enum_token_idx_from_seg_idx(q_seg_idx):
+                            for d_token_idx in self.enum_token_idx_from_seg2_idx(d_seg_idx):
+                                k = q_token_idx, d_token_idx
+                                new_mask[k] = int(v)
+                except KeyError:
+                    pass
+        return new_mask
     def accumulate_over(self, raw_scores, accumulate_method: Callable[[List[float]], float]):
         scores_d = defaultdict(list)
         for q_seg_idx in range(self.text1.get_seg_len()):
@@ -180,7 +194,7 @@ class RelatedEvalAnswer(NamedTuple):
 
 class RelatedBinaryAnswer(NamedTuple):
     problem_id: str
-    indices_list: List[List[int]]
+    score_table: List[List[int]]
 
 
 def join_p_withother(problems: List[RelatedEvalInstance],
@@ -195,6 +209,7 @@ def join_p_withother(problems: List[RelatedEvalInstance],
 
 def get_test_segment_instance() -> SegmentedInstance:
     query = 'Where is coffee from?'
+    doc_short = "The one of earliest credible evidence of the drinking of coffee in the form of the modern beverage appears in modern-day Yemen from the middle of the 15th century in Sufi shrines,"
     doc = "The one of earliest credible evidence of the drinking of coffee in the form of the modern beverage appears in modern-day Yemen from the middle of the 15th century in Sufi shrines, where coffee seeds were first roasted and brewed in a manner similar to current methods.[2] The Yemenis procured the coffee beans from the Ethiopian Highlands via coastal Somali intermediaries and began cultivation. By the 16th century, the drink had reached the rest of the Middle East and North Africa, later spreading to Europe"
     tokenizer = get_tokenizer()
     q_tokens_ids = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(query))

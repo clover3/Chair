@@ -24,7 +24,7 @@ def enum_best_segments(get_score_fn, info, max_seg=4) -> Iterable[Dict]:
             return get_score_fn(e['input_ids'])
 
         sub_entries = [e for e in sub_entries if e['passage_idx'] < max_seg]
-        max_idx = find_max_idx(sub_entries, get_score)
+        max_idx = find_max_idx(get_score, sub_entries)
 
         selected_raw_entry = sub_entries[max_idx]
         yield selected_raw_entry

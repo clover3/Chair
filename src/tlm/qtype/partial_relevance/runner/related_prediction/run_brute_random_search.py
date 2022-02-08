@@ -5,9 +5,9 @@ from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
 from list_lib import left
 from misc_lib import get_second, NamedAverager
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance
-from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_drop_non_zero, DocModFunc
+from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_drop_non_zero, DocModFuncB
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
-from tlm.qtype.partial_relevance.runner.run_eval.run_partial_related_full_eval import get_mmd_client
+from tlm.qtype.partial_relevance.runner.run_eval_old.run_partial_related_full_eval import get_mmd_client
 
 
 def get_highlighted_text(tokenizer, drop_indices, n_seg, text2):
@@ -76,7 +76,7 @@ def run_search(dataset, model_interface="localhost"):
     problems: List[RelatedEvalInstance] = load_mmde_problem(dataset)
     problems = [p for p in problems if p.score >= 0.5]
     problems = problems[:1]
-    doc_mod_fn: DocModFunc = get_drop_non_zero()
+    doc_mod_fn: DocModFuncB = get_drop_non_zero()
     forward_fn: Callable[[List[SegmentedInstance]], List[float]] = get_mmd_client(model_interface)
 
     searcher = Searcher(forward_fn, doc_mod_fn)

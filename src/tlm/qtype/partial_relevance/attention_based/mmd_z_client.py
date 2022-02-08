@@ -17,6 +17,7 @@ def get_mmd_client_wrap() -> Callable[[List[SegmentedInstance]], List[float]]:
     def query_multiple(items: List[SegmentedInstance]) -> List[float]:
         if len(items) == 0:
             return []
+
         def encode(item: SegmentedInstance):
             return join_encoder.join(item.text1.tokens_ids, item.text2.tokens_ids)
 

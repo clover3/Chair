@@ -3,11 +3,11 @@ from typing import List, Tuple
 
 from misc_lib import average
 from tab_print import tab_print
-from tlm.qtype.partial_relevance.eval_score_dp_helper import get_eval_score_save_path
+from tlm.qtype.partial_relevance.eval_score_dp_helper import get_eval_score_save_path_r
 
 
 def load_eval_result(run_name) -> List[Tuple[str, float]]:
-    save_path = get_eval_score_save_path(run_name)
+    save_path = get_eval_score_save_path_r(run_name)
     with open(save_path, "r") as f:
         reader = csv.reader(f, delimiter='\t')
         def parse_row(row):

@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+import models.bert_util.bert_utils
 from explain.pairing.probe.model_core import build_model
 from tf_util.tf_logging import tf_logging
 from trainer.multi_gpu_support import get_multiple_models, get_avg_loss, get_avg_tensors_from_models, \
@@ -27,7 +28,7 @@ class ClsProbeModel:
             task_model_, probe_predictor_list = build_model_fn()
             loss_tensor = probe_predictor_list.loss
             per_layer_loss = probe_predictor_list.all_losses
-            batch2feed_dict = task_model_.batch2feed_dict
+            batch2feed_dict = models.bert_util.bert_utils.batch2feed_dict_4_or_5_inputs
             logits = task_model_.logits
             per_layer_logit_tensor = probe_predictor_list.per_layer_logits
             self.match_predictor = probe_predictor_list

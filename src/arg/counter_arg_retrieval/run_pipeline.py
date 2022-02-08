@@ -43,7 +43,7 @@ def get_best_segment(bm25_module: BM25Bare, html_content: str, query: str) -> Tu
         candidate_list.append(candidate)
         idx += step
 
-    max_idx = find_max_idx(candidate_list, get_first)
+    max_idx = find_max_idx(get_first, candidate_list)
     score, st, ed = candidate_list[max_idx]
     passage_text = " ".join(map(StemmedToken.get_raw_token, doc_tokens[st:ed]))
     return passage_text, score

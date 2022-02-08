@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+import models.bert_util.bert_utils
 from explain.explain_model import CrossEntropyModeling, CorrelationModeling
 from explain.pairing.match_predictor import build_model
 from tf_util.tf_logging import tf_logging
@@ -28,7 +29,7 @@ class LMSModel:
             task_model_, ex_model_, match_predictor = build_model_fn()
             loss_tensor = match_predictor.loss
             per_layer_loss = match_predictor.all_losses
-            batch2feed_dict = task_model_.batch2feed_dict
+            batch2feed_dict = models.bert_util.bert_utils.batch2feed_dict_4_or_5_inputs
             logits = task_model_.logits
             ex_score_tensor = ex_model_.get_ex_scores(lms_config.target_idx)
             per_layer_logit_tensor = match_predictor.per_layer_logits

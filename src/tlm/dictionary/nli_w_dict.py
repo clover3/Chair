@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 from absl import app
 
+import models.bert_util.bert_utils
 import trainer.tf_train_module_v2 as train_module
 from cache import save_to_pickle
 from cpath import output_path, get_bert_full_path, get_latest_model_path_from_dir_path
@@ -110,13 +111,13 @@ class WSSDRRunner:
 
     def run_batch(self, batch):
         loss_val, acc = self.sess.run([self.model.get_cls_loss(), self.model.get_acc()],
-                                      feed_dict=self.model.batch2feed_dict(batch)
+                                      feed_dict=models.bert_util.bert_utils.batch2feed_dict_4_or_5_inputs(batch)
                                       )
         return loss_val, acc
 
     def get_term_rank(self, batch):
         logits, = self.sess.run([self.model.get_lookup_logits()],
-                           feed_dict=self.model.batch2feed_dict(batch)
+                           feed_dict=models.bert_util.bert_utils.batch2feed_dict_4_or_5_inputs(batch)
                            )
         ranks = np.argsort(logits[:, :, 1], axis=1)
         return np.flip(ranks, axis=1)
@@ -192,7 +193,7 @@ def demo_nli_w_dict(run_name,
             cache_name = "term_ranks_logits_cache"
             #logits = load_cache(cache_name)
             logits, = runner.sess.run([runner.model.get_lookup_logits()],
-                                    feed_dict=runner.model.batch2feed_dict(batch)
+                                    feed_dict=models.bert_util.bert_utils.batch2feed_dict_4_or_5_inputs(batch)
                                     )
             raw_scores = logits[:, :, 1]
             term_ranks = np.argsort(logits[:, :, 1], axis=1)

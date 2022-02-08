@@ -4,13 +4,13 @@ from typing import List
 from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import AttentionMaskScorerIF
 from tlm.qtype.partial_relevance.attention_based.attention_mask_gradient import AttentionGradientScorer, \
     get_attention_mask_gradient_predictor
-from tlm.qtype.partial_relevance.attention_based.bert_mask_predictor import get_bert_mask_predictor
 from tlm.qtype.partial_relevance.attention_based.bert_masking_common import later_score_prob
 from tlm.qtype.partial_relevance.attention_based.perturbation_scorer import PerturbationScorer
+from tlm.qtype.partial_relevance.bert_mask_interface.bert_mask_predictor import get_bert_mask_predictor
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
-from tlm.qtype.partial_relevance.methdos.exact_match_scorer import ExactMatchScorer
-from tlm.qtype.partial_relevance.methdos.random_score import RandomScorer
+from tlm.qtype.partial_relevance.methods.exact_match_scorer import ExactMatchScorer
+from tlm.qtype.partial_relevance.methods.random_score import RandomScorer
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import save_related_eval_answer
 from tlm.qtype.partial_relevance.runner.related_prediction.related_scoring_common import run_scoring
 

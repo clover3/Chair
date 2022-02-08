@@ -2,8 +2,9 @@
 from typing import List, Callable
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance
-from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricIF
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance, \
+    RelatedBinaryAnswer
+from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricBinaryIF
 from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 
 
@@ -24,10 +25,10 @@ def discretized_average_minus(scores):
     return 1 - pos_rate
 
 
-class PSReplace(EvalMetricIF):
+class PSReplace(EvalMetricBinaryIF):
     def __init__(self,
                  forward_fn,
-                 pair_modify_fn: Callable[[RelatedEvalAnswer, RelatedEvalInstance, List[int]], SegmentedInstance],
+                 pair_modify_fn: Callable[[RelatedBinaryAnswer, RelatedEvalInstance, List[int]], SegmentedInstance],
                  get_word_pool: Callable[[str], List[List[int]]],
                  score_combine_fn: Callable[[List[float]], float]
                  ):
@@ -42,7 +43,7 @@ class PSReplace(EvalMetricIF):
 
     def get_predictions_for_case(self,
                                  problem: RelatedEvalInstance,
-                                 answer: RelatedEvalAnswer,
+                                 answer: RelatedBinaryAnswer,
                                  ):
         key = problem.problem_id
         word_pool: List[List[int]] = self.get_word_pool(key)

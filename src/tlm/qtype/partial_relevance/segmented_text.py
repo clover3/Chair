@@ -60,13 +60,23 @@ class SegmentedText(NamedTuple):
     def from_json(cls, j):
         return SegmentedText(j['tokens_ids'], j['seg_token_indices'])
 
+    @classmethod
+    def from_tokens_ids(cls, tokens_ids):
+        seg_token_indices = [[i] for i in range(len(tokens_ids))]
+        return SegmentedText(tokens_ids, seg_token_indices)
+
+
     def get_readable_rep(self, tokenizer):
         s_list = []
         for i in self.enum_seg_idx():
-            s = ids_to_text(tokenizer, self.get_tokens_for_seg(i))
-            s_out = f"{i}) {s}"
+            s_out = self.get_segment_tokens_rep(tokenizer, i)
             s_list.append(s_out)
         return " ".join(s_list)
+
+    def get_segment_tokens_rep(self, tokenizer, i):
+        s = ids_to_text(tokenizer, self.get_tokens_for_seg(i))
+        s_out = f"{i}) {s}"
+        return s_out
 
 
 def get_replaced_segment(s: SegmentedText, drop_indices: List[int], tokens_tbi: List[int]) -> SegmentedText:

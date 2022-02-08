@@ -12,9 +12,9 @@ from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
 from tlm.qtype.partial_relevance.eval_metric.ps_replace_helper import get_ps_replace_w_fixed_word_pool, \
     get_100_random_spans, ReplaceeSpan, get_ps_replace_inner
-from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result
+from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result_r
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
-from tlm.qtype.partial_relevance.mmd_cached_client import get_mmd_cache_client, MMDCacheClient
+from tlm.qtype.partial_relevance.mmd_cached_client import get_mmd_cache_client, SQLBasedCacheClient
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_related_eval_answer
 from trainer.promise import list_future
 
@@ -77,7 +77,7 @@ def run_all_combinations():
     dataset_name = "dev_sent"
     # method = "exact_match"
     method = "exact_match_noise0.1"
-    cache_client: MMDCacheClient = get_mmd_cache_client("localhost")
+    cache_client: SQLBasedCacheClient = get_mmd_cache_client("localhost")
     forward_fn: Callable[[List[SegmentedInstance]], List[float]] = cache_client.predict
     # word_set = "emptyword"
     # replacee_span_list = get_mask_empty_as_span()
@@ -100,7 +100,7 @@ def run_for_case(cache_client, dataset_name, forward_fn, method, replacee_span_l
             policy_name = f"replace_{option_as_metric}_{word_set}_{target_idx}"
             run_name = f"{dataset_name}_{method}_{policy_name}"
             scores_d[key] = score_per_answer
-            save_eval_result(score_per_answer, run_name)
+            save_eval_result_r(score_per_answer, run_name)
             # pos_rate_per_word_d[key] = pos_rate_per_word
 
 
@@ -108,7 +108,7 @@ def run_all_combinations2():
     dataset_name = "dev_sent"
     # method = "exact_match"
     method = "exact_match_noise0.1"
-    cache_client: MMDCacheClient = get_mmd_cache_client("localhost")
+    cache_client: SQLBasedCacheClient = get_mmd_cache_client("localhost")
     forward_fn: Callable[[List[SegmentedInstance]], List[float]] = cache_client.predict
     word_set = "close10"
     replacee_span_list = get_100_random_spans()
@@ -135,7 +135,7 @@ def run_for_case2(cache_client, dataset_name, forward_fn, method, replacee_span_
             policy_name = f"replace_{option_as_metric}_{word_set}_{target_idx}"
             run_name = f"{dataset_name}_{method}_{policy_name}"
             scores_d[key] = score_per_answer
-            save_eval_result(score_per_answer, run_name)
+            save_eval_result_r(score_per_answer, run_name)
             # pos_rate_per_word_d[key] = pos_rate_per_word
 
 

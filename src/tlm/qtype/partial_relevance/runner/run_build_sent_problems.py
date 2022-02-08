@@ -7,7 +7,7 @@ from epath import job_man_dir
 from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance, RelatedEvalInstance
 from tlm.qtype.partial_relevance.problem_builder import word_segment_w_indices, \
     build_sentence_as_doc
-from tlm.qtype.partial_relevance.runner.run_eval.run_partial_related_full_eval import get_mmd_client
+from tlm.qtype.partial_relevance.runner.run_eval_old.run_partial_related_full_eval import get_mmd_client
 from tlm.qtype.partial_relevance.runner.sent_tokenize_dev import sentence_segment_w_indices
 
 

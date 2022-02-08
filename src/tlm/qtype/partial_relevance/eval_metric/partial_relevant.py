@@ -3,20 +3,21 @@ from typing import Tuple, List, NamedTuple
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import get_max_idx
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput, PartialSegment
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance
-from tlm.qtype.partial_relevance.eval_metric.ep_common import TupleOfListFuture, EvalMetricWCIF
-from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFunc
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance, \
+    RelatedBinaryAnswer
+from tlm.qtype.partial_relevance.eval_metric.ep_common import TupleOfListFuture, EvalMetricBinaryWCIF
+from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFuncB
 from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 from trainer.promise import PromiseKeeper, MyFuture, MyPromise, list_future
 
 
-class EvalMetricPartialRelevant(EvalMetricWCIF):
-    def __init__(self, forward_fn, seg_join_policy, preserve_seg_idx, doc_modify_fn: DocModFunc):
+class EvalMetricPartialRelevant(EvalMetricBinaryWCIF):
+    def __init__(self, forward_fn, seg_join_policy, preserve_seg_idx, doc_modify_fn: DocModFuncB):
         self.seg_join_policy = seg_join_policy
         self.pk = PromiseKeeper(forward_fn, 0.035)
         self.preserve_seg_idx = preserve_seg_idx
         self.tokenizer = get_tokenizer()
-        self.doc_modify_fn: DocModFunc = doc_modify_fn
+        self.doc_modify_fn: DocModFuncB = doc_modify_fn
 
     def combine_fn(self, text: SegmentedText, complement: PartialSegment) -> SegmentedText:
         return self.seg_join_policy.join_tokens(text, complement, self.preserve_seg_idx)
@@ -26,7 +27,7 @@ class EvalMetricPartialRelevant(EvalMetricWCIF):
 
     def get_predictions_for_case(self,
                                  problem: RelatedEvalInstance,
-                                 answer: RelatedEvalAnswer,
+                                 answer: RelatedBinaryAnswer,
                                  complement: ComplementSearchOutput) -> TupleOfListFuture:
         before_futures = []
         for c in complement.complement_list:
@@ -35,7 +36,7 @@ class EvalMetricPartialRelevant(EvalMetricWCIF):
             before_futures.append(self.seg_to_future(new_query_rel_doc))
 
         new_text2 = self.doc_modify_fn(problem.seg_instance.text2,
-                                       answer.contribution.table[self.preserve_seg_idx],
+                                       answer.score_table[self.preserve_seg_idx],
                                        )
 
         after_futures = []
@@ -98,13 +99,13 @@ class FuturePerCase(NamedTuple):
     after_wo_target_queries: List[MyFuture]
 
 
-class EvalMetricPartialRelevant2(EvalMetricWCIF):
-    def __init__(self, forward_fn, seg_join_policy, target_seg_idx, doc_modify_fn: DocModFunc):
+class EvalMetricPartialRelevant2(EvalMetricBinaryWCIF):
+    def __init__(self, forward_fn, seg_join_policy, target_seg_idx, doc_modify_fn: DocModFuncB):
         self.seg_join_policy = seg_join_policy
         self.pk = PromiseKeeper(forward_fn, 0.035)
         self.target_seg_idx = target_seg_idx
         self.tokenizer = get_tokenizer()
-        self.doc_modify_fn: DocModFunc = doc_modify_fn
+        self.doc_modify_fn: DocModFuncB = doc_modify_fn
 
     def combine_fn(self, text: SegmentedText, complement: PartialSegment) -> SegmentedText:
         drop_seg_idx = 1 - self.target_seg_idx
@@ -115,7 +116,7 @@ class EvalMetricPartialRelevant2(EvalMetricWCIF):
 
     def get_predictions_for_case(self,
                                  problem: RelatedEvalInstance,
-                                 answer: RelatedEvalAnswer,
+                                 answer: RelatedBinaryAnswer,
                                  complement: ComplementSearchOutput) -> FuturePerCase:
         before_target_less_queries = []
         for c in complement.complement_list:
@@ -126,7 +127,7 @@ class EvalMetricPartialRelevant2(EvalMetricWCIF):
         before_w_target_queries = [self.seg_to_future(problem.seg_instance)]
 
         new_text2 = self.doc_modify_fn(problem.seg_instance.text2,
-                                       answer.contribution.table[self.target_seg_idx],
+                                       answer.score_table[self.target_seg_idx],
                                        )
 
         after_w_target_queries = [self.seg_to_future(SegmentedInstance(problem.seg_instance.text1, new_text2))]

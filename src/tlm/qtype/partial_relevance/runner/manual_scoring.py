@@ -5,7 +5,7 @@ from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance, R
 from tlm.qtype.partial_relevance.eval_metric.ps_replace_helper import get_100_random_spans, \
     get_ps_replace_w_fixed_word_pool
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
-from tlm.qtype.partial_relevance.mmd_cached_client import MMDCacheClient, get_mmd_cache_client
+from tlm.qtype.partial_relevance.mmd_cached_client import SQLBasedCacheClient, get_mmd_cache_client
 
 
 def get_score(problem, answer, eval_metric):
@@ -24,7 +24,7 @@ def get_answer_from_input(target_seg_idx, problem) -> RelatedEvalAnswer:
 def main():
     dataset_name = "dev_sent"
     problems = load_mmde_problem(dataset_name)
-    cache_client: MMDCacheClient = get_mmd_cache_client("localhost")
+    cache_client: SQLBasedCacheClient = get_mmd_cache_client("localhost")
     forward_fn: Callable[[List[SegmentedInstance]], List[float]] = cache_client.predict
     target_idx = 0
     replacee_span_list = get_100_random_spans()

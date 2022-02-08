@@ -1,7 +1,7 @@
 import port_info
 from rpc.bert_like_server import BertLikeServer
-from tlm.qtype.partial_relevance.attention_based.bert_mask_predictor import get_bert_mask_predictor
 from tlm.qtype.partial_relevance.attention_based.bert_masking_common import deserialize_tuple_d
+from tlm.qtype.partial_relevance.bert_mask_interface.bert_mask_predictor import get_bert_mask_predictor
 
 
 def run_server():

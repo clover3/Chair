@@ -1,7 +1,7 @@
 import sys
 
 # Runs eval for Related against full query
-from tlm.qtype.partial_relevance.runner.run_eval.run_partial_related_full_eval import run_eval
+from tlm.qtype.partial_relevance.runner.run_eval_old.run_partial_related_full_eval import run_eval
 
 
 def main():

@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 from tlm.qtype.partial_relevance.calc_avg import load_eval_result
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
-from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result
+from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result_r
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 
 
@@ -40,8 +40,8 @@ def split_pos_neg(dataset, method_list, metric_list):
         assert len(pos_res) + len(neg_res) == len(eval_res)
         new_run_name_p = "{}p_{}_{}".format(dataset, method, policy_name)
         new_run_name_n = "{}n_{}_{}".format(dataset, method, policy_name)
-        save_eval_result(pos_res, new_run_name_p)
-        save_eval_result(neg_res, new_run_name_n)
+        save_eval_result_r(pos_res, new_run_name_p)
+        save_eval_result_r(neg_res, new_run_name_n)
 
     for method in method_list:
         for metric in metric_list:

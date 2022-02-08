@@ -1,5 +1,4 @@
 from collections import Counter
-from collections import Counter
 from typing import List, Tuple, NamedTuple
 
 from arg.bm25 import BM25
@@ -64,7 +63,7 @@ class BM25SelectedSegmentEncoder:
             return self.bm25_scorer.score_inner(q_tf, body_tf)
 
         if segments:
-            max_idx = find_max_idx(segments, score)
+            max_idx = find_max_idx(score, segments)
             best_segment = segments[max_idx]
 
             if len(best_segment) > 0:

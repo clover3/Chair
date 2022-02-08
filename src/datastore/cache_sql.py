@@ -1,5 +1,3 @@
-import os.path
-
 import pymysql
 
 pymysql.install_as_MySQLdb()
@@ -15,8 +13,17 @@ class KeyValueBase(object):
     value = Column('value', REAL)
 
 
-class CacheTable(Base, KeyValueBase):
+class CacheTableF(Base, KeyValueBase):
     __tablename__ = "cache"
+
+
+class KeyValueSBase(object):
+    key = Column('key', String(), primary_key=True, index=True, sqlite_on_conflict_not_null='IGNORE')
+    value = Column('value', String())
+
+
+class CacheTableS(Base, KeyValueSBase):
+    __tablename__ = "cacheS"
 
 
 def get_engine_from_sqlite_path(sqlite_path):
@@ -30,13 +37,7 @@ def index_table(table, engine):
     index_.create(bind=engine)
 
 
-def run_index_table(sqlite_path):
-    sqlite_path = os.path.abspath(sqlite_path)
-    index_table(CacheTable, get_engine_from_sqlite_path(sqlite_path))
 
-
-def main():
-    Base.metadata.create_all(engine)
 
 
 if __name__ == "__main__":

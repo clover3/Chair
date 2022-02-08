@@ -5,8 +5,8 @@ import numpy as np
 from data_generator.tokenizer_wo_tf import get_tokenizer, JoinEncoder, pretty_tokens
 from tlm.data_gen.doc_encode_common import split_by_window, split_window_get_length
 from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import softmax_rev_sigmoid, EvalPerQSeg
-from tlm.qtype.partial_relevance.attention_based.bert_masking_client import get_localhost_bert_mask_client
 from tlm.qtype.partial_relevance.attention_based.perturbation_scorer import PerturbationScorer
+from tlm.qtype.partial_relevance.bert_mask_interface.bert_masking_client import get_localhost_bert_mask_client
 from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
 from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 

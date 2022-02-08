@@ -3,10 +3,11 @@ import os
 import numpy as np
 import tensorflow as tf
 
+import models.bert_util.bert_utils
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import JoinEncoder
 from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import AttentionMaskScorerIF
-from tlm.qtype.partial_relevance.attention_based.bert_mask_predictor import PredictorAttentionMask, get_batches_ex
+from tlm.qtype.partial_relevance.bert_mask_interface.bert_mask_predictor import PredictorAttentionMask, get_batches_ex
 from tlm.qtype.partial_relevance.eval_data_structure import ContributionSummary, SegmentedInstance
 
 
@@ -24,8 +25,9 @@ class PredictorAttentionMaskGradient(PredictorAttentionMask):
             logit_list = []
             attention_gradient_list = []
             for batch in batches:
+                feed_dict = models.bert_util.bert_utils.batch2feed_dict_4_or_5_inputs(self.task, batch)
                 logits, attention_gradient = self.sess.run([self.task.logits, self.attention_gradient],
-                                         feed_dict=self.task.batch2feed_dict(batch))
+                                                           feed_dict=feed_dict)
                 logit_list.append(logits)
                 attention_gradient_list.append(attention_gradient)
             return np.concatenate(logit_list), np.concatenate(attention_gradient_list)

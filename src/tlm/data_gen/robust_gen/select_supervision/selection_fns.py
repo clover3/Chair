@@ -1,7 +1,6 @@
+import math
 import random
 from typing import List, Callable, Dict, Tuple
-
-import math
 
 from cache import load_from_pickle
 from misc_lib import find_max_idx
@@ -82,7 +81,7 @@ def get_selection_fn_include_neg() -> Callable[[str, str, List], List[int]]:
 
     def select_fn(query_id: str, doc_id: str, segments: List) -> List[int]:
         prediction_scores: List[float] = list([score_d[query_id, doc_id, idx] for idx in range(len(segments))])
-        max_idx = find_max_idx(prediction_scores, lambda x: x)
+        max_idx = find_max_idx(lambda x: x, prediction_scores)
 
         selected_indices = []
         selected_indices.append(max_idx)

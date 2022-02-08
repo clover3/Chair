@@ -1,25 +1,26 @@
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance, \
+    RelatedBinaryAnswer
 from tlm.qtype.partial_relevance.eval_metric.ep_common import TupleOfListFuture, EvalMetricIF, \
-    EvalMetricWCBuilder
-from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFunc
+    EvalMetricWCBuilder, EvalMetricBinaryIF
+from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFuncB
 from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 
 
-class DTDeletion(EvalMetricIF):
-    def __init__(self, forward_fn, seg_join_policy, target_seg_idx, doc_modify_fn: DocModFunc):
+class DTDeletion(EvalMetricBinaryIF):
+    def __init__(self, forward_fn, seg_join_policy, target_seg_idx, doc_modify_fn: DocModFuncB):
         self.seg_join_policy = seg_join_policy
         self.pk = PromiseKeeper(forward_fn, 0.035)
         self.target_seg_idx = target_seg_idx
         self.tokenizer = get_tokenizer()
-        self.doc_modify_fn: DocModFunc = doc_modify_fn
+        self.doc_modify_fn: DocModFuncB = doc_modify_fn
 
     def seg_to_future(self, seg: SegmentedInstance) -> MyFuture:
         return MyPromise(seg, self.pk).future()
 
     def get_predictions_for_case(self,
                                  problem: RelatedEvalInstance,
-                                 answer: RelatedEvalAnswer,
+                                 answer: RelatedBinaryAnswer,
                                  ) -> TupleOfListFuture:
         def get_future(text1, text2):
             return self.seg_to_future(SegmentedInstance(text1, text2))
@@ -27,7 +28,7 @@ class DTDeletion(EvalMetricIF):
         full_query = problem.seg_instance.text1
 
         drop_doc = self.doc_modify_fn(problem.seg_instance.text2,
-                                      answer.contribution.table[self.target_seg_idx],
+                                      answer.score_table[self.target_seg_idx],
                                       )
 
         qd = get_future(full_query, problem.seg_instance.text2)
@@ -51,19 +52,19 @@ class DTDeletion(EvalMetricIF):
 
 
 class EvalMetricLeaveOne(EvalMetricIF):
-    def __init__(self, forward_fn, seg_join_policy, target_seg_idx, doc_modify_fn: DocModFunc):
+    def __init__(self, forward_fn, seg_join_policy, target_seg_idx, doc_modify_fn: DocModFuncB):
         self.seg_join_policy = seg_join_policy
         self.pk = PromiseKeeper(forward_fn, 0.035)
         self.target_seg_idx = target_seg_idx
         self.tokenizer = get_tokenizer()
-        self.doc_modify_fn: DocModFunc = doc_modify_fn
+        self.doc_modify_fn: DocModFuncB = doc_modify_fn
 
     def seg_to_future(self, seg: SegmentedInstance) -> MyFuture:
         return MyPromise(seg, self.pk).future()
 
     def get_predictions_for_case(self,
                                  problem: RelatedEvalInstance,
-                                 answer: RelatedEvalAnswer,
+                                 answer: RelatedBinaryAnswer,
                                  ) -> TupleOfListFuture:
         def get_future(text1, text2):
             return self.seg_to_future(SegmentedInstance(text1, text2))
@@ -71,7 +72,7 @@ class EvalMetricLeaveOne(EvalMetricIF):
         full_query = problem.seg_instance.text1
 
         drop_doc = self.doc_modify_fn(problem.seg_instance.text2,
-                                      answer.contribution.table[self.target_seg_idx],
+                                      answer.score_table[self.target_seg_idx],
                                       )
 
         qd = get_future(full_query, problem.seg_instance.text2)
@@ -94,13 +95,13 @@ class EvalMetricLeaveOne(EvalMetricIF):
 
 
 class EvalMetricByErasureNoSegWC(EvalMetricWCBuilder):
-    def __init__(self, forward_fn, seg_join_policy, target_seg_idx, doc_modify_fn: DocModFunc):
+    def __init__(self, forward_fn, seg_join_policy, target_seg_idx, doc_modify_fn: DocModFuncB):
         inner = DTDeletion(forward_fn, seg_join_policy, target_seg_idx, doc_modify_fn)
         super(EvalMetricByErasureNoSegWC, self).__init__(inner)
 
 
 class EvalMetricLeaveOneWC(EvalMetricWCBuilder):
-    def __init__(self, forward_fn, seg_join_policy, target_seg_idx, doc_modify_fn: DocModFunc):
+    def __init__(self, forward_fn, seg_join_policy, target_seg_idx, doc_modify_fn: DocModFuncB):
         inner = EvalMetricLeaveOne(forward_fn, seg_join_policy, target_seg_idx, doc_modify_fn)
         super(EvalMetricLeaveOneWC, self).__init__(inner)
 

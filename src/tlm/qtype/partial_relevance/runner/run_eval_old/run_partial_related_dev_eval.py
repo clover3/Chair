@@ -8,7 +8,7 @@ from tlm.qtype.partial_relevance.complement_search_pckg.complement_search import
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance
 from tlm.qtype.partial_relevance.eval_metric.eval_by_erasure import EvalMetricByErasure
 from tlm.qtype.partial_relevance.eval_metric.partial_relevant import EvalMetricPartialRelevant
-from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFunc, get_top_k_fn
+from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFuncR, get_top_k_fn
 from tlm.qtype.partial_relevance.eval_utils import partial_related_eval
 from tlm.qtype.partial_relevance.loader import load_dev_small_problems
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_related_eval_answer
@@ -52,7 +52,7 @@ def main2():
 
 
 def get_top_02_drop_fn():
-    fn: DocModFunc = get_top_k_fn(0.2)
+    fn: DocModFuncR = get_top_k_fn(0.2)
     return fn
 
 

@@ -1,7 +1,7 @@
 from bert_api.client_lib import BERTClient
 from data_generator.tokenizer_wo_tf import get_tokenizer, JoinEncoder
 from port_info import MMD_Z_PORT
-from tlm.qtype.partial_relevance.attention_based.bert_mask_predictor import get_bert_mask_predictor
+from tlm.qtype.partial_relevance.bert_mask_interface.bert_mask_predictor import get_bert_mask_predictor
 
 
 def compare_with_mmd_z():

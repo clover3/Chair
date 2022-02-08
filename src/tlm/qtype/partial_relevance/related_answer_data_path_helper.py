@@ -42,29 +42,33 @@ def load_related_eval_answer(dataset_name, method) -> List[RelatedEvalAnswer]:
     return parse_related_eval_answer_from_json(raw_json)
 
 
-def get_related_binary_save_path(dataset_name, method, policy):
+def get_related_binary_save_path(dataset_name, method):
     dir_path = os.path.join(output_path, "qtype", "binary_related_scores")
     exist_or_mkdir(dir_path)
-    save_path = os.path.join(dir_path, "MMDE_{}_{}_{}.score".format(dataset_name, method, policy))
+    save_path = os.path.join(dir_path, "MMDE_{}_{}.score".format(dataset_name, method))
     return save_path
 
 
-def save_binary_related_eval_answer(answers: List[RelatedBinaryAnswer], dataset_name, method, policy):
-    save_path = get_related_binary_save_path(dataset_name, method, policy)
-    json.dump(answers, open(save_path, "w"), indent=True)
+def save_binary_related_eval_answer(answers: List[RelatedBinaryAnswer], dataset_name, method):
+    save_path = get_related_binary_save_path(dataset_name, method)
+    save_json_at(answers, save_path)
+
+
+def save_json_at(data, save_path):
+    json.dump(data, open(save_path, "w"), indent=True)
 
 
 def parse_related_binary_answer_from_json(raw_json) -> List[RelatedBinaryAnswer]:
     def parse_entry(e) -> RelatedBinaryAnswer:
         problem_id = e[0]
-        indices_list = e[1]
-        assert type(indices_list[0][0]) == int
-        return RelatedBinaryAnswer(problem_id, indices_list)
+        score_table = e[1]
+        assert type(score_table[0][0]) == int
+        return RelatedBinaryAnswer(problem_id, score_table)
     return list(map(parse_entry, raw_json))
 
 
-def load_binary_related_eval_answer(dataset_name, method, policy) -> List[RelatedBinaryAnswer]:
-    score_path = get_related_binary_save_path(dataset_name, method, policy)
+def load_binary_related_eval_answer(dataset_name, method) -> List[RelatedBinaryAnswer]:
+    score_path = get_related_binary_save_path(dataset_name, method)
     raw_json = json.load(open(score_path, "r"))
     return parse_related_binary_answer_from_json(raw_json)
 

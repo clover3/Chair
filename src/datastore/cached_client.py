@@ -43,7 +43,7 @@ class OverheadRecorder:
         return self.overhead
 
 
-class CachedClient:
+class MemoryCachedClient:
     def __init__(self,
                  forward_fn: FUNC_SIG_GENERIC,
                  hash_fn: Callable[[InputType], HashType],

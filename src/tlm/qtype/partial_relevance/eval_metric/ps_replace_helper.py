@@ -6,6 +6,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 from tlm.qtype.partial_relevance.eval_metric.ps_replace import PSReplace, discretized_average, discretized_average_minus
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_not_related_pair_replace_fn, \
     get_related_pair_replace_fn
+from tlm.qtype.partial_relevance.mmd_cached_client import get_mmd_cache_client
 
 
 class ReplaceeSpan(NamedTuple):
@@ -60,6 +61,12 @@ def get_ps_replace_w_fixed_word_pool(forward_fn,
 
     eval_metric = get_ps_replace_inner(forward_fn, target_idx, option_as_metric, get_word_pool)
     return eval_metric
+
+
+def get_ps_replace_100words(interface, target_idx, option) -> PSReplace:
+    client = get_mmd_cache_client(interface)
+    replacee_span_list = get_100_random_spans()
+    return get_ps_replace_w_fixed_word_pool(client.predict, target_idx, replacee_span_list, option)
 
 
 def get_ps_replace_inner(forward_fn,

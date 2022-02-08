@@ -2,8 +2,9 @@ from typing import List, Callable, Dict, Tuple
 
 from list_lib import index_by_fn
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance
-from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricWCIF
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance, \
+    RelatedBinaryAnswer
+from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricWCIF, EvalMetricIF, EvalMetricBinaryIF
 from trainer.promise import MyPromise, PromiseKeeper
 
 
@@ -78,6 +79,56 @@ def partial_related_eval_inner(
 
     problem_ids: List[str] = [p.problem_id for a, p, c in a_p_c_list]
     future_predictions_list = list(map(get_predictions_for_case, a_p_c_list))
+    eval_policy.do_duty()
+    eval_score_list: List[float] = list(map(eval_policy.convert_future_to_score, future_predictions_list))
+    return list(zip(problem_ids, eval_score_list))
+
+
+def align_eval_r(answer_list: List[RelatedEvalAnswer],
+                 problem_list: List[RelatedEvalInstance],
+                 eval_policy: EvalMetricIF,
+                 ) -> List[Tuple[str, float]]:
+    pid_to_p: Dict[str, RelatedEvalInstance] = index_by_fn(lambda e: e.problem_id, problem_list)
+    a_p_list: List[Tuple[RelatedEvalAnswer, RelatedEvalInstance]] = []
+    for a in answer_list:
+        p: RelatedEvalInstance = pid_to_p[a.problem_id]
+        a_p_list.append((a, p))
+
+    return align_eval_inner(a_p_list, eval_policy)
+
+
+def align_eval_inner(
+        a_p_list: List[Tuple[RelatedEvalAnswer,
+                             RelatedEvalInstance]],
+        eval_policy: EvalMetricIF) -> List[Tuple[str, float]]:
+
+    def get_predictions_for_case(a_p: Tuple[RelatedEvalAnswer,
+                                            RelatedEvalInstance]):
+        answer, problem = a_p
+        return eval_policy.get_predictions_for_case(problem, answer)
+    problem_ids: List[str] = [p.problem_id for a, p in a_p_list]
+    future_predictions_list = list(map(get_predictions_for_case, a_p_list))
+    eval_policy.do_duty()
+    eval_score_list: List[float] = list(map(eval_policy.convert_future_to_score, future_predictions_list))
+    return list(zip(problem_ids, eval_score_list))
+
+
+def align_eval_b(answer_list: List[RelatedBinaryAnswer],
+                 problem_list: List[RelatedEvalInstance],
+                 eval_policy: EvalMetricBinaryIF,
+                 ) -> List[Tuple[str, float]]:
+    pid_to_p: Dict[str, RelatedEvalInstance] = index_by_fn(lambda e: e.problem_id, problem_list)
+    a_p_list: List[Tuple[RelatedBinaryAnswer, RelatedEvalInstance]] = []
+    for a in answer_list:
+        p: RelatedEvalInstance = pid_to_p[a.problem_id]
+        a_p_list.append((a, p))
+
+    def get_predictions_for_case(a_p: Tuple[RelatedBinaryAnswer,
+                                            RelatedEvalInstance]):
+        answer, problem = a_p
+        return eval_policy.get_predictions_for_case(problem, answer)
+    problem_ids: List[str] = [p.problem_id for a, p in a_p_list]
+    future_predictions_list = list(map(get_predictions_for_case, a_p_list))
     eval_policy.do_duty()
     eval_score_list: List[float] = list(map(eval_policy.convert_future_to_score, future_predictions_list))
     return list(zip(problem_ids, eval_score_list))

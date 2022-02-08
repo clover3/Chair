@@ -107,6 +107,6 @@ def get_batch2feed_dict_for_multi_gpu(models):
             for elem_idx in range(n_elem):
                 sub_batch.append(batch[elem_idx][st:ed])
 
-            feed_dict.update(model.batch2feed_dict(sub_batch))
+            feed_dict.update(models.bert_util.bert_utils.batch2feed_dict_4_or_5_inputs(sub_batch))
         return feed_dict
     return batch2feed_dict

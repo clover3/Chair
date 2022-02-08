@@ -2,9 +2,10 @@
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import PartialSegment
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance
-from tlm.qtype.partial_relevance.eval_metric.ep_common import TupleOfListFuture, EvalMetricIF
-from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFunc
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance, \
+    RelatedBinaryAnswer
+from tlm.qtype.partial_relevance.eval_metric.ep_common import TupleOfListFuture, EvalMetricBinaryIF
+from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFuncB
 from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 
@@ -12,20 +13,20 @@ from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 # Paired-span Deletion
 # Delete paired parts of query and document
 # If F(q, d) then F(q-qt, d-dt)
-class PSDeletion(EvalMetricIF):
+class PSDeletion(EvalMetricBinaryIF):
     def __init__(self,
                  forward_fn,
                  seg_join_policy,
                  target_seg_idx,
                  drop_seg_idx,
-                 doc_modify_fn: DocModFunc,
+                 doc_modify_fn: DocModFuncB,
                  ):
         self.seg_join_policy = seg_join_policy
         self.pk = PromiseKeeper(forward_fn, 0.035)
         self.target_seg_idx = target_seg_idx
         self.drop_seg_idx = drop_seg_idx
         self.tokenizer = get_tokenizer()
-        self.doc_modify_fn: DocModFunc = doc_modify_fn
+        self.doc_modify_fn: DocModFuncB = doc_modify_fn
 
     def seg_to_future(self, seg: SegmentedInstance) -> MyFuture:
         return MyPromise(seg, self.pk).future()
@@ -43,15 +44,14 @@ class PSDeletion(EvalMetricIF):
 
     def get_predictions_for_case(self,
                                  problem: RelatedEvalInstance,
-                                 answer: RelatedEvalAnswer,
+                                 answer: RelatedBinaryAnswer,
                                  ) -> TupleOfListFuture:
         def get_future(text1, text2):
             return self.seg_to_future(SegmentedInstance(text1, text2))
 
         full_query = problem.seg_instance.text1
-
         drop_doc = self.doc_modify_fn(problem.seg_instance.text2,
-                                      answer.contribution.table[self.drop_seg_idx],
+                                      answer.score_table[self.drop_seg_idx],
                                       )
 
         qd = get_future(full_query, problem.seg_instance.text2)

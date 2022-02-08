@@ -4,7 +4,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput, PartialSegment
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import TupleOfListFuture
-from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFunc
+from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFuncR
 from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 from trainer.promise import PromiseKeeper, MyFuture, MyPromise
 
@@ -18,7 +18,7 @@ class SearchPartialRelevant:
         self.pk = PromiseKeeper(forward_fn, 0.035)
         self.preserve_seg_idx = preserve_seg_idx
         self.tokenizer = get_tokenizer()
-        self.doc_modify_fn: DocModFunc = doc_modify_fn
+        self.doc_modify_fn: DocModFuncR = doc_modify_fn
 
     def combine_fn(self, text: SegmentedText, complement: PartialSegment) -> SegmentedText:
         return self.seg_join_policy.join_tokens(text, complement, self.preserve_seg_idx)

@@ -1,5 +1,6 @@
 import abc
-from typing import List, Tuple
+import functools
+from typing import List, Iterable, Dict, Tuple
 
 import numpy as np
 import scipy.special
@@ -20,8 +21,9 @@ def softmax_rev_sigmoid(logits):
     return -np.log(1 / probs - 1)
 
 
-def indices_to_mask_dict(indices: List[Tuple[int, int]]):
-    return {k: 1 for k in indices}
+def indices_to_mask_dict(indices: List[Tuple[int, int]]) -> Dict[Tuple[int, int], int]:
+    d = {k: 1 for k in indices}
+    return d
 
 
 class EvalAll:
@@ -66,15 +68,48 @@ class EvalAll:
         return auc
 
 
+Logits = List[float]
+
+
+def get_error(p1, p2):
+    diff = np.array(p1) - np.array(p2)
+    return np.linalg.norm(diff)
+
+
+def get_drop_indices(l, keep_portion) -> List[Tuple[int, int]]:
+    total_item = len(l)
+    n_item = int(total_item * keep_portion)
+    drop_indices: List[Tuple[int, int]] = left(l[n_item:])
+    return drop_indices
+
+
 class EvalPerQSeg:
-    def __init__(self, client: BERTMaskIF, max_seq_length):
+    def __init__(self, client: BERTMaskIF, max_seq_length, dist_metric):
         self.client = client
         self.max_seq_length = max_seq_length
         self.join_encoder = JoinEncoder(max_seq_length)
+        self.dist_metric = dist_metric
 
     def eval(self, inst: SegmentedInstance, contrib: ContributionSummary) -> List[float]:
+        num_step = 10
+        keep_portion_list = [i / num_step for i in range(num_step)]
+        items = self.eval_inner(inst, contrib, keep_portion_list)
+
+        def get_auc(pair: Tuple[Logits, List[Logits]]) -> float:
+            base_point, points = pair
+            l2_error = [self.dist_metric(base_point, p) for p in points]
+            auc = sum(l2_error) / num_step
+            return auc
+
+        return list(map(get_auc, items))
+
+    def eval_inner(self,
+                   inst: SegmentedInstance,
+                   contrib: ContributionSummary,
+                   keep_portion_list: List[float]
+                   ) -> List[Tuple[Logits, List[Logits]]]:
         x0, x1, x2 = self.join_encoder.join(inst.text1.tokens_ids, inst.text2.tokens_ids)
-        auc_list = []
+        items = []
         for q_idx in range(inst.text1.get_seg_len()):
             l = []
             for d_idx in range(inst.text2.get_seg_len()):
@@ -83,28 +118,22 @@ class EvalPerQSeg:
                 l.append((k, v))
             l.sort(key=get_second, reverse=True)
             total_item = inst.text2.get_seg_len()
+            get_drop_indices_fn = functools.partial(get_drop_indices, l, total_item)
+            drop_indices_per_case: Iterable[List[Tuple[int, int]]] = map(get_drop_indices_fn, keep_portion_list)
+            mask_d_itr = map(indices_to_mask_dict, drop_indices_per_case)
+            mask_d_itr_conv = map(inst.translate_mask, mask_d_itr)
             payload = []
-            num_step = 10
-            for i in range(num_step):
-                keep_portion = i / num_step
-                n_item = int(total_item * keep_portion)
-                drop_indices: List[Tuple[int, int]] = left(l[n_item:])
-                mask_d = indices_to_mask_dict(drop_indices)
+            for mask_d in mask_d_itr_conv:
                 payload_item = x0, x1, x2, mask_d
                 payload.append(payload_item)
 
             base_item = x0, x1, x2, {}
             payload_ex = [base_item] + payload
             output = self.client.predict(payload_ex)
-            def get_error(p1, p2):
-                diff = np.array(p1) - np.array(p2)
-                return np.linalg.norm(diff)
             points = output[1:]
             base_point = output[0]
-            l2_error = [get_error(base_point, p) for p in points]
-            auc = sum(l2_error) / num_step
-            auc_list.append(auc)
-        return auc_list
+            items.append((base_point, points))
+        return items
 
     def verbose_print(self, inst: SegmentedInstance, contrib: ContributionSummary):
         x0, x1, x2 = self.join_encoder.join(inst.text1.tokens_ids, inst.text2.tokens_ids)

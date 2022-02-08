@@ -44,7 +44,7 @@ def enum_best_segments(pred_path, info) -> Iterable[Dict]:
         def get_score(e):
             return logit_to_score_softmax(e['logits'])
 
-        max_idx = find_max_idx(sub_entries, get_score)
+        max_idx = find_max_idx(get_score, sub_entries)
 
         selected_raw_entry = sub_entries[max_idx]
         yield selected_raw_entry

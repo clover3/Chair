@@ -52,5 +52,5 @@ def later_score_prob(base, after):
     return logits_to_score(after)
 
 
-def dist_l2(base, after):
+def dist_l2(base: List[float], after: List[float]):
     return np.linalg.norm(np.array(base) - np.array(after))

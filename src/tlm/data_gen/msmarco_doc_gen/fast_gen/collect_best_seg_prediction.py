@@ -1,11 +1,10 @@
 import json
 import os
 from collections import defaultdict
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Dict, Tuple
 
 from estimator_helper.output_reader import join_prediction_with_info
-from list_lib import lmap
-from misc_lib import group_by, find_max_idx, TimeProfiler, get_first
+from misc_lib import group_by, find_max_idx, get_first
 from scipy_aux import get_logits_to_score_fn
 
 
@@ -28,7 +27,7 @@ class BestSegCollector:
         qdid_to_max_seg_idx: Dict[Tuple[str, str], int] = {}
         for qdi, entries in qdid_grouped.items():
             query_id, doc_id = qdi
-            max_seg_idx = entries[find_max_idx(entries, get_score)]['seg_idx']
+            max_seg_idx = entries[find_max_idx(get_score, entries)]['seg_idx']
             qdid_to_max_seg_idx[query_id, doc_id] = max_seg_idx
         return qdid_to_max_seg_idx
 

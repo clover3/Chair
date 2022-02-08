@@ -13,9 +13,9 @@ from tlm.qtype.enum_util import enum_samples
 from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import EvalPerQSeg
 from tlm.qtype.partial_relevance.attention_based.attention_mask_gradient import AttentionGradientScorer, \
     PredictorAttentionMaskGradient
-from tlm.qtype.partial_relevance.attention_based.bert_masking_client import get_localhost_bert_mask_client
 from tlm.qtype.partial_relevance.attention_based.bert_masking_common import dist_l2
 from tlm.qtype.partial_relevance.attention_based.perturbation_scorer import PerturbationScorer
+from tlm.qtype.partial_relevance.bert_mask_interface.bert_masking_client import get_localhost_bert_mask_client
 from tlm.qtype.partial_relevance.qd_segmented_instance import QDSegmentedInstance
 from tlm.qtype.qtype_instance import QTypeInstance
 
@@ -73,7 +73,7 @@ def main():
 
     contrib_score_list = [scorer, scorer2]
     tokenizer = get_tokenizer()
-    eval_model = EvalPerQSeg(predictor, max_seq_length)
+    eval_model = EvalPerQSeg(predictor, max_seq_length, dist_l2)
 
     n_predict = 20
     ticker = TimeEstimator(n_predict, "", 9)

@@ -132,7 +132,7 @@ def run_qtype_analysis_c(qtype_entries: List[QTypeInstance],
                 func_word_weights_d[type_i],
                 log_func_word_likely[type_i])
             print(s)
-            best_type_i = find_max_idx(cluster_member_list[cluster_idx], lambda type_j: log_func_word_likely[type_j])
+            best_type_i = find_max_idx(lambda type_j: log_func_word_likely[type_j], cluster_member_list[cluster_idx])
             func_text = func_type_id_to_text[best_type_i]
             s = "{0} {1:.2f} = {2:.2f} + {3:.2f}".format(
                 func_word_structured_d[func_text],

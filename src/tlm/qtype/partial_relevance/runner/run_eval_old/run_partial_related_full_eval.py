@@ -2,21 +2,22 @@ from typing import List, Callable, Tuple
 
 from tlm.qtype.mmd_z_direct import get_mmd_z_direct_wrap
 from tlm.qtype.partial_relevance.attention_based.mmd_z_client import get_mmd_client_wrap
+from tlm.qtype.partial_relevance.bert_mask_interface.mmd_z_mask_cacche import get_attn_mask_forward_fn
 from tlm.qtype.partial_relevance.complement_path_data_helper import load_complements
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_search import FuncContentSegJoinPolicy
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance
-from tlm.qtype.partial_relevance.eval_metric.eval_by_attn import EvalMetricByAttentionDrop, get_attn_mask_forward_fn
+from tlm.qtype.partial_relevance.eval_metric.eval_by_attn import EvalMetricByAttentionDrop, EvalMetricByAttentionAUC
 from tlm.qtype.partial_relevance.eval_metric.eval_by_erasure import EvalMetricByErasure
 from tlm.qtype.partial_relevance.eval_metric.partial_relevant import EvalMetricPartialRelevant, \
     EvalMetricPartialRelevant2
-from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFunc, get_top_k_fn
-from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result
+from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFuncR, get_top_k_fn
+from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result_r
 from tlm.qtype.partial_relevance.eval_utils import partial_related_eval
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_related_eval_answer
 
 
-def get_mmd_client(option: str):
+def get_mmd_client(option: str) -> Callable[[List[SegmentedInstance]], List[float]]:
     if option == "localhost":
         return get_mmd_client_wrap()
     elif option == "direct":
@@ -28,7 +29,7 @@ def get_mmd_client(option: str):
 
 def get_eval_policy(policy_name, model_interface):
     drop_k = 0.2
-    fn: DocModFunc = get_top_k_fn(drop_k)
+    fn: DocModFuncR = get_top_k_fn(drop_k)
     if policy_name == "erasure":
         forward_fn: Callable[[List[SegmentedInstance]], List[float]] = get_mmd_client(model_interface)
         eval_policy = EvalMetricByErasure(forward_fn,
@@ -50,11 +51,14 @@ def get_eval_policy(policy_name, model_interface):
                                                 doc_modify_fn=fn
                                                 )
     elif policy_name == "attn":
-        drop_k = 0.99
         eval_policy = EvalMetricByAttentionDrop(get_attn_mask_forward_fn(),
                                                 drop_k,
                                                 preserve_seg_idx=1,
                                                 )
+    elif policy_name == "attn_auc":
+        eval_policy = EvalMetricByAttentionAUC(get_attn_mask_forward_fn(),
+                                               target_seg_idx=1,
+                                               )
     else:
         raise ValueError()
     return eval_policy
@@ -68,7 +72,7 @@ def run_eval(dataset, method, policy_name, model_interface="localhost"):
     complements = load_complements()
     scores: List[Tuple[str, float]] = partial_related_eval(answers, problems, complements, eval_policy)
     run_name = "{}_{}_{}".format(dataset, method, policy_name)
-    save_eval_result(scores, run_name)
+    save_eval_result_r(scores, run_name)
 
 
 # Runs eval for Related against full query

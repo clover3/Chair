@@ -1,5 +1,5 @@
 import time
-from typing import List, Callable, Generic
+from typing import List, Callable, Generic, Iterable
 from typing import TypeVar
 
 A = TypeVar('A')
@@ -71,7 +71,7 @@ def max_future(futures):
 
 
 # get from all element futures in the list
-def list_future(futures):
+def list_future(futures: Iterable[MyFuture[T]]) -> List[T]:
     return list([f.get() for f in futures])
 
 

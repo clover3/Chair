@@ -565,7 +565,7 @@ def enum_passage_overlap(tokens: List[Any], window_size: int,
             break
 
 
-def find_max_idx(itr: Iterable[A], key_fn: Callable[[A], Any]) -> int:
+def find_max_idx(key_fn: Callable[[A], Any], itr: Iterable[A]) -> int:
     max_idx = -1
     max_score = None
     for idx, entry in enumerate(itr):
@@ -575,6 +575,18 @@ def find_max_idx(itr: Iterable[A], key_fn: Callable[[A], Any]) -> int:
             max_score = score
 
     return max_idx
+
+
+def find_min_idx(key_fn: Callable[[A], Any], itr: Iterable[A]) -> int:
+    min_idx = -1
+    min_score = None
+    for idx, entry in enumerate(itr):
+        score = key_fn(entry)
+        if min_idx < 0 or score < min_score:
+            min_idx = idx
+            min_score = score
+
+    return min_idx
 
 
 class NamedNumber(float):
@@ -777,3 +789,6 @@ def enum_segments(items: List[Any], window_size) -> List[Tuple[int, int]]:
         output.append((st, ed))
         cursor += window_size
     return output
+
+
+

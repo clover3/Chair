@@ -5,6 +5,7 @@ import tensorflow as tf
 
 import cpath
 from cpath import output_path
+from models.bert_util.bert_utils import batch2feed_dict_4_or_5_inputs, get_last_id
 from models.transformer import hyperparams
 from models.transformer.bert_common_v2 import create_attention_mask_from_input_mask
 from tf_v2_support import placeholder, disable_eager_execution
@@ -81,24 +82,7 @@ class transformer_attn_mask:
         self.logits = logits
 
     def batch2feed_dict(self, batch):
-        if len(batch) == 4:
-            x0, x1, x2, x3 = batch
-            feed_dict = {
-                self.x_list[0]: x0,
-                self.x_list[1]: x1,
-                self.x_list[2]: x2,
-                self.x_list[3]: x3,
-            }
-        else:
-            x0, x1, x2, x3, y = batch
-            feed_dict = {
-                self.x_list[0]: x0,
-                self.x_list[1]: x1,
-                self.x_list[2]: x2,
-                self.x_list[3]: x3,
-                self.y: y,
-            }
-        return feed_dict
+        return batch2feed_dict_4_or_5_inputs(self, batch)
 
 
 class PredictorAttentionMask(BERTMaskIF):
@@ -141,19 +125,6 @@ class PredictorAttentionMask(BERTMaskIF):
         return np.array(x0), np.array(x1), np.array(x2), x3_np
 
     def load_model(self, save_dir):
-        def get_last_id(save_dir):
-            last_model_id = None
-            for (dirpath, dirnames, filenames) in os.walk(save_dir):
-                for filename in filenames:
-                    if ".meta" in filename:
-                        print(filename)
-                        model_id = filename[:-5]
-                        if last_model_id is None:
-                            last_model_id = model_id
-                        else:
-                            last_model_id = model_id if model_id > last_model_id else last_model_id
-            return last_model_id
-
         id = get_last_id(save_dir)
         path = os.path.join(save_dir, "{}".format(id))
         print("load_model")
@@ -162,7 +133,7 @@ class PredictorAttentionMask(BERTMaskIF):
         self.model_loaded = True
 
 
-def get_bert_mask_predictor():
+def get_bert_mask_predictor() -> BERTMaskIF:
     save_path = os.path.join(output_path, "model", "runs", "mmd_Z")
     disable_eager_execution()
     predictor = PredictorAttentionMask(2, 512)

@@ -1,7 +1,7 @@
 from typing import List
 
 from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
-from tlm.qtype.partial_relevance.attention_based.bert_masking_client import get_localhost_bert_mask_client
+from tlm.qtype.partial_relevance.bert_mask_interface.bert_masking_client import get_localhost_bert_mask_client
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 

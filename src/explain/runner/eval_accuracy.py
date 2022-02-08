@@ -82,5 +82,5 @@ def get_eval_params(load_type, model_path, data_type):
     return dev_batches, hp, load_fn, nli_setting, run_name
 
 
-if __name__  == "__main__":
+if __name__ == "__main__":
     eval_accuracy(sys.argv[1], sys.argv[2])
