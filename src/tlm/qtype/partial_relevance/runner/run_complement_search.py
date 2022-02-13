@@ -95,6 +95,5 @@ def main():
     run_search_and_save(dataset, "original_query", preserve_seg_idx)
 
 
-
 if __name__ == "__main__":
     main()

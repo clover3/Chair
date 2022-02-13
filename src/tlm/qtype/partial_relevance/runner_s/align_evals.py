@@ -7,7 +7,8 @@ from tlm.qtype.partial_relevance.runner.run_eval.run_align_eval_b import run_ali
 def main():
     dataset = "dev_sent"
     method_list = ["exact_match", "gradient", "random", "exact_match_noise0.1"]
-    policy_name_list = ["attn", "ps_replace_precision", "ps_replace_recall"]
+    # policy_name_list = ["attn", "ps_replace_precision", "ps_replace_recall"]
+    policy_name_list = ["ps_deletion_precision", "ps_deletion_recall"]
     model_interface = "localhost"
 
     for method in method_list:

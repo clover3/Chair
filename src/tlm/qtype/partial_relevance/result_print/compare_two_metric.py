@@ -6,10 +6,11 @@ from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
 from list_lib import l_to_map, dict_value_map, index_by_fn, flatten
 from misc_lib import find_min_idx
 from tlm.qtype.partial_relevance.attention_based.runner.save_detail_score import get_attn_detail_save_path
-from tlm.qtype.partial_relevance.calc_avg import load_eval_result
+from tlm.qtype.partial_relevance.calc_avg import load_eval_result_r
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, \
     ContributionSummary, rei_to_text, SegmentedInstance
 from tlm.qtype.partial_relevance.eval_metric.attn_mask_utils import get_drop_mask
+from tlm.qtype.partial_relevance.eval_metric.meta_common import better_fn_d
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_related_eval_answer
 from visualize.html_visual import HtmlVisualizer, Cell
@@ -17,7 +18,7 @@ from visualize.html_visual import HtmlVisualizer, Cell
 
 def get_score_for_method(dataset, method, metric):
     run_name = "{}_{}_{}".format(dataset, method, metric)
-    eval_res = load_eval_result(run_name)
+    eval_res = load_eval_result_r(run_name)
     return eval_res
 
 
@@ -31,10 +32,6 @@ def show_brevity_preference():
             e['score'] = e['fidelity'] + e['brevity']
         min_idx = find_min_idx(lambda e: e['score'], items)
         print(keep_portion_list[min_idx])
-
-
-
-
 
 
 def get_index_answer_dict(dataset, method_list):
@@ -75,7 +72,6 @@ def write_table(tokenizer, html: HtmlVisualizer, seg: SegmentedInstance, table: 
     html.write_table(html_table)
 
 
-
 def main():
     dataset = "dev_sent"
     method_list = ["exact_match", "gradient"]
@@ -83,13 +79,6 @@ def main():
     problems: List[RelatedEvalInstance] = load_mmde_problem(dataset)
     p_dict = index_by_fn(lambda p: p.problem_id, problems)
     tokenizer = get_tokenizer()
-
-    better_fn_d = {
-        "ps_replace_precision": lambda a, b: a < b,
-        "ps_replace_recall": lambda a, b: a < b,
-        "attn_brevity": lambda a, b: a > b,
-    }
-
     p = get_attn_detail_save_path(dataset, "gradient")
     info_d: Dict[str, List[Dict]] = json.load(open(p, "r"))
     target_idx = 1
@@ -145,12 +134,7 @@ def main():
         a: RelatedEvalAnswer = answer_d[method][p.problem_id]
         table = a.contribution.table
         if method == "exact_match":
-            answer_indices = []
-            for i in p.seg_instance.text2.enum_seg_idx():
-                score = table[target_idx][i]
-                assert type(score) == int
-                if int(score):
-                    answer_indices.append(i)
+            answer_indices = get_answer_indices_b(p, table)
         elif method == "gradient":
             mask_d = get_drop_mask_used(a.problem_id, a.contribution)
             drop_indices = []
@@ -161,6 +145,15 @@ def main():
             answer_indices = [i for i in p.seg_instance.text2.enum_seg_idx() if i not in drop_indices]
         else:
             assert False
+        return answer_indices
+
+    def get_answer_indices_b(p, table):
+        answer_indices = []
+        for i in p.seg_instance.text2.enum_seg_idx():
+            score = table[target_idx][i]
+            assert type(score) == int
+            if int(score):
+                answer_indices.append(i)
         return answer_indices
 
     score_d_d: Dict[Tuple[str, str], Dict[str, float]] = {}

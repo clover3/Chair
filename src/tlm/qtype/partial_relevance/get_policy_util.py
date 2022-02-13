@@ -10,7 +10,7 @@ from tlm.qtype.partial_relevance.eval_metric.eval_by_attn import EvalMetricByAtt
 from tlm.qtype.partial_relevance.eval_metric.eval_by_erasure import EvalMetricByErasure
 from tlm.qtype.partial_relevance.eval_metric.partial_relevant import EvalMetricPartialRelevant, \
     EvalMetricPartialRelevant2
-from tlm.qtype.partial_relevance.eval_metric.ps_replace_helper import get_ps_replace_100words
+from tlm.qtype.partial_relevance.eval_metric.ps_replace_helper import get_ps_replace_100words, get_ps_replace_empty
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_drop_non_zero, get_drop_zero, \
     DocModFuncB
 from tlm.qtype.partial_relevance.eval_metric_binary.dt_deletion import DTDeletion, EvalMetricLeaveOneWC, \
@@ -60,7 +60,7 @@ def get_binary_eval_policy_wc(policy_name, model_interface, preserve_idx) -> Eva
 
 
 def get_binary_eval_policy(policy_name, model_interface, target_seg_idx) -> EvalMetricBinaryIF:
-    if policy_name == "erasure_no_seg":
+    if policy_name == "deletion":
         fn: DocModFuncB = get_drop_non_zero()
         forward_fn: Callable[[List[SegmentedInstance]], List[float]] = get_mmd_client(model_interface)
         eval_policy: EvalMetricBinaryIF = DTDeletion(forward_fn,
@@ -71,6 +71,10 @@ def get_binary_eval_policy(policy_name, model_interface, target_seg_idx) -> Eval
         eval_policy: EvalMetricBinaryIF = get_ps_replace_100words(model_interface, target_seg_idx, "precision")
     elif policy_name == "ps_replace_recall":
         eval_policy: EvalMetricBinaryIF = get_ps_replace_100words(model_interface, target_seg_idx, "recall")
+    elif policy_name == "ps_deletion_precision":
+        eval_policy: EvalMetricBinaryIF = get_ps_replace_empty(model_interface, target_seg_idx, "precision")
+    elif policy_name == "ps_deletion_recall":
+        eval_policy: EvalMetricBinaryIF = get_ps_replace_empty(model_interface, target_seg_idx, "recall")
     elif policy_name == "attn":
         eval_policy: EvalMetricBinaryIF = EvalMetricByAttentionDropB(get_attn_mask_forward_fn(model_interface),
                                                                      preserve_seg_idx=target_seg_idx)

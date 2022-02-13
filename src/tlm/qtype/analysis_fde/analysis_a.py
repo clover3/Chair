@@ -186,7 +186,7 @@ def run_qtype_analysis_b(qtype_entries: Iterable[QTypeInstance],
     print("{} func_spans are found".format(n_func_word))
     query_multiple = get_mmd_client_wrap()
     func_span_list, qtype_embedding_np = embeddings_to_list(q_embedding_d)
-
+    relevant_threshold = 0.5
     f_log = open(os.path.join(output_path, "qtype", "log.txt"), "w")
     avg = NamedAverager()
     n_eval_target = 20

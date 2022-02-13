@@ -69,6 +69,12 @@ def get_ps_replace_100words(interface, target_idx, option) -> PSReplace:
     return get_ps_replace_w_fixed_word_pool(client.predict, target_idx, replacee_span_list, option)
 
 
+def get_ps_replace_empty(interface, target_idx, option) -> PSReplace:
+    client = get_mmd_cache_client(interface)
+    replacee_span_list = get_mask_empty_as_span()
+    return get_ps_replace_w_fixed_word_pool(client.predict, target_idx, replacee_span_list, option)
+
+
 def get_ps_replace_inner(forward_fn,
                          target_idx,
                          option_as_metric,

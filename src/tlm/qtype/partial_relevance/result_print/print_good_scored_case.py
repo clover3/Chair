@@ -3,7 +3,7 @@ from typing import List, Tuple
 import numpy as np
 
 from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
-from tlm.qtype.partial_relevance.calc_avg import load_eval_result
+from tlm.qtype.partial_relevance.calc_avg import load_eval_result_r
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, join_p_withother, RelatedEvalAnswer
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_related_eval_answer
@@ -12,7 +12,7 @@ from tlm.qtype.partial_relevance.segmented_text import get_highlighted_text
 
 def get_score_for_method(dataset, method, metric):
     run_name = "{}_{}_{}".format(dataset, method, metric)
-    eval_res = load_eval_result(run_name)
+    eval_res = load_eval_result_r(run_name)
     return eval_res
 
 
