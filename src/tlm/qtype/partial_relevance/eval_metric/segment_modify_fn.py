@@ -1,14 +1,18 @@
+import random
 from typing import Callable, List
 
 import numpy as np
 
+from misc_lib import average
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import PartialSegment
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_search import FuncContentSegJoinPolicy
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance, RelatedBinaryAnswer
+from tlm.qtype.partial_relevance.eval_metric.ep_common import DropSamplePolicyIF, ReplaceSamplePolicyIF
 from tlm.qtype.partial_relevance.segmented_text import SegmentedText, get_replaced_segment
 
 DocModFuncR = Callable[[SegmentedText, List[float]], SegmentedText]
 DocModFuncB = Callable[[SegmentedText, List[int]], SegmentedText]
+
 DocReplaceFuncR = Callable[[SegmentedText, List[float], List[int]], SegmentedText]
 DocReplaceFuncB = Callable[[SegmentedText, List[int], List[int]], SegmentedText]
 
@@ -72,7 +76,7 @@ def get_replace_non_zero() -> DocReplaceFuncB:
 def get_replace_zero() -> DocReplaceFuncB:
     def replace_zero(text: SegmentedText, scores: List[int], word: List[int]) -> SegmentedText:
         assert_float_or_int(scores[0])
-        drop_indices = [idx for idx, s in enumerate(scores) if s == 1]
+        drop_indices = [idx for idx, s in enumerate(scores) if s == 0]
         return get_replaced_segment(text, drop_indices, word)
     return replace_zero
 
@@ -131,3 +135,42 @@ def get_pair_modify_fn(query_modify_fn: QueryReplaceFunc,
         seg = SegmentedInstance(new_query, new_doc)
         return seg
     return pair_modify_fn
+
+
+def get_partial_text_as_segment(text1: SegmentedText, target_seg_idx: int) -> SegmentedText:
+    tokens = text1.get_tokens_for_seg(target_seg_idx)
+    return SegmentedText.from_tokens_ids(tokens)
+
+
+class TenStepRandomDropPolicy(DropSamplePolicyIF):
+    def get_drop_docs(self, text: SegmentedText, score_list: List[int]) -> List[SegmentedText]:
+        n_pos = sum(score_list)
+        segment_list = []
+        for i in range(10):
+            drop_rate = 1 - i / 10
+            n_drop = int(n_pos * drop_rate)
+            true_indices = [i for i in range(len(score_list)) if score_list[i]]
+            drop_indices = random.sample(true_indices, n_drop)
+            segment = text.get_dropped_text(drop_indices)
+            segment_list.append(segment)
+        return segment_list
+
+    def combine_results(self, outcome_list: List[float]):
+        return average(outcome_list)
+
+
+class TenStepRandomReplacePolicy(ReplaceSamplePolicyIF):
+    def get_replaced_docs(self, text: SegmentedText, score_list: List[int], word: List[int]) -> List[SegmentedText]:
+        n_pos = sum(score_list)
+        segment_list = []
+        for i in range(10):
+            drop_rate = 1 - i / 10
+            n_drop = int(n_pos * drop_rate)
+            true_indices = [i for i in range(len(score_list)) if score_list[i]]
+            drop_indices = random.sample(true_indices, n_drop)
+            segment = get_replaced_segment(text, drop_indices, word)
+            segment_list.append(segment)
+        return segment_list
+
+    def combine_results(self, outcome_list: List[float]):
+        return average(outcome_list)

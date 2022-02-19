@@ -189,7 +189,7 @@ def qtype_analysis_a(qtype_entries: List[QTypeInstance],
 
 def cluster_avg_embeddings(qtype_embedding_paired):
     # cluster_model = sklearn.cluster.KMeans(n_clusters=100, tol=1e-7)
-    cluster_model = sklearn.cluster.AgglomerativeClustering(n_clusters=None, distance_threshold=1)
+    cluster_model = sklearn.cluster.AgglomerativeClustering(n_clusters=None, distance_threshold=2)
     n_func_word = len(qtype_embedding_paired)
     tprint("Start clustering with {} functional spans".format(n_func_word))
     func_type_id_to_text: List[str] = left(qtype_embedding_paired)

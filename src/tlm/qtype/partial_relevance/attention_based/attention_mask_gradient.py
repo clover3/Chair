@@ -6,9 +6,8 @@ import tensorflow as tf
 import models.bert_util.bert_utils
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import JoinEncoder
-from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import AttentionMaskScorerIF
 from tlm.qtype.partial_relevance.bert_mask_interface.bert_mask_predictor import PredictorAttentionMask, get_batches_ex
-from tlm.qtype.partial_relevance.eval_data_structure import ContributionSummary, SegmentedInstance
+from tlm.qtype.partial_relevance.eval_data_structure import ContributionSummary, SegmentedInstance, MatrixScorerIF
 
 
 class PredictorAttentionMaskGradient(PredictorAttentionMask):
@@ -37,7 +36,7 @@ class PredictorAttentionMaskGradient(PredictorAttentionMask):
         return logits.tolist(), grads.tolist()
 
 
-class AttentionGradientScorer(AttentionMaskScorerIF):
+class AttentionGradientScorer(MatrixScorerIF):
     def __init__(self, client: PredictorAttentionMaskGradient, max_seq_length):
         self.client = client
         self.max_seq_length = max_seq_length

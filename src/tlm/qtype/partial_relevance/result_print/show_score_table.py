@@ -1,5 +1,6 @@
 from tab_print import print_table
-from tlm.qtype.partial_relevance.calc_avg import calc_count_avg, load_eval_result_r, load_eval_result_b
+from tlm.qtype.partial_relevance.calc_avg import calc_count_avg
+from tlm.qtype.partial_relevance.eval_score_dp_helper import load_eval_result_r, load_eval_result_b_single
 
 
 def print_avg():
@@ -36,7 +37,7 @@ def print_avg2():
     for policy in policy_name_list:
         for method in method_list:
             run_name = get_run_name(method, policy)
-            eval_res = load_eval_result_b(run_name)
+            eval_res = load_eval_result_b_single(run_name)
             avg, n_total, n_valid = calc_count_avg(eval_res)
             assert n_valid == n_valid
             row = [policy, method, avg, n_total]
@@ -44,8 +45,30 @@ def print_avg2():
     print_table(rows)
 
 
+def print_avg3():
+    dataset = "dev_sent"
+    method_list = ["exact_match", "random"]
+    policy_name_list = ["deletion_v2", "replace_v2"]
+
+    def get_run_name(method, policy_name):
+        return "{}_{}_{}".format(dataset, method, policy_name)
+
+    rows = []
+    for policy in policy_name_list:
+        for method in method_list:
+            try:
+                run_name = get_run_name(method, policy)
+                eval_res = load_eval_result_b_single(run_name)
+                avg, n_total, n_valid = calc_count_avg(eval_res)
+                row = [policy, method, avg, n_valid, n_total]
+                rows.append(row)
+            except FileNotFoundError:
+                pass
+    print_table(rows)
+
+
 def main():
-    print_avg2()
+    print_avg3()
 
 
 if __name__ == "__main__":

@@ -1,12 +1,10 @@
-import os
+from collections import defaultdict
 from typing import Dict, List
 
 import numpy as np
 
 from bert_api.client_lib import BERTClient
-from cache import load_pickle_from
 from cpath import data_path, pjoin
-from cpath import output_path
 from data_generator.tokenizer_wo_tf import get_tokenizer, EncoderUnitPlain
 from port_info import FDE_PORT
 from tlm.qtype.analysis_fde.analysis_a import embeddings_to_list
@@ -30,7 +28,6 @@ class FDEModule:
         self.q_bias_d = q_bias_d
         func_span_list, qtype_embedding_np = embeddings_to_list(q_embedding_d)
         self.func_span_list: List[str] = func_span_list
-        print(len(func_span_list), len(q_bias_d))
         self.qtype_embedding_np = qtype_embedding_np
         self.q_bias_list = np.stack([q_bias_d[s] for s in func_span_list])
 
@@ -51,7 +48,7 @@ class FDEModule:
             return self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(s))
         return self.compute_score_from_ids(encode(ct), encode(doc))
 
-    def compute_score_from_ids(self, ct: List[int], doc: List[int]):
+    def compute_score_from_ids(self, ct: List[int], doc: List[int]) -> np.array:
         ret: Dict = self.request(ct, doc)
         doc_vector = ret['qtype_vector2']
         d_bias = ret['d_bias']
@@ -59,7 +56,7 @@ class FDEModule:
         return score
 
     def get_promising_from_ids(self, ct: List[int], doc: List[int], threshold=0.5) -> List[str]:
-        scores = self.compute_score_from_ids(ct, doc)
+        scores: np.array = self.compute_score_from_ids(ct, doc)
         output = self._filter_promising(scores, threshold)
         return output
 
@@ -82,7 +79,26 @@ class FDEModule:
 def get_fde_module() -> FDEModule:
     run_name = "qtype_2Y_v_train_120000"
     q_embedding_d: Dict[str, np.array] = load_q_emb_qtype_2Y_v_train_120000()
-    save_dir = os.path.join(output_path, "qtype", run_name + '_sample')
-    _, query_info_dict = load_pickle_from(os.path.join(save_dir, "0"))
     q_bias_d: Dict[str, np.array] = load_q_bias(run_name)
     return FDEModule(q_embedding_d, q_bias_d)
+
+
+class FDEModuleEx(FDEModule):
+    def __init__(self,
+                 q_embedding_d: Dict[str, np.array],
+                 q_bias_d: Dict[str, np.array],
+                 cluster: List[int],
+                 ):
+        super(FDEModuleEx, self).__init__(q_embedding_d, q_bias_d)
+        self.cluster = cluster
+        cluster_id_to_idx = defaultdict(list)
+        func_span_to_cluster_idx = {}
+        for idx, cluster_id in enumerate(cluster):
+            func_span = self.func_span_list[idx]
+            cluster_id_to_idx[cluster_id].append(idx)
+            func_span_to_cluster_idx[func_span] = cluster_id
+        self.cluster_id_to_idx = cluster_id_to_idx
+        self.func_span_to_cluster_idx = func_span_to_cluster_idx
+
+    def get_cluster_id(self, func_span):
+        return self.func_span_to_cluster_idx[func_span]

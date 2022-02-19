@@ -1,15 +1,14 @@
 from typing import List
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import AttentionMaskScorerIF
 from tlm.qtype.partial_relevance.attention_based.bert_masking_common import later_score_prob
 from tlm.qtype.partial_relevance.attention_based.perturbation_scorer import PerturbationScorer
 from tlm.qtype.partial_relevance.bert_mask_interface.bert_masking_client import get_localhost_bert_mask_client
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, MatrixScorerIF
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 
 
-def get_scorer() -> AttentionMaskScorerIF:
+def get_scorer() -> MatrixScorerIF:
     predictor = get_localhost_bert_mask_client()
     max_seq_length = 512
     scorer = PerturbationScorer(predictor, max_seq_length, later_score_prob)

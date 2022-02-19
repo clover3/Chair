@@ -2,7 +2,7 @@ import sys
 from typing import List, Tuple
 
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedBinaryAnswer
-from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result_b
+from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result_b_single
 from tlm.qtype.partial_relevance.eval_utils import align_eval_b
 from tlm.qtype.partial_relevance.get_policy_util import get_binary_eval_policy
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
@@ -16,7 +16,7 @@ def run_align_eval_b(dataset, method, policy_name, model_interface="localhost"):
     eval_policy = get_binary_eval_policy(policy_name, model_interface, 1)
     scores: List[Tuple[str, float]] = align_eval_b(answers, problems, eval_policy)
     run_name = "{}_{}_{}".format(dataset, method, policy_name)
-    save_eval_result_b(scores, run_name)
+    save_eval_result_b_single(scores, run_name)
 
 
 def main():

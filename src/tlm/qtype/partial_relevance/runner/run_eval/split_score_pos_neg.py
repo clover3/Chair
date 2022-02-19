@@ -1,8 +1,7 @@
 from typing import List, Tuple
 
-from tlm.qtype.partial_relevance.calc_avg import load_eval_result_r
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
-from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result_r
+from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result_r, load_eval_result_r
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 
 

@@ -4,9 +4,8 @@ import numpy as np
 
 from data_generator.tokenizer_wo_tf import JoinEncoder
 from list_lib import lmap, left
-from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import AttentionMaskScorerIF
 from tlm.qtype.partial_relevance.attention_based.bert_masking_common import BERTMaskIF
-from tlm.qtype.partial_relevance.eval_data_structure import ContributionSummary, SegmentedInstance
+from tlm.qtype.partial_relevance.eval_data_structure import ContributionSummary, SegmentedInstance, MatrixScorerIF
 
 
 def apply_offset(new_mask: Dict[Tuple[int, int], int],
@@ -29,7 +28,7 @@ def mask_dict_assert(new_mask, max_seq_length):
         assert idx2 < max_seq_length
 
 
-class PerturbationScorer(AttentionMaskScorerIF):
+class PerturbationScorer(MatrixScorerIF):
     def __init__(self, client: BERTMaskIF, max_seq_length, dist_fn):
         self.client = client
         self.max_seq_length = max_seq_length

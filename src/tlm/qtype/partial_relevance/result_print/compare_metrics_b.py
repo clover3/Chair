@@ -2,9 +2,9 @@ from collections import Counter
 from typing import List, Dict, Tuple
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from tlm.qtype.partial_relevance.calc_avg import load_eval_result_b
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedBinaryAnswer, rei_to_text
 from tlm.qtype.partial_relevance.eval_metric.meta_common import better_fn_d
+from tlm.qtype.partial_relevance.eval_score_dp_helper import load_eval_result_b_single
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_binary_related_eval_answer
 from tlm.qtype.partial_relevance.result_print.answer_load_util import get_index_answer_dict
@@ -33,7 +33,7 @@ def load_scores(dataset, method_list, metric_list):
 
 def get_score_for_method(dataset, method, metric):
     run_name = "{}_{}_{}".format(dataset, method, metric)
-    eval_res = load_eval_result_b(run_name)
+    eval_res = load_eval_result_b_single(run_name)
     return eval_res
 
 

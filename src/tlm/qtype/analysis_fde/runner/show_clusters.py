@@ -33,7 +33,6 @@ def run_analysis_a(run_name):
             print(cluster_id, func_span)
 
 
-
 def main():
     run_name = "qtype_2Y_v_train_120000"
     run_analysis_a(run_name)

@@ -4,8 +4,8 @@ from port_info import MMD_Z_PORT
 
 def main():
     client = BERTClient("http://localhost", MMD_Z_PORT, 512)
-    sent1 = input("Query: ")
     while True:
+        sent1 = input("Query: ")
         sent2 = input("Document: ")
         ret = client.request_single(sent1, sent2)
         print((sent1, sent2))

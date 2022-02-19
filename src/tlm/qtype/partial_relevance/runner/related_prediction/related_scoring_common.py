@@ -2,11 +2,11 @@ import xmlrpc.client
 from typing import List
 
 from misc_lib import TEL
-from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import AttentionMaskScorerIF
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, ContributionSummary
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, ContributionSummary, \
+    MatrixScorerIF
 
 
-def run_scoring(problems: List[RelatedEvalInstance], scorer: AttentionMaskScorerIF) -> List[RelatedEvalAnswer]:
+def run_scoring(problems: List[RelatedEvalInstance], scorer: MatrixScorerIF) -> List[RelatedEvalAnswer]:
     answer_list: List[RelatedEvalAnswer] = []
     for p in TEL(problems):
         try:

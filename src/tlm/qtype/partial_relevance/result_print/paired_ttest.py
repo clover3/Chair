@@ -4,7 +4,7 @@ from typing import List
 from scipy.stats import ttest_rel
 
 from misc_lib import average
-from tlm.qtype.partial_relevance.calc_avg import load_eval_result_r, load_eval_result_b
+from tlm.qtype.partial_relevance.eval_score_dp_helper import load_eval_result_r, load_eval_result_b_single
 
 
 def get_nonnull_scores(eval_res):
@@ -101,7 +101,7 @@ def print_paired_ttest_r(dataset_list, method_list, metric_list):
 
 
 def print_paired_ttest_b(dataset_list, method_list, metric_list):
-    return print_paired_ttest_inner(dataset_list, method_list, metric_list, load_eval_result_b)
+    return print_paired_ttest_inner(dataset_list, method_list, metric_list, load_eval_result_b_single)
 
 
 def main2():

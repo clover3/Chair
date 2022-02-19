@@ -7,7 +7,7 @@ from data_generator.tokenizer_wo_tf import ids_to_text, pretty_tokens
 
 
 class SegmentedText(NamedTuple):
-    tokens_ids: List
+    tokens_ids: List[int]
     seg_token_indices: List[List[int]]
 
     def get_seg_len(self):

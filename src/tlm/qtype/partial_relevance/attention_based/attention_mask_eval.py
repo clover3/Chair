@@ -1,4 +1,3 @@
-import abc
 import functools
 from typing import List, Iterable, Dict, Tuple
 
@@ -173,7 +172,3 @@ class EvalPerQSeg:
                 tab_print(two_digit_float(prob), keep_portion, n_item)
 
 
-class AttentionMaskScorerIF(abc.ABC):
-    @abc.abstractmethod
-    def eval_contribution(self, inst: SegmentedInstance) -> ContributionSummary:
-        pass

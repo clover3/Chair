@@ -1,10 +1,9 @@
 import numpy as np
 
-from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import AttentionMaskScorerIF
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance, ContributionSummary
+from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance, ContributionSummary, MatrixScorerIF
 
 
-class RandomScorer(AttentionMaskScorerIF):
+class RandomScorer(MatrixScorerIF):
     def eval_contribution(self, inst: SegmentedInstance) -> ContributionSummary:
         l1 = inst.text1.get_seg_len()
         l2 = inst.text2.get_seg_len()

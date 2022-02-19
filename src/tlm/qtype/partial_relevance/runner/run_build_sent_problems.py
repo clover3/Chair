@@ -21,7 +21,7 @@ def build():
 
     scores = forward_fn([p.seg_instance for p in problems_wo_scores])
 
-    new_items = []
+    new_items: List[RelatedEvalInstance] = []
     for old_p, score in zip(problems_wo_scores, scores):
         if score >= 0.5:
             new_p = RelatedEvalInstance(

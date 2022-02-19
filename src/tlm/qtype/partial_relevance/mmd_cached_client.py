@@ -12,8 +12,15 @@ from tlm.qtype.partial_relevance.runner.run_eval_old.run_partial_related_full_ev
 FUNC_SIG = Callable[[List[SegmentedInstance]], List[float]]
 
 
-def get_mmd_cache_client(option) -> SQLBasedCacheClient:
-    forward_fn: Callable[[List[SegmentedInstance]], List[float]] = get_mmd_client(option)
+def get_mmd_cache_client(option, hooking_fn=None) -> SQLBasedCacheClient:
+    forward_fn_raw: Callable[[List[SegmentedInstance]], List[float]] = get_mmd_client(option)
+    if hooking_fn is not None:
+        def forward_fn(items: List[SegmentedInstance]) -> List[float]:
+            hooking_fn(items)
+            return forward_fn_raw(items)
+    else:
+        forward_fn = forward_fn_raw
+
     cache_client = SQLBasedCacheClient(forward_fn,
                                        SegmentedInstance.str_hash,
                                        0.035,

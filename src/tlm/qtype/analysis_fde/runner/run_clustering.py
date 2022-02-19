@@ -24,5 +24,14 @@ def main_2X():
     save_to_pickle(cluster_labels, "{}_clusters".format(run_name))
 
 
+def other_t():
+    tprint("Loading pickle...")
+    run_name = "qtype_2Y_v_train_120000"
+    q_embedding_d: Dict[str, np.array] = load_q_emb_qtype(run_name)
+    tuple_list = [(k, v) for k, v in q_embedding_d.items()]
+    cluster_labels = cluster_avg_embeddings(tuple_list)
+    save_to_pickle(cluster_labels, "{}_clusters_2".format(run_name))
+
+
 if __name__ == "__main__":
-    main_2X()
+    other_t()

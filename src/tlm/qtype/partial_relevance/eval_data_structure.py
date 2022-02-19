@@ -1,5 +1,6 @@
+import abc
 from collections import defaultdict
-from typing import NamedTuple, List, Iterator, Dict, Tuple, Callable, Any
+from typing import NamedTuple, List, Iterator, Dict, Tuple, Callable, Any, Optional
 
 import numpy as np
 
@@ -152,6 +153,28 @@ class RelatedEvalInstance(NamedTuple):
                                    )
 
 
+class RelatedEvalInstanceEx(NamedTuple):
+    problem_id: str
+    target_seg_idx: int
+    seg_instance: SegmentedInstance
+    score: float
+
+    def to_json(self):
+        return {
+            'problem_id': self.problem_id,
+            'target_seg_idx': self.target_seg_idx,
+            'seg_instance': self.seg_instance.to_json(),
+            'score': self.score
+        }
+
+    @classmethod
+    def from_json(cls, j):
+        return RelatedEvalInstanceEx(j['problem_id'],
+                                   j['target_seg_idx'],
+                                   SegmentedInstance.from_json(j['seg_instance']),
+                                   j['score']
+                                   )
+
 def rei_to_text(tokenizer, rei: RelatedEvalInstance):
     seg1_text = seg_to_text(tokenizer, rei.seg_instance.text1)
     seg2_text = seg_to_text(tokenizer, rei.seg_instance.text2)
@@ -197,6 +220,21 @@ class RelatedBinaryAnswer(NamedTuple):
     score_table: List[List[int]]
 
 
+class PerProblemEvalResult(NamedTuple):
+    problem_id: str
+    scores: List[Optional[float]]
+
+    def to_json(self):
+        return {
+            'problem_id': self.problem_id,
+            'scores': self.scores
+        }
+
+    @classmethod
+    def from_json(cls, j):
+        return PerProblemEvalResult(j['problem_id'], j['scores'])
+
+
 def join_p_withother(problems: List[RelatedEvalInstance],
                      obj_list: List) -> List[Tuple[RelatedEvalInstance, Any]]:
     pid_to_obj = index_by_fn(lambda e: e.problem_id, obj_list)
@@ -205,6 +243,11 @@ def join_p_withother(problems: List[RelatedEvalInstance],
         c = pid_to_obj[p.problem_id]
         output.append((p, c))
     return output
+
+
+def get_coffee_doc():
+    doc = "The one of earliest credible evidence of the drinking of coffee in the form of the modern beverage appears in modern-day Yemen from the middle of the 15th century in Sufi shrines, where coffee seeds were first roasted and brewed in a manner similar to current methods.[2] The Yemenis procured the coffee beans from the Ethiopian Highlands via coastal Somali intermediaries and began cultivation. By the 16th century, the drink had reached the rest of the Middle East and North Africa, later spreading to Europe"
+    return doc
 
 
 def get_test_segment_instance() -> SegmentedInstance:
@@ -230,3 +273,18 @@ def get_test_segment_instance() -> SegmentedInstance:
     text2 = SegmentedText(d_tokens_ids, d_seg_indices)
     inst = SegmentedInstance(text1, text2)
     return inst
+
+
+def join_a_p(answer_list, problem_list):
+    pid_to_p: Dict[str, RelatedEvalInstance] = index_by_fn(lambda e: e.problem_id, problem_list)
+    a_p_list: List[Tuple[RelatedBinaryAnswer, RelatedEvalInstance]] = []
+    for a in answer_list:
+        p: RelatedEvalInstance = pid_to_p[a.problem_id]
+        a_p_list.append((a, p))
+    return a_p_list
+
+
+class MatrixScorerIF(abc.ABC):
+    @abc.abstractmethod
+    def eval_contribution(self, inst: SegmentedInstance) -> ContributionSummary:
+        pass
