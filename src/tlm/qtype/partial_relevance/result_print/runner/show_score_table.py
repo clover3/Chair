@@ -47,8 +47,8 @@ def print_avg2():
 
 def print_avg3():
     dataset = "dev_sent"
-    method_list = ["exact_match", "random"]
-    policy_name_list = ["deletion_v2", "replace_v2"]
+    method_list = ["exact_match", "random_cut"]
+    policy_name_list = ["attn", "deletion"]
 
     def get_run_name(method, policy_name):
         return "{}_{}_{}".format(dataset, method, policy_name)

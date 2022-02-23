@@ -7,30 +7,31 @@ from tlm.qtype.partial_relevance.bert_mask_interface.bert_masking_client import 
 from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance, get_test_segment_instance
 from tlm.qtype.partial_relevance.eval_metric.attn_mask_utils import BertMaskWrap
 
-T = Tuple[SegmentedInstance, Dict]
-V = List[float]
+InputType = Tuple[SegmentedInstance, Dict]
+OutputType = List[float]
+AttnMaskForward = Callable[[List[InputType]], List[OutputType]]
 
 
-def get_mmd_z_mask_cache_client(option) -> SQLBasedCacheClientS[T, V]:
+def get_mmd_z_mask_cache_client(option) -> SQLBasedCacheClientS[InputType, OutputType]:
     raw_client: BERTMaskIF = get_bert_mask_client(option)
     core = BertMaskWrap(raw_client, max_seq_length=512)
-    forward_fn: Callable[[List[T]], List[V]] = core.eval
+    forward_fn: Callable[[List[InputType]], List[OutputType]] = core.eval
     cache_path = at_output_dir("qtype", "mmd_z_mask_cache.sqlite")
 
-    def hash_fn(item: T) -> str:
+    def hash_fn(item: InputType) -> str:
         seg, d = item
         s1 = SegmentedInstance.str_hash(seg)
         return s1 + str(d)
 
-    cache_client: SQLBasedCacheClientS[T, V] = SQLBasedCacheClientS(forward_fn,
-                                                                  hash_fn,
-                                                                  0.035,
-                                                                  cache_path,
-                                                                  1)
+    cache_client: SQLBasedCacheClientS[InputType, OutputType] = SQLBasedCacheClientS(forward_fn,
+                                                                                     hash_fn,
+                                                                                     0.035,
+                                                                                     cache_path,
+                                                                                     1)
     return cache_client
 
 
-def get_attn_mask_forward_fn(option: str) -> Callable[[List[T]], List[V]]:
+def get_attn_mask_forward_fn(option: str) -> AttnMaskForward:
     cache_client = get_mmd_z_mask_cache_client(option)
     return cache_client.predict
 

@@ -3,6 +3,8 @@ import os
 import gensim
 import numpy as np
 
+import tlm.qtype.partial_relevance.eval_metric_binary.eval_v3_common
+import tlm.qtype.partial_relevance.eval_metric_binary.replace_v3
 from cache import load_pickle_from
 from cpath import output_path
 
@@ -27,7 +29,7 @@ def main():
     term_id = model.wv.vocab[word].index
     #print(word, model.wv.vectors[term_id], model[word])
 
-    scores = np.dot(v_sum, model.trainables.syn1neg.T)
+    scores = np.dot(v_sum, tlm.qtype.partial_relevance.eval_metric_binary.eval_v3_common.T)
     print(scores.shape)
     rank_by_context = np.argsort(scores)[::-1]
     for j_idx in rank_by_context[:20]:

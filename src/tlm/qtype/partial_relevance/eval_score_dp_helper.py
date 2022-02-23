@@ -75,3 +75,12 @@ def load_eval_result_b_all(run_name) -> List[Tuple[str, List[Optional[float]]]]:
     save_path = get_eval_score_save_path_b_all(run_name)
     return load_list_from_jsonl(save_path, PerProblemEvalResult.from_json)
 
+
+def get_run_name(dataset, method, policy_name):
+    run_name = "{}_{}_{}".format(dataset, method, policy_name)
+    return run_name
+
+
+def is_run_exist(dataset, method, policy_name):
+    save_path = get_eval_score_save_path_b_all(get_run_name(dataset, method, policy_name))
+    return os.path.exists(save_path)

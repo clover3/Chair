@@ -288,3 +288,11 @@ class MatrixScorerIF(abc.ABC):
     @abc.abstractmethod
     def eval_contribution(self, inst: SegmentedInstance) -> ContributionSummary:
         pass
+
+
+class UnexpectedPolicyException(Exception):
+    def __init__(self, policy_name):
+        self.policy_name = policy_name
+
+    def __str__(self):
+        return f"Policy {self.policy_name} is not expected."

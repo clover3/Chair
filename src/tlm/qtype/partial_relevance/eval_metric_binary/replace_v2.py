@@ -5,8 +5,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance, RelatedBinaryAnswer, \
     RelatedEvalInstanceEx
 from tlm.qtype.partial_relevance.eval_metric.ep_common import ReplaceSamplePolicyIF
-from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_partial_text_as_segment, get_drop_zero, \
-    get_replace_zero
+from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_partial_text_as_segment, get_replace_zero
 from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 
@@ -64,7 +63,6 @@ class ReplaceV2SingleSeg:
         self.target_seg_idx = target_seg_idx
         self.tokenizer = get_tokenizer()
         self.get_word_pool = get_word_pool
-        self.drop_zero = get_drop_zero()
         self.replace_zero = get_replace_zero()
 
     def seg_to_future(self, seg: SegmentedInstance) -> MyFuture:
@@ -138,7 +136,6 @@ class ReplaceV2:
         self.replace_sample_policy = replace_sample_policy
         self.tokenizer = get_tokenizer()
         self.get_word_pool = get_word_pool
-        self.drop_zero = get_drop_zero()
         self.replace_zero = get_replace_zero()
 
     def seg_to_future(self, seg: SegmentedInstance) -> MyFuture:
@@ -197,3 +194,6 @@ class ReplaceV2:
     def do_duty(self):
         self.pw_pk.do_duty(log_size=False, reset=True)
         self.pk.do_duty(log_size=False, reset=True)
+
+
+

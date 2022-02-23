@@ -54,7 +54,6 @@ class SQLBasedCacheClient(Generic[T, V]):
         return self.volatile_cache_client.get_last_overhead()
 
 
-
 class SQLBasedCacheClientS(Generic[T, V]):
     def __init__(self,
                  forward_fn: Callable[[List[T]], List[V]],

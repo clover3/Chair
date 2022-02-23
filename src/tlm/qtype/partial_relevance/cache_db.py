@@ -59,7 +59,7 @@ def read_cache_from_sqlite(sqlite_path) -> Dict:
         for row in q_res_itr:
             d[row.key] = row.value
         ed = time.time()
-        print("{0} items read at {1:.2f}sec".format(len(d), ed - st))
+        print("read_cache_from_sqlite() - {0} items read at {1:.2f}sec".format(len(d), ed - st))
     return d
 
 
@@ -74,7 +74,7 @@ def read_cache_s_from_sqlite(sqlite_path) -> Dict:
             s = row.value
             d[row.key] = ast.literal_eval(s)
         ed = time.time()
-        print("{0} items read at {1:.2f}sec".format(len(d), ed - st))
+        print("read_cache_s_from_sqlite() - {0} items read at {1:.2f}sec".format(len(d), ed - st))
     return d
 
 

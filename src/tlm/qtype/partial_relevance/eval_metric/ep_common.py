@@ -102,6 +102,10 @@ class EvalMetricConditionalPerTargetIF(abc.ABC):
         pass
 
 
+Step1Output = TypeVar('Step1Output')
+Step2Output = TypeVar('Step2Output')
+
+
 class DropSamplePolicyIF(abc.ABC):
     @abc.abstractmethod
     def get_drop_docs(self,

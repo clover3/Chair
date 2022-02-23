@@ -55,7 +55,7 @@ def get_drop_zero() -> DocModFuncB:
         if len(scores) != seg_len:
             print("Score has {} items while text has {} segments".format(len(scores), seg_len))
 
-        drop_indices = [idx for idx, s in enumerate(scores) if s == 1]
+        drop_indices = [idx for idx, s in enumerate(scores) if s == 0]
         new_text = text.get_dropped_text(drop_indices)
         return new_text
     return drop_zero
@@ -142,24 +142,41 @@ def get_partial_text_as_segment(text1: SegmentedText, target_seg_idx: int) -> Se
     return SegmentedText.from_tokens_ids(tokens)
 
 
+def ceil(f):
+    eps = 1e-8
+    return int(f - eps) + 1
+
+
 class TenStepRandomDropPolicy(DropSamplePolicyIF):
+    def __init__(self, discretize=False):
+        self.discretize = discretize
+
     def get_drop_docs(self, text: SegmentedText, score_list: List[int]) -> List[SegmentedText]:
         n_pos = sum(score_list)
         segment_list = []
         for i in range(10):
             drop_rate = 1 - i / 10
-            n_drop = int(n_pos * drop_rate)
+            n_drop = ceil(n_pos * drop_rate)
             true_indices = [i for i in range(len(score_list)) if score_list[i]]
+            n_drop = min(len(true_indices), n_drop)
             drop_indices = random.sample(true_indices, n_drop)
-            segment = text.get_dropped_text(drop_indices)
-            segment_list.append(segment)
+            if drop_indices:
+                segment = text.get_dropped_text(drop_indices)
+                segment_list.append(segment)
         return segment_list
 
     def combine_results(self, outcome_list: List[float]):
-        return average(outcome_list)
+        if self.discretize:
+            outcome_b = [1 if s >= 0.5 else 0 for s in outcome_list]
+            return average(outcome_b)
+        else:
+            return average(outcome_list)
 
 
 class TenStepRandomReplacePolicy(ReplaceSamplePolicyIF):
+    def __init__(self, discretize=False):
+        self.discretize = discretize
+
     def get_replaced_docs(self, text: SegmentedText, score_list: List[int], word: List[int]) -> List[SegmentedText]:
         n_pos = sum(score_list)
         segment_list = []
@@ -167,10 +184,16 @@ class TenStepRandomReplacePolicy(ReplaceSamplePolicyIF):
             drop_rate = 1 - i / 10
             n_drop = int(n_pos * drop_rate)
             true_indices = [i for i in range(len(score_list)) if score_list[i]]
+            n_drop = min(len(true_indices), n_drop)
             drop_indices = random.sample(true_indices, n_drop)
-            segment = get_replaced_segment(text, drop_indices, word)
-            segment_list.append(segment)
+            if drop_indices:
+                segment = get_replaced_segment(text, drop_indices, word)
+                segment_list.append(segment)
         return segment_list
 
     def combine_results(self, outcome_list: List[float]):
-        return average(outcome_list)
+        if self.discretize:
+            outcome_b = [1 if s >= 0.5 else 0 for s in outcome_list]
+            return average(outcome_b)
+        else:
+            return average(outcome_list)

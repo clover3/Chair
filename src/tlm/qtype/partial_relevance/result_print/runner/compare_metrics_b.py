@@ -1,13 +1,14 @@
 from collections import Counter
 from typing import List, Dict, Tuple
 
-from data_generator.tokenizer_wo_tf import get_tokenizer
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedBinaryAnswer, rei_to_text
+from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedBinaryAnswer
 from tlm.qtype.partial_relevance.eval_metric.meta_common import better_fn_d
 from tlm.qtype.partial_relevance.eval_score_dp_helper import load_eval_result_b_single
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_binary_related_eval_answer
 from tlm.qtype.partial_relevance.result_print.answer_load_util import get_index_answer_dict
+from tlm.qtype.partial_relevance.segmented_text import seg_to_text
 from visualize.html_visual import HtmlVisualizer, Cell
 
 
@@ -64,10 +65,8 @@ def get_best_method_per_metric(p, score_d_d, method_list, metric_list):
 
 def main():
     dataset = "dev_sent"
-    method_list = ["exact_match", "random"]
-    metric_list = ["ps_replace_precision", "ps_replace_recall",
-                   "ps_deletion_precision", "ps_deletion_recall",
-                   "attn"]
+    method_list = ["exact_match", "random_cut"]
+    metric_list = ["deletion", "attn"]
     problems: List[RelatedEvalInstance] = load_mmde_problem(dataset)
     target_idx = 1
     tokenizer = get_tokenizer()
@@ -80,16 +79,27 @@ def main():
 
     for p in problems:
         best_method_per_metric = get_best_method_per_metric(p, score_d_d, method_list, metric_list)
-        html.write_paragraph(rei_to_text(tokenizer, p))
-        html.write_paragraph("< Preference > ")
+        preference_options = set(best_method_per_metric.values())
+        target_tokens_ids = p.seg_instance.text1.get_tokens_for_seg(target_idx)
+        target_s: str = ids_to_text(tokenizer, target_tokens_ids)
 
+        all_same = len(preference_options) == 1
+        if all_same:
+            continue
+        html.write_headline(p.problem_id, 3)
+        query = seg_to_text(tokenizer, p.seg_instance.text1)
+        doc = seg_to_text(tokenizer, p.seg_instance.text2)
+        html.write_paragraph("Query: {}".format(query))
+        html.write_paragraph("QT: {}".format(target_s))
+        html.write_paragraph("Doc: {}".format(doc))
+        html.write_headline("Preference ", 4)
         table = []
         for metric in metric_list:
             row = [Cell(metric), Cell(best_method_per_metric[metric])]
             table.append(row)
         html.write_table(table)
 
-        html.write_paragraph("< Method Output > ")
+        html.write_headline("Method Output ", 4)
         for method in method_list:
             answer = answer_d[method][p.problem_id]
             try:

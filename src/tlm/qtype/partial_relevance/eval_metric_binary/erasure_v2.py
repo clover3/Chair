@@ -97,3 +97,5 @@ class ErasureV2(EvalMetricConditionalPerTargetIF):
 
     def do_duty(self):
         self.pk.do_duty(log_size=True, reset=True)
+
+

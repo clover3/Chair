@@ -15,16 +15,24 @@ def get_mmd_client_wrap() -> Callable[[List[SegmentedInstance]], List[float]]:
     join_encoder = JoinEncoder(max_seq_length)
 
     def query_multiple(items: List[SegmentedInstance]) -> List[float]:
+        max_per_run = 10 * 1000
         if len(items) == 0:
             return []
 
         def encode(item: SegmentedInstance):
             return join_encoder.join(item.text1.tokens_ids, item.text2.tokens_ids)
 
-        payload = list(map(encode, items))
-        ret = client.send_payload(payload)
-        ret = np.array(ret)
-        probs = softmax(ret, axis=1)[:, 1]
-        return probs
+        cursor = 0
+        probs_list = []
+        while cursor < len(items):
+            cur_items = items[cursor:cursor+max_per_run]
+            payload = list(map(encode, cur_items))
+            ret = client.send_payload(payload)
+            ret = np.array(ret)
+            probs = softmax(ret, axis=1)[:, 1]
+            probs_list.append(probs)
+            cursor += max_per_run
+        probs_concat = np.concatenate(probs_list, axis=0)
+        return probs_concat.tolist()
     return query_multiple
 

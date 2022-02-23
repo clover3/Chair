@@ -5,6 +5,7 @@ from scipy.stats import ttest_rel
 
 from misc_lib import average
 from tlm.qtype.partial_relevance.eval_score_dp_helper import load_eval_result_r, load_eval_result_b_single
+from tlm.qtype.partial_relevance.result_print.method_preference_count import count_paired_comparison
 
 
 def get_nonnull_scores(eval_res):
@@ -104,13 +105,18 @@ def print_paired_ttest_b(dataset_list, method_list, metric_list):
     return print_paired_ttest_inner(dataset_list, method_list, metric_list, load_eval_result_b_single)
 
 
+def get_score_for_method(dataset, method, metric):
+    run_name = "{}_{}_{}".format(dataset, method, metric)
+    eval_res = load_eval_result_b_single(run_name)
+    scores = get_nonnull_scores(eval_res)
+    return scores
+
 def main2():
-    dataset_list = ["dev_word", "dev_wordp", "dev_wordn"]
+    dataset_list = ["dev_sent"]
     # method_list = ["random", "gradient", "attn_perturbation"]
-    method_list = ["random", "exact_match", "gradient",]
-    metric_list = ["partial_relevant", "erasure"]
-    print_paired_ttest_r(dataset_list, method_list, metric_list)
-    # print_paired_binary(dataset_list, method_list, metric_list)
+    method_list = ["exact_match", "random_cut"]
+    metric_list = ["deletion", "attn"]
+    count_paired_comparison(dataset_list, method_list, metric_list, get_score_for_method)
 
 
 def main3():
@@ -123,9 +129,9 @@ def main3():
                 metric = f"replace_{option}_{wordset}_{target_idx}"
                 metric_list.append(metric)
             print_paired_ttest_r(dataset_list, method_list, metric_list)
-    # print_paired_binary(dataset_list, method_list, metric_list)
+    print_paired_binary(dataset_list, method_list, metric_list)
 
 
 
 if __name__ == "__main__":
-    main3()
+    main2()

@@ -19,6 +19,10 @@ def average(l):
     return sum(l) / len(l)
 
 
+def threshold05(s) -> int:
+    return 1 if s >= 0.5 else 0
+
+
 def tprint(*arg):
     tim_str = strftime("%H:%M:%S", gmtime())
     all_text = " ".join(str(t) for t in arg)
@@ -54,7 +58,7 @@ class TimeEstimator:
             self.progress_tenth += 1
 
 
-def TEL(l: List):
+def TEL(l: List[A]) -> List[A]:
     ticker = TimeEstimator(len(l))
     for e in l:
         yield e

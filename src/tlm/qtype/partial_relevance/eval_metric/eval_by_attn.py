@@ -55,7 +55,6 @@ def paired_future_diff(future_prediction_list: Tuple[MyFuture, MyFuture]):
     before_score = logits_to_score(before.get())
     after_score = logits_to_score(after.get())
     eval_score = before_score - after_score
-    print("{0:.2f} -> {1:.2f}".format(before_score, after_score))
     return eval_score
 
 
