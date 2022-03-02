@@ -15,7 +15,7 @@ class PromiseKeeper:
         self.list_fn = list_fn
         self.time_estimate = time_estimate
 
-    def do_duty(self, log_size=False, reset=False):
+    def do_duty(self, log_size=False, reset=True):
         x_list = list([X.X for X in self.X_list])
         if self.time_estimate is not None:
             estimate = self.time_estimate * len(x_list)

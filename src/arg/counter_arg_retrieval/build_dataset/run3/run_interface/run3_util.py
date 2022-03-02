@@ -2,9 +2,8 @@ import csv
 import os
 from typing import Dict, Tuple, List
 
-from arg.counter_arg_retrieval.build_dataset.passage_scoring.passage_scoring import PassageScoringInner
+from arg.counter_arg_retrieval.build_dataset.passage_scorer_common import FutureScorerI, PassageScoringInner
 from arg.counter_arg_retrieval.build_dataset.passage_scoring.split_passages import PassageRange
-from arg.counter_arg_retrieval.build_dataset.run3.run_interface.passage_scorer import FutureScorerI
 from arg.counter_arg_retrieval.build_dataset.run3.run_interface.split_documents import load_ca3_swtt_passage
 from bert_api.swtt.segmentwise_tokenized_text import SegmentwiseTokenizedText
 from cpath import output_path
@@ -21,7 +20,7 @@ class Run3PassageScoring(PassageScoringInner):
         super(Run3PassageScoring, self).__init__(scorer, rlg, doc_as_passage_dict)
 
 
-def load_tsv_query(file_path):
+def load_tsv_query(file_path) -> List[Tuple[str, str]]:
     data = []
     for row in csv.reader(open(file_path, "r"), delimiter="\t"):
         data.append((row[0], row[1]))

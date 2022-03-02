@@ -1,8 +1,7 @@
+from arg.counter_arg_retrieval.build_dataset.job_running import run_job_runner_json
 from arg.counter_arg_retrieval.build_dataset.methods.bm25_clue import build_bm25
-from arg.counter_arg_retrieval.build_dataset.methods.bm25_clue import build_bm25
+from arg.counter_arg_retrieval.build_dataset.passage_scorer_common import FutureScorerI, FutureScorerTokenBased
 from arg.counter_arg_retrieval.build_dataset.run3.run_interface.bm25_interface import BM25Scorer
-from arg.counter_arg_retrieval.build_dataset.run3.run_interface.passage_scorer import FutureScorerTokenBased, \
-    FutureScorerI
 from arg.counter_arg_retrieval.build_dataset.run3.run_interface.run3_util import load_premise_queries
 from arg.counter_arg_retrieval.build_dataset.run3.swtt.save_trec_style import read_pickled_predictions_and_save
 from arg.counter_arg_retrieval.build_dataset.run4.run4_util import Run4PassageScoring

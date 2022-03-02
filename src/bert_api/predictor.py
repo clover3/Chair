@@ -8,7 +8,7 @@ from trainer.tf_train_module import init_session
 
 
 class Predictor:
-    def __init__(self, model_path, num_classes, max_seq_length=None):
+    def __init__(self, model_path, num_classes, max_seq_length=None, verbose=True):
         self.voca_size = 30522
         load_names = ['bert', "output_bias", "output_weights"]
         self.hp = hyperparams.HPFAD()
@@ -18,7 +18,7 @@ class Predictor:
         self.task = transformer_logit(self.hp, num_classes, self.voca_size, False)
         self.sess = init_session()
         self.sess.run(tf.global_variables_initializer())
-        self.load_model_white(model_path, load_names)
+        self.load_model_white(model_path, load_names, verbose)
         self.batch_size = 64
 
     def predict(self, triple_list: List[Tuple[List, List, List]]) -> List[Tuple]:
@@ -59,12 +59,6 @@ class Predictor:
 
         id = get_last_id(save_dir)
         path = os.path.join(save_dir, "{}".format(id))
-
-        def condition(v):
-            if v.name.split('/')[0] in include_namespace:
-                return True
-            return False
-
         variables = tf.contrib.slim.get_variables_to_restore()
         variables_to_restore = variables
         if verbose:

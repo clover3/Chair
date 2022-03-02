@@ -133,6 +133,7 @@ class SegmentwiseTokenizedText(NamedTuple):
         return get_duplicate_list(map(para_hash, doc_list))
 
 
+
 SWTTIndex = IntTuple
 
 

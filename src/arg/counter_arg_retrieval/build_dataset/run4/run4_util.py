@@ -2,9 +2,8 @@ import os
 from typing import List, Dict, Tuple
 
 from arg.counter_arg_retrieval.build_dataset.ca_query import load_ca_task_from_csv
-from arg.counter_arg_retrieval.build_dataset.passage_scoring.passage_scoring import PassageScoringInner
+from arg.counter_arg_retrieval.build_dataset.passage_scorer_common import FutureScorerI, PassageScoringInner
 from arg.counter_arg_retrieval.build_dataset.passage_scoring.split_passages import PassageRange
-from arg.counter_arg_retrieval.build_dataset.run3.run_interface.passage_scorer import FutureScorerI
 from bert_api.swtt.segmentwise_tokenized_text import SegmentwiseTokenizedText
 from cache import load_from_pickle
 from cpath import output_path
@@ -27,7 +26,6 @@ def load_ca4_tasks():
 
 def show_run4_swtt_count():
     d = load_run4_swtt_passage()
-
     n_doc = len(d)
 
     def get_n_passage(doc):
@@ -35,7 +33,6 @@ def show_run4_swtt_count():
         return len(passage_ranges)
 
     n_passage_all = sum(map(get_n_passage, d.values()))
-
     print(f"{n_doc} docs, {n_passage_all} passage, {n_passage_all/n_doc} avg")
 
 

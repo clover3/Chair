@@ -129,7 +129,7 @@ def model_fn_classification(bert_config, train_config, model_class, special_flag
                 "logits": logits
         }
 
-        useful_inputs = ["data_id", "input_ids2", "data_ids"]
+        useful_inputs = ["data_id", "input_ids2", "data_ids", "hash"]
         for input_name in useful_inputs:
             if input_name in features:
                 predictions[input_name] = features[input_name]

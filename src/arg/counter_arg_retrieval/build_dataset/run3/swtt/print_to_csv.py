@@ -4,6 +4,7 @@ from typing import NamedTuple
 
 from arg.counter_arg_retrieval.build_dataset.annotation_prep import read_save
 from arg.counter_arg_retrieval.build_dataset.ca_query import CAQuery
+from arg.counter_arg_retrieval.build_dataset.passage_prediction_summarizer import load_predictions_from_dir_path
 from bert_api.swtt.swtt_scorer_def import SWTTScorerOutput
 from cache import load_pickle_from
 from cpath import output_path
@@ -48,7 +49,6 @@ def get_candidate_passages(docs_and_scores, duplicate_doc_ids) -> List[Tuple[Pas
     return judge_candidates
 
 
-
 def read_save_default(run_name):
     csv_save_path = os.path.join(output_path, "ca_building", "run3", "csv", "{}.csv".format(run_name))
     prediction_entries = load_entries_from_jobs_dir(run_name)
@@ -67,12 +67,9 @@ def load_entries_from_jobs_dir(run_name):
     return prediction_entries
 
 
-def load_json_entries_from_jobs_dir(run_name, parse_fn):
-    prediction_entries: List[Tuple[CAQuery, List[Tuple[str, SWTTScorerOutput]]]] = []
+def load_json_entries_from_jobs_dir(run_name, parse_fn) -> List[Tuple[str, List[Tuple[str, SWTTScorerOutput]]]]:
     save_dir = os.path.join(output_path, "ca_building", "jobs", run_name)
-    for file_path in get_dir_files(save_dir):
-        if file_path.endswith(".json"):
-            prediction_entries.extend(parse_fn(file_path))
+    prediction_entries = load_predictions_from_dir_path(parse_fn, save_dir)
     return prediction_entries
 
 

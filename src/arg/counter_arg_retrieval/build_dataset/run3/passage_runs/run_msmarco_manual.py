@@ -1,8 +1,8 @@
 import os
 
 from arg.counter_arg_retrieval.build_dataset.job_running import run_job_runner
-from arg.counter_arg_retrieval.build_dataset.run3.run_interface.future_scorer_bert_like import FutureScorerBertLike
-from arg.counter_arg_retrieval.build_dataset.run3.run_interface.passage_scorer import FutureScorerI
+from arg.counter_arg_retrieval.build_dataset.passage_scorer_common import FutureScorerI
+from arg.counter_arg_retrieval.build_dataset.passage_scoring.offline_scorer_bert_like import FutureScorerBertLike
 from arg.counter_arg_retrieval.build_dataset.run3.run_interface.run3_util import Run3PassageScoring, load_manual_queries
 from bert_api.msmarco_tokenization import EncoderUnit
 from bert_api.predictor import Predictor, PredictorWrap

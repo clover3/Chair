@@ -1,7 +1,7 @@
 import os
 from typing import List, Tuple
 
-from arg.counter_arg_retrieval.build_dataset.run3.run_interface.passage_scorer import FutureScorerI
+from arg.counter_arg_retrieval.build_dataset.passage_scorer_common import FutureScorerI
 from arg.counter_arg_retrieval.build_dataset.passage_scoring.split_passages import PassageRange
 from bert_api.predictor import FloatPredictor
 from bert_api.swtt.segmentwise_tokenized_text import SegmentwiseTokenizedText
@@ -12,7 +12,7 @@ from misc_lib import TEL
 from trainer.promise import PromiseKeeper, MyFuture, MyPromise
 
 
-class FutureScorerBertLike(FutureScorerI):
+class FutureSWTTScorerBertLike(FutureScorerI):
     def __init__(self,
                  predictor: FloatPredictor,
                  encoder_factory,

@@ -35,7 +35,6 @@ def get_bert_assignment_map(tvars, lm_checkpoint):
             if name not in lm_assignment_candidate:
                 continue
             assignment_map[name] = lm_assignment_candidate[name]
-
             tvar_name = real_name_map[name]
 
             initialized_variable_names[tvar_name] = 1
@@ -942,7 +941,7 @@ def get_init_fn(train_config, tvars):
         assignment_fn = get_assignment_fn_from_checkpoint_type(train_config.checkpoint_type,
                                                                train_config.init_checkpoint)
         assignment_map, initialized_variable_names = assignment_fn(tvars, train_config.init_checkpoint)
-
+        assignment_map = {}
         def init_fn():
             tf.compat.v1.train.init_from_checkpoint(train_config.init_checkpoint, assignment_map)
         return initialized_variable_names, init_fn

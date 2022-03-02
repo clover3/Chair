@@ -1,7 +1,9 @@
 import json
 import os
 from pickle import UnpicklingError
+from typing import TypeVar, Generic
 
+import arg.counter_arg_retrieval.build_dataset.split_document_common
 from cpath import cache_path, data_path, json_cache_path
 
 
@@ -155,7 +157,15 @@ class DumpPickleLoader:
 def save_list_to_jsonl(item_list, save_path):
     f = open(save_path, "w")
     for item in item_list:
-        s = json.dumps(item.to_json())
+        s = json.dumps(arg.counter_arg_retrieval.build_dataset.split_document_common.sd_to_json())
+        f.write(s + "\n")
+    f.close()
+
+
+def save_list_to_jsonl_w_fn(item_list, save_path, to_json):
+    f = open(save_path, "w")
+    for item in item_list:
+        s = json.dumps(to_json(item))
         f.write(s + "\n")
     f.close()
 
@@ -173,3 +183,24 @@ def named_tuple_to_json(obj):
             _json[data] = (datas[data])
     return _json
 
+
+T = TypeVar('T')
+
+
+class StrItem(Generic[T]):
+    def __init__(self, s, item):
+        self.s = s
+        self.item = item
+
+    def to_json(self):
+        return {
+            'string': self.s,
+            'item': arg.counter_arg_retrieval.build_dataset.split_document_common.sd_to_json()
+        }
+
+    @classmethod
+    def from_json(cls, j, from_json_for_item):
+        return StrItem(j['string'], from_json_for_item(j['item']))
+
+    def to_tuple(self):
+        return self.s, self.item

@@ -121,5 +121,5 @@ class WindowEnumPolicyFixedLimit(WindowEnumPolicyI):
         return self.inner_enum.window_enum(doc, self.limit_in_subword)
 
 
-def get_run3_enum_policy():
+def get_enum_policy_30_to_400_50per_doc():
     return WindowEnumPolicyFixedLimit(400, 30, 50)

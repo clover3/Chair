@@ -2,12 +2,15 @@ import json
 import os
 from typing import List, Tuple, Dict
 
+from arg.counter_arg_retrieval.build_dataset.run5.path_helper import get_swtt_path
+from bert_api.swtt.segmentwise_tokenized_text import SegmentwiseTokenizedText
 from cache import load_from_pickle
 from cpath import output_path
 from data_generator.tokenize_helper import TokenizedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from epath import job_man_dir
 from galagos.doc_processor import jsonl_to_tokenized_text
+from galagos.swtt_processor import jsonl_to_swtt
 from job_manager.job_runner_with_server import JobRunnerF
 from misc_lib import ceil_divide, Averager, file_iterator_interval, exist_or_mkdir
 
@@ -28,6 +31,20 @@ def work(job_no):
     json.dump(output_j, open(save_path, "w"))
 
 
+def work_swtt(job_no):
+    file_path = os.path.join(output_path, "ca_building", "run5", "docs.jsonl")
+    size_per_job = 1000 * 10
+    f = open(file_path, "r")
+    st = job_no * size_per_job
+    ed = st + size_per_job
+    iter = file_iterator_interval(f, st, ed)
+    print("Job {}".format(job_no))
+    output: List[Tuple[str, SegmentwiseTokenizedText]] = jsonl_to_swtt(iter, get_tokenizer(), size_per_job)
+    save_path = get_swtt_path(job_no)
+    output_j: Dict[str, Dict] = {k: v.to_json() for k, v in output}
+    json.dump(output_j, open(save_path, "w"))
+
+
 def size_check():
     docs: List[Tuple[str, TokenizedText]] = load_from_pickle("ca_run5_document_processed")
     window_size = 400
@@ -41,7 +58,7 @@ def size_check():
 
 def main():
     num_jobs = 34
-    runner = JobRunnerF(job_man_dir, num_jobs, "ca_building_run5_parse_doc", work)
+    runner = JobRunnerF(job_man_dir, num_jobs, "ca_building_run5_parse_doc_swtt", work_swtt)
     runner.start()
 
 

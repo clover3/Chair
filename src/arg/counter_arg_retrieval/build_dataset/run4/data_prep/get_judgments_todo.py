@@ -1,5 +1,6 @@
 from typing import Tuple, Dict, List
 
+from arg.counter_arg_retrieval.build_dataset.judgement_common import convert_to_judgment_entries
 from arg.counter_arg_retrieval.build_dataset.judgments import Judgement
 from arg.counter_arg_retrieval.build_dataset.passage_scoring.split_passages import PassageRange
 from arg.counter_arg_retrieval.build_dataset.path_helper import load_sliced_passage_ranked_list
@@ -75,18 +76,17 @@ def check_if_same_passage_idx_makes_same_st_ed():
     print(n_equal, n_wrong)
 
 
-def get_judgments_todo():
+def get_judgments_todo() -> List[Judgement]:
     prev_judgments = load_prev_judgments()
     passages: Dict[DocID, Tuple[SegmentwiseTokenizedText, List[PassageRange]]] \
         = load_run4_swtt_passage()
 
     n_prev_judged = 0
     runs = ["PQ_6", "PQ_7", "PQ_8", "PQ_9"]
-    judgments_todo = []
+    judgments_todo: List[Judgement] = []
     for run_name in runs:
         pq = load_sliced_passage_ranked_list(run_name)
-        required_judgements = convert_to_judgment_entries(passages, pq)
-        print(run_name)
+        required_judgements: List[Judgement] = convert_to_judgment_entries(passages, pq)
         for e in required_judgements:
             if e in prev_judgments:
                 n_prev_judged += 1
@@ -106,19 +106,6 @@ def load_prev_judgments():
     pq1 = load_sliced_passage_ranked_list(run_name)
     prev_judgments = convert_to_judgment_entries(passages, pq1)
     return prev_judgments
-
-
-def convert_to_judgment_entries(passages, pq1):
-    all_judgements = []
-    for qid, entries in pq1.items():
-        for e in entries:
-            doc_id, passage_idx = e.doc_id.split("_")
-            passage_idx = int(passage_idx)
-            swtt, passage_ranges = passages[doc_id]
-            st, ed = passage_ranges[passage_idx]
-            judgement = Judgement(qid, doc_id, passage_idx, st, ed)
-            all_judgements.append(judgement)
-    return all_judgements
 
 
 def main():

@@ -1,7 +1,7 @@
 import json
 import os
 
-from arg.counter_arg_retrieval.build_dataset.passage_scoring.passage_scoring import scoring_output_to_json
+from arg.counter_arg_retrieval.build_dataset.passage_scorer_common import scoring_output_to_json
 from cpath import output_path
 from data_generator.job_runner import WorkerInterface, ListWorker
 from job_manager.job_runner_with_server import JobRunnerS

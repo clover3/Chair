@@ -3,7 +3,7 @@ import os
 import pickle
 from typing import List, Tuple
 
-from arg.counter_arg_retrieval.build_dataset.run3.run_interface.duplicate_removal import remove_duplicates
+from arg.counter_arg_retrieval.build_dataset.data_prep.duplicate_removal import remove_duplicates
 from bert_api.swtt.segmentwise_tokenized_text import SegmentwiseTokenizedText
 from cpath import output_path
 from list_lib import flatten

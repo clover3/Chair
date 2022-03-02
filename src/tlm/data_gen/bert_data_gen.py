@@ -1,5 +1,7 @@
 import collections
+
 import tensorflow as tf
+
 
 class TrainingInstance(object):
     def __init__(self, tokens, segment_ids, masked_lm_positions, masked_lm_labels,
@@ -23,6 +25,11 @@ def create_int_feature(values):
 
 def create_float_feature(values):
     feature = tf.train.Feature(float_list=tf.train.FloatList(value=list(values)))
+    return feature
+
+
+def create_byte_feature(bytes):
+    feature = tf.train.Feature(bytes_list=tf.train.BytesList(value=[bytes]))
     return feature
 
 

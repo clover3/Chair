@@ -8,7 +8,7 @@ from taskman_client.task_proxy import get_task_manager_proxy, get_local_machine_
 
 class JobRunnerS:
     # worker_factory : gets output_path to as argument, returns object
-    def __init__(self, working_path: str, max_job: int, job_name: str, worker_factory):
+    def __init__(self, working_path: str, max_job: int, job_name: str, worker_factory, keep_on_exception=False):
         self.machine = get_local_machine_name()
         self.task_manager_proxy = get_task_manager_proxy()
         self.max_job = max_job
@@ -16,6 +16,7 @@ class JobRunnerS:
         self.job_name = job_name
         self.out_path = os.path.join(working_path, job_name)
         self.worker_factory = worker_factory
+        self.keep_on_exception = keep_on_exception
         exist_or_mkdir(self.out_path)
 
     def start(self):
@@ -35,7 +36,14 @@ class JobRunnerS:
         job_id = self.pool_job()
         print("Job id : ", job_id)
         while job_id is not None:
-            worker.work(job_id)
+            try:
+                worker.work(job_id)
+            except Exception as e:
+                update_type = "ERROR"
+                msg = str(e)
+                self.task_manager_proxy.sub_job_update(self.job_name, self.max_job, update_type, msg)
+                if not self.keep_on_exception:
+                    raise
             job_id = self.report_done_and_pool_job(job_id)
             print("Job id : ", job_id)
 
