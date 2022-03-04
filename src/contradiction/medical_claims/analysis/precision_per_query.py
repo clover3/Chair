@@ -6,9 +6,10 @@ import numpy as np
 
 from contradiction.medical_claims.annotation_1.load_data import get_dev_group_no
 from contradiction.medical_claims.biobert.voca_common import get_biobert_tokenizer
-from contradiction.medical_claims.token_tagging.deletion_ranker import get_cont_prob, convert_split_input_ids_w_scores, \
-    get_neutral_prob
-from contradiction.medical_claims.token_tagging.token_tagging_common import get_split_score_to_pair_list_fn
+from contradiction.medical_claims.token_tagging.query_id_helper import get_query_id
+from contradiction.medical_claims.token_tagging.solver_cores.misc_common import get_neutral_prob, get_cont_prob, \
+    convert_split_input_ids_w_scores
+from contradiction.medical_claims.token_tagging.subtoken_helper import get_split_score_to_pair_list_fn
 from cpath import output_path
 from data_generator.tokenize_helper import TokenizedText
 from explain.tf2.deletion_scorer import TokenExEntry, summarize_deletion_score
@@ -58,7 +59,7 @@ TokenScoreDict = Dict[Tuple[int, int],
 
 def collect_token_scores(dir_path, info_path, tokenizer, tag_type) -> TokenScoreDict:
     info_d, summarized_result = get_summarized_results(dir_path, info_path, tag_type)
-    split_score_to_pair_list = get_split_score_to_pair_list_fn(merge_method=sum)
+    split_score_to_pair_list = get_split_score_to_pair_list_fn(merge_subtoken_scores=sum)
     output_d: TokenScoreDict = {}
     for e in summarized_result:
         info_e = info_d[str(e.data_id)]
@@ -128,7 +129,7 @@ def conditional_performance(nli_prediction_d: Dict[Tuple[int, int], List[float]]
             sent1, sent2, scores1, scores2 = token_score_d[data_no]
             print(len(sent1), len(sent2), len(scores1), len(scores2), )
             for sent_type in ["prem", "hypo"]:
-                qid = "{}_{}_{}_{}".format(group_no, inner_idx, sent_type, tag)
+                qid = get_query_id(group_no, inner_idx, sent_type, tag)
                 print(qid)
                 if qid in qrel:
                     scores: List[Tuple[str, float]] = {
