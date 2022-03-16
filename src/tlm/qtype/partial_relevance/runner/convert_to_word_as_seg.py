@@ -1,13 +1,13 @@
 import os
 from typing import List
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
+from bert_api.segmented_instance.segmented_text import SegmentedText, word_segment_w_indices
 from cache import save_list_to_jsonl
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
-from tlm.qtype.partial_relevance.problem_builder import word_segment_w_indices
-from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 
 
 def reform_segment_to_word_level(tokenizer, segment: SegmentedInstance) -> SegmentedInstance:

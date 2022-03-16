@@ -1,10 +1,11 @@
 from typing import List, Callable, Dict, Tuple
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from cpath import at_output_dir
 from datastore.sql_based_cache_client import SQLBasedCacheClientS
 from tlm.qtype.partial_relevance.attention_based.bert_masking_common import BERTMaskIF
 from tlm.qtype.partial_relevance.bert_mask_interface.bert_masking_client import get_bert_mask_client
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance, get_test_segment_instance
+from tlm.qtype.partial_relevance.eval_data_structure import get_test_segment_instance
 from tlm.qtype.partial_relevance.eval_metric.attn_mask_utils import BertMaskWrap
 
 InputType = Tuple[SegmentedInstance, Dict]

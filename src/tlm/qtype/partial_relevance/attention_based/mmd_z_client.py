@@ -4,9 +4,9 @@ import numpy as np
 from scipy.special import softmax
 
 from bert_api.client_lib import BERTClient
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import JoinEncoder
 from port_info import MMD_Z_PORT
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
 
 
 def get_mmd_client_wrap() -> Callable[[List[SegmentedInstance]], List[float]]:

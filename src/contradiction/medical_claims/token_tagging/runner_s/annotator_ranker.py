@@ -1,37 +1,16 @@
 import os
 from typing import List, Dict, Tuple
 
-from contradiction.medical_claims.token_tagging.online_solver_common import TokenScoringSolverIF2, \
-    make_ranked_list_w_solver_if2
+from contradiction.medical_claims.token_tagging.solver_cores.annotator_solver import AnnotatorSolver
+
+from contradiction.medical_claims.token_tagging.online_solver_common import make_ranked_list_w_solver_if2
 from contradiction.medical_claims.token_tagging.path_helper import get_save_path
 from contradiction.medical_claims.token_tagging.problem_loader import load_alamri1_problem_info_json, AlamriProblem
 from contradiction.medical_claims.token_tagging.query_id_helper import get_query_id
 from cpath import output_path
-from list_lib import index_by_fn
 from trec.qrel_parse import load_qrels_structured
 from trec.trec_parse import scores_to_ranked_list_entries, write_trec_ranked_list_entry
 from trec.types import QRelsDict, DocID
-
-
-class AnnotatorSolver(TokenScoringSolverIF2):
-    def __init__(self, qrel: QRelsDict, problems: List[AlamriProblem], tag_type):
-        self.tag_type = tag_type
-        self.qrel = qrel
-        self.problems_d: Dict[int, AlamriProblem] = index_by_fn(lambda p: p.data_id, problems)
-
-    def solve(self, data_id: int, text1_tokens: List[str], text2_tokens: List[str]) -> Tuple[List[float], List[float]]:
-        p = self.problems_d[data_id]
-
-        def get_answer(sent_name, tokens):
-            query_id = get_query_id(p.group_no, p.inner_idx, sent_name, self.tag_type)
-            qrel_entries: Dict[DocID, int] = self.qrel[query_id]
-            def get_score(doc_id)-> float:
-                return 1 if doc_id in qrel_entries else 0
-
-            scores: List[float] = [get_score(str(idx)) for idx, _ in enumerate(tokens)]
-            return scores
-
-        return get_answer("prem", text1_tokens), get_answer("hypo", text2_tokens)
 
 
 def make_ranked_list(save_name, problems: List[AlamriProblem], source_qrel_path, tag_type):

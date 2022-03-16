@@ -1,14 +1,9 @@
 
 from typing import List
 
-import nltk
-
-from data_generator.tokenizer_wo_tf import get_tokenizer
-from list_lib import flatten
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementCandidateGenIF, \
     PartialSegment
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
-from tlm.qtype.partial_relevance.problem_builder import get_word_level_location_w_ids
 
 
 class ComplementGenOriginalQuery(ComplementCandidateGenIF):

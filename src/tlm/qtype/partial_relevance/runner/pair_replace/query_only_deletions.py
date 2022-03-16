@@ -1,17 +1,17 @@
 import random
 from typing import List, Callable
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
+from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import Averager
 from models.classic.stopword import load_stopwords
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_search import IDX_FUNC, \
     IDX_CONTENT
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
 from tlm.qtype.partial_relevance.eval_metric.ps_replace_helper import get_mask_empty_as_span
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_replace_non_target_query, QueryReplaceFunc
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 from tlm.qtype.partial_relevance.mmd_cached_client import get_mmd_cache_client, SQLBasedCacheClient
-from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 
 
 class NotApplicableException(Exception):

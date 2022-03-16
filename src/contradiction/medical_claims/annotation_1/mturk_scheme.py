@@ -1,7 +1,8 @@
 import re
-from typing import List, Tuple, NamedTuple, Union
+from typing import List, Tuple, Union
 
 from contradiction.medical_claims.annotation_1.analyze_result.read_batch import load_file_list
+from contradiction.medical_claims.label_structure import PairedIndicesLabel, AlamriLabelUnitT
 from mturk.parse_util import HITScheme, Textbox, ColumnName, HitResult, parse_file
 
 
@@ -54,48 +55,6 @@ def parse_url(url_text: str) -> Tuple[int, int]:
     return group_no, sub_no
 
 
-class PairedIndicesLabel(NamedTuple):
-    prem_conflict: List[int]
-    prem_mismatch: List[int]
-    hypo_conflict: List[int]
-    hypo_mismatch: List[int]
-
-    def enum(self):
-        yield self.prem_conflict
-        yield self.prem_mismatch
-        yield self.hypo_conflict
-        yield self.hypo_mismatch
-
-    def to_dict(self):
-        return {
-            'prem_conflict': self.prem_conflict,
-            'prem_mismatch': self.prem_mismatch,
-            'hypo_conflict': self.hypo_conflict,
-            'hypo_mismatch': self.hypo_mismatch,
-        }
-
-    @staticmethod
-    def from_dict(d):
-        return PairedIndicesLabel(
-            d['prem_conflict'],
-            d['prem_mismatch'],
-            d['hypo_conflict'],
-            d['hypo_mismatch'],
-        )
-
-    @staticmethod
-    def get_sent_types():
-        return [
-            "prem_conflict",
-            "prem_mismatch",
-            'hypo_conflict',
-            'hypo_mismatch'
-        ]
-
-
-AlamriLabelUnit = Tuple[Tuple[int, int], PairedIndicesLabel]
-
-
 def parse_sub_indices(s):
     l = filter(None, s.strip().split(" "))
     try:
@@ -116,7 +75,7 @@ def parse_indices(indices_str: str) -> Union[PairedIndicesLabel, str]:
         raise MTurkOutputFormatError
 
 
-def parse_alamri_hit(h: HitResult) -> AlamriLabelUnit:
+def parse_alamri_hit(h: HitResult) -> AlamriLabelUnitT:
     group_no, inst_no = parse_url(h.inputs['url'])
     annot: PairedIndicesLabel = parse_indices(h.outputs['indices'])
     inst = (group_no, inst_no), annot

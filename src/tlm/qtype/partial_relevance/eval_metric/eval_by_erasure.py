@@ -1,10 +1,10 @@
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
+from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput, PartialSegment
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance, \
-    RelatedBinaryAnswer
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedBinaryAnswer
 from tlm.qtype.partial_relevance.eval_metric.ep_common import TupleOfListFuture, EvalMetricBinaryWCIF
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFuncB
-from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 
 

@@ -5,8 +5,8 @@ def main():
     url = "http://localhost:8131/predict"
     sent1 = 'This site includes a list of all award winners and a searchable database of Government Executive articles.'
     sent2 = 'The government searched the site.'
-    sent1 = "yeah i i think my favorite restaurant is always been the one closest  you know the closest as long as it's it meets the minimum criteria you know of good food"
-    sent2 = "My favorite restaurants are always at least a hundred miles away from my house. "
+    sent1 = "Supplementation during pregnancy with a medical food containing L-arginine and vitamins reduced the incidence of pre-eclampsia in a population at high risk of the condition."
+    sent2 = "L-Arginine load in pregnant women is associated with increased nitric oxide (NO) production and hypotension."
     data_list = [sent1, sent2]
     for sent in data_list:
         data =  {'sentence': sent}

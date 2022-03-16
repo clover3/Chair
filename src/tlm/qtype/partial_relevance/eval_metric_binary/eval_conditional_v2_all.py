@@ -1,5 +1,6 @@
 from typing import List, Tuple, Iterable, Optional
 
+from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens
 from list_lib import left, right
 from misc_lib import TEL
@@ -8,7 +9,6 @@ from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance,
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricConditionalPerTargetIF
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_partial_text_as_segment
 from tlm.qtype.partial_relevance.eval_metric_binary.replace_v2 import ReplaceV2
-from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 from trainer.promise import parent_child_pattern, MyFuture
 
 

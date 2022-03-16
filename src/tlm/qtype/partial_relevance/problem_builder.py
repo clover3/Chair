@@ -1,44 +1,15 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from arg.qck.decl import get_format_handler
 from arg.qck.prediction_reader import load_combine_info_jsons
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
+from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
-from data_generator.tokenizer_wo_tf import is_continuation, get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from scipy_aux import logit_to_score_softmax
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 from tlm.qtype.content_functional_parsing.qid_to_content_tokens import QueryInfo, load_query_info_dict
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance, RelatedEvalInstance
-from tlm.qtype.partial_relevance.segmented_text import SegmentedText
-
-
-def get_word_level_location_w_ids(tokenizer, input_ids) -> List[List[int]]:
-    tokens = tokenizer.convert_ids_to_tokens(input_ids)
-    intervals: List[List[int]] = []
-    start = 0
-    idx = 0
-    while idx < len(tokens):
-        token = tokens[idx]
-        if idx == 0:
-            pass
-        elif is_continuation(token):
-            pass
-        elif token == "[PAD]":
-            break
-        else:
-            end = idx
-            intervals.append(list(range(start, end)))
-            start = idx
-        idx += 1
-    end = idx
-    if end > start:
-        l: List[int] = list(range(start, end))
-        intervals.append(l)
-    return intervals
-
-
-def word_segment_w_indices(tokenizer, input_ids) -> Tuple[List[int], List[List[int]]]:
-    word_location_list = get_word_level_location_w_ids(tokenizer, input_ids)
-    return input_ids, word_location_list
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
 
 
 def build_eval_instances(info_path,

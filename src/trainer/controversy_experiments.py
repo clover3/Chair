@@ -1,9 +1,9 @@
 import pickle
 
-from krovetzstemmer import Stemmer
+import galagos.basic
 
 import cpath
-import galagos.basic
+import explain.bert_components.load_nli_dev
 from evaluation import compute_auc, compute_pr_auc, AP
 from models.classic.lm_ex import LMClassifierEx
 from models.controversy import *
@@ -129,8 +129,8 @@ class ControversyExperiment:
 
 
     def lm_protest_baseline(self):
-        train_X, train_Y = load_protest.load_data("train")
-        dev_X, dev_Y = load_protest.load_data("dev")
+        train_X, train_Y = explain.bert_components.load_nli_dev.load_data("train")
+        dev_X, dev_Y = explain.bert_components.load_nli_dev.load_data("dev")
 
         stemmer = Stemmer()
         dir_path = os.path.join(cpath.data_path, "protest", "pseudo_docs", "dbpedia")
@@ -231,8 +231,8 @@ class ControversyExperiment:
 
     
     def lm_protext_ex(self):
-        train_X, train_Y = load_protest.load_data("train")
-        dev_X, dev_Y = load_protest.load_data("dev")
+        train_X, train_Y = explain.bert_components.load_nli_dev.load_data("train")
+        dev_X, dev_Y = explain.bert_components.load_nli_dev.load_data("dev")
 
         stemmer = Stemmer()
         dir_protest = os.path.join(cpath.data_path, "protest", "pseudo_docs", "dbpedia")

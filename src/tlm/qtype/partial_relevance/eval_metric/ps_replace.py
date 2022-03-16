@@ -1,9 +1,9 @@
 
 from typing import List, Callable
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance, \
-    RelatedBinaryAnswer
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedBinaryAnswer
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricBinaryIF
 from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 

@@ -79,6 +79,12 @@ def name_mapping_cls_probe(name):
     return name
 
 
+
+def name_mapping_embedding(name):
+    name2 = name_mapping_drop_colon(name)
+    return name2.replace("_embeddings/embeddings", "_embeddings")
+
+
 def load_model_from_v1_checkpoint(save_path, model_config) -> Tuple[tf.keras.Model, BertClassifierLayer]:
     bert_config_file = os.path.join(data_path, "bert_config.json")
     bert_config = BertConfig.from_json_file(bert_config_file)
@@ -87,7 +93,7 @@ def load_model_from_v1_checkpoint(save_path, model_config) -> Tuple[tf.keras.Mod
     max_seq_len = model_config.max_seq_length
     inputs = define_bert_keras_inputs(max_seq_len)
     cls_logits = bert_classifier_layer.call(inputs)
-    load_stock_weights(bert_classifier_layer, save_path, name_mapping_drop_colon, ["optimizer"])
+    load_stock_weights(bert_classifier_layer, save_path, name_mapping_embedding, ["optimizer"])
 
     output = cls_logits
     model = tf.keras.Model(inputs=inputs, outputs=output)

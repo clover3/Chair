@@ -1,13 +1,14 @@
+import json
 from typing import List, Dict
 
-from contradiction.medical_claims.annotation_1.mturk_scheme import PairedIndicesLabel, AlamriLabelUnit
+from contradiction.medical_claims.label_structure import PairedIndicesLabel, AlamriLabelUnitT
 from list_lib import flatten, lmap
 from misc_lib import group_by, get_first
 from trec.trec_parse import write_trec_relevance_judgement
 from trec.types import TrecRelevanceJudgementEntry
 
 
-def combine_alamri1_annots(annots, combine_method) -> List[AlamriLabelUnit]:
+def combine_alamri1_annots(annots, combine_method) -> List[AlamriLabelUnitT]:
     grouped = group_by(annots, get_first)
 
 
@@ -18,8 +19,8 @@ def combine_alamri1_annots(annots, combine_method) -> List[AlamriLabelUnit]:
     return selected_annots
 
 
-def convert_annots_to_json_serializable(annots: List[AlamriLabelUnit]):
-    def to_dict(e: AlamriLabelUnit) -> Dict:
+def convert_annots_to_json_serializable(annots: List[AlamriLabelUnitT]):
+    def to_dict(e: AlamriLabelUnitT) -> Dict:
         (group_no, idx), annot = e
         return {
             'group_no': group_no,
@@ -31,15 +32,15 @@ def convert_annots_to_json_serializable(annots: List[AlamriLabelUnit]):
     return out
 
 
-def json_dict_list_to_annots(maybe_list: List) -> List[AlamriLabelUnit]:
-    def convert(d: Dict) -> AlamriLabelUnit:
+def json_dict_list_to_annots(maybe_list: List) -> List[AlamriLabelUnitT]:
+    def convert(d: Dict) -> AlamriLabelUnitT:
         label = d['label']
         return (d['group_no'], d['inner_idx']), PairedIndicesLabel.from_dict(label)
 
     return lmap(convert, maybe_list)
 
 
-def label_to_trec_entries(e: AlamriLabelUnit)\
+def label_to_trec_entries(e: AlamriLabelUnitT)\
         -> List[TrecRelevanceJudgementEntry]:
     data_id, label = e
     group_no, inner_no = data_id
@@ -54,7 +55,12 @@ def label_to_trec_entries(e: AlamriLabelUnit)\
     return output
 
 
-def save_annots_to_qrel(annots: List[AlamriLabelUnit],
+def load_label_from_json_path(json_path) -> List[AlamriLabelUnitT]:
+    maybe_list = json.load(open(json_path, "r"))
+    return json_dict_list_to_annots(maybe_list)
+
+
+def save_annots_to_qrel(annots: List[AlamriLabelUnitT],
                         save_path: str):
     rel_entries = flatten(map(label_to_trec_entries, annots))
     write_trec_relevance_judgement(rel_entries, save_path)

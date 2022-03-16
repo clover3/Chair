@@ -78,6 +78,20 @@ def read_cache_s_from_sqlite(sqlite_path) -> Dict:
     return d
 
 
+def read_cache_str_from_sqlite(sqlite_path) -> Dict:
+    st = time.time()
+    engine = get_engine_from_sqlite_path(sqlite_path)
+    session_maker = sessionmaker(bind=engine)
+    with session_maker() as session:
+        q_res_itr = session.query(CacheTableS).all()
+        d = {}
+        for row in q_res_itr:
+            s = row.value
+            d[row.key] = s
+        ed = time.time()
+        print("read_cache_str_from_sqlite() - {0} items read at {1:.2f}sec".format(len(d), ed - st))
+    return d
+
 def build_db(sqlite_path):
     engine = get_engine_from_sqlite_path(sqlite_path)
     Base.metadata.create_all(engine)

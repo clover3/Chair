@@ -1,7 +1,7 @@
 from typing import Dict, Tuple
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from tlm.qtype.partial_relevance.bert_mask_interface.mmd_z_mask_cacche import AttnMaskForward
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
 from tlm.qtype.partial_relevance.eval_metric.attn_mask_utils import get_drop_mask_binary
 from tlm.qtype.partial_relevance.eval_metric.eval_by_attn import paired_future_diff
 from tlm.qtype.partial_relevance.eval_metric_binary.eval_v3_common import assert_code

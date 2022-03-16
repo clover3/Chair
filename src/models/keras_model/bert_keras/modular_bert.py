@@ -70,9 +70,9 @@ def embedding_postprocessor(input_tensor, token_type_table, full_position_embedd
     return output
 
 
-class Embedding(MyLayer):
+class Embeddings(MyLayer):
     def __init__(self, config, use_one_hot_embeddings):
-        super(Embedding, self).__init__()
+        super(Embeddings, self).__init__()
         self.config = config
         self.use_one_hot_embeddings = use_one_hot_embeddings
         self.embedding_output = None
@@ -81,58 +81,58 @@ class Embedding(MyLayer):
         initializer = bc.create_initializer(config.initializer_range)
         # get_variable = tf.compat.v1.get_variable
         get_variable = self.add_weight
-        # self.embedding_table = get_variable(
-        #     name="word_embeddings",
-        #     shape=[config.vocab_size, config.hidden_size],
-        #     initializer=initializer)
-        # self.token_type_table = get_variable(
-        #     name="token_type_embeddings",
-        #     shape=[config.type_vocab_size, config.hidden_size],
-        #     initializer=initializer)
-        # self.full_position_embeddings = get_variable(
-        #     name="position_embeddings",
-        #     shape=[config.max_position_embeddings, config.hidden_size],
-        #     initializer=initializer)
-
-        self.embedding_table = tf.keras.layers.Embedding(
-            input_dim=config.vocab_size,
-            output_dim=config.hidden_size,
-            name="word_embeddings"
-        )
-        self.token_type_table = tf.keras.layers.Embedding(
-            input_dim=config.type_vocab_size,
-            output_dim=config.hidden_size,
-            name="token_type_embeddings"
-        )
-        self.full_position_embeddings = tf.keras.layers.Embedding(
-            input_dim=config.max_position_embeddings,
-            output_dim=config.hidden_size,
-            name="position_embeddings"
-        )
+        self.embedding_table = get_variable(
+            name="word_embeddings",
+            shape=[config.vocab_size, config.hidden_size],
+            initializer=initializer)
+        self.token_type_table = get_variable(
+            name="token_type_embeddings",
+            shape=[config.type_vocab_size, config.hidden_size],
+            initializer=initializer)
+        self.full_position_embeddings = get_variable(
+            name="position_embeddings",
+            shape=[config.max_position_embeddings, config.hidden_size],
+            initializer=initializer)
+        #
+        # self.embedding_table = tf.keras.layers.Embedding(
+        #     input_dim=config.vocab_size,
+        #     output_dim=config.hidden_size,
+        #     name="word_embeddings"
+        # )
+        # self.token_type_table = tf.keras.layers.Embedding(
+        #     input_dim=config.type_vocab_size,
+        #     output_dim=config.hidden_size,
+        #     name="token_type_embeddings"
+        # )
+        # self.full_position_embeddings = tf.keras.layers.Embedding(
+        #     input_dim=config.max_position_embeddings,
+        #     output_dim=config.hidden_size,
+        #     name="position_embeddings"
+        # )
     # Perform embedding lookup on the word ids.
     def call(self, inputs, **kwargs):
         input_ids, segment_ids = inputs
         config = self.config
-        # (self.embedding_output, self.embedding_table) = bc.embedding_lookup2(
-        #     input_ids=input_ids,
-        #     embedding_table=self.embedding_table,
-        #     vocab_size=config.vocab_size,
-        #     embedding_size=config.hidden_size,
-        #     use_one_hot_embeddings=self.use_one_hot_embeddings)
-        embedding_output = self.embedding_table(input_ids)
+        (self.embedding_output, self.embedding_table) = bc.embedding_lookup2(
+            input_ids=input_ids,
+            embedding_table=self.embedding_table,
+            vocab_size=config.vocab_size,
+            embedding_size=config.hidden_size,
+            use_one_hot_embeddings=self.use_one_hot_embeddings)
+        # embedding_output = self.embedding_table(input_ids)
 
         self.location_less_embedding = self.embedding_output
-        embedding_output += self.token_type_table(segment_ids)
-        self.embedding_output = embedding_output
-        # self.embedding_output = embedding_postprocessor(
-        #     input_tensor=self.embedding_output,
-        #     token_type_table=self.token_type_table,
-        #     full_position_embeddings=self.full_position_embeddings,
-        #     use_token_type=True,
-        #     token_type_ids=segment_ids,
-        #     token_type_vocab_size=config.type_vocab_size,
-        #     use_position_embeddings=True,
-        #     max_position_embeddings=config.max_position_embeddings)
+        # embedding_output += self.token_type_table(segment_ids)
+        # self.embedding_output = embedding_output
+        self.embedding_output = embedding_postprocessor(
+            input_tensor=self.embedding_output,
+            token_type_table=self.token_type_table,
+            full_position_embeddings=self.full_position_embeddings,
+            use_token_type=True,
+            token_type_ids=segment_ids,
+            token_type_vocab_size=config.type_vocab_size,
+            use_position_embeddings=True,
+            max_position_embeddings=config.max_position_embeddings)
         return self.embedding_output
 
 
@@ -387,7 +387,8 @@ class BertLayer(MyLayer):
         self.do_return_all_layers = do_return_all_layers
         self.use_one_hot_embeddings = use_one_hot_embeddings
         with tf.compat.v1.variable_scope("embeddings") as name_scope:
-            self.embedding_layer = Embedding(config, use_one_hot_embeddings)
+            print("name scope of embeding", name_scope.name)
+            self.embedding_layer = Embeddings(config, use_one_hot_embeddings)
             full_name = name_scope.name + "/LayerNorm"
             self.embedding_layer_norm = get_layer_norm(full_name)
             self.dummy_project = ProjectionLayer("dummy_projection", config)

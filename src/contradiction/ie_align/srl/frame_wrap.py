@@ -10,6 +10,7 @@ class IndexToken(NamedTuple):
     def get_word(self):
         return self.word
 
+
 class SRLFrame(NamedTuple):
     frame: List[IndexToken]
     args: List[Tuple[str, List[IndexToken]]]

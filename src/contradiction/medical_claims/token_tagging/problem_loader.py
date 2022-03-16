@@ -30,3 +30,18 @@ def load_alamri_problem() -> List[AlamriProblem]:
 
     assert len(output) == 305
     return output
+
+
+def get_valid_split_groups() -> List[int]:
+    return list(range(13))
+
+
+def load_alamri_split(split) -> List[AlamriProblem]:
+    all_problems = load_alamri_problem()
+    valid_groups = get_valid_split_groups()
+    if split == "val" or split == "dev":
+        return [p for p in all_problems if p.group_no in valid_groups]
+    elif split == "text":
+        return [p for p in all_problems if p.group_no not in valid_groups]
+    else:
+        raise ValueError(split)

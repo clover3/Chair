@@ -5,12 +5,13 @@ import numpy as np
 import scipy.special
 from scipy.special import softmax
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import JoinEncoder
 from list_lib import left
 from misc_lib import get_second, two_digit_float
 from tab_print import tab_print
 from tlm.qtype.partial_relevance.attention_based.bert_masking_common import BERTMaskIF
-from tlm.qtype.partial_relevance.eval_data_structure import ContributionSummary, SegmentedInstance
+from tlm.qtype.partial_relevance.eval_data_structure import ContributionSummary
 from tlm.qtype.partial_relevance.qd_segmented_instance import QDSegmentedInstance
 
 

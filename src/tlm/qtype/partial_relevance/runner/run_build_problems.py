@@ -1,11 +1,12 @@
 import os
 
+from bert_api.segmented_instance.segmented_text import word_segment_w_indices
 from cache import save_list_to_jsonl
 from cpath import output_path
 from epath import job_man_dir
 from misc_lib import split_window
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
-from tlm.qtype.partial_relevance.problem_builder import build_eval_instances, word_segment_w_indices
+from tlm.qtype.partial_relevance.problem_builder import build_eval_instances
 from tlm.qtype.partial_relevance.runner.sent_tokenize_dev import sentence_segment_w_indices
 
 

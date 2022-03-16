@@ -1,9 +1,9 @@
 from typing import List, Callable, Dict, Tuple
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from list_lib import index_by_fn
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance, \
-    RelatedBinaryAnswer
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, RelatedBinaryAnswer
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricWCIF, EvalMetricIF, EvalMetricBinaryIF
 from trainer.promise import MyPromise, PromiseKeeper
 

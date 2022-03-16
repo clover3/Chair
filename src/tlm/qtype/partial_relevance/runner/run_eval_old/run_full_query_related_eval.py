@@ -2,9 +2,10 @@ import json
 import os
 from typing import List, Callable
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from cpath import output_path
 from tlm.qtype.partial_relevance.attention_based.mmd_z_client import get_mmd_client_wrap
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_utils import related_eval
 from tlm.qtype.partial_relevance.loader import load_dev_small_problems
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import parse_related_eval_answer_from_json

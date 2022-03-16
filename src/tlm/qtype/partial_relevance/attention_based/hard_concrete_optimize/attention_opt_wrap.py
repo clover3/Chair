@@ -8,6 +8,7 @@ from typing import Dict
 import numpy as np
 import tensorflow as tf
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.bert_input_splitter import get_sep_loc
 from data_generator.tokenizer_wo_tf import JoinEncoder
 from tlm.qtype.partial_relevance.attention_based.hard_concrete_optimize.attention_opt import \
@@ -17,7 +18,6 @@ from tlm.qtype.partial_relevance.attention_based.hard_concrete_optimize.segment_
     get_always_active_mask_qt
 from tlm.qtype.partial_relevance.attention_based.hard_concrete_optimize.train_utils import session_run_print, \
     load_model_by_dir, print_dict_float_values
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
 from trainer.tf_train_module_v2 import init_session
 
 

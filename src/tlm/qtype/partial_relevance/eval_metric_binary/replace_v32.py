@@ -1,10 +1,11 @@
 from typing import List, Dict
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
+from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import PartialSegment
 from tlm.qtype.partial_relevance.complement_search_pckg.span_iter import get_candidates
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstanceEx, RelatedBinaryAnswer, \
-    SegmentedInstance
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstanceEx, RelatedBinaryAnswer
 from tlm.qtype.partial_relevance.eval_metric.ep_common import ReplaceSamplePolicyIF
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_partial_text_as_segment, get_replace_zero
 from tlm.qtype.partial_relevance.eval_metric_binary.eval_v3_common import EvalV3StateIF, V3StateWorkerIF, MetricV3, \
@@ -12,7 +13,6 @@ from tlm.qtype.partial_relevance.eval_metric_binary.eval_v3_common import EvalV3
 from tlm.qtype.partial_relevance.eval_metric_binary.replace_v2 import PerWord, add_w
 from tlm.qtype.partial_relevance.eval_metric_binary.replace_v3 import ReplaceV3StateDone, \
     ReplaceV3StateWorkerSearch, ReplaceV3StateWorkerEval, ReplaceV3StateBegin
-from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 from trainer.promise import MyFuture, PromiseKeeper
 
 EvalV32StateIF = EvalV3StateIF

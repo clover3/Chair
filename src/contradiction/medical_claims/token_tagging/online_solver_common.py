@@ -5,6 +5,7 @@ from typing import List, Tuple, Callable
 from contradiction.medical_claims.token_tagging.problem_loader import AlamriProblem
 from contradiction.medical_claims.token_tagging.query_id_helper import get_query_id
 from contradiction.medical_claims.token_tagging.trec_entry_helper import convert_token_scores_to_trec_entries
+from misc_lib import TEL
 from trec.trec_parse import write_trec_ranked_list_entry
 
 
@@ -65,7 +66,7 @@ def make_ranked_list_w_solver_if2(problems: List[AlamriProblem], run_name, save_
 def make_ranked_list_w_solver3(problems: List[AlamriProblem], run_name, save_path, tag_type,
                                problem_to_scores: Callable[[AlamriProblem], Tuple[List[float], List[float]]]):
     all_ranked_list = []
-    for p in problems:
+    for p in TEL(problems):
         scores1, scores2 = problem_to_scores(p)
 
         def get_query_id_inner(sent_name):

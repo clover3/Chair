@@ -226,8 +226,10 @@ class HtmlVisualizer(VisualizerCommon):
             for column in head:
                 if type(column) == HtmlCellStr:
                     self.f_html.write(column.s)
-                else:
+                elif type(column) == str:
                     self.f_html.write(get_table_head_cell(column).s)
+                else:
+                    raise TypeError
         for row in rows:
             self.f_html.write("<tr>\n")
             for cell in row:

@@ -1,14 +1,14 @@
 from typing import List, Optional, Tuple, Dict
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
+from bert_api.segmented_instance.segmented_text import SegmentedText
 from misc_lib import threshold05
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstanceEx, RelatedBinaryAnswer, \
-    SegmentedInstance
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstanceEx, RelatedBinaryAnswer
 from tlm.qtype.partial_relevance.eval_metric.ep_common import ReplaceSamplePolicyIF
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_replace_zero, get_partial_text_as_segment
 from tlm.qtype.partial_relevance.eval_metric_binary.eval_v3_common import EvalV3StateIF, MetricV3, V3StateWorkerIF, \
     FinalStateWorker, StateDone
 from tlm.qtype.partial_relevance.eval_metric_binary.replace_v2 import PerWord, add_w
-from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 from trainer.promise import MyFuture, MyPromise, list_future, PromiseKeeper
 
 

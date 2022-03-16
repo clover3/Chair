@@ -2,18 +2,18 @@ import json
 import os
 from typing import List
 
-from contradiction.medical_claims.annotation_1.reject_list import trusted_worker
-
 from contradiction.medical_claims.annotation_1.label_processor import combine_alamri1_annots, \
     convert_annots_to_json_serializable
-from contradiction.medical_claims.annotation_1.mturk_scheme import AlamriLabelUnit
 from contradiction.medical_claims.annotation_1.process_annotation import load_annots_w_processing, \
     load_annots_for_worker
+from contradiction.medical_claims.annotation_1.worker_id_info import trusted_worker
+from contradiction.medical_claims.label_structure import AlamriLabelUnitT
+from contradiction.medical_claims.token_tagging.path_helper import get_sbl_label_json_path
 from cpath import output_path
 
 
 def sel_by_longest():
-    annots: List[AlamriLabelUnit] = load_annots_w_processing()
+    annots: List[AlamriLabelUnitT] = load_annots_w_processing()
 
     def not6(e):
         (group_no, idx), annot = e
@@ -21,7 +21,7 @@ def sel_by_longest():
 
     annots = list(filter(not6, annots))
 
-    def num_tokens(e: AlamriLabelUnit):
+    def num_tokens(e: AlamriLabelUnitT):
         (group_no, idx), annot = e
         return sum(map(len, annot.enum()))
 
@@ -32,7 +32,7 @@ def sel_by_longest():
 
     out = combine_alamri1_annots(annots, combine_method)
     out = convert_annots_to_json_serializable(out)
-    save_dir = os.path.join(output_path, "alamri_annotation1", "label", "sel_by_longest.json")
+    save_dir = get_sbl_label_json_path()
     json.dump(out, open(save_dir, "w"), indent=True)
 
 

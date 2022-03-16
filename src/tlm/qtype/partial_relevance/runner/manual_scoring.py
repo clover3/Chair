@@ -1,7 +1,8 @@
 from typing import List, Callable
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance, RelatedEvalAnswer
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalAnswer
 from tlm.qtype.partial_relevance.eval_metric.ps_replace_helper import get_100_random_spans, \
     get_ps_replace_w_fixed_word_pool
 from tlm.qtype.partial_relevance.loader import load_mmde_problem

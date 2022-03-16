@@ -4,6 +4,8 @@ from typing import List, Callable, Dict
 import nltk
 import numpy as np
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
+from bert_api.segmented_instance.segmented_text import SegmentedText
 from cache import load_from_pickle
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import group_by
@@ -12,9 +14,7 @@ from tlm.qtype.analysis_fde.runner.build_q_emb_from_samples import load_q_bias
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import PartialSegment, SegJoinPolicyIF
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_search import FuncContentSegJoinPolicy
 from tlm.qtype.partial_relevance.complement_search_pckg.query_vector import to_id_format
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
 from tlm.qtype.partial_relevance.mmd_cached_client import get_mmd_cache_client
-from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 from tlm.qtype.wikify.doc_span_count import word_count_per_ft, print_log_odd_per_span
 from trainer.np_modules import sigmoid
 

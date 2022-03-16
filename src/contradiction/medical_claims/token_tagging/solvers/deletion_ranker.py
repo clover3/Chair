@@ -1,8 +1,7 @@
 from typing import Dict, List
 
 from contradiction.medical_claims.token_tagging.query_id_helper import get_query_id
-from contradiction.medical_claims.token_tagging.solver_cores.misc_common import split_scores_for_two_sents, \
-    get_cont_prob, \
+from contradiction.medical_claims.token_tagging.solvers.misc_common import split_scores_for_two_sents, get_cont_prob, \
     get_neutral_prob
 from contradiction.medical_claims.token_tagging.subtoken_helper import merge_subtoken_level_scores
 from contradiction.medical_claims.token_tagging.trec_entry_helper import convert_token_score_d_to_trec_entries

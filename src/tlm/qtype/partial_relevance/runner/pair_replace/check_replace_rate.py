@@ -2,6 +2,7 @@ from typing import List, Callable, Dict, Tuple
 
 from krovetzstemmer import Stemmer
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
 from explain.genex.idf_lime import load_idf_fn_for
 from list_lib import index_by_fn, right
@@ -9,7 +10,6 @@ from misc_lib import NamedAverager, average
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_search import IDX_FUNC, \
     IDX_CONTENT
 from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
 from tlm.qtype.partial_relevance.eval_metric.ps_replace_helper import get_ps_replace_w_fixed_word_pool, \
     get_100_random_spans, ReplaceeSpan, get_ps_replace_inner
 from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result_r

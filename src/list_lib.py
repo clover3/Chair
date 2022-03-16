@@ -141,3 +141,13 @@ def index_by_fn(func: Callable[[A], B], z: Iterable[A]) -> Dict[B, A]:
     for e in z:
         d_out[func(e)] = e
     return d_out
+
+
+def list_equal(a: List, b: List):
+    if len(a) != len(b):
+        return False
+
+    for a_e, b_e in zip(a, b):
+        if a_e != b_e:
+            return False
+    return True

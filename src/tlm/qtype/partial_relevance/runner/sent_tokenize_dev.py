@@ -1,16 +1,11 @@
-import json
-import os
-from typing import List, Callable, Tuple
+from typing import List, Tuple
 
-from cpath import output_path
+import nltk
+
 from data_generator.tokenizer_wo_tf import pretty_tokens, get_tokenizer
 from list_lib import flatten
-from tlm.qtype.partial_relevance.attention_based.mmd_z_client import get_mmd_client_wrap
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance
-from tlm.qtype.partial_relevance.eval_utils import related_eval
-from tlm.qtype.partial_relevance.related_answer_data_path_helper import parse_related_eval_answer_from_json
-from tlm.qtype.partial_relevance.loader import load_dev_problems, load_dev_small_problems
-import nltk
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
+from tlm.qtype.partial_relevance.loader import load_dev_problems
 
 
 def adhoc_fix(sents: List[str]) -> List[str]:

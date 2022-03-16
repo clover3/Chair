@@ -2,6 +2,7 @@ import os
 import random
 from typing import List, Callable
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from cache import save_list_to_jsonl
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
@@ -16,7 +17,7 @@ from tlm.qtype.partial_relevance.complement_search_pckg.complement_search import
 from tlm.qtype.partial_relevance.complement_search_pckg.original_query import ComplementGenOriginalQuery
 from tlm.qtype.partial_relevance.complement_search_pckg.query_vector import ComplementGenByQueryVector
 from tlm.qtype.partial_relevance.complement_search_pckg.span_iter import ComplementGenBySpanIter
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance, rei_to_text
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, rei_to_text
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 
 

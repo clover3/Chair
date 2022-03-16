@@ -1,8 +1,8 @@
 from typing import Callable, List
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from tlm.qtype.partial_relevance.bert_mask_interface.mmd_z_mask_cacche import get_attn_mask_forward_fn
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_search import FuncContentSegJoinPolicy
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricIF, EvalMetricBinaryIF, \
     EvalMetricBinaryWCIF
 from tlm.qtype.partial_relevance.eval_metric.eval_by_attn import EvalMetricByAttentionDrop, \

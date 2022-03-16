@@ -10,3 +10,9 @@ def get_save_path(save_name):
 
 def get_save_path2(run_name, tag_type):
     return get_save_path("{}_{}".format(run_name, tag_type))
+
+
+def get_sbl_label_json_path():
+    save_dir = os.path.join(output_path, "alamri_annotation1", "label", "sel_by_longest.json")
+    return save_dir
+

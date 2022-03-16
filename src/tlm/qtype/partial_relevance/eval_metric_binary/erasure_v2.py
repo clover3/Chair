@@ -1,13 +1,14 @@
 import functools
 from typing import List, Tuple, Callable
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
+from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance, RelatedBinaryAnswer, \
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedBinaryAnswer, \
     RelatedEvalInstanceEx
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricConditionalIF, DropSamplePolicyIF, \
     EvalMetricConditionalPerTargetIF
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_partial_text_as_segment
-from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 
 

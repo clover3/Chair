@@ -16,7 +16,7 @@ class WeightedSum(keras.layers.Layer):
 
 
 def make_embedding_layer(params, name: str = 'embedding',) -> keras.layers.Layer:
-    return keras.layers.Embedding(
+    return keras.layers.Embeddings(
         params['embedding_input_dim'],
         params['embedding_output_dim'],
         trainable=params['embedding_trainable'],

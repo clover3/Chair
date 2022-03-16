@@ -2,11 +2,11 @@ import math
 from collections import Counter, defaultdict
 from typing import Tuple, Dict, List
 
+from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import ids_to_text
 from misc_lib import get_second
 from tlm.qtype.analysis_fde.fde_module import FDEModuleEx
 from tlm.qtype.partial_relevance.runner.sent_tokenize_dev import sentence_segment_w_indices
-from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 
 
 def word_count_per_ft(fde_module: FDEModuleEx, entity: str, doc: str) -> Tuple[Dict[str, Counter], Counter]:

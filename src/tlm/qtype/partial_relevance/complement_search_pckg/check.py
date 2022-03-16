@@ -1,9 +1,9 @@
 from typing import Callable, List
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import SegJoinPolicyIF, \
     PartialSegment
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
 
 
 class CheckComplementCandidate:

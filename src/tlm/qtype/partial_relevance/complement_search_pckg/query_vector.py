@@ -1,10 +1,10 @@
 from typing import List
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from tlm.qtype.analysis_fde.fde_module import FDEModule
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementCandidateGenIF, \
     PartialSegment
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
 
 
 def to_id_format(tokenizer, s) -> PartialSegment:

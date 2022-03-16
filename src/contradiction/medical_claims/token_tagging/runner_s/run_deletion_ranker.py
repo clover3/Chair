@@ -2,7 +2,7 @@ import json
 import os
 
 from contradiction.medical_claims.biobert.voca_common import get_biobert_tokenizer
-from contradiction.medical_claims.token_tagging.deletion_ranker import make_ranked_list_inner
+from contradiction.medical_claims.token_tagging.solvers.deletion_ranker import make_ranked_list_inner
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from trec.trec_parse import write_trec_ranked_list_entry

@@ -1,7 +1,7 @@
 import numpy as np
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.bert_input_splitter import get_sep_loc
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
 
 
 def get_always_active_mask(seg_inst: SegmentedInstance, max_seq_length) -> np.array:

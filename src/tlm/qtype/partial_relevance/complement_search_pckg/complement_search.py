@@ -1,8 +1,8 @@
 from typing import List, Tuple
 
+from bert_api.segmented_instance.segmented_text import SegmentedText
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import SegJoinPolicyIF, \
     PartialSegment
-from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 
 IDX_CONTENT = 1
 IDX_FUNC = 0

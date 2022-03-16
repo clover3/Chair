@@ -4,11 +4,11 @@ from typing import List, Callable
 import numpy as np
 from scipy.special import softmax
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import JoinEncoder
 from tf_v2_support import disable_eager_execution
 from tlm.qtype.model_server.mmd_server import PredictorClsDense
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
 
 
 def mmd_predictor():

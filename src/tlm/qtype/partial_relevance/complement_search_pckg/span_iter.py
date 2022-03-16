@@ -2,14 +2,13 @@ from typing import List
 
 import nltk
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
+from bert_api.segmented_instance.segmented_text import SegmentedText, get_word_level_location_w_ids
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import flatten
 from misc_lib import get_duplicate_list
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementCandidateGenIF, \
     PartialSegment
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
-from tlm.qtype.partial_relevance.problem_builder import get_word_level_location_w_ids
-from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 
 
 def get_candidates(tokenizer, n_gram_range: List[int], text2: SegmentedText) -> List[PartialSegment]:

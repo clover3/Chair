@@ -112,6 +112,8 @@ class TokenizedText(NamedTuple):
         return len(self.sbword_tokens)
 
 
+
+
 def get_duplicate(doc_list: List[TokenizedText]):
     def para_hash(doc: TokenizedText):
         return " ".join(doc.tokens)

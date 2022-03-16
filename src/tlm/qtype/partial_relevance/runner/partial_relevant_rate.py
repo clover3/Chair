@@ -1,17 +1,11 @@
-import json
-import os
 from collections import Counter
-from typing import List, Callable
+from typing import List, Dict
 
-from cache import load_list_from_jsonl
-from cpath import output_path
 from list_lib import index_by_fn
-from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, SegmentedInstance
-from tlm.qtype.partial_relevance.loader import load_dev_problems, load_dev_small_problems
-from typing import List, Iterable, Callable, Dict, Tuple, Set
-
 from tlm.qtype.partial_relevance.complement_path_data_helper import load_complements
+from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
+from tlm.qtype.partial_relevance.loader import load_dev_problems
 
 
 def partial_relevant_rate(problem_list: List[RelatedEvalInstance],

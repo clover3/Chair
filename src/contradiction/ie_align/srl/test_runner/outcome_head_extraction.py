@@ -5,7 +5,7 @@ from typing import List, Dict, Tuple
 
 from contradiction.medical_claims.annotation_1.label_processor import json_dict_list_to_annots
 from contradiction.medical_claims.annotation_1.load_data import get_pair_dict, get_dev_group_no
-from contradiction.medical_claims.annotation_1.mturk_scheme import AlamriLabelUnit, PairedIndicesLabel
+from contradiction.medical_claims.label_structure import PairedIndicesLabel, AlamriLabelUnitT
 from cpath import output_path
 from misc_lib import group_by_first
 
@@ -16,7 +16,7 @@ def load_labels() -> Dict[Tuple[int, int], List[PairedIndicesLabel]]:
         source_json_path = os.path.join(output_path, "alamri_annotation1",
                                         "label", name + ".json")
         maybe_list = json.load(open(source_json_path, "r"))
-        labels: List[AlamriLabelUnit] = json_dict_list_to_annots(maybe_list)
+        labels: List[AlamriLabelUnitT] = json_dict_list_to_annots(maybe_list)
         for key, value in labels:
             d[key].append(value)
     return d
@@ -43,9 +43,9 @@ def enum_group_sentence_wise(group_no_list):
             labels = label_d[data_no]
 
             for label in labels:
-                e = text1, label.prem_conflict, label.prem_mismatch
+                e = text1, label.prem_conflict_indices, label.prem_mismatch_indices
                 flatten_tagged_sents.append(e)
-                e = text2, label.hypo_conflict, label.hypo_mismatch
+                e = text2, label.hypo_conflict_indices, label.hypo_mismatch_indices
                 flatten_tagged_sents.append(e)
         grouped_tagged_sents: Dict[str, List[Tuple[List[int], List[int]]]]\
             = group_by_first(flatten_tagged_sents)
@@ -69,11 +69,11 @@ def sent_pairwise_print(group_no_list):
             labels = label_d[data_no]
             for label in labels:
                 print("")
-                e = text1, label.prem_conflict, label.prem_mismatch
-                e = text2, label.hypo_conflict, label.hypo_mismatch
-                display_tokens = add_marker_to_tokens(label.prem_conflict, text1.split())
+                e = text1, label.prem_conflict_indices, label.prem_mismatch_indices
+                e = text2, label.hypo_conflict_indices, label.hypo_mismatch_indices
+                display_tokens = add_marker_to_tokens(label.prem_conflict_indices, text1.split())
                 print(" ".join(display_tokens))
-                display_tokens = add_marker_to_tokens(label.hypo_conflict, text2.split())
+                display_tokens = add_marker_to_tokens(label.hypo_conflict_indices, text2.split())
                 print(" ".join(display_tokens))
 
 

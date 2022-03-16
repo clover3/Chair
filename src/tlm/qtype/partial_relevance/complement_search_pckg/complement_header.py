@@ -1,9 +1,9 @@
 import abc
 from typing import List, Tuple, NamedTuple
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
+from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import ids_to_text
-from tlm.qtype.partial_relevance.eval_data_structure import SegmentedInstance
-from tlm.qtype.partial_relevance.segmented_text import SegmentedText
 
 
 class PartialSegment:

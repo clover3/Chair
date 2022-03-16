@@ -1,8 +1,9 @@
 
 from typing import List, Dict, Tuple
 
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, SegmentedInstance
+from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricIF
 from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 

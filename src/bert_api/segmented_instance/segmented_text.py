@@ -1,9 +1,11 @@
-from typing import NamedTuple, List, Iterator, Tuple
+from typing import List, Iterable, Callable, Tuple
+from typing import NamedTuple, Iterator
 
 import numpy as np
 
 from cache import named_tuple_to_json
-from data_generator.tokenizer_wo_tf import ids_to_text, pretty_tokens
+from data_generator.tokenizer_wo_tf import ids_to_text, pretty_tokens, is_continuation
+from list_lib import list_equal
 
 
 class SegmentedText(NamedTuple):
@@ -13,7 +15,7 @@ class SegmentedText(NamedTuple):
     def get_seg_len(self):
         return len(self.seg_token_indices)
 
-    def enum_seg_idx(self):
+    def enum_seg_idx(self) -> Iterator[int]:
         yield from range(self.get_seg_len())
 
     def get_empty_seg_mask(self):
@@ -38,7 +40,10 @@ class SegmentedText(NamedTuple):
     def get_tokens_for_seg(self, seg_idx):
         return [self.tokens_ids[i] for i in self.seg_token_indices[seg_idx]]
 
-    def get_dropped_text(self, drop_indices):
+    def get_seg_text(self, tokenizer, seg_idx):
+        return pretty_tokens(tokenizer.convert_ids_to_tokens(self.get_tokens_for_seg(seg_idx)), True)
+
+    def get_dropped_text(self, drop_indices: Iterable[int]):
         new_seg = []
         new_seg_indices = []
         offset = 0
@@ -53,6 +58,15 @@ class SegmentedText(NamedTuple):
                 new_seg_indices.append(new_indices)
         return SegmentedText(new_seg, new_seg_indices)
 
+    def get_sliced_text(self, target_indices: List[int]):
+        drop_indices = self.get_remaining_indices(target_indices)
+        return self.get_dropped_text(drop_indices)
+
+    def get_remaining_indices(self, target_indices):
+        iterable: Iterable[int] = self.enum_seg_idx()
+        drop_indices: List[int] = [i for i in iterable if i not in target_indices]
+        return drop_indices
+
     def to_json(self):
         return named_tuple_to_json(self)
 
@@ -64,7 +78,6 @@ class SegmentedText(NamedTuple):
     def from_tokens_ids(cls, tokens_ids):
         seg_token_indices = [[i] for i in range(len(tokens_ids))]
         return SegmentedText(tokens_ids, seg_token_indices)
-
 
     def get_readable_rep(self, tokenizer):
         s_list = []
@@ -131,3 +144,89 @@ def get_highlighted_text(tokenizer, drop_indices, text2: SegmentedText):
         all_words[i] = "[{}]".format(all_words[i])
     text = " ".join(all_words)
     return text
+
+
+def get_word_level_location_w_ids(tokenizer, input_ids) -> List[List[int]]:
+    tokens = tokenizer.convert_ids_to_tokens(input_ids)
+    intervals: List[List[int]] = []
+    start = 0
+    idx = 0
+    while idx < len(tokens):
+        token = tokens[idx]
+        if idx == 0:
+            pass
+        elif is_continuation(token):
+            pass
+        elif token == "[PAD]":
+            break
+        else:
+            end = idx
+            intervals.append(list(range(start, end)))
+            start = idx
+        idx += 1
+    end = idx
+    if end > start:
+        l: List[int] = list(range(start, end))
+        intervals.append(l)
+    return intervals
+
+
+def word_segment_w_indices(tokenizer, input_ids) -> Tuple[List[int], List[List[int]]]:
+    word_location_list = get_word_level_location_w_ids(tokenizer, input_ids)
+    return input_ids, word_location_list
+
+
+def get_word_level_segmented_text(tokenizer, input_ids: List[int]) -> SegmentedText:
+    input_ids, word_location_list = word_segment_w_indices(tokenizer, input_ids)
+    return SegmentedText(input_ids, word_location_list)
+
+
+def get_word_level_segmented_text_from_str(tokenizer, s: str) -> SegmentedText:
+    input_ids = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(s))
+    input_ids, word_location_list = word_segment_w_indices(tokenizer, input_ids)
+    return SegmentedText(input_ids, word_location_list)
+
+
+def token_list_to_segmented_text(tokenizer, token_list: List[str]) -> SegmentedText:
+    loc = 0
+    all_input_ids = []
+    indices_list = []
+    for token in token_list:
+        input_ids = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(token))
+        indices = [loc+idx for idx, _ in enumerate(input_ids)]
+        all_input_ids.extend(input_ids)
+        indices_list.append(indices)
+        loc += len(input_ids)
+    return SegmentedText(all_input_ids, indices_list)
+
+
+
+def get_segment_mapping(source: SegmentedText, subsequence: SegmentedText) -> List[int]:
+    # This runs greedy mapping. If this fails I need to implement nop-greedy matching
+    last_match_idx = -1
+    output = []
+    for i in subsequence.enum_seg_idx():
+        cut_tokens = subsequence.get_tokens_for_seg(i)
+        match_idx = -1
+        for j in range(last_match_idx+1, source.get_seg_len()):
+            if list_equal(source.get_tokens_for_seg(j), cut_tokens):
+                match_idx = j
+
+        if match_idx == -1:
+            raise IndexError
+
+        output.append(match_idx)
+        last_match_idx = match_idx
+
+    return output
+
+
+def merge_subtoken_level_scores(merge_subtoken_scores: Callable[[Iterable[float]], float],
+                                scores: List[float],
+                                t_text: SegmentedText) -> List[float]:
+    output = []
+    for seg_idx in t_text.enum_seg_idx():
+        scores_per_seg = [scores[idx] for idx in t_text.seg_token_indices[seg_idx]]
+        score_for_seg: float = merge_subtoken_scores(scores_per_seg)
+        output.append(score_for_seg)
+    return output
