@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List
+from typing import List, Iterator
 from typing import NamedTuple
 
 from cpath import output_path
@@ -45,3 +45,15 @@ def load_alamri_split(split) -> List[AlamriProblem]:
         return [p for p in all_problems if p.group_no not in valid_groups]
     else:
         raise ValueError(split)
+
+
+def iter_unique_text(split) -> Iterator[str]:
+    problems: List[AlamriProblem] = load_alamri_split(split)
+    seen = set()
+    for p in problems:
+        for text in [p.text1, p.text2]:
+            if text not in seen:
+                yield text
+                seen.add(text)
+            else:
+                pass
