@@ -1,7 +1,7 @@
 import os
 from typing import List, Dict, Tuple
 
-from arg.counter_arg_retrieval.build_dataset.ca_query import load_ca_task_from_csv
+from arg.counter_arg_retrieval.build_dataset.ca_query_helper import load_ca_task_from_csv
 from arg.counter_arg_retrieval.build_dataset.passage_scorer_common import FutureScorerI, PassageScoringInner
 from arg.counter_arg_retrieval.build_dataset.passage_scoring.split_passages import PassageRange
 from bert_api.swtt.segmentwise_tokenized_text import SegmentwiseTokenizedText

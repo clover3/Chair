@@ -16,6 +16,11 @@ def get_swtt_dir():
     return save_dir
 
 
+def get_run5_dir():
+    return os.path.join(output_path, "ca_building", "run5")
+
+
+
 def get_swtt_path(job_no):
     save_dir = get_swtt_dir()
     save_path = os.path.join(save_dir, "{}.jsonl".format(job_no))
@@ -97,3 +102,7 @@ def get_passage_prediction_path(run_name, query_id):
     exist_or_mkdir(save_dir)
     save_path = os.path.join(save_dir, "{}".format(query_id))
     return save_path
+
+
+def get_ranked_list_path_to_annotate(run_name):
+    return os.path.join(get_run5_dir(), "ranked_list_to_annotate", "{}.txt".format(run_name))
