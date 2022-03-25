@@ -1,9 +1,11 @@
 import sys
+from typing import Callable
 
 import keras
 import official.nlp.bert.run_classifier
 import official.nlp.optimization
 import tensorflow as tf
+from keras import Model
 from official import nlp
 from official.nlp import bert
 
@@ -28,9 +30,9 @@ class ModelConfig:
 
 
 class BERT_CLS:
-    def __init__(self, config: ModelConfig):
+    def __init__(self, gs_folder_bert, config: ModelConfig):
         num_classes = config.num_classes
-        model, pooled_output, sequence_output = load_bert_model_by_hub(config.max_seq_length)
+        model, pooled_output, sequence_output = load_bert_model_by_hub(gs_folder_bert, config.max_seq_length)
         self.seq_out = sequence_output
         output = tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax)(pooled_output)
         self.model: keras.Model = model
@@ -46,23 +48,16 @@ def get_optimizer(run_config: RunConfigEx):
     return optimizer
 
 
-def run_train(model_config, input_files, run_config):
+def run_train(define_model_fn: Callable, dataset, run_config):
     # Define model
-    run_config.train_step = 100000
-    max_seq_length = model_config.max_seq_length
-    bert_cls = BERT_CLS(model_config)
-    model = bert_cls.model
+    model: Model = define_model_fn()
     optimizer = get_optimizer(run_config)
     metrics = [tf.keras.metrics.SparseCategoricalAccuracy('accuracy', dtype=tf.float32)]
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-    model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
-    dataset = bert.run_classifier.get_dataset_fn(input_files,
-                                                 max_seq_length,
-                                                 run_config.batch_size,
-                                                 is_training=True)()
+    model.compile(optimizer=optimizer, loss=loss, metrics=metrics,
+                  steps_per_execution=run_config.steps_per_execution)
     model.summary()
-    print("dataset", dataset)
-    model.fit(dataset, epochs=1, steps_per_epoch=run_config.train_step)
+    model.fit(dataset, epochs=run_config.get_epochs(), steps_per_epoch=run_config.steps_per_epoch)
     model.save_weights(run_config.model_save_path)
 
 #
@@ -82,18 +77,48 @@ def parse_input_files(input_file_str):
     return input_files
 
 
+def build_dataset(model_config, input_files, run_config):
+    max_seq_length = model_config.max_seq_length
+    dataset = bert.run_classifier.get_dataset_fn(input_files,
+                                                 max_seq_length,
+                                                 run_config.batch_size,
+                                                 is_training=True)()
+    return dataset
+
+
+def get_define_model_fn(model_config, run_config) -> Callable:
+    def define_model():
+        bert_cls = BERT_CLS(run_config.init_checkpoint, model_config)
+        model = bert_cls.model
+        return model
+
+    return define_model
+
+
+def get_run_config_nli_train(args):
+    steps_per_epoch = 25000
+    num_epochs = 4
+    run_config = RunConfigEx(model_save_path=args.output_dir,
+                             train_step=num_epochs * steps_per_epoch,
+                             steps_per_epoch=steps_per_epoch,
+                             steps_per_execution=500,
+                             init_checkpoint=args.init_checkpoint)
+    return run_config
+
+
 def main(args):
     c_log.info("main {}".format(args))
     strategy = get_strategy(args.use_tpu, args.tpu_name)
     input_files = parse_input_files(args.input_files)
     bert_config = BertConfig.from_json_file(get_bert_config_path())
-    max_seq_length = 128
-    run_config = RunConfigEx(model_save_path=args.output_dir,
-                             init_checkpoint=args.init_checkpoint)
-    model_config = ModelConfig(bert_config, max_seq_length)
+    # max_seq_length = 300
+    run_config: RunConfigEx = get_run_config_nli_train(args)
+    model_config = ModelConfig(bert_config, 128)
+    define_model_fn = get_define_model_fn(model_config, run_config)
     with strategy.scope():
+        dataset = build_dataset(model_config, input_files, run_config)
         # run_eval(model_config, checkpoint_path, input_files, max_seq_length, run_config)
-        run_train(model_config, input_files, run_config)
+        run_train(define_model_fn, dataset, run_config)
 
 
 if __name__ == "__main__":

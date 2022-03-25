@@ -12,6 +12,8 @@ class RunConfigEx:
         model_save_path="saved_model_ex",
         init_checkpoint="",
         checkpoint_type="bert",
+        steps_per_epoch=-1,
+        steps_per_execution=1
                  ):
         self.batch_size = batch_size
         self.train_step = train_step
@@ -21,7 +23,15 @@ class RunConfigEx:
         self.model_save_path = model_save_path
         self.init_checkpoint = init_checkpoint
         self.checkpoint_type = checkpoint_type
+        if steps_per_epoch == -1:
+            self.steps_per_epoch = train_step
+        else:
+            self.steps_per_epoch = steps_per_epoch
+        self.steps_per_execution = steps_per_execution
 
+
+    def get_epochs(self):
+        return self.train_step // self.steps_per_epoch
 
 def get_run_config() -> RunConfigEx:
     parser = argparse.ArgumentParser(description='File should be stored in ')

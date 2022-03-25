@@ -6,6 +6,6 @@ import sys
 c_log = None
 if c_log is None:
     c_log = logging.getLogger('chair')
+    c_log.setLevel(logging.INFO)
+    c_log.addHandler(logging.StreamHandler(sys.stdout))
     c_log.info("Chair logging init")
-c_log.setLevel(logging.INFO)
-c_log.addHandler(logging.StreamHandler(sys.stdout))
