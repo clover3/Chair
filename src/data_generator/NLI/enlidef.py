@@ -40,3 +40,7 @@ def get_segment_marker(segment_id):
 def nli_probs_str(probs):
     label = get_max_idx(probs)
     return "{0}{1:.2f}".format(nli_label_list[label][0], probs[label])
+
+
+snli_train_size = 550152
+mnli_train_size = 392702

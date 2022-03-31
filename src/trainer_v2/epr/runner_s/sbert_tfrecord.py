@@ -38,11 +38,11 @@ def convert():
     tokenizer = MPNetTokenizer.from_pretrained("microsoft/mpnet-base")
     dataset = "snli"
     split = "validation"
-    json_iter = load_segmented_data(dataset, split)
+    job_no = 0
+    json_iter = load_segmented_data(dataset, split, job_no)
     dir_name = f"{dataset}_{split}"
     out_dir = os.path.join(output_path, "epr", dir_name)
     exist_or_mkdir(out_dir)
-    job_no = 0
     out_file = os.path.join(out_dir, str(job_no))
     writer = RecordWriterWrap(out_file)
     for item in json_iter:

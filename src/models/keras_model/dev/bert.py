@@ -11,7 +11,6 @@ from official.nlp import bert
 # Load the required submodules
 import official.nlp.bert.bert_models
 import official.nlp.bert.configs
-import official.nlp.bert.tokenization
 import json
 
 
@@ -50,10 +49,8 @@ def tokenize_convert(glue_dict, tokenizer):
     return inputs
 
 def maybe_load_bert():
-    gs_folder_bert = "C:\\work\\Code\\Chair\\output\\model\\runs\\bert_en_uncased_L-12_H-768_A-12_4"
-    tf.io.gfile.listdir(gs_folder_bert)
-    bert_something = tf.keras.models.load_model(gs_folder_bert)
-    bert_config_file = os.path.join(gs_folder_bert, "bert_config.json")
+    hub_url_bert = "https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/3"
+    bert_something = tf.keras.models.load_model(hub_url_bert)
     # config_dict = json.loads(tf.io.gfile.GFile(bert_config_file).read())
     # bert_config = bert.configs.BertConfig.from_dict(config_dict)
     # bert_classifier, bert_encoder = bert.bert_models.classifier_model(
@@ -68,18 +65,13 @@ def maybe_load_bert():
 
 
 def main():
-    gs_folder_bert = "C:\\work\\Code\\Chair\\output\\model\\runs\\bert_en_uncased_L-12_H-768_A-12_4"
-    tf.io.gfile.listdir(gs_folder_bert)
     glue, info = tfds.load('glue/mrpc', with_info=True,
                            # It's small, load the whole dataset
                            batch_size=-1)
     print(list(glue.keys()))
     print(info.features)
     print(info.features['label'].names)
-    tokenizer = bert.tokenization.FullTokenizer(
-        vocab_file=os.path.join(gs_folder_bert, "assets", "vocab.txt"),
-        do_lower_case=True)
-
+    maybe_load_bert()
     print("Vocab size:", len(tokenizer.vocab))
 
     glue_train = tokenize_convert(glue['train'], tokenizer)
@@ -98,17 +90,15 @@ def main():
     bert_classifier, bert_encoder = bert.bert_models.classifier_model(
         bert_config, num_labels=2)
     glue_batch = {key: val[:10] for key, val in glue_train.items()}
-    print("glue_batch", glue_batch)
-
-    print(bert_classifier(
+    some_output = bert_classifier(
         glue_batch, training=True
-    ).numpy())
+    ).numpy()
     checkpoint = tf.train.Checkpoint(encoder=bert_encoder)
     # tf.keras.utils.plot_model(bert_encoder, show_shapes=True, dpi=48)
-
+    print("checkpoint.read")
     checkpoint.read(
         os.path.join(gs_folder_bert, "variables", 'variables')).assert_consumed()
 
 
 if __name__ == "__main__":
-    maybe_load_bert()
+    main()

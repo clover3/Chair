@@ -8,14 +8,9 @@ from spacy.tokens import Span
 from list_lib import flatten
 
 SpacyToken = TypeVar('SpacyToken')
-# TODO SpaCy
-#  get Part-of-Speech
-#  verb + Preposition. (RP)
-#  keep remaining Open-class words
-#  Discard remaining.
 
 
-def spacy_segment(spacy_tokens: Doc):
+def spacy_segment(spacy_tokens: Doc) -> List[Span]:
     #  extract noun-phrases
     np_list: List[Span] = list(spacy_tokens.noun_chunks)
     #  convert noun-phrase to propositional phrase by tag IN
@@ -32,6 +27,7 @@ def spacy_segment(spacy_tokens: Doc):
         else:
             remaining_np_list.append(np)
 
+    #  verb + Preposition. (RP)
     # These VP are not precisely verb phrases, real verb phrases should have objects
     # vp_list may have overlap with np_list
     vp_list = []
@@ -60,6 +56,8 @@ def spacy_segment(spacy_tokens: Doc):
     def is_open_word(token) -> bool:
         return token.pos_ in ["ADJ", "ADV", "INTJ", "NOUN", "PROPN", "VERB"]
 
+    #  keep remaining Open-class words
+    #  Discard remaining.
     other_segments = []
     skip_words = []
     for token in spacy_tokens:

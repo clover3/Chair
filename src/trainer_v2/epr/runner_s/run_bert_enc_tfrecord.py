@@ -1,6 +1,3 @@
-import sys
-from typing import List, Dict
-
 import os
 import sys
 from typing import List, Dict
@@ -12,7 +9,6 @@ from transformers import MPNetTokenizer
 
 from cache import save_list_to_jsonl, load_list_from_jsonl
 from cpath import output_path
-from misc_lib import TimeEstimator
 from trainer_v2.arg_flags import flags_parser
 from trainer_v2.epr.input_fn import get_dataset_fn
 from trainer_v2.epr.mpnet import TFSBERT
@@ -36,46 +32,6 @@ def load_segmented_data(dataset_name, split) -> List[Dict]:
 
 
 def load_dataset_from_json(feature_keys, segment_keys, segment_per_text):
-    json_iter = load_segmented_data("snli", "validation")
-    tokenizer = MPNetTokenizer.from_pretrained("microsoft/mpnet-base")
-    def generator(json_iter):
-        def pad_items(item):
-            if len(item) > segment_per_text:
-                return item[:segment_per_text]
-            else:
-                pad_len = segment_per_text - len(item)
-                padded = item + [""] * pad_len
-                return padded
-
-        def convert_text_list(text_list):
-            input_ids = tokenizer(pad_items(text_list))
-            return input_ids
-
-        for e in json_iter:
-            d = {
-                'label': e['label']
-            }
-            for segment in segment_keys:
-                per_seg = convert_text_list(e[segment])
-                for feature_name in feature_keys:
-                    new_name = f"{segment}_{feature_name}"
-                    d[new_name] = tf.ragged.constant(per_seg[feature_name])
-            yield d
-
-    feature_spec = tf.RaggedTensorSpec(shape=(segment_per_text, None), dtype=tf.int32)
-    spec = {
-        'label': tf.TensorSpec(shape=(), dtype=tf.int32),
-    }
-    spec = (tf.TensorSpec(shape=(), dtype=tf.int32),)
-    for segment in segment_keys:
-        for feature_name in feature_keys:
-            new_name = f"{segment}_{feature_name}"
-            # spec.append(feature_spec)
-            # spec[new_name] = feature_spec
-    print(spec)
-    # dataset = Dataset.from_generator(lambda: generator(json_iter),
-    # output_signature=spec)
-
     def gen():
         ragged_tensor = tf.ragged.constant([[1, 2], [3]])
         yield 42, ragged_tensor
@@ -113,15 +69,10 @@ def run_inner(model_path, config_path, input_files):
     batch_size = 4
 
     feature_keys = ["input_ids", "attention_mask"]
-    segment_keys = ["premise", "hypothesis"]
 
-    # dataset = load_dataset_from_json(feature_keys, segment_keys, segment_per_text)
     dataset = get_dataset_fn(input_files, batch_size, False)()
-    # dataset = dataset.batch(batch_size)
     sbert = TFSBERT(model_path, config_path)
     out_e_list = []
-    json_iter = load_segmented_data("snli", "validation")
-    ticker = TimeEstimator(len(json_iter))
     print("Start iteration")
     for e in dataset:
         def get_avg_vector(segment):
@@ -138,7 +89,6 @@ def run_inner(model_path, config_path, input_files):
         max_p_idx_for_h, max_h_idx_for_p = align(p_avg_vectors, h_avg_vectors)
         e['max_p_idx_for_h'] = max_p_idx_for_h
         e['max_h_idx_for_p'] = max_h_idx_for_p
-        ticker.tick()
         out_e_list.append(e)
 
     print("End iteration")

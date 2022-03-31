@@ -157,7 +157,7 @@ class DumpPickleLoader:
 def save_list_to_jsonl(item_list, save_path):
     f = open(save_path, "w")
     for item in item_list:
-        s = json.dumps(arg.counter_arg_retrieval.build_dataset.split_document_common.sd_to_json())
+        s = json.dumps(item)
         f.write(s + "\n")
     f.close()
 

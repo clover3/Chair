@@ -16,3 +16,7 @@ def get_sbl_label_json_path():
     save_dir = os.path.join(output_path, "alamri_annotation1", "label", "sel_by_longest.json")
     return save_dir
 
+
+def get_sbl_qrel_path():
+    return os.path.join(output_path, "alamri_annotation1", "label", "sbl.qrel.val")
+

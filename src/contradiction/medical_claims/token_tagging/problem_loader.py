@@ -19,6 +19,9 @@ class AlamriProblem(NamedTuple):
     text1: str
     text2: str
 
+    def get_problem_id(self):
+        return "{}_{}".format(self.group_no, self.inner_idx)
+
 
 def load_alamri_problem() -> List[AlamriProblem]:
     info_d = load_alamri1_problem_info_json()

@@ -1,6 +1,6 @@
 import sys
 
-from evals.metric_by_trec_eval import run_trec_eval
+from evals.metric_by_trec_eval import run_trec_eval_from_ranked_list
 from trec.qrel_parse import load_qrels_structured
 from trec.trec_parse import load_ranked_list_grouped
 
@@ -15,7 +15,7 @@ def main():
     for qid, entries in rlg.items():
         if qid not in qrel:
             continue
-        score = run_trec_eval(metric, qrel_path, entries)
+        score = run_trec_eval_from_ranked_list(metric, qrel_path, entries)
         e = qid, score
         l.append(e)
         print("{}\t{}".format(qid, score))

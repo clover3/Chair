@@ -74,7 +74,10 @@ class MemoryCachedClient:
         self.hash_overhead.resume()
         self.update_cache(keys, new_predictions, todo)
 
-        overhead_limit: float = self.expected_overhead_fn(items)
+        if self.expected_overhead_fn is not None:
+            overhead_limit: float = self.expected_overhead_fn(items)
+        else:
+            overhead_limit = None
         self.hash_overhead.end(overhead_limit)
 
         output_predictions: List[OutType] = []

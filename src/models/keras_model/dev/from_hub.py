@@ -1,6 +1,4 @@
 import numpy as np
-
-import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import tensorflow_hub as hub
@@ -48,8 +46,7 @@ def get_mrpc_dataset(seq_length, batch_size=32):
     return training_dataset
 
 
-def load_bert_model_by_hub(seq_length):
-    gs_folder_bert = "C:\\work\\Code\\Chair\\output\\model\\runs\\bert_en_uncased_L-12_H-768_A-12_4"
+def load_bert_model_by_hub(gs_folder_bert, seq_length):
     encoder = hub.KerasLayer(gs_folder_bert, trainable=True)
     print("encoder", encoder)
     print(f"The Hub encoder has {len(encoder.trainable_variables)} trainable variables")

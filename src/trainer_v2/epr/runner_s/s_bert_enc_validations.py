@@ -10,8 +10,9 @@ from trainer_v2.get_tpu_strategy import get_strategy
 def main(arg):
     strategy = get_strategy(args.use_tpu, args.tpu_name)
     with strategy.scope():
-        work_for_eval_split("snli", "test", arg.config_path, arg.init_checkpoint)
-        work_for_eval_split("multi_nli", "validation_matched", arg.config_path, arg.init_checkpoint)
+        # work_for_eval_split("snli", "test", arg.config_path, arg.init_checkpoint)
+        work_for_eval_split("snli", "validation", arg.config_path, arg.init_checkpoint)
+        # work_for_eval_split("multi_nli", "validation_matched", arg.config_path, arg.init_checkpoint)
 
 
 def work_for_eval_split(dataset, split, config_path, init_checkpoint):

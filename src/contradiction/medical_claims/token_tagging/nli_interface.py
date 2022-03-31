@@ -1,7 +1,9 @@
 from typing import List, Callable, NamedTuple
 
+import scipy.special
+
 from bert_api.client_lib import BERTClient
-from bert_api.segmented_instance.segmented_text import SegmentedText
+from bert_api.segmented_instance.segmented_text import SegmentedText, get_word_level_segmented_text_from_str
 from cpath import pjoin, data_path, at_output_dir
 from data_generator.tokenizer_wo_tf import EncoderUnitPlain
 from datastore.sql_based_cache_client import SQLBasedCacheClientS
@@ -48,7 +50,7 @@ def get_nli_client(option: str) -> NLIPredictorSig:
 
 
 def get_nli_cache_sqlite_path():
-    return at_output_dir("qtype", "nli_cache.sqlite")
+    return at_output_dir("nli", "nli_cache.sqlite")
 
 
 def get_nli_cache_client(option, hooking_fn=None) -> SQLBasedCacheClientS:
@@ -65,3 +67,13 @@ def get_nli_cache_client(option, hooking_fn=None) -> SQLBasedCacheClientS:
                                         0.035,
                                         get_nli_cache_sqlite_path())
     return cache_client
+
+
+
+def predict_from_text_pair(client: SQLBasedCacheClientS, tokenizer, text1, text2):
+    t_text1: SegmentedText = get_word_level_segmented_text_from_str(tokenizer, text1)
+    t_text2: SegmentedText = get_word_level_segmented_text_from_str(tokenizer, text2)
+
+    logits = client.predict([NLIInput(t_text1, t_text2)])[0]
+    probs = scipy.special.softmax(logits)
+    return probs
