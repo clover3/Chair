@@ -1,8 +1,9 @@
 import sys
 from typing import List
 
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedBinaryAnswer, \
+from contradiction.alignment.data_structure.eval_data_structure import RelatedBinaryAnswer, \
     PerProblemEvalResult
+from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ps_replace_helper import get_100_random_spans
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import TenStepRandomDropPolicy, \
     TenStepRandomReplacePolicy

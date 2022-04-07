@@ -4,7 +4,7 @@ from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import threshold05
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstanceEx, \
+from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalInstanceEx, \
     RelatedBinaryAnswer
 from tlm.qtype.partial_relevance.eval_metric.ep_common import DropSamplePolicyIF
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_partial_text_as_segment, get_drop_zero

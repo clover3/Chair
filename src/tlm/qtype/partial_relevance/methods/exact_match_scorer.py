@@ -1,5 +1,5 @@
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
-from tlm.qtype.partial_relevance.eval_data_structure import ContributionSummary, MatrixScorerIF
+from contradiction.alignment.data_structure.eval_data_structure import ContributionSummary, MatrixScorerIF
 
 
 class ExactMatchScorer(MatrixScorerIF):

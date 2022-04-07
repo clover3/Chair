@@ -1,6 +1,6 @@
 from data_generator.tokenizer_wo_tf import JoinEncoder
 from tlm.qtype.partial_relevance.attention_based.hard_concrete_optimize.segment_helper import get_always_active_mask
-from tlm.qtype.partial_relevance.eval_data_structure import get_test_segment_instance
+from contradiction.alignment.data_structure.eval_data_structure import get_test_segment_instance
 
 
 def test_get_always_active_mask():

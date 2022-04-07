@@ -5,7 +5,7 @@ from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import Eval
 from tlm.qtype.partial_relevance.attention_based.bert_masking_common import dist_l2
 from tlm.qtype.partial_relevance.attention_based.perturbation_scorer import PerturbationScorer
 from tlm.qtype.partial_relevance.bert_mask_interface.bert_masking_client import get_localhost_bert_mask_client
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
+from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 
 

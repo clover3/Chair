@@ -1,7 +1,7 @@
 import abc
 from typing import List
 
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstanceEx, RelatedBinaryAnswer
+from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalInstanceEx, RelatedBinaryAnswer
 from tlm.qtype.partial_relevance.eval_metric_binary.eval_v3_common import FinalStateWorker, \
     UnexpectedCodeException, V3StateWorkerIF, MetricV3, StateDone
 

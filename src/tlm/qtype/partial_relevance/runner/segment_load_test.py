@@ -3,7 +3,7 @@ from typing import List
 
 from cache import load_pickle_from
 from cpath import output_path
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
+from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
 
 
 def main():

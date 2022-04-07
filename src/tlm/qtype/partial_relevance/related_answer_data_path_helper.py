@@ -4,7 +4,7 @@ from typing import List
 
 from cpath import output_path
 from misc_lib import exist_or_mkdir
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalAnswer, ContributionSummary, RelatedBinaryAnswer
+from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer, ContributionSummary, RelatedBinaryAnswer
 
 
 def get_related_save_path(dataset_name, method):

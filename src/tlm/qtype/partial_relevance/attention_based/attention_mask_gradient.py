@@ -8,7 +8,7 @@ from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import JoinEncoder
 from tlm.qtype.partial_relevance.bert_mask_interface.bert_mask_predictor import PredictorAttentionMask, get_batches_ex
-from tlm.qtype.partial_relevance.eval_data_structure import ContributionSummary, MatrixScorerIF
+from contradiction.alignment.data_structure.eval_data_structure import ContributionSummary, MatrixScorerIF
 
 
 class PredictorAttentionMaskGradient(PredictorAttentionMask):

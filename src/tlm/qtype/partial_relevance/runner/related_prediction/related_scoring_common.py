@@ -2,8 +2,9 @@ import xmlrpc.client
 from typing import List
 
 from misc_lib import TEL
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedEvalAnswer, ContributionSummary, \
+from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer, ContributionSummary, \
     MatrixScorerIF
+from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
 
 
 def run_scoring(problems: List[RelatedEvalInstance], scorer: MatrixScorerIF) -> List[RelatedEvalAnswer]:

@@ -61,7 +61,6 @@ def train_snli_on_bert():
     e_config.num_epoch = 1
     e_config.save_interval = 3 * 60 * 60  # 30 minutes
 
-
     data_loader = nli.SNLIDataLoader(hp.seq_max, nli_setting.vocab_filename, True)
     #load_id = None
     load_id = ("uncased_L-12_H-768_A-12", 'bert_model.ckpt')

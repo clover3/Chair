@@ -2,36 +2,13 @@ import abc
 from typing import NamedTuple, List, Dict, Tuple, Any, Optional
 
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
-from bert_api.segmented_instance.segmented_text import SegmentedText, seg_to_text
+from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import index_by_fn
 from tlm.data_gen.doc_encode_common import split_window_get_length
-from tlm.qtype.content_functional_parsing.qid_to_content_tokens import QueryInfo
+from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
 
 ContributionSummaryDict = Dict[str, List[float]]
-
-
-class RelatedEvalInstance(NamedTuple):
-    problem_id: str
-    query_info: QueryInfo
-    seg_instance: SegmentedInstance
-    score: float
-
-    def to_json(self):
-        return {
-            'problem_id': self.problem_id,
-            'query_info': self.query_info.to_json(),
-            'seg_instance': self.seg_instance.to_json(),
-            'score': self.score
-        }
-
-    @classmethod
-    def from_json(cls, j):
-        return RelatedEvalInstance(j['problem_id'],
-                                   QueryInfo.from_json(j['query_info']),
-                                   SegmentedInstance.from_json(j['seg_instance']),
-                                   j['score']
-                                   )
 
 
 class RelatedEvalInstanceEx(NamedTuple):
@@ -55,12 +32,6 @@ class RelatedEvalInstanceEx(NamedTuple):
                                      SegmentedInstance.from_json(j['seg_instance']),
                                      j['score']
                                      )
-
-def rei_to_text(tokenizer, rei: RelatedEvalInstance):
-    seg1_text = seg_to_text(tokenizer, rei.seg_instance.text1)
-    seg2_text = seg_to_text(tokenizer, rei.seg_instance.text2)
-    return f"RelatedEvalInstance({rei.problem_id}, {seg1_text})\n" \
-           + "Doc: " + seg2_text
 
 
 class ContributionSummary(NamedTuple):

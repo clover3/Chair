@@ -6,7 +6,7 @@ from tlm.qtype.partial_relevance.attention_based.mmd_z_client import get_mmd_cli
 from tlm.qtype.partial_relevance.bert_mask_interface.mmd_z_mask_cacche import get_attn_mask_forward_fn
 from tlm.qtype.partial_relevance.complement_path_data_helper import load_complements
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_search import FuncContentSegJoinPolicy
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance
+from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.eval_by_attn import EvalMetricByAttentionDrop, EvalMetricByAttentionAUC
 from tlm.qtype.partial_relevance.eval_metric.eval_by_erasure import EvalMetricByErasure
 from tlm.qtype.partial_relevance.eval_metric.partial_relevant import EvalMetricPartialRelevant, \

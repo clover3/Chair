@@ -1,7 +1,8 @@
 import sys
 from typing import List, Tuple
 
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstance, RelatedBinaryAnswer
+from contradiction.alignment.data_structure.eval_data_structure import RelatedBinaryAnswer
+from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result_b_single
 from tlm.qtype.partial_relevance.eval_utils import align_eval_b
 from tlm.qtype.partial_relevance.get_policy_util import get_binary_eval_policy

@@ -5,7 +5,7 @@ from typing import List, Tuple, Optional
 from cache import save_list_to_jsonl, load_list_from_jsonl
 from cpath import output_path
 from misc_lib import exist_or_mkdir
-from tlm.qtype.partial_relevance.eval_data_structure import PerProblemEvalResult
+from contradiction.alignment.data_structure.eval_data_structure import PerProblemEvalResult
 
 
 def get_eval_score_save_path_r(run_name):

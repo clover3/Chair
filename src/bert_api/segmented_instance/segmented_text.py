@@ -230,3 +230,10 @@ def merge_subtoken_level_scores(merge_subtoken_scores: Callable[[Iterable[float]
         score_for_seg: float = merge_subtoken_scores(scores_per_seg)
         output.append(score_for_seg)
     return output
+
+
+def text_to_word_level_segmented_text(text, tokenizer):
+    tokens = tokenizer.tokenize(text)
+    input_ids = tokenizer.convert_tokens_to_ids(tokens)  # text
+    segmented_text: SegmentedText = get_word_level_segmented_text(tokenizer, input_ids)
+    return segmented_text

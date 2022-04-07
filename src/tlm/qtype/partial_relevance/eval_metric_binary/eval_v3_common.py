@@ -2,7 +2,7 @@ import abc
 from abc import ABC, abstractmethod
 from typing import List, TypeVar, Optional
 
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalInstanceEx, RelatedBinaryAnswer
+from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalInstanceEx, RelatedBinaryAnswer
 
 
 class EvalMetricV3IF(abc.ABC):

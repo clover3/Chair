@@ -2,7 +2,7 @@ import functools
 import sys
 from typing import List, Callable
 
-from tlm.qtype.partial_relevance.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer
+from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_related_eval_answer, \
     get_related_binary_save_path, save_json_at
 
