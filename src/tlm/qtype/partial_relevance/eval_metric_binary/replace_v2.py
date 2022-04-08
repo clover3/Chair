@@ -6,7 +6,7 @@ from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens
 from contradiction.alignment.data_structure.eval_data_structure import RelatedBinaryAnswer, \
     RelatedEvalInstanceEx
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import ReplaceSamplePolicyIF
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_partial_text_as_segment, get_replace_zero
 from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future

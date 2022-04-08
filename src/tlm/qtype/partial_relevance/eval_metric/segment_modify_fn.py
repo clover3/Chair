@@ -9,7 +9,7 @@ from misc_lib import average
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import PartialSegment
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_search import FuncContentSegJoinPolicy
 from contradiction.alignment.data_structure.eval_data_structure import RelatedBinaryAnswer
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import DropSamplePolicyIF, ReplaceSamplePolicyIF
 
 DocModFuncR = Callable[[SegmentedText, List[float]], SegmentedText]

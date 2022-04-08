@@ -6,7 +6,7 @@ from list_lib import left, right
 from misc_lib import TEL
 from contradiction.alignment.data_structure.eval_data_structure import RelatedBinaryAnswer, join_a_p, \
     RelatedEvalInstanceEx, PerProblemEvalResult
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricConditionalPerTargetIF
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_partial_text_as_segment
 from tlm.qtype.partial_relevance.eval_metric_binary.replace_v2 import ReplaceV2

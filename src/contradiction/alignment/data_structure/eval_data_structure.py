@@ -6,7 +6,7 @@ from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import index_by_fn
 from tlm.data_gen.doc_encode_common import split_window_get_length
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 
 ContributionSummaryDict = Dict[str, List[float]]
 

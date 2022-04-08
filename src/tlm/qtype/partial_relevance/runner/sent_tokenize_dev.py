@@ -4,7 +4,7 @@ import nltk
 
 from data_generator.tokenizer_wo_tf import pretty_tokens, get_tokenizer
 from list_lib import flatten
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.loader import load_dev_problems
 
 

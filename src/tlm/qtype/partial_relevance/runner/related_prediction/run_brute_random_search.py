@@ -5,7 +5,7 @@ from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
 from list_lib import left
 from misc_lib import get_second, NamedAverager
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_drop_non_zero, DocModFuncB
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 from tlm.qtype.partial_relevance.runner.run_eval_old.run_partial_related_full_eval import get_mmd_client

@@ -18,7 +18,7 @@ from tlm.qtype.partial_relevance.complement_search_pckg.original_query import Co
 from tlm.qtype.partial_relevance.complement_search_pckg.query_vector import ComplementGenByQueryVector
 from tlm.qtype.partial_relevance.complement_search_pckg.span_iter import ComplementGenBySpanIter
 from contradiction.alignment.data_structure.print_helper import rei_to_text
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 
 

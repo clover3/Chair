@@ -7,7 +7,7 @@ from tlm.qtype.partial_relevance.attention_based.bert_masking_common import late
 from tlm.qtype.partial_relevance.attention_based.perturbation_scorer import PerturbationScorer
 from tlm.qtype.partial_relevance.bert_mask_interface.bert_mask_predictor import get_bert_mask_predictor
 from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer, MatrixScorerIF
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 from tlm.qtype.partial_relevance.methods.all_nothing_scorer import AllOneScorer, AllZeroScorer
 from tlm.qtype.partial_relevance.methods.exact_match_scorer import ExactMatchScorer

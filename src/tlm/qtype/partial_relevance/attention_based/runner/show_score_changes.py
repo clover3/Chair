@@ -13,7 +13,7 @@ from tlm.qtype.partial_relevance.attention_based.bert_masking_common import dist
 from tlm.qtype.partial_relevance.bert_mask_interface.bert_masking_client import get_localhost_bert_mask_client
 from contradiction.alignment.data_structure.eval_data_structure import ContributionSummary
 from contradiction.alignment.data_structure.print_helper import rei_to_text
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 
 

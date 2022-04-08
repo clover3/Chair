@@ -10,7 +10,7 @@ from tlm.qtype.partial_relevance.attention_based.hard_concrete_optimize.attentio
     AttentionMaskOptimizer, AttnOptEncoderWrap, init_model_for_inference, inference
 from tlm.qtype.partial_relevance.attention_based.hard_concrete_optimize.attnetion_opt_utils import AttnOptHP
 from contradiction.alignment.data_structure.print_helper import rei_to_text
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 
 

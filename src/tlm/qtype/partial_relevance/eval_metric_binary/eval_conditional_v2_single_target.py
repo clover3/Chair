@@ -4,7 +4,7 @@ from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens
 from misc_lib import TEL
 from contradiction.alignment.data_structure.eval_data_structure import RelatedBinaryAnswer, join_a_p
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricConditionalIF
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_partial_text_as_segment
 from tlm.qtype.partial_relevance.eval_metric_binary.replace_v2 import ReplaceV2SingleSeg

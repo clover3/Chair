@@ -4,7 +4,7 @@ from typing import List, Dict, Tuple
 from bert_api.segmented_instance.segmented_text import seg_to_text
 from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
 from contradiction.alignment.data_structure.eval_data_structure import RelatedBinaryAnswer
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.meta_common import better_fn_d
 from tlm.qtype.partial_relevance.eval_score_dp_helper import load_eval_result_b_single
 from tlm.qtype.partial_relevance.loader import load_mmde_problem

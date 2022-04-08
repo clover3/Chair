@@ -2,11 +2,10 @@ import os
 from collections import Counter
 from typing import List
 
-from cache import load_pickle_from, \
-    load_list_from_jsonl
+from cache import load_list_from_jsonl
 from cpath import output_path
 from misc_lib import average
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 
 
 def load_dev_small_problems() -> List[RelatedEvalInstance]:

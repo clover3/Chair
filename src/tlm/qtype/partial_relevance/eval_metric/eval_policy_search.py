@@ -4,7 +4,7 @@ from typing import List, Tuple
 
 from bert_api.segmented_instance.segmented_text import SegmentedText
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 
 
 def backtracking(deletion_array: List[bool], max_segment, is_flip) -> List[Tuple[List[bool], List[bool]]]:

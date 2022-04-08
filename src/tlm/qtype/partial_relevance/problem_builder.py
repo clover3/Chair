@@ -9,7 +9,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 from scipy_aux import logit_to_score_softmax
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 from tlm.qtype.content_functional_parsing.qid_to_content_tokens import QueryInfo, load_query_info_dict
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 
 
 def build_eval_instances(info_path,

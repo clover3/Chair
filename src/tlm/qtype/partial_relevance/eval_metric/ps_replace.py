@@ -4,7 +4,7 @@ from typing import List, Callable
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from contradiction.alignment.data_structure.eval_data_structure import RelatedBinaryAnswer
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricBinaryIF
 from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 

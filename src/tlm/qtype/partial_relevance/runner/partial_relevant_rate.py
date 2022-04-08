@@ -4,7 +4,7 @@ from typing import List, Dict
 from list_lib import index_by_fn
 from tlm.qtype.partial_relevance.complement_path_data_helper import load_complements
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.loader import load_dev_problems
 
 

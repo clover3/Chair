@@ -4,7 +4,7 @@ from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from list_lib import index_by_fn
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
 from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricWCIF, EvalMetricIF, EvalMetricBinaryIF
 from trainer.promise import MyPromise, PromiseKeeper
 

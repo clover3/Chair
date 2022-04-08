@@ -1,5 +1,5 @@
 from bert_api.segmented_instance.segmented_text import seg_to_text
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 
 
 def rei_to_text(tokenizer, rei: RelatedEvalInstance):

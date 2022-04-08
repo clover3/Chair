@@ -4,7 +4,7 @@ from typing import Optional
 from list_lib import right, left
 from contradiction.alignment.data_structure.eval_data_structure import RelatedBinaryAnswer, join_a_p, \
     RelatedEvalInstanceEx, PerProblemEvalResult
-from tlm.qtype.partial_relevance.related_eval_instance import RelatedEvalInstance
+from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric_binary.eval_conditional_v2_all import unpack_problem
 from tlm.qtype.partial_relevance.eval_metric_binary.eval_v3_common import EvalMetricV3IF, EvalV3StateIF
 from trainer.promise import parent_child_pattern
