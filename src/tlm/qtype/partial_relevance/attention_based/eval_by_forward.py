@@ -7,7 +7,7 @@ from data_generator.tokenizer_wo_tf import JoinEncoder
 from list_lib import left
 from misc_lib import get_second
 from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import indices_to_mask_dict
-from tlm.qtype.partial_relevance.attention_based.bert_masking_common import BERTMaskIF
+from bert_api.bert_masking_common import BERTMaskIF
 from contradiction.alignment.data_structure.eval_data_structure import ContributionSummary
 
 

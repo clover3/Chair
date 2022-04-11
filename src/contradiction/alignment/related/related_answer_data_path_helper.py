@@ -10,7 +10,7 @@ from contradiction.alignment.data_structure.eval_data_structure import RelatedEv
 
 
 def get_related_save_path(dataset_name, method):
-    save_path = os.path.join(output_path, "qtype", "related_scores", "MMDE_{}_{}.score".format(dataset_name, method))
+    save_path = os.path.join(output_path, "align_nli", "related_scores", "MNLIE_{}_{}.score".format(dataset_name, method))
     return save_path
 
 
@@ -20,7 +20,7 @@ def save_related_eval_answer(answers: List[RelatedEvalAnswer], dataset_name, met
 
 
 def load_related_answer(run_name) -> List[RelatedEvalAnswer]:
-    score_path = os.path.join(output_path, "qtype", "related_scores", "{}.score".format(run_name))
+    score_path = os.path.join(output_path, "align_nli", "related_scores", "{}.score".format(run_name))
     raw_json = json.load(open(score_path, "r"))
     return parse_related_eval_answer_from_json(raw_json)
 
@@ -32,9 +32,9 @@ def load_related_eval_answer(dataset_name, method) -> List[RelatedEvalAnswer]:
 
 
 def get_related_binary_save_path(dataset_name, method):
-    dir_path = os.path.join(output_path, "qtype", "binary_related_scores")
+    dir_path = os.path.join(output_path, "align_nli", "binary_related_scores")
     exist_or_mkdir(dir_path)
-    save_path = os.path.join(dir_path, "MMDE_{}_{}.score".format(dataset_name, method))
+    save_path = os.path.join(dir_path, "MNLIE_{}_{}.score".format(dataset_name, method))
     return save_path
 
 

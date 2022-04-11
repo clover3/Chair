@@ -8,7 +8,7 @@ from bert_api.segmented_instance.segmented_text import SegmentedText, seg_to_tex
 from contradiction.medical_claims.token_tagging.intersection_search.intersect_search_if import IntersectionSearchIF
 from contradiction.medical_claims.token_tagging.intersection_search.text_align_helper import \
     align_tokens_segmented_text
-from contradiction.medical_claims.token_tagging.nli_interface import NLIPredictorSig, NLIInput
+from bert_api.task_clients.nli_interface.nli_interface import NLIPredictorSig, NLIInput
 from data_generator.NLI.enlidef import NEUTRAL
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import get_max_idx

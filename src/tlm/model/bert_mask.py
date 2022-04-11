@@ -6,7 +6,7 @@ from __future__ import print_function
 import copy
 
 from models.transformer.bert_common_v2 import *
-from models.transformer.bert_common_v2 import create_initializer
+from tf_v2_support import tf1
 from tlm.model.base import BertModelInterface, transformer_model
 
 
@@ -45,8 +45,8 @@ class BertModelMasked(BertModelInterface):
         if token_type_ids is None:
             token_type_ids = tf.zeros(shape=[batch_size, seq_length], dtype=tf.int32)
 
-        with tf.compat.v1.variable_scope(scope, default_name="bert"):
-            with tf.compat.v1.variable_scope("embeddings"):
+        with tf1.variable_scope(scope, default_name="bert"):
+            with tf1.variable_scope("embeddings"):
                 # Perform embedding lookup on the word ids.
                 (self.embedding_output, self.embedding_table) = embedding_lookup(
                     input_ids=input_ids,
@@ -88,7 +88,7 @@ class BertModelMasked(BertModelInterface):
                     do_return_all_layers=True)
 
             self.sequence_output = self.all_encoder_layers[-1]
-            with tf.compat.v1.variable_scope("pooler"):
+            with tf1.variable_scope("pooler"):
                 first_token_tensor = tf.squeeze(self.sequence_output[:, 0:1, :], axis=1)
                 self.pooled_output = tf.keras.layers.Dense(config.hidden_size,
                                                            activation=tf.keras.activations.tanh,

@@ -1,7 +1,7 @@
 from bert_api.client_lib import BERTClient
 from data_generator.tokenizer_wo_tf import get_tokenizer, JoinEncoder
 from port_info import MMD_Z_PORT
-from tlm.qtype.partial_relevance.bert_mask_interface.bert_mask_predictor import get_bert_mask_predictor
+from bert_api.task_clients.mmd_z_interface.mmd_z_mask_predictor import get_mmd_z_bert_mask_predictor
 
 
 def compare_with_mmd_z():
@@ -10,7 +10,7 @@ def compare_with_mmd_z():
     # doc = "Coffee is good for health "
     tokenizer = get_tokenizer()
     # client: BERTMaskClient = get_localhost_bert_mask_client()
-    predictor = get_bert_mask_predictor()
+    predictor = get_mmd_z_bert_mask_predictor()
     max_seq_length = 512
     mmd_client = BERTClient("http://localhost", MMD_Z_PORT, max_seq_length)
     score1 = mmd_client.request_single(query, doc)

@@ -1,11 +1,12 @@
 import port_info
 from rpc.bert_like_server import BertLikeServer
 from bert_api.bert_masking_common import deserialize_tuple_d
-from bert_api.task_clients.mmd_z_interface.mmd_z_mask_predictor import get_mmd_z_bert_mask_predictor
-
+from bert_api.task_clients.nli_interface.nli_mask_predictor import get_nli_bert_mask_predictor
+import sys
 
 def run_server():
-    predictor = get_mmd_z_bert_mask_predictor()
+    model_path = sys.argv[1]
+    predictor = get_nli_bert_mask_predictor(model_path)
 
     def predict(payload):
         payload = deserialize_tuple_d(payload)
@@ -17,6 +18,6 @@ def run_server():
     server.start(port_info.BERT_MASK_PORT)
 
 
- 
+
 if __name__ == "__main__":
     run_server()

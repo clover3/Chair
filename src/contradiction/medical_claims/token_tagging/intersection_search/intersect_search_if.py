@@ -7,7 +7,7 @@ import numpy as np
 import scipy.special
 
 from bert_api.segmented_instance.segmented_text import SegmentedText, seg_to_text
-from contradiction.medical_claims.token_tagging.nli_interface import NLIPredictorSig, NLIInput
+from bert_api.task_clients.nli_interface.nli_interface import NLIPredictorSig, NLIInput
 from data_generator.NLI.enlidef import ENTAILMENT, nli_label_list, NEUTRAL, nli_probs_str
 from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens
 from list_lib import get_max_idx

@@ -3,9 +3,9 @@ from typing import List
 
 from tlm.qtype.partial_relevance.attention_based.attention_mask_gradient import AttentionGradientScorer, \
     get_attention_mask_gradient_predictor
-from tlm.qtype.partial_relevance.attention_based.bert_masking_common import later_score_prob
+from bert_api.bert_masking_common import later_score_prob
 from tlm.qtype.partial_relevance.attention_based.perturbation_scorer import PerturbationScorer
-from tlm.qtype.partial_relevance.bert_mask_interface.bert_mask_predictor import get_bert_mask_predictor
+from bert_api.task_clients.mmd_z_interface.mmd_z_mask_predictor import get_mmd_z_bert_mask_predictor
 from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer, MatrixScorerIF
 from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
@@ -18,7 +18,7 @@ from tlm.qtype.partial_relevance.runner.related_prediction.related_scoring_commo
 
 def get_attn_mask_scorer() -> MatrixScorerIF:
     # predictor = get_localhost_bert_mask_client()
-    predictor = get_bert_mask_predictor()
+    predictor = get_mmd_z_bert_mask_predictor()
     max_seq_length = 512
     scorer = PerturbationScorer(predictor, max_seq_length, later_score_prob)
     return scorer

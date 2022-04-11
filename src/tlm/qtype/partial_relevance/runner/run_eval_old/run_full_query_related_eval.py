@@ -8,7 +8,7 @@ from tlm.qtype.partial_relevance.attention_based.mmd_z_client import get_mmd_cli
 from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_utils import related_eval
 from tlm.qtype.partial_relevance.loader import load_dev_small_problems
-from tlm.qtype.partial_relevance.related_answer_data_path_helper import parse_related_eval_answer_from_json
+from contradiction.alignment.data_structure.ds_helper import parse_related_eval_answer_from_json
 
 
 # Runs eval for Related against full query

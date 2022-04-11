@@ -4,15 +4,21 @@ import numpy as np
 import tensorflow as tf
 
 import cpath
-from cpath import output_path
 from models.bert_util.bert_utils import batch2feed_dict_4_or_5_inputs, get_last_id
 from models.transformer import hyperparams
 from models.transformer.bert_common_v2 import create_attention_mask_from_input_mask
-from tf_v2_support import placeholder, disable_eager_execution
+from tf_v2_support import placeholder, disable_eager_execution, tf1
 from tlm.model import base as bert
-from tlm.model.bert_mask import BertModelMasked, apply_drop
-from tlm.qtype.partial_relevance.attention_based.bert_masking_common import BERTMaskIF
-from trainer.tf_train_module_v2 import init_session
+from tlm.model.bert_mask import apply_drop, BertModelMasked
+from bert_api.bert_masking_common import BERTMaskIF
+
+
+def init_session():
+    config = tf1.ConfigProto(allow_soft_placement=True,
+                            log_device_placement=False)
+    config.gpu_options.allow_growth = True
+
+    return tf1.Session(config=config)
 
 
 def get_batches_ex(data, batch_size, n_inputs):
@@ -95,7 +101,7 @@ class PredictorAttentionMask(BERTMaskIF):
         self.model_dir = cpath.model_path
         self.task = transformer_attn_mask(self.hp, num_classes, self.voca_size, False)
         self.sess = init_session()
-        self.sess.run(tf.compat.v1.global_variables_initializer())
+        self.sess.run(tf1.global_variables_initializer())
         self.batch_size = 32
         self.model_loaded = False
 
@@ -128,14 +134,6 @@ class PredictorAttentionMask(BERTMaskIF):
         id = get_last_id(save_dir)
         path = os.path.join(save_dir, "{}".format(id))
         print("load_model")
-        self.loader = tf.compat.v1.train.Saver(max_to_keep=1)
+        self.loader = tf1.train.Saver(max_to_keep=1)
         self.loader.restore(self.sess, path)
         self.model_loaded = True
-
-
-def get_bert_mask_predictor() -> BERTMaskIF:
-    save_path = os.path.join(output_path, "model", "runs", "mmd_Z")
-    disable_eager_execution()
-    predictor = PredictorAttentionMask(2, 512)
-    predictor.load_model(save_path)
-    return predictor

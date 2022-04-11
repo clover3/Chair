@@ -1,5 +1,5 @@
 import abc
-from typing import NamedTuple, List, Dict, Tuple, Any, Optional
+from typing import NamedTuple, List, Dict, Tuple, Any, Optional, Callable
 
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from bert_api.segmented_instance.segmented_text import SegmentedText
@@ -148,3 +148,11 @@ class UnexpectedPolicyException(Exception):
 
     def __str__(self):
         return f"Policy {self.policy_name} is not expected."
+
+
+def convert_answer(convert_fn: Callable[[float], int], a: RelatedEvalAnswer) -> RelatedBinaryAnswer:
+    def convert_row(row):
+        return list(map(convert_fn, row))
+
+    new_table = list(map(convert_row, a.contribution.table))
+    return RelatedBinaryAnswer(a.problem_id, new_table)

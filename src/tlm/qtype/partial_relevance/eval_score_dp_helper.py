@@ -36,6 +36,10 @@ def get_eval_score_save_path_b_all(run_name):
 
 def save_eval_result_b_single(eval_res: List[Tuple[str, float]], run_name):
     save_path = get_eval_score_save_path_b_single(run_name)
+    write_tsv(eval_res, save_path)
+
+
+def write_tsv(eval_res, save_path):
     with open(save_path, "w", newline='') as f:
         writer = csv.writer(f, delimiter='\t')
         writer.writerows(eval_res)

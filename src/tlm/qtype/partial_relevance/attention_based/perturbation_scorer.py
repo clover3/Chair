@@ -5,7 +5,7 @@ import numpy as np
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import JoinEncoder
 from list_lib import lmap, left
-from tlm.qtype.partial_relevance.attention_based.bert_masking_common import BERTMaskIF
+from bert_api.bert_masking_common import BERTMaskIF
 from contradiction.alignment.data_structure.eval_data_structure import ContributionSummary, MatrixScorerIF
 
 

@@ -1,8 +1,8 @@
 import abc
 from typing import List, Dict, Tuple
-
 import numpy as np
 from scipy.special import softmax
+
 
 INPUT_IDS = List[int]
 INPUT_MASK = List[int]

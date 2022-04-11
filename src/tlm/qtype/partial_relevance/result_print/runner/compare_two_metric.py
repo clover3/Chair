@@ -11,7 +11,7 @@ from contradiction.alignment.data_structure.eval_data_structure import RelatedEv
     ContributionSummary
 from contradiction.alignment.data_structure.print_helper import rei_to_text
 from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
-from tlm.qtype.partial_relevance.eval_metric.attn_mask_utils import get_drop_mask
+from bert_api.attn_mask_utils import get_drop_mask
 from tlm.qtype.partial_relevance.eval_metric.meta_common import better_fn_d
 from tlm.qtype.partial_relevance.eval_score_dp_helper import load_eval_result_r
 from tlm.qtype.partial_relevance.loader import load_mmde_problem

@@ -1,12 +1,17 @@
 from typing import List, Tuple, Dict
-
-from bert_api.segmented_instance.seg_instance import SegmentedInstance
-from data_generator.tokenizer_wo_tf import JoinEncoder
 from list_lib import left
 from misc_lib import get_second
-from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import indices_to_mask_dict
-from tlm.qtype.partial_relevance.attention_based.bert_masking_common import BERTMaskIF
+from data_generator.tokenizer_wo_tf import JoinEncoder
+
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
+from bert_api.bert_masking_common import BERTMaskIF
+
 from contradiction.alignment.data_structure.eval_data_structure import ContributionSummary
+
+
+def indices_to_mask_dict(indices: List[Tuple[int, int]]) -> Dict[Tuple[int, int], int]:
+    d = {k: 1 for k in indices}
+    return d
 
 
 class BertMaskWrap:
