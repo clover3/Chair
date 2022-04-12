@@ -5,10 +5,11 @@ import itertools
 
 from cache import save_list_to_jsonl_w_fn
 from alignment.nli_align_path_helper import get_rei_file_path
-from data_generator.tokenizer_wo_tf import get_tokenizer
-from dataset_specific.mnli.mnli_reader import MNLIReader
 from alignment.data_structure.related_eval_instance import TextPair, get_word_level_rei, \
     RelatedEvalInstance
+
+from data_generator.tokenizer_wo_tf import get_tokenizer
+from dataset_specific.mnli.mnli_reader import MNLIReader
 from typing import List, Iterable, Callable
 
 
