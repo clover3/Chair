@@ -14,7 +14,7 @@ from alignment.matrix_scorers.methods.all_nothing_scorer import AllOneScorer, Al
 from alignment.matrix_scorers.methods.exact_match_scorer import TokenExactMatchScorer
 from alignment.matrix_scorers.methods.random_score import RandomScorer
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import save_related_eval_answer
-from tlm.qtype.partial_relevance.runner.related_prediction.related_scoring_common import run_scoring
+from alignment.matrix_scorers.related_scoring_common import run_scoring
 
 
 def get_attn_mask_scorer() -> MatrixScorerIF:

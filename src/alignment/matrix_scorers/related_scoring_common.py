@@ -1,9 +1,10 @@
 import xmlrpc.client
 from typing import List
-
 from misc_lib import TEL
+
+from alignment import MatrixScorerIF
+from alignment.data_structure.matrix_scorer_if import ContributionSummary
 from alignment.data_structure.eval_data_structure import RelatedEvalAnswer
-from alignment.data_structure import MatrixScorerIF, ContributionSummary
 from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 
 
