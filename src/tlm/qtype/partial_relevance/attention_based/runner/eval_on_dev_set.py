@@ -11,10 +11,10 @@ from tlm.data_gen.doc_encode_common import split_window_get_length
 from tlm.qtype.content_functional_parsing.qid_to_content_tokens import QueryInfo
 from tlm.qtype.enum_util import enum_samples
 from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import EvalPerQSeg
-from tlm.qtype.partial_relevance.attention_based.attention_mask_gradient import AttentionGradientScorer, \
-    PredictorAttentionMaskGradient
+from tlm.qtype.partial_relevance.attention_based.attention_mask_gradient import PredictorAttentionMaskGradient
+from alignment.matrix_scorers.attn_based.attn_gradient_scorer import AttentionGradientScorer
 from bert_api.bert_masking_common import dist_l2
-from tlm.qtype.partial_relevance.attention_based.perturbation_scorer import PerturbationScorer
+from alignment.matrix_scorers.attn_based.perturbation_scorer import PerturbationScorer
 from bert_api.task_clients.bert_masking_client import get_localhost_bert_mask_client
 from tlm.qtype.partial_relevance.qd_segmented_instance import QDSegmentedInstance
 from tlm.qtype.qtype_instance import QTypeInstance

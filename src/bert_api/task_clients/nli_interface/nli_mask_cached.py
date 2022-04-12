@@ -7,7 +7,7 @@ from bert_api.bert_masking_common import BERTMaskIF
 
 from datastore.sql_based_cache_client import SQLBasedCacheClientS
 from bert_api.attn_mask_utils import BertMaskWrap
-from contradiction.alignment.data_structure.eval_data_structure import get_test_segment_instance
+from alignment.data_structure.eval_data_structure import get_test_segment_instance
 
 InputType = Tuple[SegmentedInstance, Dict]
 OutputType = List[float]

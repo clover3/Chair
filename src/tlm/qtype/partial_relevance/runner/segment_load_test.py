@@ -3,7 +3,7 @@ from typing import List
 
 from cache import load_pickle_from
 from cpath import output_path
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 
 
 def main():

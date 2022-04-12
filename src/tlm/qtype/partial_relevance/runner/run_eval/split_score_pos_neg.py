@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_score_dp_helper import save_eval_result_r, load_eval_result_r
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 

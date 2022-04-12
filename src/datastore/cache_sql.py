@@ -1,6 +1,5 @@
-import pymysql
-
-pymysql.install_as_MySQLdb()
+# import pymysql
+# pymysql.install_as_MySQLdb()
 from sqlalchemy import Column, String, Index, REAL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
@@ -36,9 +35,3 @@ def index_table(table, engine):
     index_ = Index(table.__tablename__ + '__index', table.key)
     index_.create(bind=engine)
 
-
-
-
-
-if __name__ == "__main__":
-    main()

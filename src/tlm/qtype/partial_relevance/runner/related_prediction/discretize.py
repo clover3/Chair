@@ -2,7 +2,7 @@ import functools
 import sys
 from typing import List
 
-from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer, \
+from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer, \
     convert_answer
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_related_eval_answer, \
     get_related_binary_save_path, save_json_at

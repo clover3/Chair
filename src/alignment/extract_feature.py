@@ -47,15 +47,3 @@ def perturbation_enum(si: SegmentedInstance) -> List[RankList]:
         problem_list_per_pair.append(
             RankList(si, str(seg1_idx), rank_item_list))
     return problem_list_per_pair
-
-
-def main():
-    # TODO
-    #   Given a pair instance.
-    #   Run all perturbations
-
-    return NotImplemented
-
-
-if __name__ == "__main__":
-    main()

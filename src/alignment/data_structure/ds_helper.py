@@ -1,7 +1,7 @@
 from typing import List
 
-from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer, ContributionSummary, \
-    RelatedBinaryAnswer
+from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer
+from alignment.data_structure.matrix_scorer_if import ContributionSummary
 
 
 def parse_related_eval_answer_from_json(raw_json) -> List[RelatedEvalAnswer]:

@@ -1,7 +1,8 @@
 import random
 from typing import List
 
-from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer, ContributionSummary
+from alignment.data_structure.eval_data_structure import RelatedEvalAnswer
+from alignment.data_structure import ContributionSummary
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_related_eval_answer, \
     save_related_eval_answer
 

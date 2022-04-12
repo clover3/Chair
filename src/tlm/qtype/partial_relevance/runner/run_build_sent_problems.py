@@ -6,7 +6,7 @@ from bert_api.segmented_instance.segmented_text import word_segment_w_indices
 from cache import save_list_to_jsonl
 from cpath import output_path
 from epath import job_man_dir
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.problem_builder import build_sentence_as_doc
 from tlm.qtype.partial_relevance.runner.run_eval_old.run_partial_related_full_eval import get_mmd_client
 from tlm.qtype.partial_relevance.runner.sent_tokenize_dev import sentence_segment_w_indices

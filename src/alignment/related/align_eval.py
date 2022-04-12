@@ -1,10 +1,10 @@
 import numpy as np
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
-from contradiction.alignment.data_structure.eval_data_structure import RelatedBinaryAnswer, PerProblemEvalResult, \
+from alignment.data_structure.eval_data_structure import RelatedBinaryAnswer, PerProblemEvalResult, \
     UnexpectedPolicyException
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
-from contradiction.alignment.nli_align_path_helper import load_mnli_rei_problem, save_eval_result_b
-from contradiction.alignment.related.related_answer_data_path_helper import load_binary_related_eval_answer
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.nli_align_path_helper import load_mnli_rei_problem, save_eval_result_b
+from alignment.related.related_answer_data_path_helper import load_binary_related_eval_answer
 from bert_api.task_clients.nli_interface.nli_interface import get_nli_cache_client, NLIInput
 from tlm.qtype.partial_relevance.eval_metric.ps_replace_helper import get_100_random_spans
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import TenStepRandomReplacePolicy, \

@@ -2,9 +2,9 @@ import json
 import os
 from typing import List
 
-from cache import load_list_from_jsonl, save_list_to_jsonl, save_list_to_jsonl_w_fn
-from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer, PerProblemEvalResult
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from cache import load_list_from_jsonl, save_list_to_jsonl_w_fn
+from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, PerProblemEvalResult
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from cpath import output_path, pjoin, FilePath
 from misc_lib import exist_or_mkdir
 from tlm.qtype.partial_relevance.eval_score_dp_helper import get_eval_score_save_path_b_all

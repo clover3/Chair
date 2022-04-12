@@ -5,7 +5,7 @@ from cpath import at_output_dir
 from datastore.sql_based_cache_client import SQLBasedCacheClientS
 from bert_api.bert_masking_common import BERTMaskIF
 from bert_api.task_clients.mmd_z_interface.mmd_z_mask_client import get_mmd_z_mask_client
-from contradiction.alignment.data_structure.eval_data_structure import get_test_segment_instance
+from alignment.data_structure.eval_data_structure import get_test_segment_instance
 from bert_api.attn_mask_utils import BertMaskWrap
 
 InputType = Tuple[SegmentedInstance, Dict]

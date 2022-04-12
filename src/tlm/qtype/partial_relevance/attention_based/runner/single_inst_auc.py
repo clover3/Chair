@@ -7,7 +7,7 @@ from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer, JoinEncoder, pretty_tokens
 from tlm.data_gen.doc_encode_common import split_by_window, split_window_get_length
 from tlm.qtype.partial_relevance.attention_based.attention_mask_eval import softmax_rev_sigmoid, EvalPerQSeg
-from tlm.qtype.partial_relevance.attention_based.perturbation_scorer import PerturbationScorer
+from alignment.matrix_scorers.attn_based.perturbation_scorer import PerturbationScorer
 from bert_api.task_clients.bert_masking_client import get_localhost_bert_mask_client
 
 

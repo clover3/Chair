@@ -2,11 +2,11 @@ import json
 import os
 from typing import List
 
-from contradiction.alignment.data_structure.ds_helper import parse_related_eval_answer_from_json, \
+from alignment.data_structure import parse_related_eval_answer_from_json, \
     parse_related_binary_answer_from_json
 from cpath import output_path
 from misc_lib import exist_or_mkdir
-from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer
+from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer
 
 
 def get_related_save_path(dataset_name, method):

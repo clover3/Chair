@@ -2,9 +2,9 @@ import sys
 from typing import List
 
 from tlm.qtype.partial_relevance.bert_mask_interface.mmd_z_mask_cacche import get_attn_mask_forward_fn, AttnMaskForward
-from contradiction.alignment.data_structure.eval_data_structure import RelatedBinaryAnswer, \
+from alignment.data_structure.eval_data_structure import RelatedBinaryAnswer, \
     PerProblemEvalResult, UnexpectedPolicyException
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ps_replace_helper import get_100_random_spans
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import TenStepRandomReplacePolicy, \
     TenStepRandomDropPolicy

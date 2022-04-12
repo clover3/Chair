@@ -6,7 +6,7 @@ from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import JoinEncoder
 from list_lib import lmap, left
 from bert_api.bert_masking_common import BERTMaskIF
-from contradiction.alignment.data_structure.eval_data_structure import ContributionSummary, MatrixScorerIF
+from alignment.data_structure.matrix_scorer_if import MatrixScorerIF, ContributionSummary
 
 
 def apply_offset(new_mask: Dict[Tuple[int, int], int],

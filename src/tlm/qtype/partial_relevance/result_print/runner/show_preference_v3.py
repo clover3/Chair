@@ -1,7 +1,7 @@
 from typing import List, Tuple, Optional
 
 from list_lib import flatten, right
-from contradiction.alignment.data_structure.eval_data_structure import RelatedBinaryAnswer
+from alignment.data_structure.eval_data_structure import RelatedBinaryAnswer
 from tlm.qtype.partial_relevance.eval_score_dp_helper import load_eval_result_b_all
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_binary_related_eval_answer
 from tlm.qtype.partial_relevance.result_print.method_preference_count import count_paired_comparison

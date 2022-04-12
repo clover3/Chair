@@ -1,10 +1,12 @@
-from contradiction.alignment.data_structure.eval_data_structure import MatrixScorerIF, RelatedEvalAnswer
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
-from contradiction.alignment.nli_align_path_helper import load_mnli_rei_problem
+from alignment import MatrixScorerIF
+from alignment.data_structure.eval_data_structure import RelatedEvalAnswer
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.nli_align_path_helper import load_mnli_rei_problem
+
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import save_related_eval_answer
 from tlm.qtype.partial_relevance.runner.related_prediction.related_scoring_common import run_scoring
 from tlm.qtype.partial_relevance.runner.related_prediction.run_predict import get_method
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List
 import sys
 
 

@@ -4,11 +4,8 @@ import numpy as np
 import tensorflow as tf
 
 import models.bert_util.bert_utils
-from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from cpath import output_path
-from data_generator.tokenizer_wo_tf import JoinEncoder
 from bert_api.bert_mask_predictor import get_batches_ex, PredictorAttentionMask
-from contradiction.alignment.data_structure.eval_data_structure import ContributionSummary, MatrixScorerIF
 
 
 class PredictorAttentionMaskGradient(PredictorAttentionMask):
@@ -35,22 +32,6 @@ class PredictorAttentionMaskGradient(PredictorAttentionMask):
         payload = [self.unpack_dict(e) for e in payload]
         logits, grads = forward_run(payload)
         return logits.tolist(), grads.tolist()
-
-
-class AttentionGradientScorer(MatrixScorerIF):
-    def __init__(self, client: PredictorAttentionMaskGradient, max_seq_length):
-        self.client = client
-        self.max_seq_length = max_seq_length
-        self.join_encoder = JoinEncoder(max_seq_length)
-
-    def eval_contribution(self, inst: SegmentedInstance) -> ContributionSummary:
-        x0, x1, x2 = self.join_encoder.join(inst.text1.tokens_ids, inst.text2.tokens_ids)
-        payload_inst = x0, x1, x2, {}
-        logits, grads = self.client.predict([payload_inst])
-        grad_mag = np.sum(np.abs(grads), axis=3)
-        assert len(grad_mag) == 1
-        table = inst.score_np_table_to_table(grad_mag[0])
-        return ContributionSummary(table)
 
 
 def get_attention_mask_gradient_predictor():

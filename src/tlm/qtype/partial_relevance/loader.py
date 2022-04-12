@@ -5,7 +5,7 @@ from typing import List
 from cache import load_list_from_jsonl
 from cpath import output_path
 from misc_lib import average
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 
 
 def load_dev_small_problems() -> List[RelatedEvalInstance]:

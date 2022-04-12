@@ -4,9 +4,9 @@ from typing import List, Tuple, Callable
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from contradiction.alignment.data_structure.eval_data_structure import RelatedBinaryAnswer, \
+from alignment.data_structure.eval_data_structure import RelatedBinaryAnswer, \
     RelatedEvalInstanceEx
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricConditionalIF, DropSamplePolicyIF, \
     EvalMetricConditionalPerTargetIF
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_partial_text_as_segment

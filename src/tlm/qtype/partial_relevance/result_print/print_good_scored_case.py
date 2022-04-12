@@ -4,8 +4,8 @@ import numpy as np
 
 from bert_api.segmented_instance.segmented_text import get_highlighted_text
 from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
-from contradiction.alignment.data_structure.eval_data_structure import join_p_withother, RelatedEvalAnswer
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure.eval_data_structure import join_p_withother, RelatedEvalAnswer
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_score_dp_helper import load_eval_result_r
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_related_eval_answer

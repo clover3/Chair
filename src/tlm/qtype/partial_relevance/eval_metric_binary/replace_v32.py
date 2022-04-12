@@ -5,7 +5,7 @@ from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import PartialSegment
 from tlm.qtype.partial_relevance.complement_search_pckg.span_iter import get_candidates
-from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalInstanceEx, RelatedBinaryAnswer
+from alignment.data_structure.eval_data_structure import RelatedEvalInstanceEx, RelatedBinaryAnswer
 from tlm.qtype.partial_relevance.eval_metric.ep_common import ReplaceSamplePolicyIF
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import get_partial_text_as_segment, get_replace_zero
 from tlm.qtype.partial_relevance.eval_metric_binary.eval_v3_common import EvalV3StateIF, V3StateWorkerIF, MetricV3, \

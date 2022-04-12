@@ -1,4 +1,4 @@
-from contradiction.alignment.related.align_eval import run_eval
+from alignment.related.align_eval import run_eval
 from misc_lib import tprint
 
 

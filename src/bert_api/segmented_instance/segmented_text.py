@@ -37,7 +37,7 @@ class SegmentedText(NamedTuple):
 
         return indice[:split_idx], indice[split_idx:]
 
-    def get_tokens_for_seg(self, seg_idx):
+    def get_tokens_for_seg(self, seg_idx) -> List[int]:
         return [self.tokens_ids[i] for i in self.seg_token_indices[seg_idx]]
 
     def get_seg_text(self, tokenizer, seg_idx):

@@ -2,7 +2,7 @@ import abc
 from abc import ABC, abstractmethod
 from typing import List, TypeVar, Optional
 
-from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalInstanceEx, RelatedBinaryAnswer
+from alignment.data_structure.eval_data_structure import RelatedEvalInstanceEx, RelatedBinaryAnswer
 
 
 class EvalMetricV3IF(abc.ABC):

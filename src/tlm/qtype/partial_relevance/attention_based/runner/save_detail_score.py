@@ -5,8 +5,8 @@ from typing import List, Dict
 from cpath import at_output_dir
 from list_lib import index_by_fn
 from misc_lib import exist_or_mkdir
-from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure.eval_data_structure import RelatedEvalAnswer
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.eval_by_attn import AttentionBrevityDetail
 from tlm.qtype.partial_relevance.get_policy_util import get_real_val_eval_policy
 from tlm.qtype.partial_relevance.loader import load_mmde_problem

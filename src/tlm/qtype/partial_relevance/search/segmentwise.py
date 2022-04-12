@@ -2,10 +2,10 @@ from typing import List
 
 from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
 from tlm.qtype.partial_relevance.complement_path_data_helper import load_complements
-from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer, \
+from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, \
     join_p_withother
-from contradiction.alignment.data_structure.print_helper import rei_to_text
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure.print_helper import rei_to_text
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.get_policy_util import get_eval_policy_wc
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import save_related_eval_answer, \

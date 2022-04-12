@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from list_lib import l_to_map, index_by_fn, dict_value_map
-from contradiction.alignment.data_structure.eval_data_structure import RelatedBinaryAnswer
+from alignment.data_structure.eval_data_structure import RelatedBinaryAnswer
 
 
 def get_index_answer_dict(dataset, method_list, related_answer_load_fn):

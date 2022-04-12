@@ -2,10 +2,10 @@ from typing import List
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from bert_api.bert_masking_common import later_score_prob
-from tlm.qtype.partial_relevance.attention_based.perturbation_scorer import PerturbationScorer
+from alignment.matrix_scorers.attn_based.perturbation_scorer import PerturbationScorer
 from bert_api.task_clients.bert_masking_client import get_localhost_bert_mask_client
-from contradiction.alignment.data_structure.eval_data_structure import MatrixScorerIF
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure import MatrixScorerIF
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 
 

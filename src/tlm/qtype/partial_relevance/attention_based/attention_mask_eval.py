@@ -11,7 +11,7 @@ from list_lib import left
 from misc_lib import get_second, two_digit_float
 from tab_print import tab_print
 from bert_api.bert_masking_common import BERTMaskIF
-from contradiction.alignment.data_structure.eval_data_structure import ContributionSummary
+from alignment.data_structure import ContributionSummary
 from tlm.qtype.partial_relevance.qd_segmented_instance import QDSegmentedInstance
 
 

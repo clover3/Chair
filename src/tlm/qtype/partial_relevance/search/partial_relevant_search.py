@@ -4,7 +4,7 @@ from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput, PartialSegment
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import TupleOfListFuture
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFuncR
 from trainer.promise import PromiseKeeper, MyFuture, MyPromise

@@ -3,9 +3,9 @@ from typing import Tuple, List, TypeVar
 
 from bert_api.segmented_instance.segmented_text import SegmentedText
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
-from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer, \
+from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer, \
     RelatedEvalInstanceEx
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from trainer.promise import MyFuture
 
 TupleOfListFuture = Tuple[List[MyFuture], List[MyFuture]]

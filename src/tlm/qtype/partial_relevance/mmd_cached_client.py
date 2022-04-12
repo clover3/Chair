@@ -7,7 +7,7 @@ from cpath import at_output_dir
 from datastore.cache_sql import get_engine_from_sqlite_path, CacheTableF
 from datastore.sql_based_cache_client import SQLBasedCacheClient
 from tlm.qtype.partial_relevance.cache_db import get_cache_sqlite_path
-from contradiction.alignment.data_structure.eval_data_structure import get_test_segment_instance
+from alignment.data_structure.eval_data_structure import get_test_segment_instance
 from tlm.qtype.partial_relevance.runner.run_eval_old.run_partial_related_full_eval import get_mmd_client
 
 FUNC_SIG = Callable[[List[SegmentedInstance]], List[float]]

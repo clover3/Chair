@@ -1,8 +1,8 @@
 from typing import List, Tuple, Any
 
-from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer, \
-    ContributionSummary
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure.eval_data_structure import RelatedEvalAnswer
+from alignment.data_structure import ContributionSummary
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricWCIF
 from tlm.qtype.partial_relevance.runner.related_prediction.run_search import get_one_hot_contribution
 

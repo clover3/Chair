@@ -1,0 +1,2 @@
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
+from bert_api.segmented_instance.segmented_text import SegmentedText

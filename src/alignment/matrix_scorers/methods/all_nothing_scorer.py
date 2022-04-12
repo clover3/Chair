@@ -1,7 +1,7 @@
 import numpy as np
 
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
-from contradiction.alignment.data_structure.eval_data_structure import ContributionSummary, MatrixScorerIF
+from alignment.data_structure.matrix_scorer_if import MatrixScorerIF, ContributionSummary
 
 
 class AllOneScorer(MatrixScorerIF):

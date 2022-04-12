@@ -6,7 +6,7 @@ from bert_api.segmented_instance.segmented_text import SegmentedText, word_segme
 from cache import save_list_to_jsonl
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 
 

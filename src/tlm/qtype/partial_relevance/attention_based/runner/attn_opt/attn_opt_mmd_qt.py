@@ -7,7 +7,7 @@ from tlm.qtype.partial_relevance.attention_based.hard_concrete_optimize.attentio
 from tlm.qtype.partial_relevance.attention_based.hard_concrete_optimize.attention_opt_wrap import \
     AttentionMaskOptimizer, AttnOptQTEncoder
 from tlm.qtype.partial_relevance.attention_based.hard_concrete_optimize.attnetion_opt_utils import AttnOptHP
-from contradiction.alignment.data_structure.eval_data_structure import get_test_segment_instance
+from alignment.data_structure.eval_data_structure import get_test_segment_instance
 
 
 class MMDHP(AttnOptHP):

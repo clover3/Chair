@@ -2,15 +2,14 @@
 #
 import functools
 import itertools
-from typing import Generator
 
-from cache import save_list_to_jsonl, save_list_to_jsonl_w_fn
-from contradiction.alignment.nli_align_path_helper import get_rei_file_path
+from cache import save_list_to_jsonl_w_fn
+from alignment.nli_align_path_helper import get_rei_file_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from dataset_specific.mnli.mnli_reader import MNLIReader
-from contradiction.alignment.data_structure.related_eval_instance import TextPair, get_word_level_rei, \
+from alignment.data_structure.related_eval_instance import TextPair, get_word_level_rei, \
     RelatedEvalInstance
-from typing import List, Iterable, Callable, Dict, Tuple, Set, Mapping
+from typing import List, Iterable, Callable
 
 
 def build(split) -> Iterable[RelatedEvalInstance]:
@@ -31,7 +30,7 @@ def iter_mnli_dataset(split) -> Iterable[TextPair]:
 
 def main():
     num_items = 100
-    split = "dev"
+    split = "train"
     rei_iter = build(split)
     problems: List[RelatedEvalInstance] = list(itertools.islice(rei_iter, num_items))
     save_path = get_rei_file_path(f"mnli_align_{split}.jsonl")

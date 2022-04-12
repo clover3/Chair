@@ -3,8 +3,8 @@ from typing import List, Dict, Tuple
 
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from contradiction.alignment.data_structure.eval_data_structure import RelatedEvalAnswer
-from contradiction.alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from alignment.data_structure.eval_data_structure import RelatedEvalAnswer
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricIF
 from trainer.promise import MyPromise, PromiseKeeper, MyFuture, list_future
 
