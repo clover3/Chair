@@ -18,11 +18,11 @@ def run_related_prediction_save(dataset_name, scorer_name):
 
 
 def main():
-    dataset = "dev"
+    dataset = "train"
+    # run_related_prediction_save(dataset, "random")
+    # run_related_prediction_save(dataset, "segment_exact_match")
+    # run_related_prediction_save(dataset, "all_zero")
     run_related_prediction_save(dataset, "lexical_v1")
-    run_related_prediction_save(dataset, "random")
-    run_related_prediction_save(dataset, "segment_exact_match")
-    run_related_prediction_save(dataset, "all_zero")
 
 
 if __name__ == "__main__":
