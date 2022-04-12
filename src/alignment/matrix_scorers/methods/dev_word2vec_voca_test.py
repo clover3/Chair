@@ -1,7 +1,9 @@
+import random
 from collections import Counter
 from typing import List
 
 import gensim
+import numpy as np
 
 from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from alignment.matrix_scorers.methods.get_word2vec_scorer import get_word2vec_path
@@ -47,5 +49,24 @@ def main():
 
     print(counter)
 
+
+def random_similarity():
+    w2v = gensim.models.KeyedVectors.load_word2vec_format(get_word2vec_path(), binary=True)
+    vectors = []
+    for word in enum_words():
+        try:
+            vectors.append(w2v.get_vector(word, True))
+        except KeyError:
+            pass
+
+    random.shuffle(vectors)
+    sims = []
+    for i in range(0, len(vectors)-1):
+        s = np.dot(vectors[i], vectors[i+1])
+        sims.append(s)
+    print(np.average(sims))
+
+
+
 if __name__ == "__main__":
-    main()
+    random_similarity()
