@@ -23,8 +23,8 @@ def pairwise_feature(text1: SegmentedText,
     assert len(feature_runs) == 9
     return feature_runs
 
-Features = List[SegmentedInstance]
 
+Features = List[SegmentedInstance]
 class RankList(NamedTuple):
     seg_instance: SegmentedInstance
     sub_id: str

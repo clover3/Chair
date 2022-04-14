@@ -37,6 +37,11 @@ def save_related_eval_answer(answers: List[RelatedEvalAnswer], dataset_name, met
     json.dump(answers, open(save_path, "w"), indent=True)
 
 
+def get_tfrecord_path(name) -> FilePath:
+    dir_path = os.path.join(output_path, "align_nli", "tfrecords")
+    exist_or_mkdir(dir_path)
+    return pjoin(FilePath(dir_path), name)
+
 
 def save_eval_result_b(eval_res: List[PerProblemEvalResult], run_name):
     save_path = get_eval_score_save_path_b_all(run_name)
