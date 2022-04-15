@@ -1,11 +1,11 @@
-import gensim
 import os
-import numpy as np
+from typing import List
 
+import gensim
+import numpy as np
 
 from alignment.matrix_scorers.methods.vector_similarity_scorer import VectorSimilarityScorer
 from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
-from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
 def get_word2vec_scorer(word2vec_path) -> VectorSimilarityScorer:
@@ -16,7 +16,7 @@ def get_word2vec_scorer(word2vec_path) -> VectorSimilarityScorer:
     not_found = set()
 
     def get_vector(ids: List[int]):
-        word = ids_to_text(ids, tokenizer)
+        word = ids_to_text(tokenizer, ids)
         if word in not_found:
             raise KeyError
 

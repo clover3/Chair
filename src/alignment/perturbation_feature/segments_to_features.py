@@ -32,7 +32,6 @@ def build_x(nli_client,
 def build_x_y(dataset_name, nli_client, scorer_name) -> Iterable[Tuple[np.array, np.array]]:
     answer_list: List[RelatedEvalAnswer] = load_related_eval_answer(dataset_name, scorer_name)
     problem_list: List[RelatedEvalInstance] = load_mnli_rei_problem(dataset_name)
-    output: List[Tuple[np.array, np.array]] = []
     for answer, problem in join_a_p(answer_list, problem_list):
         alignment = answer.contribution.table
         seg_inst = problem.seg_instance

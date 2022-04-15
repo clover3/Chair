@@ -3,7 +3,6 @@ import os
 from pickle import UnpicklingError
 from typing import TypeVar, Generic
 
-import arg.counter_arg_retrieval.build_dataset.split_document_common
 from cpath import cache_path, data_path, json_cache_path
 
 
@@ -195,7 +194,7 @@ class StrItem(Generic[T]):
     def to_json(self):
         return {
             'string': self.s,
-            'item': arg.counter_arg_retrieval.build_dataset.split_document_common.sd_to_json()
+            'item': self.item.to_json(),
         }
 
     @classmethod
