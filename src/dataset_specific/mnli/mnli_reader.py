@@ -17,7 +17,7 @@ def parse_nli_line(line) -> NLIPairData:
         premise=s1,
         hypothesis=s2,
         label=split_line[-1],
-        pair_id=split_line[2]
+        pair_id=split_line[0]
     )
 
 

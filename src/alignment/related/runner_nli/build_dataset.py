@@ -9,6 +9,7 @@ from alignment.nli_align_path_helper import get_rei_file_path
 from cache import save_list_to_jsonl_w_fn
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from dataset_specific.mnli.mnli_reader import MNLIReader
+from misc_lib import TimeEstimator
 
 
 def build(split) -> Iterable[RelatedEvalInstance]:
@@ -20,11 +21,13 @@ def build(split) -> Iterable[RelatedEvalInstance]:
 
 def iter_mnli_dataset(split) -> Iterable[TextPair]:
     reader = MNLIReader()
+    ticker = TimeEstimator(400000)
     for nli_pair in reader.load_split(split):
         yield TextPair(text_pair_id=nli_pair.pair_id,
                        query_like=nli_pair.hypothesis,
                        doc_like=nli_pair.premise
                        )
+        ticker.tick()
 
 
 def main():
