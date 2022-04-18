@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import List, Tuple, Iterable
 
 import numpy as np
@@ -9,6 +10,7 @@ from alignment.nli_align_path_helper import load_mnli_rei_problem
 from alignment.related.related_answer_data_path_helper import load_related_eval_answer
 from bert_api import SegmentedInstance
 from bert_api.task_clients.nli_interface.nli_interface import NLIInput
+from data_generator.create_feature import create_float_feature
 
 
 def build_x(nli_client,
@@ -38,3 +40,23 @@ def build_x_y(dataset_name, nli_client, scorer_name) -> Iterable[Tuple[np.array,
         x: np.array = build_x(nli_client, seg_inst)
         y = np.array(alignment)
         yield x, y
+
+
+def make_tf_feature(x, y, shape) -> OrderedDict:
+    x_slice = x[:shape[0], :shape[1], :, :]
+    y_slice = y[:shape[0], :shape[1]]
+
+    n_pad1 = shape[0] - x_slice.shape[0]
+    n_pad2 = shape[1] - x_slice.shape[1]
+
+    x_padded = np.pad(x_slice, [(0, n_pad1), (0, n_pad2), (0, 0), (0, 0)])
+    y_padded = np.pad(y_slice, [(0, n_pad1), (0, n_pad2)])
+
+    def encode_np_array(np_array):
+        np_flat = np.reshape(np_array, [-1])
+        return create_float_feature(np_flat)
+
+    features = OrderedDict()
+    features['x'] = encode_np_array(x_padded)
+    features['y'] = encode_np_array(y_padded)
+    return features
