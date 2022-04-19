@@ -2,7 +2,7 @@ from typing import List
 
 from alignment.nli_align_path_helper import get_tfrecord_path
 from alignment.perturbation_feature.train_configs import get_pert_train_data_shape
-from alignment.perturbation_feature.train_fns import weighted_MAE, precision_at_1, build_model, get_dataset, \
+from alignment.perturbation_feature.pert_model_2d import weighted_MAE, precision_at_1, build_model, get_dataset, \
     get_is_not_padding
 import tensorflow as tf
 

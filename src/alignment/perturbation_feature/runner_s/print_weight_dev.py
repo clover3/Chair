@@ -1,7 +1,7 @@
 from alignment.perturbation_feature.train_configs import get_pert_train_data_shape
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
-from alignment.perturbation_feature.train_fns import build_model
+from alignment.perturbation_feature.pert_model_2d import build_model
 import numpy as np
 
 
