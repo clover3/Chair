@@ -1,5 +1,8 @@
+import numpy as np
 import tensorflow as tf
 from typing import List, Iterable, Callable, Dict, Tuple, Set
+
+from keras.utils import losses_utils
 
 from alignment.perturbation_feature.read_tfrecords import reduce_multiply
 from trainer_v2.input_fn_common import format_dataset
@@ -17,6 +20,27 @@ def weighted_MAE(y, prediction):
 
     n_valid = tf.reduce_sum(is_valid_mask, axis=1)
     error_array = tf.abs(label_2d - pred_2d)
+    error_array = error_array * is_valid_mask
+    error_per_inst = tf.reduce_sum(error_array, axis=1) * (1 / n_valid)
+    return tf.reduce_mean(error_per_inst)
+
+
+def hinge_loss(y, prediction):
+    # y.shape [batch, seq_len, 1]
+    # label_2d.shape [batch, seq_len]
+    label_2d = tf.squeeze(y, axis=2)
+
+    # for each row, if value is 0, it should be padding
+    is_padding = get_is_padding(label_2d)
+    is_valid_mask = tf.cast(tf.logical_not(is_padding), tf.float32)
+    pred_2d = tf.squeeze(prediction, axis=2)
+
+    n_valid = tf.reduce_sum(is_valid_mask, axis=1)
+    label_signed = label_2d * 2 - 1
+    print('label_2d', label_2d.shape)
+    error_array = tf.math.maximum(1 - label_signed * pred_2d, 0)
+    print('error_array', error_array.shape)
+    print('is_valid_mask', is_valid_mask.shape)
     error_array = error_array * is_valid_mask
     error_per_inst = tf.reduce_sum(error_array, axis=1) * (1 / n_valid)
     return tf.reduce_mean(error_per_inst)
@@ -89,3 +113,10 @@ def get_dataset(shape, batch_size, input_file):
     dataset = dataset.map(reshape_xy)
     dataset = dataset.batch(batch_size)
     return dataset
+
+
+def print_last_layer_weights(model):
+    dense_layer = model.layers[-1]
+    print(dense_layer)
+    w, b = dense_layer.get_weights()
+    print(np.reshape(w, [9, 3]))

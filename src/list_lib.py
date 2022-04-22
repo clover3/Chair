@@ -151,3 +151,8 @@ def list_equal(a: List, b: List):
         if a_e != b_e:
             return False
     return True
+
+
+def transpose(m):
+    return [[row[i] for row in m] for i in range(len(m[0]))]
+

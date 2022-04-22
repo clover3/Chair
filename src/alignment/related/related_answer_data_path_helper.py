@@ -21,6 +21,10 @@ def save_related_eval_answer(answers: List[RelatedEvalAnswer], dataset_name, met
 
 def load_related_answer(run_name) -> List[RelatedEvalAnswer]:
     score_path = os.path.join(output_path, "align_nli", "related_scores", "{}.score".format(run_name))
+    return load_related_answer_from_path(score_path)
+
+
+def load_related_answer_from_path(score_path) -> List[RelatedEvalAnswer]:
     raw_json = json.load(open(score_path, "r"))
     return parse_related_eval_answer_from_json(raw_json)
 

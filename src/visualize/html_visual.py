@@ -217,7 +217,7 @@ class HtmlVisualizer(VisualizerCommon):
         self.f_html.write("<h{}>{}</h{}>\n".format(level, s, level))
 
     def write_table(self, rows, head=None):
-        self.f_html.write("<table style=\"border-spacing: 0px;\">\n")
+        self.f_html.write("<table style=\"border-spacing: 0px;\" class=\"table-bordered\">\n")
         self._write_table_inner(head, rows)
         self.f_html.write("</table>\n")
 

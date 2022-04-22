@@ -23,6 +23,7 @@ class RelatedEvalInstance(NamedTuple):
             'score': self.score
         }
 
+
 class TextPair(NamedTuple):
     text_pair_id: str
     query_like: str

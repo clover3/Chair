@@ -27,11 +27,10 @@ def build_x(nli_client, si: SegmentedInstance, seg1_idx) -> np.array:
     return np.stack(x_part, 0)
 
 
-def get_features(answer, problem, nli_client):
-    alignment = answer.contribution.table
+
+def length_match_check(answer, alignment, problem):
     seg_inst = problem.seg_instance
     seg1_len = len(alignment)
-
     l1_p = seg_inst.text1.get_seg_len()
     l2_p = seg_inst.text2.get_seg_len()
     l1_a = len(alignment)
@@ -42,6 +41,12 @@ def get_features(answer, problem, nli_client):
         print("{} != {}".format(l1_p, l1_a))
     if not l2_p == l2_a:
         print("{} != {}".format(len(alignment[0]), seg_inst.text2.get_seg_len()))
+
+
+def get_features(answer, problem, nli_client):
+    length_match_check(answer, answer.contribution.table, problem)
+    alignment = answer.contribution.table
+    seg_inst = problem.seg_instance
 
     for seg1_idx in seg_inst.text1.enum_seg_idx():
         scores_row = alignment[seg1_idx]
