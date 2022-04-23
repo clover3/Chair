@@ -61,13 +61,13 @@ def discretize_and_save(dataset_name, method, method_save):
     a_p_list: List[Tuple[RelatedEvalAnswer, RelatedEvalInstance]] = join_a_p(answers, problem_list)
 
     convert_answer_fn = get_convert_answer_fn(0.7)
-    new_answers: List[RelatedBinaryAnswer] = [convert_answer_fn(a, p) for a, p in  a_p_list]
+    new_answers: List[RelatedBinaryAnswer] = [convert_answer_fn(a, p) for a, p in a_p_list]
     save_path = get_related_binary_save_path(dataset_name, method_save)
     save_json_at(new_answers, save_path)
 
 
 def main():
-    dataset = "train_head"
+    dataset = "train"
     discretize_and_save(dataset, "lexical_v1", "lexical_v1_1")
 
 

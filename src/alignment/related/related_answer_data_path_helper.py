@@ -4,7 +4,7 @@ from typing import List
 
 from alignment.data_structure.ds_helper import parse_related_eval_answer_from_json, \
     parse_related_binary_answer_from_json
-from cpath import output_path
+from cpath import output_path, at_output_dir
 from misc_lib import exist_or_mkdir
 from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer
 
@@ -56,3 +56,8 @@ def load_binary_related_eval_answer(dataset_name, method) -> List[RelatedBinaryA
     raw_json = json.load(open(score_path, "r"))
     return parse_related_binary_answer_from_json(raw_json)
 
+
+def get_model_save_path(model_name):
+    dir_path = at_output_dir("model", "align")
+    exist_or_mkdir(dir_path)
+    return os.path.join(dir_path, model_name)

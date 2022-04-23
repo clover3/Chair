@@ -1,7 +1,9 @@
 import itertools
 
-from alignment.perturbation_feature.segments_to_features_row_wise import make_tf_feature, get_features
-from alignment.perturbation_feature.train_gen3_inner import get_features_skip_empty
+import numpy as np
+
+from alignment.perturbation_feature.segments_to_features_row_wise import make_tf_feature, get_features, \
+    length_match_check, build_x
 from bert_api.task_clients.nli_interface.nli_interface import get_nli_cache_client
 
 from alignment import RelatedEvalAnswer, RelatedEvalInstance
@@ -17,12 +19,12 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 def main():
     dataset_name = "train"
     scorer_name = "lexical_v1_1"
-    save_name = f"{dataset_name}_v1_1"
-    max_item = 1000 * 1000 * 1000
+    save_name = f"{dataset_name}_v1_1_100K"
+    max_item = 100 * 1000
+    tprint("Save name: " + save_name)
 
     tprint('Loading nli client')
     nli_client = get_nli_cache_client("localhost")
-    # nli_client = None
     tprint('Loading lexical alignment')
     answer_list: List[RelatedBinaryAnswer] = load_binary_related_eval_answer(dataset_name, scorer_name)
     answer_list = answer_list[:max_item]
@@ -30,7 +32,7 @@ def main():
     problem_list: List[RelatedEvalInstance] = load_mnli_rei_problem(dataset_name)
     save_path = get_tfrecord_path(save_name)
     shape = get_pert_train_data_shape()
-    ticker = TimeEstimator(max_item)
+    ticker = TimeEstimator(len(answer_list))
     writer = RecordWriterWrap(save_path)
     for answer, problem in join_a_p(answer_list, problem_list):
         for x, y in get_features_skip_empty(answer, problem, nli_client):
@@ -41,5 +43,21 @@ def main():
     print("{} records written".format(writer.total_written))
 
 
+def get_features_skip_empty(answer: RelatedBinaryAnswer, problem, nli_client):
+    alignment = answer.score_table
+    seg_inst = problem.seg_instance
+    length_match_check(answer, answer.score_table, problem)
+
+    for seg1_idx in seg_inst.text1.enum_seg_idx():
+        scores_row: List[int] = alignment[seg1_idx]
+        if all([v == 0 for v in scores_row]):
+            pass
+        else:
+            x: np.array = build_x(nli_client, seg_inst, seg1_idx)
+            y = np.array(scores_row)
+            yield x, y
+
+
 if __name__ == "__main__":
     main()
+
