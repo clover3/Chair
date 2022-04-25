@@ -1,5 +1,5 @@
 import itertools
-from bert_api.task_clients.nli_interface.nli_interface import get_nli_cache_client
+from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_client
 
 from alignment import RelatedEvalAnswer, RelatedEvalInstance
 from alignment.data_structure.eval_data_structure import join_a_p

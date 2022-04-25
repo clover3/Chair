@@ -1,6 +1,10 @@
+from alignment import RelatedEvalInstance
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from bert_api.segmented_instance.segmented_text import SegmentedText
 from typing import List, Iterable, Callable, Dict, Tuple, Set, NamedTuple
+
+from bert_api.task_clients.nli_interface.nli_interface import NLIInput
+from misc_lib import tprint
 
 
 def pairwise_feature(text1: SegmentedText,
@@ -41,6 +45,7 @@ def pairwise_feature4(text1: SegmentedText,
     assert len(feature_runs) == 4
     return feature_runs
 
+
 Features = List[SegmentedInstance]
 class RankList(NamedTuple):
     seg_instance: SegmentedInstance
@@ -64,3 +69,22 @@ def perturbation_enum(si: SegmentedInstance) -> List[RankList]:
         problem_list_per_pair.append(
             RankList(si, str(seg1_idx), rank_item_list))
     return problem_list_per_pair
+
+
+def eval_all_perturbations(nli_client, problems: List[RelatedEvalInstance]):
+    hash_key_set = set()
+    for idx, p in enumerate(problems):
+        # tprint("problem {}".format(idx))
+        ri_list: List[RankList] = perturbation_enum(p.seg_instance)
+
+        for item in ri_list:
+            for _, si_list in item.rank_item_list:
+                todo = []
+                for si in si_list:
+                    nli_input = NLIInput(si.text2, si.text1)
+                    hash_key = nli_input.str_hash()
+                    if hash_key not in hash_key_set:
+                        hash_key_set.add(hash_key)
+                        todo.append(nli_input)
+
+                nli_client.predict(todo)

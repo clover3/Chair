@@ -6,7 +6,8 @@ from alignment.extract_feature import pairwise_feature4
 from alignment.perturbation_feature.segments_to_features_row_wise import make_tf_feature, \
     length_match_check
 from bert_api import SegmentedInstance
-from bert_api.task_clients.nli_interface.nli_interface import get_nli_cache_client, NLIInput
+from bert_api.task_clients.nli_interface.nli_interface import NLIInput
+from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_client
 
 from alignment import RelatedEvalAnswer, RelatedEvalInstance
 from alignment.data_structure.eval_data_structure import join_a_p, RelatedBinaryAnswer

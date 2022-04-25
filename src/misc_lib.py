@@ -795,4 +795,6 @@ def enum_segments(items: List[Any], window_size) -> List[Tuple[int, int]]:
     return output
 
 
-
+def validate_equal(v1, v2):
+    if v1 != v2:
+        print("Warning {} != {}".format(v1, v2))

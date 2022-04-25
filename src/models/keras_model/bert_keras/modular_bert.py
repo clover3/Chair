@@ -12,7 +12,9 @@ from models.transformer.bert_common_v2 import create_initializer, get_activation
 # MyLayer = tf.keras.layers.Layer
 class MyLayer(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
-        super(MyLayer, self).__init__(kwargs)
+        # super(MyLayer, self).__init__(kwargs)
+        super(MyLayer, self).__init__()
+
 
 
 def embedding_postprocessor(input_tensor, token_type_table, full_position_embeddings,

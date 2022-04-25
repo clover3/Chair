@@ -6,7 +6,7 @@ from alignment.perturbation_feature.pert_model_1d import binary_hinge_loss
 from alignment.perturbation_feature.pert_model_2d import precision_at_1
 from alignment.perturbation_feature.segments_to_features_row_wise import make_tf_feature, get_features, build_x
 from bert_api import SegmentedInstance
-from bert_api.task_clients.nli_interface.nli_interface import get_nli_cache_client
+from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_client
 
 from alignment import RelatedEvalAnswer, RelatedEvalInstance, MatrixScorerIF
 from alignment.nli_align_path_helper import get_tfrecord_path, load_mnli_rei_problem, save_related_eval_answer

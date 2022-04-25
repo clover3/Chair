@@ -4,7 +4,7 @@ import numpy as np
 
 from alignment.perturbation_feature.segments_to_features_row_wise import make_tf_feature, get_features, \
     length_match_check, build_x
-from bert_api.task_clients.nli_interface.nli_interface import get_nli_cache_client
+from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_client
 
 from alignment import RelatedEvalAnswer, RelatedEvalInstance
 from alignment.data_structure.eval_data_structure import join_a_p, RelatedBinaryAnswer

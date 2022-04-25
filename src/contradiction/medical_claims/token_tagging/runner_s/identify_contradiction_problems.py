@@ -1,4 +1,4 @@
-from bert_api.task_clients.nli_interface.nli_interface import get_nli_cache_client
+from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_client
 from bert_api.task_clients.nli_interface.nli_interface import predict_from_text_pair
 from contradiction.medical_claims.token_tagging.problem_loader import load_alamri_split
 from cpath import at_output_dir

@@ -2,6 +2,8 @@ import time
 from collections import Counter
 from typing import Callable, List, Any, TypeVar, Dict
 
+from misc_lib import validate_equal
+
 FUNC_SIG_GENERIC = Callable[[List[Any]], List[Any]]
 InputType = TypeVar('InputType')
 OutType = TypeVar('OutType')
@@ -110,3 +112,27 @@ class MemoryCachedClient:
 
     def reset_new_items(self):
         self.new_item_dict = {}
+
+
+class CountClient:
+    def __init__(self, hash_fn, dummy_val):
+        self.volatile_cache_client: MemoryCachedClient = MemoryCachedClient(
+            self.forward_fn,
+            hash_fn,
+            {},
+            None
+        )
+        self.dummy_val = dummy_val
+        self.g_n_calc = 0
+
+    def forward_fn(self, items: List):
+        n_calc = len(items)
+        self.g_n_calc += n_calc
+        return [self.dummy_val for _ in range(n_calc)]
+
+    def predict(self, segs: List) -> List[List[float]]:
+        items = self.volatile_cache_client.predict(segs)
+        n_item = len(self.volatile_cache_client.dictionary)
+        if n_item != self.g_n_calc:
+            validate_equal(n_item, self.g_n_calc)
+        return items

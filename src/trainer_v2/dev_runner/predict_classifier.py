@@ -1,22 +1,28 @@
 import functools
+import os
 import sys
 
-import official.nlp
-import official.nlp.bert.run_classifier
 import tensorflow as tf
 from official.modeling import performance
-from official.nlp.bert import configs as bert_configs, bert_models
+from official.nlp import bert
+from official.nlp.bert import configs as bert_configs
+from official.nlp.bert import bert_models
 from official.utils.misc import keras_utils
+from official.nlp.bert.run_classifier import get_predictions_and_labels
 
 from cpath import get_bert_config_path
+from taskman_client.wrapper2 import report_run_named
 from trainer_v2.arg_flags import flags_parser
+from trainer_v2.chair_logging import c_log
 from trainer_v2.dev_runner.train_classification_model import parse_input_files, get_run_config_nli_train, ModelConfig, \
     get_optimizer, build_dataset
 from trainer_v2.get_tpu_strategy import get_strategy
 from trainer_v2.run_config import RunConfigEx
 
 
+@report_run_named("predict_classifier")
 def main(args):
+    c_log.info("predict_classifier.py")
     input_files = parse_input_files(args.input_files)
     bert_config = bert_configs.BertConfig.from_json_file(get_bert_config_path())
     max_seq_length = 300
@@ -27,34 +33,33 @@ def main(args):
     def get_model_fn():
         classifier_model, core_model = \
             bert_models.classifier_model(bert_config, model_config.num_classes, max_seq_length)
-        optimizer = get_optimizer(run_config)
-        classifier_model.optimizer = performance.configure_optimizer(
-            optimizer)
         return classifier_model, core_model
 
-    def train_input_fn():
-        dataset = build_dataset(model_config, input_files, run_config)
-        return dataset
+    eval_input_fn = bert.run_classifier.get_dataset_fn(input_files,
+                                                 max_seq_length,
+                                                 run_config.batch_size,
+                                                 is_training=False)
+    with strategy.scope():
+        classifier_model, _ = get_model_fn()
+        checkpoint = tf.train.Checkpoint(model=classifier_model)
+        latest_checkpoint_file = tf.train.latest_checkpoint(args.output_dir)
+        c_log.info(f'Checkpoint file {latest_checkpoint_file} found and restoring from checkpoint')
+        checkpoint.restore(latest_checkpoint_file).assert_existing_objects_matched()
+        c_log.info(f'get_predictions_and_labels')
+        preds, _ = get_predictions_and_labels(
+            strategy,
+            classifier_model,
+            eval_input_fn,
+            is_regression=False,
+            return_probs=True)
 
-    metric_fn = functools.partial(
-        tf.keras.metrics.SparseCategoricalAccuracy,
-        'accuracy',
-        dtype=tf.float32)
-
-    run_fn = official.nlp.bert.run_classifier.run_keras_compile_fit
-    run_fn(args.output_dir,
-           strategy,
-           get_model_fn,
-           train_input_fn,
-           None,
-           tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-           metric_fn,
-           run_config.init_checkpoint,
-           run_config.get_epochs(),
-           run_config.steps_per_epoch,
-           steps_per_loop=run_config.steps_per_execution,
-           eval_steps=0,
-           )
+        output_predict_file = os.path.join('test_results.tsv')
+        with tf.io.gfile.GFile(output_predict_file, 'w') as writer:
+          for probabilities in preds:
+            output_line = '\t'.join(
+                str(class_probability)
+                for class_probability in probabilities) + '\n'
+            writer.write(output_line)
 
 
 if __name__ == "__main__":

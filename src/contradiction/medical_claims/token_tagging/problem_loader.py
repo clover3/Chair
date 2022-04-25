@@ -44,7 +44,7 @@ def load_alamri_split(split) -> List[AlamriProblem]:
     valid_groups = get_valid_split_groups()
     if split == "val" or split == "dev":
         return [p for p in all_problems if p.group_no in valid_groups]
-    elif split == "text":
+    elif split == "test":
         return [p for p in all_problems if p.group_no not in valid_groups]
     else:
         raise ValueError(split)

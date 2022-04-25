@@ -3,7 +3,7 @@ from typing import List, Dict, Tuple
 
 from contradiction.medical_claims.label_structure import AlamriLabel, PairedIndicesLabel
 from contradiction.medical_claims.token_tagging.eval_analyze.online_eval import load_sbl_labels
-from bert_api.task_clients.nli_interface.nli_interface import get_nli_cache_client
+from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_client
 from contradiction.medical_claims.token_tagging.problem_loader import AlamriProblem, \
     load_alamri_split
 from contradiction.medical_claims.token_tagging.solvers.intersection_solver import IntersectionSolver

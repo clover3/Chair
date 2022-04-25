@@ -3,7 +3,7 @@ import itertools
 from alignment.nli_align_path_helper import get_tfrecord_path
 from alignment.perturbation_feature.segments_to_features import build_x_y, make_tf_feature
 from alignment.perturbation_feature.train_configs import get_pert_train_data_shape
-from bert_api.task_clients.nli_interface.nli_interface import get_nli_cache_client
+from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_client
 from misc_lib import TimeEstimator
 from tf_util.record_writer_wrap import RecordWriterWrap
 

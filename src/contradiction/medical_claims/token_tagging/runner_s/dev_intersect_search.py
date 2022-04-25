@@ -3,7 +3,8 @@ import scipy.special
 from bert_api.segmented_instance.segmented_text import SegmentedText, get_word_level_segmented_text_from_str, \
     seg_to_text
 from contradiction.medical_claims.token_tagging.intersection_search.tree_deletion_search import TreeDeletionSearch
-from bert_api.task_clients.nli_interface.nli_interface import get_nli_cache_client, NLIInput
+from bert_api.task_clients.nli_interface.nli_interface import NLIInput
+from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_client
 from contradiction.medical_claims.token_tagging.problem_loader import load_alamri_split
 from data_generator.NLI.enlidef import nli_probs_str
 from data_generator.tokenizer_wo_tf import get_tokenizer
