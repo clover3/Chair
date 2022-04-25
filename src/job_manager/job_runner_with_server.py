@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 from data_generator.job_runner import WorkerInterface
 from misc_lib import exist_or_mkdir
@@ -11,6 +12,7 @@ class JobRunnerS:
     def __init__(self, working_path: str, max_job: int, job_name: str, worker_factory,
                  keep_on_exception=False,
                  max_job_per_worker=None,
+                 worker_time_limit=None,
                  ):
         self.machine = get_local_machine_name()
         self.task_manager_proxy = get_task_manager_proxy()
@@ -21,6 +23,8 @@ class JobRunnerS:
         self.worker_factory = worker_factory
         self.keep_on_exception = keep_on_exception
         self.max_job_per_worker = max_job_per_worker
+        self.worker_time_limit = worker_time_limit
+        self.st = time.time()
         exist_or_mkdir(self.out_path)
 
     def start(self):
@@ -50,10 +54,21 @@ class JobRunnerS:
                 if not self.keep_on_exception:
                     raise
             n_job_done += 1
-            if self.max_job_per_worker is not None and n_job_done >= self.max_job_per_worker:
+            halt_run = self.check_halt_run(n_job_done)
+            if halt_run:
                 break
             job_id = self.report_done_and_pool_job(job_id)
             print("Job id : ", job_id)
+
+    def check_halt_run(self, n_job_done):
+        halt_run = self.max_job_per_worker is not None and n_job_done >= self.max_job_per_worker
+        if not halt_run:
+            if self.worker_time_limit is not None:
+                elapsed = time.time() - self.st
+                if elapsed > self.worker_time_limit:
+                    halt_run = True
+
+        return halt_run
 
     def run_one_job(self):
         worker = self.worker_factory(self.out_path)

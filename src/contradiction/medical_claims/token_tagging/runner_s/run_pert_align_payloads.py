@@ -3,7 +3,7 @@ from typing import List
 
 from bert_api.task_clients.nli_interface.nli_interface import load_nli_input_from_jsonl, NLIInput, NLIPredictorSig
 from bert_api.task_clients.nli_interface.nli_predictors import get_nli_client
-from cache import load_list_from_jsonl
+from cache import load_list_from_jsonl, save_list_to_jsonl
 from data_generator.job_runner import WorkerInterface
 from epath import job_man_dir
 from job_manager.job_runner_with_server import JobRunnerS
@@ -17,9 +17,10 @@ class NLIPayloadWorker(WorkerInterface):
 
     def work(self, job_id):
         payload_path = os.path.join(self.input_dir, str(job_id))
+        save_path = os.path.join(self.out_dir, str(job_id))
         items: List[NLIInput] = load_nli_input_from_jsonl(payload_path)
         scores_list: List[List[float]] = self.client(items)
-
+        save_list_to_jsonl(scores_list, save_path)
 
 
 def main():
