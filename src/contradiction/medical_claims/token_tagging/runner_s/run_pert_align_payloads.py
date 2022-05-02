@@ -34,11 +34,10 @@ def main():
         client = get_nli_client("direct")
         return NLIPayloadWorker(client, payload_dir, out_dir)
 
+    worker_time_limit = 4 * 3600 - 100
 
-    worker = factory(os.path.join(job_man_dir, job_name))
-    worker.work(num_jobs - 1)
-    # runner = JobRunnerS(job_man_dir, num_jobs, job_name, factory)
-    # runner.start()
+    runner = JobRunnerS(job_man_dir, num_jobs, job_name, factory, worker_time_limit=worker_time_limit)
+    runner.start()
 
 
 
