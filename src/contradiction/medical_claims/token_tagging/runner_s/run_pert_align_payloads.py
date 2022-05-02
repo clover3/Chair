@@ -3,7 +3,7 @@ from typing import List
 
 from bert_api.task_clients.nli_interface.nli_interface import load_nli_input_from_jsonl, NLIInput, NLIPredictorSig
 from bert_api.task_clients.nli_interface.nli_predictors import get_nli_client
-from cache import load_list_from_jsonl, save_list_to_jsonl
+from cache import save_list_to_jsonl
 from data_generator.job_runner import WorkerInterface
 from epath import job_man_dir
 from job_manager.job_runner_with_server import JobRunnerS
@@ -35,10 +35,10 @@ def main():
         return NLIPayloadWorker(client, payload_dir, out_dir)
 
 
-    worker = factory(os.path.join(job_man_dir, job_name))
-    worker.work(num_jobs - 1)
-    # runner = JobRunnerS(job_man_dir, num_jobs, job_name, factory)
-    # runner.start()
+    # worker = factory(os.path.join(job_man_dir, job_name))
+    # worker.work(num_jobs - 1)
+    runner = JobRunnerS(job_man_dir, num_jobs, job_name, factory)
+    runner.start()
 
 
 
