@@ -3,7 +3,8 @@ from typing import List
 from bert_api.client_lib import BERTClient
 from bert_api.task_clients.nli_interface.nli_interface import NLIPredictorSig, NLIInput
 from bert_api.task_clients.nli_interface.nli_local import get_local_nli_client
-from cpath import pjoin, data_path, at_output_dir
+from bert_api.task_clients.nli_interface.nli_predictors_path import get_nli_cache_sqlite_path
+from cpath import pjoin, data_path
 from data_generator.tokenizer_wo_tf import EncoderUnitPlain
 from datastore.sql_based_cache_client import SQLBasedCacheClientS
 from port_info import NLI_PORT
@@ -35,10 +36,6 @@ def get_nli_client(option: str) -> NLIPredictorSig:
         return get_local_nli_client()
     else:
         raise ValueError
-
-
-def get_nli_cache_sqlite_path():
-    return at_output_dir("nli", "nli_cache.sqlite")
 
 
 def get_nli_cache_client(option, hooking_fn=None) -> SQLBasedCacheClientS:

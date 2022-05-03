@@ -1,20 +1,18 @@
 import os
+from typing import List
 
-from bert_api.predictor import Predictor
 from bert_api.task_clients.nli_interface.nli_interface import NLIPredictorSig, NLIInput
 from cpath import data_path, pjoin, output_path
 from data_generator.tokenizer_wo_tf import EncoderUnitPlain
-from typing import List, Iterable, Callable, Dict, Tuple, Set
-import tensorflow as tf
-import numpy as np
-from trainer.np_modules import get_batches_ex
 
 
 def get_local_nli_client() -> NLIPredictorSig:
+    from bert_api.predictor import Predictor
+
     max_seq_length = 300
     voca_path = pjoin(data_path, "bert_voca.txt")
     d_encoder = EncoderUnitPlain(max_seq_length, voca_path)
-    model_path = os.path.join(output_path, "model", "runs", "standard_nli", "model-73630")
+    model_path = os.path.join(output_path, "model", "runs", "standard_nli")
     inner_predictor = Predictor(model_path, 3, max_seq_length, False)
     def query_multiple(input_list: List[NLIInput]) -> List[List]:
         payload = []

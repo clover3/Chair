@@ -42,12 +42,13 @@ def bulk_save_s(sqlite_path, key_and_value_list):
     session_maker = sessionmaker(bind=engine)
     session = session_maker()
     for key, value in key_and_value_list.items():
-        if not has_key(session, CacheTableF, key):
+        if not has_key(session, CacheTableS, key):
             value_s = str(value)
             e = CacheTableS(key=key, value=value_s)
             session.add(e)
             session.flush()
     session.commit()
+
 
 def read_cache_from_sqlite(sqlite_path) -> Dict:
     st = time.time()
