@@ -1,10 +1,9 @@
+from typing import List, Tuple, NamedTuple
+
 from alignment import RelatedEvalInstance
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from bert_api.segmented_instance.segmented_text import SegmentedText
-from typing import List, Iterable, Callable, Dict, Tuple, Set, NamedTuple
-
 from bert_api.task_clients.nli_interface.nli_interface import NLIInput
-from misc_lib import tprint
 
 
 def pairwise_feature(text1: SegmentedText,
@@ -18,6 +17,27 @@ def pairwise_feature(text1: SegmentedText,
 
     d_wo_dt: SegmentedText = text2.get_dropped_text([seg2_target_idx])
     dt: SegmentedText = text2.get_sliced_text([seg2_target_idx])
+
+    feature_runs: List[SegmentedInstance] = []
+    for new_text1 in [text1, q_wo_qt, qt]:
+        for new_text2 in [text2, d_wo_dt, dt]:
+            feature_runs.append(SegmentedInstance(new_text1, new_text2))
+
+    assert len(feature_runs) == 9
+    return feature_runs
+
+
+def pairwise_feature_ex(text1: SegmentedText,
+                        text2: SegmentedText,
+                        seg1_target_indices,
+                        seg2_target_indices,
+                        ) -> List[SegmentedInstance]:
+    # text1 is query / hypothesis
+    q_wo_qt: SegmentedText = text1.get_dropped_text(seg1_target_indices)
+    qt: SegmentedText = text1.get_sliced_text(seg1_target_indices)
+
+    d_wo_dt: SegmentedText = text2.get_dropped_text(seg2_target_indices)
+    dt: SegmentedText = text2.get_sliced_text(seg2_target_indices)
 
     feature_runs: List[SegmentedInstance] = []
     for new_text1 in [text1, q_wo_qt, qt]:

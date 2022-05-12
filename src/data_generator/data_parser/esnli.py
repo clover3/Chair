@@ -1,34 +1,36 @@
 import csv
 import os
+from typing import List, Dict
 
 from cpath import data_path
+from misc_lib import print_dict_tab
 
 scope_path = os.path.join(data_path, "nli", "e-snli")
 
-def load_split(split_name):
+
+def load_split(split_name) -> List[Dict]:
     if split_name == "train":
         result = []
-        for i in range(1,3):
+        for i in range(1, 3):
             file_path = os.path.join(scope_path, "esnli_{}_{}.csv".format(split_name, i))
             result.extend(load_file(file_path))
         return result
-        pass
     else:
         file_path = os.path.join(scope_path, "esnli_{}.csv".format(split_name))
         return load_file(file_path)
 
 
-def load_file(path):
-    f = open(path , "r")
+def load_file(path) -> List[Dict]:
+    f = open(path, "r", encoding="utf-8")
     reader = csv.reader(f, delimiter=',')
 
     column_name = None
-    data = []
+    data: List[Dict] = []
     for idx, row in enumerate(reader):
         if idx == 0:
             column_name = row
         else:
-            entry = {}
+            entry: Dict = {}
             for col_idx, col in enumerate(row):
                 col_name = column_name[col_idx]
                 entry[col_name] = col
@@ -45,15 +47,13 @@ def load_gold(split_name):
     return result
 
 
-
 def parse_judgement(split_name):
-    r = load_split(split_name)
-
+    r: List[Dict] = load_split(split_name)
     for entry in r:
         all_indice = []
-        for sent_id in [1,2]:
+        for sent_id in [1, 2]:
             indices = set()
-            for i in range(1,4):
+            for i in range(1, 4):
                 key = "Sentence{}_Highlighted_{}".format(sent_id, i)
                 if entry[key] != "{}":
                     indices.update([int(elem) for elem in entry[key].split(",")])
@@ -64,11 +64,11 @@ def parse_judgement(split_name):
 
     return r
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     r = parse_judgement("dev")
-    for e in r[:2]:
-        print(e)
+    for e in r[:10]:
+        print_dict_tab(e)
 
     r = load_gold("dev")
 

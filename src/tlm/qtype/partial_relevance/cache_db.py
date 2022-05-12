@@ -22,6 +22,22 @@ def has_key(session, table_class, key):
         return False
 
 
+def fetch_by_key(session, table_class, key):
+    try:
+        q_res = session.query(table_class).filter(table_class.key == key).one()
+        v = ast.literal_eval(q_res.value)
+        return v
+    except NoResultFound as e:
+        raise KeyError
+
+
+def fetch_by_key_auto(sqlite_path, key):
+    engine = get_engine_from_sqlite_path(sqlite_path)
+    session_maker = sessionmaker(bind=engine)
+    session = session_maker()
+    return fetch_by_key(session, CacheTableS, key)
+
+
 def bulk_save(sqlite_path, key_and_value_list):
     # tprint("bulk_save ENTRY")
     engine = get_engine_from_sqlite_path(sqlite_path)
@@ -36,12 +52,12 @@ def bulk_save(sqlite_path, key_and_value_list):
     # tprint("bulk_save EXIT")
 
 
-def bulk_save_s(sqlite_path, key_and_value_list):
+def bulk_save_s(sqlite_path, key_and_value_dict):
     # tprint("bulk_save ENTRY")
     engine = get_engine_from_sqlite_path(sqlite_path)
     session_maker = sessionmaker(bind=engine)
     session = session_maker()
-    for key, value in key_and_value_list.items():
+    for key, value in key_and_value_dict.items():
         if not has_key(session, CacheTableS, key):
             value_s = str(value)
             e = CacheTableS(key=key, value=value_s)

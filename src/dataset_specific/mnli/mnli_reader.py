@@ -1,13 +1,14 @@
-from data_generator.NLI.nli_info import corpus_dir, labels
-from typing import List, Iterable, Callable, Dict, Tuple, Set, NamedTuple, Iterator
 import os
+from typing import NamedTuple, Iterator
+
+from data_generator.NLI.nli_info import corpus_dir
 
 
 class NLIPairData(NamedTuple):
     premise: str
     hypothesis: str
     label: str
-    pair_id: str
+    data_id: str
 
 
 def parse_nli_line(line) -> NLIPairData:
@@ -17,7 +18,7 @@ def parse_nli_line(line) -> NLIPairData:
         premise=s1,
         hypothesis=s2,
         label=split_line[-1],
-        pair_id=split_line[0]
+        data_id=split_line[0]
     )
 
 

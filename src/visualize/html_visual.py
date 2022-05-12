@@ -25,7 +25,7 @@ class HtmlCellStr(NamedTuple):
 
 
 class Cell:
-    def __init__(self, s, highlight_score=0, space_left=True, space_right=True, target_color="B"):
+    def __init__(self, s, highlight_score=0, space_left=True, space_right=True, target_color="B", is_head=False):
         if type(s) == float:
             self.s = "{:02.2f}".format(s)
         else:
@@ -40,6 +40,7 @@ class Cell:
         self.space_left = space_left
         self.space_right = space_right
         self.target_color = target_color
+        self.is_head = is_head
 
 
 def get_tooltip_cell(s, tooltip):
@@ -138,6 +139,8 @@ class HtmlVisualizer(VisualizerCommon):
         self.dark_foreground = "A9B7C6"
         self.dark_background = "2B2B2B"
         self.use_tooltip = use_tooltip
+        additional_styles.append("th { text-align: center;} \n")
+
         self._write_header(additional_styles, script_include)
 
     def _write_header(self, additional_styles, script_include):
@@ -223,19 +226,26 @@ class HtmlVisualizer(VisualizerCommon):
 
     def _write_table_inner(self, head, rows):
         if head is not None:
+            self.f_html.write("<thead>")
             for column in head:
                 if type(column) == HtmlCellStr:
                     self.f_html.write(column.s)
                 elif type(column) == str:
                     self.f_html.write(get_table_head_cell(column).s)
+                elif type(column) == Cell:
+                    self.f_html.write(self.get_cell_html(column))
                 else:
                     raise TypeError
+            self.f_html.write("</thead>")
+        self.f_html.write("<tbody>")
         for row in rows:
+
             self.f_html.write("<tr>\n")
             for cell in row:
                 s = self.get_cell_html(cell)
                 self.f_html.write(s)
             self.f_html.write("</tr>\n")
+        self.f_html.write("</tbody>")
 
     def write_table_with_class(self, rows: List[List[Cell]], class_str, head=None):
         self.f_html.write("<table class=\"{}\">\n".format(class_str))
@@ -245,6 +255,7 @@ class HtmlVisualizer(VisualizerCommon):
     def get_cell_html(self, cell: Cell):
         left = "&nbsp;" if cell.space_left else ""
         right = "&nbsp;" if cell.space_right else ""
+        td_th = "th" if cell.is_head else "td"
         no_padding = "style=\"padding-right:0px; padding-left:0px\""
         if cell.highlight_score:
             if not self.dark_mode:
@@ -252,10 +263,9 @@ class HtmlVisualizer(VisualizerCommon):
             else:
                 bg_color = self.get_blue_d(cell.highlight_score)
 
-            s = "<td bgcolor=\"#{}\" {}>{}{}{}</td>".format(bg_color, no_padding, left, cell.s, right)
+            s = f"<{td_th} bgcolor=\"#{bg_color}\" {no_padding}>{left}{cell.s}{right}</{td_th}>"
         else:
-            s = "<td {}>{}{}{}</td>".format(no_padding, left, cell.s, right)
-
+            s = f"<{td_th} {no_padding}>{left}{cell.s}{right}</{td_th}>"
         return s
 
     def get_color(self, score, color):

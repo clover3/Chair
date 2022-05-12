@@ -6,7 +6,6 @@ from alignment.extract_feature import eval_all_perturbations
 from bert_api import SegmentedInstance
 from bert_api.segmented_instance.segmented_text import token_list_to_segmented_text, SegmentedText
 from bert_api.task_clients.nli_interface.nli_interface import NLIInput, save_nli_inputs_to_jsonl
-from cache import save_list_to_jsonl_w_fn
 from contradiction.medical_claims.token_tagging.problem_loader import AlamriProblem, \
     load_alamri_split
 from data_generator.tokenizer_wo_tf import get_tokenizer

@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html ng-app="annotApp">
+<head>
+    <meta charset="UTF-8">
+    <title>Alignment Annotation</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+
+	<script src="angular.js"></script>
+	<script src="app.js?1"></script>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+
+</head>
+<body>
+	<div class="container" ng-controller="annotController" ng-init="claim1='SuperWildCardMyIfThePremise';claim2='SuperWildCardMyIfTheHypothesis';inst_id=SuperWildCardMyIfID; init()">
+		<h1>Contradictory information in medical claims</h1>
+		<div class="panel panel-default">
+			<div>
+<!--				<h5>Task instruction</h5>-->
+<!--				<ul>-->
+<!--					<li><a href="../instruction.html" target="_blank" ng-click="instruction()">Task instruction</a></li>-->
+<!--				</ul>-->
+			</div>
+			<div>
+				<h5>How to use the page:</h5>
+				<ul>
+					<li>You can click on the buttons to select words.</li>
+					<li>You can click the selected word again to exclude it from the selection. </li>
+					<li>The page will automatically generate the text that contains the indices of the selected words for each of categories.</li>
+					<li>After annotation, copy-and-paste the word indices in 'Selected all' into the provided sheets.</li>
+				</ul>
+			</div>
+		</div>
+		<hr>
+		<h4>Task # {{inst_id}}</h4>
+		<div class="well">
+		<div>
+		<b>Claim 1: </b>{{ claim1 }}
+		</div>
+		<div>
+		<b>Claim 2: </b>
+		{{ claim2 }}
+		</div>
+		<hr>
+<!--		<div>-->
+<!--		<span><b>Mode: </b></span>-->
+<!--		<div class="btn-group btn-group-toggle" data-toggle="buttons">-->
+<!--		  <label class="btn btn-sm" ng-class="{'yellow': 'btn-outline-danger', 'red':'btn-danger'}[current_role]"  ng-click="current_role='red'">-->
+<!--			<input type="radio", id="option1" autocomplete="off"> {{get_role_desc('red')}}-->
+<!--		  </label>-->
+<!--		  <label class="btn btn-sm" ng-class="{'red': 'btn-outline-warning', 'yellow':'btn-warning'}[current_role]"  ng-click="current_role='yellow'">-->
+<!--			<input type="radio", id="option2" autocomplete="off"> {{get_role_desc('yellow')}}-->
+<!--		  </label>-->
+<!--		</div>-->
+<!--		</div>-->
+		<br>
+
+		<div ng-repeat="sent_name in ['claim1', 'claim2']">
+		<b>{{{'claim1':'Claim 1', 'claim2':'Claim 2'}[sent_name]}} : </b>
+		<span ng-repeat="token in tokens[sent_name] track by $index">
+		<a class="btn btn-sm " ng-class="{'yellow': 'btn-warning', 'red': 'btn-danger', 'white': 'btn-outline-dark'}[get_visual_type(sent_name, $index)]"
+		   ng-mouseover="hover(sent_name, $index)"
+			ng-click="click(sent_name, $index)">
+			<div ng-init="bold=is_bold(sent_name, $index)">
+			<span ng-if="is_bold(sent_name, $index)"><b>{{token}}</b></span ng-if="is_bold(sent_name, $index)">
+			<span ng-if="!is_bold(sent_name, $index)">{{token}}</span ng-if="!is_bold(sent_name, $index)">
+			</div>
+		</a>
+		</span>
+		</div>
+			<span>
+				Use range select
+				<input type="checkbox" ng-model="f_range_select" />
+			</span>
+
+		<br>
+		<div ng-repeat="sent_name in ['claim1', 'claim2']">
+			<div ng-repeat="role in ['yellow']">
+				<b> {{sent_name}} selected {{get_role_desc(role)}} tokens: </b>
+				<span>{{get_selected(sent_name, role)}}</span>&nbsp;&nbsp;
+			</div>
+		</div>
+		</div>
+
+		<div>
+			<b>Selected all : </b>
+			<span>{{get_all_selected()}}</span>
+			<button class="" ng-click="copy()">Copy</button>
+		</div>
+		<hr>
+		<div>
+		<a href="./{{inst_id-1}}.html" class="btn btn-link" >&larr; Prev</a> &nbsp;&nbsp; <a href="./{{inst_id+1}}.html" class="btn btn-link" style="float:right;">Next &rarr; </a>
+		</div>
+	</div>
+</body>
+</html>

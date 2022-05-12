@@ -10,7 +10,7 @@ from bert_api.segmented_instance.segmented_text import token_list_to_segmented_t
 from contradiction.medical_claims.token_tagging.online_solver_common import TokenScoringSolverIF
 # Mismatch score: Highest align score for each tokens.
 # Aligns scores:
-from contradiction.medical_claims.token_tagging.solvers.ensemble_solver import EnsembleSolver
+from contradiction.medical_claims.token_tagging.solvers.ensemble_solver import EnsembleSolver, NormalizeEnsembleScorer
 from contradiction.medical_claims.token_tagging.solvers.exact_match_solver import ExactMatchSTHandleSolver
 from data_generator.tokenizer_wo_tf import get_tokenizer
 
@@ -61,6 +61,11 @@ def get_pert_pred_solver() -> TokenScoringSolverIF:
 def get_pert_pred_solver_ex1():
     solver_list = [get_pert_pred_solver(), ExactMatchSTHandleSolver()]
     return EnsembleSolver(solver_list)
+
+
+def get_pert_pred_solver_ex2():
+    solver_list: List[TokenScoringSolverIF] = [ExactMatchSTHandleSolver(), get_pert_pred_solver()]
+    return NormalizeEnsembleScorer(solver_list, [None, 0.1])
 
 
 def main():

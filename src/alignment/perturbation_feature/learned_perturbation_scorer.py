@@ -11,7 +11,7 @@ from bert_api import SegmentedInstance
 from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_client
 
 
-def load_pert_pred_model(model_name, eval_data):
+def load_pert_pred_model(model_name, eval_data=None):
     custom_objects = {'binary_hinge_loss': binary_hinge_loss, 'precision_at_1': precision_at_1}
     new_model = tf.keras.models.load_model(get_model_save_path(model_name),
                                            custom_objects=custom_objects)
@@ -24,8 +24,6 @@ class LearnedPerturbationScorer(MatrixScorerIF):
     def __init__(self, new_model):
         self.new_model = new_model
         self.nli_client = get_nli_cache_client("localhost")
-        self.n_feature = 9
-        self.n_classes = 3
         self.shape = get_pert_train_data_shape_1d()
 
     def _pad_x(self, x):

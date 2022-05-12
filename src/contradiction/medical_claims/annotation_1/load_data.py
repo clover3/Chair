@@ -72,7 +72,3 @@ def load_dev_sents() -> List[Tuple[int, List[str]]]:
         output.append((group_no, list(sent_set)))
     return output
 
-
-#
-#
-#

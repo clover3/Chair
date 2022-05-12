@@ -6,7 +6,7 @@ from bert_api.task_clients.nli_interface.nli_local import get_local_nli_client
 from bert_api.task_clients.nli_interface.nli_predictors_path import get_nli_cache_sqlite_path
 from cpath import pjoin, data_path
 from data_generator.tokenizer_wo_tf import EncoderUnitPlain
-from datastore.sql_based_cache_client import SQLBasedCacheClientS
+from datastore.sql_based_cache_client import SQLBasedCacheClientS, SQLBasedLazyCacheClientS
 from port_info import NLI_PORT
 
 
@@ -51,4 +51,21 @@ def get_nli_cache_client(option, hooking_fn=None) -> SQLBasedCacheClientS:
                                         NLIInput.str_hash,
                                         0.035,
                                         get_nli_cache_sqlite_path())
+    return cache_client
+
+
+def get_nli_lazy_client(option, hooking_fn=None) -> SQLBasedLazyCacheClientS:
+    forward_fn_raw: NLIPredictorSig = get_nli_client(option)
+    if hooking_fn is not None:
+        def forward_fn(items: List[NLIInput]) -> List[List[float]]:
+            hooking_fn(items)
+            return forward_fn_raw(items)
+    else:
+        forward_fn = forward_fn_raw
+
+    cache_client = SQLBasedLazyCacheClientS(forward_fn,
+                                            NLIInput.str_hash,
+                                            0.035,
+                                            get_nli_cache_sqlite_path(),
+                                            save_interval=1)
     return cache_client

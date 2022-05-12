@@ -21,7 +21,7 @@ def build(split) -> Iterable[RelatedEvalInstance]:
 def iter_mnli_dataset(split) -> Iterable[TextPair]:
     reader = MNLIReader()
     for nli_pair in reader.load_split(split):
-        yield TextPair(text_pair_id=nli_pair.pair_id,
+        yield TextPair(text_pair_id=nli_pair.data_id,
                        query_like=nli_pair.hypothesis,
                        doc_like=nli_pair.premise
                        )
