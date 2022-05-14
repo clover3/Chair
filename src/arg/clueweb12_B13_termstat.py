@@ -10,7 +10,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 
 # modified
 
-def load_clueweb12_B13_termstat():
+def load_clueweb12_B13_termstat() -> Tuple[Counter, Counter]:
     f = open(os.path.join(data_path, "clueweb12_B13_termstat.txt"), "r", encoding="utf-8")
     tf = Counter()
     df = Counter()
@@ -32,13 +32,25 @@ def load_clueweb12_B13_termstat_stemmed() -> Tuple[Dict, Dict]:
     tf, df = load_clueweb12_B13_termstat()
     new_tf = Counter()
 
+    n_error = 0
     for key, cnt in tf.items():
-        new_tf[stemmer.stem(key)] += cnt
-        pass
+        try:
+            new_tf[stemmer.stem(key)] += cnt
+        except UnicodeDecodeError:
+            n_error += 1
+
+    if n_error / len(tf) > 0.1:
+        print("{} of {} are error".format(n_error, len(tf)))
+
+    n_error = 0
+
 
     df_info = defaultdict(list)
     for key, cnt in df.items():
-        df_info[stemmer.stem(key)].append(cnt)
+        try:
+            df_info[stemmer.stem(key)].append(cnt)
+        except UnicodeDecodeError:
+            pass
 
     new_df = Counter()
     for key, cnt_list in df_info.items():
