@@ -2,6 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import List
 
+import numpy as np
 import torch
 from pytorch_pretrained_bert import BertTokenizer, BertModel
 
@@ -32,7 +33,8 @@ class ISTSPredictor(ISTSPredictorI):
     def __init__(self, model_path):
         cfg = get_cfg()
         pointer_network = PointerNetwork(cfg)
-        torched_loaded = torch.load(model_path, map_location=torch.device('cpu'))
+        map_location = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        torched_loaded = torch.load(model_path, map_location=map_location)
         pointer_network.load_state_dict(torched_loaded)
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         model = BertModel.from_pretrained('bert-base-uncased')

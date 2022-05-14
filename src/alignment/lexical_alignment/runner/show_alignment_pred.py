@@ -31,10 +31,10 @@ def show_alignment(dataset_name, scorer_name, extract_edges, html_save_name):
     answer_list = answer_list[:100]
     for answer, problem in join_a_p(answer_list, problem_list):
         html.write_paragraph(problem.problem_id)
+        seg_inst = problem.seg_instance
         alignment: List[List[float]] = answer.contribution.table
         edges_from_seg1, edges_from_seg2 = extract_edges(alignment)
 
-        seg_inst = problem.seg_instance
         todo = [
             (seg_inst.text1, seg_inst.text2, "hypothesis", edges_from_seg1),
             (seg_inst.text2, seg_inst.text1, "premise", edges_from_seg2),
@@ -86,7 +86,7 @@ def show_alignment(dataset_name, scorer_name, extract_edges, html_save_name):
 
 
 def get_extract_edges_top3():
-    top_k= 3
+    top_k = 3
     def extract_edges(alignment: List[List[float]]):
         edges_from_seg1 = defaultdict(list)
         edges_from_seg2 = defaultdict(list)
