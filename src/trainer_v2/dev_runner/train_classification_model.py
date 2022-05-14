@@ -2,12 +2,8 @@ import sys
 from typing import Callable
 
 import keras
-import official.nlp.bert.run_classifier
-import official.nlp.optimization
 import tensorflow as tf
 from keras import Model
-from official import nlp
-from official.nlp import bert
 
 from cpath import get_bert_config_path
 from models.keras_model.dev.from_hub import load_bert_model_by_hub
@@ -15,18 +11,12 @@ from tlm.model.base import BertConfig
 from trainer_v2.arg_flags import flags_parser
 from trainer_v2.chair_logging import c_log
 from trainer_v2.get_tpu_strategy import get_strategy
+from trainer_v2.partial_processing.config_helper import ModelConfig, get_run_config_nli_train
+from trainer_v2.partial_processing.dev_modeling import get_optimizer
+from trainer_v2.partial_processing.misc_helper import parse_input_files
 from trainer_v2.run_config import RunConfigEx
 
 keras = tf.keras
-
-
-class ModelConfig:
-    num_classes = 3
-    max_seq_length = 512
-
-    def __init__(self, bert_config, max_seq_length):
-        self.bert_config = bert_config
-        self.max_seq_length = max_seq_length
 
 
 class BERT_CLS:
@@ -38,14 +28,6 @@ class BERT_CLS:
         self.model: keras.Model = model
         self.pooler = pooled_output
         self.output = output
-
-
-def get_optimizer(run_config: RunConfigEx):
-    num_train_steps = run_config.train_step
-    warmup_steps = int(num_train_steps * 0.1)
-    optimizer = nlp.optimization.create_optimizer(
-        run_config.learning_rate, num_train_steps=num_train_steps, num_warmup_steps=warmup_steps)
-    return optimizer
 
 
 def run_train(define_model_fn: Callable, dataset, run_config):
@@ -70,19 +52,47 @@ def run_train(define_model_fn: Callable, dataset, run_config):
 #     trainer_v2.misc_common.load_weights(checkpoint_path)
 
 
-def parse_input_files(input_file_str):
-    input_files = []
-    for input_pattern in input_file_str.split(","):
-        input_files.extend(tf.io.gfile.glob(input_pattern))
-    return input_files
+def create_classifier_dataset(file_path, seq_length, batch_size, is_training):
+    dataset = tf.data.TFRecordDataset(file_path)
+    if is_training:
+        dataset = dataset.shuffle(100)
+        dataset = dataset.repeat()
+
+    def decode_record(record):
+        name_to_features = {
+            'input_ids': tf.io.FixedLenFeature([seq_length], tf.int64),
+            'input_mask': tf.io.FixedLenFeature([seq_length], tf.int64),
+            'segment_ids': tf.io.FixedLenFeature([seq_length], tf.int64),
+            'label_ids': tf.io.FixedLenFeature([], tf.int64),
+        }
+        return tf.io.parse_single_example(record, name_to_features)
+
+    def _select_data_from_record(record):
+        x = {
+            'input_word_ids': record['input_ids'],
+            'input_mask': record['input_mask'],
+            'input_type_ids': record['segment_ids']
+        }
+        y = record['label_ids']
+        return (x, y)
+
+    dataset = dataset.map(decode_record,
+                          num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.map(
+        _select_data_from_record,
+        num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.batch(batch_size, drop_remainder=is_training)
+    dataset = dataset.prefetch(tf.data.AUTOTUNE)
+    return dataset
 
 
 def build_dataset(model_config, input_files, run_config):
-    max_seq_length = model_config.max_seq_length
-    dataset = bert.run_classifier.get_dataset_fn(input_files,
-                                                 max_seq_length,
-                                                 run_config.batch_size,
-                                                 is_training=True)()
+    dataset = create_classifier_dataset(
+        tf.io.gfile.glob(input_files),
+        model_config.max_seq_length,
+        run_config.batch_size,
+        is_training=run_config.is_training)
+
     return dataset
 
 
@@ -93,17 +103,6 @@ def get_define_model_fn(model_config, run_config) -> Callable:
         return model
 
     return define_model
-
-
-def get_run_config_nli_train(args):
-    steps_per_epoch = 25000
-    num_epochs = 4
-    run_config = RunConfigEx(model_save_path=args.output_dir,
-                             train_step=num_epochs * steps_per_epoch,
-                             steps_per_epoch=steps_per_epoch,
-                             steps_per_execution=500,
-                             init_checkpoint=args.init_checkpoint)
-    return run_config
 
 
 def main(args):

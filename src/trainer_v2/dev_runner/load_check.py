@@ -8,8 +8,8 @@ from tlm.model.base import BertConfig
 from trainer_v2.arg_flags import flags_parser
 from trainer_v2.chair_logging import c_log
 from trainer_v2.checkpoint_util import load_weights
-from trainer_v2.dev_runner.train_classification_model import ModelConfig
 from trainer_v2.get_tpu_strategy import get_strategy
+from trainer_v2.partial_processing.config_helper import ModelConfig
 from trainer_v2.run_config import RunConfigEx
 
 

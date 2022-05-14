@@ -6,24 +6,15 @@ import official.nlp.bert.run_classifier
 import tensorflow as tf
 from official.modeling import performance
 from official.nlp.bert import configs as bert_configs, bert_models
-from official.utils.misc import keras_utils
 
 from cpath import get_bert_config_path
 from trainer_v2.arg_flags import flags_parser
-from trainer_v2.dev_runner.train_classification_model import parse_input_files, get_run_config_nli_train, ModelConfig, \
-    get_optimizer, build_dataset
+from trainer_v2.dev_runner.train_classification_model import build_dataset
 from trainer_v2.get_tpu_strategy import get_strategy
+from trainer_v2.partial_processing.config_helper import ModelConfig, get_run_config_nli_train
+from trainer_v2.partial_processing.dev_modeling import get_optimizer
+from trainer_v2.partial_processing.misc_helper import parse_input_files, get_custom_callback
 from trainer_v2.run_config import RunConfigEx
-
-
-def get_custom_callback(run_config):
-    custom_callbacks = []
-    custom_callbacks.append(
-        keras_utils.TimeHistory(
-            batch_size=run_config.batch_size,
-            log_steps=run_config.steps_per_execution,
-            logdir=run_config.model_save_path))
-    return custom_callbacks
 
 
 def main2(args):

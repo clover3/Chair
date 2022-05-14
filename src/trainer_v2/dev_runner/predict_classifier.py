@@ -1,22 +1,19 @@
-import functools
 import os
 import sys
 
 import tensorflow as tf
-from official.modeling import performance
 from official.nlp import bert
-from official.nlp.bert import configs as bert_configs
 from official.nlp.bert import bert_models
-from official.utils.misc import keras_utils
+from official.nlp.bert import configs as bert_configs
 from official.nlp.bert.run_classifier import get_predictions_and_labels
 
 from cpath import get_bert_config_path
 from taskman_client.wrapper2 import report_run_named
 from trainer_v2.arg_flags import flags_parser
 from trainer_v2.chair_logging import c_log
-from trainer_v2.dev_runner.train_classification_model import parse_input_files, get_run_config_nli_train, ModelConfig, \
-    get_optimizer, build_dataset
 from trainer_v2.get_tpu_strategy import get_strategy
+from trainer_v2.partial_processing.config_helper import ModelConfig, get_run_config_nli_train
+from trainer_v2.partial_processing.misc_helper import parse_input_files
 from trainer_v2.run_config import RunConfigEx
 
 
