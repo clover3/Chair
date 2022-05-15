@@ -1,9 +1,8 @@
 import tensorflow as tf
 from official.modeling import performance
-from official.nlp.modeling import networks
 
 from trainer_v2.partial_processing.config_helper import MultiSegModelConfig
-from trainer_v2.partial_processing.dev_modeling import get_transformer_encoder, get_optimizer
+from trainer_v2.partial_processing.modeling import get_transformer_encoder, get_optimizer
 from trainer_v2.run_config import RunConfigEx
 
 
@@ -12,15 +11,34 @@ def vector_three_feature(v1, v2):
     concat = concat_layer([v1, v2])
     sub = v1 - v2
     dot = tf.multiply(v1, v2)
-    output = tf.concat([sub, dot, concat], axis=-1)
+    output = tf.concat([sub, dot, concat], axis=-1, name="three_feature")
     return output
 
 
-def model_fn_factory(model_config: MultiSegModelConfig, run_config: RunConfigEx):
+def model_factory_cls(model_config: MultiSegModelConfig, run_config: RunConfigEx):
     bert_config = model_config.bert_config
-    initializer = tf.keras.initializers.TruncatedNormal(
-        stddev=bert_config.initializer_range)
 
+    def model_fn():
+        bert_encoder: tf.keras.Model = get_transformer_encoder(
+            bert_config)
+
+        inputs = bert_encoder.inputs
+        outputs = bert_encoder(inputs)
+        cls_output = outputs['pooled_output']
+        predictions = tf.keras.layers.Dense(model_config.num_classes, name="sentence_prediction")(cls_output)
+
+        outer_model = tf.keras.Model(
+            inputs=bert_encoder.inputs,
+            outputs=predictions)
+        optimizer = get_optimizer(run_config)
+        outer_model.optimizer = performance.configure_optimizer(optimizer)
+        inner_model_list = [bert_encoder]
+        return outer_model, inner_model_list
+    return model_fn
+
+
+def model_factory_assym(model_config: MultiSegModelConfig, run_config: RunConfigEx):
+    bert_config = model_config.bert_config
     def model_fn():
         bert_encoder1: tf.keras.Model = get_transformer_encoder(
             bert_config, input_prefix_fix="encoder1_")
@@ -36,16 +54,18 @@ def model_fn_factory(model_config: MultiSegModelConfig, run_config: RunConfigEx)
         cls_output1 = get_from_bert_encoder(bert_encoder1)
         cls_output2 = get_from_bert_encoder(bert_encoder2)
 
-        # concat_layer = tf.keras.layers.Concatenate()
-        # cls_concat = concat_layer([cls_output1, cls_output2])
         feature_rep = vector_three_feature(cls_output1, cls_output2)
-        classifier = networks.Classification(
-            input_width=feature_rep.shape[-1],
-            num_classes=model_config.num_classes,
-            initializer=initializer,
-            output='logits',
-            name='sentence_prediction')
-        predictions = classifier(feature_rep)
+        # classifier = networks.Classification(
+        #     input_width=feature_rep.shape[-1],
+        #     num_classes=model_config.num_classes,
+        #     initializer=initializer,
+        #     output='logits',
+        #     name='sentence_prediction')
+        # predictions = classifier(feature_rep)
+
+        hidden = tf.keras.layers.Dense(model_config.bert_config.hidden_size, activation='relu')(feature_rep)
+        predictions = tf.keras.layers.Dense(model_config.num_classes, name="sentence_prediction")(hidden)
+
         inputs = [bert_encoder1.inputs, bert_encoder2.inputs]
 
         outer_model = tf.keras.Model(

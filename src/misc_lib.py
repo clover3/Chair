@@ -798,3 +798,15 @@ def enum_segments(items: List[Any], window_size) -> List[Tuple[int, int]]:
 def validate_equal(v1, v2):
     if v1 != v2:
         print("Warning {} != {}".format(v1, v2))
+
+
+class CountWarning:
+    def __init__(self, warning_name="Warning case", interval=100):
+        self.interval = interval
+        self.cnt = 0
+        self.warning_name = warning_name
+
+    def add_warn(self):
+        self.cnt += 1
+        if self.cnt % self.interval == 0:
+            print("{} reached {}".format(self.warning_name, self.cnt))

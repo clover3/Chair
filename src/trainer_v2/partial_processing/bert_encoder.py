@@ -22,7 +22,6 @@ from official.nlp.keras_nlp import layers
 
 @tf.keras.utils.register_keras_serializable(package='keras_nlp')
 class MyBertEncoder(tf.keras.Model):
-
     def __init__(
             self,
             word_ids,

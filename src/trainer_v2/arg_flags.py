@@ -19,6 +19,7 @@ flags_parser.add_argument("--use_tpu", type=str2bool, nargs='?',
                           const=True, default=False,
                           help="Whether to use TPU or GPU/CPU.")
 flags_parser.add_argument("--input_files", )
+flags_parser.add_argument("--eval_input_files", )
 flags_parser.add_argument("--init_checkpoint", )
 flags_parser.add_argument("--config_path", )
 flags_parser.add_argument("--output_dir", )

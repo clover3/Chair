@@ -20,7 +20,7 @@ def create_classifier_dataset(file_path, seq_length, batch_size, is_training):
             'input_type_ids': record['segment_ids']
         }
         y = record['label_ids']
-        return (x, x), y
+        return x, y
 
     return create_dataset_common(_select_data_from_record, batch_size, decode_record, file_path, is_training)
 

@@ -8,7 +8,9 @@ def get_strategy(use_tpu, tpu_name=None):
         strategy = get_tpu_strategy_inner(tpu_name)
         c_log.info("All devices: {}".format(tf.config.list_logical_devices('TPU')))
     else:
-        strategy = tf.distribute.MirroredStrategy()
+        strategy = tf.distribute.MultiWorkerMirroredStrategy()
+
+        # strategy = tf.distribute.MirroredStrategy()
     return strategy
 
 

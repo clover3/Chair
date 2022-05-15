@@ -89,7 +89,7 @@ def encode_single(tokenizer, tokens, max_seq_length):
     effective_length = max_seq_length - 2
     tokens = tokens[:effective_length]
     tokens = ["[CLS]"] + tokens + ["[SEP]"]
-    segment_ids = [0] * (len(tokens) + 2)
+    segment_ids = [0] * len(tokens)
     tokens = tokens[:max_seq_length]
     segment_ids = segment_ids[:max_seq_length]
     input_ids, input_mask, segment_ids = get_basic_input_feature_as_list(tokenizer, max_seq_length,

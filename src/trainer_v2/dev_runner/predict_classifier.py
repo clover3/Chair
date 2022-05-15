@@ -12,9 +12,9 @@ from taskman_client.wrapper2 import report_run_named
 from trainer_v2.arg_flags import flags_parser
 from trainer_v2.chair_logging import c_log
 from trainer_v2.get_tpu_strategy import get_strategy
-from trainer_v2.partial_processing.config_helper import ModelConfig, get_run_config_nli_train
+from trainer_v2.partial_processing.config_helper import ModelConfig
 from trainer_v2.partial_processing.misc_helper import parse_input_files
-from trainer_v2.run_config import RunConfigEx
+from trainer_v2.run_config import RunConfigEx, get_run_config_nli_train
 
 
 @report_run_named("predict_classifier")

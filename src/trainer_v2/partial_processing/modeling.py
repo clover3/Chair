@@ -10,12 +10,12 @@ from trainer_v2.run_config import RunConfigEx
 def get_transformer_encoder(bert_config,
                             input_prefix_fix="",
                             ):
-    word_ids = tf.keras.layers.Input(
-        shape=(None,), dtype=tf.int32, name=input_prefix_fix + 'input_word_ids')
-    mask = tf.keras.layers.Input(
-        shape=(None,), dtype=tf.int32, name=input_prefix_fix + 'input_mask')
-    type_ids = tf.keras.layers.Input(
-        shape=(None,), dtype=tf.int32, name=input_prefix_fix + 'input_type_ids')
+    def build_keras_input(name):
+        return tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name=input_prefix_fix + name)
+    mask = build_keras_input('input_mask')
+    word_ids = build_keras_input('input_word_ids')
+    type_ids = build_keras_input('input_type_ids')
+
     kwargs = dict(
         vocab_size=bert_config.vocab_size,
         hidden_size=bert_config.hidden_size,

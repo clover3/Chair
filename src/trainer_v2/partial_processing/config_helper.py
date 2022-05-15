@@ -1,4 +1,6 @@
-from trainer_v2.run_config import RunConfigEx
+from official.nlp.bert import configs as bert_configs
+
+from cpath import get_bert_config_path
 
 
 class ModelConfig:
@@ -17,12 +19,13 @@ class MultiSegModelConfig:
         self.max_seq_length_list = max_seq_length_list
 
 
-def get_run_config_nli_train(args):
-    steps_per_epoch = 25000
-    num_epochs = 4
-    run_config = RunConfigEx(model_save_path=args.output_dir,
-                             train_step=num_epochs * steps_per_epoch,
-                             steps_per_epoch=steps_per_epoch,
-                             steps_per_execution=500,
-                             init_checkpoint=args.init_checkpoint)
-    return run_config
+def get_model_config_nli():
+    bert_config = get_bert_config()
+    max_seq_length = 300
+    model_config = ModelConfig(bert_config, max_seq_length)
+    return model_config
+
+
+def get_bert_config():
+    bert_config = bert_configs.BertConfig.from_json_file(get_bert_config_path())
+    return bert_config

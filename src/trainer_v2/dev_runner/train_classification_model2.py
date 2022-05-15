@@ -11,10 +11,10 @@ from cpath import get_bert_config_path
 from trainer_v2.arg_flags import flags_parser
 from trainer_v2.dev_runner.train_classification_model import build_dataset
 from trainer_v2.get_tpu_strategy import get_strategy
-from trainer_v2.partial_processing.config_helper import ModelConfig, get_run_config_nli_train
-from trainer_v2.partial_processing.dev_modeling import get_optimizer
+from trainer_v2.partial_processing.config_helper import ModelConfig
 from trainer_v2.partial_processing.misc_helper import parse_input_files, get_custom_callback
-from trainer_v2.run_config import RunConfigEx
+from trainer_v2.partial_processing.modeling import get_optimizer
+from trainer_v2.run_config import RunConfigEx, get_run_config_nli_train
 
 
 def main2(args):

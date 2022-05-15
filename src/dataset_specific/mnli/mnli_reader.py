@@ -1,6 +1,7 @@
 import os
 from typing import NamedTuple, Iterator
 
+from data_generator.NLI.enlidef import nli_label_list
 from data_generator.NLI.nli_info import corpus_dir
 
 
@@ -9,6 +10,9 @@ class NLIPairData(NamedTuple):
     hypothesis: str
     label: str
     data_id: str
+
+    def get_label_as_int(self):
+        return nli_label_list.index(self.label)
 
 
 def parse_nli_line(line) -> NLIPairData:
