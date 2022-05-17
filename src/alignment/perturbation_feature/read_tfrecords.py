@@ -1,9 +1,10 @@
+from typing import List
+
 import tensorflow as tf
-from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from alignment.nli_align_path_helper import get_tfrecord_path
 from alignment.perturbation_feature.train_configs import get_pert_train_data_shape
-from trainer_v2.input_fn_common import format_dataset
+from trainer_v2.train_util.input_fn_common import format_dataset
 
 
 def perturbation_feature(shape):

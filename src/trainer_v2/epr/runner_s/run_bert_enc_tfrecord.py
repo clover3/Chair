@@ -9,11 +9,11 @@ from transformers import MPNetTokenizer
 
 from cache import save_list_to_jsonl, load_list_from_jsonl
 from cpath import output_path
-from trainer_v2.arg_flags import flags_parser
 from trainer_v2.epr.input_fn import get_dataset_fn
 from trainer_v2.epr.mpnet import TFSBERT
 from trainer_v2.epr.path_helper import get_segmented_data_path
-from trainer_v2.get_tpu_strategy import get_strategy
+from trainer_v2.train_util.arg_flags import flags_parser
+from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
 def align(p_vectors, h_vectors):

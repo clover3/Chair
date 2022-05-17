@@ -2,6 +2,8 @@ from typing import List
 
 import tensorflow as tf
 
+from trainer_v2.train_util.input_fn_common import create_dataset_common
+
 
 def create_classifier_dataset(file_path, seq_length, batch_size, is_training):
     def decode_record(record):
@@ -59,26 +61,33 @@ def create_two_seg_classification_dataset(file_path: str,
     return create_dataset_common(reform_example, batch_size, decode_record, file_path, is_training)
 
 
-def create_dataset_common(select_data_from_record_fn, batch_size, decode_record, file_path, is_training):
-    dataset = tf.data.TFRecordDataset(file_path)
-    if is_training:
-        dataset = dataset.shuffle(100)
-        dataset = dataset.repeat()
-    dataset = dataset.map(decode_record,
-                          num_parallel_calls=tf.data.AUTOTUNE)
-    dataset = dataset.map(
-        select_data_from_record_fn,
-        num_parallel_calls=tf.data.AUTOTUNE)
-    dataset = dataset.batch(batch_size, drop_remainder=is_training)
-    dataset = dataset.prefetch(tf.data.AUTOTUNE)
-    return dataset
+def create_two_seg_classification_dataset2(file_path: str,
+                                          seq_length_list: List[int],
+                                          batch_size: int,
+                                          is_training: bool):
+
+    def decode_record(record):
+        name_to_features = {
+            'label_ids': tf.io.FixedLenFeature([], tf.int64),
+        }
+        for i in range(2):
+            def fixed_len_feature():
+                return tf.io.FixedLenFeature([seq_length_list[i]], tf.int64)
+
+            name_to_features[f'input_ids{i}'] = fixed_len_feature()
+            name_to_features[f'input_mask{i}'] = fixed_len_feature()
+            name_to_features[f'segment_ids{i}'] = fixed_len_feature()
+
+        return tf.io.parse_single_example(record, name_to_features)
+
+    def reform_example(record):
+        x_list = []
+        for i in range(2):
+            x = record[f'input_ids{i}'], record[f'input_mask{i}'], record[f'segment_ids{i}']
+            x_list.append(x)
+        y = record['label_ids']
+        return tuple(x_list), y
+
+    return create_dataset_common(reform_example, batch_size, decode_record, file_path, is_training)
 
 
-def build_classification_dataset(model_config, input_files, run_config, is_training):
-    dataset = create_classifier_dataset(
-        tf.io.gfile.glob(input_files),
-        model_config.max_seq_length,
-        run_config.batch_size,
-        is_training=is_training)
-
-    return dataset

@@ -1,11 +1,10 @@
+from typing import List
+
 import numpy as np
 import tensorflow as tf
-from typing import List, Iterable, Callable, Dict, Tuple, Set
-
-from keras.utils import losses_utils
 
 from alignment.perturbation_feature.read_tfrecords import reduce_multiply
-from trainer_v2.input_fn_common import format_dataset
+from trainer_v2.train_util.input_fn_common import format_dataset
 
 
 def weighted_MAE(y, prediction):

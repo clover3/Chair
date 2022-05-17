@@ -4,6 +4,7 @@ import os
 import tensorflow as tf
 
 from cpath import output_path
+from trainer_v2.train_util.callbacks import CustomCallback
 
 
 def do_tf_thing():
@@ -36,7 +37,7 @@ def do_tf_thing():
                                                       write_graph=False,
                                                       update_freq=1
                                                       )
-    custom_callbacks = [summary_callback]
+    custom_callbacks = [summary_callback, CustomCallback()]
     history = model.fit(x_train, y_train,
               steps_per_epoch=steps_per_epoch,
               validation_data=None,

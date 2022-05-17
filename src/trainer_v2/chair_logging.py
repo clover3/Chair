@@ -13,6 +13,20 @@ if c_log is None:
                                   )
     ch = logging.StreamHandler(sys.stdout)
     ch.setFormatter(formatter)
-
-    c_log.addHandler(ch)
+    root_logger = logging.getLogger()
+    root_logger.addHandler(ch)
     c_log.info("Chair logging init")
+    tf_logger = logging.getLogger('tensorflow')
+    tf_logger.propagate = False
+
+
+class IgnoreFilter(logging.Filter):
+    def __init__(self, targets):
+        self.targets = targets
+        super(IgnoreFilter).__init__()
+
+    def filter(self, record):
+        for pattern in self.targets:
+            if pattern in record.msg:
+                return False
+        return True

@@ -16,6 +16,10 @@ def get_transformer_encoder(bert_config,
     word_ids = build_keras_input('input_word_ids')
     type_ids = build_keras_input('input_type_ids')
 
+    return bert_encoder_factory(bert_config, word_ids, mask, type_ids)
+
+
+def bert_encoder_factory(bert_config, word_ids, mask, type_ids):
     kwargs = dict(
         vocab_size=bert_config.vocab_size,
         hidden_size=bert_config.hidden_size,
@@ -30,7 +34,6 @@ def get_transformer_encoder(bert_config,
         embedding_width=bert_config.embedding_size,
         initializer=tf.keras.initializers.TruncatedNormal(
             stddev=bert_config.initializer_range))
-
     return MyBertEncoder(word_ids,
                          mask,
                          type_ids, **kwargs)

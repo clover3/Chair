@@ -2,9 +2,9 @@ import sys
 
 from epath import job_man_dir
 from job_manager.job_runner_with_server import JobRunnerS
-from trainer_v2.arg_flags import flags_parser
 from trainer_v2.epr.s_bert_enc import EncodeWorker, load_segmented_data
-from trainer_v2.get_tpu_strategy import get_strategy
+from trainer_v2.train_util.arg_flags import flags_parser
+from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
 def main(arg):

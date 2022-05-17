@@ -1,5 +1,7 @@
 import tensorflow as tf
 
+from trainer_v2.train_util.misc_helper import parse_input_files
+
 
 def _decode_record(record, name_to_features):
     example = tf.io.parse_single_example(serialized=record, features=name_to_features)
@@ -35,3 +37,34 @@ def format_dataset(name_to_features,
             d = d.repeat()
     d = d.map(lambda record: _decode_record(record, name_to_features))
     return d
+
+
+def create_dataset_common(select_data_from_record_fn, batch_size, decode_record, file_path, is_training):
+    dataset = tf.data.TFRecordDataset(file_path)
+    if is_training:
+        dataset = dataset.shuffle(100)
+        dataset = dataset.repeat()
+    dataset = dataset.map(decode_record,
+                          num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.map(
+        select_data_from_record_fn,
+        num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.batch(batch_size, drop_remainder=is_training)
+    dataset = dataset.prefetch(tf.data.AUTOTUNE)
+    return dataset
+
+
+def get_input_fn(args, get_dataset_fn):
+    def train_input_fn():
+        input_files = parse_input_files(args.input_files)
+        dataset = get_dataset_fn(input_files, True)
+        return dataset
+
+    def eval_input_fn():
+        if args.eval_input_files is None:
+            return None
+        input_files = parse_input_files(args.eval_input_files)
+        dataset = get_dataset_fn(input_files, is_training=False)
+        return dataset
+
+    return train_input_fn, eval_input_fn

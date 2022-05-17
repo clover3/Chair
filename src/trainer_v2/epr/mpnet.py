@@ -4,8 +4,8 @@ import tensorflow as tf
 from transformers import TFMPNetModel, MPNetConfig, MPNetTokenizer
 
 from cache import load_from_pickle
-from trainer_v2.arg_flags import flags_parser
-from trainer_v2.get_tpu_strategy import get_strategy
+from trainer_v2.train_util.arg_flags import flags_parser
+from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
 def load_reference_embedding():

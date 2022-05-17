@@ -3,38 +3,8 @@ from official.modeling import performance
 
 from trainer_v2.partial_processing.config_helper import MultiSegModelConfig
 from trainer_v2.partial_processing.modeling import get_transformer_encoder, get_optimizer
+from trainer_v2.partial_processing.network_utils import vector_three_feature
 from trainer_v2.run_config import RunConfigEx
-
-
-def vector_three_feature(v1, v2):
-    concat_layer = tf.keras.layers.Concatenate()
-    concat = concat_layer([v1, v2])
-    sub = v1 - v2
-    dot = tf.multiply(v1, v2)
-    output = tf.concat([sub, dot, concat], axis=-1, name="three_feature")
-    return output
-
-
-def model_factory_cls(model_config: MultiSegModelConfig, run_config: RunConfigEx):
-    bert_config = model_config.bert_config
-
-    def model_fn():
-        bert_encoder: tf.keras.Model = get_transformer_encoder(
-            bert_config)
-
-        inputs = bert_encoder.inputs
-        outputs = bert_encoder(inputs)
-        cls_output = outputs['pooled_output']
-        predictions = tf.keras.layers.Dense(model_config.num_classes, name="sentence_prediction")(cls_output)
-
-        outer_model = tf.keras.Model(
-            inputs=bert_encoder.inputs,
-            outputs=predictions)
-        optimizer = get_optimizer(run_config)
-        outer_model.optimizer = performance.configure_optimizer(optimizer)
-        inner_model_list = [bert_encoder]
-        return outer_model, inner_model_list
-    return model_fn
 
 
 def model_factory_assym(model_config: MultiSegModelConfig, run_config: RunConfigEx):

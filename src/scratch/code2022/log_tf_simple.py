@@ -1,6 +1,7 @@
 import logging
 
 import tensorflow as tf
+from official import nlp
 
 from trainer_v2.chair_logging import c_log
 
@@ -18,6 +19,7 @@ def modify_tf_logger():
 
     c_log.addHandler(ch)
     c_log.info("tf logging")
+
 
 def do_tf_thing():
     mnist = tf.keras.datasets.mnist
@@ -40,13 +42,27 @@ def do_tf_thing():
 
 
 def main():
-    c_log.info("hi")
+    c_log.info("main 1")
     import logging
+    root_logger = logging.getLogger()
+    print("c_log.handlers", c_log.handlers)
+    print("root_logger handler", root_logger.handlers)
     tf.get_logger().setLevel(logging.ERROR)
+    tf_logger = logging.getLogger('tensorflow')
+    c_log.info("main 2")
+    tf_logger.propagate = False
+    tf_logger.info("tf logger say somthing")
+    print("root_logger handler", root_logger.handlers)
+    optimizer = nlp.optimization.create_optimizer(1, num_train_steps=1000, num_warmup_steps=1)
+    print("tf_logger handler", tf_logger.handlers)
+    tf_logger.info("tf logger say somthing2")
+    c_log.info("main 3")
+    print("root_logger handler", root_logger.handlers)
+    tf_logger.info("tf logger say somthing3")
+    c_log.info("main 4")
+    c_log.info("main 5")
 
-    # modify_tf_logger()
-    do_tf_thing()
-    return NotImplemented
+
 
 
 if __name__ == "__main__":

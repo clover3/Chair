@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from alignment.perturbation_feature.read_tfrecords import perturbation_feature
-from trainer_v2.input_fn_common import format_dataset
+from trainer_v2.train_util.input_fn_common import format_dataset
 
 
 def weighted_MAE(y, prediction):

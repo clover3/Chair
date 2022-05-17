@@ -6,8 +6,8 @@ import tensorflow as tf
 from data_generator.NLI.enlidef import snli_train_size
 from epath import job_man_dir
 from misc_lib import ceil_divide
-from trainer_v2.arg_flags import flags_parser
 from trainer_v2.epr.s_bert_enc import EncodeWorker, load_segmented_data
+from trainer_v2.train_util.arg_flags import flags_parser
 
 
 def main(arg):
