@@ -5,6 +5,7 @@ import tensorflow as tf
 
 def file_show(fn):
     cnt = 0
+    n_display = 5
     for record in tf.compat.v1.python_io.tf_record_iterator(fn):
         example = tf.train.Example()
         example.ParseFromString(record)
@@ -21,7 +22,7 @@ def file_show(fn):
             print(v)
 
         cnt += 1
-        if cnt >= 5:##
+        if cnt >= n_display:##
             break
 
 

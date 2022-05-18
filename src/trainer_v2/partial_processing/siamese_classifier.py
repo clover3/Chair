@@ -3,7 +3,7 @@ from official.modeling import tf_utils
 from official.nlp.keras_nlp import layers
 
 from models.transformer.bert_common_v2 import get_shape_list2
-from trainer_v2.partial_processing.bert_encoder_layer import BertEncoderModule
+from trainer_v2.partial_processing.bert_encoder_module import BertEncoderLayer
 from trainer_v2.partial_processing.network_utils import vector_three_feature
 
 
@@ -53,7 +53,7 @@ class SiameseClassifier(tf.keras.Model):
         )
         dense1 = tf.keras.layers.Dense(3, trainable=True)
         print("dense1", dense1, dense1.trainable_variables, dense1.trainable_weights)
-        bert_encoder = BertEncoderModule(**sub_kwargs)
+        bert_encoder = BertEncoderLayer(**sub_kwargs)
         self.bert_encoder = bert_encoder
         print("bert_encoder.trainable", bert_encoder.trainable_variables)
 

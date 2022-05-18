@@ -1,10 +1,10 @@
 import os
-import time
 
 import tensorflow as tf
 from official.utils.misc import keras_utils
 from tensorflow import keras
 
+from trainer_v2.chair_logging import c_log
 from trainer_v2.run_config import RunConfigEx
 
 
@@ -107,12 +107,9 @@ class CheckpointCallback(tf.keras.callbacks.Callback):
         self._do_checkpoint_save_check()
 
     def on_train_batch_end(self, batch, logs=None):
-        st = time.time()
-        self._do_checkpoint_save_check()
-        ed = time.time()
-        if ed - st > 1:
-            print()
-            print("on_train_batch_end took {}".format(ed-st))
+        ret = self._do_checkpoint_save_check()
+        if ret is not None:
+            c_log.info("Checkpoint saved at {}".format(ret))
 
 
 def get_checkpoint_callback(model, model_dir, optimizer, run_config: RunConfigEx):

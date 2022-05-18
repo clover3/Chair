@@ -16,12 +16,14 @@
 # pylint: disable=g-classes-have-attributes
 
 import tensorflow as tf
+from official.modeling import tf_utils
 
 from official.nlp.keras_nlp import layers
 
 
 @tf.keras.utils.register_keras_serializable(package='keras_nlp')
-class BertEncoderModule(tf.Module):
+# class BertEncoderModule(tf.Module):
+class BertEncoderLayer(tf.keras.layers.Layer):
     def __init__(
             self,
             vocab_size,
@@ -38,12 +40,12 @@ class BertEncoderModule(tf.Module):
             output_range=None,
             embedding_width=None,
             **kwargs):
-        super(BertEncoderModule, self).__init__()
+        super(BertEncoderLayer, self).__init__()
 
         activation = tf.keras.activations.get(inner_activation)
         initializer = tf.keras.initializers.get(initializer)
 
-        self._self_setattr_tracking = False
+        # self._self_setattr_tracking = False
         self._config_dict = {
             'vocab_size': vocab_size,
             'hidden_size': hidden_size,
@@ -62,7 +64,7 @@ class BertEncoderModule(tf.Module):
         self.output_range = output_range
         if embedding_width is None:
             embedding_width = hidden_size
-        self._embedding_layer = self._build_embedding_layer()
+        self._embedding_layer: tf.keras.layers.Layer = self._build_embedding_layer()
 
         # Always uses dynamic slicing for simplicity.
         self._position_embedding_layer = layers.PositionEmbedding(
@@ -121,11 +123,6 @@ class BertEncoderModule(tf.Module):
             activation='tanh',
             kernel_initializer=initializer,
             name='pooler_transform')
-        print("_pooler_layer", self._pooler_layer.trainable)
-        print("_pooler_layer", self._pooler_layer.trainable_variables)
-
-    def __call__(self, x):
-        return self.call(x)
 
     def call(self, inputs):
         word_ids, mask, type_ids = inputs
@@ -150,11 +147,11 @@ class BertEncoderModule(tf.Module):
         first_token_tensor = last_enocder_output[:, 0, :]
 
         cls_output = self._pooler_layer(first_token_tensor)
-        outputs = dict(
-            sequence_output=encoder_outputs[-1],
-            pooled_output=cls_output,
-            encoder_outputs=encoder_outputs,
-        )
+        # outputs = dict(
+        #     sequence_output=encoder_outputs[-1],
+        #     pooled_output=cls_output,
+        #     encoder_outputs=encoder_outputs,
+        # )
         return cls_output
 
     def get_embedding_table(self):
@@ -188,3 +185,23 @@ class BertEncoderModule(tf.Module):
     @classmethod
     def from_config(cls, config, custom_objects=None):
         return cls(**config)
+
+
+def get_bert_encoder_module(bert_config):
+    kwargs = dict(
+        vocab_size=bert_config.vocab_size,
+        hidden_size=bert_config.hidden_size,
+        num_layers=bert_config.num_hidden_layers,
+        num_attention_heads=bert_config.num_attention_heads,
+        inner_dim=bert_config.intermediate_size,
+        inner_activation=tf_utils.get_activation(bert_config.hidden_act),
+        output_dropout=bert_config.hidden_dropout_prob,
+        attention_dropout=bert_config.attention_probs_dropout_prob,
+        max_sequence_length=bert_config.max_position_embeddings,
+        type_vocab_size=bert_config.type_vocab_size,
+        embedding_width=bert_config.embedding_size,
+        initializer=tf.keras.initializers.TruncatedNormal(
+            stddev=bert_config.initializer_range),
+    )
+    bert_encoder = BertEncoderLayer(**kwargs)
+    return bert_encoder

@@ -10,7 +10,5 @@ def main():
     print(list(v[101]))
 
 
-
-
 if __name__ == "__main__":
     main()
