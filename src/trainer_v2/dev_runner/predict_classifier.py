@@ -32,10 +32,10 @@ def main(args):
             bert_models.classifier_model(bert_config, model_config.num_classes, max_seq_length)
         return classifier_model, core_model
 
-    eval_input_fn = bert.run_classifier.get_dataset_fn(input_files,
-                                                 max_seq_length,
-                                                 run_config.batch_size,
-                                                 is_training=False)
+    eval_input_fn = bert.run_classifier.get_dataset(input_files,
+                                                    max_seq_length,
+                                                    run_config.batch_size,
+                                                    is_training=False)
     with strategy.scope():
         classifier_model, _ = get_model_fn()
         checkpoint = tf.train.Checkpoint(model=classifier_model)

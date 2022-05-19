@@ -6,7 +6,8 @@ from trainer_v2.chair_logging import c_log
 def get_strategy(use_tpu, tpu_name=None):
     if use_tpu:
         strategy = get_tpu_strategy_inner(tpu_name)
-        c_log.info("All devices: {}".format(tf.config.list_logical_devices('TPU')))
+        tpu_devices = tf.config.list_logical_devices('TPU')
+        c_log.info("{} TPU devices found".format(len(tpu_devices)))
     else:
         c_log.debug("use_tpu={}".format(use_tpu))
         strategy = tf.distribute.MultiWorkerMirroredStrategy()

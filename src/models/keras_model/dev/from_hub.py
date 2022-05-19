@@ -10,7 +10,6 @@ tfds.disable_progress_bar()
 from official.nlp import bert
 
 # Load the required submodules
-import official.nlp.bert.run_classifier
 
 
 def tokenize_convert(sentence_list, tokenizer):
@@ -38,7 +37,7 @@ def tokenize_convert(sentence_list, tokenizer):
 
 def get_mrpc_dataset(seq_length, batch_size=32):
     train_data_output_path = "C:\\work\\Code\\Chair\\src\\models\\keras_model\\dev\\mrpc_train.tf_record"
-    training_dataset = bert.run_classifier.get_dataset_fn(
+    training_dataset = bert.run_classifier.get_dataset(
         train_data_output_path,
         seq_length,
         batch_size,

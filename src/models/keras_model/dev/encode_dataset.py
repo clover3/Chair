@@ -1,9 +1,6 @@
 import os
 
-import official.nlp.bert.run_classifier
-import official.nlp.bert.tokenization
 # Load the required submodules
-import official.nlp.data.classifier_data_lib
 import tensorflow as tf
 from official import nlp
 from official.nlp import bert
@@ -35,13 +32,13 @@ def main():
             train_data_output_path=train_data_output_path,
             eval_data_output_path=eval_data_output_path,
             max_seq_length=max_seq_length))
-    training_dataset = bert.run_classifier.get_dataset_fn(
+    training_dataset = bert.run_classifier.get_dataset(
         train_data_output_path,
         max_seq_length,
         batch_size,
         is_training=True)()
 
-    evaluation_dataset = bert.run_classifier.get_dataset_fn(
+    evaluation_dataset = bert.run_classifier.get_dataset(
         eval_data_output_path,
         max_seq_length,
         eval_batch_size,

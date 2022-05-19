@@ -17,8 +17,6 @@ from trainer_v2.train_util.get_tpu_strategy import get_strategy
 from trainer_v2.train_util.misc_helper import parse_input_files
 
 keras = tf.keras
-
-
 class BERT_CLS:
     def __init__(self, gs_folder_bert, config: ModelConfig):
         num_classes = config.num_classes

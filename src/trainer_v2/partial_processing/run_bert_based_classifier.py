@@ -51,6 +51,24 @@ def load_checkpoint(init_checkpoint: str, checkpoint_type: str,
         raise ValueError("Checkpoint type {} is not expected".format(checkpoint_type))
 
 
+def load_checkpoint_keras_blind(init_checkpoint: str, checkpoint_type: str,
+                                model, sub_module_list: List):
+    if not init_checkpoint:
+        return
+
+    c_log.info("checkpoint_type: {}".format(checkpoint_type))
+    if checkpoint_type == "bert":
+        for i, sub_module in enumerate(sub_module_list):
+            checkpoint = tf.train.Checkpoint(model=sub_module)
+            checkpoint.restore(init_checkpoint).assert_existing_objects_matched()
+    elif checkpoint_type == "resume":
+        checkpoint = tf.train.Checkpoint(model=model)
+        checkpoint.restore(init_checkpoint).assert_existing_objects_matched()
+        c_log.debug("checkpoint.restore")
+    else:
+        raise ValueError("Checkpoint type {} is not expected".format(checkpoint_type))
+
+
 def load_from_reshaped_bert_checkpoint(sub_module, init_checkpoint):
     # prefix = f"bert_encoder_layer/encoder{i+1}"
     prefix = get_common_prefix([v.name for v in sub_module.variables])
@@ -83,7 +101,7 @@ def show_sub_model_param(sub_model: BertEncoderLayer):
 
 def run_keras_fit(get_model_fn, loss_fn, metric_fn,
                   run_config: RunConfigEx,
-                  train_input_fn, eval_input_fn):
+                  train_input_fn, eval_input_fn, load_checkpoint_fn):
     c_log.debug("run_keras_fit ENTRY")
     # List parameters
     init_checkpoint = run_config.init_checkpoint
@@ -144,7 +162,9 @@ def run_classification(args,
                        run_config,
                        get_model_fn,
                        train_input_fn,
-                       eval_input_fn):
+                       eval_input_fn,
+                       load_checkpoint_fn,
+                       ):
     c_log.info("run_classification entry")
     strategy = get_strategy(args.use_tpu, args.tpu_name)
     metric_fn = functools.partial(tf.keras.metrics.SparseCategoricalAccuracy,
@@ -153,7 +173,7 @@ def run_classification(args,
     loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     with strategy.scope():
         history, outer_model = run_keras_fit(get_model_fn, loss_fn, metric_fn,
-                                             run_config, train_input_fn, eval_input_fn)
+                                             run_config, train_input_fn, eval_input_fn, load_checkpoint_fn)
     stats = {'total_training_steps': run_config.steps_per_epoch * run_config.get_epochs()}
 
     if 'loss' in history.history:

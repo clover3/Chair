@@ -1,3 +1,5 @@
+from collections import Callable
+
 import tensorflow as tf
 
 from trainer_v2.train_util.misc_helper import parse_input_files
@@ -39,7 +41,11 @@ def format_dataset(name_to_features,
     return d
 
 
-def create_dataset_common(select_data_from_record_fn, batch_size, decode_record, file_path, is_training):
+def create_dataset_common(select_data_from_record_fn: Callable,
+                          batch_size: int,
+                          decode_record: Callable,
+                          file_path: str,
+                          is_training: bool):
     dataset = tf.data.TFRecordDataset(file_path)
     if is_training:
         dataset = dataset.shuffle(100)

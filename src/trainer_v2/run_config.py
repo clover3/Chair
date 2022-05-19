@@ -15,7 +15,10 @@ class RunConfigEx:
                  init_checkpoint="",
                  checkpoint_type="bert",
                  steps_per_epoch=-1,
-                 steps_per_execution=1
+                 steps_per_execution=1,
+                 is_training=True,
+                 is_debug_run=False,
+                 tpu_config=None,
                  ):
         self.batch_size = batch_size
         self.eval_every_n_step = eval_every_n_step
@@ -28,6 +31,7 @@ class RunConfigEx:
             self.steps_per_epoch = train_step
         else:
             self.steps_per_epoch = steps_per_epoch
+        self.is_training = is_training
 
         if train_step:
             self.train_step = train_step
@@ -39,9 +43,23 @@ class RunConfigEx:
             raise ValueError("One of train_step or train_epochs should be specified")
 
         self.steps_per_execution = steps_per_execution
+        self.is_debug_run = is_debug_run
+        self.tpu_config = tpu_config
 
     def get_epochs(self):
         return self.train_step // self.steps_per_epoch
+
+    def print_info(self):
+        if self.is_debug_run:
+            c_log.warning("DEBUGGING in use")
+
+        if self.tpu_config is not None:
+            if self.steps_per_execution == 1 and self.is_debug_run:
+                c_log.warning("Using tpu with steps_per_execution == 1")
+
+        if self.init_checkpoint is None:
+            c_log.warning("No checkpoint specified!")
+
 
 
 class ExTrainConfig:
