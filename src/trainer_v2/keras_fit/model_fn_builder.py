@@ -2,8 +2,8 @@ import tensorflow as tf
 from official.modeling import performance
 
 from trainer_v2.chair_logging import c_log
-from trainer_v2.partial_processing.config_helper import MultiSegModelConfig
-from trainer_v2.partial_processing.modeling import get_transformer_encoder, get_optimizer
+from trainer_v2.keras_fit.config_helper import MultiSegModelConfig
+from trainer_v2.keras_fit.modeling import get_transformer_encoder, get_optimizer
 from trainer_v2.run_config import RunConfigEx
 
 

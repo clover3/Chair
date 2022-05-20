@@ -14,7 +14,7 @@ class RunnerIF(ABC):
         pass
 
     @abstractmethod
-    def get_model_ref_for_ckpt(self):
+    def do_init_checkpoint(self, init_checkpoint):
         pass
 
     @abstractmethod
@@ -26,16 +26,16 @@ class RunnerIF(ABC):
         pass
 
     @abstractmethod
-    def get_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
+    def get_train_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         pass
 
     @abstractmethod
-    def get_dataset(self, input_path) -> tf.data.Dataset:
+    def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         pass
 
-    @abstractmethod
-    def init_loss(self):
-        pass
+    # @abstractmethod
+    # def build_dataset(self, input_path) -> tf.data.Dataset:
+    #     pass
 
     @abstractmethod
     def set_keras_model(self, model):

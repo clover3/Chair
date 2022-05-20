@@ -1,5 +1,6 @@
 import math
 import re
+from typing import NamedTuple
 
 import bert
 import tensorflow as tf
@@ -26,7 +27,17 @@ class ModelConfig:
     num_classes = 3
 
 
-class BERT_CLS:
+class BERT_CLS(NamedTuple):
+    l_bert: tf.keras.layers.Layer
+    pooler: tf.keras.layers.Dense
+
+    def apply(self, inputs):
+        seq_out = self.l_bert(inputs)
+        cls = self.pooler(seq_out[:, 0, :])
+        return cls
+
+
+class BertClassifier:
     def __init__(self, bert_params, config: ModelConfig):
         l_bert = bert.BertModelLayer.from_params(bert_params, name="bert")
         max_seq_len = config.max_seq_length
@@ -42,19 +53,9 @@ class BERT_CLS:
         output = tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax)(pooled)
         model = keras.Model(inputs=[l_input_ids, l_token_type_ids], outputs=output, name="bert_model")
         self.model: keras.Model = model
+        self.bert_cls = BERT_CLS(l_bert, pooler)
         self.l_bert = l_bert
         self.pooler = pooler
-
-
-
-@tf.function
-def eval_fn(model, item, loss_fn, dev_loss, dev_acc):
-    x1, x2, y = item
-    prediction, _ = model([x1, x2], training=False)
-    loss = loss_fn(y, prediction)
-    dev_loss.update_state(loss)
-    pred = tf.argmax(prediction, axis=1)
-    dev_acc.update_state(y, pred)
 
 
 def load_stock_weights(bert: BertModelLayer, ckpt_path,
@@ -112,6 +113,18 @@ def load_stock_weights(bert: BertModelLayer, ckpt_path,
     return skipped_weight_value_tuples  # (bert_weight, value_from_ckpt)
 
 
+def pooler_mapping(name, prefix="bert"):
+    name = name.split(":")[0]
+    ns   = name.split("/")
+    pns  = prefix.split("/")
+
+    if ns[:len(pns)] != pns:
+        return None
+
+    name = "/".join(["bert"] + ns[len(pns):])
+    return name
+
+
 def load_pooler(pooler: tf.keras.layers.Dense, ckpt_path):
     """
     Use this method to load the weights from a pre-trained BERT checkpoint into a bert layer.
@@ -122,15 +135,17 @@ def load_pooler(pooler: tf.keras.layers.Dense, ckpt_path):
     the segment/token_type embeddings.
     """
     ckpt_reader = tf.train.load_checkpoint(ckpt_path)
-
-    stock_weights = set(ckpt_reader.get_variable_to_dtype_map().keys())
-
     loaded_weights = set()
+
+    re_bert = re.compile(r'(.*)/(pooler)/(.+):0')
+    match = re_bert.match(pooler.weights[0].name)
+    assert match, "Unexpected bert layer: {} weight:{}".format(pooler, pooler.weights[0].name)
+    prefix = match.group(1)
     skip_count = 0
     weight_value_tuples = []
     bert_params = pooler.weights
     for ndx, (param) in enumerate(bert_params):
-        name = param.name
+        name = pooler_mapping(param.name, prefix)
         m = re.match("^(.*):\\d+$", name)
         if m is not None:
             stock_name = m.group(1)
@@ -144,6 +159,8 @@ def load_pooler(pooler: tf.keras.layers.Dense, ckpt_path):
         else:
             print("{} not found".format(stock_name))
             skip_count += 1
+
+    assert len(loaded_weights) == 2
     keras.backend.batch_set_value(weight_value_tuples)
 
 

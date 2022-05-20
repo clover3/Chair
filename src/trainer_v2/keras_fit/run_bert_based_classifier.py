@@ -7,7 +7,7 @@ import tensorflow as tf
 from trainer_v2.chair_logging import c_log, IgnoreFilter
 from trainer_v2.kera_debug.dev_name_mapping import normalize_mem_var_inner
 from trainer_v2.kera_debug.name_based_checkpoint_loader import load_stock_weights
-from trainer_v2.partial_processing.bert_encoder_module import BertEncoderLayer
+from trainer_v2.keras_fit.bert_encoder_module import BertEncoderLayer
 from trainer_v2.run_config import RunConfigEx
 from trainer_v2.train_util.callbacks import get_checkpoint_callback, get_summary_callback
 from trainer_v2.train_util.get_tpu_strategy import get_strategy

@@ -37,7 +37,7 @@ def tokenize_convert(sentence_list, tokenizer):
 
 def get_mrpc_dataset(seq_length, batch_size=32):
     train_data_output_path = "C:\\work\\Code\\Chair\\src\\models\\keras_model\\dev\\mrpc_train.tf_record"
-    training_dataset = bert.run_classifier.get_dataset(
+    training_dataset = bert.run_classifier.build_dataset(
         train_data_output_path,
         seq_length,
         batch_size,

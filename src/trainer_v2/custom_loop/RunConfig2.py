@@ -1,14 +1,12 @@
 import json
-from abc import abstractmethod, ABC
+from abc import ABC
 
 from trainer_v2.chair_logging import c_log
 
 
 class SubConfig(ABC):
-    @abstractmethod
     def print_info(self):
         c_log.info("{}".format(self.__dict__))
-        pass
 
 
 class InputFileConfig(SubConfig):
@@ -58,7 +56,6 @@ class TrainConfig(SubConfig):
         return TrainConfig(0, 0, 2e-5, -1)
 
     def print_info(self):
-        super(TrainConfig, self).print_info()
         if self.init_checkpoint is None:
             c_log.warning("No checkpoint specified!")
 
@@ -92,7 +89,6 @@ class CommonRunConfig(SubConfig):
     def print_info(self):
         if self.is_debug_run:
             c_log.warning("DEBUGGING in use")
-        super(CommonRunConfig, self).print_info()
 
 
 class TPUConfig(SubConfig):
@@ -129,7 +125,6 @@ class RunConfig2:
         return self.train_config.get_epochs()
 
     def print_info(self):
-        self.common_run_config.print_info()
         for sub_config in self.get_sub_configs():
             sub_config.print_info()
 

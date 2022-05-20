@@ -7,7 +7,7 @@ from models.keras_model.bert_keras.modular_bert import BertClassifierLayer
 from tlm.model.base import BertConfig
 from trainer_v2.chair_logging import c_log
 from trainer_v2.dev_runner.checkpoint_util import load_weights
-from trainer_v2.partial_processing.config_helper import ModelConfig
+from trainer_v2.keras_fit.config_helper import ModelConfig
 from trainer_v2.run_config import RunConfigEx
 from trainer_v2.train_util.arg_flags import flags_parser
 from trainer_v2.train_util.get_tpu_strategy import get_strategy

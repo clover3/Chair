@@ -32,13 +32,13 @@ def main():
             train_data_output_path=train_data_output_path,
             eval_data_output_path=eval_data_output_path,
             max_seq_length=max_seq_length))
-    training_dataset = bert.run_classifier.get_dataset(
+    training_dataset = bert.run_classifier.build_dataset(
         train_data_output_path,
         max_seq_length,
         batch_size,
         is_training=True)()
 
-    evaluation_dataset = bert.run_classifier.get_dataset(
+    evaluation_dataset = bert.run_classifier.build_dataset(
         eval_data_output_path,
         max_seq_length,
         eval_batch_size,

@@ -10,7 +10,7 @@ from official.nlp.bert.run_classifier import get_predictions_and_labels
 from cpath import get_bert_config_path
 from taskman_client.wrapper2 import report_run_named
 from trainer_v2.chair_logging import c_log
-from trainer_v2.partial_processing.config_helper import ModelConfig
+from trainer_v2.keras_fit.config_helper import ModelConfig
 from trainer_v2.run_config import RunConfigEx, get_run_config_nli_train
 from trainer_v2.train_util.arg_flags import flags_parser
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
@@ -32,10 +32,10 @@ def main(args):
             bert_models.classifier_model(bert_config, model_config.num_classes, max_seq_length)
         return classifier_model, core_model
 
-    eval_input_fn = bert.run_classifier.get_dataset(input_files,
-                                                    max_seq_length,
-                                                    run_config.batch_size,
-                                                    is_training=False)
+    eval_input_fn = bert.run_classifier.build_dataset(input_files,
+                                                      max_seq_length,
+                                                      run_config.batch_size,
+                                                      is_training=False)
     with strategy.scope():
         classifier_model, _ = get_model_fn()
         checkpoint = tf.train.Checkpoint(model=classifier_model)

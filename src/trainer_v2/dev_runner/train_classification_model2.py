@@ -9,8 +9,8 @@ from official.nlp.bert import configs as bert_configs, bert_models
 
 from cpath import get_bert_config_path
 from trainer_v2.dev_runner.train_classification_model import build_dataset
-from trainer_v2.partial_processing.config_helper import ModelConfig
-from trainer_v2.partial_processing.modeling import get_optimizer
+from trainer_v2.keras_fit.config_helper import ModelConfig
+from trainer_v2.keras_fit.modeling import get_optimizer
 from trainer_v2.run_config import RunConfigEx, get_run_config_nli_train
 from trainer_v2.train_util.arg_flags import flags_parser
 from trainer_v2.train_util.callbacks import get_custom_callback

@@ -3,8 +3,8 @@ from official.modeling import tf_utils
 from official.nlp.keras_nlp import layers
 
 from models.transformer.bert_common_v2 import get_shape_list2
-from trainer_v2.partial_processing.bert_encoder_module import BertEncoderLayer
-from trainer_v2.partial_processing.network_utils import vector_three_feature
+from trainer_v2.custom_loop.modeling_common.network_utils import vector_three_feature
+from trainer_v2.keras_fit.bert_encoder_module import BertEncoderLayer
 
 
 @tf.keras.utils.register_keras_serializable(package='keras_nlp')

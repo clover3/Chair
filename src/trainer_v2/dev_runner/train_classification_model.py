@@ -9,8 +9,8 @@ from cpath import get_bert_config_path
 from models.keras_model.dev.from_hub import load_bert_model_by_hub
 from tlm.model.base import BertConfig
 from trainer_v2.chair_logging import c_log
-from trainer_v2.partial_processing.config_helper import ModelConfig
-from trainer_v2.partial_processing.modeling import get_optimizer
+from trainer_v2.keras_fit.config_helper import ModelConfig
+from trainer_v2.keras_fit.modeling import get_optimizer
 from trainer_v2.run_config import RunConfigEx, get_run_config_nli_train
 from trainer_v2.train_util.arg_flags import flags_parser
 from trainer_v2.train_util.get_tpu_strategy import get_strategy

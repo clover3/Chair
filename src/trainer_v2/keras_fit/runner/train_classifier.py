@@ -10,11 +10,11 @@ c_log.info("import tensorflow ...")
 import tensorflow as tf
 c_log.info("import tensorflow DONE")
 from trainer_v2.train_util.arg_flags import flags_parser
-from trainer_v2.partial_processing.model_fn_builder import model_factory_cls
-from trainer_v2.partial_processing.config_helper import get_model_config_nli
-from trainer_v2.partial_processing.input_fn import create_classifier_dataset
+from trainer_v2.keras_fit.model_fn_builder import model_factory_cls
+from trainer_v2.keras_fit.config_helper import get_model_config_nli
+from trainer_v2.keras_fit.input_fn import create_classifier_dataset
 from trainer_v2.train_util.input_fn_common import get_input_fn
-from trainer_v2.partial_processing.run_bert_based_classifier import run_classification
+from trainer_v2.keras_fit.run_bert_based_classifier import run_classification
 from trainer_v2.run_config import RunConfigEx, get_run_config_nli_train
 
 from tensorflow.python.data import Dataset

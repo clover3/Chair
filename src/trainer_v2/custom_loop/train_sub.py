@@ -1,33 +1,18 @@
 import itertools
 import os
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Callable
 
-import numpy as np
 import tensorflow as tf
-from tensorflow import keras
 from tensorflow.python.distribute.distribute_lib import Strategy
 from tensorflow.python.eager import context
 from tensorflow.python.framework import ops
 
 from trainer_v2.chair_logging import c_log
-from trainer_v2.partial_processing2.RunConfig2 import RunConfig2
-from trainer_v2.partial_processing2.modeling_common.bert_common import load_bert_checkpoint, is_interesting_step
-from trainer_v2.partial_processing2.modeling_common.tf_helper import apply_gradient_warning_less, distribute_dataset
-from trainer_v2.partial_processing2.runner_if import RunnerIF
+from trainer_v2.custom_loop.RunConfig2 import RunConfig2
+from trainer_v2.custom_loop.modeling_common.bert_common import is_interesting_step
+from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
+from trainer_v2.custom_loop.runner_if import RunnerIF
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
-
-
-@tf.function
-def train_cls(model: keras.Model, item, loss_fn, optimizer):
-    x1, x2, y = item
-    with tf.GradientTape() as tape:
-        prediction = model([x1, x2], training=True)
-        loss = loss_fn(y, prediction)
-
-    c_log.debug("train_cls called")
-    gradients = tape.gradient(loss, model.trainable_variables)
-    apply_gradient_warning_less(optimizer, gradients, model.trainable_variables)
-    return loss
 
 
 @tf.function
@@ -55,8 +40,8 @@ class EvalObject:
 
     @tf.function
     def eval_fn(self, item):
-        x1, x2, y = item
-        prediction = self.model([x1, x2], training=False)
+        x, y = item
+        prediction = self.model(x, training=False)
         loss = self.loss_fn(y, prediction)
         self.loss.update_state(loss)
         pred = tf.argmax(prediction, axis=1)
@@ -99,16 +84,37 @@ def load_model(keras_model, model_path):
     keras_model.load(model_path)
 
 
-def tf_run(run_config: RunConfig2,
-           runner: RunnerIF,
-           ):
+class RecentCounter:
+    def __init__(self, interval):
+        self.last_idx = None
+        self.interval = interval
+
+    def update_last(self, idx):
+        self.last_idx = idx
+
+    def is_over_interval(self, idx):
+        if self.last_idx is None:
+            self.update_last(idx)
+            return True
+        elapsed = idx - self.last_idx
+        if elapsed < self.interval:
+            return False
+        else:
+            self.update_last(idx)
+            return True
+
+
+def tf_train_run(run_config: RunConfig2,
+                 runner: RunnerIF,
+                 dataset_factory: Callable[[str], tf.data.Dataset]
+                 ):
     c_log.debug("tf_run_inner ENTRY")
     strategy = get_strategy_from_config(run_config)
     model_save_dir: str = run_config.train_config.model_save_path
 
     c_log.debug("tf_run_inner initializing dataset")
-    train_dataset = runner.get_dataset(run_config.input_file_config.train_files_path)
-    eval_dataset = runner.get_dataset(run_config.input_file_config.eval_files_path)
+    train_dataset = dataset_factory(run_config.input_file_config.train_files_path)
+    eval_dataset = dataset_factory(run_config.input_file_config.eval_files_path)
     eval_batches = distribute_dataset(strategy, eval_dataset)
     dist_train_dataset = distribute_dataset(strategy, train_dataset)
     #
@@ -121,7 +127,7 @@ def tf_run(run_config: RunConfig2,
                                  eval_batches,
                                  strategy,
                                  runner.loss_fn,
-                                 runner.get_metrics())
+                                 runner.get_eval_metrics())
 
     train_itr = iter(dist_train_dataset)
 
@@ -130,8 +136,15 @@ def tf_run(run_config: RunConfig2,
         return os.path.join(model_save_dir, "model_{}".format(current_step))
 
     c_log.debug("Loading checkpoints")
-    load_bert_checkpoint(runner.get_model_ref_for_ckpt(), run_config.train_config.init_checkpoint)
+    runner.do_init_checkpoint(run_config.train_config.init_checkpoint)
     c_log.info("START Training")
+    current_step = _evaluate(model.optimizer.iterations)
+    c_log.debug("Current step = {}".format(current_step))
+
+    def save_fn():
+        model_save_path = get_model_save_path()
+        model.save(model_save_path)
+        c_log.info("Model saved at {}".format(model_save_path))
 
     @tf.function
     def distributed_train_step(dist_inputs: Tuple):
@@ -139,37 +152,47 @@ def tf_run(run_config: RunConfig2,
         loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None)
         return loss
 
-    for step_idx in range(run_config.train_config.train_step):
-        f_do_cls_train = True
-        f_do_eval = step_idx % run_config.train_config.eval_every_n_step == 0
-        f_do_save = step_idx % run_config.train_config.save_every_n_step == 0 and \
-                    not run_config.common_run_config.is_debug_run
+    eval_rc = RecentCounter(run_config.train_config.eval_every_n_step)
+    save_rc = RecentCounter(run_config.train_config.save_every_n_step)
+    step_idx = 0
+    while step_idx < run_config.train_config.train_step:
+        f_do_eval = eval_rc.is_over_interval(step_idx)
+        f_do_save = save_rc.is_over_interval(step_idx) and not run_config.common_run_config.is_debug_run
 
-        batch_item = next(train_itr)
+        if f_do_save:
+            save_fn()
+
+        current_step = _evaluate(model.optimizer.iterations)
+        c_log.debug("Current step = {}".format(current_step))
         per_step_msg = "step {0}".format(step_idx)
 
-        if f_do_cls_train:
+        for _ in tf.range(run_config.common_run_config.steps_per_execution):
+            batch_item = next(train_itr)
             train_loss = distributed_train_step((batch_item,))
-            train_loss = np.array(train_loss)
-            per_step_msg += " train_loss={0:.2f}".format(train_loss)
+
+        metrics = runner.get_train_metrics()
+        msg = summarize_metric(metrics)
+        per_step_msg += msg
 
         if f_do_eval:
             eval_loss, eval_metrics = eval_object.do_eval()
-            per_step_msg += " dev_loss={0:.2f}".format(eval_loss)
-            for metric_name, metric_value in eval_metrics.items():
-                per_step_msg += " dev_{0}={1:.2f}".format(metric_name, metric_value)
-
-        if f_do_save:
-            model_save_path = get_model_save_path()
-            model.save(model_save_path)
-            c_log.info("Model saved at {}".format(model_save_path))
+            per_step_msg += " dev: loss={0:.2f}".format(eval_loss)
+            msg = summarize_metric(eval_metrics)
+            per_step_msg += msg
 
         if f_do_eval or is_interesting_step(step_idx):
             c_log.info(per_step_msg)
+
+        step_idx += run_config.common_run_config.steps_per_execution
     c_log.info("Training completed")
-    model_save_path = get_model_save_path()
-    model.save(model_save_path)
-    c_log.info("Model saved at {}".format(model_save_path))
+    save_fn()
+
+
+def summarize_metric(metrics) -> str:
+    msg = ""
+    for metric_name, metric_value in metrics.items():
+        msg += "{0}={1:.2f}".format(metric_name, metric_value)
+    return msg
 
 
 def tf_eval_run(run_config: RunConfig2,
@@ -179,7 +202,7 @@ def tf_eval_run(run_config: RunConfig2,
     dist_strategy = get_strategy_from_config(run_config)
 
     c_log.debug("tf_run_inner initializing dataset")
-    eval_dataset = runner.get_dataset(run_config.input_file_config.eval_files_path)
+    eval_dataset = runner.build_dataset(run_config.input_file_config.eval_files_path)
     eval_batches = distribute_dataset(dist_strategy, eval_dataset)
     #
     with dist_strategy.scope():
@@ -192,7 +215,7 @@ def tf_eval_run(run_config: RunConfig2,
                                  eval_batches,
                                  dist_strategy,
                                  runner.loss_fn,
-                                 runner.get_metrics(),
+                                 runner.get_eval_metrics(),
                                  eval_steps=-1)
 
     c_log.info("START Evaluation")

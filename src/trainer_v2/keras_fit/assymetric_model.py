@@ -1,10 +1,10 @@
 import tensorflow as tf
 from official.modeling import performance
 
-from trainer_v2.partial_processing.bert_encoder_module import get_bert_encoder_module
-from trainer_v2.partial_processing.config_helper import MultiSegModelConfig
-from trainer_v2.partial_processing.modeling import get_optimizer
-from trainer_v2.partial_processing.network_utils import vector_three_feature
+from trainer_v2.custom_loop.modeling_common.network_utils import vector_three_feature
+from trainer_v2.keras_fit.bert_encoder_module import get_bert_encoder_module
+from trainer_v2.keras_fit.config_helper import MultiSegModelConfig
+from trainer_v2.keras_fit.modeling import get_optimizer
 from trainer_v2.run_config import RunConfigEx
 
 

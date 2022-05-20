@@ -1,6 +1,6 @@
 from trainer_v2.chair_logging import c_log
-from trainer_v2.partial_processing.runner.siamese import get_model_config
-from trainer_v2.partial_processing.siamese_model import model_factory_siamese
+from trainer_v2.keras_fit.runner.siamese import get_model_config
+from trainer_v2.keras_fit.siamese_model import model_factory_siamese
 from trainer_v2.run_config import RunConfigEx
 
 

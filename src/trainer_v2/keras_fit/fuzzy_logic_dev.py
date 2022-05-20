@@ -1,6 +1,6 @@
 import numpy as np
 
-from trainer_v2.partial_processing.assymetric_model import fuzzy_logic
+from trainer_v2.keras_fit.assymetric_model import fuzzy_logic
 
 
 def main():

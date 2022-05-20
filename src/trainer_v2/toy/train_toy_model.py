@@ -6,8 +6,8 @@ from official.modeling import performance
 
 from cpath import model_path
 from trainer_v2.chair_logging import c_log
-from trainer_v2.partial_processing.modeling import get_optimizer
-from trainer_v2.partial_processing.run_bert_based_classifier import run_keras_fit
+from trainer_v2.keras_fit.modeling import get_optimizer
+from trainer_v2.keras_fit.run_bert_based_classifier import run_keras_fit
 from trainer_v2.run_config import RunConfigEx
 from trainer_v2.train_util.arg_flags import flags_parser
 from trainer_v2.train_util.get_tpu_strategy import get_strategy

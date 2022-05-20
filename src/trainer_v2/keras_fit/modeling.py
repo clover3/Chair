@@ -1,9 +1,8 @@
-import official.nlp.optimization
 import tensorflow as tf
 from official import nlp
 from official.modeling import tf_utils
 
-from trainer_v2.partial_processing.bert_encoder import MyBertEncoder
+from trainer_v2.keras_fit.bert_encoder import MyBertEncoder
 from trainer_v2.run_config import RunConfigEx
 
 

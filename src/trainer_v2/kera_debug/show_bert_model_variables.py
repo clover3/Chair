@@ -1,7 +1,7 @@
-from trainer_v2.partial_processing.assymetric_model import model_factory_assym
-from trainer_v2.partial_processing.config_helper import get_bert_config
-from trainer_v2.partial_processing.modeling import get_transformer_encoder
-from trainer_v2.partial_processing.runner.two_seg_classifier import get_model_config
+from trainer_v2.keras_fit.assymetric_model import model_factory_assym
+from trainer_v2.keras_fit.config_helper import get_bert_config
+from trainer_v2.keras_fit.modeling import get_transformer_encoder
+from trainer_v2.keras_fit.runner.two_seg_classifier import get_model_config
 from trainer_v2.run_config import RunConfigEx
 
 
