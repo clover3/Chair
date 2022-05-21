@@ -4,7 +4,7 @@ from typing import Dict
 import tensorflow as tf
 
 
-class RunnerIF(ABC):
+class TrainerIF(ABC):
     @abstractmethod
     def build_model(self):
         pass
@@ -32,10 +32,6 @@ class RunnerIF(ABC):
     @abstractmethod
     def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         pass
-
-    # @abstractmethod
-    # def build_dataset(self, input_path) -> tf.data.Dataset:
-    #     pass
 
     @abstractmethod
     def set_keras_model(self, model):

@@ -2,21 +2,20 @@ from typing import Dict
 
 import tensorflow as tf
 
-from trainer_v2.custom_loop.RunConfig2 import RunConfig2
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
-from trainer_v2.custom_loop.per_task.classification_inner_models import ClassificationAsym, ClassificationAsymDebug, \
-    ClassificationInnerModelIF
-from trainer_v2.custom_loop.runner_if import RunnerIF
+from trainer_v2.custom_loop.per_task.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.run_config2 import RunConfig2
+from trainer_v2.custom_loop.trainer_if import TrainerIF
 
 
-class ClassificationRunnerFactory(RunnerIF):
-    def __init__(self, bert_params, model_config, run_config: RunConfig2, inner_model: ClassificationInnerModelIF):
+class TrainerFactory(TrainerIF):
+    def __init__(self, bert_params, model_config, run_config: RunConfig2, inner_model: ClassificationModelIF):
         self.bert_params = bert_params
         self.model_config = model_config
         self.run_config = run_config
         self.eval_metrics = {}
         self.eval_metrics_factory = {
-            'acc': lambda :tf.keras.metrics.Accuracy(name='accuracy', dtype=None)
+            'acc': lambda: tf.keras.metrics.Accuracy(name='accuracy', dtype=None)
         }
         self.batch_size = run_config.common_run_config.batch_size
         self.inner_model = inner_model
@@ -77,12 +76,3 @@ class ClassificationRunnerFactory(RunnerIF):
     def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         return self.eval_metrics
 
-
-def get_classification_asym_runner(bert_params, model_config, run_config: RunConfig2):
-    inner = ClassificationAsym()
-    return ClassificationRunnerFactory(bert_params, model_config, run_config, inner)
-
-
-def get_classification_asym_debug_runner(bert_params, model_config, run_config: RunConfig2):
-    inner = ClassificationAsymDebug()
-    return ClassificationRunnerFactory(bert_params, model_config, run_config, inner)

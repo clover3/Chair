@@ -14,6 +14,14 @@ class InputFileConfig(SubConfig):
         self.train_files_path = train_files_path
         self.eval_files_path = eval_files_path
 
+    @classmethod
+    def from_args(cls, args):
+        input_file_config = InputFileConfig(
+            args.input_files,
+            args.eval_input_files
+        )
+        return input_file_config
+
 
 class TrainConfig(SubConfig):
     def __init__(self,
@@ -75,6 +83,10 @@ class EvalConfig(SubConfig):
         else:
             c_log.info("eval_steps: all")
 
+    @classmethod
+    def from_args(self, args):
+        return EvalConfig(model_save_path=args.output_dir)
+
 
 class CommonRunConfig(SubConfig):
     def __init__(self,
@@ -95,6 +107,14 @@ class TPUConfig(SubConfig):
     def __init__(self, use_tpu, tpu_name):
         self.use_tpu = use_tpu
         self.tpu_name = tpu_name
+
+    @classmethod
+    def from_args(cls, args):
+        if args.use_tpu:
+            tpu_config = TPUConfig(args.use_tpu, args.tpu_name)
+        else:
+            tpu_config = None
+        return tpu_config
 
 
 class RunConfig2:
@@ -121,6 +141,9 @@ class RunConfig2:
     def is_training(self) -> bool:
         return self.train_config is not None
 
+    def is_eval(self) -> bool:
+        return self.eval_config is not None
+
     def get_epochs(self) -> int:
         return self.train_config.get_epochs()
 
@@ -129,7 +152,6 @@ class RunConfig2:
             sub_config.print_info()
 
         if self.tpu_config is not None:
-            self.tpu_config.print_info()
             if self.common_run_config.steps_per_execution == 1 and not self.common_run_config.is_debug_run:
                 c_log.warning("Using tpu with steps_per_execution == 1")
 
@@ -146,14 +168,20 @@ class RunConfig2:
         return None
 
 
+def get_run_config2_nli(args):
+    if args.action == "train":
+        return _get_run_config2_nli_train(args)
+    elif args.action == "eval":
+        return _get_run_config2_nli_eval(args)
+    else:
+        raise ValueError(args.action)
 
-def get_run_config2_nli_train(args):
+
+def _get_run_config2_nli_train(args):
     nli_train_data_size = 392702
     num_epochs = 4
-    if args.config_path is not None:
-        config_j = json.load(open(args.config_path, "r"))
-    else:
-        config_j = {}
+    config_j = load_json_wrap(args)
+
     if 'batch_size' in config_j:
         batch_size = config_j['batch_size']
     else:
@@ -166,12 +194,9 @@ def get_run_config2_nli_train(args):
         steps_per_epoch=steps_per_epoch,
         init_checkpoint=args.init_checkpoint
     )
-    common_run_config = CommonRunConfig(
-        steps_per_execution=1,
-    )
-    input_file_config = get_input_file_config(args)
-
-    tpu_config = get_tpu_config(args)
+    common_run_config = CommonRunConfig()
+    input_file_config = InputFileConfig.from_args(args)
+    tpu_config = TPUConfig.from_args(args)
 
     run_config = RunConfig2(common_run_config=common_run_config,
                             input_file_config=input_file_config,
@@ -181,14 +206,6 @@ def get_run_config2_nli_train(args):
 
     update_run_config(config_j, run_config)
     return run_config
-
-
-def get_input_file_config(args):
-    input_file_config = InputFileConfig(
-        args.input_files,
-        args.eval_input_files
-    )
-    return input_file_config
 
 
 def update_run_config(config_j, run_config):
@@ -201,23 +218,13 @@ def update_run_config(config_j, run_config):
             c_log.info("Overwrite {} as {}".format(key, value))
 
 
-def get_run_config2_nli_eval(args):
-    if args.config_path is not None:
-        config_j = json.load(open(args.config_path, "r"))
-    else:
-        config_j = {}
+def _get_run_config2_nli_eval(args):
+    config_j = load_json_wrap(args)
 
-    common_run_config = CommonRunConfig(
-        steps_per_execution=1,
-    )
-    input_file_config = InputFileConfig(
-        args.input_files,
-        args.eval_input_files
-    )
-    eval_config = EvalConfig(
-        model_save_path=args.output_dir,
-    )
-    tpu_config = get_tpu_config(args)
+    common_run_config = CommonRunConfig()
+    input_file_config = InputFileConfig.from_args(args)
+    eval_config = EvalConfig.from_args(args)
+    tpu_config = TPUConfig.from_args(args)
 
     run_config = RunConfig2(common_run_config=common_run_config,
                             input_file_config=input_file_config,
@@ -229,9 +236,11 @@ def get_run_config2_nli_eval(args):
     return run_config
 
 
-def get_tpu_config(args):
-    if args.use_tpu:
-        tpu_config = TPUConfig(args.use_tpu, args.tpu_name)
-    else:
-        tpu_config = None
-    return tpu_config
+def load_json_wrap(args):
+    try:
+        config_j = json.load(open(args.config_path, "r"))
+    except FileNotFoundError:
+        config_j = {}
+    except AttributeError:
+        config_j = {}
+    return config_j

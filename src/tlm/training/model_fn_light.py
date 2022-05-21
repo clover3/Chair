@@ -12,6 +12,7 @@ def metric_fn(log_probs, ):
     return {}
 
 
+
 class ModelLight(abc.ABC):
     @abc.abstractmethod
     def get_logits(self):
@@ -57,6 +58,11 @@ def model_fn_with_loss(model_config, train_config, model_class: Callable[ModelLi
             eval_metrics = (metric_fn, [
                 logits
             ])
+            try:
+                eval_metrics = model.get_metric()
+                tf_logging.info("set metric from model")
+            except:
+                pass
             output_spec = TPUEstimatorSpec(mode=mode, loss=loss, eval_metrics=eval_metrics, scaffold_fn=scaffold_fn)
         else:
             predictions = {

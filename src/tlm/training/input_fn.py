@@ -141,6 +141,31 @@ def input_fn_builder_dual_bert_double_length_input(flags):
     return input_fn
 
 
+def input_fn_builder_dual_bert_different_length(flags):
+    input_files = get_input_files_from_flags(flags)
+    show_input_files(input_files)
+    is_training = flags.do_train
+    num_cpu_threads = 4
+    max_seq_length1 = 200
+    max_seq_length2 = 100
+
+    def input_fn(params):
+        """The actual input function."""
+        batch_size = params["batch_size"]
+
+        name_to_features = dict({
+            "input_ids0": tf.io.FixedLenFeature([max_seq_length1], tf.int64),
+            "input_mask0": tf.io.FixedLenFeature([max_seq_length1], tf.int64),
+            "segment_ids0": tf.io.FixedLenFeature([max_seq_length1], tf.int64),
+            "input_ids1": tf.io.FixedLenFeature([max_seq_length2], tf.int64),
+            "input_mask1": tf.io.FixedLenFeature([max_seq_length2], tf.int64),
+            "segment_ids1": tf.io.FixedLenFeature([max_seq_length2], tf.int64),
+        })
+        name_to_features["label_ids"] = tf.io.FixedLenFeature([], tf.int64)
+        return format_dataset(name_to_features, batch_size, is_training, flags, input_files, num_cpu_threads)
+
+    return input_fn
+
 
 
 def input_fn_builder_use_second_input(flags):

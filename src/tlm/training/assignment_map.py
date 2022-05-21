@@ -25,6 +25,7 @@ def get_bert_assignment_map(tvars, lm_checkpoint):
         targ_name = re.sub("dense[_]?\d*", "dense", targ_name)
         lm_assignment_candidate[targ_name] = var
         tf_logging.debug("Init from lm_checkpoint : %s" % name)
+        tf_logging.debug("map to -> : %s" % targ_name)
         real_name_map[targ_name] = name
 
     assignment_map = {}
@@ -70,6 +71,7 @@ def get_assignment_map_remap_from_v1(tvars, remap_prefix, lm_checkpoint):
             (name, var) = (x[0], x[1])
             if name not in assignment_candidate:
                 continue
+
             assignment_map[name] = assignment_candidate[name]
             tvar_name = real_name_map[name]
             initialized_variable_names[tvar_name] = 1

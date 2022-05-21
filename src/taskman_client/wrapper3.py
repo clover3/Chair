@@ -8,15 +8,26 @@ def flag_to_run_name(flags):
         return flags.output_dir.split("/")[-1]
 
 
+def get_hp_str_from_flag(flags):
+    log_key_flags = ["init_checkpoint", "input_files", "output_dir"]
+    s = ""
+    for key in log_key_flags:
+        value = getattr(flags, key)
+        s += "{}:\t{}\n".format(key, value)
+    return s
+
+
 def report_run3(func):
     def func_wrapper(args):
         flags = args
-        task_proxy = get_task_proxy()
         run_name = flag_to_run_name(flags)
-        # if flags.use_tpu and flags.tpu_name is None:
-        #     task_proxy.task_pending(run_name, flags_str)
-        #     flags.tpu_name = task_proxy.request_tpu(run_name)
-        #     task_proxy.tpu_name = flags.tpu_name
+        task_proxy = get_task_proxy(flags.tpu_name)
+        flags_str = get_hp_str_from_flag(flags)
+        if flags.use_tpu and flags.tpu_name is None:
+            task_proxy.task_pending(run_name, flags_str)
+            print("Requesting TPU...")
+            flags.tpu_name = task_proxy.request_tpu(run_name)
+            task_proxy.tpu_name = flags.tpu_name
 
         job_id = flags.job_id if flags.job_id >= 0 else None
         task_proxy.task_start(run_name, "", job_id)

@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 
 from trainer_v2.custom_loop.modeling_common.assym_debug import BERT_AssymetricDebug
-from trainer_v2.custom_loop.modeling_common.assymetric import BERT_Assymetric
+from trainer_v2.custom_loop.modeling_common.assymetric import BERTAssymetric
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_checkpoint
+from trainer_v2.custom_loop.modeling_common.siamese import BERTSiamese
 
 
-class ClassificationInnerModelIF(ABC):
+class ClassificationModelIF(ABC):
     def __init__(self):
         pass
 
@@ -22,29 +23,41 @@ class ClassificationInnerModelIF(ABC):
         pass
 
 
-class ClassificationAsym(ClassificationInnerModelIF):
+class Siamese(ClassificationModelIF):
     def build_model(self, bert_params, model_config):
-        classifier = BERT_Assymetric(bert_params, model_config)
-        self._classifier = classifier
+        network = BERTSiamese(bert_params, model_config)
+        self.network = network
 
     def get_keras_model(self):
-        return self._classifier.model
+        return self.network.model
 
     def init_checkpoint(self, init_checkpoint):
-        bert_cls1, bert_cls2 = self._classifier.bert_cls_list
+        load_bert_checkpoint(self.network.bert_cls, init_checkpoint)
+
+
+class Asymmetric(ClassificationModelIF):
+    def build_model(self, bert_params, model_config):
+        network = BERTAssymetric(bert_params, model_config)
+        self.network = network
+
+    def get_keras_model(self):
+        return self.network.model
+
+    def init_checkpoint(self, init_checkpoint):
+        bert_cls1, bert_cls2 = self.network.bert_cls_list
         load_bert_checkpoint(bert_cls1, init_checkpoint)
         load_bert_checkpoint(bert_cls2, init_checkpoint)
 
 
-class ClassificationAsymDebug(ClassificationInnerModelIF):
+class AsymDebug(ClassificationModelIF):
     def build_model(self, bert_params, model_config):
         classifier = BERT_AssymetricDebug(bert_params, model_config)
-        self._classifier = classifier
+        self.network = classifier
 
     def get_keras_model(self):
-        return self._classifier.model
+        return self.network.model
 
     def init_checkpoint(self, init_checkpoint):
-        bert_cls1, bert_cls2 = self._classifier.bert_cls_list
+        bert_cls1, bert_cls2 = self.network.bert_cls_list
         load_bert_checkpoint(bert_cls1, init_checkpoint)
         load_bert_checkpoint(bert_cls2, init_checkpoint)

@@ -1,5 +1,7 @@
 import logging.config
+import os
 import sys
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 # logging.config.fileConfig('logging.conf')
 

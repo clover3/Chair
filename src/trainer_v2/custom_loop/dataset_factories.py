@@ -1,8 +1,8 @@
 import tensorflow as tf
 
-from trainer_v2.custom_loop.RunConfig2 import RunConfig2
 from trainer_v2.custom_loop.modeling_common.assymetric import ModelConfig2Seg
 from trainer_v2.custom_loop.modeling_common.bert_common import ModelConfig
+from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.train_util.input_fn_common import create_dataset_common
 
 
@@ -44,12 +44,21 @@ def get_two_seg_data(file_path, run_config: RunConfig2, model_config: ModelConfi
 
         return tf.io.parse_single_example(record, name_to_features)
 
+    # def reform_example(record):
+    #     x_list = []
+    #     for i in range(2):
+    #         x_list.append((record[f'input_ids{i}'], record[f'segment_ids{i}']))
+    #     y = record['label_ids']
+    #     return tuple(x_list), y
+
     def reform_example(record):
-        x_list = []
-        for i in range(2):
-            x_list.append((record[f'input_ids{i}'], record[f'segment_ids{i}']))
+        for k, v in record.items():
+            if v.dtype == tf.int64:
+                record[k] = tf.cast(v, tf.int32)
+        x = record['input_ids0'], record['segment_ids0'], record['input_ids1'], record['segment_ids1']
         y = record['label_ids']
-        return tuple(x_list), y
+        return x, y
+
     return create_dataset_common(reform_example, run_config.common_run_config.batch_size,
                                  decode_record, file_path, run_config.is_training())
 
