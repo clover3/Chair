@@ -1,30 +1,39 @@
-from typing import Callable
+from typing import Callable, List
 
 import tensorflow as tf
 
+from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.assymetric import ModelConfig2Seg
 from trainer_v2.custom_loop.modeling_common.bert_common import ModelConfig
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 
 
+def parse_file_path(input_file):
+    input_files = []
+    for input_pattern in input_file.split(","):
+        input_files.extend(tf.io.gfile.glob(input_pattern))
+    return input_files
+
+
 def create_dataset_common(decode_record: Callable,
-                          select_data_from_record_fn: Callable,
-                          batch_size: int,
+                          run_config: RunConfig2,
                           file_path: str,
                           is_training_split: bool):
-    dataset = tf.data.TFRecordDataset(file_path)
+    config = run_config.dataset_config
+    batch_size = run_config.common_run_config.batch_size
+
+    input_files: List[str] = parse_file_path(file_path)
+    if len(input_files) > 1:
+        c_log.info("{} inputs files".format(len(input_files)))
+    dataset = tf.data.TFRecordDataset(parse_file_path(file_path), num_parallel_reads=len(input_files))
     if is_training_split:
-        dataset = dataset.shuffle(100)
+        dataset = dataset.shuffle(config.shuffle_buffer_size)
         dataset = dataset.repeat()
     dataset = dataset.map(decode_record,
                           num_parallel_calls=tf.data.AUTOTUNE)
-    dataset = dataset.map(
-        select_data_from_record_fn,
-        num_parallel_calls=tf.data.AUTOTUNE)
     dataset = dataset.batch(batch_size, drop_remainder=True)
     dataset = dataset.prefetch(tf.data.AUTOTUNE)
     return dataset
-
 
 
 def get_classification_dataset(file_path,
@@ -34,6 +43,12 @@ def get_classification_dataset(file_path,
                                ) -> tf.data.Dataset:
     seq_length = model_config.max_seq_length
 
+    def select_data_from_record(record):
+        for k, v in record.items():
+            record[k] = tf.cast(v, tf.int32)
+        entry = (record['input_ids'], record['segment_ids']), record['label_ids']
+        return entry
+
     def decode_record(record):
         name_to_features = {
             'input_ids': tf.io.FixedLenFeature([seq_length], tf.int64),
@@ -41,14 +56,10 @@ def get_classification_dataset(file_path,
             'segment_ids': tf.io.FixedLenFeature([seq_length], tf.int64),
             'label_ids': tf.io.FixedLenFeature([], tf.int64),
         }
-        return tf.io.parse_single_example(record, name_to_features)
+        record = tf.io.parse_single_example(record, name_to_features)
+        return select_data_from_record(record)
 
-    def _select_data_from_record(record):
-        for k, v in record.items():
-            record[k] = tf.cast(v, tf.int32)
-        entry = (record['input_ids'], record['segment_ids']), record['label_ids']
-        return entry
-    return create_dataset_common(decode_record, _select_data_from_record, run_config.common_run_config.batch_size,
+    return create_dataset_common(decode_record, run_config,
                                  file_path, is_for_training)
 
 
@@ -71,7 +82,8 @@ def get_two_seg_data(file_path,
             name_to_features[f'input_mask{i}'] = fixed_len_feature()
             name_to_features[f'segment_ids{i}'] = fixed_len_feature()
 
-        return tf.io.parse_single_example(record, name_to_features)
+        record = tf.io.parse_single_example(record, name_to_features)
+        return reform_example(record)
 
     def reform_example(record):
         for k, v in record.items():
@@ -81,8 +93,8 @@ def get_two_seg_data(file_path,
         y = record['label_ids']
         return x, y
 
-    return create_dataset_common(decode_record, reform_example,
-                                 run_config.common_run_config.batch_size,
+    return create_dataset_common(decode_record,
+                                 run_config,
                                  file_path,
                                  is_for_training)
 

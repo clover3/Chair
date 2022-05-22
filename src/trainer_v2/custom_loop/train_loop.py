@@ -14,22 +14,6 @@ from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result, get_strategy_from_config, eval_tensor, \
     summarize_metric
 from trainer_v2.custom_loop.trainer_if import TrainerIF
-import logging
-import os
-from typing import Tuple, Dict, Callable, List
-
-import tensorflow as tf
-from tensorflow.python.distribute.distribute_lib import Strategy
-
-from misc_lib import RecentCounter
-from taskman_client.task_proxy import get_task_manager_proxy
-from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.modeling_common.bert_common import is_interesting_step
-from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
-from trainer_v2.custom_loop.run_config2 import RunConfig2
-from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result, get_strategy_from_config, eval_tensor, \
-    summarize_metric
-from trainer_v2.custom_loop.trainer_if import TrainerIF
 
 
 @tf.function
@@ -102,8 +86,8 @@ def tf_run_train(run_config: RunConfig2,
     model_save_dir: str = run_config.train_config.model_save_path
 
     c_log.debug("tf_run_inner initializing dataset")
-    train_dataset = dataset_factory(run_config.input_file_config.train_files_path, True)
-    eval_dataset = dataset_factory(run_config.input_file_config.eval_files_path, False)
+    train_dataset = dataset_factory(run_config.dataset_config.train_files_path, True)
+    eval_dataset = dataset_factory(run_config.dataset_config.eval_files_path, False)
     eval_batches = distribute_dataset(strategy, eval_dataset)
     dist_train_dataset = distribute_dataset(strategy, train_dataset)
     #
@@ -184,7 +168,7 @@ def tf_run_eval_2(run_config: RunConfig2,
     c_log.debug("tf_run_eval_2 ENTRY")
     strategy = get_strategy_from_config(run_config)
     c_log.debug("tf_run_inner initializing dataset")
-    eval_dataset = dataset_factory(run_config.input_file_config.eval_files_path, False)
+    eval_dataset = dataset_factory(run_config.dataset_config.eval_files_path, False)
     eval_batches = distribute_dataset(strategy, eval_dataset)
     #
     c_log.debug("Building models")
@@ -228,7 +212,7 @@ def tf_run_eval(run_config: RunConfig2,
         metrics: Dict[str, tf.keras.metrics.Metric] = trainer.get_eval_metrics()
 
     c_log.debug("tf_run_inner initializing dataset")
-    eval_dataset = build_dataset(run_config.input_file_config.eval_files_path, False)
+    eval_dataset = build_dataset(run_config.dataset_config.eval_files_path, False)
     eval_dataset = eval_dataset.take(eval_step)
     eval_dataset = distribute_dataset(strategy, eval_dataset)
 
@@ -272,14 +256,15 @@ def report_check(run_config: RunConfig2, ret: Dict):
         run_name = run_config.common_run_config.run_name
         condition = run_config.common_run_config.report_condition
         for report_field in report_field_list:
-            proxy.report_number(run_name, ret[report_field], condition, report_field)
+            value = float(ret[report_field])
+            proxy.report_number(run_name, value, condition, report_field)
             c_log.info(f"Reported {run_name}: {report_field}={ret[report_field]} ({condition})")
 
 
-def tf_run_train_or_eval(run_config: RunConfig2,
-                         trainer: TrainerIF,
-                         build_dataset,
-                         ):
+def tf_run(run_config: RunConfig2,
+           trainer: TrainerIF,
+           build_dataset,
+           ):
     if run_config.common_run_config.is_debug_run:
         c_log.setLevel(logging.DEBUG)
 

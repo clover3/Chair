@@ -9,14 +9,16 @@ class SubConfig(ABC):
         c_log.info("{}".format(self.__dict__))
 
 
-class InputFileConfig(SubConfig):
-    def __init__(self, train_files_path: str, eval_files_path: str):
+class DatasetConfig(SubConfig):
+    def __init__(self, train_files_path: str, eval_files_path: str,
+                 shuffle_buffer_size=100):
         self.train_files_path = train_files_path
         self.eval_files_path = eval_files_path
+        self.shuffle_buffer_size = shuffle_buffer_size
 
     @classmethod
     def from_args(cls, args):
-        input_file_config = InputFileConfig(
+        input_file_config = DatasetConfig(
             args.input_files,
             args.eval_input_files
         )
@@ -130,7 +132,7 @@ class TPUConfig(SubConfig):
 class RunConfig2:
     def __init__(self,
                  common_run_config: CommonRunConfig,
-                 input_file_config: InputFileConfig,
+                 dataset_config: DatasetConfig,
                  train_config: TrainConfig=None,
                  tpu_config=None,
                  eval_config: EvalConfig=None
@@ -139,13 +141,13 @@ class RunConfig2:
         self.train_config = train_config
         self.eval_config: EvalConfig = eval_config
         self.tpu_config = tpu_config
-        self.input_file_config = input_file_config
+        self.dataset_config = dataset_config
         self.sub_configs = []
 
     def get_sub_configs(self):
         all_configs = [self.common_run_config,
                        self.train_config, self.eval_config,
-                       self.tpu_config, self.input_file_config]
+                       self.tpu_config, self.dataset_config]
         return [config for config in all_configs if config is not None]
 
     def is_training(self) -> bool:
@@ -205,11 +207,11 @@ def _get_run_config2_nli_train(args):
         init_checkpoint=args.init_checkpoint
     )
     common_run_config = CommonRunConfig()
-    input_file_config = InputFileConfig.from_args(args)
+    input_file_config = DatasetConfig.from_args(args)
     tpu_config = TPUConfig.from_args(args)
 
     run_config = RunConfig2(common_run_config=common_run_config,
-                            input_file_config=input_file_config,
+                            dataset_config=input_file_config,
                             train_config=train_config,
                             tpu_config=tpu_config
                             )
@@ -232,12 +234,12 @@ def _get_run_config2_nli_eval(args):
     config_j = load_json_wrap(args)
 
     common_run_config = CommonRunConfig.from_args(args)
-    input_file_config = InputFileConfig.from_args(args)
+    input_file_config = DatasetConfig.from_args(args)
     eval_config = EvalConfig.from_args(args)
     tpu_config = TPUConfig.from_args(args)
 
     run_config = RunConfig2(common_run_config=common_run_config,
-                            input_file_config=input_file_config,
+                            dataset_config=input_file_config,
                             eval_config=eval_config,
                             tpu_config=tpu_config
                             )

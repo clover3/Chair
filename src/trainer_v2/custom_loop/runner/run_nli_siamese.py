@@ -9,7 +9,7 @@ from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
 from trainer_v2.custom_loop.per_task.inner_network import Siamese
 from trainer_v2.custom_loop.per_task.trainer import Trainer
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2_nli
-from trainer_v2.custom_loop.train_loop import tf_run_train_or_eval
+from trainer_v2.custom_loop.train_loop import tf_run
 from trainer_v2.train_util.arg_flags import flags_parser
 
 
@@ -27,7 +27,7 @@ def main(args):
     def dataset_factory(input_files, is_for_training):
         return get_two_seg_data(input_files, run_config, model_config, is_for_training)
 
-    tf_run_train_or_eval(run_config, trainer, dataset_factory)
+    tf_run(run_config, trainer, dataset_factory)
 
 
 if __name__ == "__main__":

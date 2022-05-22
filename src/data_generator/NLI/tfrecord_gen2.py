@@ -4,6 +4,7 @@ from arg.qck.encode_common import encode_single
 from cpath import at_output_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from dataset_specific.mnli.mnli_reader import MNLIReader, NLIPairData
+from dataset_specific.mnli.snli_reader import SNLIReader
 from misc_lib import CountWarning
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from tlm.data_gen.bert_data_gen import create_int_feature
@@ -30,16 +31,24 @@ def get_encode_fn(max_seq_length1, max_seq_length2):
     return entry_encode
 
 
-def do_for_split(split):
+def gen_mnli(split):
     reader = MNLIReader()
     output_path = at_output_dir("tfrecord", f"nli_p200_h100_{split}")
     entry_encode = get_encode_fn(200, 100)
     write_records_w_encode_fn(output_path, entry_encode, reader.load_split(split), 400 * 1000)
 
 
+def gen_snli(split):
+    reader = SNLIReader()
+    output_path = at_output_dir("tfrecord", f"snli_p200_h100_{split}")
+    train_data_size = 549367
+    entry_encode = get_encode_fn(200, 100)
+    write_records_w_encode_fn(output_path, entry_encode, reader.load_split(split), train_data_size)
+
+
 def main():
     split = "train"
-    do_for_split(split)
+    gen_snli(split)
 
 
 if __name__ == "__main__":
