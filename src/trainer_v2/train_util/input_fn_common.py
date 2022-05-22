@@ -45,9 +45,9 @@ def create_dataset_common(select_data_from_record_fn: Callable,
                           batch_size: int,
                           decode_record: Callable,
                           file_path: str,
-                          is_training: bool):
+                          is_training_split: bool):
     dataset = tf.data.TFRecordDataset(file_path)
-    if is_training:
+    if is_training_split:
         dataset = dataset.shuffle(100)
         dataset = dataset.repeat()
     dataset = dataset.map(decode_record,
@@ -55,7 +55,7 @@ def create_dataset_common(select_data_from_record_fn: Callable,
     dataset = dataset.map(
         select_data_from_record_fn,
         num_parallel_calls=tf.data.AUTOTUNE)
-    dataset = dataset.batch(batch_size, drop_remainder=is_training)
+    dataset = dataset.batch(batch_size, drop_remainder=is_training_split)
     dataset = dataset.prefetch(tf.data.AUTOTUNE)
     return dataset
 

@@ -93,14 +93,24 @@ class CommonRunConfig(SubConfig):
                  batch_size=16,
                  steps_per_execution=1,
                  is_debug_run=False,
+                 run_name="",
+                 report_field="",
+                 report_condition="",
                  ):
         self.batch_size = batch_size
         self.steps_per_execution = steps_per_execution
         self.is_debug_run = is_debug_run
+        self.run_name = run_name
+        self.report_field = report_field
+        self.report_condition = report_condition
 
     def print_info(self):
         if self.is_debug_run:
             c_log.warning("DEBUGGING in use")
+
+    @classmethod
+    def from_args(cls, args):
+        return CommonRunConfig(run_name=args.run_name)
 
 
 class TPUConfig(SubConfig):
@@ -221,7 +231,7 @@ def update_run_config(config_j, run_config):
 def _get_run_config2_nli_eval(args):
     config_j = load_json_wrap(args)
 
-    common_run_config = CommonRunConfig()
+    common_run_config = CommonRunConfig.from_args(args)
     input_file_config = InputFileConfig.from_args(args)
     eval_config = EvalConfig.from_args(args)
     tpu_config = TPUConfig.from_args(args)

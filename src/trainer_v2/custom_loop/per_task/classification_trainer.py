@@ -1,6 +1,6 @@
 from trainer_v2.custom_loop.modeling_common.bert_common import BertClassifier, load_bert_checkpoint
 from trainer_v2.custom_loop.per_task.inner_network import ClassificationModelIF
-from trainer_v2.custom_loop.per_task.trainer_factory import TrainerFactory
+from trainer_v2.custom_loop.per_task.trainer import Trainer
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 
 
@@ -18,6 +18,6 @@ class StandardBertCls(ClassificationModelIF):
 
 def get_classification_trainer(bert_params, model_config, run_config: RunConfig2):
     inner = StandardBertCls()
-    return TrainerFactory(bert_params, model_config, run_config, inner)
+    return Trainer(bert_params, model_config, run_config, inner)
 
 

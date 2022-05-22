@@ -810,3 +810,23 @@ class CountWarning:
         self.cnt += 1
         if self.cnt % self.interval == 0:
             print("{} reached {}".format(self.warning_name, self.cnt))
+
+
+class RecentCounter:
+    def __init__(self, interval):
+        self.last_idx = None
+        self.interval = interval
+
+    def update_last(self, idx):
+        self.last_idx = idx
+
+    def is_over_interval(self, idx):
+        if self.last_idx is None:
+            self.update_last(idx)
+            return True
+        elapsed = idx - self.last_idx
+        if elapsed < self.interval:
+            return False
+        else:
+            self.update_last(idx)
+            return True

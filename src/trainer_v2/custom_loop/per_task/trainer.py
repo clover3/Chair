@@ -8,7 +8,7 @@ from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.trainer_if import TrainerIF
 
 
-class TrainerFactory(TrainerIF):
+class Trainer(TrainerIF):
     def __init__(self, bert_params, model_config, run_config: RunConfig2, inner_model: ClassificationModelIF):
         self.bert_params = bert_params
         self.model_config = model_config

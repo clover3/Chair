@@ -22,8 +22,8 @@ def main(args):
     model_config = ModelConfig()
     trainer: TrainerIF = get_classification_trainer(bert_params, model_config, run_config)
 
-    def build_dataset(input_files):
-        return get_classification_dataset(input_files, run_config, model_config)
+    def build_dataset(input_files, is_for_training):
+        return get_classification_dataset(input_files, run_config, model_config, is_for_training)
 
     tf_run_train(run_config, trainer, build_dataset)
 
