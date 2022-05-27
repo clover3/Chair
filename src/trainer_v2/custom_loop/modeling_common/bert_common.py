@@ -3,11 +3,14 @@ import re
 from typing import NamedTuple
 
 import bert
+import numpy as np
 import tensorflow as tf
 from bert import BertModelLayer, StockBertConfig
 from bert.loader import map_to_stock_variable_name, _checkpoint_exists, bert_prefix, map_stock_config_to_params
 from tensorflow import keras
 
+from cache import load_from_pickle
+from list_lib import list_equal
 from trainer_v2.chair_logging import c_log
 
 
@@ -51,11 +54,36 @@ class BertClassifier:
         pooler = tf.keras.layers.Dense(bert_params.hidden_size, activation=tf.nn.tanh, name="bert/pooler/dense")
         pooled = pooler(first_token)
         output = tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax)(pooled)
-        model = keras.Model(inputs=[l_input_ids, l_token_type_ids], outputs=output, name="bert_model")
+        model = keras.Model(inputs=(l_input_ids, l_token_type_ids), outputs=output, name="bert_model")
         self.model: keras.Model = model
         self.bert_cls = BERT_CLS(l_bert, pooler)
         self.l_bert = l_bert
         self.pooler = pooler
+
+
+class ModelSanity:
+    def __init__(self):
+        self.vector = np.array(load_from_pickle("layer11_output_dense_kernel"))
+
+    def match(self, vector, msg):
+        shape_equal = list_equal(self.vector.shape, vector.shape)
+        if not shape_equal:
+            print("Shape is different {}!={}".format(self.vector.shape, vector.shape))
+
+        err = np.sum(np.abs(self.vector - vector))
+        print("{} Err={}".format(msg, err))
+
+    def get_vector_from_bert(self, bert_model_layer: BertModelLayer):
+        layer11 = bert_model_layer.encoders_layer.encoder_layers[11]
+        dense_layer = layer11.output_projector.dense
+        variable = dense_layer.weights[0]
+        return variable.numpy()
+
+
+def do_model_sanity_check(l_bert, msg=""):
+    ms = ModelSanity()
+    v = ms.get_vector_from_bert(l_bert)
+    ms.match(v, msg)
 
 
 def load_stock_weights(bert: BertModelLayer, ckpt_path,
@@ -165,6 +193,8 @@ def load_pooler(pooler: tf.keras.layers.Dense, ckpt_path):
 
 
 def is_interesting_step(step_idx):
+    if step_idx == 0:
+        return True
     interval = int(math.pow(10, int(math.log10(step_idx) - 1)))
     if step_idx < 100:
         return True

@@ -23,6 +23,8 @@ def report_run3(func):
         run_name = flag_to_run_name(flags)
         machine = get_local_machine_name()
         task_proxy = TaskProxy("gosford.cs.umass.edu", 8000, machine, flags.tpu_name, None)
+        if machine == "GOSFORD":
+            run_name = "dontreport"
         flags_str = get_hp_str_from_flag(flags)
         if flags.use_tpu and flags.tpu_name is None:
             task_proxy.task_pending(run_name, flags_str)

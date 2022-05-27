@@ -51,6 +51,26 @@ class BERTSiamese:
         self.bert_cls = bert_cls
 
 
+class BERTSiameseL:
+    def __init__(self, bert_params, config: ModelConfig2Seg):
+        l_bert = bert.BertModelLayer.from_params(bert_params, name="bert")
+        pooler = tf.keras.layers.Dense(bert_params.hidden_size, activation=tf.nn.tanh, name="bert/pooler/dense")
+        bert_cls = BERT_CLS(l_bert, pooler)
+        num_classes = config.num_classes
+        batch_size, inputs, l_input_ids, l_token_type_ids = \
+            build_siamese_inputs_apply(config.max_seq_length1, config.max_seq_length2)
+
+        cls = bert_cls.apply([l_input_ids, l_token_type_ids])
+        cls_output1 = cls[:batch_size]
+        cls_output2 = cls[batch_size:]
+
+        feature_rep = vector_three_feature(cls_output1, cls_output2)
+        output = tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax)(feature_rep)
+        model = keras.Model(inputs=inputs, outputs=output, name="bert_model")
+        self.model: keras.Model = model
+        self.bert_cls = bert_cls
+
+
 class BERTSiameseMean:
     def __init__(self, bert_params, config: ModelConfig2Seg):
         Dense = tf.keras.layers.Dense

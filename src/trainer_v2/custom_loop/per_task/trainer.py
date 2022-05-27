@@ -2,6 +2,7 @@ from typing import Dict
 
 import tensorflow as tf
 
+from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
 from trainer_v2.custom_loop.per_task.inner_network import ClassificationModelIF
 from trainer_v2.custom_loop.run_config2 import RunConfig2
@@ -32,11 +33,10 @@ class Trainer(TrainerIF):
     def build_model(self):
         run_config = self.run_config
         if self.run_config.is_training():
-            ## ---Different
             self.inner_model.build_model(self.bert_params, self.model_config)
             self.keras_model = self.inner_model.get_keras_model()
-            ###
-            optimizer = tf.optimizers.Adam(learning_rate=run_config.train_config.learning_rate)
+            self.keras_model.summary()
+            optimizer = AdamWeightDecay(learning_rate=run_config.train_config.learning_rate)
             self.keras_model.optimizer = optimizer
             self.training_loss = tf.keras.metrics.Mean('training_loss', dtype=tf.float32)
             self.train_metrics = {'loss': self.training_loss}
@@ -64,7 +64,7 @@ class Trainer(TrainerIF):
         model = self.get_keras_model()
         x, y = item
         with tf.GradientTape() as tape:
-            prediction = model([x], training=True)
+            prediction = model(x, training=True)
             loss = self.loss_fn(y, prediction)
 
         gradients = tape.gradient(loss, model.trainable_variables)
@@ -77,4 +77,3 @@ class Trainer(TrainerIF):
 
     def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         return self.eval_metrics
-

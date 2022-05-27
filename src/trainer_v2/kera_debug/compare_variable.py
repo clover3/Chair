@@ -1,6 +1,4 @@
 import tensorflow as tf
-from cache import save_to_pickle
-import tensorflow as tf
 
 from cache import save_to_pickle
 
@@ -25,6 +23,15 @@ def save_embedding_802_v2():
     return vector
 
 
+def save_layer11_output_dense_kernel():
+    target_name = "bert/encoder/layer_11/output/dense/kernel"
+    bert_v1 = "C:\\work\\Code\\Chair\\output\\model\\runs\\uncased_L-12_H-768_A-12\\bert_model.ckpt"
+    table = tf.train.load_variable(bert_v1, target_name)
+    vector = table
+    print(vector)
+    save_to_pickle(vector, "layer11_output_dense_kernel")
+    return vector
+
 
 def main():
     v1 = save_embedding_802()
@@ -35,4 +42,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    save_layer11_output_dense_kernel()

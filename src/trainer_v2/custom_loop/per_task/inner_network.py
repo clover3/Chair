@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 
 from trainer_v2.custom_loop.modeling_common.assym_debug import BERT_AssymetricDebug
 from trainer_v2.custom_loop.modeling_common.assymetric import BERTAssymetric
-from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_checkpoint, load_stock_weights
-from trainer_v2.custom_loop.modeling_common.siamese import BERTSiamese, BERTSiameseMean
+from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_checkpoint, load_stock_weights, \
+    do_model_sanity_check
+from trainer_v2.custom_loop.modeling_common.siamese import BERTSiamese, BERTSiameseMean, BERTSiameseL
 
 
 class ClassificationModelIF(ABC):
@@ -26,6 +27,23 @@ class ClassificationModelIF(ABC):
 class Siamese(ClassificationModelIF):
     def build_model(self, bert_params, model_config):
         network = BERTSiamese(bert_params, model_config)
+        self.network = network
+
+    def get_keras_model(self):
+        return self.network.model
+
+    def init_checkpoint(self, init_checkpoint):
+        do_model_sanity_check(self.network.bert_cls.l_bert)
+        load_bert_checkpoint(self.network.bert_cls, init_checkpoint)
+        do_model_sanity_check(self.network.bert_cls.l_bert)
+
+    def do_sanity_check(self, msg):
+        do_model_sanity_check(self.network.bert_cls.l_bert, msg)
+
+
+class SiameseL(ClassificationModelIF):
+    def build_model(self, bert_params, model_config):
+        network = BERTSiameseL(bert_params, model_config)
         self.network = network
 
     def get_keras_model(self):

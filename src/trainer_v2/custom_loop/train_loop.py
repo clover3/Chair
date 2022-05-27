@@ -120,8 +120,8 @@ def tf_run_train(run_config: RunConfig2,
 
         @tf.function
         def distributed_train_step(train_itr):
-            batch_item = next(train_itr)
             for _ in tf.range(run_config.common_run_config.steps_per_execution):
+                batch_item = next(train_itr)
                 per_replica_losses = strategy.run(trainer.train_step, args=(batch_item, ))
 
         eval_rc = RecentCounter(run_config.train_config.eval_every_n_step)
@@ -142,8 +142,7 @@ def tf_run_train(run_config: RunConfig2,
             metrics = trainer.get_train_metrics()
             for m in metrics.values():
                 m.reset_state()
-
-            train_loss = distributed_train_step(train_itr)
+            distributed_train_step(train_itr)
             msg = summarize_metric(fetch_metric_result(metrics))
             per_step_msg += msg
 
