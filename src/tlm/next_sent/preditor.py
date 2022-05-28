@@ -9,7 +9,7 @@ class Predictor:
     def __init__(self, model_path):
         self.voca_size = 30522
         self.hp = hyperparams.HPFAD()
-        self.model_dir = cpath.model_path
+        self.model_dir = cpath.common_model_dir_root
         self.task = transformer_next_sent(self.hp, 2, self.voca_size, False)
         self.sess = init_session()
         self.sess.run(tf.global_variables_initializer())

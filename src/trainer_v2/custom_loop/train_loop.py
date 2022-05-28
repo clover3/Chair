@@ -5,11 +5,13 @@ from typing import Tuple, Dict, Callable, List
 import tensorflow as tf
 from tensorflow.python.distribute.distribute_lib import Strategy
 
+from cpath import get_bert_config_path
 from misc_lib import RecentCounter
 from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.modeling_common.bert_common import is_interesting_step
+from trainer_v2.custom_loop.modeling_common.bert_common import is_interesting_step, load_bert_config
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
+from trainer_v2.custom_loop.per_task.trainer import Trainer
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result, get_strategy_from_config, eval_tensor, \
     summarize_metric
@@ -273,3 +275,10 @@ def tf_run(run_config: RunConfig2,
         ret = tf_run_eval(run_config, trainer, build_dataset)
         report_check(run_config, ret)
         return ret
+
+
+def tf_run_for_bert(dataset_factory, model_config, run_config, inner):
+    run_config.print_info()
+    bert_params = load_bert_config(get_bert_config_path())
+    trainer = Trainer(bert_params, model_config, run_config, inner)
+    tf_run(run_config, trainer, dataset_factory)

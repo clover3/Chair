@@ -31,7 +31,7 @@ def run(args):
 
     save_name = "{}_{}".format(args.data_name, args.method_name)
     data = load_as_simple_format(args.data_name)
-    explains: List[np.array] = predictor(hp, nli_setting, data, args.method_name, args.model_path)
+    explains: List[np.array] = predictor(hp, nli_setting, data, args.method_name, args.common_model_dir_root)
 
     save_to_pickle(explains, save_name)
 

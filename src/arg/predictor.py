@@ -16,7 +16,7 @@ class Predictor:
         else:
             run_name = "arg_key_neccesary_{}".format(cheat_topic)
         self.hp = hyperparams.HPBert()
-        self.model_dir = cpath.model_path
+        self.model_dir = cpath.common_model_dir_root
         self.data_loader = BertDataLoader(topic, True, self.hp.seq_max, "bert_voca.txt")
 
         self.task = transformer_nli(self.hp, self.voca_size, 0, False)

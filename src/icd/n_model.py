@@ -8,7 +8,7 @@ import time
 import numpy as np
 import tensorflow as tf
 
-from cpath import model_path
+from cpath import common_model_dir_root
 from icd.code import fit_and_tokenize, input_fn, str_code_id, str_desc_tokens
 from icd.common import lmap, load_description
 from icd.common_args import parser
@@ -106,7 +106,7 @@ class _LoggerHook(tf.train.SessionRunHook):
 
 
 def train_loop(args):
-    model_dir = os.path.join(model_path, "w2v_model")
+    model_dir = os.path.join(common_model_dir_root, "w2v_model")
     data = load_description()
     n_input_voca = data[-1]['order_number']
     input2 = lmap(lambda x: x['short_desc'], data)

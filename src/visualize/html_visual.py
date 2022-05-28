@@ -13,6 +13,12 @@ def normalize255(v, max):
     return v/max * 255
 
 
+def normalize100(v, max):
+    if max == 0:
+        return 0
+    return v/max * 100
+
+
 def get_color(r):
     r = 255 - int(r)
     bg_color = ("%02x" % r) + ("%02x" % r) + "ff"

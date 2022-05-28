@@ -97,7 +97,7 @@ def run(args):
                          args.method_name,
                          args.data_id,
                          args.sub_range,
-                         args.model_path
+                         args.common_model_dir_root
                          )
 
 if __name__ == "__main__":

@@ -71,16 +71,22 @@ class BERTSiameseL:
         self.bert_cls = bert_cls
 
 
+class ModelConfig2SegProject(ModelConfig2Seg):
+    max_seq_length1 = 200
+    max_seq_length2 = 100
+    num_classes = 3
+    project_dim = 4 * 728
+
+
 class BERTSiameseMean:
-    def __init__(self, bert_params, config: ModelConfig2Seg):
+    def __init__(self, bert_params, config: ModelConfig2SegProject):
         Dense = tf.keras.layers.Dense
         l_bert = bert.BertModelLayer.from_params(bert_params, name="bert")
 
         batch_size, inputs, l_input_ids, l_token_type_ids =\
             build_siamese_inputs_apply(config.max_seq_length1, config.max_seq_length2)
         seq_output = l_bert([l_input_ids, l_token_type_ids])
-        project_dim = bert_params.hidden_size * 4
-        seq_p = Dense(project_dim, activation='relu')(seq_output)
+        seq_p = Dense(config.project_dim, activation='relu')(seq_output)
         seq_m = tf.reduce_mean(seq_p, axis=1)
         seq_rep = seq_m
 

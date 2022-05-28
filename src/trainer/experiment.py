@@ -75,7 +75,7 @@ class Experiment:
         self.save_interval = 10 * 60
         self.log = log.train_logger()
         self.log2 = log.aux_logger()
-        self.model_dir = cpath.model_path
+        self.model_dir = cpath.common_model_dir_root
         self.sess = None
         self.g_step = 0
     @staticmethod
@@ -1482,7 +1482,7 @@ class Experiment:
         self.loader.restore(self.sess, path)
 
     def pickle_cacher(self, pickle_name, get_fn, use_pickle):
-        pickle_path = os.path.join(cpath.model_path, pickle_name)
+        pickle_path = os.path.join(cpath.common_model_dir_root, pickle_name)
         print(pickle_path)
         if not use_pickle:
             obj = get_fn()

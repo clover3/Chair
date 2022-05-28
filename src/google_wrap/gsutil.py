@@ -14,7 +14,7 @@ def download_model(dir_path, model_step, save_name):
     model_name = "model.ckpt-{}".format(model_step)
     model_path = dir_path + "/" + model_name
 
-    save_dir = os.path.join(cpath.model_path, "runs", save_name)
+    save_dir = os.path.join(cpath.common_model_dir_root, "runs", save_name)
     exist_or_mkdir(save_dir)
 
     src_path = model_path + "*"

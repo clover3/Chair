@@ -152,7 +152,7 @@ def get_encoded_path(job_id):
     return save_path
 
 def encode(job_id):
-    cache_path = os.path.join(cpath.model_path, "sub_tokens.pickle")
+    cache_path = os.path.join(cpath.common_model_dir_root, "sub_tokens.pickle")
     vocab_filename = "bert_voca.txt"
     voca_path = os.path.join(data_path, vocab_filename)
     encoder = EncoderUnit(cache_path=cache_path, max_sequence=512, voca_path=voca_path)

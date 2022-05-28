@@ -3,22 +3,11 @@ import re
 
 import tensorflow as tf
 
-from cpath import model_path, output_path
+from cpath import common_model_dir_root, output_path
 from misc_lib import *
 from tf_v2_support import tf1
 
 tf_logger = logging.getLogger('tensorflow')
-
-
-
-def get_canonical_model_path(name):
-    run_dir = os.path.join(model_path, 'runs')
-    save_dir = os.path.join(run_dir, name)
-
-    exist_or_mkdir(model_path)
-    exist_or_mkdir(run_dir)
-    exist_or_mkdir(save_dir)
-    return save_dir
 
 
 def setup_summary_writer(exp_name):
@@ -35,10 +24,10 @@ def setup_summary_writer(exp_name):
 
 
 def save_model(sess, name, global_step):
-    run_dir = os.path.join(model_path, 'runs')
+    run_dir = os.path.join(common_model_dir_root, 'runs')
     save_dir = os.path.join(run_dir, name)
 
-    exist_or_mkdir(model_path)
+    exist_or_mkdir(common_model_dir_root)
     exist_or_mkdir(run_dir)
     exist_or_mkdir(save_dir)
     return save_model_to_dir_path(sess, save_dir, global_step)
@@ -183,4 +172,4 @@ def load_model_with_blacklist(sess, path, exclude_namespace, verbose=True):
 
 
 def get_model_path(run_name, step_name):
-    return os.path.join(model_path, 'runs', run_name, step_name)
+    return os.path.join(common_model_dir_root, 'runs', run_name, step_name)

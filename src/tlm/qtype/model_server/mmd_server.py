@@ -77,7 +77,7 @@ class PredictorClsDense:
         self.hp = hyperparams.HPFAD()
         if seq_len is not None:
             self.hp.seq_max = seq_len
-        self.model_dir = cpath.model_path
+        self.model_dir = cpath.common_model_dir_root
         self.task = transformer_logit(self.hp, num_classes, self.voca_size, False)
         self.sess = init_session()
         self.sess.run(tf.compat.v1.global_variables_initializer())

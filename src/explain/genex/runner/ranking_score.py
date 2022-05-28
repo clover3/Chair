@@ -16,7 +16,7 @@ def run(args):
     hp = hyperparams.HPGenEx()
     save_name = "{}_labels".format(args.data_name)
     data = load_as_simple_format(args.data_name)
-    labels = label_predict(hp, data, args.model_path)
+    labels = label_predict(hp, data, args.common_model_dir_root)
 
     save_to_pickle(labels, save_name)
 

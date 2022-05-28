@@ -1,8 +1,6 @@
 
 import sys
 
-from trec.parse import load_qrels_flat
-
 from trec.trec_parse import write_trec_relevance_judgement
 from trec.types import TrecRelevanceJudgementEntry
 

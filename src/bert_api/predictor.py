@@ -14,7 +14,7 @@ class Predictor:
         self.hp = hyperparams.HPFAD()
         if max_seq_length is not None:
             self.hp.seq_max = max_seq_length
-        self.model_dir = cpath.model_path
+        self.model_dir = cpath.common_model_dir_root
         self.task = transformer_logit(self.hp, num_classes, self.voca_size, False)
         self.sess = init_session()
         self.sess.run(tf.global_variables_initializer())

@@ -4,7 +4,7 @@ import sys
 import tensorflow as tf
 from official.modeling import performance
 
-from cpath import model_path
+from cpath import common_model_dir_root
 from trainer_v2.chair_logging import c_log
 from trainer_v2.keras_fit.modeling import get_optimizer
 from trainer_v2.keras_fit.run_bert_based_classifier import run_keras_fit
@@ -76,7 +76,7 @@ def create_regression_dataset(file_path: str,
 
 def main(args):
     c_log.info("train_toy_model.py")
-    output_dir = os.path.join(model_path, "toy_model")
+    output_dir = os.path.join(common_model_dir_root, "toy_model")
     num_epochs = 10
     steps_per_epoch = 5
     run_config = RunConfigEx(model_save_path=output_dir,

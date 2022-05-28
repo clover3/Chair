@@ -37,7 +37,7 @@ class BERTAssymetric:
         feature_rep = vector_three_feature(cls1, cls2)
         hidden = tf.keras.layers.Dense(bert_params.hidden_size, activation='relu')(feature_rep)
         output = tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax)(hidden)
-        inputs = [l_input_ids1, l_token_type_ids1, l_input_ids2, l_token_type_ids2]
+        inputs = (l_input_ids1, l_token_type_ids1, l_input_ids2, l_token_type_ids2)
         model = keras.Model(inputs=inputs, outputs=output, name="bert_model")
         self.model: keras.Model = model
         self.bert_cls_list = [bert_cls1, bert_cls2]

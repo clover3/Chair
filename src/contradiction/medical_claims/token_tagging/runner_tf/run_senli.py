@@ -44,7 +44,7 @@ def run(args):
     nli_setting = BertNLI()
     predict_nli_ex(hp, nli_setting,
                    args.data_path,
-                   args.model_path,
+                   args.common_model_dir_root,
                    args.run_name,
                    args.modeling_option,
                    )

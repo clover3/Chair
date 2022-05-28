@@ -1,4 +1,4 @@
-from cpath import model_path
+from cpath import common_model_dir_root
 from dispute.adreaction import FLAGS
 from dispute.guardian import save_local_pickle, load_local_pickle
 from models.cnn import CNN
@@ -24,7 +24,7 @@ def get_predictor():
     sout = cnn.network(input_comment)
     sess = init_session()
     batch_size = 512
-    path = os.path.join(model_path, "runs", "agree", "model-36570")
+    path = os.path.join(common_model_dir_root, "runs", "agree", "model-36570")
     variables = tf.contrib.slim.get_variables_to_restore()
     for v in variables:
         print(v.name)

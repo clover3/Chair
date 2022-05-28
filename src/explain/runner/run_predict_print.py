@@ -59,12 +59,12 @@ def run(args):
     data_loader = get_modified_data_loader2(hp, nli_setting)
 
     predict_for_view(hp, nli_setting, data_loader,
-                       args.data_id,
-                       args.model_path,
-                       args.run_name,
-                       args.modeling_option,
-                       tags,
-                       )
+                     args.data_id,
+                     args.common_model_dir_root,
+                     args.run_name,
+                     args.modeling_option,
+                     tags,
+                     )
 
 
 if __name__ == "__main__":

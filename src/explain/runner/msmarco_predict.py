@@ -67,7 +67,7 @@ def run(args):
     nli_setting = ExTrainConfig()
     def worker_factory(out_dir):
         worker = PredictWorker(args.input_dir, out_dir)
-        worker.load_model(hp, nli_setting, args.model_path, "co")
+        worker.load_model(hp, nli_setting, args.common_model_dir_root, "co")
         return worker
 
     runner = JobRunner(args.save_dir, 696, "pc_tfrecord_ex", worker_factory)

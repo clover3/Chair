@@ -15,7 +15,7 @@ exist_or_mkdir(json_cache_path)
 output_path = FilePath(os.path.join(project_root, 'output'))
 log_path = FilePath(os.path.join(project_root, 'common.log'))
 
-model_path = FilePath(os.path.join(output_path, 'model'))
+common_model_dir_root = FilePath(os.path.join(output_path, 'model'))
 prediction_dir = FilePath(os.path.join(output_path, "prediction"))
 
 qtype_root_dir = FilePath(os.path.join(output_path, "qtype"))
@@ -26,7 +26,7 @@ def pjoin(file_path: FilePath, file_name) -> FilePath:
 
 
 def get_model_full_path(exp_name, run_id = None):
-    run_dir = os.path.join(model_path, 'runs')
+    run_dir = os.path.join(common_model_dir_root, 'runs')
     save_dir = os.path.join(run_dir, exp_name)
     model_id = None
     if run_id is None:
@@ -44,7 +44,7 @@ def get_model_full_path(exp_name, run_id = None):
 
 
 def get_latest_model_path(exp_name):
-    run_dir = os.path.join(model_path, 'runs')
+    run_dir = os.path.join(common_model_dir_root, 'runs')
     save_dir = os.path.join(run_dir, exp_name)
     return get_latest_model_path_from_dir_path(save_dir)
 
@@ -68,7 +68,7 @@ def get_latest_model_path_from_dir_path(save_dir):
 
 
 def get_bert_full_path():
-    return os.path.join(model_path, 'runs', "uncased_L-12_H-768_A-12", "bert_model.ckpt")
+    return os.path.join(common_model_dir_root, 'runs', "uncased_L-12_H-768_A-12", "bert_model.ckpt")
 
 
 def get_bert_config_path():
@@ -88,3 +88,12 @@ def at_output_dir(folder_name, file_name):
 def at_data_dir(folder_name, file_name):
     return os.path.join(data_path, folder_name, file_name)
 
+
+def get_canonical_model_path(name):
+    run_dir = os.path.join(common_model_dir_root, 'runs')
+    save_dir = os.path.join(run_dir, name)
+
+    exist_or_mkdir(common_model_dir_root)
+    exist_or_mkdir(run_dir)
+    exist_or_mkdir(save_dir)
+    return save_dir

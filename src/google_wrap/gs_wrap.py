@@ -3,7 +3,7 @@ from os.path import join as pjoin
 
 from google.cloud import storage
 
-from cpath import model_path
+from cpath import common_model_dir_root
 from misc_lib import exist_or_mkdir
 
 
@@ -96,7 +96,7 @@ def download_model_last(gs_model_dir, local_dir):
 # returns <str:step>
 def download_model_last_auto(run_name):
     gs_path = GS_MODEL_ROOT_DIR + "/" + run_name
-    local_path = pjoin(model_path, "runs", run_name)
+    local_path = pjoin(common_model_dir_root, "runs", run_name)
     exist_or_mkdir(local_path)
     steps = download_model_last(gs_path, local_path)
     return run_name, "model.ckpt-{}".format(steps)

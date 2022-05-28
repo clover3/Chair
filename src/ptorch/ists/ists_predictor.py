@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from pytorch_pretrained_bert import BertTokenizer, BertModel
 
-from cpath import model_path
+from cpath import common_model_dir_root
 from ptorch.ists.bert_chunk_encoder import BertChunkEncoderForInference
 from ptorch.ists.holder import Holder
 from ptorch.ists.pointer_network_model import PointerNetwork
@@ -59,6 +59,6 @@ class ISTSPredictor(ISTSPredictorI):
 
 
 def get_ists_predictor() -> ISTSPredictor:
-    checkpoint_path = os.path.join(model_path, "ists", "pointer_network", "model.checkpoint")
+    checkpoint_path = os.path.join(common_model_dir_root, "ists", "pointer_network", "model.checkpoint")
     predictor = ISTSPredictor(checkpoint_path)
     return predictor

@@ -75,7 +75,7 @@ class Predictor:
     def __init__(self, config):
         disable_eager_execution()
         self.voca_size = 30522
-        self.model_dir = cpath.model_path
+        self.model_dir = cpath.common_model_dir_root
         self.task = qde_model(config, False)
         self.sess = init_session()
         self.sess.run(tf.compat.v1.global_variables_initializer())

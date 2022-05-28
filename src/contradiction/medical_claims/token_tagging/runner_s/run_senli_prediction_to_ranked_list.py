@@ -3,7 +3,7 @@ import os
 from typing import List, Dict, Tuple
 
 from cache import load_from_pickle
-from contradiction.medical_claims.token_tagging.solver_cores.senli_prediction_to_ranked_list import convert_inner
+from contradiction.medical_claims.token_tagging.solvers.senli_prediction_to_ranked_list import convert_inner
 from cpath import output_path
 from data_generator.NLI import nli_info
 from data_generator.tokenizer_wo_tf import get_tokenizer

@@ -31,6 +31,7 @@ class FutureSWTTScorerBertLike(FutureScorerI):
 
         output_list: List[SWTTScorerOutput] = []
         for e in TEL(l):
+            e: SWTTScorerInput = e
             payload_list: List[Tuple[List[str], List[str]]] = e.payload_list
             triplet_list = list(map(encode, payload_list))
             scores: List[float] = self.predictor.predict(triplet_list)

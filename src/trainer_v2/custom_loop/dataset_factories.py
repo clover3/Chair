@@ -1,4 +1,4 @@
-from typing import Callable, List
+from typing import Callable, List, TypeVar
 
 import tensorflow as tf
 
@@ -63,9 +63,12 @@ def get_classification_dataset(file_path,
                                  file_path, is_for_training)
 
 
+ModelConfig2SegT = TypeVar('ModelConfig2SegT', bound=ModelConfig2Seg)
+
+
 def get_two_seg_data(file_path,
                      run_config: RunConfig2,
-                     model_config: ModelConfig2Seg,
+                     model_config: ModelConfig2SegT,
                      is_for_training,
                      ) -> tf.data.Dataset:
     seq_length_list = [model_config.max_seq_length1, model_config.max_seq_length2]

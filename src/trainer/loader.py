@@ -2,7 +2,7 @@ import os
 
 import cpath
 
-run_dir = os.path.join(cpath.model_path, 'runs')
+run_dir = os.path.join(cpath.common_model_dir_root, 'runs')
 
 def find_model_name(dir_name):
     save_dir = os.path.join(run_dir, dir_name)

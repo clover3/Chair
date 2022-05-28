@@ -29,12 +29,12 @@ def run(args):
     data_loader = get_modified_data_loader2(hp, nli_setting)
 
     predict_nli_ex(hp, nli_setting, data_loader,
-                         args.tag,
-                         args.data_id,
-                         args.model_path,
-                         args.run_name,
-                         args.modeling_option,
-                         )
+                   args.tag,
+                   args.data_id,
+                   args.common_model_dir_root,
+                   args.run_name,
+                   args.modeling_option,
+                   )
 
 if __name__ == "__main__":
     args = parser.parse_args(sys.argv[1:])

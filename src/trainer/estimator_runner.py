@@ -18,7 +18,7 @@ import cpath
 from misc_lib import delete_if_exist
 from trainer.bert_estimator_builder import *
 def get_model_dir(run_id, delete_exist = True):
-    run_dir = os.path.join(cpath.model_path, 'runs')
+    run_dir = os.path.join(cpath.common_model_dir_root, 'runs')
     save_dir = os.path.join(run_dir, run_id)
     if delete_exist:
         delete_if_exist(save_dir)
@@ -135,7 +135,7 @@ class EstimatorRunner:
         else:
             model_dir = get_model_dir("causal")
             input_pattern = os.path.join(cpath.data_path, "causal", "Thus.train_*")
-            init_checkpoint = os.path.join(cpath.model_path, "runs", FLAGS.init_checkpoint)
+            init_checkpoint = os.path.join(cpath.common_model_dir_root, "runs", FLAGS.init_checkpoint)
 
         vocab_size = 30522
 
@@ -239,7 +239,7 @@ class EstimatorRunner:
         else:
             model_dir = get_model_dir("causal")
             input_pattern = os.path.join(cpath.data_path, "causal", "Thus.train_*")
-            init_checkpoint = os.path.join(cpath.model_path, "runs", FLAGS.init_checkpoint)
+            init_checkpoint = os.path.join(cpath.common_model_dir_root, "runs", FLAGS.init_checkpoint)
 
 
         vocab_size = 30522

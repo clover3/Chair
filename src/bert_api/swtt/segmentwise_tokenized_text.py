@@ -87,15 +87,15 @@ class SegmentwiseTokenizedText(NamedTuple):
         else:
             return -d
 
-    def get_window_sb_tokens(self, window: Tuple[IntTuple, IntTuple]):
+    def get_window_sb_tokens(self, window: Tuple[IntTuple, IntTuple]) -> List[str]:
         st, ed = window
         ptr: IntTuple = st.copy()
-        out_tokens = []
+        out_tokens: List[str] = []
         while ptr < ed:
             if ptr.idx1 == ed.idx1:
-                to_add = self.segments[ptr.idx1].sbword_tokens[ptr.idx2:ed.idx2]
+                to_add: List[str] = self.segments[ptr.idx1].sbword_tokens[ptr.idx2:ed.idx2]
             else:
-                to_add = self.segments[ptr.idx1].sbword_tokens[ptr.idx2:]
+                to_add: List[str] = self.segments[ptr.idx1].sbword_tokens[ptr.idx2:]
 
             out_tokens.extend(to_add)
             ptr = ptr.get_next_segment()
@@ -135,5 +135,31 @@ class SegmentwiseTokenizedText(NamedTuple):
 
 
 SWTTIndex = IntTuple
+
+
+class PassageSWTT:
+    def __init__(self, swtt: SegmentwiseTokenizedText, passage_range: List[Tuple[SWTTIndex, SWTTIndex]]):
+        self.swtt = swtt
+        self.passage_range = passage_range
+
+    def get_as_word_token_list(self, idx) -> List[List[str]]:
+        st, ed = self.passage_range[idx]
+        word_tokens_list: List[List[str]] = self.swtt.get_word_tokens_grouped(st, ed)
+        return word_tokens_list
+
+
+class PassageSWTTUnit:
+    def __init__(self,
+                 swtt: SegmentwiseTokenizedText,
+                 passage_range: List[Tuple[SWTTIndex, SWTTIndex]],
+                 idx: int):
+        self.passage_range = passage_range[idx]
+        self.swtt = swtt
+
+    def get_as_subword(self):
+        return self.swtt.get_window_sb_tokens(self.passage_range)
+
+
+
 
 

@@ -7,7 +7,7 @@ from absl import app
 import models.bert_util.bert_utils
 import trainer.tf_train_module_v2 as train_module
 from cache import save_to_pickle
-from cpath import output_path, get_bert_full_path, get_latest_model_path_from_dir_path
+from cpath import output_path, get_bert_full_path, get_latest_model_path_from_dir_path, get_canonical_model_path
 from data_generator.NLI import nli
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap
@@ -20,7 +20,7 @@ from tlm.model_cnfig import JsonConfig
 from tlm.training.assignment_map import get_bert_assignment_map, get_assignment_map_as_is
 from tlm.training.dict_model_fn import get_bert_assignment_map_for_dict
 from tlm.training.train_flags import *
-from trainer.model_saver import save_model_to_dir_path, load_model, get_canonical_model_path
+from trainer.model_saver import save_model_to_dir_path, load_model
 from trainer.tf_module import get_loss_from_batches, split_tvars
 from visualize.html_visual import Cell, HtmlVisualizer
 

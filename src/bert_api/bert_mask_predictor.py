@@ -4,13 +4,13 @@ import numpy as np
 import tensorflow as tf
 
 import cpath
+from bert_api.bert_masking_common import BERTMaskIF
 from models.bert_util.bert_utils import batch2feed_dict_4_or_5_inputs, get_last_id
 from models.transformer import hyperparams
 from models.transformer.bert_common_v2 import create_attention_mask_from_input_mask
 from tf_v2_support import placeholder, disable_eager_execution, tf1
 from tlm.model import base as bert
 from tlm.model.bert_mask import apply_drop, BertModelMasked
-from bert_api.bert_masking_common import BERTMaskIF
 
 
 def init_session():
@@ -98,7 +98,7 @@ class PredictorAttentionMask(BERTMaskIF):
         self.hp = hyperparams.HPFAD()
         if seq_len is not None:
             self.hp.seq_max = seq_len
-        self.model_dir = cpath.model_path
+        self.model_dir = cpath.common_model_dir_root
         self.task = transformer_attn_mask(self.hp, num_classes, self.voca_size, False)
         self.sess = init_session()
         self.sess.run(tf1.global_variables_initializer())

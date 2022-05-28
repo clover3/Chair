@@ -150,4 +150,4 @@ def run(explain_tag, method_name, model_path):
 
 if __name__ == "__main__":
     args = nli_ex_prediction_parser.parse_args(sys.argv[1:])
-    run(args.tag, args.method_name, args.model_path)
+    run(args.tag, args.method_name, args.common_model_dir_root)
