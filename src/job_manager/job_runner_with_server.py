@@ -1,9 +1,10 @@
 import os
 import sys
 import time
+from typing import Callable, Any
 
 from data_generator.job_runner import WorkerInterface
-from misc_lib import exist_or_mkdir
+from misc_lib import exist_or_mkdir, tprint
 from taskman_client.task_proxy import get_task_manager_proxy, get_local_machine_name
 
 
@@ -42,7 +43,7 @@ class JobRunnerS:
     def auto_runner(self):
         worker = self.worker_factory(self.out_path)
         job_id = self.pool_job()
-        print("Job id : ", job_id)
+        tprint("Job id : ", job_id)
         n_job_done = 0
         while job_id is not None:
             try:
@@ -58,7 +59,7 @@ class JobRunnerS:
             if halt_run:
                 break
             job_id = self.report_done_and_pool_job(job_id)
-            print("Job id : ", job_id)
+            tprint("Job id : ", job_id)
 
     def check_halt_run(self, n_job_done):
         halt_run = self.max_job_per_worker is not None and n_job_done >= self.max_job_per_worker
@@ -86,7 +87,7 @@ class DummyWorker(WorkerInterface):
 
 class JobRunnerF(JobRunnerS):
     # worker_factory : gets output_path to as argument, returns object
-    def __init__(self, working_path: str, max_job: int, job_name: str, work_fn):
+    def __init__(self, working_path: str, max_job: int, job_name: str, work_fn: Callable[[Any], None]):
         def factor(out_dir):
             return DummyWorker(out_dir, work_fn)
         super(JobRunnerF, self).__init__(working_path, max_job, job_name, factor)

@@ -65,6 +65,13 @@ def TEL(l: List[A]) -> List[A]:
         ticker.tick()
 
 
+def TELI(l: Iterable[A], data_size) -> Iterable[A]:
+    ticker = TimeEstimator(data_size)
+    for e in l:
+        yield e
+        ticker.tick()
+
+
 class CodeTiming:
     def __init__(self):
         self.acc = {}

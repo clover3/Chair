@@ -53,4 +53,6 @@ class MNLIReader:
         for line in line_itr:
             yield parse_nli_line(line)
 
-
+    def get_data_size(self, split_name):
+        data_size = 400 * 1000 if split_name == "train" else 9815
+        return data_size
