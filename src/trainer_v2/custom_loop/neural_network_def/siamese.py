@@ -101,3 +101,27 @@ class BERTSiameseMean:
         self.model: keras.Model = model
 
 
+class BERTSiameseMC:
+    def __init__(self, bert_params, config: ModelConfig2SegProject):
+        Dense = tf.keras.layers.Dense
+        l_bert = bert.BertModelLayer.from_params(bert_params, name="bert")
+
+        batch_size, inputs, l_input_ids, l_token_type_ids = \
+            build_siamese_inputs_apply(config.max_seq_length1, config.max_seq_length2)
+        seq_output = l_bert([l_input_ids, l_token_type_ids])
+        seq_p = Dense(config.project_dim, activation='relu')(seq_output)
+        seq_m = tf.reduce_mean(seq_p, axis=1)
+        seq_rep = seq_m
+
+        rep1 = seq_rep[:batch_size]
+        rep2 = seq_rep[batch_size:]
+
+        concat_layer = tf.keras.layers.Concatenate()
+        feature_rep = concat_layer([rep1, rep2])
+
+        hidden = tf.keras.layers.Dense(bert_params.hidden_size, activation='relu')(feature_rep)
+        output = tf.keras.layers.Dense(config.num_classes, activation=tf.nn.softmax)(hidden)
+        model = keras.Model(inputs=inputs, outputs=output, name="bert_model")
+        self.l_bert = l_bert
+        self.model: keras.Model = model
+

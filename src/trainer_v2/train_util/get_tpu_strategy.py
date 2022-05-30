@@ -28,5 +28,5 @@ def get_tpu_strategy_inner(tpu_name):
     strategy = tf.distribute.TPUStrategy(resolver)
     c_log.debug("get_tpu_strategy:: init Client")
     c = Client(tpu=tpu_name)
-    c.configure_tpu_version(tf.__version__, restart_type='ifNeeded')
+    # c.configure_tpu_version(tf.__version__, restart_type='ifNeeded')
     return strategy

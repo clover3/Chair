@@ -4,8 +4,8 @@ from cpath import get_bert_config_path
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.dataset_factories import get_two_seg_data
-from trainer_v2.custom_loop.modeling_common.assymetric import ModelConfig2Seg
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
+from trainer_v2.custom_loop.neural_network_def.assymetric import ModelConfig2Seg
 from trainer_v2.custom_loop.per_task.inner_network import Siamese
 from trainer_v2.custom_loop.per_task.trainer import Trainer
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2_nli

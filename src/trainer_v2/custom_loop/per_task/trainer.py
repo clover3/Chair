@@ -35,7 +35,7 @@ class Trainer(TrainerIF):
         if self.run_config.is_training():
             self.inner_model.build_model(self.bert_params, self.model_config)
             self.keras_model = self.inner_model.get_keras_model()
-            self.keras_model.summary()
+            self.keras_model.summary(140)
             optimizer = AdamWeightDecay(learning_rate=run_config.train_config.learning_rate)
             self.keras_model.optimizer = optimizer
             self.training_loss = tf.keras.metrics.Mean('training_loss', dtype=tf.float32)

@@ -137,6 +137,7 @@ def load_stock_weights(bert: BertModelLayer, ckpt_path,
 
         c_log.warn("Unused weights from checkpoint:",
               "\n\t" + "\n\t".join(sorted(stock_weights.difference(loaded_weights))))
+        raise ValueError("Checkpoint load exception")
 
     return skipped_weight_value_tuples  # (bert_weight, value_from_ckpt)
 

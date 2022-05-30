@@ -3,8 +3,8 @@ from typing import Callable, List, TypeVar
 import tensorflow as tf
 
 from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.modeling_common.assymetric import ModelConfig2Seg
 from trainer_v2.custom_loop.modeling_common.bert_common import ModelConfig
+from trainer_v2.custom_loop.neural_network_def.assymetric import ModelConfig2Seg
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 
 
