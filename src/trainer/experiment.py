@@ -16,12 +16,12 @@ from cpath import get_model_full_path
 from data_generator import shared_setting
 from data_generator.adhoc.ws import *
 from data_generator.argmining import ukp
-from data_generator.cnn import SimpleLoader
 from data_generator.data_parser import controversy, load_protest
 from data_generator.data_parser.robust import *
 from data_generator.data_parser.robust2 import load_2k_rank
 from data_generator.data_parser.trec import *
 from data_generator.mask_lm import enwiki
+from data_generator.old_codes.cnn import SimpleLoader
 from data_generator.stance import stance_detection
 from data_generator.ubuntu import ubuntu
 from evaluation import *

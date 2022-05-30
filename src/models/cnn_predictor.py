@@ -3,7 +3,7 @@ import tensorflow as tf
 
 import cache
 import cpath
-from data_generator.cnn import *
+from data_generator.old_codes.cnn import *
 from models.cnn import CNN
 from models.transformer import hyperparams
 from summarization.tokenizer import *

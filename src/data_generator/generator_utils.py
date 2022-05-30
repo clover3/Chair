@@ -25,15 +25,16 @@ import random
 import stat
 import tarfile
 import tempfile
+
 import requests
 import six
+import tensorflow as tf
 from six.moves import range  # pylint: disable=redefined-builtin
-# Imports urllib on Python2, urllib.request on Python3
 
 from data_generator import text_encoder
-from data_generator import mlperf_log
+from data_generator.old_codes import mlperf_log
 
-import tensorflow as tf
+# Imports urllib on Python2, urllib.request on Python3
 
 UNSHUFFLED_SUFFIX = "-unshuffled"
 
