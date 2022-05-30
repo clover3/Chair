@@ -14,6 +14,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 from explain.nli_ex_predictor import NLIExPredictor
 from misc_lib import two_digit_float
 from models.transformer import hyperparams
+from tlm.token_utils import cells_from_tokens
 from trainer.np_modules import get_batches_ex
 from trainer.promise import PromiseKeeper, MyPromise
 from trainer_v2.chair_logging import c_log
@@ -112,7 +113,6 @@ def main():
         swtt, passage_ranges = passages[doc_id]
         passage = PassageSWTTUnit(swtt, passage_ranges, int(passage_idx))
 
-        print("g={0} p={1:.2f}".format(e.judged_score, e.model_score))
         triplet = encoder.encode_token_pairs(e.q_tokens, passage.get_as_subword())
         promise = MyPromise(triplet, pk)
         e_out = (e, triplet, promise)
@@ -123,7 +123,6 @@ def main():
     for e_out in e_out_list:
         e, triplet, promise = e_out
         probs, ex_logit = promise.future().get()
-        print(ex_logit)
         input_ids, _, _ = triplet
         p, h = split_p_h_with_input_ids(input_ids, input_ids)
         p_score, h_score = split_p_h_with_input_ids(ex_logit, input_ids)
@@ -138,8 +137,9 @@ def main():
             max_v = max(scores)
             scores = [normalize100(s, max_v) for s in scores]
             tokens = tokenizer.convert_ids_to_tokens(input_ids)
-            out_s_tokens: List[Cell] = [Cell(token, score) for score, token in zip(scores, tokens)]
-            return out_s_tokens
+            return cells_from_tokens(tokens, scores)
+            # out_s_tokens: List[Cell] = [Cell(token, score) for score, token in zip(scores, tokens)]
+            # return out_s_tokens
         decision_str = "gold={0} p={1:.2f}".format(e.judged_score, e.model_score)
 
         pred_str ="Prediction: " + ",".join(map(two_digit_float, probs))
@@ -150,6 +150,7 @@ def main():
         html.write_paragraph("Premise: ")
         html.write_table([format_token_cells(h_score, h)])
         html.write_bar()
+
 
 if __name__ == "__main__":
     main()
