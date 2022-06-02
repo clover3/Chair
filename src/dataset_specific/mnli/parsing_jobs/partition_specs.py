@@ -24,3 +24,7 @@ def partition_data_spec_job_man_dir(ps, job_name) -> PartitionDataSpec:
     return PartitionDataSpec.build(ps, dir_path)
 
 
+def get_mnli_spacy_split_pds(split) -> PartitionDataSpec:
+    ps = get_mnli_partition_spec(split)
+    job_name = "mnli_spacy_split_{}".format(split)
+    return partition_data_spec_job_man_dir(ps, job_name)

@@ -55,7 +55,8 @@ class PartitionDataSpec(NamedTuple):
     def read_pickles_as_itr(self) -> Iterator:
         for i in range(self.num_job):
             path = self.get_records_path_for_job(i)
-            yield from pickle.load(open(path, "rb"))
+            some_list = pickle.load(open(path, "rb"))
+            yield from some_list
 
 
 class IteratorToPickleWorker(WorkerInterface):
@@ -81,8 +82,9 @@ class IteratorToPickleWorker(WorkerInterface):
 
 def run_iterator_to_pickle_worker(ps: PartitionSpec, data_iter_fn: Callable[[], Iterator],
                                   worker: IteratorWorkerSpec, job_name):
-    print("run_iterator_to_pickle_worker")
+    print("Run IteratorToPickleWorker. job_name={}".format(job_name))
     # Let's define canonical WorkerInterface
+
     def worker_factory(out_dir):
         return IteratorToPickleWorker(ps, data_iter_fn, worker, out_dir)
 

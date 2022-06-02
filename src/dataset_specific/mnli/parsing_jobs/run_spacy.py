@@ -28,6 +28,7 @@ class NLIPairDataSpacy(NamedTuple):
                                 nlp(e.premise), nlp(e.hypothesis))
 
 
+
 class SpacyWorker(IteratorWorkerSpec):
     def __init__(self):
         self.nlp = spacy.load("en_core_web_sm")
@@ -56,6 +57,7 @@ def main():
     worker = SpacyWorker()
     reader = MNLIReader()
     split = "train"
+    split = "dev"
     data_itr = lambda :reader.load_split(split)
     ps = get_mnli_partition_spec(split)
     name = "mnli_spacy_tokenize_{}".format(split)
