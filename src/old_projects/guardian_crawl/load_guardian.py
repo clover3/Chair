@@ -1,7 +1,9 @@
+import html
 import json
 import os
-import html
+
 from bs4 import BeautifulSoup
+
 
 def parse_paragraph(body):
     raw_html = html.unescape(body)

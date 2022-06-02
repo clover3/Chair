@@ -2,7 +2,7 @@ import os
 import pickle
 
 from cpath import data_path
-from crawl.guardian_api import *
+from old_projects.guardian_crawl.guardian_api import load_short_ids_from_path, get_comment
 
 save_dir = os.path.join(data_path, "guardian", "any")
 

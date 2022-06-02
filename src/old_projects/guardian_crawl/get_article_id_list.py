@@ -1,10 +1,9 @@
 import os
 import pickle
 
-from crawl.load_guardian import load_article_only_short_url
-
 from cpath import data_path
 from misc_lib import get_dir_files, get_dir_dir
+from old_projects.guardian_crawl.load_guardian import load_article_only_short_url
 
 scope_dir = os.path.join(data_path, "guardian")
 

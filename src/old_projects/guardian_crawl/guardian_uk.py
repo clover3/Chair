@@ -1,8 +1,9 @@
 import os
 from collections import Counter
 
-from cpath import data_path
 from crawl.load_guardian import load_articles_from_dir
+
+from cpath import data_path
 
 
 def load_commented_articles_opinion():

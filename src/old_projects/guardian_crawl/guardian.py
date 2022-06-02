@@ -8,7 +8,7 @@ from datetime import datetime
 import requests
 
 from cpath import data_path
-from crawl.guardian_api import get_comment, load_short_ids_from_path
+from old_projects.guardian_crawl.guardian_api import get_comment, load_short_ids_from_path
 
 
 def ask_list_with_body(query, page):
