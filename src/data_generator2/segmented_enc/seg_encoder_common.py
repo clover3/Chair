@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Tuple, List
 
 from arg.qck.encode_common import encode_single
-from data_generator.segmented_enc.sent_split_by_spacy import split_spacy_tokens
+from data_generator2.segmented_enc.sent_split_by_spacy import split_spacy_tokens
 from misc_lib import CountWarning
 
 
@@ -131,3 +131,77 @@ class SpacySplitEncoder2(EncoderInterface):
 
         return encode_two_segments(self.tokenizer, self.segment_len,
                                    first, second)
+
+
+class SpacySplitEncoderSlash(EncoderInterface):
+    def __init__(self, tokenizer, total_max_seq_length, cache_split):
+        segment_len = int(total_max_seq_length / 2)
+        self.segment_len = segment_len
+        self.tokenizer = tokenizer
+        self.counter_warning = CountWarning()
+        self.cache_split = cache_split
+        if total_max_seq_length % 2:
+            raise ValueError()
+
+    def encode(self, tokens) -> Tuple[List, List, List]:
+        raise NotImplementedError
+
+    def encode_from_text(self, text):
+        seg1, seg2 = self.cache_split[text]
+
+        def text_to_tokens(text):
+            text = text.replace("[MASK]", "/")
+            tokens = self.tokenizer.tokenize(text)
+            if len(tokens) > self.segment_len:
+                tokens = tokens[:self.segment_len]
+                self.counter_warning.add_warn()
+            return tokens
+
+        first = text_to_tokens(seg1)
+        second = text_to_tokens(seg2)
+
+        return encode_two_segments(self.tokenizer, self.segment_len,
+                                   first, second)
+
+
+
+class SpacySplitEncoderMaskReplacer(EncoderInterface):
+    def __init__(self, tokenizer, total_max_seq_length, cache_split, mask_replacer):
+        segment_len = int(total_max_seq_length / 2)
+        self.segment_len = segment_len
+        self.tokenizer = tokenizer
+        self.counter_warning = CountWarning()
+        self.cache_split = cache_split
+        self.mask_replacer = mask_replacer
+        if total_max_seq_length % 2:
+            raise ValueError()
+
+    def encode(self, tokens) -> Tuple[List, List, List]:
+        raise NotImplementedError
+
+    def encode_from_text(self, text):
+        seg1, seg2 = self.cache_split[text]
+
+        def text_to_tokens(text):
+            text = text.replace("[MASK]", self.mask_replacer)
+            tokens = self.tokenizer.tokenize(text)
+            if len(tokens) > self.segment_len:
+                tokens = tokens[:self.segment_len]
+                self.counter_warning.add_warn()
+            return tokens
+
+        first = text_to_tokens(seg1)
+        second = text_to_tokens(seg2)
+
+        return encode_two_segments(self.tokenizer, self.segment_len,
+                                   first, second)
+
+
+class SpacySplitEncoderMaskSlash(SpacySplitEncoderMaskReplacer):
+    def __init__(self, tokenizer, total_max_seq_length, cache_split):
+        super(SpacySplitEncoderMaskSlash, self).__init__(tokenizer, total_max_seq_length, cache_split, "/")
+
+
+class SpacySplitEncoderNoMask(SpacySplitEncoderMaskReplacer):
+    def __init__(self, tokenizer, total_max_seq_length, cache_split):
+        super(SpacySplitEncoderNoMask, self).__init__(tokenizer, total_max_seq_length, cache_split, "")

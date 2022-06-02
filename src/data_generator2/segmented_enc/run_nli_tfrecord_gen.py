@@ -1,8 +1,8 @@
 from cpath import at_output_dir
-from data_generator.segmented_enc.seg_encoder_common import SingleEncoder, EvenSplitEncoder, SpacySplitEncoder, \
-    SpacySplitEncoder2
-from data_generator.segmented_enc.segmented_tfrecord_gen import get_encode_fn_from_encoder_list
 from data_generator.tokenizer_wo_tf import get_tokenizer
+from data_generator2.segmented_enc.seg_encoder_common import SingleEncoder, EvenSplitEncoder, SpacySplitEncoder, \
+    SpacySplitEncoder2, SpacySplitEncoderSlash, SpacySplitEncoderNoMask
+from data_generator2.segmented_enc.segmented_tfrecord_gen import get_encode_fn_from_encoder_list
 from dataset_specific.mnli.mnli_reader import MNLIReader
 from dataset_specific.mnli.parsing_jobs.partition_specs import get_mnli_spacy_split_pds
 from tf_util.record_writer_wrap import write_records_w_encode_fn
@@ -45,9 +45,32 @@ def gen_spacy_tokenize2(split):
     mnli_encode_common(p_encoder, h_encoder, split, output_path)
 
 
+def gen_spacy_tokenize_slash(split):
+    print("gen_spacy_tokenize_slash")
+    pds = get_mnli_spacy_split_pds(split)
+    split_d = dict(pds.read_pickles_as_itr())
+    output_path = at_output_dir("tfrecord", f"nli_sg4_{split}")
+    tokenizer = get_tokenizer()
+    p_encoder = SingleEncoder(tokenizer, 200)
+    h_encoder = SpacySplitEncoderSlash(tokenizer, 100, split_d)
+    mnli_encode_common(p_encoder, h_encoder, split, output_path)
+
+
+
+def gen_spacy_tokenize_no_mask(split):
+    print("gen_spacy_tokenize_no_mask")
+    pds = get_mnli_spacy_split_pds(split)
+    split_d = dict(pds.read_pickles_as_itr())
+    output_path = at_output_dir("tfrecord", f"nli_sg5_{split}")
+    tokenizer = get_tokenizer()
+    p_encoder = SingleEncoder(tokenizer, 200)
+    h_encoder = SpacySplitEncoderNoMask(tokenizer, 100, split_d)
+    mnli_encode_common(p_encoder, h_encoder, split, output_path)
+
+
 def main():
-    split = "train"
-    gen_spacy_tokenize2(split)
+    gen_spacy_tokenize_no_mask("dev")
+    gen_spacy_tokenize_no_mask("train")
 
 
 if __name__ == "__main__":

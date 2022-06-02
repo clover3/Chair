@@ -24,7 +24,7 @@ def file_show(fn):
             print(key)
             print(v)
 
-            if key in ["input_ids", "input_ids1", "input_ids2", "q_e_input_ids"]:
+            if key in ["input_ids", "input_ids0", "input_ids1", "input_ids2", "q_e_input_ids"]:
                 tokens = tokenizer.convert_ids_to_tokens(v)
                 print(key)
                 print(" ".join(tokens))

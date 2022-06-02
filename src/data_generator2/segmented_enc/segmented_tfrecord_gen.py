@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from data_generator.segmented_enc.seg_encoder_common import EncoderInterface
+from data_generator2.segmented_enc.seg_encoder_common import EncoderInterface
 from dataset_specific.mnli.mnli_reader import NLIPairData
 from tlm.data_gen.bert_data_gen import create_int_feature
 

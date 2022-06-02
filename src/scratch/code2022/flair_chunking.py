@@ -1,8 +1,6 @@
 from flair.data import Sentence
 from flair.models import SequenceTagger
 
-import data_generator.segmented_enc.sent_split_by_spacy
-
 
 def main():
     # load tagger
@@ -25,7 +23,7 @@ def main():
             print(e, e.annotation_layers)
         else:
             print("none")
-    for entity in data_generator.segmented_enc.sent_split_by_spacy.get_spans('np'):
+    for entity in data_generator2.segmented_enc.sent_split_by_spacy.get_spans('np'):
         print(entity)
 
 

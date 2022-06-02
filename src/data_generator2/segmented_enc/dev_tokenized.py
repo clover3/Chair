@@ -1,6 +1,6 @@
 import spacy
 
-from data_generator.segmented_enc.sent_split_by_spacy import split_spacy_tokens
+from data_generator2.segmented_enc.sent_split_by_spacy import split_spacy_tokens
 from dataset_specific.mnli.mnli_reader import MNLIReader
 
 

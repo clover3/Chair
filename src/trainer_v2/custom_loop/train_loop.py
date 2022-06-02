@@ -8,7 +8,7 @@ from tensorflow.python.distribute.distribute_lib import Strategy
 from cpath import get_bert_config_path
 from misc_lib import RecentCounter
 from taskman_client.task_proxy import get_task_manager_proxy
-from trainer_v2.chair_logging import c_log
+from trainer_v2.chair_logging import c_log, IgnoreFilter
 from trainer_v2.custom_loop.modeling_common.bert_common import is_interesting_step, load_bert_config
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
 from trainer_v2.custom_loop.per_task.trainer import Trainer
@@ -277,8 +277,22 @@ def tf_run(run_config: RunConfig2,
         return ret
 
 
-def tf_run_for_bert(dataset_factory, model_config, run_config, inner):
+def adjust_logging():
+    msgs = [
+        "UserWarning: `layer.apply` is deprecated and will be removed in a future version",
+        "`model.compile_metrics` will be empty until you train or evaluate the model."
+    ]
+    tf_logging = logging.getLogger("tensorflow")
+    tf_logging.addFilter(IgnoreFilter(msgs))
+
+
+def tf_run_for_bert(dataset_factory, model_config,
+                    run_config: RunConfig2, inner):
+    adjust_logging()
     run_config.print_info()
+
+    if run_config.common_run_config.tf_random_seed is not None:
+        tf.random.set_seed(run_config.common_run_config.tf_random_seed)
     bert_params = load_bert_config(get_bert_config_path())
     trainer = Trainer(bert_params, model_config, run_config, inner)
     tf_run(run_config, trainer, dataset_factory)
