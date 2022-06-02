@@ -5,10 +5,10 @@ from typing import NamedTuple
 import tlm.qtype.qe_de_res_parse
 from arg.qck.decl import get_format_handler
 from arg.qck.prediction_reader import load_combine_info_jsons
-from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
 from misc_lib import group_by, average, tprint
 from scipy_aux import logit_to_score_softmax
+from tlm.estimator_output_reader import join_prediction_with_info
 
 
 class SegmentScore(NamedTuple):

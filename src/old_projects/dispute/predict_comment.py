@@ -1,7 +1,7 @@
 from cpath import common_model_dir_root
-from dispute.adreaction import FLAGS
-from dispute.guardian import save_local_pickle, load_local_pickle
 from models.cnn import CNN
+from old_projects.dispute.adreaction import FLAGS
+from old_projects.dispute.guardian import save_local_pickle, load_local_pickle
 from trainer.tf_module import *
 from trainer.tf_train_module import init_session
 

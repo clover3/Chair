@@ -8,11 +8,11 @@ from arg.perspectives.build_feature import average_tf_over_docs
 from arg.perspectives.collection_based.datapoint_strct import split_pos_neg, get_num_mention, get_tf_from_datapoint, \
     get_label
 from cache import load_from_pickle
+from dataset_specific.clue_path import get_first_disk
 from galagos.interface import send_doc_queries, format_query_bm25
 from list_lib import lmap
 from misc_lib import average, split_7_3, SuccessCounter
 from models.classic.lm_counter_io import LMClassifier
-from sydney_clueweb.clue_path import get_first_disk
 
 
 def learn_lm(feature_label_list):

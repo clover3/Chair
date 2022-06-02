@@ -2,7 +2,7 @@ import gensim
 import nltk
 from gensim.models import KeyedVectors
 
-from icd.common import load_description, lmap, AP_from_binary
+from old_projects.icd.common import load_description, lmap, AP_from_binary
 
 
 def do_eval(w2v):

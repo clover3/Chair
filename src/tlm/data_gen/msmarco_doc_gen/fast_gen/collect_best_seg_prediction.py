@@ -3,9 +3,9 @@ import os
 from collections import defaultdict
 from typing import List, Dict, Tuple
 
-from estimator_helper.output_reader import join_prediction_with_info
 from misc_lib import group_by, find_max_idx, get_first
 from scipy_aux import get_logits_to_score_fn
+from tlm.estimator_output_reader import join_prediction_with_info
 
 
 class BestSegCollector:

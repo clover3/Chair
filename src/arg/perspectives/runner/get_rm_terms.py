@@ -3,9 +3,9 @@ import os
 
 from arg.perspectives.pc_run_path import get_train_query_file
 from cpath import project_root
+from dataset_specific.clue_path import index_name_list
 from galagos.query_to_all_clueweb_disk import get_rm_terms
 from list_lib import lmap, flatten
-from sydney_clueweb.clue_path import index_name_list
 
 
 # query is made from query_gen.py

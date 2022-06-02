@@ -9,11 +9,11 @@ import numpy as np
 import tensorflow as tf
 
 from cpath import common_model_dir_root
-from icd.code import fit_and_tokenize, input_fn, str_code_id, str_desc_tokens
-from icd.common import lmap, load_description
-from icd.common_args import parser
 from models.transformer.bert_common import create_initializer
 from models.transformer.optimization import create_optimizer
+from old_projects.icd.code import fit_and_tokenize, input_fn, str_code_id, str_desc_tokens
+from old_projects.icd.common import lmap, load_description
+from old_projects.icd.common_args import parser
 
 
 def build_model(code_ids, token_ids, dim, max_seq, n_input_voca, n_output_voca):

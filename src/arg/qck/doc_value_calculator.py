@@ -4,9 +4,9 @@ import scipy.special
 
 from arg.qck.decl import QCKQuery, KDP, QCKCandidate, qck_convert_map, QCKOutEntry
 from arg.qck.prediction_reader import load_combine_info_jsons
-from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
 from misc_lib import group_by, get_first
+from tlm.estimator_output_reader import join_prediction_with_info
 
 
 def load_and_group_predictions(info_path, pred_path) -> List[QCKOutEntry]:

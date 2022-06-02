@@ -10,8 +10,8 @@ import tlm.qtype.qe_de_res_parse
 from arg.qck.decl import get_format_handler
 from arg.qck.prediction_reader import load_combine_info_jsons
 from cache import save_to_pickle
-from estimator_helper.output_reader import join_prediction_with_info
 from misc_lib import group_by
+from tlm.estimator_output_reader import join_prediction_with_info
 from trec.qrel_parse import load_qrels_structured
 
 parser = argparse.ArgumentParser(description='')

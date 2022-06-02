@@ -1,5 +1,5 @@
-from cord.csv_to_galago_indexable import read_csv_and_write
-from cord.path_info import meta_data_path
+from dataset_specific.cord.csv_to_galago_indexable import read_csv_and_write
+from dataset_specific.cord.path_info import meta_data_path
 
 
 def main():

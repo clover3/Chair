@@ -8,10 +8,10 @@ from arg.qck.decl import qk_convert_map, QCKQuery, KDP
 from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.qck.token_scoring.decl import ScoreVector, TokenScore
 from data_generator.tokenizer_wo_tf import get_word_level_location, get_tokenizer
-from estimator_helper.output_reader import join_prediction_with_info
 from exec_lib import run_func_with_config
 from list_lib import lmap, dict_value_map
 from misc_lib import group_by, TimeEstimator
+from tlm.estimator_output_reader import join_prediction_with_info
 from trainer.np_modules import sigmoid
 
 

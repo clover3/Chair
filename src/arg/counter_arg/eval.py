@@ -8,9 +8,9 @@ from arg.counter_arg.enum_all_argument import enum_all_argument
 from arg.counter_arg.header import ArguDataPoint
 from arg.counter_arg.header import Passage, ArguDataID
 from cache import load_cache, save_to_pickle
-from distrib.parallel import parallel_run
 from list_lib import lmap, get_max_idx
 from misc_lib import average, NamedNumber
+from utils.parallel import parallel_run
 
 
 class EvalCondition(enum.Enum):

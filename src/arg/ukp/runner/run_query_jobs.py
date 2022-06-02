@@ -1,8 +1,8 @@
 from arg.ukp.ukp_q_path import get_ranked_list_save_dir, get_all_query_file_names
+from dataset_specific.clue_path import index_name_list
 from galagos import query_to_all_clueweb_disk
 from galagos.query_runs_ids import Q_CONFIG_ID_BM25_UKP
 from misc_lib import exist_or_mkdir
-from sydney_clueweb.clue_path import index_name_list
 
 
 # query is made from query_gen.py

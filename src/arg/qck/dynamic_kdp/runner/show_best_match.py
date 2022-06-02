@@ -5,9 +5,9 @@ from arg.qck.decl import qck_convert_map, QCKOutEntry
 from arg.qck.doc_value_calculator import logit_to_score_softmax
 from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.util import load_run_config
-from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
 from tab_print import print_table
+from tlm.estimator_output_reader import join_prediction_with_info
 
 
 def main():

@@ -1,8 +1,9 @@
 import os
 import pickle
 
-from cpath import data_path
 from crawl.crawl_uk import get_comment
+
+from cpath import data_path
 
 scope_dir = os.path.join(data_path, "guardian")
 

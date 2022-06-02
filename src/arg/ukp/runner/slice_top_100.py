@@ -3,11 +3,11 @@ from typing import Dict, List
 from arg.ukp.ukp_q_path import get_ranked_list_save_dir, num_query_file
 from base_type import FileName
 from cpath import pjoin
+from dataset_specific.clue_path import index_name_list
 from galagos.parse import load_galago_ranked_list
 from galagos.query_runs_ids import Q_CONFIG_ID_BM25_UKP
 from galagos.types import SimpleRankedListEntry
 from misc_lib import TimeEstimator
-from sydney_clueweb.clue_path import index_name_list
 
 
 def work():

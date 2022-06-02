@@ -1,8 +1,9 @@
-import os
 import csv
+import os
 from collections import defaultdict
-from summarization.tokenizer import tokenize
+
 from models.classic.stopword import load_stopwords
+from summarization.tokenizer import tokenize
 
 root_dir = "C:\work\Data\CKB annotation"
 

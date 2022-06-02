@@ -1,15 +1,7 @@
 import csv
 from typing import Dict, List
 
-
-def write_doc(fout, doc_no, title, content):
-    fout.write("<DOC>\n")
-    fout.write("<DOCNO>{}</DOCNO>\n".format(doc_no))
-    fout.write("<HEADLINE>{}</HEADLINE>\n".format(title))
-    fout.write("<TEXT>\n")
-    fout.write(content)
-    fout.write("</TEXT>\n")
-    fout.write("</DOC>\n")
+from galagos.doc_write_helper import write_galago_xml_doc
 
 
 def read_csv_as_dict(csv_path) -> List[Dict]:
@@ -35,7 +27,7 @@ def read_csv_and_write(csv_path, output_path):
     data = read_csv_as_dict(csv_path)
     fout = open(output_path, "w")
     for entry in data:
-        write_doc(fout, entry[str_cord_uid], entry[str_title], entry[str_abstract])
+        write_galago_xml_doc(fout, entry[str_cord_uid], entry[str_title], entry[str_abstract])
 
     fout.close()
 

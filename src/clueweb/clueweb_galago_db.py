@@ -4,13 +4,13 @@ from typing import List, Dict, Set
 
 from base_type import FilePath
 from cpath import data_path
+from dataset_specific.clue_path import get_first_disk
 from datastore.alchemy_schema import Base, KeyOnlyTable, engine, Session, TokenizedCluewebDocTable
 from datastore.interface import has_key, load, save, flush
 from datastore.table_names import TokenizedCluewebDoc, RawCluewebDoc, CluewebDocTF, QueryResult
 from galagos.parse import load_galago_ranked_list
 from galagos.types import SimpleRankedListEntry, QueryResultID
 from misc_lib import TimeEstimator
-from sydney_clueweb.clue_path import get_first_disk
 
 
 def load_from_db_or_from_galago(table_name, key, galago_fn):

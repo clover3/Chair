@@ -9,9 +9,9 @@ from arg.perspectives.types import CPIDPair
 from arg.qck.doc_value_calculator import doc_value
 from arg.qck.prediction_reader import load_prediction_with_info, group_by_qid_cid
 from cpath import output_path
-from estimator_helper.output_reader import load_combine_info_jsons
 from list_lib import lmap
 from misc_lib import exist_or_mkdir, group_by, average
+from tlm.estimator_output_reader import load_combine_info_jsons
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 
 

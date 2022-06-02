@@ -1,6 +1,6 @@
+import math
 from multiprocessing import Pool
 
-import math
 from krovetzstemmer import Stemmer
 
 from data_generator.data_parser import amsterdam
@@ -151,7 +151,7 @@ def get_guardian_selective_lm():
 
 
 def get_yw_may():
-    from dispute.guardian import load_local_pickle
+    from old_projects.dispute.guardian import load_local_pickle
 
 
     stopwords = load_stopwords()

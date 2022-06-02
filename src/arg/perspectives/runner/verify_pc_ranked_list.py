@@ -2,8 +2,8 @@
 
 import os
 
+from dataset_specific.clue_path import index_name_list
 from galagos import query_to_all_clueweb_disk
-from sydney_clueweb.clue_path import index_name_list
 
 
 # query is made from query_gen.py

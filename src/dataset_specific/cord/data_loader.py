@@ -1,7 +1,7 @@
 import json
 
-from cord.path_info import cord_dir
 from cpath import pjoin
+from dataset_specific.cord.path_info import cord_dir
 
 
 def load_queries():

@@ -5,8 +5,8 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 
 from arg.perspectives.basic_analysis import load_train_data_point
+from dataset_specific.clue_path import index_name_list
 from list_lib import lmap, lmap_w_exception, lfilter, left, flatten, right
-from sydney_clueweb.clue_path import index_name_list
 
 
 def featurize_fn(voca, voca2idx, datapoint):

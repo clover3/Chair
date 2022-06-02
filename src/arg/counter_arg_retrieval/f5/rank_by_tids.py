@@ -6,10 +6,10 @@ from nltk import sent_tokenize
 from arg.counter_arg_retrieval.f5.load_f5_clue_docs import load_all_docs_cleaned
 from cache import load_from_pickle
 from cpath import at_output_dir
-from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap, get_max_idx
 from scipy_aux import logit_to_score_softmax
 from tab_print import print_table
+from tlm.estimator_output_reader import join_prediction_with_info
 
 
 def get_f5_tids_score_d_from_bert():

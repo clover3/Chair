@@ -7,9 +7,9 @@ from arg.qck.decl import QKUnit, qk_convert_map
 from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.qck.qk_summarize import QKOutEntry
 from cache import load_from_pickle
-from estimator_helper.output_reader import join_prediction_with_info
 from exec_lib import run_func_with_config
 from list_lib import lmap
+from tlm.estimator_output_reader import join_prediction_with_info
 from visualize.html_visual import get_collapsible_script, HtmlVisualizer, get_scroll_css, get_collapsible_css
 
 

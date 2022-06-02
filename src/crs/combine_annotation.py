@@ -1,8 +1,8 @@
 from collections import Counter
 
 from crs.load_stance_annotation import load_stance_verify_annot
+from evals.agreement import binary_kappa
 from list_lib import right
-from stats.agreement import binary_kappa
 
 
 def combined_agreement(path):

@@ -1,12 +1,11 @@
 import json
-from typing import List, Iterable, Callable, Dict, Tuple, Set
-
 import os
+from typing import List, Dict
 
 from cache import load_pickle_from
 from epath import job_man_dir
-from estimator_helper.output_reader import join_prediction_with_info
 from tlm.data_gen.msmarco_doc_gen.fast_gen.seg_resource import SRPerQuery
+from tlm.estimator_output_reader import join_prediction_with_info
 
 
 def main():

@@ -4,13 +4,13 @@ import sys
 
 from cache import *
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from dictionary.reader import DictionaryReader, DictionaryParser, all_pos_list
+from job_manager.marked_task_manager import MarkedTaskManager
 from list_lib import lmap
 from misc_lib import TimeEstimator
 from misc_lib import exist_or_mkdir
-from job_manager.marked_task_manager import MarkedTaskManager
 from tf_util.tf_logging import tf_logging
 from tlm.dictionary.data_gen import DictEntryPredictGen
+from tlm.dictionary.reader import DictionaryReader, DictionaryParser, all_pos_list
 
 working_path ="/mnt/nfs/work3/youngwookim/data/bert_tf"
 

@@ -6,8 +6,8 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.python.keras import Input, Model
 
-from icd.common import lmap, load_description, AP_from_binary
 from list_lib import flatten
+from old_projects.icd.common import lmap, load_description, AP_from_binary
 
 
 def encode_data(vocabulary_set, text_list):

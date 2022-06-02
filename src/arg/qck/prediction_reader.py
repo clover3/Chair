@@ -3,9 +3,9 @@ import os
 from typing import Dict, List
 
 from arg.qck.decl import qck_convert_map
-from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import dict_value_map
 from misc_lib import get_dir_files, group_by
+from tlm.estimator_output_reader import join_prediction_with_info
 
 
 def load_combine_info_jsons(dir_path, convert_map, drop_kdp=True) -> Dict:

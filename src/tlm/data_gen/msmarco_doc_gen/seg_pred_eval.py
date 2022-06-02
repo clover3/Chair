@@ -7,9 +7,9 @@ import scipy.special
 import tlm.qtype.qe_de_res_parse
 from arg.qck.decl import get_format_handler
 from arg.qck.prediction_reader import load_combine_info_jsons
-from estimator_helper.output_reader import join_prediction_with_info
 from misc_lib import group_by, find_max_idx, SuccessCounter
 from taskman_client.task_proxy import get_task_manager_proxy
+from tlm.estimator_output_reader import join_prediction_with_info
 
 
 def score_sand_report(pred_file_path: str, info_file_path: str, run_name: str,

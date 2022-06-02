@@ -12,9 +12,9 @@ from arg.qck.prediction_reader import group_by_qid_cid, load_combine_info_jsons
 from cpath import output_path
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap, foreach
 from misc_lib import average, exist_or_mkdir
+from tlm.estimator_output_reader import join_prediction_with_info
 from tlm.token_utils import cells_from_tokens
 from visualize.html_visual import HtmlVisualizer, Cell
 

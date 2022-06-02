@@ -7,9 +7,9 @@ import scipy.special
 from arg.perspectives.ppnc.pdcd_eval import collect_scores_and_confidence
 from arg.perspectives.types import DataID, CPIDPair
 from cpath import output_path
-from estimator_helper.output_reader import load_combine_info_jsons
 from list_lib import dict_value_map, lmap
 from misc_lib import group_by, SuccessCounter, exist_or_mkdir
+from tlm.estimator_output_reader import load_combine_info_jsons
 from visualize.html_visual import Cell, HtmlVisualizer
 
 

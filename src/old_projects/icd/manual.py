@@ -2,8 +2,8 @@ import nltk
 import numpy as np
 from gensim.models import KeyedVectors
 
-from icd.common import lmap, load_description
 from list_lib import flatten
+from old_projects.icd.common import lmap, load_description
 
 
 def tokenize(input2):

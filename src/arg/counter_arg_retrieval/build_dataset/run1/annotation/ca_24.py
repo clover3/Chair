@@ -6,9 +6,9 @@ from arg.counter_arg_retrieval.build_dataset.run1.ca4_access_verify import get_c
 from arg.counter_arg_retrieval.build_dataset.run1.annotation.scheme import get_ca_run1_scheme2
 from arg.counter_arg_retrieval.build_dataset.verify_common import summarize_agreement, \
     get_agreement_rate_from_answer_list
+from evals.agreement import cohens_kappa
 from misc_lib import SuccessCounter
 from mturk.parse_util import parse_file, HitResult
-from stats.agreement import cohens_kappa
 
 
 def true_rate(list_list):

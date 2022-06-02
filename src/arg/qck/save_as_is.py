@@ -8,9 +8,9 @@ import scipy.special
 from arg.qck.decl import get_format_handler, FormatHandler
 from arg.qck.prediction_reader import load_combine_info_jsons
 from cpath import output_path
-from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
 from misc_lib import group_by, exist_or_mkdir
+from tlm.estimator_output_reader import join_prediction_with_info
 from trec.trec_parse import write_trec_ranked_list_entry
 from trec.types import TrecRankedListEntry
 

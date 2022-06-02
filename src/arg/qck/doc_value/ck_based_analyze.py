@@ -2,18 +2,17 @@ import json
 import sys
 from typing import List, Dict, Tuple
 
-from trec.trec_parse import load_qrels_flat
-
 from arg.qck.decl import get_format_handler, get_qk_pair_id
 from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.qck.qk_summarize import get_score_from_logit
 from arg.qck.save_to_trec_form import get_doc_id
 from cache import load_cache
-from estimator_helper.output_reader import join_prediction_with_info
 from evals.basic_func import get_acc_prec_recall
 from list_lib import dict_value_map
 from misc_lib import group_by
 from tab_print import print_table
+from tlm.estimator_output_reader import join_prediction_with_info
+from trec.trec_parse import load_qrels_flat
 
 
 def prec_recall(pred_file_path: str, info_file_path: str, input_type: str, score_type: str,

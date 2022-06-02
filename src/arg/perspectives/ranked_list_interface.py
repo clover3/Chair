@@ -3,12 +3,12 @@ from typing import Callable, List, Dict
 from arg.pf_common.ranked_list_interface import RankedListInterface
 from cache import load_from_pickle
 from clueweb.clueweb_galago_db import load_from_db_or_from_galago
+from dataset_specific.clue_path import get_first_disk
 from datastore.table_names import QueryResult
 from galagos.interface import send_queries_passage, PassageQuery, format_passage_query, DocQuery, \
     format_query_bm25, send_doc_queries
 from galagos.tokenize_util import clean_tokenize_str_to_tokens
 from galagos.types import SimpleRankedListEntry, GalagoPassageRankEntry
-from sydney_clueweb.clue_path import get_first_disk
 
 
 def make_passage_query(claim_id, perspective_id, claim_text, p_text) -> PassageQuery:

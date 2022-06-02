@@ -2,9 +2,9 @@ from collections import Counter
 
 from contradiction.medical_claims.annotation_1.load_data import get_pair_dict
 from contradiction.medical_claims.annotation_1.process_annotation import load_annots_w_processing
+from evals.agreement import cohens_kappa
 from list_lib import left
 from misc_lib import group_by, get_first, average
-from stats.agreement import cohens_kappa
 
 
 def print_annot_stats(all_annots):

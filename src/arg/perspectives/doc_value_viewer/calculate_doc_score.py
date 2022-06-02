@@ -3,8 +3,8 @@ from typing import List, Dict, Tuple
 from arg.perspectives.load import get_claim_perspective_id_dict2
 from arg.qck.decl import QCKOutEntry
 from arg.qck.doc_value_calculator import get_doc_value_parts, DocValueParts
-from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
+from tlm.estimator_output_reader import join_prediction_with_info
 
 
 def load_labels() -> Dict[str, List[str]]:

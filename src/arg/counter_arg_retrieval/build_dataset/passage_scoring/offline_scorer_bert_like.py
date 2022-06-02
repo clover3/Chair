@@ -2,9 +2,9 @@ import collections
 from typing import List, Dict
 from typing import OrderedDict
 
-from estimator_helper.output_reader import join_prediction_with_info
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tlm.data_gen.bert_data_gen import create_int_feature, create_byte_feature
+from tlm.estimator_output_reader import join_prediction_with_info
 #    Output:
 #       TFRecord w data id
 # Stage 2 - TPU Server

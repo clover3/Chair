@@ -2,12 +2,12 @@ import os
 from typing import List, Any
 
 from arg.counter_arg_retrieval.build_dataset.run1.annotation.ca_rate_compare import common_dir
+from evals.agreement import cohens_kappa
 from list_lib import lmap, lflatten
 from misc_lib import get_first, get_second
 from misc_lib import group_by
 from mturk.parse_util import ColumnName, Textbox, HITScheme, Checkbox
 from mturk.parse_util import parse_file, HitResult
-from stats.agreement import cohens_kappa
 
 
 def get_ca6_scheme():

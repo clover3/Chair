@@ -1,11 +1,11 @@
 from typing import List
 
 from cache import load_from_pickle
+from dataset_specific.clue_path import get_first_disk
 from datastore.interface import load
 from datastore.table_names import QueryResult
 from galagos.types import SimpleRankedListEntry
 from list_lib import lmap
-from sydney_clueweb.clue_path import get_first_disk
 
 
 class RankedListInterface:

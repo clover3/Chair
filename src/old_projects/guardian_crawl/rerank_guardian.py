@@ -4,8 +4,8 @@ from adhoc.bm25 import BM25_2
 from adhoc.bm25_ex import stem_tokenize
 from adhoc.idf import Idf_tokens
 from cpath import data_path
-from dispute.guardian import load_article_w_title
 from misc_lib import *
+from old_projects.dispute.guardian import load_article_w_title
 
 
 def get_file_list(query):

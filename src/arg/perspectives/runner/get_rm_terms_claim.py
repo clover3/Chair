@@ -3,9 +3,9 @@ import os
 from arg.perspectives.load import load_train_claim_ids, load_dev_claim_ids, get_claims_from_ids
 from arg.perspectives.query.query_gen import get_claims_query
 from cpath import project_root
+from dataset_specific.clue_path import index_name_list
 from galagos.query_to_all_clueweb_disk import get_rm_terms
 from misc_lib import exist_or_mkdir
-from sydney_clueweb.clue_path import index_name_list
 
 
 # query is made from query_gen.py

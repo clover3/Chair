@@ -5,9 +5,9 @@ from typing import Dict, Tuple, List
 
 from arg.perspectives.types import CPIDPair
 from cpath import output_path
-from estimator_helper.output_reader import load_combine_info_jsons
 from misc_lib import exist_or_mkdir
 from scipy_aux import logit_to_score_softmax
+from tlm.estimator_output_reader import load_combine_info_jsons
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 from visualize.html_visual import HtmlVisualizer
 

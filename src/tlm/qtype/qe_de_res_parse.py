@@ -4,9 +4,9 @@ from typing import Dict, Callable, Tuple, List
 
 import scipy.special
 
-from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
 from misc_lib import group_by, tprint, average, get_dir_files
+from tlm.estimator_output_reader import join_prediction_with_info
 
 
 def summarize_score(info: Dict,

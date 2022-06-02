@@ -1,10 +1,10 @@
 import os
 
 from cpath import src_path, project_root
+from dataset_specific import clue_path
 from galagos.parse import load_galago_ranked_list, load_queries
 from list_lib import lmap
 from misc_lib import exist_or_mkdir
-from sydney_clueweb import clue_path
 
 threaded_search_sh_path = os.path.join(src_path, "sh_script", "threaded_search.sh")
 

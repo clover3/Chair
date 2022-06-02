@@ -1,7 +1,7 @@
 import gensim.models
 import nltk
 
-from icd.common import lmap, load_description
+from old_projects.icd.common import lmap, load_description
 
 
 def train(save_name):

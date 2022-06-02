@@ -1,4 +1,4 @@
-from stats.agreement import binary_kappa
+from evals.agreement import binary_kappa
 
 
 def main():

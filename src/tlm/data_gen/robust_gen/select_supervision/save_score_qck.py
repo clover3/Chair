@@ -5,7 +5,7 @@ from arg.qck.decl import qc_convert_map
 from arg.qck.prediction_reader import load_combine_info_jsons
 from arg.qck.qk_summarize import get_score_from_logit
 from cache import save_to_pickle
-from estimator_helper.output_reader import join_prediction_with_info
+from tlm.estimator_output_reader import join_prediction_with_info
 
 
 def summarize_score(info: Dict,

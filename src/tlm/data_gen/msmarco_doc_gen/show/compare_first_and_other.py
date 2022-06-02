@@ -1,9 +1,10 @@
 import os
+
 import tensorflow as tf
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from epath import job_man_dir
-from estimator_helper.output_reader import load_combine_info_jsons
+from tlm.estimator_output_reader import load_combine_info_jsons
 
 
 def main():

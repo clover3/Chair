@@ -1,7 +1,7 @@
 from cache import *
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from dictionary.reader import DictionaryReader
 from tlm.dictionary.data_gen import dictionary_encoder
+from tlm.dictionary.reader import DictionaryReader
 
 
 def encode_dictionary():

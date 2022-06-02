@@ -6,10 +6,10 @@ from scipy.stats import pearsonr
 
 from arg.counter_arg_retrieval.build_dataset.run1.annotation.scheme import get_ca_run1_scheme
 from arg.counter_arg_retrieval.build_dataset.verify_common import print_hit_answers, kendalltau_fixed
+from evals.agreement import cohens_kappa
 from list_lib import lmap
 from misc_lib import group_by, get_first, get_second, get_third, average
 from mturk.parse_util import parse_file, HitResult
-from stats.agreement import cohens_kappa
 
 
 def summarize_agreement(hit_results: List[HitResult]):

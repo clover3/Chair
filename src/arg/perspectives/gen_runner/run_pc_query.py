@@ -2,10 +2,10 @@ import os
 from functools import partial
 
 from arg.perspectives.pc_run_path import get_query_file_for_split
+from dataset_specific.clue_path import index_name_list
 from galagos import query_to_all_clueweb_disk
 from list_lib import lmap
 from misc_lib import exist_or_mkdir
-from sydney_clueweb.clue_path import index_name_list
 
 
 # query is made from query_gen.py

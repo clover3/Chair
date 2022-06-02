@@ -8,11 +8,11 @@ import numpy as np
 
 from arg.qck.decl import qck_convert_map
 from arg.qck.prediction_reader import load_combine_info_jsons
-from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import dict_value_map
 from misc_lib import group_by, exist_or_mkdir, DataIDManager
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from tlm.data_gen.bert_data_gen import create_int_feature, create_float_feature
+from tlm.estimator_output_reader import join_prediction_with_info
 
 Vectors = List[np.array]
 Label = int

@@ -5,10 +5,10 @@ from arg.counter_arg_retrieval.build_dataset.run1.annotation.scheme import get_c
 from arg.counter_arg_retrieval.build_dataset.run1.enum_disagreeing_ones import load_ca3_master
 from arg.counter_arg_retrieval.build_dataset.verify_common import summarize_agreement, annotator_eval, \
     show_agreement_inner_w_true_rate
+from evals.agreement import cohens_kappa
 from list_lib import lmap
 from misc_lib import get_first, get_second, get_third
 from mturk.parse_util import parse_file, HitResult
-from stats.agreement import cohens_kappa
 
 scheme3_question_d = {
     "Q1.": "claim supports topic",

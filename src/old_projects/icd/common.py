@@ -1,4 +1,4 @@
-from icd.input_path_getter import get_icm10cm_order_path
+from old_projects.icd.input_path_getter import get_icm10cm_order_path
 
 
 def lmap(func, iterable_something):

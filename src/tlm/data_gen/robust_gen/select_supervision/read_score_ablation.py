@@ -2,13 +2,13 @@ import collections
 import os
 from typing import Iterable, Dict
 
-from estimator_helper.output_reader import join_prediction_with_info
 from misc_lib import group_by, find_max_idx, tprint, DataIDManager
 from scipy_aux import logit_to_score_softmax
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from tlm.data_gen.base import pad0
 from tlm.data_gen.classification_common import InstAsInputIds, encode_inst_as_input_ids
 from tlm.data_gen.robust_gen.select_supervision.read_score import decompress_seg_ids_entry, save_info
+from tlm.estimator_output_reader import join_prediction_with_info
 
 
 def enum_best_segments_only_pos(pred_path, info) -> Iterable[Dict]:

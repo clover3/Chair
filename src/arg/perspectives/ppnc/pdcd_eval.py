@@ -7,9 +7,9 @@ import scipy.special
 from arg.perspectives.eval_caches import eval_map
 from arg.perspectives.types import DataID, CPIDPair
 from cpath import output_path
-from estimator_helper.output_reader import load_combine_info_jsons
 from list_lib import lmap
 from misc_lib import group_by
+from tlm.estimator_output_reader import load_combine_info_jsons
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 
 

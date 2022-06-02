@@ -8,10 +8,10 @@ from arg.qck.decl import QCKQuery, QCKCandidate, KDP, PayloadAsTokens
 from arg.qck.encode_common import encode_two_inputs
 from base_type import FilePath
 from data_generator.tokenizer_wo_tf import CachedTokenizer, get_tokenizer
-from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lfilter, lmap
 from misc_lib import group_by, DataIDManager
 from tf_util.record_writer_wrap import write_records_w_encode_fn
+from tlm.estimator_output_reader import join_prediction_with_info
 
 recover_subtokens = NotImplemented
 

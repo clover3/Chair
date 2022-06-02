@@ -5,7 +5,6 @@ from typing import List, Iterable, Dict
 from typing import NamedTuple
 
 from cache import load_pickle_from
-from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import left
 from misc_lib import group_by, find_max_idx, tprint, exist_or_mkdir, DataIDManager
 from scipy_aux import logit_to_score_softmax
@@ -13,6 +12,7 @@ from tf_util.record_writer_wrap import write_records_w_encode_fn
 from tlm.data_gen.base import pad0
 from tlm.data_gen.classification_common import InstAsInputIds, encode_inst_as_input_ids
 from tlm.data_gen.robust_gen.data_info_compression import decompress_seq
+from tlm.estimator_output_reader import join_prediction_with_info
 from tlm.robust.load import get_robust_splits, robust_query_intervals
 
 

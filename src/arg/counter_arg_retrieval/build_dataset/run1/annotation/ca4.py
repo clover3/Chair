@@ -9,10 +9,10 @@ from arg.counter_arg_retrieval.build_dataset.verify_by_acess_log import load_apa
 from arg.counter_arg_retrieval.build_dataset.verify_common import summarize_agreement, print_hit_answers, \
     show_agreement_inner_for_two, show_agreement_inner_w_true_rate, count_all_true
 from cpath import output_path
+from evals.agreement import cohens_kappa
 from list_lib import lmap
 from misc_lib import group_by, average, SuccessCounter
 from mturk.parse_util import parse_file, HitResult
-from stats.agreement import cohens_kappa
 
 scheme4_question_d = {
     "Q1.on": "claim supports topic",

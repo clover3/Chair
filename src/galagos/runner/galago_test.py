@@ -1,6 +1,6 @@
 from clueweb.clueweb_galago_db import DocGetter
+from dataset_specific.clue_path import get_first_disk
 from galagos.interface import send_doc_queries, get_doc
-from sydney_clueweb.clue_path import get_first_disk
 
 
 def basic_test():

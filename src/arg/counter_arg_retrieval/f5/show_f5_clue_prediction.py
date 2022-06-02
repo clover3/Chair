@@ -1,10 +1,10 @@
 import json
 
 from cpath import at_output_dir
-from estimator_helper.output_reader import join_prediction_with_info
 from misc_lib import BinHistogram, get_second
 from scipy_aux import logit_to_score_softmax
 from tab_print import tab_print
+from tlm.estimator_output_reader import join_prediction_with_info
 from tlm.estimator_prediction_viewer import EstimatorPredictionViewer
 
 

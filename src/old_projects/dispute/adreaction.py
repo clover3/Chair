@@ -1,9 +1,10 @@
-
-
-import numpy as np
 import tensorflow as tf
 
 from models.cnn import CNN
+import tensorflow as tf
+
+from models.cnn import CNN
+
 
 class flags:
     def __init__(self):

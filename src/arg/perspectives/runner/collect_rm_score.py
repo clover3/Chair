@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from arg.perspectives.load import load_train_claim_ids, load_dev_claim_ids
 from cache import save_to_pickle
-from sydney_clueweb.clue_path import index_name_list
+from dataset_specific.clue_path import index_name_list
 
 
 def collect_from(claim_ids, dir_path):

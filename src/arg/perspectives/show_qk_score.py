@@ -2,11 +2,11 @@ import sys
 from typing import List
 from typing import NamedTuple
 
-from estimator_helper.output_reader import load_combine_info_jsons, join_prediction_with_info
 from exec_lib import run_func_with_config
 from list_lib import lmap
 from misc_lib import group_by
 from scipy_aux import logit_to_score_softmax
+from tlm.estimator_output_reader import load_combine_info_jsons, join_prediction_with_info
 
 
 class OutEntry(NamedTuple):

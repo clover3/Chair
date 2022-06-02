@@ -12,9 +12,9 @@ from arg.qck.qck_multi_save_to_trec_form import top_k_average
 from arg.qck.save_to_trec_form import get_max_score_from_doc_parts
 from arg.qck.trec_helper import score_d_to_trec_style_predictions
 from cpath import output_path
-from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap
 from misc_lib import exist_or_mkdir, group_by, average
+from tlm.estimator_output_reader import join_prediction_with_info
 from trec.trec_parse import write_trec_ranked_list_entry
 
 

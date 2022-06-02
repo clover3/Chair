@@ -6,9 +6,9 @@ from typing import List, Iterable, Dict
 from arg.qck.decl import QKUnit, qk_convert_map
 from arg.qck.prediction_reader import load_combine_info_jsons
 from cache import save_to_pickle
-from estimator_helper.output_reader import join_prediction_with_info
 from list_lib import lmap, lfilter
 from misc_lib import group_by, average
+from tlm.estimator_output_reader import join_prediction_with_info
 
 parser = argparse.ArgumentParser(description='File should be stored in ')
 parser.add_argument("--prediction_path")

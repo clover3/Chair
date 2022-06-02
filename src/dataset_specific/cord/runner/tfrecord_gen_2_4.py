@@ -2,13 +2,13 @@ import os
 from typing import List, Dict, Tuple, Callable
 
 from cache import save_to_pickle
-from cord.csv_to_galago_indexable import read_csv_as_dict, str_cord_uid, str_title, str_abstract
-from cord.data_loader import load_queries
-from cord.path_info import cord_working_dir, meta_data_path
 from cpath import pjoin
 from data_generator.create_feature import create_int_feature
 from data_generator.subword_translate import Subword
 from data_generator.tokenizer_wo_tf import get_tokenizer
+from dataset_specific.cord.csv_to_galago_indexable import read_csv_as_dict, str_cord_uid, str_title, str_abstract
+from dataset_specific.cord.data_loader import load_queries
+from dataset_specific.cord.path_info import cord_working_dir, meta_data_path
 from galagos.parse import load_galago_ranked_list
 from galagos.types import SimpleRankedListEntry
 from tf_util.record_writer_wrap import RecordWriterWrap
