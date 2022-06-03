@@ -1,9 +1,9 @@
 from typing import NamedTuple
 
-import bert
 import tensorflow as tf
 from tensorflow import keras
 
+from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.custom_loop.modeling_common.bert_common import BERT_CLS
 from trainer_v2.custom_loop.modeling_common.network_utils import vector_three_feature, get_two_projected_mean_encoder
 from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig2SegProject
@@ -18,7 +18,7 @@ class ModelConfig2Seg:
 class BERTAssymetric:
     def __init__(self, bert_params, config: ModelConfig2Seg):
         def build_bert_cls(prefix):
-            l_bert = bert.BertModelLayer.from_params(bert_params, name="{}/bert".format(prefix))
+            l_bert = BertModelLayer.from_params(bert_params, name="{}/bert".format(prefix))
             pooler = tf.keras.layers.Dense(bert_params.hidden_size, activation=tf.nn.tanh, name="{}/bert/pooler/dense".format(prefix))
             return BERT_CLS(l_bert, pooler)
 
@@ -88,7 +88,7 @@ class BERTAsymmetricPMC:
                 return seq_m
 
         def build_encoder(prefix) -> Encoder:
-            l_bert = bert.BertModelLayer.from_params(bert_params, name="{}/bert".format(prefix))
+            l_bert = BertModelLayer.from_params(bert_params, name="{}/bert".format(prefix))
             projector = Dense(config.project_dim, activation='relu', name="{}/project".format(prefix))
             return Encoder(l_bert, projector)
 

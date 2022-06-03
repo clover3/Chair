@@ -1,5 +1,6 @@
 import logging
 import os
+import warnings
 from typing import Tuple, Dict, Callable, List
 
 import tensorflow as tf
@@ -126,8 +127,8 @@ def tf_run_train(run_config: RunConfig2,
                 batch_item = next(train_itr)
                 per_replica_losses = strategy.run(trainer.train_step, args=(batch_item, ))
 
-        eval_rc = RecentCounter(run_config.train_config.eval_every_n_step)
-        save_rc = RecentCounter(run_config.train_config.save_every_n_step)
+        eval_rc = RecentCounter(run_config.train_config.eval_every_n_step, 0)
+        save_rc = RecentCounter(run_config.train_config.save_every_n_step, 0)
         step_idx = current_step
         c_log.info("START Training")
         while step_idx < run_config.train_config.train_step:
@@ -266,6 +267,9 @@ def tf_run(run_config: RunConfig2,
            trainer: TrainerIF,
            build_dataset,
            ):
+    c_log.info("Run name: %s", run_config.common_run_config.run_name)
+    c_log.info("Houston, we have a %s", run_config.common_run_config.run_name)
+
     if run_config.common_run_config.is_debug_run:
         c_log.setLevel(logging.DEBUG)
 
@@ -284,6 +288,8 @@ def adjust_logging():
     ]
     tf_logging = logging.getLogger("tensorflow")
     tf_logging.addFilter(IgnoreFilter(msgs))
+    warnings.filterwarnings("ignore", '`layer.updates` will be removed in a future version. ')
+    warnings.filterwarnings("ignore", "`layer.apply` is deprecated")
 
 
 def tf_run_for_bert(dataset_factory, model_config,

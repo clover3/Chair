@@ -1,8 +1,8 @@
-import bert
 import tensorflow as tf
 from tensorflow import keras
 
 from models.transformer.bert_common_v2 import get_shape_list2
+from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.custom_loop.modeling_common.bert_common import BERT_CLS
 from trainer_v2.custom_loop.modeling_common.network_utils import vector_three_feature
 
@@ -32,7 +32,7 @@ def build_siamese_inputs_apply(max_seq_len1, max_seq_len2):
 
 class BERTSiamese:
     def __init__(self, bert_params, config: ModelConfig2Seg):
-        l_bert = bert.BertModelLayer.from_params(bert_params, name="bert")
+        l_bert = BertModelLayer.from_params(bert_params, name="bert")
         pooler = tf.keras.layers.Dense(bert_params.hidden_size, activation=tf.nn.tanh, name="bert/pooler/dense")
         bert_cls = BERT_CLS(l_bert, pooler)
         num_classes = config.num_classes
@@ -53,7 +53,7 @@ class BERTSiamese:
 
 class BERTSiameseL:
     def __init__(self, bert_params, config: ModelConfig2Seg):
-        l_bert = bert.BertModelLayer.from_params(bert_params, name="bert")
+        l_bert = BertModelLayer.from_params(bert_params, name="bert")
         pooler = tf.keras.layers.Dense(bert_params.hidden_size, activation=tf.nn.tanh, name="bert/pooler/dense")
         bert_cls = BERT_CLS(l_bert, pooler)
         num_classes = config.num_classes
@@ -81,7 +81,7 @@ class ModelConfig2SegProject(ModelConfig2Seg):
 class BERTSiameseMean:
     def __init__(self, bert_params, config: ModelConfig2SegProject):
         Dense = tf.keras.layers.Dense
-        l_bert = bert.BertModelLayer.from_params(bert_params, name="bert")
+        l_bert = BertModelLayer.from_params(bert_params, name="bert")
 
         batch_size, inputs, l_input_ids, l_token_type_ids =\
             build_siamese_inputs_apply(config.max_seq_length1, config.max_seq_length2)
@@ -104,7 +104,7 @@ class BERTSiameseMean:
 class BERTSiameseMC:
     def __init__(self, bert_params, config: ModelConfig2SegProject):
         Dense = tf.keras.layers.Dense
-        l_bert = bert.BertModelLayer.from_params(bert_params, name="bert")
+        l_bert = BertModelLayer.from_params(bert_params, name="bert")
 
         batch_size, inputs, l_input_ids, l_token_type_ids = \
             build_siamese_inputs_apply(config.max_seq_length1, config.max_seq_length2)

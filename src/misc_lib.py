@@ -820,8 +820,8 @@ class CountWarning:
 
 
 class RecentCounter:
-    def __init__(self, interval):
-        self.last_idx = None
+    def __init__(self, interval, last_idx=None):
+        self.last_idx = last_idx
         self.interval = interval
 
     def update_last(self, idx):

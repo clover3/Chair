@@ -2,15 +2,14 @@ import math
 import re
 from typing import NamedTuple
 
-import bert
 import numpy as np
 import tensorflow as tf
-from bert import BertModelLayer, StockBertConfig
 from bert.loader import map_to_stock_variable_name, _checkpoint_exists, bert_prefix, map_stock_config_to_params
 from tensorflow import keras
 
 from cache import load_from_pickle
 from list_lib import list_equal
+from trainer_v2.bert_for_tf2 import BertModelLayer, StockBertConfig
 from trainer_v2.chair_logging import c_log
 
 
@@ -42,7 +41,7 @@ class BERT_CLS(NamedTuple):
 
 class BertClassifier:
     def __init__(self, bert_params, config: ModelConfig):
-        l_bert = bert.BertModelLayer.from_params(bert_params, name="bert")
+        l_bert = BertModelLayer.from_params(bert_params, name="bert")
         max_seq_len = config.max_seq_length
         num_classes = config.num_classes
 

@@ -1,9 +1,9 @@
 from typing import NamedTuple
 
-import bert
 import tensorflow as tf
 
 from models.transformer.bert_common_v2 import get_shape_list2
+from trainer_v2.bert_for_tf2 import BertModelLayer
 
 
 def vector_three_feature(v1, v2):
@@ -25,7 +25,7 @@ class MeanProjectionEnc(tf.keras.layers.Layer):
     def __init__(self, bert_params, project_dim, prefix):
         super(MeanProjectionEnc, self).__init__()
         Dense = tf.keras.layers.Dense
-        self.l_bert: tf.keras.layers.Layer = bert.BertModelLayer.from_params(bert_params, name="{}/bert".format(prefix))
+        self.l_bert: tf.keras.layers.Layer = BertModelLayer.from_params(bert_params, name="{}/bert".format(prefix))
         self.projector: tf.keras.layers.Dense = Dense(project_dim, activation='relu', name="{}/project".format(prefix))
 
     def call(self, inputs, *args, **kwargs):
@@ -49,7 +49,7 @@ def get_two_projected_mean_encoder(bert_params, project_dim):
             return seq_m
 
     def build_encoder(prefix) -> Encoder:
-        l_bert = bert.BertModelLayer.from_params(bert_params, name="{}/bert".format(prefix))
+        l_bert = BertModelLayer.from_params(bert_params, name="{}/bert".format(prefix))
         projector = Dense(project_dim, activation='relu', name="{}/project".format(prefix))
         return Encoder(l_bert, projector)
 
