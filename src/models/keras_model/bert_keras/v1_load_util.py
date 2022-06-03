@@ -79,10 +79,29 @@ def name_mapping_cls_probe(name):
     return name
 
 
-
 def name_mapping_embedding(name):
     name2 = name_mapping_drop_colon(name)
     return name2.replace("_embeddings/embeddings", "_embeddings")
+
+
+DROP_KEYWORD = "DROP"
+def name_mapping_for_my_bert(name):
+    name = name.replace("_embeddings/embeddings", "_embeddings")
+
+    layer_pattern ="one_transform_layer(_)?(\d+)?/"
+    m = re.search(layer_pattern, name)
+    if m is not None:
+        if m.group(2) is not None:
+            layer_no = int(m.group(2)) % 12
+        else:
+            layer_no = 0
+        after = ""
+        name = re.sub(layer_pattern, after, name)
+    if name.find(DROP_KEYWORD) >= 0:
+        idx = name.find(DROP_KEYWORD) + len(DROP_KEYWORD) + 1
+        name = name[idx:]
+    name = name.split(":")[0]
+    return name
 
 
 def load_model_from_v1_checkpoint(save_path, model_config) -> Tuple[tf.keras.Model, BertClassifierLayer]:
@@ -107,7 +126,12 @@ def load_model_cls_probe_from_v1_checkpoint(save_path, model_config):
     max_seq_len = model_config.max_seq_length
     inputs = define_bert_keras_inputs(max_seq_len)
     cls_logits = bert_cls_probe.call(inputs)
-    load_stock_weights(bert_cls_probe, save_path, name_mapping_cls_probe, ["optimizer", "probe_optimizer"])
+
+    def name_mapping(name):
+        n = name_mapping_for_my_bert(name)
+        n = name_mapping_cls_probe(n)
+        return n
+    load_stock_weights(bert_cls_probe, save_path, name_mapping, ["optimizer", "probe_optimizer"])
 
     output = cls_logits
     model = tf.keras.Model(inputs=inputs, outputs=output)

@@ -94,7 +94,7 @@ def define_input(max_seq_len, prefix):
 DROP_KEYWORD = "DROP"
 
 
-def name_mapping(name):
+def name_mapping_for_my_bert(name):
     name = name.replace("encoder_with_bias/", "SCOPE1/")
     name = name.replace("encoder_with_bias_1/", "SCOPE2/")
     name = name.replace("_embeddings/embeddings", "_embeddings")
@@ -126,7 +126,7 @@ def load_qde4(save_path, model_config):
         de_inputs = define_input(max_seq_len, "de")
         inputs = qe_inputs, de_inputs
         out_d = model.call(inputs)
-    load_stock_weights(model, save_path, name_mapping, ["optimizer", "probe_optimizer"])
+    load_stock_weights(model, save_path, name_mapping_for_my_bert, ["optimizer", "probe_optimizer"])
     model = tf.keras.Model(inputs=inputs, outputs=out_d)
     return model
 
