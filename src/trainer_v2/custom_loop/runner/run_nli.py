@@ -5,7 +5,7 @@ from taskman_client.wrapper3 import report_run3
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.dataset_factories import get_classification_dataset
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config, ModelConfig
-from trainer_v2.custom_loop.per_task.classification_trainer import StandardBertCls
+from trainer_v2.custom_loop.neural_network_def.classification_trainer import StandardBertCls
 from trainer_v2.custom_loop.per_task.trainer import Trainer
 from trainer_v2.custom_loop.run_config2 import get_run_config2_nli, RunConfig2
 from trainer_v2.custom_loop.train_loop import tf_run

@@ -267,8 +267,8 @@ def tf_run(run_config: RunConfig2,
            trainer: TrainerIF,
            build_dataset,
            ):
-    c_log.info("Run name: %s", run_config.common_run_config.run_name)
-    c_log.info("Houston, we have a %s", run_config.common_run_config.run_name)
+    run_name = str(run_config.common_run_config.run_name)
+    c_log.info("Run name: %s", run_name)
 
     if run_config.common_run_config.is_debug_run:
         c_log.setLevel(logging.DEBUG)
@@ -283,13 +283,13 @@ def tf_run(run_config: RunConfig2,
 
 def adjust_logging():
     msgs = [
-        "UserWarning: `layer.apply` is deprecated and will be removed in a future version",
+        # "UserWarning: `layer.apply` is deprecated and will be removed in a future version",
         "`model.compile_metrics` will be empty until you train or evaluate the model."
     ]
     tf_logging = logging.getLogger("tensorflow")
     tf_logging.addFilter(IgnoreFilter(msgs))
     warnings.filterwarnings("ignore", '`layer.updates` will be removed in a future version. ')
-    warnings.filterwarnings("ignore", "`layer.apply` is deprecated")
+    # warnings.filterwarnings("ignore", "`layer.apply` is deprecated")
 
 
 def tf_run_for_bert(dataset_factory, model_config,
@@ -297,8 +297,6 @@ def tf_run_for_bert(dataset_factory, model_config,
     adjust_logging()
     run_config.print_info()
 
-    if run_config.common_run_config.tf_random_seed is not None:
-        tf.random.set_seed(run_config.common_run_config.tf_random_seed)
     bert_params = load_bert_config(get_bert_config_path())
     trainer = Trainer(bert_params, model_config, run_config, inner)
     tf_run(run_config, trainer, dataset_factory)

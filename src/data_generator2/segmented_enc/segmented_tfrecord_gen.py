@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import List, Dict
 
 from data_generator2.segmented_enc.seg_encoder_common import EncoderInterface
@@ -8,7 +9,7 @@ from tlm.data_gen.bert_data_gen import create_int_feature
 def get_encode_fn_from_encoder_list(encoder_list: List[EncoderInterface]):
     def entry_encode(e: NLIPairData) -> Dict:
         text_list = [e.premise, e.hypothesis]
-        features = {}
+        features = OrderedDict()
         for i in range(2):
             input_ids, input_mask, segment_ids = encoder_list[i].encode_from_text(text_list[i])
             features["input_ids{}".format(i)] = create_int_feature(input_ids)

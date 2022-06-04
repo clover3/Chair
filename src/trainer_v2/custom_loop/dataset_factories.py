@@ -4,7 +4,7 @@ import tensorflow as tf
 
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.bert_common import ModelConfig
-from trainer_v2.custom_loop.neural_network_def.assymetric import ModelConfig2Seg
+from trainer_v2.custom_loop.neural_network_def.asymmetric import ModelConfig2Seg
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 
 
@@ -25,7 +25,9 @@ def create_dataset_common(decode_record: Callable,
     input_files: List[str] = parse_file_path(file_path)
     if len(input_files) > 1:
         c_log.info("{} inputs files".format(len(input_files)))
-    dataset = tf.data.TFRecordDataset(parse_file_path(file_path), num_parallel_reads=len(input_files))
+    elif len(input_files) == 0:
+        c_log.error("No input files found - Maybe you dont' want this ")
+    dataset = tf.data.TFRecordDataset(input_files, num_parallel_reads=len(input_files))
     if is_training_split:
         dataset = dataset.shuffle(config.shuffle_buffer_size)
         dataset = dataset.repeat()

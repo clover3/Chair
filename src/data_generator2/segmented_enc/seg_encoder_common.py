@@ -4,6 +4,7 @@ from typing import Tuple, List
 from arg.qck.encode_common import encode_single
 from data_generator2.segmented_enc.sent_split_by_spacy import split_spacy_tokens
 from misc_lib import CountWarning
+from tlm.data_gen.base import get_basic_input_feature_as_list
 
 
 class EncoderInterface(ABC):
@@ -59,12 +60,74 @@ class EvenSplitEncoder(EncoderInterface):
         # returns input_ids, input_mask, segment_ids
         middle = int(len(tokens) / 2)
         first = tokens[:middle]
-        second = tokens[:middle]
+        second = tokens[middle:]
         if len(tokens) > self.segment_len * 2:
             self.counter_warning.add_warn()
 
         return encode_two_segments(self.tokenizer, self.segment_len,
                                    first, second)
+
+    def encode_from_text(self, text):
+        # returns input_ids, input_mask, segment_ids
+        return self.encode(self.tokenizer.tokenize(text))
+
+
+def split_even_avoid_cut(tokens):
+    cut_loc = int(len(tokens) / 2)
+    if cut_loc == 0:
+        pass
+    else:
+        while tokens[cut_loc - 1].endswith("##"):
+            cut_loc += 1
+            assert cut_loc <= len(tokens)
+    return cut_loc
+
+
+class EvenSplitEncoderAvoidCut(EncoderInterface):
+    def __init__(self, tokenizer, total_max_seq_length):
+        segment_len = int(total_max_seq_length / 2)
+        self.segment_len = segment_len
+        self.tokenizer = tokenizer
+        self.counter_warning = CountWarning()
+        if total_max_seq_length % 2:
+            raise ValueError()
+
+    def encode(self, tokens) -> Tuple[List, List, List]:
+        # returns input_ids, input_mask, segment_ids
+        cut_loc = split_even_avoid_cut(tokens)
+
+        first = tokens[:cut_loc]
+        second = tokens[cut_loc:]
+        if len(tokens) > self.segment_len * 2:
+            self.counter_warning.add_warn()
+
+        return encode_two_segments(self.tokenizer, self.segment_len,
+                                   first, second)
+
+    def encode_from_text(self, text):
+        # returns input_ids, input_mask, segment_ids
+        return self.encode(self.tokenizer.tokenize(text))
+
+
+class SplitBySegmentIDs(EncoderInterface):
+    def __init__(self, tokenizer, total_max_seq_length):
+        segment_len = int(total_max_seq_length / 2)
+        self.segment_len = segment_len
+        self.tokenizer = tokenizer
+        self.counter_warning = CountWarning()
+        if total_max_seq_length % 2:
+            raise ValueError()
+
+    def encode(self, tokens) -> Tuple[List, List, List]:
+        # returns input_ids, input_mask, segment_ids
+        cut_loc = split_even_avoid_cut(tokens)
+
+        first = tokens[:cut_loc]
+        second = tokens[cut_loc:]
+        if len(tokens) > self.segment_len * 2:
+            self.counter_warning.add_warn()
+
+        return encode_two_no_sep(self.tokenizer, self.segment_len, first, second)
 
     def encode_from_text(self, text):
         # returns input_ids, input_mask, segment_ids
@@ -205,3 +268,20 @@ class SpacySplitEncoderMaskSlash(SpacySplitEncoderMaskReplacer):
 class SpacySplitEncoderNoMask(SpacySplitEncoderMaskReplacer):
     def __init__(self, tokenizer, total_max_seq_length, cache_split):
         super(SpacySplitEncoderNoMask, self).__init__(tokenizer, total_max_seq_length, cache_split, "")
+
+
+def encode_two_no_sep(tokenizer, segment_len, tokens1, tokens2):
+    max_seq_length = segment_len * 2
+    effective_length = max_seq_length - 2   # 100-2 = 98
+    effective_length_half = int(effective_length / 2) # 98/2 = 49
+    tokens1 = tokens1[:effective_length_half]   # <=49
+    tokens2 = tokens2[:effective_length_half]   # <=49
+    tokens = tokens1 + tokens2 + ["[SEP]"]  # 49 + 49 + 1 = 99
+    segment_ids = [0] * len(tokens1) + [1] * (len(tokens2) + 1)
+    assert len(tokens) == len(segment_ids)
+    tokens = tokens[:max_seq_length]
+    segment_ids = segment_ids[:max_seq_length]
+    input_ids, input_mask, segment_ids = get_basic_input_feature_as_list(tokenizer, max_seq_length,
+                                                                         tokens, segment_ids)
+
+    return input_ids, input_mask, segment_ids

@@ -1,5 +1,5 @@
 from trainer_v2.custom_loop.modeling_common.bert_common import BertClassifier, load_bert_checkpoint
-from trainer_v2.custom_loop.per_task.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
 
 
 class StandardBertCls(ClassificationModelIF):

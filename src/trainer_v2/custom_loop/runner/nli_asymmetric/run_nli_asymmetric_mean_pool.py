@@ -3,8 +3,8 @@ import sys
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.dataset_factories import get_two_seg_data
-from trainer_v2.custom_loop.neural_network_def.assymetric import ModelConfig2SegProject
-from trainer_v2.custom_loop.per_task.inner_network import AsymmetricMeanPool
+from trainer_v2.custom_loop.neural_network_def.asymmetric import ModelConfig2SegProject
+from trainer_v2.custom_loop.neural_network_def.asymmetric2 import AsymmetricMeanPool
 from trainer_v2.custom_loop.run_config2 import get_run_config2_nli, RunConfig2
 from trainer_v2.custom_loop.train_loop import tf_run_for_bert
 from trainer_v2.train_util.arg_flags import flags_parser

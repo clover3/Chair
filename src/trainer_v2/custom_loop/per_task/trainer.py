@@ -4,7 +4,7 @@ import tensorflow as tf
 
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
-from trainer_v2.custom_loop.per_task.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.trainer_if import TrainerIF
 

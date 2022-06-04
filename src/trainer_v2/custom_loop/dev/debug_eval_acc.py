@@ -9,7 +9,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.dataset_factories import get_two_seg_data
-from trainer_v2.custom_loop.neural_network_def.assymetric import ModelConfig2SegProject
+from trainer_v2.custom_loop.neural_network_def.asymmetric import ModelConfig2SegProject
 from trainer_v2.custom_loop.run_config2 import get_run_config2_nli, RunConfig2
 from trainer_v2.train_util.arg_flags import flags_parser
 

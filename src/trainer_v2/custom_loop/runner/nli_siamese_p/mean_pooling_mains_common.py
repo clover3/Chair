@@ -1,7 +1,7 @@
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.dataset_factories import get_two_seg_data
+from trainer_v2.custom_loop.neural_network_def.inner_network import SiameseMeanProject
 from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig2SegProject
-from trainer_v2.custom_loop.per_task.inner_network import SiameseMeanProject
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2_nli
 from trainer_v2.custom_loop.train_loop import tf_run_for_bert
 

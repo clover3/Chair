@@ -1,10 +1,13 @@
+import os
+
 from cpath import at_output_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.seg_encoder_common import SingleEncoder, EvenSplitEncoder, SpacySplitEncoder, \
-    SpacySplitEncoder2, SpacySplitEncoderSlash, SpacySplitEncoderNoMask
+    SpacySplitEncoder2, SpacySplitEncoderSlash, SpacySplitEncoderNoMask, EvenSplitEncoderAvoidCut, SplitBySegmentIDs
 from data_generator2.segmented_enc.segmented_tfrecord_gen import get_encode_fn_from_encoder_list
 from dataset_specific.mnli.mnli_reader import MNLIReader
 from dataset_specific.mnli.parsing_jobs.partition_specs import get_mnli_spacy_split_pds
+from misc_lib import exist_or_mkdir
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 
 
@@ -17,7 +20,6 @@ def mnli_encode_common(p_encoder, h_encoder, split, output_path):
     print("h has {} warning cases".format(h_encoder.counter_warning.cnt))
 
 
-
 def gen_mnli(split):
     output_path = at_output_dir("tfrecord", f"nli_p200_hseg2_100_{split}")
     tokenizer = get_tokenizer()
@@ -25,6 +27,7 @@ def gen_mnli(split):
     h_encoder = EvenSplitEncoder(tokenizer, 100)
 
     mnli_encode_common(p_encoder, h_encoder, split, output_path)
+
 
 
 def gen_spacy_tokenized(split):
@@ -56,7 +59,6 @@ def gen_spacy_tokenize_slash(split):
     mnli_encode_common(p_encoder, h_encoder, split, output_path)
 
 
-
 def gen_spacy_tokenize_no_mask(split):
     print("gen_spacy_tokenize_no_mask")
     pds = get_mnli_spacy_split_pds(split)
@@ -68,9 +70,31 @@ def gen_spacy_tokenize_no_mask(split):
     mnli_encode_common(p_encoder, h_encoder, split, output_path)
 
 
+def gen_mnli_avoid_cut(split):
+    output_dir = at_output_dir("tfrecord", "nli_sg6")
+    exist_or_mkdir(output_dir)
+    output_path = os.path.join(output_dir, split)
+    tokenizer = get_tokenizer()
+    p_encoder = SingleEncoder(tokenizer, 200)
+    h_encoder = EvenSplitEncoderAvoidCut(tokenizer, 100)
+    mnli_encode_common(p_encoder, h_encoder, split, output_path)
+
+
+def gen_mnli_avoid_cut_split_by_seg_id(split):
+    output_dir = at_output_dir("tfrecord", "nli_sg7")
+    exist_or_mkdir(output_dir)
+    output_path = os.path.join(output_dir, split)
+    tokenizer = get_tokenizer()
+    p_encoder = SingleEncoder(tokenizer, 200)
+    h_encoder = SplitBySegmentIDs(tokenizer, 100)
+    mnli_encode_common(p_encoder, h_encoder, split, output_path)
+
+
 def main():
-    gen_spacy_tokenize_no_mask("dev")
-    gen_spacy_tokenize_no_mask("train")
+    # gen_mnli_avoid_cut("dev")
+    # gen_mnli_avoid_cut("train")
+    gen_mnli_avoid_cut_split_by_seg_id("dev")
+    gen_mnli_avoid_cut_split_by_seg_id("train")
 
 
 if __name__ == "__main__":
