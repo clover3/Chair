@@ -106,5 +106,62 @@ class SplitSegmentIDLayer(tf.keras.layers.Layer):
         return rep_middle0, rep_middle1
 
 
+class SplitSegmentIDLayerWVar(tf.keras.layers.Layer):
+    def __init__(self, hidden_dims):
+        super(SplitSegmentIDLayerWVar, self).__init__()
+        init = tf.random_normal_initializer()
+        self.empty_embedding = tf.Variable(
+            initial_value=init(shape=(hidden_dims,), dtype="float32"), trainable=True
+        )
 
+    def call(self, inputs, *args, **kwargs):
+        rep_middle, l_input_ids, token_type_ids = inputs
+        # rep_middle: [batch_size, seq_length, hidden_dim]
+        batch_size, seq_length = get_shape_list2(l_input_ids)
+        empty_embedding_seq = tf_tile_after_expand_dims(self.empty_embedding, [0, 1], [batch_size, seq_length, 1])
+
+        def slice_segment_pad_value(segment_id_val):
+            input_mask = tf.not_equal(l_input_ids, 0)
+            is_target_seg_mask = tf.logical_and(tf.equal(token_type_ids, segment_id_val), input_mask)
+            is_target_seg_mask = tf.cast(tf.expand_dims(is_target_seg_mask, 2), tf.float32)
+            rep_middle_masked = tf.multiply(rep_middle, is_target_seg_mask)
+            is_not_target_seq_mask = (1.0 - is_target_seg_mask)
+            empty_embedding_seq_masked = tf.multiply(empty_embedding_seq, is_not_target_seq_mask)
+            return rep_middle_masked + empty_embedding_seq_masked
+
+        rep_middle0 = slice_segment_pad_value(0)
+        rep_middle1 = slice_segment_pad_value(1)
+
+        return rep_middle0, rep_middle1
+
+
+class TwoLayerDense(tf.keras.layers.Layer):
+    def __init__(self, hidden_size, hidden_size2, activation1='relu', activation2=tf.nn.softmax):
+        super(TwoLayerDense, self).__init__()
+        self.layer1 = tf.keras.layers.Dense(hidden_size, activation=activation1)
+        self.layer2 = tf.keras.layers.Dense(hidden_size2, activation=activation2)
+
+    def call(self, inputs, *args, **kwargs):
+        hidden = self.layer1(inputs)
+        return self.layer2(hidden)
+
+
+def tf_tile_after_expand_dims(v, expand_dim_list, tile_param):
+    v_ex = v
+    for expand_dim in expand_dim_list:
+        v_ex = tf.expand_dims(v_ex, expand_dim)
+    return tf.tile(v_ex, tile_param)
+
+
+class TileAfterExpandDims(tf.keras.layers.Layer):
+    def __init__(self, expand_dim_raw, tile_param):
+        super(TileAfterExpandDims, self).__init__()
+        if type(expand_dim_raw) == int:
+            self.expand_dim_list = [expand_dim_raw]
+        else:
+            self.expand_dim_list = expand_dim_raw
+        self.tile_param = tile_param
+
+    def call(self, inputs, *args, **kwargs):
+        return tf_tile_after_expand_dims(inputs, self.expand_dim_list, self.tile_param)
 

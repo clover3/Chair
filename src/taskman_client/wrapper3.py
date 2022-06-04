@@ -16,6 +16,7 @@ def get_hp_str_from_flag(flags):
         s += "{}:\t{}\n".format(key, value)
     return s
 
+g_task_proxy: TaskProxy = None
 
 def report_run3(func):
     def func_wrapper(args):
@@ -23,6 +24,8 @@ def report_run3(func):
         run_name = flag_to_run_name(flags)
         machine = get_local_machine_name()
         task_proxy = TaskProxy("gosford.cs.umass.edu", 8000, machine, flags.tpu_name, None)
+        global g_task_proxy
+        g_task_proxy = task_proxy
         if machine == "GOSFORD":
             run_name = "dontreport"
         flags_str = get_hp_str_from_flag(flags)
@@ -55,3 +58,5 @@ def report_run3(func):
     return func_wrapper
 
 
+def get_g_task_proxy() -> TaskProxy:
+    return g_task_proxy

@@ -63,6 +63,36 @@ class FuzzyLogicLayer(tf.keras.layers.Layer):
         return combine_local_decision_by_fuzzy_logic(inputs)
 
 
+#  Add bias
+class FuzzyLogicLayer2(tf.keras.layers.Layer):
+    def __init__(self):
+        super(FuzzyLogicLayer2, self).__init__()
+        b_init = tf.zeros_initializer()
+        self.bias = tf.Variable(
+            initial_value=b_init(shape=(3,), dtype="float32"), trainable=True
+        )
+
+    def call(self, inputs, *args, **kwargs):
+        local_decisions = inputs
+        local_entail_p = local_decisions[:, :, 0]
+        local_neutral_p = local_decisions[:, :, 1]
+        local_contradiction_p = local_decisions[:, :, 2]
+
+        comb_contradiction_s = tf.reduce_max(local_contradiction_p, axis=-1)
+
+        cnp1 = tf.reduce_max(local_neutral_p, axis=-1)  # [batch_size]
+        cnp2 = 1 - comb_contradiction_s
+        comb_neutral_s = tf.multiply(cnp1, cnp2)
+        comb_entail_s = tf.math.exp(tf.reduce_mean(tf.math.log(local_entail_p), axis=-1))
+
+        score_stacked = tf.stack([comb_entail_s, comb_neutral_s, comb_contradiction_s], axis=1)
+        score_stacked = score_stacked + self.bias
+
+        sum_s = tf.reduce_sum(score_stacked, axis=1, keepdims=True)
+        sentence_logits = tf.divide(score_stacked, sum_s)
+        sentence_prob = tf.nn.softmax(sentence_logits, axis=1)
+        return sentence_prob
+
 #
 # class BERTAsymmetricContextualizedSlice:
 #     def __init__(self, bert_params, config: ModelConfig2SegProject, combine_local_decisions_layer):
