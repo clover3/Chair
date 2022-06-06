@@ -1,8 +1,8 @@
 from typing import List, Tuple
 
 from bert_api.segmented_instance.segmented_text import token_list_to_segmented_text, SegmentedText
-from contradiction.medical_claims.token_tagging.intersection_search.tree_deletion_search import TreeDeletionSearch, \
-    Subsequence
+from contradiction.medical_claims.token_tagging.intersection_search.deletion_tools import Subsequence
+from contradiction.medical_claims.token_tagging.intersection_search.tree_deletion_search import TreeDeletionSearch
 from contradiction.medical_claims.token_tagging.online_solver_common import TokenScoringSolverIF
 from data_generator.tokenizer_wo_tf import get_tokenizer
 

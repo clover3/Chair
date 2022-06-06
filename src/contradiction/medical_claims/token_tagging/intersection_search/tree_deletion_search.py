@@ -1,18 +1,19 @@
-from typing import Callable, Dict, Iterator, NamedTuple
+from typing import Dict, Iterator
 from typing import List, Iterable
 
 import scipy.special
 import spacy
 
 from bert_api.segmented_instance.segmented_text import SegmentedText, seg_to_text
+from bert_api.task_clients.nli_interface.nli_interface import NLIPredictorSig, NLIInput
+from contradiction.medical_claims.token_tagging.intersection_search.deletion_tools import Subsequence, \
+    do_local_search_addition
 from contradiction.medical_claims.token_tagging.intersection_search.intersect_search_if import IntersectionSearchIF
 from contradiction.medical_claims.token_tagging.intersection_search.text_align_helper import \
     align_tokens_segmented_text
-from bert_api.task_clients.nli_interface.nli_interface import NLIPredictorSig, NLIInput
 from data_generator.NLI.enlidef import NEUTRAL
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import get_max_idx
-from misc_lib import pick1
 
 
 def align_tokens_segmented_text_old(tokenizer, tokens: List[str], t: SegmentedText) -> List[int]:
@@ -44,48 +45,6 @@ def align_tokens_segmented_text_old(tokenizer, tokens: List[str], t: SegmentedTe
 
 def align_spacy_tokens_segmented_text(tokenizer, spacy_tokens: Iterable, t: SegmentedText) -> Dict[int, List[int]]:
     return align_tokens_segmented_text(tokenizer, [str(s) for s in spacy_tokens], t)
-
-
-class Subsequence(NamedTuple):
-    segmented_text: SegmentedText
-    parent: SegmentedText
-    parent_drop_indices: List[int]
-
-    def get_seg_len(self):
-        return self.segmented_text.get_seg_len()
-
-
-def do_local_search(init: Subsequence, get_score: Callable[[SegmentedText], float]):
-    stop = len(init.parent_drop_indices) == 0
-    best_score: float = get_score(init.segmented_text)
-    best_sub: Subsequence = init
-    n_try_wo_update = 0
-    while not stop:
-        new_point: Subsequence = add_one_token(best_sub)
-        new_score = get_score(new_point.segmented_text)
-
-        if new_score > best_score:
-            best_score = new_score
-            best_sub: Subsequence = new_point
-            n_try_wo_update = 0
-        else:
-            n_try_wo_update += 1
-
-        if n_try_wo_update > 2 * len(best_sub.parent_drop_indices):
-            stop = True
-        if len(best_sub.parent_drop_indices) == 0:
-            stop = True
-
-    return best_sub
-
-
-
-def add_one_token(subsequence: Subsequence) -> Subsequence:
-    add_index = pick1(subsequence.parent_drop_indices)
-    new_drop_indices = [i for i in subsequence.parent_drop_indices if i != add_index]
-    new_segmented_text = subsequence.parent.get_dropped_text(new_drop_indices)
-    new_subsequence = Subsequence(new_segmented_text, subsequence.parent, new_drop_indices)
-    return new_subsequence
 
 
 class TreeDeletionSearch(IntersectionSearchIF):
@@ -125,7 +84,7 @@ class TreeDeletionSearch(IntersectionSearchIF):
                 return 0
         self.print("find_longest_non_neutral_subset()")
         self.print("After enum: {} {}".format(best_len, seg_to_text(self.tokenizer, best_t2_p.segmented_text)))
-        new_best_tp = do_local_search(best_t2_p, subsequence_score)
+        new_best_tp = do_local_search_addition(best_t2_p, subsequence_score)
         self.print("After local search: {} {}".format(new_best_tp.get_seg_len(),
                                                       seg_to_text(self.tokenizer, new_best_tp.segmented_text)))
         return new_best_tp
@@ -137,11 +96,11 @@ class TreeDeletionSearch(IntersectionSearchIF):
             pass
 
     def enum_entailed_subset(self, t1: SegmentedText, t2: SegmentedText) -> Iterator[Subsequence]:
-        # TODO: For each word of t2
         # t2_p = subtree(word)
         # t2_p = t2 - subtree(word)
         spacy_tokens = self.spacy_nlp(seg_to_text(self.tokenizer, t2))
         spacy_to_st_idx: Dict[int, List[int]] = align_spacy_tokens_segmented_text(self.tokenizer, spacy_tokens, t2)
+        # ch_idx : character index from spacy
         ch_idx_to_token_idx = {}
         for t_idx, t in enumerate(spacy_tokens):
             ch_idx_to_token_idx[t.idx] = t_idx
@@ -192,3 +151,4 @@ def get_child_indices_translated(child_indices, spacy_to_st_idx: Dict[int, List[
     t2_indices.extend(filling_indices)
     t2_indices.sort()
     return t2_indices
+

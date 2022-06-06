@@ -74,5 +74,5 @@ def main(run1_name, run2_name):
 
 
 if __name__ == "__main__":
-    main("annotator_j", "word2vec_em")
+    main("annotator_j", "search1")
 
