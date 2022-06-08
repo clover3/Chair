@@ -165,3 +165,26 @@ class TileAfterExpandDims(tf.keras.layers.Layer):
     def call(self, inputs, *args, **kwargs):
         return tf_tile_after_expand_dims(inputs, self.expand_dim_list, self.tile_param)
 
+
+
+class SplitSegmentIDWMeanLayer(tf.keras.layers.Layer):
+    def __init__(self):
+        super(SplitSegmentIDWMeanLayer, self).__init__()
+
+    def call(self, inputs, *args, **kwargs):
+        rep_middle, l_input_ids, token_type_ids = inputs
+        # rep_middle: [batch_size, seq_length, hidden_dim]
+
+        def slice_segment_w_mean(segment_id_val):
+            is_target_seg_mask = tf.logical_and(tf.equal(token_type_ids, segment_id_val), tf.not_equal(l_input_ids, 0))
+            is_target_seg_mask = tf.cast(tf.expand_dims(is_target_seg_mask, 2), tf.float32)
+            rep_middle_masked = tf.multiply(rep_middle, is_target_seg_mask)
+            eps = 1e-6
+            n_tokens = tf.reduce_sum(is_target_seg_mask, axis=1) + eps  # [batch_size, 1]
+            summed = tf.reduce_sum(rep_middle_masked, axis=1) # [batch_size, project_dim]
+            return tf.divide(summed, n_tokens)
+
+        rep_middle0 = slice_segment_w_mean(0)
+        rep_middle1 = slice_segment_w_mean(1)
+
+        return rep_middle0, rep_middle1

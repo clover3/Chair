@@ -1,3 +1,4 @@
+import random
 from abc import ABC, abstractmethod
 from typing import Tuple, List
 
@@ -285,3 +286,48 @@ def encode_two_no_sep(tokenizer, segment_len, tokens1, tokens2):
                                                                          tokens, segment_ids)
 
     return input_ids, input_mask, segment_ids
+
+
+def get_split_location(tokens) -> Tuple[int, int]:
+    retry = True
+    n_retry = 0
+    while retry:
+        st = random.randint(0, len(tokens) - 1)
+        while st-1 >= 0 and tokens[st - 1].endswith("##"):
+            st += 1
+            assert st <= len(tokens)
+
+        # st is located at end of the text
+        if st + 1 > len(tokens) and n_retry < 4:
+            n_retry += 1
+            retry = True
+            continue
+
+        ed = random.randint(st+1, len(tokens))
+        retry = False
+        return st, ed
+
+
+class SplitBySegmentIDsUnEvenSlice(EncoderInterface):
+    def __init__(self, tokenizer, total_max_seq_length):
+        segment_len = int(total_max_seq_length / 2)
+        self.segment_len = segment_len
+        self.tokenizer = tokenizer
+        self.counter_warning = CountWarning("One segment is empty")
+        if total_max_seq_length % 2:
+            raise ValueError()
+
+    def encode(self, tokens) -> Tuple[List, List, List]:
+        # returns input_ids, input_mask, segment_ids
+        st, ed = get_split_location(tokens)
+        first_a = tokens[:st]
+        first_b = tokens[ed:]
+        first = first_a + ["[MASK]"] + first_b
+        second = tokens[st:ed]
+        if not second:
+            self.counter_warning.add_warn()
+        return encode_two_segments(self.tokenizer, self.segment_len, first, second)
+
+    def encode_from_text(self, text):
+        # returns input_ids, input_mask, segment_ids
+        return self.encode(self.tokenizer.tokenize(text))

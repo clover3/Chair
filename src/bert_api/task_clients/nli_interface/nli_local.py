@@ -6,6 +6,7 @@ from cpath import data_path, pjoin, output_path
 from data_generator.tokenizer_wo_tf import EncoderUnitPlain
 
 
+# Return probabilities
 def get_local_nli_client() -> NLIPredictorSig:
     from bert_api.predictor import Predictor
 

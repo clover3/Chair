@@ -43,6 +43,9 @@ class SegmentedText(NamedTuple):
     def get_seg_text(self, tokenizer, seg_idx):
         return pretty_tokens(tokenizer.convert_ids_to_tokens(self.get_tokens_for_seg(seg_idx)), True)
 
+    def get_tokens_as_text(self, tokenizer):
+        return [self.get_seg_text(tokenizer, i) for i in self.enum_seg_idx()]
+
     def get_dropped_text(self, drop_indices: Iterable[int]):
         new_seg = []
         new_seg_indices = []

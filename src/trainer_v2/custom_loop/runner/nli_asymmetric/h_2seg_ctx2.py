@@ -3,7 +3,7 @@ import sys
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import FuzzyLogicLayer
-from trainer_v2.custom_loop.neural_network_def.asymmetric2 import BERTAsymmetricContextualizedSlice2
+from trainer_v2.custom_loop.neural_network_def.contextualized import BERTAsymmetricContextualizedSlice2
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.dataset_factories import get_two_seg_data

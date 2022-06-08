@@ -4,7 +4,7 @@ from os.path import join as pjoin
 from google.cloud import storage
 
 from cpath import common_model_dir_root
-from misc_lib import exist_or_mkdir
+from misc_lib import exist_or_mkdir, get_dir_files
 
 
 def credential_check():
@@ -130,3 +130,38 @@ def auto_resolve_init_checkpoint(init_checkpoint):
 
         return get_last_model_path_from_dir_name(init_checkpoint)
 
+
+def upload_file(src_local_path, target_storage_path):
+    credential_check()
+    client = storage.Client()
+    bucket_name, gs_path = parse_gs_path(target_storage_path)
+    bucket = client.get_bucket(bucket_name)
+    new_blob = bucket.blob(gs_path)
+    new_blob.upload_from_filename(filename=src_local_path)
+
+
+def upload_dir(src_local_path, target_storage_path):
+    print("Upload {} to {}".format(src_local_path, target_storage_path))
+    credential_check()
+    client = storage.Client()
+    bucket_name, gs_dir_path = parse_gs_path(target_storage_path)
+    bucket = client.get_bucket(bucket_name)
+
+    for file_path in get_dir_files(src_local_path):
+        file_name = os.path.basename(file_path)
+        gs_path = gs_dir_path + "/" + file_name
+        new_blob = bucket.blob(gs_path)
+        ret = new_blob.upload_from_filename(filename=file_path)
+        print(ret)
+
+
+def main():
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "C:\work\Code\webtool\CloverTPU-3fa50b250c68.json"
+    local_path = "C:\\work\\Code\\Chair\\output\\tfrecord\\nli_sg8\\dev"
+    # upload_file(local_path, "gs://clovertpu/training/data/nli_sg8/dev")
+    local_dir_path = "C:\\work\\Code\\Chair\\output\\tfrecord\\nli_sg8"
+    upload_dir(local_dir_path, "gs://clovertpu/training/data/nli_sg8")
+
+
+if __name__ == "__main__":
+    main()

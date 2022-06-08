@@ -552,6 +552,15 @@ def get_duplicate_list(l):
     return duplicate_indices
 
 
+def remove_duplicate(l, hash_fn):
+    duplicate_indices = get_duplicate_list(map(hash_fn, l))
+    output = []
+    for idx, item in enumerate(l):
+        if idx not in duplicate_indices:
+            output.append(item)
+    return output
+
+
 def enum_passage(tokens: List[Any], window_size: int) -> Iterable[List[Any]]:
     cursor = 0
     while cursor < len(tokens):

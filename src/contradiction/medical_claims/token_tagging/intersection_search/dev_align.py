@@ -11,8 +11,9 @@ from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_cli
 from contradiction.medical_claims.token_tagging.intersection_search.deletion_tools import Subsequence, do_local_search
 from contradiction.medical_claims.token_tagging.problem_loader import AlamriProblem, load_alamri_problem
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from misc_lib import pick1, Averager
+from misc_lib import pick1, Averager, two_digit_float, remove_duplicate
 from trainer_v2.chair_logging import c_log
+from visualize.html_visual import HtmlVisualizer, Cell, normalize
 
 
 def get_seq_deleter(g_val):
@@ -73,6 +74,7 @@ def drop_sequence(seq_deleter, sub_sequence: Subsequence) -> Subsequence:
 
     remaining_indices = [i for i in all_indices if i not in sub_sequence.parent_drop_indices]
     additional_delete_indices = seq_deleter(4, remaining_indices)
+    assert additional_delete_indices
 
     def in_new_indices(i):
         return i in sub_sequence.parent_drop_indices or i in additional_delete_indices
@@ -105,12 +107,24 @@ def get_score_from_records(records: List[Tuple[Subsequence, Logits]]) -> List[fl
     return scores
 
 
+def build_hypo_row(probs, scores, tokens):
+    token_cells = list([Cell(t, s) for t, s in zip(tokens, scores)])
+    score_cells = []
+    for label_idx, p in enumerate(probs):
+        target_color = ["B", "G", "R"][label_idx]
+        cell = Cell(two_digit_float(p), int(p * 100), target_color=target_color)
+        score_cells.append(cell)
+    return score_cells + token_cells
+
+
+
 def search_many_perturbation(predict: NLIPredictorSig, t1, t2) -> List[Tuple[Subsequence, Logits]]:
     records: List[Tuple[Subsequence, Logits]] = []
     # Goal: Modify t2 to get entailed information
     #
     # Run multiple local search, average the scores
     #  1. Delete until neutral drops
+    tokenizer = get_tokenizer()
 
     def get_neutral_s(sub_sequence: Subsequence) -> float:
         seg_text = sub_sequence.segmented_text
@@ -119,6 +133,7 @@ def search_many_perturbation(predict: NLIPredictorSig, t1, t2) -> List[Tuple[Sub
         probs = probs_list[0]
         records.append((sub_sequence, probs))
         return probs[1]
+
 
     seq_deleter = get_seq_deleter(0.7)
     init = Subsequence(t2, t2, [])
@@ -162,6 +177,43 @@ def get_scores_by_many_perturbations(predict_fn, t_text1, t_text2):
     return scores
 
 
+
+def dev_get_scores_by_many_perturbations(predict_fn, t_text1, t_text2):
+    html = HtmlVisualizer("perturbation_search.html")
+    all_records = search_many_perturbation(predict_fn, t_text1, t_text2)
+
+    def record_hash(record):
+        sub_sequence, _ = record
+        return str(sub_sequence.parent_drop_indices)
+
+    unique_reocrds = remove_duplicate(all_records, record_hash)
+
+    tokenizer = get_tokenizer()
+    row = list(map(Cell, t_text1.get_tokens_as_text(tokenizer)))
+    html.write_paragraph("Premise")
+    html.write_table([row])
+    html.write_paragraph("Hypothesis")
+
+    for sub_sequence, probs in unique_reocrds:
+        parent = sub_sequence.parent
+        tokens: List[str] = parent.get_tokens_as_text(tokenizer)
+        scores: List[float] = [0 if j in sub_sequence.parent_drop_indices else 100 for j in parent.enum_seg_idx()]
+        row = build_hypo_row(probs, scores, tokens)
+        html.write_table([row])
+
+    scores = get_score_from_records(unique_reocrds)
+    norm_scores = normalize(scores)
+    tokens: List[str] = t_text2.get_tokens_as_text(tokenizer)
+    row = build_hypo_row([0, 0, 0], norm_scores, tokens)
+    html.write_paragraph("Summarized scores:")
+    html.write_table([row])
+    html.write_bar()
+    html.f_html.flush()
+
+    input("press to continue")
+    return scores
+
+
 def summarize_labels(records) -> List:
     label_distrib = Counter()
     for _, probs in records:
@@ -181,8 +233,7 @@ def main():
         c_log.debug('----')
         t_text1: SegmentedText = get_word_level_segmented_text_from_str(tokenizer, p.text1)
         t_text2: SegmentedText = get_word_level_segmented_text_from_str(tokenizer, p.text2)
-        records = search_many_perturbation(cache_client.predict, t_text1, t_text2)
-        scores = get_score_from_records(records)
+        dev_get_scores_by_many_perturbations(cache_client.predict, t_text1, t_text2)
 
 
 

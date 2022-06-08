@@ -125,3 +125,10 @@ class BERTSiameseMC:
         self.l_bert = l_bert
         self.model: keras.Model = model
 
+
+
+class ModelConfig200_200(ModelConfig2Seg):
+    max_seq_length1 = 200
+    max_seq_length2 = 200
+    num_classes = 3
+    project_dim = 4 * 728
