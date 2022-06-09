@@ -1,5 +1,5 @@
 from data_generator.job_runner import sydney_working_dir, JobRunner
-from tlm.data_gen.base import UnmaskedPairGen
+from tlm.data_gen.lm_datagen import UnmaskedPairGen
 from tlm.data_gen.lm_worker import WikiLMWorker
 
 

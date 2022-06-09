@@ -5,7 +5,8 @@ from typing import List
 from data_generator.job_runner import WorkerInterface, JobRunner, sydney_working_dir
 from misc_lib import pick1
 from tlm.bookcorpus.load_tokens import load_seg_with_repeat
-from tlm.data_gen.base import UnmaskedPairGen, truncate_seq_pair, format_tokens_pair_n_segid, SegmentInstance
+from tlm.data_gen.base import truncate_seq_pair, format_tokens_pair_n_segid
+from tlm.data_gen.lm_datagen import UnmaskedPairGen, SegmentInstance
 from tlm.data_gen.run_sero_gen import pool_tokens, Token
 
 

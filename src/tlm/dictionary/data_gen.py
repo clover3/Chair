@@ -1,3 +1,4 @@
+import collections
 import random
 from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict
@@ -7,13 +8,16 @@ import numpy as np
 
 import tlm.data_gen.base as datagen_base
 import tlm.data_gen.bert_data_gen as btd
+import tlm.data_gen.lm_datagen
+import tlm.data_gen.tf_logger_misc
 from data_generator import tokenizer_wo_tf as tokenization
 from data_generator.tokenizer_wo_tf import is_continuation
 from misc_lib import pick1, TimeEstimator, average
 from models.classic.stopword import load_stopwords
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tf_util.tf_logging import tf_logging
-from tlm.data_gen.base import UnmaskedPairGen, pad0
+from tlm.data_gen.base import pad0
+from tlm.data_gen.lm_datagen import UnmaskedPairGen
 from tlm.dictionary.data_gen_base import Word, SegmentInstanceWithDictEntry, TOKEN_LINE_SEP, TOKEN_DEF_SEP, \
     DictPredictionEntry, DictLMFeaturizer, DictLMFeaturizerUnmasked, MultiSenseEntry
 
@@ -248,7 +252,7 @@ class DictTrainGen(UnmaskedPairGen):
             writer_index = (writer_index + 1) % len(writers)
 
             if inst_index < 20:
-                datagen_base.log_print_inst(instance, features)
+                tlm.data_gen.tf_logger_misc.log_print_inst(instance, features)
 
         total_written = 0
         for writer in writers:
@@ -274,7 +278,7 @@ class DictLookupPredictGen(DictTrainGen):
         self.max_word_len = 8
         self.samples_n = samples_n
         self.event_counter = Counter()
-        self.mlm_feature = datagen_base.MLMFeaturizer(self.tokenizer, self.max_seq_length, self.max_predictions_per_seq)
+        self.mlm_feature = tlm.data_gen.lm_datagen.MLMFeaturizer(self.tokenizer, self.max_seq_length, self.max_predictions_per_seq)
         self.feature_formatter = DictLMFeaturizer(
             self.tokenizer, self.max_seq_length, self.max_predictions_per_seq, self.max_def_length,
             self.max_d_loc, self.max_word_len
@@ -369,7 +373,22 @@ class DictLookupPredictGen(DictTrainGen):
         return n_example_list
 
 
-class DictCaseCounter(datagen_base.IfCaseCounter):
+class IfCaseCounter:
+    def __init__(self, name_and_conditions):
+        self.counter = collections.Counter()
+        self.name_and_conditions = name_and_conditions
+
+    def update(self, instance):
+        for name, condition in self.name_and_conditions.items():
+            if condition(instance):
+                self.counter[name] += 1
+
+    def count_report(self):
+        for key in self.counter:
+            yield "{} : {}".format(key, self.counter[key])
+
+
+class DictCaseCounter(IfCaseCounter):
     def __init__(self, max_def_length):
         cases = {
             "None word" : lambda x: x.dict_word is None,
@@ -475,7 +494,7 @@ class DictEntryPredictGen(UnmaskedPairGen):
                 writer.write_feature(features)
                 case_counter.update(instance)
                 if inst_index < 20:
-                    datagen_base.log_print_inst(instance, features)
+                    tlm.data_gen.tf_logger_misc.log_print_inst(instance, features)
         writer.close()
 
         tf_logging.info("Wrote %d total instances", writer.total_written)
@@ -500,7 +519,7 @@ class SenseSelectingDictionaryReaderGen(UnmaskedPairGen):
         self.get_basic_input_features_as_list =\
             partial(datagen_base.get_basic_input_feature_as_list, self.tokenizer, self.max_seq_length)
         self.get_masked_lm_features_as_list =\
-            partial(datagen_base.get_masked_lm_features_as_list, self.tokenizer, self.max_predictions_per_seq)
+            partial(tlm.data_gen.lm_datagen.get_masked_lm_features_as_list, self.tokenizer, self.max_predictions_per_seq)
 
     @staticmethod
     def drop_definitions(batch_insts, max_def_length):

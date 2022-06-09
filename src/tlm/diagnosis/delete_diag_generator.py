@@ -1,6 +1,6 @@
 from collections import Counter
 
-from tlm.data_gen.base import LMTrainGen
+from tlm.data_gen.lm_datagen import LMTrainGen
 
 
 class DeleteTokenTestGen(LMTrainGen):

@@ -3,9 +3,11 @@ from functools import partial
 from data_generator.job_runner import sydney_working_dir
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tf_util.tf_logging import tf_logging
-from tlm.data_gen.base import UnmaskedPairGen, log_print_inst, get_basic_input_feature
+from tlm.data_gen.base import get_basic_input_feature
 from tlm.data_gen.bert_data_gen import create_int_feature
+from tlm.data_gen.lm_datagen import UnmaskedPairGen
 from tlm.data_gen.lm_worker import LMJobRunner
+from tlm.data_gen.tf_logger_misc import log_print_inst
 
 
 class SeroPairGen(UnmaskedPairGen):

@@ -1,5 +1,6 @@
 from list_lib import flatten
-from tlm.data_gen.base import UnmaskedGen, truncate_seq_pair, format_tokens_pair_n_segid, SegmentInstance
+from tlm.data_gen.base import truncate_seq_pair, format_tokens_pair_n_segid
+from tlm.data_gen.lm_datagen import UnmaskedGen, SegmentInstance
 
 
 class SentGen(UnmaskedGen):

@@ -15,7 +15,18 @@ class TokenScoringSolverIF(ABC):
         pass
 
     def solve_from_text(self, text1: str, text2: str) -> Tuple[List[float], List[float]]:
-        return self.solve(text1.split(), text2.split())
+        tokens1 = text1.split()
+        tokens2 = text2.split()
+        scores1, scores2 = self.solve(tokens1, tokens2)
+
+        def check_length(scores, tokens):
+            if len(scores) != len(tokens):
+                print("WARNING number of scores ({}) doesn't match number of tokens ({})".format(len(scores), len(tokens)))
+
+        check_length(scores1, tokens1)
+        check_length(scores2, tokens2)
+        return scores1, scores2
+
 
 
 class TokenScoringSolverIF2(ABC):

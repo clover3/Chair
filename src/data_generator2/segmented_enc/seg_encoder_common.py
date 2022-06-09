@@ -5,10 +5,10 @@ from typing import Tuple, List
 from arg.qck.encode_common import encode_single
 from data_generator2.segmented_enc.sent_split_by_spacy import split_spacy_tokens
 from misc_lib import CountWarning
-from tlm.data_gen.base import get_basic_input_feature_as_list
+from tlm.data_gen.base import get_basic_input_feature_as_list, combine_with_sep_cls, concat_triplet_windows
 
 
-class EncoderInterface(ABC):
+class SingleEncoderInterface(ABC):
     # @abstractmethod
     # def encode(self, tokens) -> Tuple[List, List, List]:
     #     # returns input_ids, input_mask, segment_ids
@@ -20,7 +20,20 @@ class EncoderInterface(ABC):
         pass
 
 
-class SingleEncoder(EncoderInterface):
+class PairEncoderInterface(ABC):
+    # @abstractmethod
+    # def encode(self, tokens) -> Tuple[List, List, List]:
+    #     # returns input_ids, input_mask, segment_ids
+    #     pass
+
+    @abstractmethod
+    def encode_from_text(self, text1, text2) -> Tuple[List, List, List]:
+        # returns input_ids, input_mask, segment_ids
+        pass
+
+
+
+class SingleEncoder(SingleEncoderInterface):
     def __init__(self, tokenizer, max_seq_length):
         self.max_seq_length = max_seq_length
         self.tokenizer = tokenizer
@@ -48,7 +61,7 @@ def encode_two_segments(tokenizer, segment_len, first, second):
     return all_input_ids, all_input_mask, all_segment_ids
 
 
-class EvenSplitEncoder(EncoderInterface):
+class EvenSplitEncoder(SingleEncoderInterface):
     def __init__(self, tokenizer, total_max_seq_length):
         segment_len = int(total_max_seq_length / 2)
         self.segment_len = segment_len
@@ -84,7 +97,7 @@ def split_even_avoid_cut(tokens):
     return cut_loc
 
 
-class EvenSplitEncoderAvoidCut(EncoderInterface):
+class EvenSplitEncoderAvoidCut(SingleEncoderInterface):
     def __init__(self, tokenizer, total_max_seq_length):
         segment_len = int(total_max_seq_length / 2)
         self.segment_len = segment_len
@@ -110,7 +123,7 @@ class EvenSplitEncoderAvoidCut(EncoderInterface):
         return self.encode(self.tokenizer.tokenize(text))
 
 
-class SplitBySegmentIDs(EncoderInterface):
+class SplitBySegmentIDs(SingleEncoderInterface):
     def __init__(self, tokenizer, total_max_seq_length):
         segment_len = int(total_max_seq_length / 2)
         self.segment_len = segment_len
@@ -135,7 +148,7 @@ class SplitBySegmentIDs(EncoderInterface):
         return self.encode(self.tokenizer.tokenize(text))
 
 
-class SpacySplitEncoder(EncoderInterface):
+class SpacySplitEncoder(SingleEncoderInterface):
     def __init__(self, tokenizer, total_max_seq_length):
         segment_len = int(total_max_seq_length / 2)
         self.segment_len = segment_len
@@ -167,7 +180,7 @@ class SpacySplitEncoder(EncoderInterface):
                                    first, second)
 
 
-class SpacySplitEncoder2(EncoderInterface):
+class SpacySplitEncoder2(SingleEncoderInterface):
     def __init__(self, tokenizer, total_max_seq_length, cache_split):
         segment_len = int(total_max_seq_length / 2)
         self.segment_len = segment_len
@@ -197,7 +210,7 @@ class SpacySplitEncoder2(EncoderInterface):
                                    first, second)
 
 
-class SpacySplitEncoderSlash(EncoderInterface):
+class SpacySplitEncoderSlash(SingleEncoderInterface):
     def __init__(self, tokenizer, total_max_seq_length, cache_split):
         segment_len = int(total_max_seq_length / 2)
         self.segment_len = segment_len
@@ -229,7 +242,7 @@ class SpacySplitEncoderSlash(EncoderInterface):
 
 
 
-class SpacySplitEncoderMaskReplacer(EncoderInterface):
+class SpacySplitEncoderMaskReplacer(SingleEncoderInterface):
     def __init__(self, tokenizer, total_max_seq_length, cache_split, mask_replacer):
         segment_len = int(total_max_seq_length / 2)
         self.segment_len = segment_len
@@ -288,7 +301,7 @@ def encode_two_no_sep(tokenizer, segment_len, tokens1, tokens2):
     return input_ids, input_mask, segment_ids
 
 
-def get_split_location(tokens) -> Tuple[int, int]:
+def get_random_split_location(tokens) -> Tuple[int, int]:
     retry = True
     n_retry = 0
     while retry:
@@ -308,7 +321,16 @@ def get_split_location(tokens) -> Tuple[int, int]:
         return st, ed
 
 
-class SplitBySegmentIDsUnEvenSlice(EncoderInterface):
+def random_token_split(tokens):
+    st, ed = get_random_split_location(tokens)
+    first_a = tokens[:st]
+    first_b = tokens[ed:]
+    first = first_a + ["[MASK]"] + first_b
+    second = tokens[st:ed]
+    return first, second
+
+
+class SplitBySegmentIDsUnEvenSlice(SingleEncoderInterface):
     def __init__(self, tokenizer, total_max_seq_length):
         segment_len = int(total_max_seq_length / 2)
         self.segment_len = segment_len
@@ -319,11 +341,7 @@ class SplitBySegmentIDsUnEvenSlice(EncoderInterface):
 
     def encode(self, tokens) -> Tuple[List, List, List]:
         # returns input_ids, input_mask, segment_ids
-        st, ed = get_split_location(tokens)
-        first_a = tokens[:st]
-        first_b = tokens[ed:]
-        first = first_a + ["[MASK]"] + first_b
-        second = tokens[st:ed]
+        first, second = random_token_split(tokens)
         if not second:
             self.counter_warning.add_warn()
         return encode_two_segments(self.tokenizer, self.segment_len, first, second)
@@ -331,3 +349,32 @@ class SplitBySegmentIDsUnEvenSlice(EncoderInterface):
     def encode_from_text(self, text):
         # returns input_ids, input_mask, segment_ids
         return self.encode(self.tokenizer.tokenize(text))
+
+
+class TwoSegConcatEncoder(PairEncoderInterface):
+    def __init__(self, tokenizer, total_max_seq_length):
+        segment_len = int(total_max_seq_length / 2)
+        self.segment_len = segment_len
+
+        self.tokenizer = tokenizer
+        self.counter_warning = CountWarning()
+        if total_max_seq_length % 2:
+            raise ValueError()
+
+    def encode(self, tokens1, tokens2) -> Tuple[List, List, List]:
+        tokens2_first, tokens2_second = random_token_split(tokens2)
+        triplet_list = []
+        for part_of_tokens2 in [tokens2_first, tokens2_second]:
+            tokens, segment_ids = combine_with_sep_cls(self.segment_len, tokens1, part_of_tokens2)
+            if len(tokens) > self.segment_len:
+                self.counter_warning.add_warn()
+
+            triplet = get_basic_input_feature_as_list(self.tokenizer, self.segment_len,
+                                                      tokens, segment_ids)
+            triplet_list.append(triplet)
+
+        return concat_triplet_windows(triplet_list, self.segment_len)
+
+    def encode_from_text(self, text1, text2):
+        # returns input_ids, input_mask, segment_ids
+        return self.encode(self.tokenizer.tokenize(text1), self.tokenizer.tokenize(text2))

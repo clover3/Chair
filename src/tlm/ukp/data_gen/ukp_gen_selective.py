@@ -6,7 +6,7 @@ import data_generator.argmining.ukp_header
 from data_generator.job_runner import JobRunner, sydney_working_dir
 from galagos.parse import load_galago_ranked_list
 from misc_lib import get_dir_files
-from tlm.data_gen.base import UnmaskedPairedDataGen
+from tlm.data_gen.lm_datagen import UnmaskedPairedDataGen
 from tlm.ukp.data_gen.run_ukp_gen1 import UkpWorker
 from tlm.ukp.sydney_data import sydney_get_ukp_ranked_list
 

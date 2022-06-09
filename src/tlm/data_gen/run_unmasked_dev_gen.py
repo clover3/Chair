@@ -2,7 +2,7 @@ import os
 import pickle
 
 from data_generator.job_runner import JobRunner
-from tlm.data_gen.base import UnmaskedGen
+from tlm.data_gen.lm_datagen import UnmaskedGen
 
 working_path ="/mnt/nfs/work3/youngwookim/data/bert_tf"
 

@@ -36,3 +36,7 @@ class TrainerIF(ABC):
     @abstractmethod
     def set_keras_model(self, model):
         pass
+
+    @abstractmethod
+    def train_callback(self):
+        pass

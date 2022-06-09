@@ -3,7 +3,7 @@ import pickle
 
 from data_generator import job_runner
 from data_generator.job_runner import JobRunner, sydney_working_dir
-from tlm.data_gen.base import UnmaskedPairedDataGen
+from tlm.data_gen.lm_datagen import UnmaskedPairedDataGen
 
 
 def get_all_file_name_list():

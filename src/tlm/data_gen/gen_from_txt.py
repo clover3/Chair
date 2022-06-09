@@ -1,5 +1,5 @@
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from tlm.data_gen.base import UnmaskedPairGen
+from tlm.data_gen.lm_datagen import UnmaskedPairGen
 
 
 class GenFromTxt(UnmaskedPairGen):

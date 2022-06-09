@@ -1,4 +1,4 @@
-from tlm.data_gen.base import MaskedPairGen
+from tlm.data_gen.lm_datagen import MaskedPairGen
 from tlm.data_gen.lm_worker import LMJobRunner
 
 if __name__ == "__main__":

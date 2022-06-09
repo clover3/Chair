@@ -1,7 +1,9 @@
 import tensorflow as tf
 
 from models.transformer.bert_common_v2 import get_shape_list2
-from trainer_v2.custom_loop.modeling_common.network_utils import split_stack_input
+from trainer_v2.chair_logging import c_log
+from trainer_v2.custom_loop.modeling_common.network_utils import split_stack_input, TwoLayerDense
+from trainer_v2.custom_loop.train_loop_helper import eval_tensor
 
 
 def split_stack_flatten_encode_stack(encoder, input_list,
@@ -37,6 +39,8 @@ class StackedInputMapper(tf.keras.layers.Layer):
                                                 self.total_seq_length, self.window_length)
 
 
+# Input [batch_size, num_window, num_classes]
+# Output [batch_size, num_classes]
 def combine_local_decision_by_fuzzy_logic(local_decisions):
     local_entail_p = local_decisions[:, :, 0]
     local_neutral_p = local_decisions[:, :, 1]
@@ -61,10 +65,23 @@ class FuzzyLogicLayer(tf.keras.layers.Layer):
         return combine_local_decision_by_fuzzy_logic(inputs)
 
 
+class MLPLabelCombine(tf.keras.layers.Layer):
+    def __init__(self, num_window, num_classes):
+        super(MLPLabelCombine, self).__init__()
+        self.input_size = num_window * num_classes
+        hidden1 = num_window * num_classes * 100
+        self.hidden1 = hidden1
+        self.tld = TwoLayerDense(hidden1, num_classes)
+
+    def call(self, inputs, *args, **kwargs):
+        h = tf.reshape(inputs, [-1, self.input_size])
+        return self.tld(h)
+
+
 #  Add bias
-class FuzzyLogicLayer2(tf.keras.layers.Layer):
+class FuzzyLogicLayerBias(tf.keras.layers.Layer):
     def __init__(self):
-        super(FuzzyLogicLayer2, self).__init__()
+        super(FuzzyLogicLayerBias, self).__init__()
         b_init = tf.zeros_initializer()
         self.bias = tf.Variable(
             initial_value=b_init(shape=(3,), dtype="float32"), trainable=True
@@ -72,6 +89,31 @@ class FuzzyLogicLayer2(tf.keras.layers.Layer):
 
     def call(self, inputs, *args, **kwargs):
         return combine_local_decision_by_fuzzy_logic(inputs)
+
+
+#  Add bias
+class FuzzyLogicToMLP(tf.keras.layers.Layer):
+    def __init__(self, num_window, num_classes, train_step):
+        super(FuzzyLogicToMLP, self).__init__()
+        self.alpha = tf.Variable(initial_value=1.0, trainable=False, dtype=tf.float32)
+        self.fll = FuzzyLogicLayer()
+        self.mlp = MLPLabelCombine(num_window, num_classes)
+        self.decay_steps = train_step
+
+    def callback(self, arg):
+        train_step_var = arg['step']
+        step = tf.minimum(train_step_var, self.decay_steps)
+        alpha = 1 - step / self.decay_steps
+        alpha = tf.cast(alpha, tf.float32)
+        c_log.debug("FuzzyLogicToMLP::callback alpha was %s", eval_tensor(self.alpha))
+        self.alpha.assign(alpha)
+        c_log.debug("FuzzyLogicToMLP::callback alpha is now %s", eval_tensor(self.alpha))
+
+    def call(self, inputs, *args, **kwargs):
+        out1 = self.fll(inputs)
+        out2 = self.mlp(inputs)
+        output = self.alpha * out1 + (-self.alpha + 1) * out2
+        return output
 
 
 def main():

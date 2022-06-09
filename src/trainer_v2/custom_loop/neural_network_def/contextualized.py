@@ -355,7 +355,8 @@ class BAContextualizedSlice6(ClassificationModelIF):
 
 
 class BAContextualizedSlice7(ClassificationModelIF):
-    # No upper encoder
+    # Segments are NOT separated.
+    # Segment representation: mean of projected vectors.
     # Trainable lowe encoder
     def __init__(self, decision_combine_layer):
         super(BAContextualizedSlice7, self).__init__()
@@ -404,3 +405,5 @@ class BAContextualizedSlice7(ClassificationModelIF):
     def init_checkpoint(self, init_checkpoint):
         for l_bert in self.l_bert_list:
             load_stock_weights(l_bert, init_checkpoint, n_expected_restore=197)
+
+

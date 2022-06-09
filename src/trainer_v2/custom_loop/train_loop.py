@@ -146,6 +146,7 @@ def tf_run_train(run_config: RunConfig2,
             for m in metrics.values():
                 m.reset_state()
             distributed_train_step(train_itr)
+            trainer.train_callback()
             msg = summarize_metric(fetch_metric_result(metrics))
             per_step_msg += msg
 

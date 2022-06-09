@@ -7,7 +7,7 @@ from cpath import output_path
 
 
 def load_alamri1_problem_info_json():
-    info_path = os.path.join(output_path, "alamri_annotation1", "tfrecord", "biobert_alamri1.info")
+    info_path = os.path.join(output_path, "alamri_annotation1", "alamri1.info")
     info_d = json.load(open(info_path, "r", encoding="utf-8"))
     return info_d
 

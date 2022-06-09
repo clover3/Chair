@@ -10,8 +10,9 @@ from data_generator.job_runner import JobRunner, sydney_working_dir
 from list_lib import flatten
 from misc_lib import pick1
 from tf_util.record_writer_wrap import RecordWriterWrap
-from tlm.data_gen.base import truncate_seq_pair, format_tokens_pair_n_segid, SegmentInstance, \
-    get_basic_input_feature, log_print_inst
+from tlm.data_gen.base import truncate_seq_pair, format_tokens_pair_n_segid, get_basic_input_feature
+from tlm.data_gen.lm_datagen import SegmentInstance
+from tlm.data_gen.tf_logger_misc import log_print_inst
 from tlm.ukp.sydney_data import ukp_load_tokens_for_topic, sydney_get_ukp_ranked_list
 
 

@@ -8,8 +8,9 @@ from list_lib import lmap, flatten
 from misc_lib import average
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tf_util.tf_logging import tf_logging
-from tlm.data_gen.base import LMTrainGen, get_basic_input_feature
+from tlm.data_gen.base import get_basic_input_feature
 from tlm.data_gen.bert_data_gen import create_int_feature
+from tlm.data_gen.lm_datagen import LMTrainGen
 
 
 class WikiWorker:

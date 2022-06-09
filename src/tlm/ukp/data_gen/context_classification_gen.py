@@ -10,10 +10,10 @@ from data_generator.tokenizer_wo_tf import pretty_tokens, get_tokenizer
 from list_lib import lmap, flatten
 from tf_util.enum_features import load_record
 from tf_util.record_writer_wrap import RecordWriterWrap
-from tlm.data_gen.base import get_basic_input_feature_as_list, \
-    log_print_feature
+from tlm.data_gen.base import get_basic_input_feature_as_list
 from tlm.data_gen.bert_data_gen import create_int_feature
 from tlm.data_gen.feature_to_text import take
+from tlm.data_gen.tf_logger_misc import log_print_feature
 from tlm.tlm.relevance_on_bert_tokens import Ranker
 from tlm.ukp.data_gen.add_topic_ids_cls import token_ids_to_topic
 from tlm.ukp.data_gen.run_ukp_gen2 import load_tokens_for_topic

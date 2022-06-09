@@ -77,3 +77,9 @@ class Trainer(TrainerIF):
 
     def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         return self.eval_metrics
+
+    def train_callback(self):
+        try:
+            self.inner_model.callback({'step': self.optimizer.iterations})
+        except AttributeError:
+            pass

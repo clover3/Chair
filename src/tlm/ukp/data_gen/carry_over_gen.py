@@ -17,9 +17,10 @@ from list_lib import lmap, flatten
 from misc_lib import get_dir_files
 from tf_util.record_writer_wrap import RecordWriterWrap
 from tf_util.tf_logging import tf_logging
-from tlm.data_gen.base import LMTrainBase, format_tokens_pair_n_segid, truncate_seq_pair, get_basic_input_feature, \
-    log_print_feature
+from tlm.data_gen.base import format_tokens_pair_n_segid, truncate_seq_pair, get_basic_input_feature
 from tlm.data_gen.bert_data_gen import create_int_feature
+from tlm.data_gen.lm_datagen import LMTrainBase
+from tlm.data_gen.tf_logger_misc import log_print_feature
 from tlm.ukp.sydney_data import sydney_get_ukp_ranked_list
 
 

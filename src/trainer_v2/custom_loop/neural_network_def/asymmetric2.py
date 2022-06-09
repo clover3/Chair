@@ -68,6 +68,7 @@ class BERTEvenSegmented(ClassificationModelIF):
         local_decisions = tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax)(hidden)
         self.local_decisions = local_decisions
         combine_local_decisions = self.combine_local_decisions_layer()
+        self.cld = combine_local_decisions
         output = combine_local_decisions(local_decisions)
         inputs = (l_input_ids1, l_token_type_ids1, l_input_ids2, l_token_type_ids2)
         model = keras.Model(inputs=inputs, outputs=output, name="bert_model")
@@ -81,6 +82,14 @@ class BERTEvenSegmented(ClassificationModelIF):
         l_bert1, l_bert2 = self.l_bert_list
         load_stock_weights(l_bert1, init_checkpoint, n_expected_restore=197)
         load_stock_weights(l_bert2, init_checkpoint, n_expected_restore=197)
+
+
+class BERTEvenSegmentedWCallback(BERTEvenSegmented):
+    def __init__(self, combine_local_decisions_layer):
+        super(BERTEvenSegmentedWCallback, self).__init__(combine_local_decisions_layer)
+
+    def callback(self, arg):
+        self.cld.callback(arg)
 
 
 # Projection + Mean+ Concat

@@ -156,3 +156,17 @@ def list_equal(a: List, b: List):
 def transpose(m):
     return [[row[i] for row in m] for i in range(len(m[0]))]
 
+
+class MaxKeyValue:
+    def __init__(self):
+        self.max_key = None
+        self.max_value = None
+
+    def update(self, k, v):
+        if self.max_value is None:
+            self.max_key = k
+            self.max_value = v
+        elif self.max_value < v:
+            self.max_key = k
+            self.max_value = v
+

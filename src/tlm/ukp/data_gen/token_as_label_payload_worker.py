@@ -5,8 +5,9 @@ from data_generator import job_runner
 from data_generator.argmining.ukp import DataLoader
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap
-from tlm.data_gen.base import UnmaskedPairedDataGen, truncate_seq_pair, SegmentInstance
+from tlm.data_gen.base import truncate_seq_pair
 from tlm.data_gen.label_as_token_encoder import encode_label_and_token_pair
+from tlm.data_gen.lm_datagen import UnmaskedPairedDataGen, SegmentInstance
 
 
 class UkpTokenAsLabelGenerator(UnmaskedPairedDataGen):

@@ -3,7 +3,8 @@ from functools import partial
 
 from data_generator import tokenizer_wo_tf as tokenization
 from tlm.data_gen import bert_data_gen as btd
-from tlm.data_gen.base import pad0, get_basic_input_feature, get_masked_lm_features, OrderedDictBuilder
+from tlm.data_gen.base import pad0, get_basic_input_feature
+from tlm.data_gen.lm_datagen import OrderedDictBuilder, get_masked_lm_features
 
 
 class Word:
