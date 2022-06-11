@@ -39,11 +39,13 @@ class PromiseKeeper:
         if reset:
             self.reset()
 
+    def get_future(self, x):
+        return MyPromise(x, self).future()
+
     def reset(self):
         self.X_list = []
 
 T = TypeVar('T')
-
 
 class MyFuture(Generic[T]):
     def __init__(self):
@@ -70,6 +72,7 @@ class MyPromise:
         return self.Y
 
 
+
 def sum_future(futures):
     return sum([f.get() for f in futures])
 
@@ -89,9 +92,11 @@ def promise_to_items(promises: List[MyPromise]):
 
 Parent = TypeVar("Parent")
 Child = TypeVar("Child")
+MiddleOutputType = TypeVar("MiddleOutputType")
 OutputType = TypeVar("OutputType")
 
 
+#
 def parent_child_pattern(p_list: List[Parent],
                          enum_children: Callable[[Parent], List[Child]],
                          work_for_children: Callable[[List[Child]], List[OutputType]]
@@ -109,6 +114,28 @@ def parent_child_pattern(p_list: List[Parent],
     for p, fl in zip(p_list, future_list_list):
         output_list: List[OutputType] = list_future(fl)
         output.append((p, output_list))
+    return output
+
+
+def parent_child_reduce_pattern(p_list: List[Parent],
+                                enum_children: Callable[[Parent], List[Child]],
+                                work_for_children: Callable[[List[Child]], List[MiddleOutputType]],
+                                reduce_fn: Callable[[List[MiddleOutputType]], OutputType]
+                                ) -> List[Tuple[Parent, OutputType]]:
+
+    pk = PromiseKeeper(work_for_children)
+    future_list_list: List[List[MyFuture[MiddleOutputType]]] = []
+    for p in p_list:
+        future_list: List[MyFuture[MiddleOutputType]] = [MyPromise(c, pk).future() for c in enum_children(p)]
+        future_list_list.append(future_list)
+
+    pk.do_duty(False, False)
+
+    output: List[Tuple[Parent, OutputType]] = []
+    for p, fl in zip(p_list, future_list_list):
+        middle_output_list: List[MiddleOutputType] = list_future(fl)
+        output: OutputType = reduce_fn(middle_output_list)
+        output.append((p, output))
     return output
 
 

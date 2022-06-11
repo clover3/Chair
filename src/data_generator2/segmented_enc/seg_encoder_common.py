@@ -330,7 +330,7 @@ def random_token_split(tokens):
     return first, second
 
 
-class SplitBySegmentIDsUnEvenSlice(SingleEncoderInterface):
+class UnEvenSlice(SingleEncoderInterface):
     def __init__(self, tokenizer, total_max_seq_length):
         segment_len = int(total_max_seq_length / 2)
         self.segment_len = segment_len
@@ -363,6 +363,9 @@ class TwoSegConcatEncoder(PairEncoderInterface):
 
     def encode(self, tokens1, tokens2) -> Tuple[List, List, List]:
         tokens2_first, tokens2_second = random_token_split(tokens2)
+        return self.two_seg_concat_core(tokens1, tokens2_first, tokens2_second)
+
+    def two_seg_concat_core(self, tokens1, tokens2_first, tokens2_second):
         triplet_list = []
         for part_of_tokens2 in [tokens2_first, tokens2_second]:
             tokens, segment_ids = combine_with_sep_cls(self.segment_len, tokens1, part_of_tokens2)
@@ -372,7 +375,6 @@ class TwoSegConcatEncoder(PairEncoderInterface):
             triplet = get_basic_input_feature_as_list(self.tokenizer, self.segment_len,
                                                       tokens, segment_ids)
             triplet_list.append(triplet)
-
         return concat_triplet_windows(triplet_list, self.segment_len)
 
     def encode_from_text(self, text1, text2):

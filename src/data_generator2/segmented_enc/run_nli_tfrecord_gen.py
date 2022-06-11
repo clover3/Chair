@@ -4,7 +4,7 @@ from cpath import at_output_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.seg_encoder_common import SingleEncoder, EvenSplitEncoder, SpacySplitEncoder, \
     SpacySplitEncoder2, SpacySplitEncoderSlash, SpacySplitEncoderNoMask, EvenSplitEncoderAvoidCut, SplitBySegmentIDs, \
-    SplitBySegmentIDsUnEvenSlice
+    UnEvenSlice
 from data_generator2.segmented_enc.segmented_tfrecord_gen import get_encode_fn_from_encoder_list
 from dataset_specific.mnli.mnli_reader import MNLIReader
 from dataset_specific.mnli.parsing_jobs.partition_specs import get_mnli_spacy_split_pds
@@ -97,7 +97,7 @@ def gen_mnli_un_even(split):
     output_path = os.path.join(output_dir, split)
     tokenizer = get_tokenizer()
     p_encoder = SingleEncoder(tokenizer, 200)
-    h_encoder = SplitBySegmentIDsUnEvenSlice(tokenizer, 200)
+    h_encoder = UnEvenSlice(tokenizer, 200)
     mnli_asymmetric_encode_common(p_encoder, h_encoder, split, output_path)
 
 

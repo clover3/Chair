@@ -17,7 +17,7 @@ def split_stack_flatten_encode_stack(encoder, input_list,
 
     input_list_stacked = split_stack_input(input_list, total_seq_length, window_length)
     input_list_flatten = list(map(r3to2, input_list_stacked))  # [batch_size * num_window, window_length]
-    rep_flatten = encoder.call(input_list_flatten)  # [batch_size * num_window, dim]
+    rep_flatten = encoder(input_list_flatten)  # [batch_size * num_window, dim]
     _, rep_dim = get_shape_list2(rep_flatten)
 
     def r2to3(arr):

@@ -28,7 +28,6 @@ class TokenScoringSolverIF(ABC):
         return scores1, scores2
 
 
-
 class TokenScoringSolverIF2(ABC):
     @abstractmethod
     def solve(self, data_id: int, text1_tokens: List[str], text2_tokens: List[str]) -> Tuple[List[float], List[float]]:

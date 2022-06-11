@@ -6,7 +6,7 @@ from trainer_v2.custom_loop.modeling_common.bert_common import load_stock_weight
     BERT_CLS, load_bert_checkpoint
 from trainer_v2.custom_loop.neural_network_def.asymmetric import BERTAsymmetricProjectMean
 from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
-from trainer_v2.custom_loop.neural_network_def.segmented_enc import StackedInputMapper
+from trainer_v2.custom_loop.neural_network_def.segmented_enc import split_stack_flatten_encode_stack
 
 
 class AsymmetricMeanPool(ClassificationModelIF):
@@ -46,9 +46,9 @@ class TwoSegConcat(ClassificationModelIF):
         # [batch_size, dim]
         window_length = int(max_seq_length / num_window)
         inputs = [l_input_ids, l_token_type_ids]
-        mapper = StackedInputMapper(bert_cls.apply, max_seq_length, window_length)
-        # [batch_size, num_window, dim]
-        feature_rep = mapper(inputs)
+        feature_rep = split_stack_flatten_encode_stack(bert_cls.apply, inputs,
+                                                       max_seq_length, window_length)
+
 
         # [batch_size, num_window, dim2 ]
         hidden = tf.keras.layers.Dense(bert_params.hidden_size, activation='relu')(feature_rep)
@@ -61,6 +61,8 @@ class TwoSegConcat(ClassificationModelIF):
         model = keras.Model(inputs=inputs, outputs=output, name="bert_model")
         self.model: keras.Model = model
         self.bert_cls = bert_cls
+        self.l_bert = l_bert
+        self.pooler = pooler
 
     def get_keras_model(self):
         return self.model

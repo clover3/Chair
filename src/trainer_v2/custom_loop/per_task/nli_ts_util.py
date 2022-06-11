@@ -1,9 +1,14 @@
+from typing import List
+
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
 
 from data_generator2.segmented_enc.seg_encoder_common import encode_two_segments
+from misc_lib import tprint, ceil_divide
 from tlm.data_gen.base import get_basic_input_feature_as_list
+from trainer_v2.custom_loop.demo.demo_common import EncodedSegmentIF
+from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
 
 
 def encode_prem(tokenizer, prem_text, max_seq_length1):
@@ -46,21 +51,73 @@ def batch_shaping(item):
     return np.expand_dims(arr, 0)
 
 
-def load_local_decision_nli(model_path):
+def load_local_decision_nli(model_path, get_local_decision_layer_from_model):
     model = tf.keras.models.load_model(model_path)
-    local_decision_layer_idx = 12
-    local_decision_layer = model.layers[local_decision_layer_idx]
-    print("Local decision layer", local_decision_layer.name)
+    model.summary()
+    local_decision_layer = get_local_decision_layer_from_model(model)
     new_outputs = [local_decision_layer.output, model.outputs]
     fun = K.function([model.input, ], new_outputs)  # evaluation function
     return fun
 
 
-def load_local_decision_nli_model(model_path):
+def load_local_decision_nli_model(model_path, get_local_decision_layer_from_model):
     model = tf.keras.models.load_model(model_path)
-    local_decision_layer_idx = 12
-    local_decision_layer = model.layers[local_decision_layer_idx]
+    local_decision_layer = get_local_decision_layer_from_model(model)
     new_outputs = [local_decision_layer.output, model.outputs]
     model = tf.keras.models.Model(inputs=model.input, outputs=new_outputs)
     return model
+
+
+def get_local_decision_layer_from_model_by_shape(model):
+    for idx, layer in enumerate(model.layers):
+        shape = layer.output.shape
+        try:
+            if shape[1] == 2 and shape[2] == 3:
+                print("Maybe this is local decision layer: {}".format(layer.name))
+                return layer
+        except IndexError:
+            pass
+    raise KeyError
+
+
+class LocalDecisionNLICore:
+    def __init__(self, model_path, strategy, n_input=4):
+        tprint("Loading model...")
+        self.predictor = load_local_decision_nli_model(model_path, get_local_decision_layer_from_model_by_shape)
+        tprint("Done")
+        self.strategy = strategy
+        self.n_input = n_input
+
+    def predict(self, input_list):
+        batch_size = 16
+        while len(input_list) % batch_size:
+            input_list.append(input_list[-1])
+
+        dataset = tf.data.Dataset.from_tensor_slices(input_list)
+        strategy = self.strategy
+
+        def reform(row):
+            if self.n_input == 4:
+                x = row[0], row[1], row[2], row[3]
+            elif self.n_input == 2:
+                x = row[0], row[1],
+            else:
+                raise ValueError
+            return x,
+
+        dataset = dataset.map(reform)
+        dataset = dataset.batch(batch_size, drop_remainder=True)
+        maybe_step = ceil_divide(len(input_list), batch_size)
+        dataset = distribute_dataset(strategy, dataset)
+        model = self.predictor
+        l_decision, g_decision = model.predict(dataset, steps=maybe_step)
+        return l_decision
+
+    def predict_es(self, input_list: List[EncodedSegmentIF]):
+        payload = [x.get_input() for x in input_list]
+        l_decision_list = self.predict(payload)
+        real_input_len = len(input_list)
+        l_decision_list = l_decision_list[:real_input_len]
+        second_l_decision = [d[1] for d in l_decision_list]
+        return second_l_decision
 
