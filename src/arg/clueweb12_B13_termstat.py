@@ -3,7 +3,7 @@ import pickle
 from collections import Counter, defaultdict
 from typing import Dict, Tuple
 
-from cache import save_to_pickle, load_from_pickle, load_pickle_from
+from cache import save_to_pickle, load_from_pickle, load_pickle_from, function_cache_wrap
 from cpath import data_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
 
@@ -24,9 +24,16 @@ def load_clueweb12_B13_termstat() -> Tuple[Counter, Counter]:
 
 
 cdf = 50 * 1000 * 1000
+clue_cdf = cdf
 clueweb12aa_collection_length = 25601339619
 
-def load_clueweb12_B13_termstat_stemmed() -> Tuple[Dict, Dict]:
+
+def load_clueweb12_B13_termstat_stemmed():
+    fn = function_cache_wrap(_load_clueweb12_B13_termstat_stemmed, "clueweb12_B13_termstat_stemmed")
+    return fn()
+
+
+def _load_clueweb12_B13_termstat_stemmed() -> Tuple[Dict, Dict]:
     from krovetzstemmer import Stemmer
     stemmer = Stemmer()
     tf, df = load_clueweb12_B13_termstat()
@@ -43,8 +50,6 @@ def load_clueweb12_B13_termstat_stemmed() -> Tuple[Dict, Dict]:
         print("{} of {} are error".format(n_error, len(tf)))
 
     n_error = 0
-
-
     df_info = defaultdict(list)
     for key, cnt in df.items():
         try:

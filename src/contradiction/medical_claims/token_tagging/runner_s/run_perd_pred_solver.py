@@ -26,7 +26,7 @@ def main_ex1():
     make_ranked_list_w_solver2(problems, run_name, save_path, tag_type, solver)
 
 
-def main():
+def main_ex2():
     tag_type = "mismatch"
     run_name = "pert_pred_ex2"
     save_path = get_save_path2(run_name, tag_type)
@@ -35,6 +35,7 @@ def main():
     make_ranked_list_w_solver2(problems, run_name, save_path, tag_type, solver)
 
 
+
 if __name__ == "__main__":
-    main()
+    main_ex2()
 

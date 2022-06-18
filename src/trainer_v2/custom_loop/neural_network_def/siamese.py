@@ -78,6 +78,14 @@ class ModelConfig2SegProject(ModelConfig2Seg):
     project_dim = 4 * 728
 
 
+class ModelConfigTwoProject(ModelConfig2Seg):
+    max_seq_length1 = 200
+    max_seq_length2 = 100
+    num_classes = 3
+    project_dim = 4 * 728
+    project_dim2 = 728
+
+
 class BERTSiameseMean:
     def __init__(self, bert_params, config: ModelConfig2SegProject):
         Dense = tf.keras.layers.Dense

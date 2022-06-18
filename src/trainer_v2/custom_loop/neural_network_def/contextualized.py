@@ -37,8 +37,11 @@ class BERTAsymmetricContextualizedSlice(ClassificationModelIF):
 
         ssi = SplitSegmentIDLayer()
         rep_middle0, rep_middle1 = ssi((rep2_middle, l_input_ids2, l_token_type_ids2))
-        rep_middle_concat = tf.concat([rep_middle0, rep_middle1], axis=0)
-        rep2_seq_flat = encoder2_upper(rep_middle_concat)
+        rep_middle_concat = tf.stack([rep_middle0, rep_middle1], axis=1)
+        batch_size, seq_length = get_shape_list2(l_input_ids1)
+        size_at_middle = [batch_size * num_window, config.max_seq_length2, bert_params.hidden_size]
+        rep_middle_flat = tf.reshape(rep_middle_concat, size_at_middle)
+        rep2_seq_flat = encoder2_upper(rep_middle_flat)
         rep2_flat = mp(rep2_seq_flat)
 
         batch_size, _ = get_shape_list2(l_input_ids2)
@@ -51,8 +54,6 @@ class BERTAsymmetricContextualizedSlice(ClassificationModelIF):
         feature_rep = vtf((rep1_stacked, rep2_stacked))
 
         local_decisions = TwoLayerDense(bert_params.hidden_size, num_classes)(feature_rep)
-        # hidden = tf.keras.layers.Dense(bert_params.hidden_size, activation='relu')(feature_rep)
-        # local_decisions = tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax)(hidden)
         self.local_decisions = local_decisions
         output = self.decision_combine_layer()(local_decisions)
         inputs = (l_input_ids1, l_token_type_ids1, l_input_ids2, l_token_type_ids2)
@@ -101,8 +102,11 @@ class BERTAsymmetricContextualizedSlice2(ClassificationModelIF):
 
         ssi = SplitSegmentIDLayer()
         rep_middle0, rep_middle1 = ssi((rep2_middle, l_input_ids2, l_slice_ids))
-        rep_middle_concat = tf.concat([rep_middle0, rep_middle1], axis=0)
-        rep2_seq_flat = encoder2_upper(rep_middle_concat)
+        batch_size, seq_length = get_shape_list2(l_input_ids1)
+        rep_middle_concat = tf.stack([rep_middle0, rep_middle1], axis=1)
+        size_at_middle = [batch_size * num_window, config.max_seq_length2, bert_params.hidden_size]
+        rep_middle_flat = tf.reshape(rep_middle_concat, size_at_middle)
+        rep2_seq_flat = encoder2_upper(rep_middle_flat)
         rep2_flat = mp(rep2_seq_flat)
 
         batch_size, _ = get_shape_list2(l_input_ids2)
@@ -159,8 +163,11 @@ class BERTAsymmetricContextualizedSlice3(ClassificationModelIF):
 
         ssi = SplitSegmentIDLayer()
         rep_middle0, rep_middle1 = ssi((rep2_middle, l_input_ids2, l_slice_ids))
-        rep_middle_concat = tf.concat([rep_middle0, rep_middle1], axis=0)
-        rep2_flat = mp(rep_middle_concat)
+        batch_size, seq_length = get_shape_list2(l_input_ids1)
+        rep_middle_concat = tf.stack([rep_middle0, rep_middle1], axis=1)
+        size_at_middle = [batch_size * num_window, config.max_seq_length2, bert_params.hidden_size]
+        rep_middle_flat = tf.reshape(rep_middle_concat, size_at_middle)
+        rep2_flat = mp(rep_middle_flat)
 
         batch_size, _ = get_shape_list2(l_input_ids2)
         _, rep_dim = get_shape_list2(rep2_flat)
@@ -213,8 +220,11 @@ class BERTAsymmetricContextualizedSlice4(ClassificationModelIF):
 
         ssi = SplitSegmentIDLayerWVar(bert_params.hidden_size)
         rep_middle0, rep_middle1 = ssi((rep2_middle, l_input_ids2, l_slice_ids))
-        rep_middle_concat = tf.concat([rep_middle0, rep_middle1], axis=0)
-        rep2_flat = mp(rep_middle_concat)
+        batch_size, seq_length = get_shape_list2(l_input_ids1)
+        rep_middle_concat = tf.stack([rep_middle0, rep_middle1], axis=1)
+        size_at_middle = [batch_size * num_window, config.max_seq_length2, bert_params.hidden_size]
+        rep_middle_flat = tf.reshape(rep_middle_concat, size_at_middle)
+        rep2_flat = mp(rep_middle_flat)
 
         batch_size, _ = get_shape_list2(l_input_ids2)
         _, rep_dim = get_shape_list2(rep2_flat)
@@ -266,8 +276,11 @@ class BERTAsymmetricContextualizedSlice5(ClassificationModelIF):
 
         ssi = SplitSegmentIDLayer()
         rep_middle0, rep_middle1 = ssi((rep2_middle, l_input_ids2, l_token_type_ids2))
-        rep_middle_concat = tf.concat([rep_middle0, rep_middle1], axis=0)
-        rep2_seq_flat = encoder2_upper(rep_middle_concat)
+        batch_size, seq_length = get_shape_list2(l_input_ids1)
+        rep_middle_concat = tf.stack([rep_middle0, rep_middle1], axis=1)
+        size_at_middle = [batch_size * num_window, config.max_seq_length2, bert_params.hidden_size]
+        rep_middle_flat = tf.reshape(rep_middle_concat, size_at_middle)
+        rep2_seq_flat = encoder2_upper(rep_middle_flat)
         rep2_flat = mp(rep2_seq_flat)
 
         batch_size, _ = get_shape_list2(l_input_ids2)
@@ -326,12 +339,16 @@ class BAContextualizedSlice6(ClassificationModelIF):
 
         ssi = SplitSegmentIDLayerWVar(bert_params.hidden_size)
         rep_middle0, rep_middle1 = ssi((rep2_middle, l_input_ids2, l_slice_ids))
-        rep_middle_concat = tf.concat([rep_middle0, rep_middle1], axis=0)
-        rep2_flat = mp(rep_middle_concat)
+        batch_size, seq_length = get_shape_list2(l_input_ids1)
+        rep_middle_concat = tf.stack([rep_middle0, rep_middle1], axis=1)
+        size_at_middle = [batch_size * num_window, config.max_seq_length2, bert_params.hidden_size]
+        rep_middle_flat = tf.reshape(rep_middle_concat, size_at_middle)
+        rep2_flat = mp(rep_middle_flat)
 
         batch_size, _ = get_shape_list2(l_input_ids2)
         _, rep_dim = get_shape_list2(rep2_flat)
-        rep2_stacked = tf.reshape(rep2_flat, [batch_size, num_window, rep_dim])
+        rep2_stacked = tf.reshape(rep2_flat, [num_window, batch_size, rep_dim])
+        rep2_stacked = tf.transpose(rep2_stacked, [1, 0, 2])
 
         rep1_stacked = TileAfterExpandDims(1, [1, num_window, 1])(rep1)
 

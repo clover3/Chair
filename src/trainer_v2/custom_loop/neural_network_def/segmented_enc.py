@@ -65,6 +65,27 @@ class FuzzyLogicLayer(tf.keras.layers.Layer):
         return combine_local_decision_by_fuzzy_logic(inputs)
 
 
+class FuzzyLogicLayerOnLogits(tf.keras.layers.Layer):
+    def call(self, inputs, *args, **kwargs):
+        local_decisions = inputs
+        local_entail_s = local_decisions[:, :, 0]
+        local_neutral_s = local_decisions[:, :, 1]
+        local_contradiction_s = local_decisions[:, :, 2]
+
+        combined_contradiction_s = tf.reduce_max(local_contradiction_s, axis=-1)
+
+        cnp1 = tf.reduce_max(local_neutral_s, axis=-1)  # [batch_size]
+        cnp2 = 1 - tf.nn.sigmoid(combined_contradiction_s)
+        combined_neutral_s = tf.multiply(cnp1, cnp2)
+        combined_entail_s = tf.reduce_mean(local_entail_s, axis=-1)
+
+        score_stacked = tf.stack([combined_entail_s, combined_neutral_s, combined_contradiction_s], axis=1)
+        sum_s = tf.reduce_sum(score_stacked, axis=1, keepdims=True)
+        sentence_logits = tf.divide(score_stacked, sum_s)
+        sentence_prob = tf.nn.softmax(sentence_logits, axis=1)
+        return sentence_prob
+
+
 class MLPLabelCombine(tf.keras.layers.Layer):
     def __init__(self, num_window, num_classes):
         super(MLPLabelCombine, self).__init__()

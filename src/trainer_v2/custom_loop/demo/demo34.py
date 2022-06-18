@@ -2,17 +2,14 @@ import functools
 import os
 from typing import Iterable
 
-from arg.qck.encode_common import encode_single
 from cpath import get_canonical_model_path
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from data_generator2.segmented_enc.seg_encoder_common import encode_two_segments
 from dataset_specific.mnli.mnli_reader import NLIPairData
 from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig200_200
 
 import os
 
@@ -20,23 +17,7 @@ from trainer_v2.custom_loop.demo.demo_common import iterate_and_demo, EncodedSeg
     enum_hypo_token_tuple, iter_alamri
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-from trainer_v2.custom_loop.per_task.nli_ts_util import batch_shaping, load_local_decision_nli
-
-
-def get_two_seg_asym_encoder():
-    model_config = ModelConfig200_200()
-    tokenizer = get_tokenizer()
-    segment_len = int(model_config.max_seq_length2 / 2)
-
-    def encode_two_seg_input(p_tokens, h_first, h_second):
-        input_ids1, input_mask1, segment_ids1 = encode_single(tokenizer, p_tokens, model_config.max_seq_length1)
-        triplet2 = encode_two_segments(tokenizer, segment_len, h_first, h_second)
-        input_ids2, input_mask2, segment_ids2 = triplet2
-        x = input_ids1, segment_ids1, input_ids2, segment_ids2
-        x = tuple(map(batch_shaping, x))
-        return x
-
-    return encode_two_seg_input
+from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_nli, get_two_seg_asym_encoder
 
 
 def main():

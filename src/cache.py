@@ -37,6 +37,21 @@ def load_cache(name):
         return None
 
 
+def function_cache_wrap(fn, name):
+    pickle_name = "{}.pickle".format(name)
+    path = os.path.join(cache_path, pickle_name)
+    def wrap_fn():
+        if os.path.exists(path):
+            print("Using cached value {}".format(name))
+            ret = pickle.load(open(path, "rb"))
+        else:
+            ret = fn()
+
+        save_to_pickle(ret, name)
+        return ret
+    return wrap_fn
+
+
 def dump_to_json(obj, name):
     pickle_name = "{}.json".format(name)
     path = os.path.join(json_cache_path, pickle_name)

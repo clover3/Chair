@@ -18,8 +18,13 @@ class AnnotatorSolver(TokenScoringSolverIF2):
 
         def get_answer(sent_name, tokens):
             query_id = get_query_id(p.group_no, p.inner_idx, sent_name, self.tag_type)
-            qrel_entries: Dict[DocID, int] = self.qrel[query_id]
-            def get_score(doc_id)-> float:
+            try:
+                qrel_entries: Dict[DocID, int] = self.qrel[query_id]
+            except KeyError:
+                print("No judges for {}".format(query_id))
+                qrel_entries = {}
+
+            def get_score(doc_id) -> float:
                 return 1 if doc_id in qrel_entries else 0
 
             scores: List[float] = [get_score(str(idx)) for idx, _ in enumerate(tokens)]

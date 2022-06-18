@@ -6,21 +6,12 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from contradiction.medical_claims.token_tagging.batch_solver_common import make_ranked_list_w_batch_solver
 from contradiction.medical_claims.token_tagging.path_helper import get_save_path2
 from contradiction.medical_claims.token_tagging.problem_loader import load_alamri_problem, AlamriProblem
-from contradiction.medical_claims.token_tagging.solvers.nlits_batch_solver import get_batch_solver_nlits40, \
-    get_batch_solver_nlits40_e
+from contradiction.medical_claims.token_tagging.solvers.nlits_batch_solver import get_batch_solver_nlits45
 from data_generator.NLI.enlidef import NEUTRAL
 
 
 def run_nlits_solver(run_name, tag_type, target_label):
-    solver = get_batch_solver_nlits40(target_label)
-    save_path = get_save_path2(run_name, tag_type)
-    problems: List[AlamriProblem] = load_alamri_problem()
-    print("Using {} problems".format(len(problems)))
-    make_ranked_list_w_batch_solver(problems, run_name, save_path, tag_type, solver)
-
-
-def run_nlits_solver_e(run_name, tag_type, target_label):
-    solver = get_batch_solver_nlits40_e(target_label)
+    solver = get_batch_solver_nlits45(target_label)
     save_path = get_save_path2(run_name, tag_type)
     problems: List[AlamriProblem] = load_alamri_problem()
     print("Using {} problems".format(len(problems)))
@@ -30,16 +21,9 @@ def run_nlits_solver_e(run_name, tag_type, target_label):
 def main():
     tag_type = "mismatch"
     target_label = NEUTRAL
-    run_name = "nlits40"
+    run_name = "nlits45"
     run_nlits_solver(run_name, tag_type, target_label)
 
 
-def main2():
-    tag_type = "mismatch"
-    target_label = NEUTRAL
-    run_name = "nlits40_e"
-    run_nlits_solver_e(run_name, tag_type, target_label)
-
-
 if __name__ == "__main__":
-    main2()
+    main()

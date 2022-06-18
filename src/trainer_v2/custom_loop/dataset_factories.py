@@ -21,6 +21,9 @@ def create_dataset_common(decode_record: Callable,
                           is_training_split: bool):
     config = run_config.dataset_config
     batch_size = run_config.common_run_config.batch_size
+    if not is_training_split:
+        if run_config.common_run_config.eval_batch_size is not None:
+            batch_size = run_config.common_run_config.eval_batch_size
 
     input_files: List[str] = parse_file_path(file_path)
     if len(input_files) > 1:
@@ -30,6 +33,8 @@ def create_dataset_common(decode_record: Callable,
     dataset = tf.data.TFRecordDataset(input_files, num_parallel_reads=len(input_files))
     if is_training_split:
         dataset = dataset.shuffle(config.shuffle_buffer_size)
+        # epochs = run_config.train_config.get_epochs()
+        # dataset = dataset.repeat(epochs)
         dataset = dataset.repeat()
     dataset = dataset.map(decode_record,
                           num_parallel_calls=tf.data.AUTOTUNE)

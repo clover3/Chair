@@ -27,4 +27,4 @@ def solve_conflict():
 
 
 if __name__ == "__main__":
-    solve_conflict()
+    main()

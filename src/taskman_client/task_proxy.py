@@ -40,10 +40,12 @@ class TaskManagerProxy(RESTProxy):
         return self.task_update(run_name, uuid_var, tpu_name, machine, update_type, msg)
 
     def report_number(self, name, value, condition, field):
+        machine = get_local_machine_name()
         data = {
             'name': name,
             "number": value,
             "condition": condition,
+            "machine": machine,
             "field": field,
         }
         return self.post("/experiment/update", data)

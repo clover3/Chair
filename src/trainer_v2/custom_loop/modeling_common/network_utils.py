@@ -177,7 +177,8 @@ class SplitSegmentIDWMeanLayer(tf.keras.layers.Layer):
 
         def slice_segment_w_mean(segment_id_val):
             is_target_seg_mask = tf.logical_and(tf.equal(token_type_ids, segment_id_val), tf.not_equal(l_input_ids, 0))
-            is_target_seg_mask = tf.cast(tf.expand_dims(is_target_seg_mask, 2), tf.float32)
+            is_target_seg_mask = tf.expand_dims(is_target_seg_mask, 2)
+            is_target_seg_mask = tf.cast(is_target_seg_mask, tf.float32)
             rep_middle_masked = tf.multiply(rep_middle, is_target_seg_mask)
             eps = 1e-6
             n_tokens = tf.reduce_sum(is_target_seg_mask, axis=1) + eps  # [batch_size, 1]
@@ -188,3 +189,28 @@ class SplitSegmentIDWMeanLayer(tf.keras.layers.Layer):
         rep_middle1 = slice_segment_w_mean(1)
 
         return rep_middle0, rep_middle1
+
+
+class SplitSegmentID(tf.keras.layers.Layer):
+    def __init__(self):
+        super(SplitSegmentID, self).__init__()
+
+    def call(self, inputs, *args, **kwargs):
+        l_input_ids, token_type_ids = inputs
+
+        def slice_segment_w_mean(segment_id_val):
+            is_target_seg_mask = tf.logical_and(tf.equal(token_type_ids, segment_id_val), tf.not_equal(l_input_ids, 0))
+            is_target_seg_mask = tf.cast(is_target_seg_mask, tf.int32)
+            masked_input_ids = tf.multiply(l_input_ids, is_target_seg_mask)
+            return masked_input_ids
+
+        input_ids1 = slice_segment_w_mean(0)
+        input_ids2 = slice_segment_w_mean(1)
+
+        n_shift = tf.reduce_sum(tf.cast(tf.not_equal(input_ids1, 0), tf.int32), axis=1, keepdims=True)
+        input_ids2_n_shift = tf.concat([input_ids2, -n_shift], axis=1)
+        input_ids2_r = tf.map_fn(fn=lambda x: tf.roll(x[:-1], shift=x[-1], axis=0),
+                                   elems=input_ids2_n_shift)
+
+        return input_ids1, input_ids2_r
+

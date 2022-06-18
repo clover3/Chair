@@ -6,7 +6,9 @@ from contradiction.medical_claims.token_tagging.online_solver_common import Toke
 
 
 class EnsembleSolver(TokenScoringSolverIF):
-    def __init__(self, solver_list: List[TokenScoringSolverIF], weight_list: List[float] = None):
+    def __init__(self, solver_list: List[TokenScoringSolverIF],
+                 weight_list: List[float] = None,
+                 ):
         self.solver_list = solver_list
         if weight_list is not None:
             self.weight_list = weight_list
@@ -21,6 +23,7 @@ class EnsembleSolver(TokenScoringSolverIF):
             scores_list1.append(np.array(scores1))
             scores_list2.append(np.array(scores2))
 
+
         def combine(scores_list) -> List[float]:
             stacked = np.stack(scores_list, axis=0)
             weights = np.expand_dims(self.weight_list, 1)
@@ -30,7 +33,8 @@ class EnsembleSolver(TokenScoringSolverIF):
 
 
 class NormalizeEnsembleScorer(TokenScoringSolverIF):
-    def __init__(self, solver_list: List[TokenScoringSolverIF], normalize_range: List[float] = None):
+    def __init__(self, solver_list: List[TokenScoringSolverIF],
+                 normalize_range: List[float] = None):
         self.solver_list = solver_list
         if normalize_range is not None:
             self.cap_list = normalize_range
@@ -46,12 +50,13 @@ class NormalizeEnsembleScorer(TokenScoringSolverIF):
             scores_list2.append(np.array(scores2))
 
         def normalize(np_array, cap):
+            # normalize to [0, cap] rangee
             if cap is None:
                 return np_array
             gap = max(np_array) - min(np_array)
             if gap == 0:
                 gap = 1
-            factor = 0.1 / gap
+            factor = cap / gap
             return (np_array - min(np_array)) * factor
 
         def combine(scores_list) -> List[float]:

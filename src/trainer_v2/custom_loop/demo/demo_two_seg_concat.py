@@ -5,34 +5,13 @@ from typing import Iterable
 from cpath import get_canonical_model_path
 from trainer_v2.custom_loop.demo.demo_common import iterate_and_demo, EncodedSegmentIF, EncodedSegment, \
     enum_hypo_token_tuple, iter_alamri
-from trainer_v2.custom_loop.runner.run_two_seg_concat import ModelConfig
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from data_generator2.segmented_enc.seg_encoder_common import TwoSegConcatEncoder
 from dataset_specific.mnli.mnli_reader import NLIPairData
 from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_nli_model
-
-
-def get_two_seg_concat_encoder():
-    model_config = ModelConfig()
-    tokenizer = get_tokenizer()
-    encoder = TwoSegConcatEncoder(tokenizer, model_config.max_seq_length)
-
-    begin = True
-
-    def encode_two_seg_input(p_tokens, h_first, h_second):
-        triplet = encoder.two_seg_concat_core(p_tokens, h_first, h_second)
-        input_ids, input_mask, segment_ids = triplet
-        x = input_ids, segment_ids
-        nonlocal begin
-        if begin:
-            begin = False
-        return x
-
-    return encode_two_seg_input
+from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_nli_model, get_two_seg_concat_encoder
 
 
 def main():

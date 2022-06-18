@@ -3,14 +3,15 @@ from typing import NamedTuple
 import tensorflow as tf
 from tensorflow import keras
 
+from models.transformer.bert_common_v2 import get_shape_list2
 from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.custom_loop.modeling_common.bert_common import load_stock_weights, define_bert_input
 from trainer_v2.custom_loop.modeling_common.network_utils import VectorThreeFeature, \
-    MeanProjectionEnc
+    MeanProjectionEnc, SplitSegmentID
 from trainer_v2.custom_loop.neural_network_def.asymmetric import BERTAsymmetricProjectMean
 from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import StackedInputMapper
-from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig2SegProject
+from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig2SegProject, ModelConfigTwoProject
 
 
 class AsymmetricMeanPool(ClassificationModelIF):
@@ -149,3 +150,166 @@ class BERTAsymmetricPMC(ClassificationModelIF):
         load_stock_weights(l_bert2, init_checkpoint, n_expected_restore=197)
 
 
+
+
+class TwoSegmentRawLogits(ClassificationModelIF):
+    def __init__(self, combine_local_decisions_layer):
+        super(TwoSegmentRawLogits, self).__init__()
+        self.combine_local_decisions_layer = combine_local_decisions_layer
+
+    def build_model(self, bert_params, config: ModelConfig2SegProject):
+        num_window = 2
+        encoder1 = MeanProjectionEnc(bert_params, config.project_dim, "encoder1")
+        encoder2 = MeanProjectionEnc(bert_params, config.project_dim, "encoder2")
+
+        num_classes = config.num_classes
+
+        max_seq_len1 = config.max_seq_length1
+        max_seq_len2 = config.max_seq_length2
+        l_input_ids1, l_token_type_ids1 = define_bert_input(config.max_seq_length1, "1")
+        l_input_ids2, l_token_type_ids2 = define_bert_input(config.max_seq_length2, "2")
+
+        # [batch_size, dim]
+        rep1 = encoder1.call([l_input_ids1, l_token_type_ids1])
+
+        window_length = int(max_seq_len2 / num_window)
+        inputs_for_seg2 = [l_input_ids2, l_token_type_ids2]
+
+        mapper = StackedInputMapper(encoder2, max_seq_len2, window_length)
+        # [batch_size, num_window, dim]
+        rep2_stacked = mapper(inputs_for_seg2)
+
+        rep1_ = tf.expand_dims(rep1, 1)
+        rep1_stacked = tf.tile(rep1_, [1, num_window, 1])
+
+        # [batch_size, num_window, dim2 ]
+        vtf = VectorThreeFeature()
+        feature_rep = vtf((rep1_stacked, rep2_stacked))
+        hidden = tf.keras.layers.Dense(bert_params.hidden_size, activation='relu')(feature_rep)
+        local_decisions = tf.keras.layers.Dense(num_classes)(hidden)
+        self.local_decisions = local_decisions
+        combine_local_decisions = self.combine_local_decisions_layer()
+        self.cld = combine_local_decisions
+        output = combine_local_decisions(local_decisions)
+        inputs = (l_input_ids1, l_token_type_ids1, l_input_ids2, l_token_type_ids2)
+        model = keras.Model(inputs=inputs, outputs=output, name="bert_model")
+        self.model: keras.Model = model
+        self.l_bert_list = [encoder1.l_bert, encoder2.l_bert]
+
+    def get_keras_model(self):
+        return self.model
+
+    def init_checkpoint(self, init_checkpoint):
+        l_bert1, l_bert2 = self.l_bert_list
+        load_stock_weights(l_bert1, init_checkpoint, n_expected_restore=197)
+        load_stock_weights(l_bert2, init_checkpoint, n_expected_restore=197)
+
+
+class ESSliceSegs(ClassificationModelIF):
+    def __init__(self, combine_local_decisions_layer):
+        super(ESSliceSegs, self).__init__()
+        self.combine_local_decisions_layer = combine_local_decisions_layer
+
+    def build_model(self, bert_params, config: ModelConfig2SegProject):
+        num_window = 2
+        encoder1 = MeanProjectionEnc(bert_params, config.project_dim, "encoder1")
+        encoder2 = MeanProjectionEnc(bert_params, config.project_dim, "encoder2")
+
+        num_classes = config.num_classes
+        l_input_ids1, l_token_type_ids1 = define_bert_input(config.max_seq_length1, "1")
+        l_input_ids2, l_token_type_ids2 = define_bert_input(config.max_seq_length2, "2")
+
+        # [batch_size, dim]
+        rep1 = encoder1.call([l_input_ids1, l_token_type_ids1])
+        ssi = SplitSegmentID()
+        input_ids2_1, input_ids2_2 = ssi([l_input_ids2, l_token_type_ids2])
+        self.debug_var = input_ids2_1, input_ids2_2
+        batch_size, seq_length = get_shape_list2(l_input_ids1)
+
+        input_ids2 = tf.stack([input_ids2_1, input_ids2_2], axis=1)
+        input_ids2_flat = tf.reshape(input_ids2, [batch_size * num_window, config.max_seq_length2])
+        dummy_l_token_type_ids = tf.zeros_like(input_ids2_flat, name="dummy_token_type_ids")
+        rep2_flat = encoder2([input_ids2_flat, dummy_l_token_type_ids])
+        rep2_stacked = tf.reshape(rep2_flat, [batch_size, num_window, config.project_dim])
+
+        # [batch_size, num_window, dim]
+        rep1_ = tf.expand_dims(rep1, 1)
+        rep1_stacked = tf.tile(rep1_, [1, num_window, 1])
+
+        # [batch_size, num_window, dim2 ]
+        vtf = VectorThreeFeature()
+        feature_rep = vtf((rep1_stacked, rep2_stacked))
+        hidden = tf.keras.layers.Dense(bert_params.hidden_size, activation='relu')(feature_rep)
+        local_decisions = tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax)(hidden)
+        self.local_decisions = local_decisions
+        combine_local_decisions = self.combine_local_decisions_layer()
+        self.cld = combine_local_decisions
+        output = combine_local_decisions(local_decisions)
+        inputs = (l_input_ids1, l_token_type_ids1, l_input_ids2, l_token_type_ids2)
+        model = keras.Model(inputs=inputs, outputs=output, name="bert_model")
+        self.model: keras.Model = model
+        self.l_bert_list = [encoder1.l_bert, encoder2.l_bert]
+
+    def get_keras_model(self):
+        return self.model
+
+    def init_checkpoint(self, init_checkpoint):
+        l_bert1, l_bert2 = self.l_bert_list
+        load_stock_weights(l_bert1, init_checkpoint, n_expected_restore=197)
+        load_stock_weights(l_bert2, init_checkpoint, n_expected_restore=197)
+
+
+
+class ESRoled(ClassificationModelIF):
+    def __init__(self, combine_local_decisions_layer):
+        super(ESRoled, self).__init__()
+        self.combine_local_decisions_layer = combine_local_decisions_layer
+
+    def build_model(self, bert_params, config: ModelConfigTwoProject):
+        num_window = 2
+        encoder1 = MeanProjectionEnc(bert_params, config.project_dim, "encoder1")
+        encoder2 = MeanProjectionEnc(bert_params, config.project_dim, "encoder2")
+        encoder2_b = MeanProjectionEnc(bert_params, config.project_dim2, "encoder2_b")
+
+        num_classes = config.num_classes
+        l_input_ids1, l_token_type_ids1 = define_bert_input(config.max_seq_length1, "1")
+        l_input_ids2, l_token_type_ids2 = define_bert_input(config.max_seq_length2, "2")
+
+        # [batch_size, dim]
+        rep1 = encoder1.call([l_input_ids1, l_token_type_ids1])
+        ssi = SplitSegmentID()
+        input_ids2_1, input_ids2_2 = ssi([l_input_ids2, l_token_type_ids2])
+        batch_size, _ = get_shape_list2(l_input_ids1)
+
+        input_ids2 = tf.concat([input_ids2_1, input_ids2_2], axis=0)
+        dummy_l_token_type_ids = tf.zeros_like(input_ids2)
+
+        rep2_flat = encoder2([input_ids2, dummy_l_token_type_ids])
+        rep2_stacked = tf.reshape(rep2_flat, [batch_size, num_window, config.project_dim])
+        rep2_role = encoder2_b([l_input_ids2, dummy_l_token_type_ids])
+
+        # [batch_size, num_window, dim]
+        rep1_ = tf.expand_dims(rep1, 1)
+        rep1_stacked = tf.tile(rep1_, [1, num_window, 1])
+
+        # [batch_size, num_window, dim2 ]
+        vtf = VectorThreeFeature()
+        feature_rep = vtf((rep1_stacked, rep2_stacked))
+        hidden = tf.keras.layers.Dense(bert_params.hidden_size, activation='relu')(feature_rep)
+        local_decisions = tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax)(hidden)
+        self.local_decisions = local_decisions
+        combine_local_decisions = self.combine_local_decisions_layer()
+        self.cld = combine_local_decisions
+        output = combine_local_decisions(local_decisions)
+        inputs = (l_input_ids1, l_token_type_ids1, l_input_ids2, l_token_type_ids2)
+        model = keras.Model(inputs=inputs, outputs=output, name="bert_model")
+        self.model: keras.Model = model
+        self.l_bert_list = [encoder1.l_bert, encoder2.l_bert]
+
+    def get_keras_model(self):
+        return self.model
+
+    def init_checkpoint(self, init_checkpoint):
+        l_bert1, l_bert2 = self.l_bert_list
+        load_stock_weights(l_bert1, init_checkpoint, n_expected_restore=197)
+        load_stock_weights(l_bert2, init_checkpoint, n_expected_restore=197)

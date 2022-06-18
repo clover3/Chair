@@ -170,3 +170,13 @@ class MaxKeyValue:
             self.max_key = k
             self.max_value = v
 
+
+def all_equal(a: List):
+    v = None
+    for item in a:
+        if v is None:
+            v = item
+        else:
+            if v != item:
+                return False
+    return True

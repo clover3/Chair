@@ -1,6 +1,7 @@
 from typing import Iterator
 from typing import List, Iterable, Dict, Tuple
 
+from list_lib import flatten
 from misc_lib import group_by, get_second, dict_to_tuple_list
 from trec.types import TrecRankedListEntry, TrecRelevanceJudgementEntry
 
@@ -36,6 +37,7 @@ def load_ranked_list(path) -> List[TrecRankedListEntry]:
     return ranked_list
 
 
+RLG = Dict[str, List[TrecRankedListEntry]]
 def load_ranked_list_grouped(path) -> Dict[str, List[TrecRankedListEntry]]:
     ranked_list: List[TrecRankedListEntry] = load_ranked_list(path)
 
@@ -43,6 +45,10 @@ def load_ranked_list_grouped(path) -> Dict[str, List[TrecRankedListEntry]]:
         return e.query_id
 
     return group_by(ranked_list, get_qid)
+
+
+def write_rlg(rlg: RLG, save_path: str):
+    return write_trec_ranked_list_entry(flatten(rlg.values()), save_path)
 
 
 def trec_writer(doc_id, doc_text) -> List[str]:

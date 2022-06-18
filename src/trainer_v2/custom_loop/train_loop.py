@@ -123,9 +123,12 @@ def tf_run_train(run_config: RunConfig2,
 
         @tf.function
         def distributed_train_step(train_itr):
+            # try:
             for _ in tf.range(run_config.common_run_config.steps_per_execution):
                 batch_item = next(train_itr)
                 per_replica_losses = strategy.run(trainer.train_step, args=(batch_item, ))
+            # except StopIteration as e:
+            #     print(e)
 
         eval_rc = RecentCounter(run_config.train_config.eval_every_n_step, 0)
         save_rc = RecentCounter(run_config.train_config.save_every_n_step, 0)
@@ -164,35 +167,38 @@ def tf_run_train(run_config: RunConfig2,
         save_fn()
 
 
-def tf_run_eval_2(run_config: RunConfig2,
-                  trainer: TrainerIF,
-                  dataset_factory: Callable[[str, bool], tf.data.Dataset]
-                  ):
-    c_log.debug("tf_run_eval_2 ENTRY")
-    strategy = get_strategy_from_config(run_config)
-    c_log.debug("tf_run_inner initializing dataset")
-    eval_dataset = dataset_factory(run_config.dataset_config.eval_files_path, False)
-    eval_batches = distribute_dataset(strategy, eval_dataset)
-    #
-    c_log.debug("Building models")
-    with strategy.scope():
-        model_path = run_config.eval_config.model_save_path
-        model = tf.saved_model.load(model_path)
-        trainer.build_model()
-        c_log.debug("Initializing eval object")
-        c_log.debug("run_config.eval_config.eval_step {}".format(run_config.eval_config.eval_step))
-        eval_steps = run_config.eval_config.eval_step
-        eval_object = EvalObject(model,
-                                 eval_batches,
-                                 strategy,
-                                 trainer.loss_fn,
-                                 trainer.get_eval_metrics(),
-                                 eval_steps=eval_steps)
+def get_latest_model_path_from_dir_path(save_dir):
+    max_name = ""
+    max_step = 0
+    for (dirpath, dirnames, filenames) in os.walk(save_dir):
+        for dir_name in dirnames:
+            prefix = "model_"
+            if dir_name.startswith(prefix):
+                maybe_step = dir_name[len(prefix):]
+                try:
+                    step = int(maybe_step)
+                    if step > max_step:
+                        max_step = step
+                        max_name = dir_name
+                except ValueError:
+                    pass
 
-        eval_loss, eval_metrics = eval_object.do_eval()
-        eval_metrics['loss'] = eval_loss
-        c_log.info("{}".format(eval_metrics))
-    return eval_metrics
+        if max_name:
+            return os.path.join(dirpath, max_name)
+        raise FileNotFoundError("No valid file found at {}".format(save_dir))
+
+
+def load_model(model_path):
+    try:
+        model = tf.saved_model.load(model_path)
+    except OSError:
+        if os.path.exists(model_path):
+            c_log.info("Model not found at {}, search for sub-directories".format(model_path))
+            new_model_path = get_latest_model_path_from_dir_path(model_path)
+            model = tf.saved_model.load(new_model_path)
+        else:
+            raise
+    return model
 
 
 def tf_run_eval(run_config: RunConfig2,
@@ -207,7 +213,7 @@ def tf_run_eval(run_config: RunConfig2,
     with strategy.scope():
         c_log.debug("Loading model")
         model_path = run_config.eval_config.model_save_path
-        model = tf.saved_model.load(model_path)
+        model = load_model(model_path)
         trainer.build_model()
         trainer.set_keras_model(model)
         loss_metric = tf.keras.metrics.Mean(name='loss')

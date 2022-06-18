@@ -8,8 +8,8 @@ from data_generator.NLI.enlidef import NEUTRAL
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import right, left
 from misc_lib import Averager
-from trainer_v2.custom_loop.demo.demo34 import get_two_seg_asym_encoder
 from trainer_v2.custom_loop.demo.demo_common import enum_hypo_token_tuple_from_tokens
+from trainer_v2.custom_loop.per_task.nli_ts_util import get_two_seg_asym_encoder
 
 Probs = List[float]
 

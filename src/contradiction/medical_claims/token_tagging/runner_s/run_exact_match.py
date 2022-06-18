@@ -7,7 +7,8 @@ from contradiction.medical_claims.token_tagging.online_solver_common import make
 from contradiction.medical_claims.token_tagging.path_helper import get_save_path2
 from contradiction.medical_claims.token_tagging.problem_loader import load_alamri_problem, AlamriProblem
 from contradiction.medical_claims.token_tagging.solvers.exact_match_solver import ExactMatchSolver, \
-    ExactMatchSTHandleSolver, TF_IDF
+    ExactMatchSTHandleSolver
+from contradiction.medical_claims.token_tagging.solvers.idf_solver import TF_IDF
 
 
 def main_old():
@@ -34,12 +35,17 @@ def solve_and_save(run_name, solver, tag_type):
 
 
 def run_tf_idf():
-    tf, df = load_clueweb12_B13_termstat_stemmed()
-    stemmer = Stemmer()
-    solver = TF_IDF(df, cdf, stemmer)
+    solver = get_tf_idf_solver()
     tag_type = "mismatch"
     run_name = "tf_idf"
     solve_and_save(run_name, solver, tag_type)
+
+
+def get_tf_idf_solver():
+    tf, df = load_clueweb12_B13_termstat_stemmed()
+    stemmer = Stemmer()
+    solver = TF_IDF(df, cdf, stemmer)
+    return solver
 
 
 if __name__ == "__main__":

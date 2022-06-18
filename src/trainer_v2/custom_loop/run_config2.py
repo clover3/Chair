@@ -98,6 +98,7 @@ class CommonRunConfig(SubConfig):
                  run_name="",
                  report_field="",
                  report_condition="",
+                 eval_batch_size=None,
                  ):
         self.batch_size = batch_size
         self.steps_per_execution = steps_per_execution
@@ -105,6 +106,7 @@ class CommonRunConfig(SubConfig):
         self.run_name = run_name
         self.report_field = report_field
         self.report_condition = report_condition
+        self.eval_batch_size = eval_batch_size
 
     def print_info(self):
         if self.is_debug_run:

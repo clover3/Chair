@@ -4,11 +4,15 @@ import numpy as np
 import tensorflow as tf
 from keras import backend as K
 
-from data_generator2.segmented_enc.seg_encoder_common import encode_two_segments
+from arg.qck.encode_common import encode_single
+from data_generator.tokenizer_wo_tf import get_tokenizer
+from data_generator2.segmented_enc.seg_encoder_common import encode_two_segments, TwoSegConcatEncoder
 from misc_lib import tprint, ceil_divide
 from tlm.data_gen.base import get_basic_input_feature_as_list
 from trainer_v2.custom_loop.demo.demo_common import EncodedSegmentIF
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
+from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig200_200
+from trainer_v2.custom_loop.runner.run_two_seg_concat import ModelConfig
 
 
 def encode_prem(tokenizer, prem_text, max_seq_length1):
@@ -121,3 +125,38 @@ class LocalDecisionNLICore:
         second_l_decision = [d[1] for d in l_decision_list]
         return second_l_decision
 
+
+def get_two_seg_asym_encoder(do_batch_shaping=True):
+    model_config = ModelConfig200_200()
+    tokenizer = get_tokenizer()
+    segment_len = int(model_config.max_seq_length2 / 2)
+
+    def encode_two_seg_input(p_tokens, h_first, h_second):
+        input_ids1, input_mask1, segment_ids1 = encode_single(tokenizer, p_tokens, model_config.max_seq_length1)
+        triplet2 = encode_two_segments(tokenizer, segment_len, h_first, h_second)
+        input_ids2, input_mask2, segment_ids2 = triplet2
+        x = input_ids1, segment_ids1, input_ids2, segment_ids2
+        if do_batch_shaping:
+            x = tuple(map(batch_shaping, x))
+        return x
+
+    return encode_two_seg_input
+
+
+def get_two_seg_concat_encoder():
+    model_config = ModelConfig()
+    tokenizer = get_tokenizer()
+    encoder = TwoSegConcatEncoder(tokenizer, model_config.max_seq_length)
+
+    begin = True
+
+    def encode_two_seg_input(p_tokens, h_first, h_second):
+        triplet = encoder.two_seg_concat_core(p_tokens, h_first, h_second)
+        input_ids, input_mask, segment_ids = triplet
+        x = input_ids, segment_ids
+        nonlocal begin
+        if begin:
+            begin = False
+        return x
+
+    return encode_two_seg_input
