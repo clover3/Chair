@@ -142,4 +142,3 @@ class AttentionLayer(Layer):
     # noinspection PyUnusedLocal
     def compute_mask(self, inputs, mask=None):
         return mask   # [B, F]
-

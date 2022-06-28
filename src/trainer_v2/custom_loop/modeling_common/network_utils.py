@@ -136,8 +136,11 @@ class SplitSegmentIDLayerWVar(tf.keras.layers.Layer):
 
 
 class TwoLayerDense(tf.keras.layers.Layer):
-    def __init__(self, hidden_size, hidden_size2, activation1='relu', activation2=tf.nn.softmax):
-        super(TwoLayerDense, self).__init__()
+    def __init__(self, hidden_size, hidden_size2,
+                 activation1='relu', activation2=tf.nn.softmax,
+                 **kwargs
+                 ):
+        super(TwoLayerDense, self).__init__(**kwargs)
         self.layer1 = tf.keras.layers.Dense(hidden_size, activation=activation1)
         self.layer2 = tf.keras.layers.Dense(hidden_size2, activation=activation2)
 
@@ -214,3 +217,99 @@ class SplitSegmentID(tf.keras.layers.Layer):
 
         return input_ids1, input_ids2_r
 
+
+def logical_to_int(a, b, logical_fn):
+    out_b = logical_fn(tf.cast(a, tf.bool), tf.cast(b, tf.bool))
+    return tf.cast(out_b, tf.int32)
+
+
+def int_or(a, b):
+    return logical_to_int(a, b, tf.logical_or)
+
+
+def int_and(a, b):
+    return logical_to_int(a, b, tf.logical_and)
+
+
+def mask_shift_repeat_old(is_continue_chunk):
+    B, L = get_shape_list2(is_continue_chunk)
+    n_shift = 10
+    m_b_r1 = tf.tile(tf.expand_dims(is_continue_chunk, -1), [1, 1, L])
+    m_b_r0 = tf.transpose(m_b_r1, [0, 2, 1])
+    identity_2d = tf.eye(L, dtype=tf.int32)
+    identity_3d = tf.expand_dims(identity_2d, 0)
+    m_0 = tf.tile(identity_3d, [B, 1, 1])
+
+    def shift_dim0_down(t, step):
+        t_s = tf.concat([tf.zeros([B, step, L], tf.int32), t[:, :-step]], axis=1)
+        return t_s
+
+    def shift_dim1_down(t, step):
+        t_s = tf.concat([tf.zeros([B, L, step], tf.int32), t[:, :, :-step]], axis=2)
+        return t_s
+
+    m_i = m_0
+    for _ in range(n_shift):
+        m_i_prev = m_i
+        # M_2[a, b] = M_1[a, b-1] and B[b]  or M_1[a, b]
+        #  m_b_r0[i1, j] == m_b_r0[i2, j]
+        m_shift_by0 = int_and(shift_dim0_down(m_i_prev, 1), m_b_r1)
+        m_shift_by1 = int_and(shift_dim1_down(m_i_prev, 1), m_b_r0)
+        m_i = int_or(int_or(m_shift_by1, m_i_prev), m_shift_by0)
+    return m_i
+
+
+def mask_shift_repeat(is_continue_chunk):
+    B, L = get_shape_list2(is_continue_chunk)
+    n_shift = 10
+    m_b_r1 = tf.tile(tf.expand_dims(is_continue_chunk, -1), [1, 1, L])
+    m_b_r0 = tf.transpose(m_b_r1, [0, 2, 1])
+    identity_2d = tf.eye(L, dtype=tf.int32)
+    identity_3d = tf.expand_dims(identity_2d, 0)
+    m_0 = tf.tile(identity_3d, [B, 1, 1])
+    horizontal_zero = tf.zeros([B, 1, L], tf.int32)
+    def shift_dim0_down(t):
+        # return tf.roll(t, axis=1, shift=1)
+        t_s = tf.concat([horizontal_zero, t[:, :-1]], axis=1)
+        return t_s
+        # return t_s
+
+    m_i = m_0
+    for _ in range(n_shift):
+        m_i_prev = m_i
+        # M_2[a, b] = M_1[a, b-1] and B[b]  or M_1[a, b]
+        #  m_b_r0[i1, j] == m_b_r0[i2, j]
+        m_shift_by0 = tf.multiply(shift_dim0_down(m_i_prev), m_b_r1)
+        m_i = tf.maximum(m_i_prev, m_shift_by0)
+
+    out_m = tf.maximum(tf.transpose(m_i, [0, 2, 1]), m_i)
+    out_m = tf.cast(out_m, tf.int32)
+
+    return out_m
+
+
+def build_chunk_attention_mask(chunk_st_mask):
+    B_rule = 1 - chunk_st_mask
+    m_i = mask_shift_repeat(B_rule)
+    return m_i
+
+
+class ChunkAttentionMaskLayer(tf.keras.layers.Layer):
+    def call(self, inputs, *args, **kwargs):
+        return build_chunk_attention_mask(inputs)
+
+
+class ChunkAttentionMaskLayerFreeP(tf.keras.layers.Layer):
+    def call(self, inputs, *args, **kwargs):
+        p_array, h_array = inputs
+        B, L1 = get_shape_list2(p_array)
+        B, L2 = get_shape_list2(h_array)
+        mask00 = tf.ones([B, L1, L1], tf.int32)
+        mask01 = tf.zeros([B, L1, L2], tf.int32)
+        mask10 = tf.ones([B, L2, L1], tf.int32)
+        mask11 = build_chunk_attention_mask(h_array)
+        output_mak = tf.concat([
+            tf.concat([mask00, mask01], axis=2),
+            tf.concat([mask10, mask11], axis=2)
+        ], axis=1)
+        return output_mak

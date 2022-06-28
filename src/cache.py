@@ -17,8 +17,10 @@ def load_from_pickle(name):
 
     return obj
 
+
 def save_to_pickle(obj, name: str):
-    assert type(name) == str
+    if not type(name) == str:
+        raise TypeError("You passed {} as name and {} as obj".format(name, obj))
     pickle_name = "{}.pickle".format(name)
     path = os.path.join(cache_path, pickle_name)
     pickle.dump(obj, open(path, "wb"))

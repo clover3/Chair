@@ -257,4 +257,7 @@ def load_json_wrap(args):
         config_j = {}
     except AttributeError:
         config_j = {}
+    except TypeError as e:
+        c_log.warning("maybe args.config_path is not specified : {}".format(e))
+        config_j = {}
     return config_j

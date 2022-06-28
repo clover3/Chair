@@ -22,7 +22,7 @@ def file_show(fn):
             print(v)
 
         cnt += 1
-        if cnt >= n_display:##
+        if cnt >= n_display:  ##
             break
 
 

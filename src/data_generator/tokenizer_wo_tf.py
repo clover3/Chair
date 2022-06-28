@@ -675,3 +675,11 @@ class JoinEncoder:
 def ids_to_text(tokenizer, ids: List[int]) -> str:
     tokens = tokenizer.convert_ids_to_tokens(ids)
     return pretty_tokens(tokens, True)
+
+
+def get_continuation_voca_ids(tokenizer: FullTokenizer) -> List[int]:
+    output = []
+    for text_token, id_token in tokenizer.vocab.items():
+        if is_continuation(text_token):
+            output.append(id_token)
+    return output

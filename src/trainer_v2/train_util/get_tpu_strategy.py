@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+from taskman_client.task_proxy import get_local_machine_name
 from trainer_v2.chair_logging import c_log
 
 
@@ -29,4 +30,14 @@ def get_tpu_strategy_inner(tpu_name):
     c_log.debug("get_tpu_strategy:: init Client")
     c = Client(tpu=tpu_name)
     # c.configure_tpu_version(tf.__version__, restart_type='ifNeeded')
+    return strategy
+
+
+def get_strategy_by_machine_name():
+    machine_name = get_local_machine_name()
+    is_tpu = machine_name not in ["GOSFORD", "ingham.cs.umass.edu"]
+    if is_tpu:
+        strategy = get_strategy(True, "local")
+    else:
+        strategy = get_strategy(False, "")
     return strategy

@@ -113,6 +113,33 @@ def load_stock_weights_encoder_only(bert_like, ckpt_path,
     return skipped_weight_value_tuples  # (bert_weight, value_from_ckpt)
 
 
+def load_stock_weights_encoder_only(bert_like, ckpt_path,
+                                    map_to_stock_fn=map_to_stock_variable_name,
+                                    n_expected_restore=None,
+                                    ):
+    assert _checkpoint_exists(ckpt_path), "Checkpoint does not exist: {}".format(ckpt_path)
+    assert len(bert_like.weights) > 0, "BertModelLayer weights have not been instantiated yet. " \
+                                       "Please add the layer in a Keras model and call model.build() first!"
+
+    skipped_weight_value_tuples = _load_stock_weights(bert_like, ckpt_path, map_to_stock_fn, n_expected_restore)
+
+    return skipped_weight_value_tuples  # (bert_weight, value_from_ckpt)
+
+
+def load_stock_weights_embedding(bert_like, ckpt_path,
+                                 map_to_stock_fn=map_to_stock_variable_name,
+                                 n_expected_restore=None,
+                                 ):
+    assert _checkpoint_exists(ckpt_path), "Checkpoint does not exist: {}".format(ckpt_path)
+    assert len(bert_like.weights) > 0, "BertModelLayer weights have not been instantiated yet. " \
+                                       "Please add the layer in a Keras model and call model.build() first!"
+
+    skipped_weight_value_tuples = _load_stock_weights(bert_like, ckpt_path, map_to_stock_fn, n_expected_restore)
+
+    return skipped_weight_value_tuples  # (bert_weight, value_from_ckpt)
+
+
+
 def _load_stock_weights(bert, ckpt_path, map_to_stock_fn, n_expected_restore):
     ckpt_reader = tf.train.load_checkpoint(ckpt_path)
     stock_weights = set(ckpt_reader.get_variable_to_dtype_map().keys())

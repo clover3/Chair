@@ -49,7 +49,6 @@ class TwoSegConcat(ClassificationModelIF):
         feature_rep = split_stack_flatten_encode_stack(bert_cls.apply, inputs,
                                                        max_seq_length, window_length)
 
-
         # [batch_size, num_window, dim2 ]
         hidden = tf.keras.layers.Dense(bert_params.hidden_size, activation='relu')(feature_rep)
         local_decisions = tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax)(hidden)

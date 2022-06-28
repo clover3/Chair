@@ -1,11 +1,19 @@
 import random
 from abc import ABC, abstractmethod
-from typing import Tuple, List
+from typing import Tuple, List, Set
 
 from arg.qck.encode_common import encode_single
+from data_generator.tokenizer_wo_tf import get_continuation_voca_ids, FullTokenizer
 from data_generator2.segmented_enc.sent_split_by_spacy import split_spacy_tokens
-from misc_lib import CountWarning
+from misc_lib import CountWarning, SuccessCounter
 from tlm.data_gen.base import get_basic_input_feature_as_list, combine_with_sep_cls, concat_triplet_windows
+
+
+def is_only_0_or_1(l):
+    for v in l:
+        if v != 0 and v !=1 :
+            return False
+    return True
 
 
 class SingleEncoderInterface(ABC):
@@ -30,7 +38,6 @@ class PairEncoderInterface(ABC):
     def encode_from_text(self, text1, text2) -> Tuple[List, List, List]:
         # returns input_ids, input_mask, segment_ids
         pass
-
 
 
 class SingleEncoder(SingleEncoderInterface):
@@ -380,3 +387,71 @@ class TwoSegConcatEncoder(PairEncoderInterface):
     def encode_from_text(self, text1, text2):
         # returns input_ids, input_mask, segment_ids
         return self.encode(self.tokenizer.tokenize(text1), self.tokenizer.tokenize(text2))
+
+
+class SingleChunkIndicatingEncoder(SingleEncoderInterface):
+    def __init__(self, tokenizer, max_seq_length):
+        self.max_seq_length = max_seq_length
+        self.tokenizer: FullTokenizer = tokenizer
+        self.counter_warning = CountWarning()
+        self.continue_voca: Set[int] = set(get_continuation_voca_ids(tokenizer))
+        self.chunk_start_rate = SuccessCounter()
+
+    def encode(self, tokens) -> Tuple[List, List, List]:
+        if len(tokens) > self.max_seq_length - 2:
+            self.counter_warning.add_warn()
+        input_ids, input_mask, _ = encode_single(self.tokenizer, tokens, self.max_seq_length)
+
+        def is_chunk_start(token_id):
+            if token_id in self.continue_voca:
+                if token_id != 0:
+                    self.chunk_start_rate.fail()
+                return False
+            else:
+                if token_id != 0:
+                    self.chunk_start_rate.suc()
+                return True
+
+        chunk_start_indicators = list(map(is_chunk_start, input_ids))
+        fake_segment_ids = chunk_start_indicators
+        return input_ids, input_mask, fake_segment_ids
+
+
+class ChunkIndicatingEncoder(SingleEncoderInterface):
+    def __init__(self, tokenizer, max_seq_length, typical_chunk_len):
+        self.max_seq_length = max_seq_length
+        self.tokenizer: FullTokenizer = tokenizer
+        self.counter_warning = CountWarning()
+        self.continue_voca: Set[int] = set(get_continuation_voca_ids(tokenizer))
+        self.chunk_start_rate = SuccessCounter()
+        self.typical_chunk_len = typical_chunk_len
+
+    def encode(self, tokens) -> Tuple[List, List, List]:
+        if len(tokens) > self.max_seq_length - 2:
+            self.counter_warning.add_warn()
+        input_ids, input_mask, _ = encode_single(self.tokenizer, tokens, self.max_seq_length)
+
+        cur_chunk = []
+        chunk_start_indicators = []
+        self.chunk_start_rate.suc()
+        for idx, token_id in enumerate(input_ids):
+            if len(cur_chunk) == 0:
+                chunk_start_indicators.append(1)
+                self.chunk_start_rate.suc()
+            else:
+                chunk_start_indicators.append(0)
+                self.chunk_start_rate.fail()
+            cur_chunk.append(token_id)
+
+            if len(cur_chunk) >= self.typical_chunk_len and token_id not in self.continue_voca:
+                cur_chunk = []
+
+        if not is_only_0_or_1(chunk_start_indicators):
+            raise ValueError()
+        assert len(chunk_start_indicators) == len(input_ids)
+        fake_segment_ids = chunk_start_indicators
+        return input_ids, input_mask, fake_segment_ids
+
+    def encode_from_text(self, text):
+        # returns input_ids, input_mask, segment_ids
+        return self.encode(self.tokenizer.tokenize(text))

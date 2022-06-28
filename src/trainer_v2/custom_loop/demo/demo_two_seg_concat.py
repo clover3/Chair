@@ -11,7 +11,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from dataset_specific.mnli.mnli_reader import NLIPairData
 from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_nli_model, get_two_seg_concat_encoder
+from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model, get_two_seg_concat_encoder
 
 
 def main():
@@ -20,18 +20,8 @@ def main():
     if len(sys.argv) > 1:
         model_path = sys.argv[1]
 
-    def get_local_decision_layer_from_model(model):
-        local_decision_layer_idx = 17
-        local_decision_layer = model.layers[local_decision_layer_idx]
-        for idx, layer in enumerate(model.layers):
-            print("layer {}: {} {}".format(idx, layer.name, layer.output.shape))
-        print("Local decision layer")
-        print("Name: ", local_decision_layer.name)
-        print("Shape: ", local_decision_layer.output.shape)
-        return local_decision_layer
-
     c_log.info("Loading model from %s", model_path)
-    predictor = load_local_decision_nli_model(model_path, get_local_decision_layer_from_model)
+    predictor = load_local_decision_model(model_path)
     tokenizer = get_tokenizer()
     window_size = 3
     encode_two_seg_input = get_two_seg_concat_encoder()

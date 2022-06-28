@@ -188,14 +188,15 @@ def get_latest_model_path_from_dir_path(save_dir):
         raise FileNotFoundError("No valid file found at {}".format(save_dir))
 
 
-def load_model(model_path):
+def load_model_by_dir_or_abs(model_path):
     try:
-        model = tf.saved_model.load(model_path)
+        model = tf.keras.models.load_model(model_path, compile=False)
     except OSError:
         if os.path.exists(model_path):
             c_log.info("Model not found at {}, search for sub-directories".format(model_path))
             new_model_path = get_latest_model_path_from_dir_path(model_path)
-            model = tf.saved_model.load(new_model_path)
+            c_log.info("Loading model from {}".format(new_model_path))
+            model = tf.keras.models.load_model(new_model_path)
         else:
             raise
     return model
@@ -213,7 +214,7 @@ def tf_run_eval(run_config: RunConfig2,
     with strategy.scope():
         c_log.debug("Loading model")
         model_path = run_config.eval_config.model_save_path
-        model = load_model(model_path)
+        model = tf.saved_model.load(model_path)
         trainer.build_model()
         trainer.set_keras_model(model)
         loss_metric = tf.keras.metrics.Mean(name='loss')

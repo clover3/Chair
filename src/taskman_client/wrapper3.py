@@ -17,7 +17,6 @@ def get_hp_str_from_flag(flags):
     return s
 
 g_task_proxy: TaskProxy = None
-
 def report_run3(func):
     def func_wrapper(args):
         flags = args

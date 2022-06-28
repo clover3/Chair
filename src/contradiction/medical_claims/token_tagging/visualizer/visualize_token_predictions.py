@@ -1,19 +1,21 @@
-import json
 import os
 from typing import List, Dict, Tuple
 
+from contradiction.medical_claims.token_tagging.path_helper import get_sbl_qrel_path
+from contradiction.medical_claims.token_tagging.problem_loader import AlamriProblem, load_alamri_problem
 from cpath import output_path
 from data_generator.tokenize_helper import TokenizedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
+from list_lib import index_by_fn
 from misc_lib import group_by
 from tlm.token_utils import cells_from_tokens
+from trec.qrel_parse import load_qrels_structured
 from trec.trec_parse import load_ranked_list
-from trec.types import TrecRankedListEntry
-from visualize.html_visual import HtmlVisualizer, Cell, normalize
+from trec.types import TrecRankedListEntry, QRelsDict
+from visualize.html_visual import HtmlVisualizer, Cell
 
 
-def collect_scores(ranked_list: List[TrecRankedListEntry]) -> Dict[Tuple[int, int],
-                                                                   Dict[Tuple, Dict]]:
+def collect_scores(ranked_list: List[TrecRankedListEntry]) -> Dict[str, Dict[Tuple, Dict]]:
     grouped = group_by(ranked_list, lambda x: x.query_id)
     qid_to_score_d = {}
     for qid, entries in grouped.items():
@@ -26,7 +28,7 @@ def collect_scores(ranked_list: List[TrecRankedListEntry]) -> Dict[Tuple[int, in
         group_no, inner_idx, sent_type, tag_type = qid.split("_")
         group_no = int(group_no)
         inner_idx = int(inner_idx)
-        return group_no, inner_idx
+        return "{}_{}".format(group_no, inner_idx)
 
     pair_no_grouped = group_by(qid_to_score_d.keys(), get_pair_idx)
     output = {}
@@ -42,61 +44,69 @@ def collect_scores(ranked_list: List[TrecRankedListEntry]) -> Dict[Tuple[int, in
 def print_html(run_name,
                tag_type,
                ranked_list,
-               info_d: Dict[int, Dict],
+               problems: List[AlamriProblem],
+               qrel: QRelsDict,
                tokenizer):
-    PairNo = Tuple[int, int]
     SentType = Tuple[str, str]
-    score_grouped: Dict[PairNo, Dict[SentType, Dict]] = collect_scores(ranked_list)
+    score_grouped: Dict[str, Dict[SentType, Dict]] = collect_scores(ranked_list)
     keys = list(score_grouped.keys())
     keys.sort()
 
-    pair_no_index_info = {}
-    for data_id, info_e in info_d.items():
-        pair_no = info_e['group_no'], info_e['inner_idx']
-        pair_no_index_info[pair_no] = info_e
-
+    problems_d: Dict[str, AlamriProblem] = index_by_fn(AlamriProblem.get_problem_id, problems)
     save_name = "{}_{}.html".format(run_name, tag_type)
     html = HtmlVisualizer(save_name)
 
     for pair_no in keys:
-        print(pair_no)
         local_d = score_grouped[pair_no]
-        info_e = pair_no_index_info[pair_no]
-        text1 = info_e['text1']
-        text2 = info_e['text2']
-        t_text1 = TokenizedText.from_text(text1, tokenizer)
-        t_text2 = TokenizedText.from_text(text2, tokenizer)
+        p = problems_d[pair_no]
+        t_text1 = TokenizedText.from_text(p.text1, tokenizer)
+        t_text2 = TokenizedText.from_text(p.text2, tokenizer)
         t_text_d = {
             'prem': t_text1,
             'hypo': t_text2,
         }
-        html.write_paragraph("Data no: {} {}".format(pair_no[0], pair_no[1]))
+        html.write_paragraph("Data no: {}".format(pair_no))
         for sent_type in ["prem", "hypo"]:
+            qid = f"{pair_no}_{sent_type}_{tag_type}"
+            try:
+                qrel_d: Dict[str, int] = qrel[qid]
+            except KeyError:
+                qrel_d = {}
             score_d = local_d[sent_type, tag_type]
             t_text = t_text_d[sent_type]
             tokens = t_text.tokens
-            score = [score_d[str(i)] for i in range(len(tokens))]
-            print(tokens)
-            print(score)
-            score = normalize(score)
-            cells = cells_from_tokens(tokens, score)
-            row = [Cell("{}:".format(sent_type))] + cells
-            html.multirow_print(row, 20)
+            scores = [score_d[str(i)] for i in range(len(tokens))]
+            scores = [s * 100 for s in scores]
+
+            row = cells_from_tokens(tokens, scores)
+
+            def get_qrel_cell(i):
+                try:
+                    relevant = qrel_d[str(i)]
+                except KeyError:
+                    relevant = 0
+                if relevant :
+                    return Cell("", highlight_score=100, target_color="G")
+                else:
+                    return Cell("", highlight_score=0)
+            row2 = list(map(get_qrel_cell, range(len(tokens))))
+            table = [row, row2]
+            html.write_paragraph(sent_type)
+            html.write_table(table)
 
 
 # tfrecord/bert_alamri1.pickle
 def main():
-    data_name = "bert_alamri1"
     tokenizer = get_tokenizer()
-    save_dir = os.path.join(output_path, "alamri_annotation1", "tfrecord")
-    info_file_path = os.path.join(save_dir, "{}.info".format(data_name))
-    info = json.load(open(info_file_path, "r"))
-    run_name = "senli"
-    for tag_type in ["mismatch", "conflict"]:
-        ranked_list_path = os.path.join(output_path, "alamri_annotation1", "ranked_list",
-                                        "senli_{}.txt".format(tag_type))
-        ranked_list = load_ranked_list(ranked_list_path)
-        print_html(run_name, tag_type, ranked_list, info, tokenizer)
+    problems: List[AlamriProblem] = load_alamri_problem()
+
+    run_name = "nlits"
+    tag_type = "mismatch"
+    ranked_list_path = os.path.join(output_path, "alamri_annotation1", "ranked_list",
+                                    "{}_{}.txt".format(run_name, tag_type))
+    qrel: QRelsDict = load_qrels_structured(get_sbl_qrel_path())
+    ranked_list = load_ranked_list(ranked_list_path)
+    print_html(run_name, tag_type, ranked_list, problems, qrel, tokenizer)
 
 
 if __name__ == "__main__":

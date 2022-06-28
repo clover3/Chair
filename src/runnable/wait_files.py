@@ -5,7 +5,7 @@ import time
 
 def main():
     raw_file_list = sys.argv[1]
-    print(raw_file_list)
+    print("wait files:", raw_file_list)
     file_list = raw_file_list.split(",")
     num_files = len(file_list)
     wait = True

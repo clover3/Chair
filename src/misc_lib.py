@@ -119,6 +119,12 @@ class SuccessCounter:
     def get_suc_prob(self):
         return self.n_suc / self.n_total
 
+    def add(self, decision: bool):
+        if decision:
+            self.suc()
+        else:
+            self.fail()
+
 def exist_or_mkdir(dir_path):
     if not os.path.exists(dir_path):
         os.mkdir(dir_path)

@@ -51,7 +51,11 @@ def combine_local_decision_by_fuzzy_logic(local_decisions):
     cnp1 = tf.reduce_max(local_neutral_p, axis=-1)  # [batch_size]
     cnp2 = 1-combined_contradiction_s
     combined_neutral_s = tf.multiply(cnp1, cnp2)
-    combined_entail_s = tf.math.exp(tf.reduce_mean(tf.math.log(local_entail_p), axis=-1))
+
+    def mean(t, axis):
+        return tf.reduce_mean(t, axis)
+
+    combined_entail_s = tf.math.exp(mean(tf.math.log(local_entail_p), axis=-1))
 
     score_stacked = tf.stack([combined_entail_s, combined_neutral_s, combined_contradiction_s], axis=1)
     sum_s = tf.reduce_sum(score_stacked, axis=1, keepdims=True)
@@ -60,9 +64,105 @@ def combine_local_decision_by_fuzzy_logic(local_decisions):
     return sentence_prob
 
 
+def fuzzy_logic_ex(local_decisions, input_mask=None):
+    if input_mask is None:
+        return combine_local_decision_by_fuzzy_logic(local_decisions)
+
+    input_mask_f = tf.cast(input_mask, tf.float32)
+
+    input_mask_ex = tf.cast(tf.expand_dims(input_mask, 2), tf.float32)
+    # If input_mask is 0, there score will be 0 and will not affect max in c/p
+    local_decisions = tf.multiply(local_decisions, input_mask_ex)
+    local_entail_p = local_decisions[:, :, 0]
+    local_neutral_p = local_decisions[:, :, 1]
+    local_contradiction_p = local_decisions[:, :, 2]
+
+    combined_contradiction_s = tf.reduce_max(local_contradiction_p, axis=-1)
+
+    cnp1 = tf.reduce_max(local_neutral_p, axis=-1)  # [batch_size]
+    cnp2 = 1-combined_contradiction_s
+    combined_neutral_s = tf.multiply(cnp1, cnp2)
+    eps = 1e-6
+
+    def mean(t, axis):
+        t2 = tf.reduce_sum(t, axis)
+        n_valid = tf.cast(tf.reduce_sum(input_mask_f, axis=1), tf.float32) + eps
+        return tf.divide(t2, n_valid)
+
+    # Valid cell [0~1]+eps -> -6~0
+    # Valid cell 0+eps -> -6 -> 0
+    log_local_entail_p = tf.math.log(local_entail_p + eps) * input_mask_f
+    mean_log_local_entail_p = mean(log_local_entail_p, -1)  # [-6~0]
+    combined_entail_s = tf.math.exp(mean_log_local_entail_p)  # [0~1]
+    score_stacked = tf.stack([combined_entail_s, combined_neutral_s, combined_contradiction_s], axis=1)
+    sum_s = tf.reduce_sum(score_stacked, axis=1, keepdims=True)
+    sentence_logits = tf.divide(score_stacked, sum_s)
+    sentence_prob = tf.nn.softmax(sentence_logits, axis=1)
+    return sentence_prob
+
+
+def fuzzy_logic_no_sum(local_decisions, input_mask=None):
+    if input_mask is None:
+        return combine_local_decision_by_fuzzy_logic(local_decisions)
+
+    input_mask_f = tf.cast(input_mask, tf.float32)
+
+    input_mask_ex = tf.cast(tf.expand_dims(input_mask, 2), tf.float32)
+    # If input_mask is 0, there score will be 0 and will not affect max in c/p
+    local_decisions = tf.multiply(local_decisions, input_mask_ex)
+    local_entail_p = local_decisions[:, :, 0]
+    local_neutral_p = local_decisions[:, :, 1]
+    local_contradiction_p = local_decisions[:, :, 2]
+
+    combined_contradiction_s = tf.reduce_max(local_contradiction_p, axis=-1)
+
+    cnp1 = tf.reduce_max(local_neutral_p, axis=-1)  # [batch_size]
+    cnp2 = 1-combined_contradiction_s
+    combined_neutral_s = tf.multiply(cnp1, cnp2)
+    eps = 1e-6
+
+    def mean(t, axis):
+        t2 = tf.reduce_sum(t, axis)
+        n_valid = tf.cast(tf.reduce_sum(input_mask_f, axis=1), tf.float32) + eps
+        return tf.divide(t2, n_valid)
+
+    # Valid cell [0~1]+eps -> -6~0
+    # Valid cell 0+eps -> -6 -> 0
+    log_local_entail_p = tf.math.log(local_entail_p + eps) * input_mask_f
+    mean_log_local_entail_p = mean(log_local_entail_p, -1)  # [-6~0]
+    combined_entail_s_log = mean_log_local_entail_p
+    combined_neutral_s_log = tf.math.log(combined_neutral_s + eps)
+    combined_contradiction_s_log = tf.math.log(combined_contradiction_s + eps)
+    score_stacked = tf.stack([combined_entail_s_log,
+                              combined_neutral_s_log,
+                              combined_contradiction_s_log,
+                              ], axis=1)
+    sentence_logits = score_stacked
+    sentence_prob = tf.nn.softmax(sentence_logits, axis=1)
+    return sentence_prob
+
+
 class FuzzyLogicLayer(tf.keras.layers.Layer):
     def call(self, inputs, *args, **kwargs):
-        return combine_local_decision_by_fuzzy_logic(inputs)
+        return fuzzy_logic_ex(inputs, kwargs['input_mask'])
+
+
+class FuzzyLogicLayerM(tf.keras.layers.Layer):
+    def call(self, inputs, input_mask, *args, **kwargs):
+        return fuzzy_logic_ex(inputs, input_mask)
+
+
+class FuzzyLogicLayerM2(tf.keras.layers.Layer):
+    def call(self, inputs, *args, **kwargs):
+        scores, input_mask = inputs
+        return fuzzy_logic_ex(scores, input_mask)
+
+
+class FuzzyLogicLayerNoSum(tf.keras.layers.Layer):
+    def call(self, inputs, *args, **kwargs):
+        scores, input_mask = inputs
+        return fuzzy_logic_no_sum(scores, input_mask)
+
 
 
 class FuzzyLogicLayerOnLogits(tf.keras.layers.Layer):
@@ -154,3 +254,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+#

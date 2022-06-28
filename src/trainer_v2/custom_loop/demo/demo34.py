@@ -3,6 +3,7 @@ import os
 from typing import Iterable
 
 from cpath import get_canonical_model_path
+from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig200_200
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -17,25 +18,20 @@ from trainer_v2.custom_loop.demo.demo_common import iterate_and_demo, EncodedSeg
     enum_hypo_token_tuple, iter_alamri
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_nli, get_two_seg_asym_encoder
+from trainer_v2.custom_loop.per_task.nli_ts_util import get_two_seg_asym_encoder, load_local_decision_model
 
 
 def main():
     c_log.info("Start {}".format(__file__))
     model_path = os.path.join(get_canonical_model_path("nli_ts_run34_0"), "model_25000")
 
-    def get_local_decision_layer_from_model(model):
-        local_decision_layer_idx = 12
-        local_decision_layer = model.layers[local_decision_layer_idx]
-        print("Local decision layer")
-        print("Name: ", local_decision_layer.name)
-        print("Shape: ", local_decision_layer.output.shape)
-        return local_decision_layer
 
-    predictor = load_local_decision_nli(model_path, get_local_decision_layer_from_model)
+    predictor = load_local_decision_model(model_path)
     tokenizer = get_tokenizer()
     window_size = 3
-    encode_two_seg_input = get_two_seg_asym_encoder()
+    model_config = ModelConfig200_200()
+    encode_two_seg_input = get_two_seg_asym_encoder(model_config.max_seq_length1,
+                                                    model_config.max_seq_length2)
 
     def enum_hypo_tuples(window_size, e: NLIPairData) -> Iterable[EncodedSegmentIF]:
         p_tokens = tokenizer.tokenize(e.premise)
