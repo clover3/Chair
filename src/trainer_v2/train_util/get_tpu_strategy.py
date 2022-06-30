@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from taskman_client.task_proxy import get_local_machine_name
+from taskman_client.task_proxy import get_local_machine_name, assign_tpu_anonymous
 from trainer_v2.chair_logging import c_log
 
 
@@ -35,9 +35,14 @@ def get_tpu_strategy_inner(tpu_name):
 
 def get_strategy_by_machine_name():
     machine_name = get_local_machine_name()
-    is_tpu = machine_name not in ["GOSFORD", "ingham.cs.umass.edu"]
-    if is_tpu:
-        strategy = get_strategy(True, "local")
-    else:
+    if machine_name == "us-1":
+        tpu_name = assign_tpu_anonymous()
+        strategy = get_strategy(True, tpu_name)
+    elif machine_name == "GOSFORD":
         strategy = get_strategy(False, "")
+    elif machine_name == "ingham.cs.umass.edu":
+        strategy = get_strategy(False, "")
+    else:
+        # It should be tpu v4
+        strategy = get_strategy(True, "local")
     return strategy

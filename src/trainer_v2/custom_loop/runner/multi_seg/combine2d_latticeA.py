@@ -10,7 +10,7 @@ from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2_nli
 from trainer_v2.custom_loop.train_loop import tf_run_for_bert
 from trainer_v2.train_util.arg_flags import flags_parser
 
-from trainer_v2.custom_loop.neural_network_def.combine2d import SingleToken2DEmbOnly, ReduceMaxLayer
+from trainer_v2.custom_loop.neural_network_def.combine2d import SingleToken2DEmbOnly, MonoSortCombinerA
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import FuzzyLogicLayerNoSum
 
 from trainer_v2.chair_logging import c_log
@@ -24,7 +24,7 @@ def main(args):
     def dataset_factory(input_files, is_for_training):
         return get_two_seg_data(input_files, run_config, model_config, is_for_training)
 
-    inner = SingleToken2DEmbOnly(ReduceMaxLayer, FuzzyLogicLayerNoSum)
+    inner = SingleToken2DEmbOnly(MonoSortCombinerA, FuzzyLogicLayerNoSum)
     tf_run_for_bert(dataset_factory, model_config, run_config, inner)
 
 

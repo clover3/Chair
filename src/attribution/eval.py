@@ -1,3 +1,4 @@
+from attribution.attrib_types import TokenScores
 from attribution.deleter_trsfmr import token_delete_with_indice
 from data_generator.NLI import nli
 from data_generator.NLI.enlidef import get_target_class
@@ -60,16 +61,17 @@ def eval_pairing(pair_logits_p, pair_logits_h, data_loader, enc_list, pair_infos
     return scores_p, scores_h
 
 
-def predict_translate(conf_score, data_loader, enc_payload, plain_payload):
+def predict_translate(conf_score, data_loader, enc_payload, plain_payload)\
+        -> List[Tuple[TokenScores, TokenScores]]:
     max_k = 999
-    pred_list = []
+    pred_list: List[Tuple[TokenScores, TokenScores]] = []
     for idx, entry in enumerate(plain_payload):
         conf_p, conf_h = data_loader.split_p_h(conf_score[idx], enc_payload[idx])
         prem, hypo = entry
         input_ids = enc_payload[idx][0]
         p_enc, h_enc = data_loader.split_p_h(input_ids, enc_payload[idx])
-        p_explain = []
-        h_explain = []
+        p_explain: TokenScores = []
+        h_explain: TokenScores = []
 
         p_set = set()
         for i in top_k_idx(conf_p, max_k):

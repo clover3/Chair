@@ -40,9 +40,13 @@ def get_local_decision_nlits_core(run_name, encoder_name):
 
 def get_model_path(model_name):
     machine_name = get_local_machine_name()
-    is_tpu = machine_name not in ["GOSFORD", "ingham.cs.umass.edu"]
-    if is_tpu:
-        model_path = f'/home/youngwookim/code/Chair/model/{model_name}'
-    else:
+    if machine_name == "us-1":
+        model_path = f'gs://clovertpu/training/model/{model_name}'
+    elif machine_name == "GOSFORD":
         model_path = os.path.join(common_model_dir_root, 'runs', f"{model_name}")
+    elif machine_name == "ingham.cs.umass.edu":
+        model_path = os.path.join(common_model_dir_root, 'runs', f"{model_name}")
+    else:
+        # It should be tpu v4
+        model_path = f'/home/youngwookim/code/Chair/model/{model_name}'
     return model_path

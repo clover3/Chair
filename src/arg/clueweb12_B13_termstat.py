@@ -1,7 +1,10 @@
+import math
 import os
 import pickle
 from collections import Counter, defaultdict
 from typing import Dict, Tuple
+
+from krovetzstemmer import Stemmer
 
 from cache import save_to_pickle, load_from_pickle, load_pickle_from, function_cache_wrap
 from cpath import data_path
@@ -116,3 +119,20 @@ def save_subword_termstat():
 
 if __name__ == "__main__":
     save_clueweb12_B13_termstat_stemmed()
+
+
+class ClueIDF:
+    def __init__(self):
+        tf, df = load_clueweb12_B13_termstat_stemmed()
+        self.df = df
+        self.stemmer = Stemmer()
+        self.cdf = clue_cdf
+
+    def get_weight(self, token) -> float:
+        stemmed_token = self.stemmer(token)
+        df = self.df[stemmed_token]
+        if df == 0:
+            df = 10
+
+        assert self.cdf - df + 0.5 > 0
+        return math.log((self.cdf - df + 0.5) / (df + 0.5))

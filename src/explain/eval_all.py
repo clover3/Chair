@@ -3,6 +3,7 @@ from functools import partial
 import cpath
 from data_generator.NLI.nli import *
 from data_generator.data_parser import esnli
+from evaluation import *
 from explain.eval_pr import *
 
 

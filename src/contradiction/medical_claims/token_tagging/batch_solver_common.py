@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from abc import ABC, abstractmethod
 from typing import List, Tuple, TypeVar, NamedTuple
 
 from contradiction.medical_claims.token_tagging.problem_loader import AlamriProblem

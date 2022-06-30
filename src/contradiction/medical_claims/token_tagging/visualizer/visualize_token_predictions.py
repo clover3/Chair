@@ -6,8 +6,8 @@ from contradiction.medical_claims.token_tagging.problem_loader import AlamriProb
 from cpath import output_path
 from data_generator.tokenize_helper import TokenizedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from list_lib import index_by_fn
-from misc_lib import group_by
+from list_lib import index_by_fn, lmap
+from misc_lib import group_by, two_digit_float
 from tlm.token_utils import cells_from_tokens
 from trec.qrel_parse import load_qrels_structured
 from trec.trec_parse import load_ranked_list
@@ -75,10 +75,11 @@ def print_html(run_name,
             score_d = local_d[sent_type, tag_type]
             t_text = t_text_d[sent_type]
             tokens = t_text.tokens
-            scores = [score_d[str(i)] for i in range(len(tokens))]
-            scores = [s * 100 for s in scores]
+            raw_scores = [score_d[str(i)] for i in range(len(tokens))]
+            scores = [s * 100 for s in raw_scores]
 
-            row = cells_from_tokens(tokens, scores)
+            score_row = cells_from_tokens(lmap(two_digit_float, raw_scores), scores)
+            text_row = cells_from_tokens(tokens, scores)
 
             def get_qrel_cell(i):
                 try:
@@ -89,8 +90,8 @@ def print_html(run_name,
                     return Cell("", highlight_score=100, target_color="G")
                 else:
                     return Cell("", highlight_score=0)
-            row2 = list(map(get_qrel_cell, range(len(tokens))))
-            table = [row, row2]
+            qrel_row = list(map(get_qrel_cell, range(len(tokens))))
+            table = [text_row, score_row, qrel_row]
             html.write_paragraph(sent_type)
             html.write_table(table)
 

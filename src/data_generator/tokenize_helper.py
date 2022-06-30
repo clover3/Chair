@@ -64,13 +64,16 @@ class TokenizedText(NamedTuple):
             tokenizer = g_tokenizer
 
         tokens = text.split()
+        return cls.from_word_tokens(text, tokenizer, tokens)
+
+    @classmethod
+    def from_word_tokens(cls, text, tokenizer, tokens):
         idx_mapping = []
         subword_list = []
         for idx, token in enumerate(tokens):
             sb_tokens = tokenizer.tokenize(token)
             idx_mapping.extend([WordIdx(idx)] * len(sb_tokens))
             subword_list.extend(sb_tokens)
-
         return TokenizedText(text, tokens, subword_list, idx_mapping)
 
     def conver_sbword_indice(self, idx):
@@ -110,8 +113,6 @@ class TokenizedText(NamedTuple):
 
     def get_sb_len(self):
         return len(self.sbword_tokens)
-
-
 
 
 def get_duplicate(doc_list: List[TokenizedText]):

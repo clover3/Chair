@@ -250,6 +250,23 @@ def _get_run_config2_nli_eval(args):
     return run_config
 
 
+def get_run_config2(args):
+    config_j = load_json_wrap(args)
+    common_run_config = CommonRunConfig.from_args(args)
+    input_file_config = DatasetConfig.from_args(args)
+    eval_config = EvalConfig.from_args(args)
+    tpu_config = TPUConfig.from_args(args)
+
+    run_config = RunConfig2(common_run_config=common_run_config,
+                            dataset_config=input_file_config,
+                            eval_config=eval_config,
+                            tpu_config=tpu_config
+                            )
+
+    update_run_config(config_j, run_config)
+    return run_config
+
+
 def load_json_wrap(args):
     try:
         config_j = json.load(open(args.config_path, "r"))

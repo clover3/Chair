@@ -164,7 +164,6 @@ class FuzzyLogicLayerNoSum(tf.keras.layers.Layer):
         return fuzzy_logic_no_sum(scores, input_mask)
 
 
-
 class FuzzyLogicLayerOnLogits(tf.keras.layers.Layer):
     def call(self, inputs, *args, **kwargs):
         local_decisions = inputs

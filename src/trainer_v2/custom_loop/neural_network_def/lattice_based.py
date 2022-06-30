@@ -3,6 +3,8 @@ import tensorflow as tf
 import tensorflow_lattice as tfl
 from tensorflow import keras
 
+from models.transformer.bert_common_v2 import get_shape_list2
+
 
 class Lattice3(tf.keras.layers.Layer):
     def __init__(self, n_seg, lattice_sizes):
@@ -87,9 +89,52 @@ class MonoCombiner(tf.keras.layers.Layer):
         for i in range(self.n_output):
             h = self.lattice_layers[i](h0)
             h_list.append(h)
+        z = tf.concat(h_list, axis=2)
+        y = tf.nn.softmax(z, axis=2)
+        return y
+
+
+class MonoCombiner3d(tf.keras.layers.Layer):
+    def __init__(self, width, n_seg):
+        super(MonoCombiner3d, self).__init__()
+        self.n_output = 3
+        self.n_seg = n_seg
+        n_dim = self.n_output * self.n_seg
+        lattice_sizes = [width for _ in range(n_dim)]
+        self.calibrator = tfl.layers.PWLCalibration(
+            units=n_dim,
+            input_keypoints=np.linspace(0, 1, num=100),
+            dtype=tf.float32,
+            output_min=0.0,
+            output_max=width - 1.0,
+            input_keypoints_type='learned_interior',
+            monotonicity='increasing')
+
+        def get_lattice_layer(key_input_idx):
+            def monotonic_opt(idx):
+                if idx % 3 == key_input_idx:
+                    return 'increasing'
+                else:
+                    return 'none'
+
+            monotonicities = list(map(monotonic_opt, range(n_dim)))
+            lattice_layer = get_lattice(lattice_sizes, monotonicities)
+            return lattice_layer
+        self.lattice_layers = [get_lattice_layer(i) for i in range(self.n_output)]
+
+    def call(self, inputs, *args, **kwargs):
+        B, L, D = get_shape_list2(inputs)
+        # D = 3 * 3
+        flat_inputs = tf.reshape(inputs, [B * L, D])
+        h0 = self.calibrator(flat_inputs) # [B * L, D]
+        h_list = []
+        for i in range(self.n_output):
+            h = self.lattice_layers[i](h0)
+            h_list.append(h)
         z = tf.concat(h_list, axis=1)
         y = tf.nn.softmax(z, axis=1)
-        return y
+        y_out = tf.reshape(y, [B, L, self.n_output])
+        return y_out
 
 
 def get_average(t, input_mask, axis):
