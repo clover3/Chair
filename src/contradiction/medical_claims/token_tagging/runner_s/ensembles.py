@@ -3,7 +3,7 @@ from typing import List
 from contradiction.medical_claims.token_tagging.eval_helper import do_ecc_eval_w_trec_eval
 from contradiction.medical_claims.token_tagging.path_helper import get_save_path2
 from contradiction.medical_claims.token_tagging.problem_loader import get_valid_split_groups
-from contradiction.medical_claims.token_tagging.tf_idf_discretize import idf_to_category_val
+from contradiction.medical_claims.token_tagging.tf_idf_discretize import idf_to_category_val, idf_to_category_val_norm1
 from list_lib import lmap, foreach
 from trec.ranked_list_util import ensemble_ranked_list
 from trec.trec_parse import load_ranked_list_grouped, RLG, write_rlg
@@ -51,12 +51,29 @@ def get_idf_and_sth_combiner(factor) -> EnsembleCoreIF:
         return TransformEnsembleCore(fn_list)
 
 
+def get_idf_comb2(factor) -> EnsembleCoreIF:
+    def v_grouping(v):
+        v_abs = abs(v)
+        sign = v / v_abs
+        v2 = sign * idf_to_category_val_norm1(v_abs)
+        v2 = (v2 + 1) / 2
+        return v2
+
+    def idf_transform(scores):
+        return lmap(v_grouping, scores)
+
+    def normalize_fn(x):
+        return normalize(x, factor)
+    fn_list = [idf_transform, normalize_fn]
+    return TransformEnsembleCore(fn_list)
+
+
 def main2():
     run_name_list = [
-        "tf_idf",
-        "nlits40"
+        "exact_match",
+        "nlits40_6"
     ]
-    output_run_name = "nlits40_ex"
+    output_run_name = "nlits40_6_EM"
 
     tag_type = "mismatch"
     ensemble_core = get_even_ensembler(len(run_name_list))
@@ -103,11 +120,29 @@ def do_for_run(run_name):
     )
 
 
+def do_for_run2(run_name):
+    run_name_list = [
+        "tf_idf",
+        run_name
+    ]
+    factor = 1
+    output_run_name = "{}_idf_minor".format(run_name)
+    print(output_run_name)
+    tag_type = "mismatch"
+    ensemble_core = get_even_ensembler(factor)
+    build_ensemble_ranked_list_and_save(
+        run_name_list,
+        ensemble_core.combine,
+        tag_type,
+        output_run_name
+    )
+
+
 def main():
     # todo = ["nlits40", "nlits45", "senli", "probe", "deletion", "pert_pred", "coattention"]
-    todo = ["sbl"]
+    todo = ["nlits40_5"]
     foreach(do_for_run, todo)
 
 
 if __name__ == "__main__":
-    main()
+    main2()

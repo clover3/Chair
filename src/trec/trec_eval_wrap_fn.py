@@ -12,8 +12,8 @@ def trec_eval_wrap(label_path, prediction_path, metric_opt):
     cmd.append(label_path)
     cmd.append(prediction_path)
     cmd = " ".join(cmd)
-    p = subprocess.Popen(cmd, shell=True)
-    p.wait()
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    return p.communicate()
 
 
 def get_trec_eval_path():

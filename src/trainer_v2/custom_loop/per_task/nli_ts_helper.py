@@ -6,7 +6,7 @@ from taskman_client.task_proxy import get_local_machine_name
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.per_task.nli_ts_util import get_two_seg_concat_encoder, get_two_seg_asym_encoder, \
     load_local_decision_model, LocalDecisionNLICore
-from trainer_v2.train_util.get_tpu_strategy import get_strategy_by_machine_name
+from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 
 EncoderType = Callable[[List, List, List], Iterable[Tuple]]
 
@@ -26,9 +26,9 @@ def get_encode_fn(encoder_name, model) -> EncoderType:
     return encode_fn
 
 
-def get_local_decision_nlits_core(run_name, encoder_name):
-    strategy = get_strategy_by_machine_name()
-    model_path = get_model_path(run_name)
+def get_local_decision_nlits_core(run_config, encoder_name):
+    model_path = run_config.eval_config.model_save_path
+    strategy = get_strategy_from_config(run_config)
     with strategy.scope():
         c_log.debug("Loading model from {} ...".format(model_path))
         model = load_local_decision_model(model_path)

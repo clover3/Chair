@@ -147,6 +147,12 @@ class FuzzyLogicLayer(tf.keras.layers.Layer):
         return fuzzy_logic_ex(inputs, kwargs['input_mask'])
 
 
+class FuzzyLogicLayer2(tf.keras.layers.Layer):
+    def call(self, inputs, *args, **kwargs):
+        scores, input_mask = inputs
+        return fuzzy_logic_ex(scores, input_mask)
+
+
 class FuzzyLogicLayerM(tf.keras.layers.Layer):
     def call(self, inputs, input_mask, *args, **kwargs):
         return fuzzy_logic_ex(inputs, input_mask)
@@ -162,6 +168,12 @@ class FuzzyLogicLayerNoSum(tf.keras.layers.Layer):
     def call(self, inputs, *args, **kwargs):
         scores, input_mask = inputs
         return fuzzy_logic_no_sum(scores, input_mask)
+
+
+class FuzzyLogic3(tf.keras.layers.Layer):
+    def call(self, inputs, *args, **kwargs):
+        scores = inputs
+        return fuzzy_logic_no_sum(scores, None)
 
 
 class FuzzyLogicLayerOnLogits(tf.keras.layers.Layer):

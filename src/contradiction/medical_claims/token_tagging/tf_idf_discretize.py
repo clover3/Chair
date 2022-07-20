@@ -16,6 +16,10 @@ def idf_to_category_val(idf_v):
         # return "OOV"
 
 
+def idf_to_category_val_norm1(idf_v):
+    return idf_to_category_val(idf_v) / 18
+
+
 def daily_topic_rare(idf_v):
     if idf_v < 6:
         return 6

@@ -152,6 +152,7 @@ def _load_stock_weights(bert, ckpt_path, map_to_stock_fn, n_expected_restore):
     param_values = keras.backend.batch_get_value(bert.weights)
     for ndx, (param_value, param) in enumerate(zip(param_values, bert_params)):
         stock_name = map_to_stock_fn(param.name, prefix)
+        c_log.debug(param.name)
 
         if ckpt_reader.has_tensor(stock_name):
             ckpt_value = ckpt_reader.get_tensor(stock_name)

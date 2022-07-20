@@ -71,9 +71,9 @@ def enum_hypo_token_tuple(tokenizer, hypothesis, window_size) -> List[Tuple[List
     yield from enum_hypo_token_tuple_from_tokens(tokenizer, space_tokenized_tokens, window_size)
 
 
-def enum_hypo_token_tuple_from_tokens(tokenizer, space_tokenized_tokens, window_size) -> \
+def enum_hypo_token_tuple_from_tokens(tokenizer, space_tokenized_tokens, window_size, offset=0) -> \
         List[Tuple[List[str], List[str], int, int]]:
-    st = 0
+    st = offset
     def sb_tokenize(tokens):
         output = []
         for t in tokens:

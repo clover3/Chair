@@ -150,7 +150,6 @@ class SingleSegment2(ClassificationModelIF):
         load_stock_weights_nc(l_bert2, init_checkpoint, n_expected_restore=197)
 
 
-
 class TwoChunk(ClassificationModelIF):
     def __init__(self, combine_local_decisions_layer):
         super(TwoChunk, self).__init__()

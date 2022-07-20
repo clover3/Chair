@@ -32,12 +32,30 @@ def get_local_decision_layer_from_model_by_shape(model):
     raise KeyError
 
 
-class LocalDecisionNLIMS:
-    def __init__(self, model, strategy, encode_fn):
+def get_weight_layer_from_model_by_shape(model):
+    for idx, layer in enumerate(model.layers):
+        try:
+            shape = layer.output.shape
+            if shape[3] == 1:
+                print("Maybe this is local decision layer: {}".format(layer.name))
+                return layer
+        except AttributeError:
+            print("layer is actually : ", layer)
+        except IndexError:
+            pass
+
+    print("Layer not found")
+    for idx, layer in enumerate(model.layers):
+        print(idx, layer, layer.output.shape)
+    raise KeyError
+
+
+class KerasPredictHelper:
+    def __init__(self, model, strategy, data_reform_fn):
         self.strategy = strategy
         self.model = model
         self.n_input = len(self.model.inputs)
-        self.encode_fn = encode_fn
+        self.data_reform_fn = data_reform_fn
 
         def get_spec(input_i: tf.keras.layers.Input):
             return tf.TensorSpec(input_i.type_spec.shape[1:], dtype=tf.int32)
@@ -56,6 +74,20 @@ class LocalDecisionNLIMS:
             output_signature=tuple(self.out_sig))
         strategy = self.strategy
 
+        dataset = dataset.map(self.data_reform_fn)
+        dataset = dataset.batch(batch_size, drop_remainder=True)
+        maybe_step = ceil_divide(len(input_list), batch_size)
+        dataset = distribute_dataset(strategy, dataset)
+        model = self.model
+        return model.predict(dataset, steps=maybe_step)
+
+
+
+class LocalDecisionNLIMS:
+    def __init__(self, model, strategy, encode_fn):
+        self.encode_fn = encode_fn
+        self.n_input = len(model.inputs)
+
         def reform(*row):
             # return (*row),
             if self.n_input == 4:
@@ -66,13 +98,10 @@ class LocalDecisionNLIMS:
                 raise ValueError
             return x,
 
-        dataset = dataset.map(reform)
-        dataset = dataset.batch(batch_size, drop_remainder=True)
-        maybe_step = ceil_divide(len(input_list), batch_size)
-        dataset = distribute_dataset(strategy, dataset)
-        model = self.model
-        l_decision, g_decision = model.predict(dataset, steps=maybe_step)
-        return l_decision, g_decision
+        self.inner_predictor = KerasPredictHelper(model, strategy, reform)
+
+    def predict(self, input_list):
+        return self.inner_predictor.predict(input_list)
 
     def predict_es(self, input_list: List[EncodedSegmentIF]):
         payload = [x.get_input() for x in input_list]
@@ -116,5 +145,27 @@ def get_local_decision_nlims(run_config: RunConfig2):
         model = load_local_decision_model(model_path)
         encode_fn = get_encode_fn(model, False)
         c_log.debug("Done")
+        nlits: LocalDecisionNLIMS = LocalDecisionNLIMS(model, strategy, encode_fn)
+    return nlits
+
+
+def get_weighted_nlims(run_config: RunConfig2):
+    model_path = run_config.eval_config.model_save_path
+    strategy = get_strategy_from_config(run_config)
+    with strategy.scope():
+        c_log.debug("Loading model from {} ...".format(model_path))
+        model = load_model_by_dir_or_abs(model_path)
+        local_decision_layer = get_local_decision_layer_from_model_by_shape(model)
+        weight_output_layer = get_weight_layer_from_model_by_shape(model)
+        new_outputs = [local_decision_layer.output, weight_output_layer.output, model.outputs]
+        model = tf.keras.models.Model(inputs=model.input, outputs=new_outputs)
+        encode_fn = get_encode_fn(model, False)
+        c_log.debug("Done")
+
+        def reform(*row):
+            x = row[0], row[1], row[2], row[3]
+            return x,
+
+        KerasPredictHelper(model, strategy, reform)
         nlits: LocalDecisionNLIMS = LocalDecisionNLIMS(model, strategy, encode_fn)
     return nlits

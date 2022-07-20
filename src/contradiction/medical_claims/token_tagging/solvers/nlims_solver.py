@@ -51,13 +51,17 @@ class NLISingleToken2DAdapter(AdapterIF):
         seq_len1, seq_len2, c = local_decision.shape
         # Originally g_decision is made by first reduce_max in p_side and them fuzzy sum over h_side
         word_idx_grouped: Dict[int, List[float]] = defaultdict(list)
-        for sb_idx, word_idx in enumerate(tt_based_es.tt2.sbword_mapping):
-            if sb_idx >= seq_len2:
-                break
-            decision_row = local_decision[:, sb_idx]
+        l2 = min(len(tt_based_es.tt2.sbword_mapping) + 2, seq_len2)
+        for i in range(l2):
+            sb_idx = i - 1
+            decision_row = local_decision[:, i]
             three_scores = np.max(decision_row, axis=0)
             score_for_this_h_token: float = three_scores[self.target_label]
-            word_idx_grouped[word_idx].append(score_for_this_h_token)
+            try:
+                word_idx = tt_based_es.tt2.sbword_mapping[sb_idx]
+                word_idx_grouped[word_idx].append(score_for_this_h_token)
+            except IndexError:
+                pass
 
         merge_fn = average
         score_array = []
@@ -68,7 +72,7 @@ class NLISingleToken2DAdapter(AdapterIF):
         return score_array
 
 
-def get_batch_solver_nlims(run_config: RunConfig2, target_label: int):
+def get_batch_solver_nli_single_token_2d(run_config: RunConfig2, target_label: int):
     nlims = get_local_decision_nlims(run_config)
     adapter = NLISingleToken2DAdapter(nlims, target_label)
     solver = BatchSolver(adapter)

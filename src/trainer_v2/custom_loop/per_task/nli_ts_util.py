@@ -8,6 +8,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.seg_encoder_common import encode_two_segments, TwoSegConcatEncoder
 from misc_lib import ceil_divide
 from tlm.data_gen.base import get_basic_input_feature_as_list
+from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.demo.demo_common import EncodedSegmentIF
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
 from trainer_v2.custom_loop.train_loop import load_model_by_dir_or_abs
@@ -66,16 +67,16 @@ def get_local_decision_layer_from_model_by_shape(model):
         try:
             shape = layer.output.shape
             if shape[1] == 2 and shape[2] == 3:
-                print("Maybe this is local decision layer: {}".format(layer.name))
+                c_log.debug("Maybe this is local decision layer: {}".format(layer.name))
                 return layer
         except AttributeError:
             print("layer is actually : ", layer)
         except IndexError:
             pass
 
-    print("Layer not found")
+    c_log.error("Layer not found")
     for idx, layer in enumerate(model.layers):
-        print(idx, layer, layer.output.shape)
+        c_log.error(idx, layer, layer.output.shape)
     raise KeyError
 
 
