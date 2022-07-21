@@ -1,8 +1,8 @@
 import abc
 from typing import NamedTuple, List
 
-from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 
 
 class ContributionSummary(NamedTuple):
@@ -31,5 +31,11 @@ class ContributionSummary(NamedTuple):
 class MatrixScorerIF(abc.ABC):
     @abc.abstractmethod
     def eval_contribution(self, inst: SegmentedInstance) -> ContributionSummary:
+        pass
+
+
+class MatrixScorerIF2(abc.ABC):
+    @abc.abstractmethod
+    def solve(self, tokens1: List[str], tokens2: List[str]) -> List[List[float]]:
         pass
 
