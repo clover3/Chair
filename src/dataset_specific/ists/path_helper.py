@@ -2,7 +2,7 @@ import os
 from typing import List
 
 from cpath import data_path
-from dataset_specific.ists.parse import ISTSProblem, parse_label_file, AlignmentList
+from dataset_specific.ists.parse import ISTSProblem, parse_label_file, AlignmentPredictionList
 
 
 def get_ists_texts_path(genre, split, sent_name):
@@ -41,7 +41,7 @@ def load_ists_problems(genre, split) -> List[ISTSProblem]:
     return p_list
 
 
-def load_ists_label(genre, split) -> AlignmentList:
+def load_ists_label(genre, split) -> AlignmentPredictionList:
     return parse_label_file(get_ists_label_path(genre, split))
 
 

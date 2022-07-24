@@ -1,7 +1,7 @@
 import numpy as np
 
-from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from alignment.data_structure.matrix_scorer_if import MatrixScorerIF, ContributionSummary
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
 
 
 class AllOneScorer(MatrixScorerIF):
@@ -20,4 +20,5 @@ class AllZeroScorer(MatrixScorerIF):
         scores = np.zeros([l1, l2])
         table = inst.score_np_table_to_table(scores)
         return ContributionSummary(table)
+
 

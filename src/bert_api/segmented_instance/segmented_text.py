@@ -235,6 +235,26 @@ def merge_subtoken_level_scores(merge_subtoken_scores: Callable[[Iterable[float]
     return output
 
 
+def merge_subtoken_level_scores_2d(merge_subtoken_scores: Callable[[Iterable[float]], float],
+                                   scores: List[List[float]],
+                                   t_text1: SegmentedText,
+                                   t_text2: SegmentedText,
+                                   ) -> List[List[float]]:
+    output = []
+    for seg_idx1 in t_text1.enum_seg_idx():
+        row = []
+        for seg_idx2 in t_text2.enum_seg_idx():
+            scores_per_cell = []
+            for idx1 in t_text1.seg_token_indices[seg_idx1]:
+                for idx2 in t_text2.seg_token_indices[seg_idx2]:
+                    scores_per_cell.append(scores[idx1][idx2])
+            s: float = merge_subtoken_scores(scores_per_cell)
+            row.append(s)
+        output.append(row)
+    return output
+
+
+
 def text_to_word_level_segmented_text(text, tokenizer):
     tokens = tokenizer.tokenize(text)
     input_ids = tokenizer.convert_tokens_to_ids(tokens)  # text

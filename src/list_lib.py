@@ -180,3 +180,11 @@ def all_equal(a: List):
             if v != item:
                 return False
     return True
+
+
+def pairzip(l1: Iterable[A], l2: Iterable[B]) -> List[Tuple[A, B]]:
+    output: List[Tuple[A, B]] = []
+    for a, b in zip(l1, l2):
+        output.append((a, b))
+    return output
+

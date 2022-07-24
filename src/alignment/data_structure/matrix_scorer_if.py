@@ -3,6 +3,8 @@ from typing import NamedTuple, List
 
 from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
+from bert_api.segmented_instance.segmented_text import token_list_to_segmented_text, SegmentedText
+from data_generator.tokenizer_wo_tf import get_tokenizer
 
 
 class ContributionSummary(NamedTuple):
@@ -39,3 +41,15 @@ class MatrixScorerIF2(abc.ABC):
     def solve(self, tokens1: List[str], tokens2: List[str]) -> List[List[float]]:
         pass
 
+
+class MatrixScorerIF2From1(MatrixScorerIF2):
+    def __init__(self, matrix_scorer_v1: MatrixScorerIF):
+        self.matrix_scorer_v1 = matrix_scorer_v1
+        self.tokenizer = get_tokenizer()
+
+    def solve(self, tokens1: List[str], tokens2: List[str]) -> List[List[float]]:
+        t1: SegmentedText = token_list_to_segmented_text(self.tokenizer, tokens1)
+        t2: SegmentedText = token_list_to_segmented_text(self.tokenizer, tokens2)
+        inst = SegmentedInstance(t1, t2)
+        contrib = self.matrix_scorer_v1.eval_contribution(inst)
+        return contrib.table

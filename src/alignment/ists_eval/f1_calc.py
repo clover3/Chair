@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import List, Dict
 
 from alignment.ists_eval.eval_helper import load_ists_predictions
-from dataset_specific.ists.parse import AlignmentLabelUnit, AlignmentList
+from dataset_specific.ists.parse import AlignmentLabelUnit, AlignmentPredictionList
 from dataset_specific.ists.path_helper import load_ists_label
 from misc_lib import get_f1
 
@@ -172,7 +172,7 @@ def calc_overlap(ali1: List[AlignmentLabelUnit],
         return _calc_overlap_no_score(ali1, ali2, mode)
 
 
-def count_fanout_sum(alignment_list: AlignmentList):
+def count_fanout_sum(alignment_list: AlignmentPredictionList):
     link_sys = 0
     for problem_id, sub_align in alignment_list:
         fanout = count_fanout(sub_align)
@@ -180,8 +180,8 @@ def count_fanout_sum(alignment_list: AlignmentList):
     return link_sys
 
 
-def calc_f1(gold: AlignmentList,
-            pred: AlignmentList,
+def calc_f1(gold: AlignmentPredictionList,
+            pred: AlignmentPredictionList,
             mode) -> Dict[str, float]:
     gold_d = dict(gold)
     pred_d = dict(pred)
@@ -198,8 +198,8 @@ def calc_f1(gold: AlignmentList,
         # print("{} ov={} prec: {}".format(problem_id, n_overlap, two_digit_float(prec)))
         overlap_gold += calc_overlap(gold_d[problem_id], pred_align, mode)
 
-    precision = overlap_pred / link_pred
-    recall = overlap_gold / link_gold
+    precision = overlap_pred / link_pred if link_pred != 0 else 1
+    recall = overlap_gold / link_gold if link_gold !=0 else 1
     f1 = get_f1(precision, recall)
     return {
         'overlap_pred': overlap_pred,
@@ -213,8 +213,8 @@ def calc_f1(gold: AlignmentList,
 
 
 def main():
-    pred: AlignmentList = load_ists_predictions("headlines", "train", "em")
-    gold: AlignmentList = load_ists_label("headlines", "train")
+    pred: AlignmentPredictionList = load_ists_predictions("headlines", "train", "em")
+    gold: AlignmentPredictionList = load_ists_label("headlines", "train")
     for mode in ["", "type", "score"]:
         scores = calc_f1(gold, pred, mode)
         print(scores)

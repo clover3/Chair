@@ -21,7 +21,7 @@ class AlignmentLabelUnit(NamedTuple):
         s3 = f"{self.chunk_text1} <==> {self.chunk_text2}"
         return " // ".join([s0, s1, s2, s3])
 
-AlignmentList = List[Tuple[str, List[AlignmentLabelUnit]]]
+AlignmentPredictionList = List[Tuple[str, List[AlignmentLabelUnit]]]
 
 
 class ISTSProblem(NamedTuple):

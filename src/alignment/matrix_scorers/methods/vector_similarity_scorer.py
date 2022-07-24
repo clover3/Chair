@@ -1,9 +1,10 @@
-from bert_api import SegmentedInstance
-from alignment import MatrixScorerIF
-from typing import List
+from typing import List, Callable
+
 import numpy as np
+
+from alignment import MatrixScorerIF
 from alignment.data_structure.matrix_scorer_if import ContributionSummary
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from bert_api import SegmentedInstance
 
 
 class VectorSimilarityScorer(MatrixScorerIF):
@@ -13,7 +14,7 @@ class VectorSimilarityScorer(MatrixScorerIF):
                  ):
         self.get_vector = get_vector
         self.get_similarity = get_similarity
-
+        
     def eval_contribution(self, inst: SegmentedInstance) -> ContributionSummary:
         l1 = inst.text1.get_seg_len()
         l2 = inst.text2.get_seg_len()
