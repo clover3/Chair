@@ -3,7 +3,7 @@ from typing import List, Dict, Tuple
 
 import numpy as np
 
-from contradiction.medical_claims.token_tagging.batch_solver_common import AdapterIF, BatchSolver, NeuralOutput
+from contradiction.medical_claims.token_tagging.batch_solver_common import BSAdapterIF, BatchSolver, NeuralOutput
 from data_generator.tokenize_helper import TokenizedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import average
@@ -24,7 +24,7 @@ class TokenizedTextBasedES(EncodedSegmentIF):
 
 # NLIMS is a model which feed multiple segments of a text at a time.
 # In NLITS80 model, each subword is directly feed. We will merge scores afterward
-class NLISingleToken2DAdapter(AdapterIF):
+class NLISingleToken2DAdapter(BSAdapterIF):
     def __init__(self, nlims: LocalDecisionNLIMS, target_label: int):
         self.nlims: LocalDecisionNLIMS = nlims
         self.tokenizer = get_tokenizer()

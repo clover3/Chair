@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from contradiction.medical_claims.token_tagging.batch_solver_common import NeuralOutput, AdapterIF, BatchSolver
+from contradiction.medical_claims.token_tagging.batch_solver_common import NeuralOutput, BSAdapterIF, BatchSolver
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import flatten
 from misc_lib import average
@@ -84,9 +84,6 @@ class AlphaMinReducer(MinReducer):
         return accum / denom
 
 
-
-
-
 def get_batch_solver_nlits(run_config: RunConfig2, encoder_name: str, target_label: int):
     nlits = get_local_decision_nlits_core(run_config, encoder_name)
     adapter = NLITSAdapter(nlits, AvgReducer(target_label))
@@ -129,7 +126,7 @@ def get_batch_solver_nlits6(run_config: RunConfig2, encoder_name: str, target_la
     return solver
 
 
-class NLITSAdapter(AdapterIF):
+class NLITSAdapter(BSAdapterIF):
     def __init__(self,
                  nlits: LocalDecisionNLICore,
                  score_reducer: ScoreReducerI):

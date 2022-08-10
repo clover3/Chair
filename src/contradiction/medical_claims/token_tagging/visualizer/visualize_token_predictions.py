@@ -101,7 +101,7 @@ def main():
     tokenizer = get_tokenizer()
     problems: List[AlamriProblem] = load_alamri_problem()
 
-    run_name = "nlits40_6_EM"
+    run_name = "psearch"
     tag_type = "mismatch"
     ranked_list_path = os.path.join(output_path, "alamri_annotation1", "ranked_list",
                                     "{}_{}.txt".format(run_name, tag_type))

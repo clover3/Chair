@@ -11,7 +11,7 @@ from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_cli
 from contradiction.medical_claims.token_tagging.intersection_search.deletion_tools import Subsequence, do_local_search
 from contradiction.medical_claims.token_tagging.problem_loader import AlamriProblem, load_alamri_problem
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from misc_lib import pick1, Averager, two_digit_float, remove_duplicate
+from misc_lib import pick1, Averager, two_digit_float, remove_duplicate, average
 from trainer_v2.chair_logging import c_log
 from visualize.html_visual import HtmlVisualizer, Cell, normalize
 
@@ -212,6 +212,32 @@ def dev_get_scores_by_many_perturbations(predict_fn, t_text1, t_text2):
 
     input("press to continue")
     return scores
+
+
+def enum_small_segments(predict: NLIPredictorSig,
+                        t1: SegmentedText,
+                        t2: SegmentedText) -> List[float]:
+    def get_neutral_s(seg_text: SegmentedText) -> float:
+        X = [NLIInput(t1, seg_text)]
+        probs_list = predict(X)
+        probs = probs_list[0]
+        return probs[1] + probs[2]
+
+    # tokenizer = get_tokenizer()
+    scores_building = [list() for _ in t2.enum_seg_idx()]
+    # Do local search by only deleting, goal is to find one with lowest neutral score.
+    for window_size in [1, 3, 5]:
+        st = 0
+        while st < t2.get_seg_len():
+            ed = min(st + window_size, t2.get_seg_len())
+            t2_sub = t2.get_sliced_text(list(range(st, ed)))
+            score = get_neutral_s(t2_sub)
+            assert type(score) == float
+            for i in range(st, ed):
+                scores_building[i].append(score)
+            st += window_size
+    ret = [average(l) for l in scores_building]
+    return ret
 
 
 def summarize_labels(records) -> List:

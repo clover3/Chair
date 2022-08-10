@@ -1,7 +1,10 @@
 import os
 import sys
+
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+from trainer_v2.chair_logging import c_log
 from contradiction.medical_claims.token_tagging.v2_solver_helper import solve_mismatch_ecc
 from contradiction.medical_claims.token_tagging.solvers.nlits_batch_solver import get_batch_solver_nlits5
 from taskman_client.wrapper3 import report_run3

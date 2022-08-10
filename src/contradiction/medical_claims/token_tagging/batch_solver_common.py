@@ -44,7 +44,8 @@ ECCInput = Tuple[List[str], List[str]]
 ECCOutput = Tuple[List[float], List[float]]
 
 
-class AdapterIF(ABC):
+# Batch Solver Adapter
+class BSAdapterIF(ABC):
     @abstractmethod
     def neural_worker(self, items: List):
         pass
@@ -54,13 +55,13 @@ class AdapterIF(ABC):
         pass
 
     @abstractmethod
-    def enum_child(self, t1, t2) -> List:
+    def enum_child(self, t1: List[str], t2: List[str]) -> List:
         pass
 
 
 class BatchSolver(BatchTokenScoringSolverIF):
     def __init__(self, adapter):
-        self.adapter: AdapterIF = adapter
+        self.adapter: BSAdapterIF = adapter
 
     def solve(self, payload: List[ECCInput]) -> List[ECCOutput]:
         pk = PromiseKeeper(self.adapter.neural_worker)
@@ -92,3 +93,5 @@ class BatchSolver(BatchTokenScoringSolverIF):
                    get_scores(e.t1, e.t2, e.f_list2)
 
         return lmap(apply_reduce, future_ref)
+
+
