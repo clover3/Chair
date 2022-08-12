@@ -1,13 +1,13 @@
 from typing import List
 
-from alignment import RelatedEvalAnswer
+from alignment import Alignment2D
 from alignment.data_structure.batch_scorer_if import BatchMatrixScorerIF
 from alignment.data_structure.matrix_scorer_if import ContributionSummary
 from dataset_specific.ists.parse import AlignmentLabelUnit
 from misc_lib import TEL
 
 
-def convert_2d_to_ists(problems, scores_list: List[RelatedEvalAnswer],
+def convert_2d_to_ists(problems, scores_list: List[Alignment2D],
                        score_matrix_to_alignment_fn):
     predictions = []
     for p, rel_eval_answer in zip(problems, scores_list):
@@ -58,25 +58,25 @@ def _solve_ists(problems, score_matrix_to_alignment_fn, solver):
     return predictions
 
 
-def batch_solve_2d(problems, solver: BatchMatrixScorerIF) -> List[RelatedEvalAnswer]:
+def batch_solve_2d(problems, solver: BatchMatrixScorerIF) -> List[Alignment2D]:
     payload = []
     for p in problems:
         input_per_problem = p.text1.split(), p.text2.split()
         payload.append(input_per_problem)
     batch_output = solver.solve(payload)
     assert len(problems) == len(batch_output)
-    predictions: List[RelatedEvalAnswer] = []
+    predictions: List[Alignment2D] = []
     for p, score_matrix in zip(problems, batch_output):
-        predictions.append(RelatedEvalAnswer(p.problem_id, ContributionSummary(score_matrix)))
+        predictions.append(Alignment2D(p.problem_id, ContributionSummary(score_matrix)))
     return predictions
 
 
-def solve_2d_scoring(problems, solver) -> List[RelatedEvalAnswer]:
+def solve_2d_scoring(problems, solver) -> List[Alignment2D]:
     predictions = []
     for p in TEL(problems):
         tokens1 = p.text1.split()
         tokens2 = p.text2.split()
         score_matrix: List[List[float]] = solver.solve(tokens1, tokens2)
-        predictions.append(RelatedEvalAnswer(p.problem_id, ContributionSummary(score_matrix)))
+        predictions.append(Alignment2D(p.problem_id, ContributionSummary(score_matrix)))
     return predictions
 

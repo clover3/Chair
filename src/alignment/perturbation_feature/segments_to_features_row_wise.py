@@ -1,13 +1,9 @@
 from collections import OrderedDict
-from typing import List, Tuple, Iterable
+from typing import List
 
 import numpy as np
 
-from alignment import RelatedEvalAnswer, RelatedEvalInstance
-from alignment.data_structure.eval_data_structure import join_a_p
 from alignment.extract_feature import pairwise_feature
-from alignment.nli_align_path_helper import load_mnli_rei_problem
-from alignment.related.related_answer_data_path_helper import load_related_eval_answer
 from bert_api import SegmentedInstance
 from bert_api.task_clients.nli_interface.nli_interface import NLIInput
 from data_generator.create_feature import create_float_feature

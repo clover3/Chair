@@ -2,14 +2,14 @@ import functools
 import sys
 from typing import List
 
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer, \
+from alignment.data_structure.eval_data_structure import Alignment2D, RelatedBinaryAnswer, \
     convert_answer
 from alignment.related.related_answer_data_path_helper import load_related_eval_answer, \
     get_related_binary_save_path, save_json_at
 
 
 def discretize_and_save(dataset_name, method):
-    answers: List[RelatedEvalAnswer] = load_related_eval_answer(dataset_name, method)
+    answers: List[Alignment2D] = load_related_eval_answer(dataset_name, method)
     cutoff = 0.5
 
     def convert(score):

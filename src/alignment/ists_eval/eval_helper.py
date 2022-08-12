@@ -1,7 +1,7 @@
 import json
 from typing import Callable, List
 
-from alignment import RelatedEvalAnswer
+from alignment import Alignment2D
 from alignment.data_structure.batch_scorer_if import BatchMatrixScorerIF
 from alignment.data_structure.ds_helper import parse_related_eval_answer_from_json
 from alignment.data_structure.matrix_scorer_if import MatrixScorerIF2
@@ -24,7 +24,7 @@ def solve_and_save_eval(solver, run_name, score_matrix_to_alignment_fn, genre, s
 
 def batch_solve_save_eval(solver: BatchMatrixScorerIF, run_name, score_matrix_to_alignment_fn, genre, split):
     problems = load_ists_problems(genre, split)
-    predictions_2d: List[RelatedEvalAnswer] = batch_solve_2d(problems, solver)
+    predictions_2d: List[Alignment2D] = batch_solve_2d(problems, solver)
     save_2d_scores(genre, split, run_name, predictions_2d)
 
     ists_predictions = convert_2d_to_ists(problems, predictions_2d, score_matrix_to_alignment_fn)
@@ -40,7 +40,7 @@ def solve_and_save_eval_mini(solver: MatrixScorerIF2,
     problems = load_ists_problems(genre, split)
     problems = problems[:2]
 
-    predictions_2d: List[RelatedEvalAnswer] = solve_2d_scoring(problems, solver)
+    predictions_2d: List[Alignment2D] = solve_2d_scoring(problems, solver)
     save_2d_scores(genre, split, run_name, predictions_2d)
 
     ists_predictions = convert_2d_to_ists(problems, predictions_2d, score_matrix_to_alignment_fn)
@@ -55,7 +55,7 @@ def load_ists_predictions(genre, split, run_name) -> AlignmentPredictionList:
 
 def solve_as_2d_scores(solver, run_name, genre, split):
     problems = load_ists_problems(genre, split)
-    predictions: List[RelatedEvalAnswer] = solve_2d_scoring(problems, solver)
+    predictions: List[Alignment2D] = solve_2d_scoring(problems, solver)
     save_2d_scores(genre, split, run_name, predictions)
 
 
@@ -87,7 +87,7 @@ def solve_and_save_eval_ht2d(solver: MatrixScorerIF2, run_name):
     solve_as_2d_scores(solver, run_name, genre, split)
 
 
-def load_ht2d(run_name) -> List[RelatedEvalAnswer]:
+def load_ht2d(run_name) -> List[Alignment2D]:
     genre = "headlines"
     split = "train"
     score_path = get_ists_2d_save_path(genre, split, run_name)

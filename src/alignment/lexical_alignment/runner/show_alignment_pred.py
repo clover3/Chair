@@ -2,7 +2,7 @@
 from collections import defaultdict
 from typing import List, Tuple, NamedTuple
 
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, join_a_p
+from alignment.data_structure.eval_data_structure import Alignment2D, join_a_p
 from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from alignment.nli_align_path_helper import load_mnli_rei_problem
 from alignment.related.related_answer_data_path_helper import get_related_save_path, load_related_answer_from_path
@@ -23,7 +23,7 @@ class AlignedSegment(NamedTuple):
 def show_alignment(dataset_name, scorer_name, extract_edges, html_save_name):
     save_path = get_related_save_path(dataset_name, scorer_name)
     problem_list: List[RelatedEvalInstance] = load_mnli_rei_problem(dataset_name)
-    answer_list: List[RelatedEvalAnswer] = load_related_answer_from_path(save_path)
+    answer_list: List[Alignment2D] = load_related_answer_from_path(save_path)
     tokenizer = get_tokenizer()
     html = HtmlVisualizer(html_save_name, script_include=[get_bootstrap_include_source()])
     html.write_div_open("container")

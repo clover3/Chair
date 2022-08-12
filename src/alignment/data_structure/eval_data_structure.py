@@ -1,12 +1,12 @@
 from typing import NamedTuple, List, Dict, Tuple, Any, Optional, Callable
 
+from alignment.data_structure.matrix_scorer_if import ContributionSummary
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from bert_api.segmented_instance.segmented_text import SegmentedText
-from alignment.data_structure.matrix_scorer_if import ContributionSummary
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import index_by_fn
 from tlm.data_gen.doc_encode_common import split_window_get_length
-from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 
 ContributionSummaryDict = Dict[str, List[float]]
 
@@ -34,14 +34,14 @@ class RelatedEvalInstanceEx(NamedTuple):
                                      )
 
 
-class RelatedEvalAnswer(NamedTuple):
+class Alignment2D(NamedTuple):
     problem_id: str
     contribution: ContributionSummary
 
     @classmethod
     def from_indices(cls, indices: List[int], target_seg_idx, p: RelatedEvalInstance):
-        return RelatedEvalAnswer(p.problem_id,
-                                 ContributionSummary.from_indices(indices, target_seg_idx, p))
+        return Alignment2D(p.problem_id,
+                           ContributionSummary.from_indices(indices, target_seg_idx, p))
 
 
 class RelatedBinaryAnswer(NamedTuple):
@@ -121,7 +121,7 @@ class UnexpectedPolicyException(Exception):
         return f"Policy {self.policy_name} is not expected."
 
 
-def convert_answer(convert_fn: Callable[[float], int], a: RelatedEvalAnswer) -> RelatedBinaryAnswer:
+def convert_answer(convert_fn: Callable[[float], int], a: Alignment2D) -> RelatedBinaryAnswer:
     def convert_row(row):
         return list(map(convert_fn, row))
 

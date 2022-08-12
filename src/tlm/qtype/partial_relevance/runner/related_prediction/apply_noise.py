@@ -1,8 +1,8 @@
 import random
 from typing import List
 
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer
 from alignment.data_structure import ContributionSummary
+from alignment.data_structure.eval_data_structure import Alignment2D
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_related_eval_answer, \
     save_related_eval_answer
 
@@ -12,7 +12,7 @@ def draw(prob):
 
 
 def apply_noise(dataset, method, factor):
-    answers: List[RelatedEvalAnswer] = load_related_eval_answer(dataset, method)
+    answers: List[Alignment2D] = load_related_eval_answer(dataset, method)
 
     def is_true(s):
         return s > 1e-8
@@ -41,14 +41,14 @@ def apply_noise(dataset, method, factor):
                 new_s = 0
         return new_s
 
-    def apply_noise_to_answer(a: RelatedEvalAnswer) -> RelatedEvalAnswer:
+    def apply_noise_to_answer(a: Alignment2D) -> Alignment2D:
         new_table = []
         for row in a.contribution.table:
             new_row = list(map(apply_noise_to_score, row))
             new_table.append(new_row)
 
         c = ContributionSummary(new_table)
-        new_answer = RelatedEvalAnswer(a.problem_id, c)
+        new_answer = Alignment2D(a.problem_id, c)
         return new_answer
     new_answer_list = list(map(apply_noise_to_answer, answers))
     new_method_name = method + "_noise{}".format(factor)

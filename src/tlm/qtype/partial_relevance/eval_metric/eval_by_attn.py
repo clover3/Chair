@@ -2,12 +2,12 @@ import abc
 import functools
 from typing import List, Tuple, Dict, Callable, NamedTuple
 
-from bert_api.segmented_instance.seg_instance import SegmentedInstance
-from misc_lib import average
-from bert_api.bert_masking_common import logits_to_score, dist_l2
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer
+from alignment.data_structure.eval_data_structure import Alignment2D, RelatedBinaryAnswer
 from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from bert_api.attn_mask_utils import get_drop_mask, get_drop_mask_binary
+from bert_api.bert_masking_common import logits_to_score, dist_l2
+from bert_api.segmented_instance.seg_instance import SegmentedInstance
+from misc_lib import average
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricWCIF, TupleOfListFuture, EvalMetricIF, \
     EvalMetricBinaryIF
 from trainer.promise import MyPromise, PromiseKeeper, list_future, MyFuture
@@ -23,7 +23,7 @@ class EvalMetricByAttentionDrop(EvalMetricIF):
 
     def get_predictions_for_case(self,
                                  problem: RelatedEvalInstance,
-                                 answer: RelatedEvalAnswer,
+                                 answer: Alignment2D,
                                  ) -> TupleOfListFuture:
         def get_future(seg: SegmentedInstance, mask: Dict):
             item = seg, mask
@@ -129,7 +129,7 @@ class EvalMetricByAttentionMultiPoint(EvalMetricIF):
 
     def get_predictions_for_case(self,
                                  problem: RelatedEvalInstance,
-                                 answer: RelatedEvalAnswer,
+                                 answer: Alignment2D,
                                  ) -> PIF:
         def get_future(seg: SegmentedInstance, mask: Dict) -> MyFuture[List[float]]:
             item = seg, mask
@@ -212,7 +212,7 @@ class AttentionBrevityDetail:
 
     def get_predictions_for_case(self,
                                  problem: RelatedEvalInstance,
-                                 answer: RelatedEvalAnswer,
+                                 answer: Alignment2D,
                                  ) -> PIF:
         return self.inner.get_predictions_for_case(problem, answer)
 

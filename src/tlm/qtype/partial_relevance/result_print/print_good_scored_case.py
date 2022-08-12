@@ -2,10 +2,10 @@ from typing import List, Tuple
 
 import numpy as np
 
+from alignment.data_structure.eval_data_structure import join_p_withother, Alignment2D
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from bert_api.segmented_instance.segmented_text import get_highlighted_text
 from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
-from alignment.data_structure.eval_data_structure import join_p_withother, RelatedEvalAnswer
-from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_score_dp_helper import load_eval_result_r
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import load_related_eval_answer
@@ -21,7 +21,7 @@ def main():
     dataset = "dev_word"
     method = "gradient"
     policy_name = "erasure"
-    answers: List[RelatedEvalAnswer] = load_related_eval_answer(dataset, method)
+    answers: List[Alignment2D] = load_related_eval_answer(dataset, method)
     problems: List[RelatedEvalInstance] = load_mmde_problem(dataset)
     eval_res: List[Tuple[str, float]] = get_score_for_method(dataset, method, policy_name)
     score_d = dict(eval_res)

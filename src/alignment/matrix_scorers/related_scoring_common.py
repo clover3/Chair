@@ -1,15 +1,15 @@
 import xmlrpc.client
 from typing import List
-from misc_lib import TEL
 
 from alignment import MatrixScorerIF
+from alignment.data_structure.eval_data_structure import Alignment2D
 from alignment.data_structure.matrix_scorer_if import ContributionSummary
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer
 from alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from misc_lib import TEL
 
 
-def run_scoring(problems: List[RelatedEvalInstance], scorer: MatrixScorerIF) -> List[RelatedEvalAnswer]:
-    answer_list: List[RelatedEvalAnswer] = []
+def run_scoring(problems: List[RelatedEvalInstance], scorer: MatrixScorerIF) -> List[Alignment2D]:
+    answer_list: List[Alignment2D] = []
     for p in TEL(problems):
         try:
             c: ContributionSummary = scorer.eval_contribution(p.seg_instance)
@@ -17,6 +17,6 @@ def run_scoring(problems: List[RelatedEvalInstance], scorer: MatrixScorerIF) -> 
         except xmlrpc.client.Fault:
             print(p.seg_instance.to_json())
             raise
-        answer = RelatedEvalAnswer(p.problem_id, c)
+        answer = Alignment2D(p.problem_id, c)
         answer_list.append(answer)
     return answer_list

@@ -1,11 +1,11 @@
 from typing import List
 
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer
+from alignment.data_structure.eval_data_structure import Alignment2D, RelatedBinaryAnswer
 from alignment.data_structure.matrix_scorer_if import ContributionSummary
 
 
-def parse_related_eval_answer_from_json(raw_json) -> List[RelatedEvalAnswer]:
-    def parse_entry(e) -> RelatedEvalAnswer:
+def parse_related_eval_answer_from_json(raw_json) -> List[Alignment2D]:
+    def parse_entry(e) -> Alignment2D:
         problem_id = e[0]
         assert type(problem_id) == str
         score_array_wrap = e[1]
@@ -13,7 +13,7 @@ def parse_related_eval_answer_from_json(raw_json) -> List[RelatedEvalAnswer]:
         assert type(score_array) == list
         score_type = type(score_array[0][0])
         assert score_type == float or score_type == int
-        return RelatedEvalAnswer(problem_id, ContributionSummary(score_array))
+        return Alignment2D(problem_id, ContributionSummary(score_array))
     return list(map(parse_entry, raw_json))
 
 

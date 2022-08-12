@@ -1,12 +1,12 @@
 from typing import Tuple, List, NamedTuple
 
+from alignment.data_structure.eval_data_structure import Alignment2D, RelatedBinaryAnswer
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from bert_api.segmented_instance.segmented_text import SegmentedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import get_max_idx
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput, PartialSegment
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer
-from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import TupleOfListFuture, EvalMetricBinaryWCIF
 from tlm.qtype.partial_relevance.eval_metric.segment_modify_fn import DocModFuncB
 from trainer.promise import PromiseKeeper, MyFuture, MyPromise, list_future
@@ -62,7 +62,7 @@ class EvalMetricPartialRelevant(EvalMetricBinaryWCIF):
         return eval_score
 
     def print_future_score(self, future_prediction_list,
-                           a_p_c: Tuple[RelatedEvalAnswer, RelatedEvalInstance, ComplementSearchOutput]):
+                           a_p_c: Tuple[Alignment2D, RelatedEvalInstance, ComplementSearchOutput]):
         a, p, c = a_p_c
         def combine_to_partial_relevant(future_list):
             scores = list_future(future_list)

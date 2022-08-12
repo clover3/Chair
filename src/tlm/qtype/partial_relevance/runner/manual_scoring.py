@@ -1,8 +1,8 @@
 from typing import List, Callable
 
+from alignment.data_structure.eval_data_structure import Alignment2D
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer
 from tlm.qtype.partial_relevance.eval_metric.ps_replace_helper import get_100_random_spans, \
     get_ps_replace_w_fixed_word_pool
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
@@ -16,10 +16,10 @@ def get_score(problem, answer, eval_metric):
     return pos_rate
 
 
-def get_answer_from_input(target_seg_idx, problem) -> RelatedEvalAnswer:
+def get_answer_from_input(target_seg_idx, problem) -> Alignment2D:
     s = input()
     indices = [int(t) for t in s.split()]
-    return RelatedEvalAnswer.from_indices(indices, target_seg_idx, problem)
+    return Alignment2D.from_indices(indices, target_seg_idx, problem)
 
 
 def main():

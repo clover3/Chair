@@ -1,3 +1,3 @@
+from alignment.data_structure.eval_data_structure import Alignment2D
 from alignment.data_structure.matrix_scorer_if import MatrixScorerIF
 from alignment.data_structure.related_eval_instance import RelatedEvalInstance
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer

@@ -3,7 +3,7 @@ from typing import List, Tuple, Iterable
 
 import numpy as np
 
-from alignment import RelatedEvalAnswer, RelatedEvalInstance
+from alignment import Alignment2D, RelatedEvalInstance
 from alignment.data_structure.eval_data_structure import join_a_p
 from alignment.extract_feature import pairwise_feature
 from alignment.nli_align_path_helper import load_mnli_rei_problem
@@ -32,7 +32,7 @@ def build_x(nli_client,
 
 
 def build_x_y(dataset_name, nli_client, scorer_name) -> Iterable[Tuple[np.array, np.array]]:
-    answer_list: List[RelatedEvalAnswer] = load_related_eval_answer(dataset_name, scorer_name)
+    answer_list: List[Alignment2D] = load_related_eval_answer(dataset_name, scorer_name)
     problem_list: List[RelatedEvalInstance] = load_mnli_rei_problem(dataset_name)
     for answer, problem in join_a_p(answer_list, problem_list):
         alignment = answer.contribution.table

@@ -1,9 +1,7 @@
-import functools
-import sys
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Tuple
 
 from alignment import RelatedEvalInstance
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer, join_a_p
+from alignment.data_structure.eval_data_structure import Alignment2D, RelatedBinaryAnswer, join_a_p
 from alignment.nli_align_path_helper import load_mnli_rei_problem
 from alignment.related.related_answer_data_path_helper import load_related_eval_answer, \
     get_related_binary_save_path, save_json_at
@@ -34,7 +32,7 @@ def get_is_stopword_fn():
 def get_convert_answer_fn(threshold):
     is_stopword = get_is_stopword_fn()
 
-    def convert_answer(a: RelatedEvalAnswer, p: RelatedEvalInstance) -> RelatedBinaryAnswer:
+    def convert_answer(a: Alignment2D, p: RelatedEvalInstance) -> RelatedBinaryAnswer:
         def convert_value(s):
             if s >= threshold:
                 return 1
@@ -56,9 +54,9 @@ def get_convert_answer_fn(threshold):
 
 
 def discretize_and_save(dataset_name, method, method_save):
-    answers: List[RelatedEvalAnswer] = load_related_eval_answer(dataset_name, method)
+    answers: List[Alignment2D] = load_related_eval_answer(dataset_name, method)
     problem_list: List[RelatedEvalInstance] = load_mnli_rei_problem(dataset_name)
-    a_p_list: List[Tuple[RelatedEvalAnswer, RelatedEvalInstance]] = join_a_p(answers, problem_list)
+    a_p_list: List[Tuple[Alignment2D, RelatedEvalInstance]] = join_a_p(answers, problem_list)
 
     convert_answer_fn = get_convert_answer_fn(0.7)
     new_answers: List[RelatedBinaryAnswer] = [convert_answer_fn(a, p) for a, p in a_p_list]

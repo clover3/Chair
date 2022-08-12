@@ -4,9 +4,9 @@ from typing import List
 
 from alignment.data_structure.ds_helper import parse_related_eval_answer_from_json, \
     parse_related_binary_answer_from_json
+from alignment.data_structure.eval_data_structure import Alignment2D, RelatedBinaryAnswer
 from cpath import output_path, at_output_dir
 from misc_lib import exist_or_mkdir
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer
 
 
 def get_related_save_path(dataset_name, method):
@@ -14,22 +14,22 @@ def get_related_save_path(dataset_name, method):
     return save_path
 
 
-def save_related_eval_answer(answers: List[RelatedEvalAnswer], dataset_name, method):
+def save_related_eval_answer(answers: List[Alignment2D], dataset_name, method):
     save_path = get_related_save_path(dataset_name, method)
     json.dump(answers, open(save_path, "w"), indent=True)
 
 
-def load_related_answer(run_name) -> List[RelatedEvalAnswer]:
+def load_related_answer(run_name) -> List[Alignment2D]:
     score_path = os.path.join(output_path, "align_nli", "related_scores", "{}.score".format(run_name))
     return load_related_answer_from_path(score_path)
 
 
-def load_related_answer_from_path(score_path) -> List[RelatedEvalAnswer]:
+def load_related_answer_from_path(score_path) -> List[Alignment2D]:
     raw_json = json.load(open(score_path, "r"))
     return parse_related_eval_answer_from_json(raw_json)
 
 
-def load_related_eval_answer(dataset_name, method) -> List[RelatedEvalAnswer]:
+def load_related_eval_answer(dataset_name, method) -> List[Alignment2D]:
     score_path = get_related_save_path(dataset_name, method)
     raw_json = json.load(open(score_path, "r"))
     return parse_related_eval_answer_from_json(raw_json)

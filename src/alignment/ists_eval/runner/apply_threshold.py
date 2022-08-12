@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from alignment import RelatedEvalAnswer
+from alignment import Alignment2D
 from alignment.ists_eval.eval_helper import load_ht2d
 from alignment.ists_eval.eval_utils import score_matrix_to_alignment_by_threshold, save_ists_predictions
 from alignment.ists_eval.path_helper import get_ists_save_path
@@ -32,9 +32,9 @@ def augment_problems(ists_raw_preds: AlignmentPredictionList,
 
 
 def apply_threshold_and_save(genre, run_name, split):
-    preds: List[RelatedEvalAnswer] = load_ht2d(run_name)
+    preds: List[Alignment2D] = load_ht2d(run_name)
 
-    def convert(p: RelatedEvalAnswer):
+    def convert(p: Alignment2D):
         alu_list_raw: List[AlignmentLabelUnit] = score_matrix_to_alignment_by_threshold(p.contribution.table, 0.02)
         return alu_list_raw
 

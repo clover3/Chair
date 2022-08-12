@@ -1,11 +1,11 @@
 from typing import List
 
-from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
-from tlm.qtype.partial_relevance.complement_path_data_helper import load_complements
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, \
+from alignment.data_structure.eval_data_structure import Alignment2D, \
     join_p_withother
 from alignment.data_structure.print_helper import rei_to_text
 from alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
+from tlm.qtype.partial_relevance.complement_path_data_helper import load_complements
 from tlm.qtype.partial_relevance.get_policy_util import get_eval_policy_wc
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
 from tlm.qtype.partial_relevance.related_answer_data_path_helper import save_related_eval_answer, \
@@ -19,7 +19,7 @@ def run_search(dataset, policy_name, model_interface="localhost"):
     dataset = dataset + "_ten"
     eval_policy = get_eval_policy_wc(policy_name, model_interface, target_idx)
     complements = load_complements()
-    answers: List[RelatedEvalAnswer] = related_search(problems, eval_policy, target_idx)
+    answers: List[Alignment2D] = related_search(problems, eval_policy, target_idx)
     method = "{}_search2".format(policy_name)
     save_related_eval_answer(answers, dataset, method)
 

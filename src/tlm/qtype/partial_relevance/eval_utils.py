@@ -1,10 +1,10 @@
 from typing import List, Callable, Dict, Tuple
 
+from alignment.data_structure.eval_data_structure import Alignment2D, RelatedBinaryAnswer
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from list_lib import index_by_fn
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, RelatedBinaryAnswer
-from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricWCIF, EvalMetricIF, EvalMetricBinaryIF
 from trainer.promise import MyPromise, PromiseKeeper
 
@@ -14,7 +14,7 @@ from trainer.promise import MyPromise, PromiseKeeper
 #   2. Top-k drop flip.
 
 
-def related_eval(answer_list: List[RelatedEvalAnswer],
+def related_eval(answer_list: List[Alignment2D],
                  problem_list: List[RelatedEvalInstance],
                  forward_fn: Callable[[List[SegmentedInstance]], List[float]],
                  drop_rate
@@ -49,14 +49,14 @@ def related_eval(answer_list: List[RelatedEvalAnswer],
     return eval_score_list
 
 
-def partial_related_eval(answer_list: List[RelatedEvalAnswer],
+def partial_related_eval(answer_list: List[Alignment2D],
                          problem_list: List[RelatedEvalInstance],
                          complement_list: List[ComplementSearchOutput],
                          eval_policy: EvalMetricWCIF,
                          ) -> List[Tuple[str, float]]:
     pid_to_p: Dict[str, RelatedEvalInstance] = index_by_fn(lambda e: e.problem_id, problem_list)
     pid_to_c: Dict[str, ComplementSearchOutput] = index_by_fn(lambda e: e.problem_id, complement_list)
-    a_p_c_list: List[Tuple[RelatedEvalAnswer, RelatedEvalInstance, ComplementSearchOutput]] = []
+    a_p_c_list: List[Tuple[Alignment2D, RelatedEvalInstance, ComplementSearchOutput]] = []
     for a in answer_list:
         p: RelatedEvalInstance = pid_to_p[a.problem_id]
         c: ComplementSearchOutput = pid_to_c[a.problem_id]
@@ -66,13 +66,13 @@ def partial_related_eval(answer_list: List[RelatedEvalAnswer],
 
 
 def partial_related_eval_inner(
-        a_p_c_list: List[Tuple[RelatedEvalAnswer,
+        a_p_c_list: List[Tuple[Alignment2D,
                                RelatedEvalInstance,
                                ComplementSearchOutput]],
         eval_policy: EvalMetricWCIF,
         ) -> List[Tuple[str, float]]:
 
-    def get_predictions_for_case(a_p_c: Tuple[RelatedEvalAnswer,
+    def get_predictions_for_case(a_p_c: Tuple[Alignment2D,
                                               RelatedEvalInstance,
                                               ComplementSearchOutput]):
         answer, problem, complement = a_p_c
@@ -85,12 +85,12 @@ def partial_related_eval_inner(
     return list(zip(problem_ids, eval_score_list))
 
 
-def align_eval_r(answer_list: List[RelatedEvalAnswer],
+def align_eval_r(answer_list: List[Alignment2D],
                  problem_list: List[RelatedEvalInstance],
                  eval_policy: EvalMetricIF,
                  ) -> List[Tuple[str, float]]:
     pid_to_p: Dict[str, RelatedEvalInstance] = index_by_fn(lambda e: e.problem_id, problem_list)
-    a_p_list: List[Tuple[RelatedEvalAnswer, RelatedEvalInstance]] = []
+    a_p_list: List[Tuple[Alignment2D, RelatedEvalInstance]] = []
     for a in answer_list:
         p: RelatedEvalInstance = pid_to_p[a.problem_id]
         a_p_list.append((a, p))
@@ -99,11 +99,11 @@ def align_eval_r(answer_list: List[RelatedEvalAnswer],
 
 
 def align_eval_inner(
-        a_p_list: List[Tuple[RelatedEvalAnswer,
+        a_p_list: List[Tuple[Alignment2D,
                              RelatedEvalInstance]],
         eval_policy: EvalMetricIF) -> List[Tuple[str, float]]:
 
-    def get_predictions_for_case(a_p: Tuple[RelatedEvalAnswer,
+    def get_predictions_for_case(a_p: Tuple[Alignment2D,
                                             RelatedEvalInstance]):
         answer, problem = a_p
         return eval_policy.get_predictions_for_case(problem, answer)

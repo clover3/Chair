@@ -2,16 +2,16 @@ import json
 import os
 from typing import List, Tuple, Any, Dict
 
+from alignment.data_structure import ContributionSummary
+from alignment.data_structure.eval_data_structure import Alignment2D, \
+    join_p_withother
+from alignment.data_structure.print_helper import rei_to_text
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
 from list_lib import index_by_fn
 from tlm.qtype.partial_relevance.complement_path_data_helper import load_complements
 from tlm.qtype.partial_relevance.complement_search_pckg.complement_header import ComplementSearchOutput
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer, \
-    join_p_withother
-from alignment.data_structure import ContributionSummary
-from alignment.data_structure.print_helper import rei_to_text
-from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from tlm.qtype.partial_relevance.eval_metric.ep_common import EvalMetricWCIF
 from tlm.qtype.partial_relevance.get_policy_util import get_eval_policy_wc
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
@@ -20,20 +20,20 @@ from tlm.qtype.partial_relevance.related_answer_data_path_helper import save_rel
     parse_related_eval_answer_from_json
 
 
-def get_one_hot_contribution(p: RelatedEvalInstance, idx1: int, idx2: int) -> RelatedEvalAnswer:
+def get_one_hot_contribution(p: RelatedEvalInstance, idx1: int, idx2: int) -> Alignment2D:
     inst = p.seg_instance
     np_array = inst.get_drop_mask(idx1, idx2)
     table: List[List[float]] = p.seg_instance.score_d_to_table(np_array)
-    return RelatedEvalAnswer(p.problem_id, ContributionSummary(table))
+    return Alignment2D(p.problem_id, ContributionSummary(table))
 
 
 def partial_related_search(
         p_c_list: List[Tuple[RelatedEvalInstance,
                              ComplementSearchOutput]],
         eval_policy: EvalMetricWCIF,
-        preserve_idx) -> List[RelatedEvalAnswer]:
+        preserve_idx) -> List[Alignment2D]:
 
-    def get_predictions_for_case(a_p_c: Tuple[RelatedEvalAnswer,
+    def get_predictions_for_case(a_p_c: Tuple[Alignment2D,
                                               RelatedEvalInstance,
                                               ComplementSearchOutput]):
         a, p, c = a_p_c
@@ -44,23 +44,23 @@ def partial_related_search(
         dmc_list: List[int] = list(range(p.seg_instance.text2.get_seg_len()))
         dmc_paired_future = []
         for dmc in dmc_list:
-            answer: RelatedEvalAnswer = get_one_hot_contribution(p, preserve_idx, dmc)
+            answer: Alignment2D = get_one_hot_contribution(p, preserve_idx, dmc)
             future = get_predictions_for_case((answer, p, c))
             dmc_paired_future.append((dmc, future))
         per_pc.append((p, c, dmc_paired_future))
 
     eval_policy.do_duty()
 
-    def summarize(p: RelatedEvalInstance, dmc_paired: List[Tuple[Any, float]]) -> RelatedEvalAnswer:
+    def summarize(p: RelatedEvalInstance, dmc_paired: List[Tuple[Any, float]]) -> Alignment2D:
         score_d = dict(dmc_paired)
         scores = [score_d[idx] for idx in range(p.seg_instance.text2.get_seg_len())]
         cs = ContributionSummary.from_single_array(scores, preserve_idx, 2)
-        return RelatedEvalAnswer(p.problem_id, cs)
+        return Alignment2D(p.problem_id, cs)
 
-    output: List[RelatedEvalAnswer] = []
+    output: List[Alignment2D] = []
     for p, c, dmc_paired_future in per_pc:
         dmc_paired = [(dmc, eval_policy.convert_future_to_score(future)) for dmc, future in dmc_paired_future]
-        a: RelatedEvalAnswer = summarize(p, dmc_paired)
+        a: Alignment2D = summarize(p, dmc_paired)
         output.append(a)
     return output
 
@@ -84,7 +84,7 @@ def run_search(dataset, policy_name, model_interface="localhost"):
     eval_policy = get_eval_policy_wc(policy_name, model_interface, target_idx)
     complements = load_complements()
     pc_list: List[Tuple[RelatedEvalInstance, ComplementSearchOutput]] = join_pc(problems, complements)
-    answers: List[RelatedEvalAnswer] = partial_related_search(pc_list, eval_policy, target_idx)
+    answers: List[Alignment2D] = partial_related_search(pc_list, eval_policy, target_idx)
     method = "{}_search".format(policy_name)
     save_related_eval_answer(answers, dataset, method)
 

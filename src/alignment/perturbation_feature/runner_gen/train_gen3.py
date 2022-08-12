@@ -1,19 +1,16 @@
-import itertools
+from typing import List
 
 import numpy as np
 
-from alignment.perturbation_feature.segments_to_features_row_wise import make_tf_feature, get_features, \
-    length_match_check, build_x
-from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_client
-
-from alignment import RelatedEvalAnswer, RelatedEvalInstance
+from alignment import RelatedEvalInstance
 from alignment.data_structure.eval_data_structure import join_a_p, RelatedBinaryAnswer
 from alignment.nli_align_path_helper import get_tfrecord_path, load_mnli_rei_problem
+from alignment.perturbation_feature.segments_to_features_row_wise import make_tf_feature, length_match_check, build_x
 from alignment.perturbation_feature.train_configs import get_pert_train_data_shape
-from alignment.related.related_answer_data_path_helper import load_related_eval_answer, load_binary_related_eval_answer
+from alignment.related.related_answer_data_path_helper import load_binary_related_eval_answer
+from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_client
 from misc_lib import TimeEstimator, tprint
 from tf_util.record_writer_wrap import RecordWriterWrap
-from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
 def main():

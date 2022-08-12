@@ -2,16 +2,16 @@ import json
 from collections import Counter
 from typing import List, Tuple, Dict
 
+from alignment.data_structure import ContributionSummary
+from alignment.data_structure.eval_data_structure import Alignment2D
+from alignment.data_structure.print_helper import rei_to_text
+from alignment.data_structure.related_eval_instance import RelatedEvalInstance
+from bert_api.attn_mask_utils import get_drop_mask
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
 from list_lib import l_to_map, dict_value_map, index_by_fn, flatten
 from misc_lib import find_min_idx
 from tlm.qtype.partial_relevance.attention_based.runner.save_detail_score import get_attn_detail_save_path
-from alignment.data_structure.eval_data_structure import RelatedEvalAnswer
-from alignment.data_structure import ContributionSummary
-from alignment.data_structure.print_helper import rei_to_text
-from alignment.data_structure.related_eval_instance import RelatedEvalInstance
-from bert_api.attn_mask_utils import get_drop_mask
 from tlm.qtype.partial_relevance.eval_metric.meta_common import better_fn_d
 from tlm.qtype.partial_relevance.eval_score_dp_helper import load_eval_result_r
 from tlm.qtype.partial_relevance.loader import load_mmde_problem
@@ -41,12 +41,12 @@ def get_index_answer_dict(dataset, method_list):
     def load_answers(method):
         return load_related_eval_answer(dataset, method)
 
-    answer_d_raw: Dict[str, List[RelatedEvalAnswer]] = l_to_map(load_answers, method_list)
+    answer_d_raw: Dict[str, List[Alignment2D]] = l_to_map(load_answers, method_list)
 
-    def index_answer_list(l: List[RelatedEvalAnswer]) -> Dict[str, RelatedEvalAnswer]:
+    def index_answer_list(l: List[Alignment2D]) -> Dict[str, Alignment2D]:
         return index_by_fn(lambda a: a.problem_id, l)
 
-    answer_d: Dict[str, Dict[str, RelatedEvalAnswer]] = dict_value_map(index_answer_list, answer_d_raw)
+    answer_d: Dict[str, Dict[str, Alignment2D]] = dict_value_map(index_answer_list, answer_d_raw)
     return answer_d
 
 
@@ -86,7 +86,7 @@ def main():
     info_d: Dict[str, List[Dict]] = json.load(open(p, "r"))
     target_idx = 1
 
-    answer_d: Dict[str, Dict[str, RelatedEvalAnswer]] = get_index_answer_dict(dataset, method_list)
+    answer_d: Dict[str, Dict[str, Alignment2D]] = get_index_answer_dict(dataset, method_list)
 
     def get_drop_mask_used(problem_id, contrib: ContributionSummary):
         e_list: List[Dict] = info_d[problem_id]
@@ -134,7 +134,7 @@ def main():
         return method + ":" + " ".join(s_list)
 
     def get_answer_indices(p, method):
-        a: RelatedEvalAnswer = answer_d[method][p.problem_id]
+        a: Alignment2D = answer_d[method][p.problem_id]
         table = a.contribution.table
         if method == "exact_match":
             answer_indices = get_answer_indices_b(p, table)

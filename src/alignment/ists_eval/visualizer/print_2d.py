@@ -1,6 +1,6 @@
 import json
 
-from alignment import RelatedEvalAnswer
+from alignment import Alignment2D
 from alignment.data_structure.matrix_scorer_if import ContributionSummary
 from alignment.ists_eval.path_helper import get_ists_2d_save_path
 
@@ -12,7 +12,7 @@ def parse_j(j):
         assert len(contribution_summary) == 1
         table = contribution_summary[0]
         print("problem_id", problem_id)
-        RelatedEvalAnswer(problem, ContributionSummary())
+        Alignment2D(problem, ContributionSummary(table))
 
 
 
