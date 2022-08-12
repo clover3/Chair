@@ -38,6 +38,9 @@ class ProbeOutput(NamedTuple):
     def slice_seg2(self, arr):
         return arr[self.sep_idx1 + 1: self.sep_idx2]
 
+    def get_seg2_prob(self, layer_no):
+        return self.slice_seg2(self.get_layer_probe(layer_no))
+
     def to_json(self):
         return {
             'logits': self.logits.tolist(),

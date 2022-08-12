@@ -62,6 +62,14 @@ def load_local_decision_model(model_path):
     return model
 
 
+def load_local_decision_model_as_second_only(model_path):
+    model = load_model_by_dir_or_abs(model_path)
+    local_decision_layer = get_local_decision_layer_from_model_by_shape(model)
+    new_outputs = [local_decision_layer.output[1]]
+    model = tf.keras.models.Model(inputs=model.input, outputs=new_outputs)
+    return model
+
+
 def get_local_decision_layer_from_model_by_shape(model):
     for idx, layer in enumerate(model.layers):
         try:
@@ -131,6 +139,62 @@ class LocalDecisionNLICore:
         l_decision_list = l_decision_list[:real_input_len]
         second_l_decision = [d[1] for d in l_decision_list]
         return second_l_decision
+
+
+class LocalDecisionNLICoreSecond:
+    def __init__(self, model, strategy, encode_fn):
+        self.strategy = strategy
+        self.model = model
+        self.n_input = len(self.model.inputs)
+        self.l_list: List[int] = [input_unit.shape[1] for input_unit in self.model.inputs]
+        self.encode_fn = encode_fn
+
+        def get_spec(input_i: tf.keras.layers.Input):
+            return tf.TensorSpec(input_i.type_spec.shape[1:], dtype=tf.int32)
+        self.out_sig = [get_spec(input) for input in model.inputs]
+
+    def predict(self, input_list):
+        batch_size = 16
+        while len(input_list) % batch_size:
+            input_list.append(input_list[-1])
+
+        def generator():
+            yield from input_list
+
+        # dataset = tf.data.Dataset.from_tensor_slices(input_list)
+        dataset = tf.data.Dataset.from_generator(
+            generator,
+            output_signature=tuple(self.out_sig))
+        strategy = self.strategy
+
+        def reform(*row):
+            # return (*row),
+            if self.n_input == 4:
+                x = row[0], row[1], row[2], row[3]
+            elif self.n_input == 2:
+                x = row[0], row[1],
+            else:
+                raise ValueError
+            return x,
+
+        dataset = dataset.map(reform)
+        dataset = dataset.batch(batch_size, drop_remainder=True)
+        maybe_step = ceil_divide(len(input_list), batch_size)
+        dataset = distribute_dataset(strategy, dataset)
+        model = self.model
+        l_decision = model.predict(dataset, steps=maybe_step)
+        return l_decision
+
+    def predict_es(self, input_list: List[EncodedSegmentIF]):
+        payload = [x.get_input() for x in input_list]
+        l_decision_list = self.predict(payload)
+        print(l_decision_list.shape)
+        print(l_decision_list)
+        real_input_len = len(input_list)
+        print(real_input_len)
+
+        l_decision_list = l_decision_list[:real_input_len]
+        return l_decision_list
 
 
 def get_two_seg_asym_encoder(max_seq_length1, max_seq_length2, do_batch_shaping=True):

@@ -6,7 +6,7 @@ from dataset_specific.ists.path_helper import load_ists_label
 
 def main():
     gold: AlignmentPredictionList = load_ists_label("headlines", "train")
-    run_name_list = ["random_one", "em", "word2vec", "coattn"]
+    run_name_list = ["random_one", "em", "word2vec", "coattn", "nlits_mini", "probe_mini"]
     for run_name in run_name_list:
         mode = ""
         pred: AlignmentPredictionList = load_ists_predictions("headlines", "train", run_name)

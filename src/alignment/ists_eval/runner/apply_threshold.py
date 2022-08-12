@@ -1,8 +1,9 @@
 from typing import List, Tuple
 
 from alignment import RelatedEvalAnswer
-from alignment.ists_eval.eval_helper import load_ht2d, get_ists_save_path
+from alignment.ists_eval.eval_helper import load_ht2d
 from alignment.ists_eval.eval_utils import score_matrix_to_alignment_by_threshold, save_ists_predictions
+from alignment.ists_eval.path_helper import get_ists_save_path
 from dataset_specific.ists.parse import AlignmentLabelUnit, ISTSProblem, AlignmentPredictionList
 from dataset_specific.ists.path_helper import load_ists_problems
 from list_lib import left, pairzip

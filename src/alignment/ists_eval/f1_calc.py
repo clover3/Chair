@@ -185,6 +185,10 @@ def calc_f1(gold: AlignmentPredictionList,
             mode) -> Dict[str, float]:
     gold_d = dict(gold)
     pred_d = dict(pred)
+    if len(gold) != len(pred):
+        print("Gold has {} problems but pred has only {} problems".format(len(gold), len(pred)))
+        gold = [(problem_id, alignments) for problem_id, alignments in gold if problem_id in pred_d]
+        print("Adjusting to predictions")
     link_pred = count_fanout_sum(pred)
     link_gold = count_fanout_sum(gold)
 
