@@ -30,8 +30,13 @@ def convert_mnli_ex_entry_to_trec_entries(e: MNLIExEntry) -> List[TrecRelevanceJ
 def do_convert_save_trec_style(split, label):
     entries = load_mnli_ex(split, label)
     rel_entries = convert_mnli_ex_to_trec_style(entries)
-    save_path = os.path.join(data_path, "nli", "mnli_ex", "trec_style", "{}_{}.txt".format(label, split))
+    save_path = get_mnli_ex_trec_style_label_path(label, split)
     write_trec_relevance_judgement(rel_entries, save_path)
+
+
+def get_mnli_ex_trec_style_label_path(label, split):
+    save_path = os.path.join(data_path, "nli", "mnli_ex", "trec_style", "{}_{}.txt".format(label, split))
+    return save_path
 
 
 def main():

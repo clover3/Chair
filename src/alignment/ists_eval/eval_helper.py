@@ -35,18 +35,28 @@ def batch_solve_save_eval(solver: BatchMatrixScorerIF, run_name, score_matrix_to
 def solve_and_save_eval_mini(solver: MatrixScorerIF2,
                            run_name: str,
                              score_matrix_to_alignment_fn: Callable):
+    n_problem = 2
+    solve_and_save_eval_part(n_problem, run_name, score_matrix_to_alignment_fn, solver)
+
+
+def solve_and_save_eval_mini50(solver: MatrixScorerIF2,
+                             run_name: str,
+                             score_matrix_to_alignment_fn: Callable):
+    n_problem = 50
+    solve_and_save_eval_part(n_problem, run_name, score_matrix_to_alignment_fn, solver)
+
+
+
+def solve_and_save_eval_part(n_problem, run_name, score_matrix_to_alignment_fn, solver):
     genre = "headlines"
     split = "train"
     problems = load_ists_problems(genre, split)
-    problems = problems[:2]
-
+    problems = problems[:n_problem]
     predictions_2d: List[Alignment2D] = solve_2d_scoring(problems, solver)
     save_2d_scores(genre, split, run_name, predictions_2d)
-
     ists_predictions = convert_2d_to_ists(problems, predictions_2d, score_matrix_to_alignment_fn)
     save_path = get_ists_save_path(genre, split, run_name)
     save_ists_predictions(ists_predictions, save_path)
-
 
 
 def load_ists_predictions(genre, split, run_name) -> AlignmentPredictionList:

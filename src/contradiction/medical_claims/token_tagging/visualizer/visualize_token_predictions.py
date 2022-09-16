@@ -3,16 +3,13 @@ from typing import List, Dict, Tuple
 
 from contradiction.medical_claims.token_tagging.path_helper import get_sbl_qrel_path
 from contradiction.medical_claims.token_tagging.problem_loader import AlamriProblem, load_alamri_problem
+from contradiction.token_visualize import TextPair, print_html
 from cpath import output_path
-from data_generator.tokenize_helper import TokenizedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from list_lib import index_by_fn, lmap
-from misc_lib import group_by, two_digit_float
-from tlm.token_utils import cells_from_tokens
+from misc_lib import group_by
 from trec.qrel_parse import load_qrels_structured
 from trec.trec_parse import load_ranked_list
-from trec.types import TrecRankedListEntry, QRelsDict
-from visualize.html_visual import HtmlVisualizer, Cell
+from trec.types import QRelsDict, TrecRankedListEntry
 
 
 def collect_scores(ranked_list: List[TrecRankedListEntry]) -> Dict[str, Dict[Tuple, Dict]]:
@@ -41,74 +38,28 @@ def collect_scores(ranked_list: List[TrecRankedListEntry]) -> Dict[str, Dict[Tup
     return output
 
 
-def print_html(run_name,
-               tag_type,
-               ranked_list,
-               problems: List[AlamriProblem],
-               qrel: QRelsDict,
-               tokenizer):
-    SentType = Tuple[str, str]
-    score_grouped: Dict[str, Dict[SentType, Dict]] = collect_scores(ranked_list)
-    keys = list(score_grouped.keys())
-    keys.sort()
-
-    problems_d: Dict[str, AlamriProblem] = index_by_fn(AlamriProblem.get_problem_id, problems)
-    save_name = "{}_{}.html".format(run_name, tag_type)
-    html = HtmlVisualizer(save_name)
-
-    for pair_no in keys:
-        local_d = score_grouped[pair_no]
-        p = problems_d[pair_no]
-        t_text1 = TokenizedText.from_text(p.text1, tokenizer)
-        t_text2 = TokenizedText.from_text(p.text2, tokenizer)
-        t_text_d = {
-            'prem': t_text1,
-            'hypo': t_text2,
-        }
-        html.write_paragraph("Data no: {}".format(pair_no))
-        for sent_type in ["prem", "hypo"]:
-            qid = f"{pair_no}_{sent_type}_{tag_type}"
-            try:
-                qrel_d: Dict[str, int] = qrel[qid]
-            except KeyError:
-                qrel_d = {}
-            score_d = local_d[sent_type, tag_type]
-            t_text = t_text_d[sent_type]
-            tokens = t_text.tokens
-            raw_scores = [score_d[str(i)] for i in range(len(tokens))]
-            scores = [s * 100 for s in raw_scores]
-
-            score_row = cells_from_tokens(lmap(two_digit_float, raw_scores), scores)
-            text_row = cells_from_tokens(tokens, scores)
-
-            def get_qrel_cell(i):
-                try:
-                    relevant = qrel_d[str(i)]
-                except KeyError:
-                    relevant = 0
-                if relevant :
-                    return Cell("", highlight_score=100, target_color="G")
-                else:
-                    return Cell("", highlight_score=0)
-            qrel_row = list(map(get_qrel_cell, range(len(tokens))))
-            table = [text_row, score_row, qrel_row]
-            html.write_paragraph(sent_type)
-            html.write_table(table)
+def alamri_to_text_pair(p: AlamriProblem) -> TextPair:
+    return TextPair(p.get_problem_id(), p.text1, p.text2)
 
 
 # tfrecord/bert_alamri1.pickle
 def main():
-    tokenizer = get_tokenizer()
-    problems: List[AlamriProblem] = load_alamri_problem()
-
     run_name = "psearch"
     tag_type = "mismatch"
+
+
+    tokenizer = get_tokenizer()
+    problems: List[AlamriProblem] = load_alamri_problem()
+    text_pairs: List[TextPair] = list(map(alamri_to_text_pair, problems))
     ranked_list_path = os.path.join(output_path, "alamri_annotation1", "ranked_list",
                                     "{}_{}.txt".format(run_name, tag_type))
     qrel: QRelsDict = load_qrels_structured(get_sbl_qrel_path())
     ranked_list = load_ranked_list(ranked_list_path)
-    print_html(run_name, tag_type, ranked_list, problems, qrel, tokenizer)
+    save_name = "{}_{}.html".format(run_name, tag_type)
+    score_grouped: Dict[str, Dict[Tuple[str, str], Dict]] = collect_scores(ranked_list)
+    print_html(save_name, tag_type, score_grouped, text_pairs, qrel, tokenizer)
 
 
 if __name__ == "__main__":
     main()
+

@@ -53,6 +53,7 @@ def write_html(html, input_ids, logits, probe_logits, y):
         rows = [row[:display_len] for row in rows]
         html.write_table(rows)
 
+        html.f_html.flush()
 
 def main():
     model_config = ModelConfig()

@@ -61,6 +61,6 @@ def get_save_path(save_name):
 
 def solve_mnli_tag(split, run_name, solver: TokenScoringSolverIF, tag_type):
     problems: List[MNLIExEntry] = load_mnli_ex(split, tag_type)
-    save_name = "{}_{}".format(run_name, tag_type)
+    save_name = "{}_{}_{}".format(split, run_name, tag_type)
     save_path = get_save_path(save_name)
     make_ranked_list_w_solver_mnli(problems, solver, run_name, save_path)

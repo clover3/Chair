@@ -1,12 +1,11 @@
 import abc
-from typing import List, Dict, Tuple
-
 import numpy as np
+from typing import List, Dict, Tuple
 
 from alignment.data_structure.batch_scorer_if import BatchMatrixScorerIF, AlignProblem, AlignAnswer, BASAIF
 from alignment.data_structure.matrix_scorer_if import MatrixScorerIF2
 from bert_api.segmented_instance.segmented_text import token_list_to_segmented_text, SegmentedText, \
-    merge_subtoken_level_scores
+    merge_subtoken_level_scores, seg_to_text
 from bert_api.task_clients.nli_interface.nli_interface import NLIInput
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from explain.bert_components.cls_probe_predictor import ClsProbePredictor, ProbeOutput
@@ -39,17 +38,18 @@ class ProbeAdapter(BASAIF):
         layer_range = list(range(1, 13))
 
         assert minus_one == -1
-
+        print("t2: {}".format(seg_to_text(self.tokenizer, t2)))
         align_score_d: Dict[int, List[float]] = {}
         for po, i in output[1:]:
             maybe_t2_len = po.sep_idx2 - (po.sep_idx1 + 1)
             if len(t2.tokens_ids) != maybe_t2_len:
                 print("WARNING length of {} is expected but got {}".format(len(t2.tokens_ids), maybe_t2_len))
-
+            print("Removed p token: {}".format(text1_tokens[i]))
             align_score_per_layer_list: List[np.array] = []
             for layer_no in layer_range:
                 change = base_po.get_seg2_prob(layer_no) - po.get_seg2_prob(layer_no)
                 align_score_per_layer: List[float] = [self.sel_score_fn(item_probe) for item_probe in change]
+                print(layer_no, align_score_per_layer)
                 align_score_per_layer_np = np.array(align_score_per_layer)
                 align_score_per_layer_list.append(align_score_per_layer_np)
 
