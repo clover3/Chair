@@ -89,19 +89,20 @@ def get_local_decision_layer_from_model_by_shape(model):
 
 
 class LocalDecisionNLICore:
-    def __init__(self, model, strategy, encode_fn):
+    def __init__(self, model, strategy, encode_fn, batch_size=16):
         self.strategy = strategy
         self.model = model
         self.n_input = len(self.model.inputs)
         self.l_list: List[int] = [input_unit.shape[1] for input_unit in self.model.inputs]
         self.encode_fn = encode_fn
+        self.batch_size = batch_size
 
         def get_spec(input_i: tf.keras.layers.Input):
             return tf.TensorSpec(input_i.type_spec.shape[1:], dtype=tf.int32)
         self.out_sig = [get_spec(input) for input in model.inputs]
 
     def predict(self, input_list):
-        batch_size = 16
+        batch_size = self.batch_size
         while len(input_list) % batch_size:
             input_list.append(input_list[-1])
 

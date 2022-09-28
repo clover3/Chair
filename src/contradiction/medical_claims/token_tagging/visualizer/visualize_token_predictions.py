@@ -44,7 +44,7 @@ def alamri_to_text_pair(p: AlamriProblem) -> TextPair:
 
 # tfrecord/bert_alamri1.pickle
 def main():
-    run_name = "psearch"
+    run_name = "nlits40_6"
     tag_type = "mismatch"
 
 

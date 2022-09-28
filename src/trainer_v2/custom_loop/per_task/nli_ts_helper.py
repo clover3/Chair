@@ -7,6 +7,7 @@ from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.per_task.nli_ts_util import get_two_seg_concat_encoder, get_two_seg_asym_encoder, \
     load_local_decision_model, LocalDecisionNLICore, load_local_decision_model_as_second_only, \
     LocalDecisionNLICoreSecond
+from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 
 EncoderType = Callable[[List, List, List], Iterable[Tuple]]
@@ -27,7 +28,7 @@ def get_encode_fn(encoder_name, model) -> EncoderType:
     return encode_fn
 
 
-def get_local_decision_nlits_core(run_config, encoder_name):
+def get_local_decision_nlits_core(run_config: RunConfig2, encoder_name):
     model_path = run_config.eval_config.model_save_path
     strategy = get_strategy_from_config(run_config)
     with strategy.scope():
@@ -35,7 +36,11 @@ def get_local_decision_nlits_core(run_config, encoder_name):
         model = load_local_decision_model(model_path)
         encode_fn = get_encode_fn(encoder_name, model)
         c_log.debug("Done")
-        nlits: LocalDecisionNLICore = LocalDecisionNLICore(model, strategy, encode_fn)
+        nlits: LocalDecisionNLICore \
+            = LocalDecisionNLICore(model,
+                                   strategy,
+                                   encode_fn,
+                                   run_config.common_run_config.batch_size)
     return nlits
 
 
