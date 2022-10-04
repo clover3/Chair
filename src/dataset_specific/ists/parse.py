@@ -2,6 +2,8 @@ import xml.etree.ElementTree as ET
 from typing import List, Tuple
 from typing import NamedTuple
 
+from alignment.base_ds import TextPairProblem
+
 
 class AlignmentLabelUnit(NamedTuple):
     chunk_token_id1: List[int]
@@ -24,10 +26,13 @@ class AlignmentLabelUnit(NamedTuple):
 AlignmentPredictionList = List[Tuple[str, List[AlignmentLabelUnit]]]
 
 
-class ISTSProblem(NamedTuple):
+class iSTSProblem(NamedTuple):
     problem_id: str
     text1: str
     text2: str
+
+    def to_text_pair_problem(self):
+        return TextPairProblem(self.problem_id, self.text1, self.text2)
 
 
 def parse_alignment_line(line) -> AlignmentLabelUnit:

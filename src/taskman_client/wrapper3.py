@@ -1,3 +1,5 @@
+import requests
+
 from taskman_client.task_proxy import get_local_machine_name, TaskProxy
 
 
@@ -36,7 +38,11 @@ def report_run3(func):
             task_proxy.tpu_name = flags.tpu_name
 
         job_id = flags.job_id if flags.job_id >= 0 else None
-        task_proxy.task_start(run_name, "", job_id)
+        try:
+            task_proxy.task_start(run_name, "", job_id)
+        except requests.exceptions.ConnectTimeout as e:
+            print(e)
+
         try:
             r = func(args)
             print("Run completed")

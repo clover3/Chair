@@ -4,7 +4,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 from alignment import Alignment2D
 from alignment.data_structure.matrix_scorer_if import ContributionSummary
 from alignment.ists_eval.path_helper import get_ists_2d_save_path
-from dataset_specific.ists.parse import ISTSProblem
+from dataset_specific.ists.parse import iSTSProblem
 from dataset_specific.ists.path_helper import load_ists_problems
 from misc_lib import two_digit_float
 from visualize.html_visual import HtmlVisualizer, Cell
@@ -22,7 +22,7 @@ def parse_j(j) -> List[Alignment2D]:
     return output
 
 
-def print_to_html(alignment2d_list: List[Alignment2D], problems: List[ISTSProblem], save_name):
+def print_to_html(alignment2d_list: List[Alignment2D], problems: List[iSTSProblem], save_name):
     html = HtmlVisualizer(save_name)
 
     for alignment2d, problem in zip(alignment2d_list, problems):
@@ -61,7 +61,7 @@ def main():
     save_path = get_ists_2d_save_path(genre, split, run_name)
     j = json.load(open(save_path, "r"))
     alignment2d_list: List[Alignment2D] = parse_j(j)
-    problems: List[ISTSProblem] = load_ists_problems(genre, split)
+    problems: List[iSTSProblem] = load_ists_problems(genre, split)
     print_to_html(alignment2d_list, problems, run_name + ".html")
 
 

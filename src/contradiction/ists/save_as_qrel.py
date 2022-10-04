@@ -32,8 +32,8 @@ def do_for_genre_split(dir_path, genre, split):
 
         no_align_list1.sort()
         no_align_list2.sort()
-        qid1 = f"{problem_id}_1"
-        qid2 = f"{problem_id}_2"
+        qid1 = f"noali_{problem_id}_1"
+        qid2 = f"noali_{problem_id}_2"
         for token_id in no_align_list1:
             e = TrecRelevanceJudgementEntry(qid1, str(token_id), 1)
             all_judgments.append(e)
@@ -45,7 +45,7 @@ def do_for_genre_split(dir_path, genre, split):
 
 
 def main():
-    dir_path = os.path.join(output_path, "ists", "noali")
+    dir_path = os.path.join(output_path, "ists", "noali_label")
     exist_or_mkdir(dir_path)
     for genre in genre_list:
         for split in split_list:

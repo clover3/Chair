@@ -27,8 +27,17 @@ class Word2VecSolver(TokenScoringSolverIF):
 
     def similar(self, word1, word2) -> float:
         try:
-            return self.w2v.similarity(word1, word2)
+            s = self.w2v.similarity(word1, word2)
+            print("{} {} {}".format(s, word1, word2))
+            return s
         except KeyError:
+            msg = "KeyError {} {}".format(word1, word2)
+            if not self.w2v.__contains__(word1):
+                msg += " missing {}".format(word1)
+            if not self.w2v.__contains__(word2):
+                msg += " missing {}".format(word2)
+            if word1 == word2:
+                return 1
             return 0
 
     def get_max_similarity_rev(self, text1_tokens, text2_tokens) -> List[float]:

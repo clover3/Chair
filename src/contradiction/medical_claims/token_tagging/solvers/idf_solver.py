@@ -18,7 +18,11 @@ class TF_IDF(TokenScoringSolverIF):
         return scores1, scores2
 
     def get_weight(self, token) -> float:
-        stemmed_token = self.stemmer(token)
+        try:
+            stemmed_token = self.stemmer(token)
+        except UnicodeDecodeError:
+            print("Fail to stem {}".format(token))
+            stemmed_token = token
         df = self.df[stemmed_token]
         if df == 0:
             df = 10
