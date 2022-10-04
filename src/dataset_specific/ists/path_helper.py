@@ -9,7 +9,7 @@ def get_ists_texts_path(genre, split, sent_name):
     assert genre in ["headlines", "images", "answers-students"]
     assert sent_name in ["sent1", "sent2"]
     if split == "test":
-        p = os.path.join(data_path, "sts_16", "test", f"STSint.testInput.{genre}.{sent_name}.txt")
+        p = os.path.join(data_path, "sts_16", "test", f"STSint.testinput.{genre}.{sent_name}.txt")
     else:
         p = os.path.join(data_path, "sts_16", f"STSint.input.{genre}.{sent_name}.txt")
     return p
@@ -18,9 +18,11 @@ def get_ists_texts_path(genre, split, sent_name):
 def get_ists_label_path(genre, split):
     assert genre in ["headlines", "images", "answers-students"]
     if split == "test":
-        p = os.path.join(data_path, "sts_16", "test", f"STSint.testInput.{genre}.wa")
-    else:
+        p = os.path.join(data_path, "sts_16", "test", f"STSint.testinput.{genre}.wa")
+    elif split == "train":
         p = os.path.join(data_path, "sts_16", f"STSint.input.{genre}.wa")
+    else:
+        raise Exception()
     return p
 
 

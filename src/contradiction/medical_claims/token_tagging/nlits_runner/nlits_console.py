@@ -1,5 +1,6 @@
 import sys
 
+from contradiction.medical_claims.token_tagging.visualizer.deletion_score_to_html import make_nli_prediction_summary_str
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from trainer_v2.custom_loop.per_task.nli_ts_helper import get_local_decision_nlits_core
 from trainer_v2.custom_loop.run_config2 import get_run_config2
@@ -23,9 +24,10 @@ def main(args):
         print(l_decisions.shape)
         g_decision = g_decisions[0][0]
         l_decision = l_decisions[0]
+        l_first, l_second = l_decision
         print((sent1, sent2))
-        print("g_decision: ", g_decision)
-        print("l_decision: ", l_decision)
+        print("g_decision: ", make_nli_prediction_summary_str(g_decision))
+        print("l_decision: ", make_nli_prediction_summary_str(l_second))
 
 
 if __name__ == "__main__":

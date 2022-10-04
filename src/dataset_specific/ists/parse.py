@@ -44,6 +44,7 @@ def parse_alignment_line(line) -> AlignmentLabelUnit:
 
 
 def parse_label_file(file_path) -> List[Tuple[str, List[AlignmentLabelUnit]]]:
+    print(file_path)
     f = open(file_path, "r")
     alignments = f.read()
     alignments = alignments.replace("<==>", "==").replace("&", "&amp;")

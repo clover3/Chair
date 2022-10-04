@@ -74,9 +74,9 @@ def save_2d_scores(genre, split, run_name, predictions):
     json.dump(predictions, open(save_path, "w"), indent=1)
 
 
-def batch_solve_save_eval_ht(solver: BatchMatrixScorerIF,
-                             run_name: str,
-                             score_matrix_to_alignment_fn: Callable):
+def batch_solve_save_eval_headlines_train(solver: BatchMatrixScorerIF,
+                                          run_name: str,
+                                          score_matrix_to_alignment_fn: Callable):
     genre = "headlines"
     split = "train"
     batch_solve_save_eval(solver, run_name, score_matrix_to_alignment_fn, genre, split)
@@ -97,9 +97,22 @@ def solve_and_save_eval_ht2d(solver: MatrixScorerIF2, run_name):
     solve_as_2d_scores(solver, run_name, genre, split)
 
 
-def load_ht2d(run_name) -> List[Alignment2D]:
+# ht: Headline and Train
+def solve_and_save_eval_headlines_train_2d(solver: MatrixScorerIF2, run_name):
     genre = "headlines"
     split = "train"
+    solve_as_2d_scores(solver, run_name, genre, split)
+
+
+# ht: Headline and Train
+def solve_and_save_eval_headlines_2d(solver: MatrixScorerIF2, run_name):
+    genre = "headlines"
+    solve_as_2d_scores(solver, run_name, genre, "test")
+    solve_as_2d_scores(solver, run_name, genre, "train")
+
+
+def load_headline_2d(run_name, split) -> List[Alignment2D]:
+    genre = "headlines"
     score_path = get_ists_2d_save_path(genre, split, run_name)
     raw_json = json.load(open(score_path, "r"))
     return parse_related_eval_answer_from_json(raw_json)
