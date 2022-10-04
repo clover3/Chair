@@ -19,10 +19,11 @@ def get_hp_str_from_flag(flags):
 g_task_proxy: TaskProxy = None
 def report_run3(func):
     def func_wrapper(args):
+        hostname = "clovertask2.xyz"
         flags = args
         run_name = flag_to_run_name(flags)
         machine = get_local_machine_name()
-        task_proxy = TaskProxy("gosford.cs.umass.edu", 8000, machine, flags.tpu_name, None)
+        task_proxy = TaskProxy(hostname, 8000, machine, flags.tpu_name, None)
         global g_task_proxy
         g_task_proxy = task_proxy
         if machine == "GOSFORD":
