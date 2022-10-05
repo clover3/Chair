@@ -14,7 +14,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 # modified
 
 def load_clueweb12_B13_termstat() -> Tuple[Counter, Counter]:
-    f = open(os.path.join(data_path, "clueweb12_B13_termstat.txt"), "r", encoding="utf-8")
+    f = open(os.path.join(data_path, "clueweb", "clueweb12_B13_termstat.txt"), "r", encoding="utf-8")
     tf = Counter()
     df = Counter()
     for line in f:

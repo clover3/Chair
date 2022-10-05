@@ -32,7 +32,7 @@ def load_df_for(data_name):
     if data_name == "wiki":
         return load_df_stemmed(os.path.join(data_path, "enwiki", "tf_stat"))
     elif data_name == "clue":
-        # return load_df_stemmed(os.path.join(data_path, "clueweb12_B13_termstat.txt"))
+        # return load_df_stemmed(os.path.join(data_path, "clueweb", "clueweb12_B13_termstat.txt"))
         return load_df_stemmed(os.path.join(data_path, "clueweb09_term_stat.txt"))
     elif data_name == "tdlt":
         return load_df_stemmed(os.path.join(data_path, "msmarco_term_stat.txt"))
