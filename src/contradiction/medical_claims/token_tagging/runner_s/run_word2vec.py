@@ -10,7 +10,6 @@ from misc_lib import tprint
 
 def main():
     tag_type = "mismatch"
-    tag_type = "conflict"
     run_name = "word2vec"
     save_path = get_save_path2(run_name, tag_type)
     problems: List[AlamriProblem] = load_alamri_problem()
@@ -55,4 +54,4 @@ def main4():
 
 
 if __name__ == "__main__":
-    main4()
+    main()

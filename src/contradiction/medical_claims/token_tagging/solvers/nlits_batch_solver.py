@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from contradiction.medical_claims.token_tagging.batch_solver_common import NeuralOutput, BSAdapterIF, BatchSolver
+from contradiction.medical_claims.token_tagging.batch_solver_common import NeuralOutput, BSAdapterIF, BatchSolver, \
+    ECCOutput, ECCInput, BatchTokenScoringSolverIF
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import flatten
 from misc_lib import average
@@ -43,6 +44,22 @@ class ReducerCommon(ScoreReducerI):
         scores_building = [list() for _ in text2_tokens]
         for probs, es_item in records:
             s = probs[self.target_label]
+            for i in range(es_item.st, es_item.ed):
+                if i < len(scores_building):
+                    scores_building[i].append(s)
+
+        scores = [self.reduce_fn(scores) for scores in scores_building]
+        return scores
+
+
+class ReducerEC(ScoreReducerI):
+    def __init__(self, reduce_fn):
+        self.reduce_fn = reduce_fn
+
+    def reduce(self, records: List[Tuple[List[float], ESTwoPiece]], text2_tokens) -> List[float]:
+        scores_building = [list() for _ in text2_tokens]
+        for probs, es_item in records:
+            s = probs[1] + probs[2]
             for i in range(es_item.st, es_item.ed):
                 if i < len(scores_building):
                     scores_building[i].append(s)
@@ -126,6 +143,13 @@ def get_batch_solver_nlits6(run_config: RunConfig2, encoder_name: str, target_la
     return solver
 
 
+def get_batch_solver_nlits7(run_config: RunConfig2, encoder_name: str):
+    nlits = get_local_decision_nlits_core(run_config, encoder_name)
+    adapter = NLITSAdapter3(nlits, ReducerEC(average))
+    solver = BatchSolver(adapter)
+    return solver
+
+
 class NLITSAdapter(BSAdapterIF):
     def __init__(self,
                  nlits: LocalDecisionNLICore,
@@ -194,3 +218,27 @@ class NLITSAdapter3(NLITSAdapter):
                     es_list.append(es)
         return es_list
 
+
+class SolverPostProcessorPunct(BatchTokenScoringSolverIF):
+    def __init__(self, base_batch_solver: BatchSolver):
+        self.base_solver = base_batch_solver
+
+    def solve(self, payload: List[ECCInput]) -> List[ECCOutput]:
+        scores_list = self.base_solver.solve(payload)
+        out_scores_list = []
+        for scores, problem in zip(scores_list, payload):
+            scores1, scores2 = scores
+            tokens1, tokens2 = problem
+
+            for idx, t in enumerate(tokens1):
+                if t in ",.;L'`!?":
+                    if t not in tokens2:
+                        scores1[idx] = 0.9
+
+            for idx, t in enumerate(tokens2):
+                if t in ",.;L'`!?":
+                    if t not in tokens1:
+                        scores2[idx] = 0.9
+
+            out_scores_list.append((scores1, scores2))
+        return out_scores_list

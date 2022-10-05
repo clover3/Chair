@@ -1,11 +1,18 @@
-from typing import List, Callable, Tuple
+from typing import List, Callable, Tuple, Dict
 
 from contradiction.medical_claims.token_tagging.batch_solver_common import BatchTokenScoringSolverIF
 from contradiction.medical_claims.token_tagging.online_solver_common import TokenScoringSolverIF
-from contradiction.medical_claims.token_tagging.trec_entry_helper import convert_token_scores_to_trec_entries
 from alignment.base_ds import TextPairProblem
+from list_lib import dict_key_map
 from misc_lib import TEL
-from trec.trec_parse import write_trec_ranked_list_entry
+from trec.trec_parse import write_trec_ranked_list_entry, score_d_to_ranked_list_entries
+
+
+def convert_token_scores_to_trec_entries(query_id, run_name, token_scores: List[float]):
+    token_scores_d = {idx+1: s for idx, s in enumerate(token_scores)}
+    token_scores_s: Dict[str, float] = dict_key_map(str, token_scores_d)
+    ranked_list = score_d_to_ranked_list_entries(token_scores_s, run_name, query_id)
+    return ranked_list
 
 
 def make_ranked_list_w_problem2score(problems: List[TextPairProblem], run_name, save_path, tag_type,

@@ -1,5 +1,6 @@
 import os
 
+from contradiction.ists.save_path_helper import get_qrel_path
 from cpath import output_path
 from dataset_specific.ists.parse import AlignmentPredictionList
 from dataset_specific.ists.path_helper import load_ists_label
@@ -9,8 +10,8 @@ from trec.trec_parse import write_trec_relevance_judgement
 from trec.types import TrecRelevanceJudgementEntry
 
 
-def do_for_genre_split(dir_path, genre, split):
-    save_path = os.path.join(dir_path, f"{genre}_{split}.qrel")
+def do_for_genre_split(genre, split):
+    save_path = get_qrel_path(genre, split)
     labels: AlignmentPredictionList = load_ists_label(genre, split)
     all_judgments = []
     for problem_id, per_problem in labels:
@@ -45,14 +46,13 @@ def do_for_genre_split(dir_path, genre, split):
 
 
 def main():
-    dir_path = os.path.join(output_path, "ists", "noali_label")
-    exist_or_mkdir(dir_path)
+
     for genre in genre_list:
         for split in split_list:
             if genre == "answers-students" and split == "train":
                 continue
             try:
-                do_for_genre_split(dir_path, genre, split)
+                do_for_genre_split(genre, split)
             except Exception:
                 print(genre, split)
                 raise
