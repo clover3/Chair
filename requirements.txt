@@ -54,7 +54,7 @@ params-flow==0.8.2
 Pillow==9.1.0
 portalocker==2.4.0
 promise==2.3
-protobuf==3.18.1
+protobuf==3.18.3
 psutil==5.9.0
 py-cpuinfo==8.0.0
 py-params==0.10.2
