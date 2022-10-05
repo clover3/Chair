@@ -24,7 +24,6 @@ class Trainer(TrainerIF):
         self.inner_model = inner_model
 
         # These variables will be initialized by build_model()
-        self.training_loss = None
         self.train_metrics = None
         self.keras_model = None
         self.optimizer = None
@@ -38,8 +37,7 @@ class Trainer(TrainerIF):
             self.keras_model.summary(140)
             optimizer = AdamWeightDecay(learning_rate=run_config.train_config.learning_rate)
             self.keras_model.optimizer = optimizer
-            self.training_loss = tf.keras.metrics.Mean('training_loss', dtype=tf.float32)
-            self.train_metrics = {'loss': self.training_loss}
+            self.train_metrics = {}
             self.optimizer = optimizer
         else:
             pass
@@ -69,7 +67,6 @@ class Trainer(TrainerIF):
 
         gradients = tape.gradient(loss, model.trainable_variables)
         apply_gradient_warning_less(self.optimizer, gradients, model.trainable_variables)
-        self.training_loss.update_state(loss)
         return loss
 
     def get_train_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:

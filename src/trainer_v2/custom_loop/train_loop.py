@@ -124,9 +124,18 @@ def tf_run_train(run_config: RunConfig2,
         @tf.function
         def distributed_train_step(train_itr):
             # try:
+            total_loss = 0.0
+            n_step = 0.
             for _ in tf.range(run_config.common_run_config.steps_per_execution):
                 batch_item = next(train_itr)
                 per_replica_losses = strategy.run(trainer.train_step, args=(batch_item, ))
+                loss = strategy.reduce(
+                    tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None)
+                total_loss += loss
+                n_step += 1.
+
+            train_loss = total_loss / n_step
+            return train_loss
             # except StopIteration as e:
             #     print(e)
 
@@ -148,9 +157,10 @@ def tf_run_train(run_config: RunConfig2,
             metrics = trainer.get_train_metrics()
             for m in metrics.values():
                 m.reset_state()
-            distributed_train_step(train_itr)
+            train_loss = distributed_train_step(train_itr)
             trainer.train_callback()
             msg = summarize_metric(fetch_metric_result(metrics))
+            per_step_msg += " loss_b={0:.6f} ".format(train_loss)
             per_step_msg += msg
 
             if f_do_eval:
