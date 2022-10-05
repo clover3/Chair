@@ -32,7 +32,7 @@ h5py==3.1.0
 httplib2==0.20.4
 idna==3.3
 Jinja2==3.1.2
-joblib==1.1.0
+joblib==1.2.0
 kaggle==1.5.12
 keras==2.8.0
 Keras-Preprocessing==1.1.2
@@ -54,7 +54,7 @@ params-flow==0.8.2
 Pillow==9.1.0
 portalocker==2.4.0
 promise==2.3
-protobuf==3.18.1
+protobuf==3.18.3
 psutil==5.9.0
 py-cpuinfo==8.0.0
 py-params==0.10.2
@@ -82,7 +82,7 @@ tabulate==0.8.9
 tensorboard==2.8.0
 tensorboard-data-server==0.6.1
 tensorboard-plugin-wit==1.8.0
-tensorflow==2.8.0
+tensorflow==2.8.1
 tensorflow-addons==0.16.1
 tensorflow-datasets==4.5.2
 tensorflow-estimator==2.6.0
