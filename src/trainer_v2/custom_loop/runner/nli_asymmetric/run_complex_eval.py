@@ -17,7 +17,7 @@ from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 from trainer_v2.train_util.arg_flags import flags_parser
 import numpy as np
 
-class ModelConfig:
+class ModelConfig(ModelConfigType):
     max_seq_length = 600
     num_classes = 3
 

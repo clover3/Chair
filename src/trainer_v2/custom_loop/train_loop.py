@@ -111,7 +111,7 @@ def tf_run_train(run_config: RunConfig2,
             current_step = eval_tensor(model.optimizer.iterations)
             return os.path.join(model_save_dir, "model_{}".format(current_step))
 
-        c_log.debug("Loading checkpoints")
+        c_log.info("Loading checkpoints: {}".format(run_config.train_config.init_checkpoint))
         trainer.do_init_checkpoint(run_config.train_config.init_checkpoint)
         current_step = eval_tensor(model.optimizer.iterations)
         c_log.info("Current step = {}".format(current_step))
@@ -121,12 +121,14 @@ def tf_run_train(run_config: RunConfig2,
             model.save(model_save_path)
             c_log.info("Model saved at {}".format(model_save_path))
 
+        conf_steps_per_execution = run_config.common_run_config.steps_per_execution
+
         @tf.function
-        def distributed_train_step(train_itr):
+        def distributed_train_step(train_itr, steps_per_execution):
             # try:
             total_loss = 0.0
             n_step = 0.
-            for _ in tf.range(run_config.common_run_config.steps_per_execution):
+            for _ in tf.range(steps_per_execution):
                 batch_item = next(train_itr)
                 per_replica_losses = strategy.run(trainer.train_step, args=(batch_item, ))
                 loss = strategy.reduce(
@@ -134,11 +136,8 @@ def tf_run_train(run_config: RunConfig2,
                 total_loss += loss
                 n_step += 1.
 
-            train_loss = total_loss / n_step
-            return train_loss
-            # except StopIteration as e:
-            #     print(e)
-
+                train_loss = total_loss / n_step
+                return train_loss
         eval_rc = RecentCounter(run_config.train_config.eval_every_n_step, 0)
         save_rc = RecentCounter(run_config.train_config.save_every_n_step, 0)
         step_idx = current_step
@@ -152,12 +151,22 @@ def tf_run_train(run_config: RunConfig2,
 
             current_step = eval_tensor(model.optimizer.iterations)
             c_log.debug("Current step = {}".format(current_step))
-            per_step_msg = "step {0}".format(step_idx)
 
             metrics = trainer.get_train_metrics()
             for m in metrics.values():
                 m.reset_state()
-            train_loss = distributed_train_step(train_itr)
+
+            if step_idx == 0:
+                steps_to_execute = 1
+            elif step_idx % conf_steps_per_execution > 0:
+                steps_to_execute = conf_steps_per_execution - step_idx % conf_steps_per_execution
+            else:
+                steps_to_execute = conf_steps_per_execution
+
+            train_loss = distributed_train_step(train_itr, steps_to_execute)
+            step_idx += steps_to_execute
+            per_step_msg = "step {0}".format(step_idx)
+
             trainer.train_callback()
             msg = summarize_metric(fetch_metric_result(metrics))
             per_step_msg += " loss_b={0:.6f} ".format(train_loss)
@@ -172,7 +181,6 @@ def tf_run_train(run_config: RunConfig2,
             if f_do_eval or is_interesting_step(step_idx):
                 c_log.info(per_step_msg)
 
-            step_idx += run_config.common_run_config.steps_per_execution
         c_log.info("Training completed")
         save_fn()
 

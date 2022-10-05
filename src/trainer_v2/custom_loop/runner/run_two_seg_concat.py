@@ -14,7 +14,7 @@ from trainer_v2.custom_loop.trainer_if import TrainerIF
 from trainer_v2.train_util.arg_flags import flags_parser
 
 
-class ModelConfig:
+class ModelConfig(ModelConfigType):
     max_seq_length = 600
     num_classes = 3
 

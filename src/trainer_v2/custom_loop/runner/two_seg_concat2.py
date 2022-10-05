@@ -4,6 +4,7 @@ from cpath import get_bert_config_path
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.dataset_factories import get_classification_dataset
+from trainer_v2.custom_loop.definitions import ModelConfigType
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import FuzzyLogicLayerSingle
 from trainer_v2.custom_loop.neural_network_def.two_seg_concat import TwoSegConcat2
@@ -14,7 +15,7 @@ from trainer_v2.custom_loop.trainer_if import TrainerIF
 from trainer_v2.train_util.arg_flags import flags_parser
 
 
-class ModelConfig:
+class ModelConfig(ModelConfigType):
     max_seq_length = 600
     num_classes = 3
 

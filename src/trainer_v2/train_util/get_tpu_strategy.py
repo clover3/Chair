@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from taskman_client.task_proxy import get_local_machine_name, assign_tpu_anonymous
 from trainer_v2.chair_logging import c_log
+import atexit
 
 
 def get_strategy(use_tpu, tpu_name=None):
@@ -13,7 +14,8 @@ def get_strategy(use_tpu, tpu_name=None):
         c_log.debug("use_tpu={}".format(use_tpu))
         strategy = tf.distribute.MultiWorkerMirroredStrategy()
         c_log.info("All devices: {}".format(tf.config.list_logical_devices('GPU')))
-        # strategy = tf.distribute.MirroredStrategy()
+        atexit.register(strategy._extended._cross_device_ops._pool.close)  # type: ignore
+        atexit.register(strategy._extended._host_cross_device_ops._pool.close)  # type: ignore
     return strategy
 
 
