@@ -1,5 +1,6 @@
 import requests
 
+from taskman_client.host_defs import webtool_host, webtool_port
 from taskman_client.task_proxy import get_local_machine_name, TaskProxy
 
 
@@ -18,14 +19,15 @@ def get_hp_str_from_flag(flags):
         s += "{}:\t{}\n".format(key, value)
     return s
 
+
 g_task_proxy: TaskProxy = None
 def report_run3(func):
     def func_wrapper(args):
-        hostname = "clovertask2.xyz"
+        hostname = webtool_host
         flags = args
         run_name = flag_to_run_name(flags)
         machine = get_local_machine_name()
-        task_proxy = TaskProxy(hostname, 8000, machine, flags.tpu_name, None)
+        task_proxy = TaskProxy(hostname, webtool_port, machine, flags.tpu_name, None)
         global g_task_proxy
         g_task_proxy = task_proxy
         if machine == "GOSFORD":

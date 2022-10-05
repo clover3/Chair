@@ -9,4 +9,8 @@ def main(name, number, condition, field):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    name = sys.argv[1]
+    number = sys.argv[2]
+    condition = sys.argv[3]
+    field = sys.argv[4]
+    main(name, number, condition, field)

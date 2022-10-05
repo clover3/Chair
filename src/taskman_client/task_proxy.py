@@ -4,6 +4,7 @@ import uuid
 from typing import Dict
 
 from taskman_client.RESTProxy import RESTProxy
+from taskman_client.host_defs import webtool_host, webtool_port
 
 
 class TaskManagerProxy(RESTProxy):
@@ -169,11 +170,11 @@ def get_local_machine_name():
 
 def get_task_proxy(tpu_name=None, uuid_var=None):
     machine = get_local_machine_name()
-    return TaskProxy("gosford.cs.umass.edu", 8000, machine, tpu_name, uuid_var)
+    return TaskProxy(webtool_host, webtool_port, machine, tpu_name, uuid_var)
 
 
 def get_task_manager_proxy():
-    return TaskManagerProxy("gosford.cs.umass.edu", 8000)
+    return TaskManagerProxy(webtool_host, webtool_port)
 
 
 def assign_tpu_anonymous(wait=True):
@@ -214,4 +215,4 @@ if __name__ == "__main__":
     arr = numpy.array([0.1,0.242])
     value = arr[0]
 
-    TaskManagerProxy("gosford.cs.umass.edu", 8000).get_num_active_jobs("lesterny")
+    TaskManagerProxy(webtool_host, webtool_port).get_num_active_jobs("lesterny")
