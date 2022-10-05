@@ -30,9 +30,9 @@ class AsymmetricMeanPool(ClassificationModelIF):
 
 
 class TwoSegConcat(ClassificationModelIF):
-    def __init__(self, combine_local_decisions_layer):
+    def __init__(self, ld_combine_layer):
         super(TwoSegConcat, self).__init__()
-        self.combine_local_decisions_layer = combine_local_decisions_layer
+        self.ld_combine_layer = ld_combine_layer
 
     def build_model(self, bert_params, config: ModelConfig):
         num_window = 2
@@ -55,9 +55,11 @@ class TwoSegConcat(ClassificationModelIF):
         hidden = tf.keras.layers.Dense(bert_params.hidden_size, activation='relu')(feature_rep)
         local_decisions = tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax)(hidden)
         self.local_decisions = local_decisions
-        combine_local_decisions = self.combine_local_decisions_layer()
-        self.cld = combine_local_decisions
-        output = combine_local_decisions(local_decisions)
+        ld_combine = self.ld_combine_layer()
+        self.cld = ld_combine
+        output = ld_combine(local_decisions)
+        print('local_decisions', local_decisions)
+        print('output', output)
         inputs = (l_input_ids, l_token_type_ids)
         model = keras.Model(inputs=inputs, outputs=output, name="bert_model")
         self.model: keras.Model = model
@@ -99,7 +101,8 @@ class TwoSegConcat2(ClassificationModelIF):
         # [batch_size, num_window, dim2 ]
         hidden = tf.keras.layers.Dense(bert_params.hidden_size, activation='relu')(feature_rep)
         local_decisions = tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax)(hidden)
-        output = combine_local_decision_by_fuzzy_logic(local_decisions)
+        comb_layer = self.combine_local_decisions_layer()
+        output = comb_layer(local_decisions)
         # output = local_decisions[:, 0]
         inputs = (l_input_ids, l_token_type_ids)
         model = keras.Model(inputs=inputs, outputs=output, name="bert_model")

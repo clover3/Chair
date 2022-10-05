@@ -147,6 +147,11 @@ class FuzzyLogicLayer(tf.keras.layers.Layer):
         return fuzzy_logic_ex(inputs, kwargs['input_mask'])
 
 
+class FuzzyLogicLayerSingle(tf.keras.layers.Layer):
+    def call(self, inputs, *args, **kwargs):
+        return combine_local_decision_by_fuzzy_logic(inputs)
+
+
 class FuzzyLogicLayer2(tf.keras.layers.Layer):
     def call(self, inputs, *args, **kwargs):
         scores, input_mask = inputs
