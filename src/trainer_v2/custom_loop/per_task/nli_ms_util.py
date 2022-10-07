@@ -6,9 +6,8 @@ from arg.qck.encode_common import encode_single
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import ceil_divide
 from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.demo.demo_common import EncodedSegmentIF
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
-from trainer_v2.custom_loop.per_task.nli_ts_util import batch_shaping
+from trainer_v2.custom_loop.per_task.nli_ts_util import batch_shaping, EncodedSegmentIF
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop import load_model_by_dir_or_abs
 from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config

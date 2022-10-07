@@ -136,8 +136,8 @@ def tf_run_train(run_config: RunConfig2,
                 total_loss += loss
                 n_step += 1.
 
-                train_loss = total_loss / n_step
-                return train_loss
+            train_loss = total_loss / n_step
+            return train_loss
         eval_rc = RecentCounter(run_config.train_config.eval_every_n_step, 0)
         save_rc = RecentCounter(run_config.train_config.save_every_n_step, 0)
         step_idx = current_step
@@ -162,14 +162,16 @@ def tf_run_train(run_config: RunConfig2,
                 steps_to_execute = conf_steps_per_execution - step_idx % conf_steps_per_execution
             else:
                 steps_to_execute = conf_steps_per_execution
-
+            c_log.debug("Execute {} steps".format(steps_to_execute))
             train_loss = distributed_train_step(train_itr, steps_to_execute)
+
             step_idx += steps_to_execute
+            c_log.debug("step_idx={} optimizer_iter={}".format(step_idx, model.optimizer.iterations))
             per_step_msg = "step {0}".format(step_idx)
 
             trainer.train_callback()
             msg = summarize_metric(fetch_metric_result(metrics))
-            per_step_msg += " loss_b={0:.6f} ".format(train_loss)
+            per_step_msg += " loss={0:.6f} ".format(train_loss)
             per_step_msg += msg
 
             if f_do_eval:

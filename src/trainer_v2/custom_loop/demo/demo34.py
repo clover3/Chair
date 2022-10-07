@@ -14,11 +14,12 @@ from trainer_v2.chair_logging import c_log
 
 import os
 
-from trainer_v2.custom_loop.demo.demo_common import iterate_and_demo, EncodedSegmentIF, EncodedSegment, \
+from trainer_v2.custom_loop.demo.demo_common import iterate_and_demo, EncodedSegment, \
     enum_hypo_token_tuple, iter_alamri
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-from trainer_v2.custom_loop.per_task.nli_ts_util import get_two_seg_asym_encoder, load_local_decision_model
+from trainer_v2.custom_loop.per_task.nli_ts_util import get_two_seg_asym_encoder, load_local_decision_model, \
+    EncodedSegmentIF
 
 
 def main():

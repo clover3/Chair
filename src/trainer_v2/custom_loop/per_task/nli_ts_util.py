@@ -1,4 +1,5 @@
-from typing import List
+from abc import ABC, abstractmethod
+from typing import List, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -9,9 +10,14 @@ from data_generator2.segmented_enc.seg_encoder_common import encode_two_segments
 from misc_lib import ceil_divide
 from tlm.data_gen.base import get_basic_input_feature_as_list
 from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.demo.demo_common import EncodedSegmentIF
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
 from trainer_v2.custom_loop.train_loop import load_model_by_dir_or_abs
+
+
+class EncodedSegmentIF(ABC):
+    @abstractmethod
+    def get_input(self):
+        pass
 
 
 def encode_prem(tokenizer, prem_text, max_seq_length1):
@@ -231,4 +237,24 @@ def get_two_seg_concat_encoder(max_seq_length):
 
     return encode_two_seg_input
 
+
+def enum_hypo_token_tuple_from_tokens(tokenizer, space_tokenized_tokens, window_size, offset=0) -> \
+        List[Tuple[List[str], List[str], int, int]]:
+    st = offset
+    def sb_tokenize(tokens):
+        output = []
+        for t in tokens:
+            output.extend(tokenizer.tokenize(t))
+        return output
+
+    while st < len(space_tokenized_tokens):
+        ed = st + window_size
+        first_a = space_tokenized_tokens[:st]
+        second = space_tokenized_tokens[st:ed]
+        first_b = space_tokenized_tokens[ed:]
+
+        first = sb_tokenize(first_a) + ["[MASK]"] + sb_tokenize(first_b)
+        second = sb_tokenize(second)
+        yield first, second, st, ed
+        st += window_size
 

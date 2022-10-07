@@ -12,6 +12,7 @@ from cache import load_from_pickle
 from list_lib import list_equal
 from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.chair_logging import c_log
+from trainer_v2.custom_loop.definitions import ModelConfigType
 
 
 class RunConfig:
@@ -25,7 +26,7 @@ class RunConfig:
     init_checkpoint = ""
 
 
-class ModelConfig:
+class ModelConfig(ModelConfigType):
     max_seq_length = 300
     num_classes = 3
 

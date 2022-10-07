@@ -3,21 +3,13 @@ import os
 from cpath import at_output_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.gs_uploader import upload_nli_sg_files
+from data_generator2.segmented_enc.mnli_common import mnli_encode_common
 from data_generator2.segmented_enc.seg_encoder_common import TwoSegConcatEncoder
 from data_generator2.segmented_enc.segmented_tfrecord_gen import get_encode_fn_from_encoder
-from dataset_specific.mnli.mnli_reader import MNLIReader
 from misc_lib import exist_or_mkdir
-from tf_util.record_writer_wrap import write_records_w_encode_fn
 
 
-def mnli_encode_common(encode_fn, split, output_path):
-    data_size = 400 * 1000 if split == "train" else 10000
-    reader = MNLIReader()
-    write_records_w_encode_fn(output_path, encode_fn, reader.load_split(split), data_size)
-
-
-def gen_mnli_concat_two_seg(split):
-    data_name = "nli_sg9"
+def gen_mnli_concat_two_seg(data_name, split):
     output_dir = at_output_dir("tfrecord", data_name)
     exist_or_mkdir(output_dir)
     output_path = os.path.join(output_dir, split)
@@ -28,10 +20,17 @@ def gen_mnli_concat_two_seg(split):
 
 
 def main():
+    data_name = "nli_sg9"
     for split in ["dev", "train"]:
-        gen_mnli_concat_two_seg(split)
+        gen_mnli_concat_two_seg(data_name, split)
     upload_nli_sg_files("nli_sg9")
 
 
+def main2():
+    data_name = "nli_sg9_2"
+    for split in ["dev", "train"]:
+        gen_mnli_concat_two_seg(data_name, split)
+
+
 if __name__ == "__main__":
-    main()
+    main2()

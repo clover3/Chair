@@ -1,6 +1,7 @@
 import tensorflow as tf
 from models.transformer.bert_common_v2 import get_shape_list2
 from trainer_v2.chair_logging import c_log
+import numpy as np
 
 
 def cpt_combine(local_decisions):
@@ -59,11 +60,16 @@ def cpt_combine3(local_decisions):
 
 
 def cpt_combine_var(local_decision_a, local_decision_b, mat):
+    mat_one_hot = tf.one_hot(mat, 3)  # [3, 3, 3]   axis 2 is one hot
+    t = cpt_product(local_decision_a, local_decision_b, mat_one_hot)
+    return t
+
+
+def cpt_product(local_decision_a, local_decision_b, cpt):
     left = tf.expand_dims(local_decision_a, 2)
     right = tf.expand_dims(local_decision_b, 1)
     co_prob = tf.multiply(left, right)  # [B, 3, 3]
-    mat_one_hot = tf.one_hot(mat, 3)  # [3, 3, 3]   axis 2 is one hot
-    t = tf.tensordot(co_prob, mat_one_hot, axes=[[1, 2], [0, 1]]) # [B, 3, 3]
+    t = tf.tensordot(co_prob, cpt, axes=[[1, 2], [0, 1]])  # [B, 3, 3]
     return t
 
 
@@ -72,6 +78,17 @@ def cpt_combine4(local_decisions):
                        [1, 1, 1, 2],
                        [1, 1, 1, 1],
                        [2, 2, 1, 2],
+                       ])
+    local_decision_a = local_decisions[:, 0]
+    local_decision_b = local_decisions[:, 1]  # [B, 4]
+    return cpt_combine_var(local_decision_a, local_decision_b, mat)
+
+
+def cpt_combine4_2(local_decisions):
+    mat = tf.constant([[0, 0, 1, 2],
+                       [0, 1, 2, 2],
+                       [1, 2, 1, 2],
+                       [2, 2, 2, 2],
                        ])
     local_decision_a = local_decisions[:, 0]
     local_decision_b = local_decisions[:, 1]  # [B, 4]
@@ -87,6 +104,68 @@ class MatrixCombine4(tf.keras.layers.Layer):
     def call(self, inputs, *args, **kwargs):
         return cpt_combine4(inputs)
 
+
+class MatrixCombine4_2(tf.keras.layers.Layer):
+    def call(self, inputs, *args, **kwargs):
+        return cpt_combine4_2(inputs)
+
+
+def numpy_one_hot(a, depth):
+    output = (np.arange(depth) == a[..., None]).astype(int)
+    return output
+
+
+class MatrixCombineTrainable(tf.keras.layers.Layer):
+    def __init__(self):
+        super(MatrixCombineTrainable, self).__init__()
+        init_val_dis = [[0, 1, 2],
+                        [1, 1, 2],
+                        [2, 2, 2]]
+        init_val = numpy_one_hot(np.array(init_val_dis), 3)
+        self.cpt = tf.Variable(initial_value=init_val, trainable=True, dtype=tf.float32)
+
+    def call(self, inputs, *args, **kwargs):
+        local_decisions = inputs
+        local_decision_a = local_decisions[:, 0]
+        local_decision_b = local_decisions[:, 1]  # [B, 3]
+        t = cpt_product(local_decision_a, local_decision_b, self.cpt)
+        return t
+
+
+class MatrixCombineTrainableNorm(tf.keras.layers.Layer):
+    def __init__(self):
+        super(MatrixCombineTrainableNorm, self).__init__()
+        init_val_dis = [[0, 1, 2],
+                        [1, 1, 2],
+                        [2, 2, 2]]
+        init_val = numpy_one_hot(np.array(init_val_dis), 3)
+        self.cpt = tf.Variable(initial_value=init_val, trainable=True, dtype=tf.float32)
+
+    def call(self, inputs, *args, **kwargs):
+        local_decisions = inputs
+        local_decision_a = local_decisions[:, 0]
+        local_decision_b = local_decisions[:, 1]  # [B, 3]
+        t = cpt_product(local_decision_a, local_decision_b, self.cpt)
+        d = tf.reduce_sum(t, axis=1, keepdims=True)
+        t = tf.divide(t, d)
+        return t
+
+
+class MatrixCombineTrainable0(tf.keras.layers.Layer):
+    def __init__(self):
+        super(MatrixCombineTrainable0, self).__init__()
+        shape = [3, 3, 3]
+        self.cpt = tf.Variable(tf.random_normal_initializer(0.01)(shape), trainable=True)
+
+    def call(self, inputs, *args, **kwargs):
+        local_decisions = inputs
+        eps = 1e-10
+        ld_logs = tf.math.log(local_decisions + eps)
+        ld_logs_a = ld_logs[:, 0]
+        ld_logs_b = ld_logs[:, 1]  # [B, 3]
+        t = cpt_product(ld_logs_a, ld_logs_b, self.cpt)
+        t = tf.nn.softmax(t)
+        return t
 
 
 def test_discrete():
@@ -142,5 +221,25 @@ def test_discrete4():
             print(label_a, label_b, gold_n, pred_n, gold_n == pred_n)
 
 
+def numpy_test():
+    init_val_dis = [[0, 1, 2],
+                    [1, 1, 2],
+                    [2, 2, 2]]
+    a = np.array(init_val_dis)
+    output = numpy_one_hot(a, 3)
+    print(output)
+    print(output.shape)
+
+    for i in range(3):
+        for j in range(3):
+            c = init_val_dis[i][j]
+            for k in range(3):
+                if k == c:
+                    assert output[i, j, k] == 1
+                else:
+                    assert output[i, j, k] == 0
+
+
+
 if __name__ == "__main__":
-    test_discrete4()
+    numpy_test()

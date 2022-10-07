@@ -41,7 +41,8 @@ def report_run3(func):
 
         job_id = flags.job_id if flags.job_id >= 0 else None
         try:
-            task_proxy.task_start(run_name, "", job_id)
+            msg = flags_str
+            task_proxy.task_start(run_name, msg, job_id)
         except requests.exceptions.ConnectTimeout as e:
             print(e)
 

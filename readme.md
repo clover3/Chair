@@ -7,6 +7,6 @@
 
 
 
-* conda create --name new_chair python=3.6
+* conda create --name new_chair python=3.8
 * conda activate new_chair
-* pip install -r requirement_tf12.txt
+* pip install -r requirement.txt

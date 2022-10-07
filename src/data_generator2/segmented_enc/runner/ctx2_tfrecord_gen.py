@@ -2,7 +2,7 @@ import os
 
 from cpath import at_output_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from data_generator2.segmented_enc.run_nli_tfrecord_gen import mnli_asymmetric_encode_common
+from data_generator2.segmented_enc.runner.run_nli_tfrecord_gen import mnli_asymmetric_encode_common
 from data_generator2.segmented_enc.seg_encoder_common import SingleChunkIndicatingEncoder, ChunkIndicatingEncoder
 from misc_lib import exist_or_mkdir
 from tf_util.lib.tf_funcs import show_tfrecord

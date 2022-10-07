@@ -30,11 +30,10 @@ def create_dataset_common(decode_record: Callable,
         c_log.info("{} inputs files".format(len(input_files)))
     elif len(input_files) == 0:
         c_log.error("No input files found - Maybe you dont' want this ")
+        raise FileNotFoundError(input_files)
     dataset = tf.data.TFRecordDataset(input_files, num_parallel_reads=len(input_files))
     if is_training_split:
         dataset = dataset.shuffle(config.shuffle_buffer_size)
-        # epochs = run_config.train_config.get_epochs()
-        # dataset = dataset.repeat(epochs)
         dataset = dataset.repeat()
     dataset = dataset.map(decode_record,
                           num_parallel_calls=tf.data.AUTOTUNE)

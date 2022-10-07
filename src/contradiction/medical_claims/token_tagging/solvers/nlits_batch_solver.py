@@ -6,9 +6,9 @@ from contradiction.medical_claims.token_tagging.batch_solver_common import Neura
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import flatten
 from misc_lib import average
-from trainer_v2.custom_loop.demo.demo_common import enum_hypo_token_tuple_from_tokens, EncodedSegmentIF
 from trainer_v2.custom_loop.per_task.nli_ts_helper import get_local_decision_nlits_core
-from trainer_v2.custom_loop.per_task.nli_ts_util import LocalDecisionNLICore
+from trainer_v2.custom_loop.per_task.nli_ts_util import LocalDecisionNLICore, enum_hypo_token_tuple_from_tokens, \
+    EncodedSegmentIF
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 
 

@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from typing import List, Iterable, Callable, Tuple
 
 import numpy as np
@@ -8,12 +7,7 @@ from data_generator.tokenizer_wo_tf import pretty_tokens
 from dataset_specific.mnli.mnli_reader import NLIPairData
 from list_lib import MaxKeyValue
 from misc_lib import two_digit_float
-
-
-class EncodedSegmentIF(ABC):
-    @abstractmethod
-    def get_input(self):
-        pass
+from trainer_v2.custom_loop.per_task.nli_ts_util import enum_hypo_token_tuple_from_tokens, EncodedSegmentIF
 
 
 def iterate_and_demo(
@@ -69,27 +63,6 @@ class EncodedSegment(EncodedSegmentIF):
 def enum_hypo_token_tuple(tokenizer, hypothesis, window_size) -> List[Tuple[List[str], List[str], int, int]]:
     space_tokenized_tokens = hypothesis.split()
     yield from enum_hypo_token_tuple_from_tokens(tokenizer, space_tokenized_tokens, window_size)
-
-
-def enum_hypo_token_tuple_from_tokens(tokenizer, space_tokenized_tokens, window_size, offset=0) -> \
-        List[Tuple[List[str], List[str], int, int]]:
-    st = offset
-    def sb_tokenize(tokens):
-        output = []
-        for t in tokens:
-            output.extend(tokenizer.tokenize(t))
-        return output
-
-    while st < len(space_tokenized_tokens):
-        ed = st + window_size
-        first_a = space_tokenized_tokens[:st]
-        second = space_tokenized_tokens[st:ed]
-        first_b = space_tokenized_tokens[ed:]
-
-        first = sb_tokenize(first_a) + ["[MASK]"] + sb_tokenize(first_b)
-        second = sb_tokenize(second)
-        yield first, second, st, ed
-        st += window_size
 
 
 def iter_alamri() -> Iterable[NLIPairData]:

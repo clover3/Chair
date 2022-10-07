@@ -7,7 +7,7 @@ from contradiction.medical_claims.token_tagging.batch_solver_common import BSAda
 from data_generator.tokenize_helper import TokenizedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import average
-from trainer_v2.custom_loop.demo.demo_common import EncodedSegmentIF
+from trainer_v2.custom_loop.per_task.nli_ts_util import EncodedSegmentIF
 from trainer_v2.custom_loop.per_task.nli_ms_util import LocalDecisionNLIMS, get_local_decision_nlims
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 

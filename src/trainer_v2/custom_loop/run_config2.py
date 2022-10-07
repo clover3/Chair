@@ -8,6 +8,8 @@ class SubConfig(ABC):
     def print_info(self):
         c_log.info("{}".format(self.__dict__))
 
+    def __str__(self):
+        return "{}".format(self.__dict__)
 
 class DatasetConfig(SubConfig):
     def __init__(self, train_files_path: str, eval_files_path: str,
@@ -99,6 +101,7 @@ class CommonRunConfig(SubConfig):
                  report_field="",
                  report_condition="",
                  eval_batch_size=None,
+                 job_id="",
                  ):
         self.batch_size = batch_size
         self.steps_per_execution = steps_per_execution
@@ -107,6 +110,7 @@ class CommonRunConfig(SubConfig):
         self.report_field = report_field
         self.report_condition = report_condition
         self.eval_batch_size = eval_batch_size
+        self.job_id = job_id
 
     def print_info(self):
         if self.is_debug_run:
@@ -180,6 +184,13 @@ class RunConfig2:
             if key in sub_config.__dict__:
                 return sub_config
         return None
+
+    def __str__(self):
+        s = ""
+        for sub_config in self.get_sub_configs():
+            s += "\n" + str(sub_config)
+
+        return s
 
 
 def get_run_config2_nli(args):
@@ -270,9 +281,11 @@ def get_run_config2(args):
 def load_json_wrap(args):
     try:
         config_j = json.load(open(args.config_path, "r"))
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        c_log.warning("Config not found: {}".format(e))
         config_j = {}
-    except AttributeError:
+    except AttributeError as e:
+        c_log.warning(e)
         config_j = {}
     except TypeError as e:
         c_log.warning("maybe args.config_path is not specified : {}".format(e))

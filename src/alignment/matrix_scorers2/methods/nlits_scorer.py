@@ -8,9 +8,9 @@ from contradiction.medical_claims.token_tagging.batch_solver_common import Neura
 from contradiction.medical_claims.token_tagging.solvers.nlits_batch_solver import ESTwoPiece
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import average, group_by, two_digit_float
-from trainer_v2.custom_loop.demo.demo_common import enum_hypo_token_tuple_from_tokens, EncodedSegmentIF
 from trainer_v2.custom_loop.per_task.nli_ts_helper import get_local_decision_nlits_core
-from trainer_v2.custom_loop.per_task.nli_ts_util import LocalDecisionNLICore
+from trainer_v2.custom_loop.per_task.nli_ts_util import LocalDecisionNLICore, enum_hypo_token_tuple_from_tokens, \
+    EncodedSegmentIF
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 
 
