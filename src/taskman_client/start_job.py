@@ -7,6 +7,7 @@ from taskman_client.task_proxy import get_task_proxy
 parser = argparse.ArgumentParser(description='')
 parser.add_argument("--job_id", default=-1)
 
+
 def main():
     if 'uuid' in os.environ:
         uuid_var = os.environ['uuid']

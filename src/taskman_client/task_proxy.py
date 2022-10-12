@@ -12,6 +12,9 @@ class TaskManagerProxy(RESTProxy):
         super(TaskManagerProxy, self).__init__(host, port)
 
     def task_update(self, run_name, uuid, tpu_name, machine, update_type, msg, job_id=None):
+        if run_name == "dontreport":
+            return
+
         data = {
             'run_name': run_name,
             'uuid': uuid,
@@ -23,6 +26,20 @@ class TaskManagerProxy(RESTProxy):
         if job_id is not None:
             data['job_id'] = job_id
         return self.post("/task/update", data)
+
+    def task_info_update(self, run_name, uuid, machine, msg, dict_opt=None):
+        if run_name == "dontreport":
+            return
+
+        data = {
+            'run_name': run_name,
+            'uuid': uuid,
+            'machine': machine,
+            'msg': msg
+        }
+        if dict_opt is not None:
+            data.update(dict_opt)
+        return self.post("/task/info_update", data)
 
     def task_pending(self, run_name, uuid_var, tpu_name, machine, msg):
         update_type = "PENDING"
@@ -124,23 +141,15 @@ class TaskProxy:
             self.uuid_var = uuid_var
 
     def task_pending(self, run_name, msg=None):
-        if run_name == "dontreport":
-            return
         return self.proxy.task_pending(run_name, self.uuid_var, self.tpu_name, self.machine, msg)
 
     def task_start(self, run_name, msg=None, job_id=None):
-        if run_name == "dontreport":
-            return
         return self.proxy.task_start(run_name, self.uuid_var, self.tpu_name, self.machine, msg, job_id)
 
     def task_complete(self, run_name, msg=None):
-        if run_name == "dontreport":
-            return
         return self.proxy.task_complete(run_name, self.uuid_var, self.tpu_name, self.machine, msg)
 
     def task_interrupted(self, run_name, msg=None):
-        if run_name == "dontreport":
-            return
         return self.proxy.task_interrupted(run_name, self.uuid_var, self.tpu_name, self.machine, msg)
 
     def request_tpu(self, run_name, wait=True):
@@ -159,6 +168,12 @@ class TaskProxy:
             assigned_tpu = request()
         print("Assigned tpu : ", assigned_tpu)
         return assigned_tpu
+
+    def task_info_update(self, run_name, msg=None, dict_data=None):
+        return self.proxy.task_info_update(run_name,
+                                           self.uuid_var,
+                                           self.machine, msg, dict_data)
+
 
 
 def get_local_machine_name():
