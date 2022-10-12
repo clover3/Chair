@@ -587,6 +587,13 @@ def tokenize_from_tokens(tokenizer: FullTokenizer, tokens: List[str]) -> List[st
     return output
 
 
+def sb_tokenize_w_tokenizer(tokenizer, tokens):
+    output = []
+    for t in tokens:
+        output.extend(tokenizer.tokenize(t))
+    return output
+
+
 class CachedTokenizer:
     def __init__(self, tokenizer):
         self.tokenizer = tokenizer

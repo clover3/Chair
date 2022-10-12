@@ -1,3 +1,4 @@
+import functools
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
@@ -5,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 
 from arg.qck.encode_common import encode_single
-from data_generator.tokenizer_wo_tf import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer, sb_tokenize_w_tokenizer
 from data_generator2.segmented_enc.seg_encoder_common import encode_two_segments, TwoSegConcatEncoder
 from data_generator2.segmented_enc.two_seg_by_mask import ConcatWMasInference
 from misc_lib import ceil_divide
@@ -260,15 +261,10 @@ def get_concat_mask_encoder(max_seq_length):
     return encode_two_seg_input
 
 
-
 def enum_hypo_token_tuple_from_tokens(tokenizer, space_tokenized_tokens, window_size, offset=0) -> \
         List[Tuple[List[str], List[str], int, int]]:
     st = offset
-    def sb_tokenize(tokens):
-        output = []
-        for t in tokens:
-            output.extend(tokenizer.tokenize(t))
-        return output
+    sb_tokenize = functools.partial(sb_tokenize_w_tokenizer, tokenizer)
 
     while st < len(space_tokenized_tokens):
         ed = st + window_size
@@ -279,5 +275,24 @@ def enum_hypo_token_tuple_from_tokens(tokenizer, space_tokenized_tokens, window_
         first = sb_tokenize(first_a) + ["[MASK]"] + sb_tokenize(first_b)
         second = sb_tokenize(second)
         yield first, second, st, ed
+        st += window_size
+
+
+def enum_hypo_token_wmask(sb_tokenize, space_tokenized_tokens, window_size, offset=0) -> \
+        List[Tuple[List[str], List[int], int, int]]:
+    st = offset
+
+    while st < len(space_tokenized_tokens):
+        ed = st + window_size
+        first_a = space_tokenized_tokens[:st]
+        second = space_tokenized_tokens[st:ed]
+        first_b = space_tokenized_tokens[ed:]
+
+        first_a_sb = sb_tokenize(first_a)
+        first_b_sb = sb_tokenize(first_b)
+        second_sb = sb_tokenize(second)
+        tokens = first_a_sb + second_sb + first_b_sb
+        mask = [0] * len(first_a_sb) + [1] * len(second_sb) + [0] * len(first_b_sb)
+        yield tokens, mask, st, ed
         st += window_size
 

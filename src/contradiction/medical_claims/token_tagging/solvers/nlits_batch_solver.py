@@ -1,14 +1,15 @@
+import functools
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
 from contradiction.medical_claims.token_tagging.batch_solver_common import NeuralOutput, BSAdapterIF, BatchSolver, \
     ECCOutput, ECCInput, BatchTokenScoringSolverIF
-from data_generator.tokenizer_wo_tf import get_tokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer, sb_tokenize_w_tokenizer
 from list_lib import flatten
 from misc_lib import average
 from trainer_v2.custom_loop.per_task.nli_ts_helper import get_local_decision_nlits_core
 from trainer_v2.custom_loop.per_task.nli_ts_util import LocalDecisionNLICore, enum_hypo_token_tuple_from_tokens, \
-    EncodedSegmentIF
+    EncodedSegmentIF, enum_hypo_token_wmask
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 
 
@@ -150,6 +151,13 @@ def get_batch_solver_nlits7(run_config: RunConfig2, encoder_name: str):
     return solver
 
 
+def get_batch_solver_wmask(run_config: RunConfig2, encoder_name: str, target_label: int):
+    nlits = get_local_decision_nlits_core(run_config, encoder_name)
+    adapter = NLITSAdapterWMask(nlits, AvgReducer(target_label))
+    solver = BatchSolver(adapter)
+    return solver
+
+
 class NLITSAdapter(BSAdapterIF):
     def __init__(self,
                  nlits: LocalDecisionNLICore,
@@ -215,6 +223,29 @@ class NLITSAdapter3(NLITSAdapter):
                                                                                    t2, window_size, offset):
                     x = self.nlits.encode_fn(p_tokens, h_first, h_second)
                     es = ESTwoPiece(x, t1, t2, [h_first, h_second], st, ed)
+                    es_list.append(es)
+        return es_list
+
+
+class NLITSAdapterWMask(NLITSAdapter):
+    def __init__(self,
+                 nlits: LocalDecisionNLICore,
+                 score_reducer: ScoreReducerI):
+        super(NLITSAdapterWMask, self).__init__(nlits, score_reducer)
+        self.sb_tokenize = functools.partial(sb_tokenize_w_tokenizer, self.tokenizer)
+
+    def enum_child(self, t1, t2):
+        p_tokens = list(flatten(map(self.tokenizer.tokenize, t1)))
+        n_seg = len(t2)
+        es_list = []
+        for offset in [0, 1, 2]:
+            for window_size in [1, 3, 6]:
+                if window_size >= n_seg:
+                    break
+                for h_tokens, mask, st, ed in enum_hypo_token_wmask(self.sb_tokenize,
+                                                                    t2, window_size, offset):
+                    x = self.nlits.encode_fn(p_tokens, h_tokens, mask)
+                    es = ESTwoPiece(x, t1, t2, [h_tokens, mask], st, ed)
                     es_list.append(es)
         return es_list
 

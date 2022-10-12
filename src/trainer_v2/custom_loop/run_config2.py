@@ -92,6 +92,21 @@ class EvalConfig(SubConfig):
         return EvalConfig(model_save_path=args.output_dir)
 
 
+class PredictConfig(SubConfig):
+    def __init__(self,
+                 model_save_path="saved_model_ex",
+                 ):
+        self.model_save_path = model_save_path
+
+    def print_info(self):
+        c_log.info("Model to use for predict: {}".format(self.model_save_path))
+
+    @classmethod
+    def from_args(self, args):
+        return PredictConfig(model_save_path=args.output_dir)
+
+
+
 class CommonRunConfig(SubConfig):
     def __init__(self,
                  batch_size=16,
@@ -141,18 +156,20 @@ class RunConfig2:
                  dataset_config: DatasetConfig,
                  train_config: TrainConfig=None,
                  tpu_config=None,
-                 eval_config: EvalConfig=None
+                 eval_config: EvalConfig=None,
+                 predict_config: PredictConfig=None,
                  ):
         self.common_run_config = common_run_config
         self.train_config = train_config
         self.eval_config: EvalConfig = eval_config
+        self.predict_config: PredictConfig = predict_config
         self.tpu_config = tpu_config
         self.dataset_config = dataset_config
         self.sub_configs = []
 
     def get_sub_configs(self):
         all_configs = [self.common_run_config,
-                       self.train_config, self.eval_config,
+                       self.train_config, self.eval_config, self.predict_config,
                        self.tpu_config, self.dataset_config]
         return [config for config in all_configs if config is not None]
 
@@ -192,6 +209,12 @@ class RunConfig2:
 
         return s
 
+    def get_model_path(self):
+        for config in [self.train_config, self.eval_config, self.predict_config]:
+            try:
+                return config.model_save_path
+            except AttributeError:
+                pass
 
 def get_run_config2_nli(args):
     if args.action == "train":
@@ -271,6 +294,23 @@ def get_run_config2(args):
     run_config = RunConfig2(common_run_config=common_run_config,
                             dataset_config=input_file_config,
                             eval_config=eval_config,
+                            tpu_config=tpu_config
+                            )
+
+    update_run_config(config_j, run_config)
+    return run_config
+
+
+def get_run_config_for_predict(args):
+    config_j = load_json_wrap(args)
+    common_run_config = CommonRunConfig.from_args(args)
+    input_file_config = DatasetConfig.from_args(args)
+    pred_config = PredictConfig.from_args(args)
+    tpu_config = TPUConfig.from_args(args)
+
+    run_config = RunConfig2(common_run_config=common_run_config,
+                            dataset_config=input_file_config,
+                            predict_config=pred_config,
                             tpu_config=tpu_config
                             )
 

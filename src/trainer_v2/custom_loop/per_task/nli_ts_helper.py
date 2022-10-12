@@ -33,7 +33,7 @@ def get_encode_fn(encoder_name, model) -> EncoderType:
 
 
 def get_local_decision_nlits_core(run_config: RunConfig2, encoder_name):
-    model_path = run_config.eval_config.model_save_path
+    model_path = run_config.get_model_path()
     strategy = get_strategy_from_config(run_config)
     with strategy.scope():
         c_log.debug("Loading model from {} ...".format(model_path))
@@ -49,7 +49,7 @@ def get_local_decision_nlits_core(run_config: RunConfig2, encoder_name):
 
 
 def get_local_decision_nlits_core2(run_config, encoder_name):
-    model_path = run_config.eval_config.model_save_path
+    model_path = run_config.get_model_path()
     strategy = get_strategy_from_config(run_config)
     with strategy.scope():
         c_log.debug("Loading model from {} ...".format(model_path))

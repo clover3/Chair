@@ -389,6 +389,43 @@ class TwoSegConcatEncoder(PairEncoderInterface):
         return self.encode(self.tokenizer.tokenize(text1), self.tokenizer.tokenize(text2))
 
 
+class TwoSegConcatRoleEncoder(PairEncoderInterface):
+    def __init__(self, tokenizer, total_max_seq_length):
+        segment_len = int(total_max_seq_length / 2)
+        self.segment_len = segment_len
+
+        self.tokenizer = tokenizer
+        self.counter_warning = CountWarning()
+        if total_max_seq_length % 2:
+            raise ValueError()
+
+    def encode(self, tokens1, tokens2) -> Tuple[List, List, List]:
+        st, ed = get_random_split_location(tokens2)
+        first_a = tokens2[:st]
+        first_b = tokens2[ed:]
+        first = first_a + ["[MASK]"] + first_b
+        second = tokens2[st:ed]
+
+        tokens2_first, tokens2_second = random_token_split(tokens2)
+        return self.two_seg_concat_core(tokens1, tokens2_first, tokens2_second)
+
+    def two_seg_concat_core(self, tokens1, tokens2_first, tokens2_second):
+        triplet_list = []
+        for part_of_tokens2 in [tokens2_first, tokens2_second]:
+            tokens, segment_ids = combine_with_sep_cls(self.segment_len, tokens1, part_of_tokens2)
+            if len(tokens) > self.segment_len:
+                self.counter_warning.add_warn()
+
+            triplet = get_basic_input_feature_as_list(self.tokenizer, self.segment_len,
+                                                      tokens, segment_ids)
+            triplet_list.append(triplet)
+        return concat_triplet_windows(triplet_list, self.segment_len)
+
+    def encode_from_text(self, text1, text2):
+        # returns input_ids, input_mask, segment_ids
+        return self.encode(self.tokenizer.tokenize(text1), self.tokenizer.tokenize(text2))
+
+
 class SingleChunkIndicatingEncoder(SingleEncoderInterface):
     def __init__(self, tokenizer, max_seq_length):
         self.max_seq_length = max_seq_length
