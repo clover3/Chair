@@ -6,7 +6,7 @@ from taskman_client.task_proxy import get_local_machine_name
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.per_task.nli_ts_util import get_two_seg_concat_encoder, get_two_seg_asym_encoder, \
     load_local_decision_model, LocalDecisionNLICore, load_local_decision_model_as_second_only, \
-    LocalDecisionNLICoreSecond
+    LocalDecisionNLICoreSecond, get_concat_mask_encoder
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 
@@ -23,6 +23,10 @@ def get_encode_fn(encoder_name, model) -> EncoderType:
         max_seg_length2 = model.inputs[2].shape[1]
         c_log.info("Using get_two_seg_asym_encoder")
         encode_fn: EncoderType = get_two_seg_asym_encoder(max_seg_length1, max_seg_length2, False)
+    elif encoder_name == "concat_wmask":
+        max_seg_length1 = model.inputs[0].shape[1]
+        c_log.info("Using get_two_seg_concat_encoder")
+        encode_fn: EncoderType = get_concat_mask_encoder(max_seg_length1)
     else:
         raise ValueError(encoder_name)
     return encode_fn

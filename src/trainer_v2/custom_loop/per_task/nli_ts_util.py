@@ -7,6 +7,7 @@ import tensorflow as tf
 from arg.qck.encode_common import encode_single
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.seg_encoder_common import encode_two_segments, TwoSegConcatEncoder
+from data_generator2.segmented_enc.two_seg_by_mask import ConcatWMasInference
 from misc_lib import ceil_divide
 from tlm.data_gen.base import get_basic_input_feature_as_list
 from trainer_v2.chair_logging import c_log
@@ -109,6 +110,7 @@ class LocalDecisionNLICore:
 
     def predict(self, input_list):
         batch_size = self.batch_size
+
         while len(input_list) % batch_size:
             input_list.append(input_list[-1])
 
@@ -136,7 +138,8 @@ class LocalDecisionNLICore:
         maybe_step = ceil_divide(len(input_list), batch_size)
         dataset = distribute_dataset(strategy, dataset)
         model = self.model
-        l_decision, g_decision = model.predict(dataset, steps=maybe_step)
+        verbose = 1 if maybe_step > 15 else 0
+        l_decision, g_decision = model.predict(dataset, steps=maybe_step, verbose=verbose)
         return l_decision, g_decision
 
     def predict_es(self, input_list: List[EncodedSegmentIF]):
@@ -236,6 +239,26 @@ def get_two_seg_concat_encoder(max_seq_length):
         return x
 
     return encode_two_seg_input
+
+
+def get_concat_mask_encoder(max_seq_length):
+    tokenizer = get_tokenizer()
+    encoder = ConcatWMasInference(tokenizer, max_seq_length)
+
+    begin = True
+
+    def encode_two_seg_input(p_tokens, h_tokens, mask):
+        assert max(mask) <= 1
+        triplet = encoder.encode(p_tokens, h_tokens, mask)
+        input_ids, input_mask, segment_ids = triplet
+        x = input_ids, segment_ids
+        nonlocal begin
+        if begin:
+            begin = False
+        return x
+
+    return encode_two_seg_input
+
 
 
 def enum_hypo_token_tuple_from_tokens(tokenizer, space_tokenized_tokens, window_size, offset=0) -> \

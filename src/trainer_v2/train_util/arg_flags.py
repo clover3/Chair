@@ -27,3 +27,4 @@ flags_parser.add_argument("--action", default="train")
 
 flags_parser.add_argument("--job_id", type=int, default=-1)
 flags_parser.add_argument("--run_name", default=None)
+flags_parser.add_argument("--predict_save_path", default="prediction.pickle")

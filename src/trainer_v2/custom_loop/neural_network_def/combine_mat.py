@@ -152,10 +152,13 @@ class MatrixCombineTrainableNorm(tf.keras.layers.Layer):
 
 
 class MatrixCombineTrainable0(tf.keras.layers.Layer):
-    def __init__(self):
+    def __init__(self, init_val=None):
         super(MatrixCombineTrainable0, self).__init__()
         shape = [3, 3, 3]
-        self.cpt = tf.Variable(tf.random_normal_initializer(0.01)(shape), trainable=True)
+
+        if init_val is None:
+            init_val = tf.random_normal_initializer(0.01)(shape)
+        self.cpt = tf.Variable(init_val, trainable=True, dtype=tf.float32)
 
     def call(self, inputs, *args, **kwargs):
         local_decisions = inputs
@@ -166,6 +169,7 @@ class MatrixCombineTrainable0(tf.keras.layers.Layer):
         t = cpt_product(ld_logs_a, ld_logs_b, self.cpt)
         t = tf.nn.softmax(t)
         return t
+
 
 
 def test_discrete():
