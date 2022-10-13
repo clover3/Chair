@@ -4,8 +4,7 @@ from tensorflow import keras
 from models.transformer.bert_common_v2 import get_shape_list2
 from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.custom_loop.definitions import ModelConfigType
-from trainer_v2.custom_loop.modeling_common.bert_common import load_stock_weights, define_bert_input, ModelConfig, \
-    BERT_CLS, load_bert_checkpoint
+from trainer_v2.custom_loop.modeling_common.bert_common import define_bert_input, BERT_CLS, load_bert_checkpoint
 from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import split_stack_flatten_encode_stack
 
@@ -89,6 +88,21 @@ def transform_inputs_for_ts(l_input_ids, l_token_type_ids):
     return input_ids, segment_ids
 
 
+class TransformInputsForTS(tf.keras.layers.Layer):
+    def __init__(self):
+        super(TransformInputsForTS, self).__init__()
+
+    def call(self, inputs, *args, **kwargs):
+        l_input_ids, l_token_type_ids = inputs
+        return transform_inputs_for_ts(l_input_ids, l_token_type_ids)
+
+
+def keep_seg_12(l_input_ids, l_token_type_ids):
+    keep = tf.not_equal(l_token_type_ids, 0)
+    keep_mask = tf.cast(keep, tf.int32)  # [1 if keep
+    input_ids = l_input_ids * keep_mask
+    return input_ids, l_token_type_ids
+
 
 # Variable Local Decision Combiner with Single segment input
 class SingleVarLD(ClassificationModelIF):
@@ -164,4 +178,5 @@ class BaselineNLI(ClassificationModelIF):
 
     def init_checkpoint(self, init_checkpoint):
         load_bert_checkpoint(self.bert_cls, init_checkpoint)
+
 

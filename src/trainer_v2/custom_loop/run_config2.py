@@ -11,6 +11,7 @@ class SubConfig(ABC):
     def __str__(self):
         return "{}".format(self.__dict__)
 
+
 class DatasetConfig(SubConfig):
     def __init__(self, train_files_path: str, eval_files_path: str,
                  shuffle_buffer_size=100):
@@ -104,7 +105,6 @@ class PredictConfig(SubConfig):
     @classmethod
     def from_args(self, args):
         return PredictConfig(model_save_path=args.output_dir)
-
 
 
 class CommonRunConfig(SubConfig):
@@ -268,7 +268,6 @@ def update_run_config(config_j, run_config):
 
 def _get_run_config2_nli_eval(args):
     config_j = load_json_wrap(args)
-
     common_run_config = CommonRunConfig.from_args(args)
     input_file_config = DatasetConfig.from_args(args)
     eval_config = EvalConfig.from_args(args)

@@ -14,7 +14,7 @@ def get_qid_pst(pair_no, sent_type, tag_type):
 
 
 class PerPairScores:
-    def __init__(self, per_pair_d):
+    def __init__(self, per_pair_d: Dict[Tuple[str, str], Dict[int, float]]):
         self.per_pair_d = per_pair_d
 
     def get_score_as_list(self, tag_type, sent_type):
@@ -44,7 +44,7 @@ def print_html(save_name,
     keys = list(score_grouped.keys())
     keys.sort()
 
-    problems_d: Dict[str, TextPairProblem] = index_by_fn(lambda x: x.problem_id, problems)
+    problems_d: Dict[str, TextPairProblem] = index_by_fn(lambda x: x.get_problem_id(), problems)
     html = HtmlVisualizer(save_name)
 
     for pair_no in keys:

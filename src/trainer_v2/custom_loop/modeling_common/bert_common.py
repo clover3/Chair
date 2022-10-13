@@ -114,7 +114,7 @@ def load_stock_weights_encoder_only(bert_like, ckpt_path,
     return skipped_weight_value_tuples  # (bert_weight, value_from_ckpt)
 
 
-def load_stock_weights_encoder_only(bert_like, ckpt_path,
+def load_stock_weights_bert_like(bert_like, ckpt_path,
                                     map_to_stock_fn=map_to_stock_variable_name,
                                     n_expected_restore=None,
                                     ):
