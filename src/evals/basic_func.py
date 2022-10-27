@@ -1,6 +1,10 @@
 from typing import List, Dict
 
 
+def i2b(l: List[int]) -> List[bool]:
+    return [bool(k) for k in l]
+
+
 def get_acc_prec_recall(pred: List[bool], gold: List[bool]) -> Dict:
     tp = 0
     tn = 0

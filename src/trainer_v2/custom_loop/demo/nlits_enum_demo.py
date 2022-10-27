@@ -7,7 +7,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens
 from misc_lib import two_digit_float
 from trainer_v2.custom_loop.per_task.nli_ts_helper import get_local_decision_nlits_core
 from trainer_v2.custom_loop.per_task.nli_ts_util import enum_hypo_token_tuple_from_tokens
-from trainer_v2.custom_loop.run_config2 import get_run_config2
+from trainer_v2.custom_loop.run_config2 import get_eval_run_config2
 from trainer_v2.train_util.arg_flags import flags_parser
 
 
@@ -22,7 +22,7 @@ def main(args):
         sent1, sent2 = tab_sep.split("\t")
         return sent1.split(), sent2.split()
 
-    run_config = get_run_config2(args)
+    run_config = get_eval_run_config2(args)
     run_config.print_info()
     nlits = get_local_decision_nlits_core(run_config, "concat")
     def sb_tokenize(tokens):

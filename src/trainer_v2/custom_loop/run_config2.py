@@ -1,5 +1,6 @@
 import json
 from abc import ABC
+from typing import Optional
 
 from trainer_v2.chair_logging import c_log
 
@@ -136,41 +137,47 @@ class CommonRunConfig(SubConfig):
         return CommonRunConfig(run_name=args.run_name)
 
 
-class TPUConfig(SubConfig):
-    def __init__(self, use_tpu, tpu_name):
-        self.use_tpu = use_tpu
+class DeviceConfig(SubConfig):
+    def __init__(self, use_tpu, tpu_name, force_use_gpu=False):
+        self._use_tpu = use_tpu
         self.tpu_name = tpu_name
+        self._force_use_gpu = force_use_gpu
 
     @classmethod
     def from_args(cls, args):
-        if args.use_tpu:
-            tpu_config = TPUConfig(args.use_tpu, args.tpu_name)
-        else:
-            tpu_config = None
-        return tpu_config
+        device_config = DeviceConfig(args.use_tpu, args.tpu_name)
+        return device_config
+
+    def use_tpu(self):
+        return self._use_tpu
+
+    def force_use_gpu(self):
+        return self._force_use_gpu
 
 
 class RunConfig2:
+    device_config: Optional[DeviceConfig]
+
     def __init__(self,
                  common_run_config: CommonRunConfig,
                  dataset_config: DatasetConfig,
-                 train_config: TrainConfig=None,
-                 tpu_config=None,
-                 eval_config: EvalConfig=None,
-                 predict_config: PredictConfig=None,
+                 train_config: TrainConfig = None,
+                 device_config: DeviceConfig = None,
+                 eval_config: EvalConfig = None,
+                 predict_config: PredictConfig = None,
                  ):
         self.common_run_config = common_run_config
         self.train_config = train_config
         self.eval_config: EvalConfig = eval_config
         self.predict_config: PredictConfig = predict_config
-        self.tpu_config = tpu_config
+        self.device_config = device_config
         self.dataset_config = dataset_config
         self.sub_configs = []
 
     def get_sub_configs(self):
         all_configs = [self.common_run_config,
                        self.train_config, self.eval_config, self.predict_config,
-                       self.tpu_config, self.dataset_config]
+                       self.device_config, self.dataset_config]
         return [config for config in all_configs if config is not None]
 
     def is_training(self) -> bool:
@@ -186,7 +193,7 @@ class RunConfig2:
         for sub_config in self.get_sub_configs():
             sub_config.print_info()
 
-        if self.tpu_config is not None:
+        if self.device_config.use_tpu():
             if self.common_run_config.steps_per_execution == 1 and not self.common_run_config.is_debug_run:
                 c_log.warning("Using tpu with steps_per_execution == 1")
 
@@ -216,6 +223,7 @@ class RunConfig2:
             except AttributeError:
                 pass
 
+
 def get_run_config2_nli(args):
     if args.action == "train":
         return _get_run_config2_nli_train(args)
@@ -244,12 +252,12 @@ def _get_run_config2_nli_train(args):
     )
     common_run_config = CommonRunConfig.from_args(args)
     input_file_config = DatasetConfig.from_args(args)
-    tpu_config = TPUConfig.from_args(args)
+    device_config = DeviceConfig.from_args(args)
 
     run_config = RunConfig2(common_run_config=common_run_config,
                             dataset_config=input_file_config,
                             train_config=train_config,
-                            tpu_config=tpu_config
+                            device_config=device_config
                             )
 
     update_run_config(config_j, run_config)
@@ -270,30 +278,30 @@ def _get_run_config2_nli_eval(args):
     config_j = load_json_wrap(args)
     common_run_config = CommonRunConfig.from_args(args)
     input_file_config = DatasetConfig.from_args(args)
+    device_config = DeviceConfig.from_args(args)
     eval_config = EvalConfig.from_args(args)
-    tpu_config = TPUConfig.from_args(args)
 
     run_config = RunConfig2(common_run_config=common_run_config,
                             dataset_config=input_file_config,
                             eval_config=eval_config,
-                            tpu_config=tpu_config
+                            device_config=device_config
                             )
 
     update_run_config(config_j, run_config)
     return run_config
 
 
-def get_run_config2(args):
+def get_eval_run_config2(args):
     config_j = load_json_wrap(args)
     common_run_config = CommonRunConfig.from_args(args)
     input_file_config = DatasetConfig.from_args(args)
+    device_config = DeviceConfig.from_args(args)
     eval_config = EvalConfig.from_args(args)
-    tpu_config = TPUConfig.from_args(args)
 
     run_config = RunConfig2(common_run_config=common_run_config,
                             dataset_config=input_file_config,
                             eval_config=eval_config,
-                            tpu_config=tpu_config
+                            device_config=device_config
                             )
 
     update_run_config(config_j, run_config)
@@ -305,12 +313,12 @@ def get_run_config_for_predict(args):
     common_run_config = CommonRunConfig.from_args(args)
     input_file_config = DatasetConfig.from_args(args)
     pred_config = PredictConfig.from_args(args)
-    tpu_config = TPUConfig.from_args(args)
+    device_config = DeviceConfig.from_args(args)
 
     run_config = RunConfig2(common_run_config=common_run_config,
                             dataset_config=input_file_config,
                             predict_config=pred_config,
-                            tpu_config=tpu_config
+                            device_config=device_config
                             )
 
     update_run_config(config_j, run_config)

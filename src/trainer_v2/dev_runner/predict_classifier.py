@@ -26,7 +26,7 @@ def main(args):
     run_config: RunConfigEx = get_run_config_nli_train(args)
     model_config = ModelConfig(bert_config, max_seq_length)
 
-    strategy = get_strategy(args.use_tpu, args.tpu_name)
+    strategy = get_strategy(args.use_tpu(), args.tpu_name)
     def get_model_fn():
         classifier_model, core_model = \
             bert_models.classifier_model(bert_config, model_config.num_classes, max_seq_length)

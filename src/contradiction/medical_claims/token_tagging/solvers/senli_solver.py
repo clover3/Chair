@@ -52,7 +52,6 @@ class SENLISolverAsym(TokenScoringSolverIF):
         voca_path = pjoin(data_path, "bert_voca.txt")
         self.d_encoder = EncoderUnitPlain(max_seq_length, voca_path)
 
-
     def solve(self, text1_tokens: List[str], text2_tokens: List[str]) -> Tuple[List[float], List[float]]:
         t1: SegmentedText = token_list_to_segmented_text(self.tokenizer, text1_tokens)
         t2: SegmentedText = token_list_to_segmented_text(self.tokenizer, text2_tokens)
@@ -67,6 +66,7 @@ class SENLISolverAsym(TokenScoringSolverIF):
         scores2 = merge_subtoken_level_scores(average, seg2_scores, t2)
 
         return scores1, scores2
+
 
 def get_nli_ex_19():
     hp = hyperparams.HPSENLI3()

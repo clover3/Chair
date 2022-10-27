@@ -49,7 +49,7 @@ def do_agreement_analysis(pair_d, all_annots):
             t1_len, t2_len = len(h.split(" ")), len(p.split(" "))
             _, annot1 = assn1
             _, annot2 = assn2
-            for sent_type_idx, (indices1, indices2) in enumerate(zip(annot1.enum_qtype_2Y_v_train_120000(), annot2.enum_qtype_2Y_v_train_120000())):
+            for sent_type_idx, (indices1, indices2) in enumerate(zip(annot1.enum(), annot2.enum())):
                 if target_sent_type_idx is not None:
                     if target_sent_type_idx != sent_type_idx:
                         continue
@@ -110,7 +110,7 @@ def do_virtual_prec_recall(pair_d, all_annots):
             t1_len, t2_len = len(h.split(" ")), len(p.split(" "))
             _, annot1 = assn1
             _, annot2 = assn2
-            for sent_type_idx, (indices1, indices2) in enumerate(zip(annot1.enum_qtype_2Y_v_train_120000(), annot2.enum_qtype_2Y_v_train_120000())):
+            for sent_type_idx, (indices1, indices2) in enumerate(zip(annot1.enum(), annot2.enum())):
                 if target_sent_type_idx is not None:
                     if target_sent_type_idx != sent_type_idx:
                         continue

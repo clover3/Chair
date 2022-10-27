@@ -3,7 +3,7 @@ import sys
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from trainer_v2.custom_loop.run_config2 import get_run_config2
+from trainer_v2.custom_loop.run_config2 import get_eval_run_config2
 
 
 from alignment.data_structure.matrix_scorer_if import MatrixScorerIF2
@@ -13,7 +13,7 @@ from trainer_v2.train_util.arg_flags import flags_parser
 
 
 def main(args):
-    run_config = get_run_config2(args)
+    run_config = get_eval_run_config2(args)
     run_config.print_info()
     solver: MatrixScorerIF2 = get_nlits_2dsolver(run_config, "concat")
     run_name = "nlits"

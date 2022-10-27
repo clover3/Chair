@@ -24,13 +24,44 @@ def load_annots_w_processing() -> List[AlamriLabelUnitT]:
             return parse_alamri_hit(h)
         except MTurkOutputFormatError:
             invalid.append(h)
-            print(h.worker_id, h.outputs['indices'])
+            print("MTurkOutputFormatError", h.worker_id, h.outputs['indices'])
             return None
 
     annots: List[AlamriLabelUnitT] = list(filter(None, map(parse_hit, hits_filtered)))
     print(f"{len(annots)} acquired")
     print("{} are broken".format(len(invalid)))
     trusted_worker = ['A1J1MXAI07HGUT', 'A1QE4E0WPJZGEI']
+    added_annot = []
+    for hit in invalid:
+        if hit.worker_id in trusted_worker:
+            annot = parse_hit_with_indices_fix(hit)
+            added_annot.append(annot)
+    print(f"add {len(added_annot)} annots by fixing")
+    all_annots: List[AlamriLabelUnitT] = annots + added_annot
+    return all_annots
+
+
+def load_annots_trusted() -> List[AlamriLabelUnitT]:
+    trusted_worker = ['A1J1MXAI07HGUT', 'A1QE4E0WPJZGEI']
+    hits_inc_reject = load_all_annotation_w_reject()
+    print(f"{len(hits_inc_reject)} all including rejected hits")
+    hits: List[HitResult] = load_all_annotation()
+    print(f"{len(hits)} all non-rejected hits")
+    hits_filtered = list(filter(lambda h: h.worker_id in trusted_worker, hits))
+    print(f"{len(hits_filtered)} from non-black list")
+    invalid = []
+
+    def parse_hit(h) -> AlamriLabelUnitT:
+        try:
+            return parse_alamri_hit(h)
+        except MTurkOutputFormatError:
+            invalid.append(h)
+            print("MTurkOutputFormatError", h.worker_id, h.outputs['indices'])
+            return None
+
+    annots: List[AlamriLabelUnitT] = list(filter(None, map(parse_hit, hits_filtered)))
+    print(f"{len(annots)} acquired")
+    print("{} are broken".format(len(invalid)))
     added_annot = []
     for hit in invalid:
         if hit.worker_id in trusted_worker:

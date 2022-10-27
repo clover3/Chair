@@ -26,17 +26,18 @@ class SearchSolver(TokenScoringSolverIF):
 
 
 class PartialSegSolver(TokenScoringSolverIF):
-    def __init__(self, predict_fn):
+    def __init__(self, predict_fn, target_label):
         self.predict_fn = predict_fn
         self.tokenizer = get_tokenizer()
+        self.target_label = target_label
         c_log.setLevel(logging.WARN)
 
     def solve(self, text1_tokens: List[str], text2_tokens: List[str]) -> Tuple[List[float], List[float]]:
         t1: SegmentedText = token_list_to_segmented_text(self.tokenizer, text1_tokens)
         t2: SegmentedText = token_list_to_segmented_text(self.tokenizer, text2_tokens)
 
-        scores2 = enum_small_segments(self.predict_fn, t1, t2)
-        scores1 = enum_small_segments(self.predict_fn, t2, t1)
+        scores2 = enum_small_segments(self.predict_fn, t1, t2, self.target_label)
+        scores1 = enum_small_segments(self.predict_fn, t2, t1, self.target_label)
         return scores1, scores2
 
 

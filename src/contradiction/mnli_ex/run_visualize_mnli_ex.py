@@ -1,6 +1,6 @@
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
-from contradiction.medical_claims.token_tagging.path_helper import get_sbl_qrel_path
+from contradiction.medical_claims.token_tagging.path_helper import get_sbl_vak_qrel_path
 from contradiction.medical_claims.token_tagging.problem_loader import AlamriProblem
 from contradiction.mnli_ex.load_mnli_ex_data import load_mnli_ex, MNLIExEntry
 from contradiction.mnli_ex.ranking_style_helper import get_save_path

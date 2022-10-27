@@ -216,12 +216,14 @@ def dev_get_scores_by_many_perturbations(predict_fn, t_text1, t_text2):
 
 def enum_small_segments(predict: NLIPredictorSig,
                         t1: SegmentedText,
-                        t2: SegmentedText) -> List[float]:
+                        t2: SegmentedText,
+                        target_label,
+                        ) -> List[float]:
     def get_neutral_s(seg_text: SegmentedText) -> float:
         X = [NLIInput(t1, seg_text)]
         probs_list = predict(X)
         probs = probs_list[0]
-        return probs[1] + probs[2]
+        return probs[target_label]
 
     # tokenizer = get_tokenizer()
     scores_building = [list() for _ in t2.enum_seg_idx()]

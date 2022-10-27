@@ -3,12 +3,12 @@ import sys
 from contradiction.medical_claims.token_tagging.visualizer.deletion_score_to_html import make_nli_prediction_summary_str
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from trainer_v2.custom_loop.per_task.nli_ts_helper import get_local_decision_nlits_core
-from trainer_v2.custom_loop.run_config2 import get_run_config2
+from trainer_v2.custom_loop.run_config2 import get_eval_run_config2
 from trainer_v2.train_util.arg_flags import flags_parser
 
 
 def main(args):
-    run_config = get_run_config2(args)
+    run_config = get_eval_run_config2(args)
     run_config.print_info()
     nlits = get_local_decision_nlits_core(run_config, "concat")
     tokenizer = get_tokenizer()

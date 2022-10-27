@@ -18,7 +18,7 @@ class RunConfigEx:
                  steps_per_execution=1,
                  is_training=True,
                  is_debug_run=False,
-                 tpu_config=None,
+                 device_config=None,
                  ):
         self.batch_size = batch_size
         self.eval_every_n_step = eval_every_n_step
@@ -44,7 +44,7 @@ class RunConfigEx:
 
         self.steps_per_execution = steps_per_execution
         self.is_debug_run = is_debug_run
-        self.tpu_config = tpu_config
+        self.device_config = device_config
 
     def get_epochs(self):
         return self.train_step // self.steps_per_epoch
@@ -53,7 +53,7 @@ class RunConfigEx:
         if self.is_debug_run:
             c_log.warning("DEBUGGING in use")
 
-        if self.tpu_config is not None:
+        if self.device_config.use_tpu():
             if self.steps_per_execution == 1 and self.is_debug_run:
                 c_log.warning("Using tpu with steps_per_execution == 1")
 

@@ -11,14 +11,14 @@ from data_generator.tokenize_helper import TokenizedText
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import two_digit_float
 from trainer_v2.custom_loop.per_task.nli_ms_util import get_weighted_nlims
-from trainer_v2.custom_loop.run_config2 import get_run_config2
+from trainer_v2.custom_loop.run_config2 import get_eval_run_config2
 from trainer_v2.train_util.arg_flags import flags_parser
 from visualize.html_visual import HtmlVisualizer, Cell
 from visualize.nli_visualize import get_cell_str, prob_to_color
 
 
 def main(args):
-    run_config = get_run_config2(args)
+    run_config = get_eval_run_config2(args)
     nlims = None
     problems: List[AlamriProblem] = load_alamri_problem()
     tokenizer = get_tokenizer()

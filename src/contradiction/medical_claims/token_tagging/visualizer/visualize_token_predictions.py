@@ -3,7 +3,7 @@ from typing import List, Dict, Tuple
 
 from alignment.base_ds import TextPairProblem
 from alignment.data_structure.related_eval_instance import TextPair
-from contradiction.medical_claims.token_tagging.path_helper import get_sbl_qrel_path
+from contradiction.medical_claims.token_tagging.path_helper import get_sbl_vak_qrel_path
 from contradiction.medical_claims.token_tagging.problem_loader import AlamriProblem, load_alamri_problem
 from contradiction.token_visualize import print_html, PerPairScores
 from cpath import output_path
@@ -47,7 +47,7 @@ def alamri_to_text_pair(p: AlamriProblem) -> TextPairProblem:
 
 # tfrecord/bert_alamri1.pickle
 def main():
-    run_name = "nlits95"
+    run_name = "psearch"
     tag_type = "mismatch"
 
 
@@ -56,7 +56,7 @@ def main():
     text_pairs: List[TextPairProblem] = list(map(alamri_to_text_pair, problems))
     ranked_list_path = os.path.join(output_path, "alamri_annotation1", "ranked_list",
                                     "{}_{}.txt".format(run_name, tag_type))
-    qrel: QRelsDict = load_qrels_structured(get_sbl_qrel_path())
+    qrel: QRelsDict = load_qrels_structured(get_sbl_vak_qrel_path())
     ranked_list = load_ranked_list(ranked_list_path)
     save_name = "{}_{}.html".format(run_name, tag_type)
     score_grouped: Dict[str, PerPairScores] = collect_scores(ranked_list)

@@ -15,7 +15,6 @@ solver_factory_d = {
 
 
 def nli_baseline_predict(problems: List[MNLIExEntry], explain_tag, method_name):
-
     solver: MNLIExSolver = solver_factory_d[method_name]()
     pred_list: List[Tuple[TokenScores, TokenScores]] = solver.explain(problems, explain_tag)
     return pred_list

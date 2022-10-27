@@ -81,6 +81,7 @@ def parse_alamri_hit(h: HitResult) -> AlamriLabelUnitT:
     inst = (group_no, inst_no), annot
     return inst
 
+
 def parse_hit_with_indices_fix(h):
     indices_str = h.outputs['indices']
     segs = indices_str.split(",")
@@ -89,6 +90,7 @@ def parse_hit_with_indices_fix(h):
 
     fixed_indices_str = "," + indices_str
     group_no, inst_no = parse_url(h.inputs['url'])
+    print("Fix ", group_no, inst_no)
     annot: PairedIndicesLabel = parse_indices(fixed_indices_str)
     inst = (group_no, inst_no), annot
     return inst

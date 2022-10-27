@@ -5,7 +5,7 @@ from tensorflow.python.eager import context
 from tensorflow.python.framework import ops
 
 from trainer_v2.custom_loop.run_config2 import RunConfig2
-from trainer_v2.train_util.get_tpu_strategy import get_strategy
+from trainer_v2.train_util.get_tpu_strategy import get_strategy, get_strategy2
 
 
 def fetch_metric_result(metrics: Dict[str, tf.keras.metrics.Metric]):
@@ -16,10 +16,15 @@ def fetch_metric_result(metrics: Dict[str, tf.keras.metrics.Metric]):
 
 
 def get_strategy_from_config(run_config: RunConfig2):
-    if run_config.tpu_config is not None:
-        return get_strategy(run_config.tpu_config.use_tpu, run_config.tpu_config.tpu_name)
+    if run_config.device_config is not None:
+        device_config = run_config.device_config
+        return get_strategy2(
+            device_config.use_tpu(),
+            device_config.tpu_name,
+            device_config.force_use_gpu()
+        )
     else:
-        return get_strategy(False, "")
+        return get_strategy2(False, "")
 
 
 def eval_tensor(tensor):

@@ -2,7 +2,8 @@ from typing import List, Tuple
 
 # TODO load trec_qrel
 from cache import save_list_to_jsonl_w_fn
-from contradiction.medical_claims.token_tagging.acc_eval.label_loaders import SentTokenLabel
+from contradiction.medical_claims.token_tagging.path_helper import get_sbl_qrel_path, get_sbl_binary_label_path
+from contradiction.token_tagging.acc_eval.label_loaders import SentTokenLabel
 from contradiction.medical_claims.token_tagging.problem_loader import load_alamri_problem
 from trec.qrel_parse import load_qrels_flat_per_query
 from trec.types import DocID
@@ -27,8 +28,7 @@ def convert_qrel_to_acc(judgment_path, tag):
                     try:
                         label_arr[int(doc_id)] = label
                     except IndexError:
-                        print("{} it has {} tokens but got {}".format(text, n_tokens, doc_id))
-                print(qid, label_arr)
+                        print("text has {} tokens but got {}".format(n_tokens, doc_id))
                 parsed_labels.append(SentTokenLabel(qid, label_arr))
             except KeyError:
                 pass
@@ -36,10 +36,12 @@ def convert_qrel_to_acc(judgment_path, tag):
 
 
 def main():
-    judge_path = "C:\\work\\Code\\Chair\\output\\alamri_annotation1\\label\\sbl.qrel.test"
-    parsed_labels = convert_qrel_to_acc(judge_path, "mismatch")
-    save_path = "C:\\work\\Code\\Chair\\output\\alamri_annotation1\\label\\sbl.test.jsonl"
-    save_list_to_jsonl_w_fn(parsed_labels, save_path, SentTokenLabel.to_json)
+    for split in ["val", "test"]:
+        for tag in ["conflict", "mismatch"]:
+                qrel_path = get_sbl_qrel_path(split)
+                parsed_labels = convert_qrel_to_acc(qrel_path, tag)
+                save_path = get_sbl_binary_label_path(tag, split)
+                save_list_to_jsonl_w_fn(parsed_labels, save_path, SentTokenLabel.to_json)
 
 
 if __name__ == "__main__":

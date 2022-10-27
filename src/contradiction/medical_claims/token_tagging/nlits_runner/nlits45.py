@@ -4,7 +4,7 @@ from typing import List
 
 from contradiction.medical_claims.token_tagging.solvers.nlits_batch_solver import get_batch_solver_nlits
 from taskman_client.wrapper3 import report_run3
-from trainer_v2.custom_loop.run_config2 import get_run_config2, RunConfig2
+from trainer_v2.custom_loop.run_config2 import get_eval_run_config2, RunConfig2
 from trainer_v2.train_util.arg_flags import flags_parser
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -28,7 +28,7 @@ def run_nlits_solver(run_config: RunConfig2, tag_type, target_label: int):
 def main(args):
     tag_type = "mismatch"
     target_label = NEUTRAL
-    run_config = get_run_config2(args)
+    run_config = get_eval_run_config2(args)
     run_nlits_solver(run_config, tag_type, target_label)
 
 

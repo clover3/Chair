@@ -25,12 +25,25 @@ def device_list_summary(device_list):
 def get_strategy(use_tpu, tpu_name=None):
     if use_tpu:
         strategy = get_tpu_strategy_inner(tpu_name)
-        # tpu_devices = tf.config.list_logical_devices('TPU')
-        # c_log.info("{} TPU devices found".format(len(tpu_devices)))
     else:
         c_log.debug("use_tpu={}".format(use_tpu))
         strategy = tf.distribute.MultiWorkerMirroredStrategy()
         c_log.info(device_list_summary(tf.config.list_logical_devices('GPU')))
+        atexit.register(strategy._extended._cross_device_ops._pool.close)  # type: ignore
+        atexit.register(strategy._extended._host_cross_device_ops._pool.close)  # type: ignore
+    return strategy
+
+
+def get_strategy2(use_tpu, tpu_name=None, force_use_gpu=False):
+    if use_tpu:
+        strategy = get_tpu_strategy_inner(tpu_name)
+    else:
+        c_log.debug("use_tpu={}".format(use_tpu))
+        strategy = tf.distribute.MultiWorkerMirroredStrategy()
+        gpu_devices = tf.config.list_logical_devices('GPU')
+        if force_use_gpu and not gpu_devices:
+            raise Exception("GPU devices not found")
+        c_log.info(device_list_summary(gpu_devices))
         atexit.register(strategy._extended._cross_device_ops._pool.close)  # type: ignore
         atexit.register(strategy._extended._host_cross_device_ops._pool.close)  # type: ignore
     return strategy

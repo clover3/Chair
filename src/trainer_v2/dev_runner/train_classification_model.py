@@ -105,7 +105,7 @@ def get_define_model_fn(model_config, run_config) -> Callable:
 
 def main(args):
     c_log.info("main {}".format(args))
-    strategy = get_strategy(args.use_tpu, args.tpu_name)
+    strategy = get_strategy(args.use_tpu(), args.tpu_name)
     input_files = parse_input_files(args.input_files)
     bert_config = BertConfig.from_json_file(get_bert_config_path())
     # max_seq_length = 300
