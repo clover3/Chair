@@ -32,3 +32,13 @@ def get_encode_fn_from_encoder(encoder: PairEncoderInterface):
         return features
 
     return entry_encode
+
+
+def encode_triplet(triplet, label: int):
+    features = OrderedDict()
+    input_ids, input_mask, segment_ids = triplet
+    features["input_ids"] = create_int_feature(input_ids)
+    features["input_mask"] = create_int_feature(input_mask)
+    features["segment_ids"] = create_int_feature(segment_ids)
+    features['label_ids'] = create_int_feature([label])
+    return features

@@ -97,3 +97,13 @@ def get_canonical_model_path(name):
     exist_or_mkdir(run_dir)
     exist_or_mkdir(save_dir)
     return save_dir
+
+
+def get_canonical_model_path2(name, sub_dir):
+    run_dir = os.path.join(common_model_dir_root, 'runs')
+    save_dir = os.path.join(run_dir, name, sub_dir)
+
+    exist_or_mkdir(common_model_dir_root)
+    exist_or_mkdir(run_dir)
+    exist_or_mkdir(save_dir)
+    return save_dir

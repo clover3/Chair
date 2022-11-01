@@ -2,11 +2,11 @@ import tensorflow as tf
 from tensorflow import keras
 
 from trainer_v2.bert_for_tf2 import BertModelLayer
-from trainer_v2.custom_loop.modeling_common.bert_common import BERT_CLS, ModelConfig
+from trainer_v2.custom_loop.modeling_common.bert_common import BERT_CLS, ModelConfig300
 
 
 class BERT_AssymetricDebug:
-    def __init__(self, bert_params, config: ModelConfig):
+    def __init__(self, bert_params, config: ModelConfig300):
         def build_bert_cls(prefix):
             l_bert = BertModelLayer.from_params(bert_params, name="{}/bert".format(prefix))
             pooler = tf.keras.layers.Dense(bert_params.hidden_size, activation=tf.nn.tanh, name="{}/bert/pooler/dense".format(prefix))

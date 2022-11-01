@@ -26,7 +26,7 @@ class RunConfig:
     init_checkpoint = ""
 
 
-class ModelConfig(ModelConfigType):
+class ModelConfig300(ModelConfigType):
     max_seq_length = 300
     num_classes = 3
 
@@ -42,7 +42,7 @@ class BERT_CLS(NamedTuple):
 
 
 class BertClassifier:
-    def __init__(self, bert_params, config: ModelConfig):
+    def __init__(self, bert_params, config: ModelConfig300):
         l_bert = BertModelLayer.from_params(bert_params, name="bert")
         max_seq_len = config.max_seq_length
         num_classes = config.num_classes

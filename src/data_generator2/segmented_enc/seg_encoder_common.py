@@ -56,6 +56,22 @@ class SingleEncoder(SingleEncoderInterface):
         return self.encode(self.tokenizer.tokenize(text))
 
 
+class BasicConcatEncoder(PairEncoderInterface):
+    def __init__(self, tokenizer, max_seq_length):
+        self.max_seq_length = max_seq_length
+        self.tokenizer = tokenizer
+        self.counter_warning = CountWarning()
+
+    def encode(self, tokens1, tokens2) -> Tuple[List, List, List]:
+        tokens, segment_ids = combine_with_sep_cls(self.max_seq_length, tokens1, tokens2)
+        triplet = get_basic_input_feature_as_list(self.tokenizer, self.max_seq_length, tokens, segment_ids)
+        return triplet
+
+    def encode_from_text(self, text1, text2) -> Tuple[List, List, List]:
+        # returns input_ids, input_mask, segment_ids
+        return self.encode(self.tokenizer.tokenize(text1), self.tokenizer.tokenize(text2))
+
+
 def encode_two_segments(tokenizer, segment_len, first, second):
     all_input_ids: List[int] = []
     all_input_mask: List[int] = []
@@ -372,7 +388,7 @@ class TwoSegConcatEncoder(PairEncoderInterface):
         tokens2_first, tokens2_second = random_token_split(tokens2)
         return self.two_seg_concat_core(tokens1, tokens2_first, tokens2_second)
 
-    def two_seg_concat_core(self, tokens1, tokens2_first, tokens2_second):
+    def two_seg_concat_core(self, tokens1, tokens2_first, tokens2_second) -> Tuple[List, List, List]:
         triplet_list = []
         for part_of_tokens2 in [tokens2_first, tokens2_second]:
             tokens, segment_ids = combine_with_sep_cls(self.segment_len, tokens1, part_of_tokens2)
@@ -384,7 +400,7 @@ class TwoSegConcatEncoder(PairEncoderInterface):
             triplet_list.append(triplet)
         return concat_triplet_windows(triplet_list, self.segment_len)
 
-    def encode_from_text(self, text1, text2):
+    def encode_from_text(self, text1, text2) -> Tuple[List, List, List]:
         # returns input_ids, input_mask, segment_ids
         return self.encode(self.tokenizer.tokenize(text1), self.tokenizer.tokenize(text2))
 

@@ -234,7 +234,8 @@ def tf_run_eval(run_config: RunConfig2,
     with strategy.scope():
         c_log.debug("Loading model")
         model_path = run_config.eval_config.model_save_path
-        model = tf.saved_model.load(model_path)
+        # model = tf.saved_model.load(model_path)
+        model = tf.keras.models.load_model(model_path)
         trainer.build_model()
         trainer.set_keras_model(model)
         loss_metric = tf.keras.metrics.Mean(name='loss')

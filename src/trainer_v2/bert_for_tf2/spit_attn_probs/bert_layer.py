@@ -6,7 +6,10 @@
 
 from __future__ import absolute_import, division, print_function
 
+from typing import NamedTuple
+
 import params_flow as pf
+import tensorflow as tf
 from bert.embeddings import BertEmbeddingsLayer
 from bert.layer import Layer
 from tensorflow import keras
@@ -75,3 +78,12 @@ class BertModelLayerSAP(Layer):
                                                training=training)
         return output, attention_probs_list   # [B, seq_len, hidden_size]
 
+
+class BertClsSAP(NamedTuple):
+    l_bert: tf.keras.layers.Layer
+    pooler: tf.keras.layers.Dense
+
+    def apply(self, inputs):
+        seq_out, attn_probs = self.l_bert(inputs)
+        cls = self.pooler(seq_out[:, 0, :])
+        return cls
