@@ -1,7 +1,8 @@
 import os
 
+from alignment import RelatedEvalInstance
 from bert_api.segmented_instance.segmented_text import word_segment_w_indices
-from cache import save_list_to_jsonl
+from cache import save_list_to_jsonl, save_list_to_jsonl_w_fn
 from cpath import output_path
 from epath import job_man_dir
 from misc_lib import split_window
@@ -32,7 +33,7 @@ def token_level():
     raw_prediction_path = os.path.join(output_path, "qtype", "MMDE_dev_mmd_Z.score")
     items = build_eval_instances(info_path, raw_prediction_path, word_segment_w_indices, 1000)
     save_path = os.path.join(output_path, "qtype", "MMDE_dev_word_problems.json")
-    save_list_to_jsonl(items, save_path)
+    save_list_to_jsonl_w_fn(items, save_path, RelatedEvalInstance.to_json)
 
 
 def split_problem():
@@ -49,4 +50,5 @@ if __name__ == "__main__":
     # main_small()
     # print("Building for larger set")
     # main()
-    split_problem()
+    # split_problem()
+    token_level()

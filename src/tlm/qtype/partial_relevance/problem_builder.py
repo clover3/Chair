@@ -43,7 +43,7 @@ def build_eval_instances(info_path,
         text2 = SegmentedText(d_tokens_ids, seg2_indices)
         si = SegmentedInstance(text1, text2)
         problem_id = "{}-{}".format(query_id, doc_id)
-        rei = RelatedEvalInstance(problem_id, query_info, si, score.tolist())
+        rei = RelatedEvalInstance(problem_id, si, score.tolist())
         assert 1 >= score >= 0
         all_items.append(rei)
     return all_items

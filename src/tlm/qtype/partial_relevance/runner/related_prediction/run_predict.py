@@ -1,7 +1,7 @@
 import sys
 from typing import List
 
-from alignment.data_structure import MatrixScorerIF
+from alignment import MatrixScorerIF
 from alignment.data_structure.eval_data_structure import Alignment2D
 from alignment.data_structure.related_eval_instance import RelatedEvalInstance
 from alignment.matrix_scorers.attn_based.attn_gradient_scorer import AttentionGradientScorer
