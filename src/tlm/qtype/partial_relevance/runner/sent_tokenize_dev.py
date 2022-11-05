@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-# import nltk
+import nltk
 
 from data_generator.tokenizer_wo_tf import pretty_tokens, get_tokenizer
 from list_lib import flatten

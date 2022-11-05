@@ -116,10 +116,9 @@ class TaskManagerProxy(RESTProxy):
         r = self.post("/task/sub_job_done_and_pool_job", data)
         return r['job_id']
 
-    def sub_job_update(self, job_name, machine, update_type, msg, job_id=None):
+    def sub_job_update(self, job_name, machine, update_type, msg, job_id):
         data = {
             'job_name': job_name,
-            'uuid': uuid,
             'machine': machine,
             'update_type': update_type,
             'msg': msg
@@ -127,6 +126,15 @@ class TaskManagerProxy(RESTProxy):
         if job_id is not None:
             data['job_id'] = job_id
         return self.post("/task/sub_job_update", data)
+
+    def cancel_allocation(self, job_name, job_id):
+        data = {
+            'job_name': job_name,
+            'job_id': job_id
+        }
+        r = self.post("/task/cancel_allocation", data)
+        return r['job_id']
+
 
 
 class TaskProxy:

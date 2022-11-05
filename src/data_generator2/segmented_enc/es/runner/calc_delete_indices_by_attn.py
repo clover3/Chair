@@ -4,8 +4,8 @@ from data_generator2.segmented_enc.es.path_helper import get_evidence_selected0_
 from dataset_specific.mnli.mnli_reader import MNLIReader
 from misc_lib import TimeEstimator
 from trainer_v2.custom_loop.attention_helper.attention_extractor import AttentionExtractor
-from trainer_v2.custom_loop.attention_helper.evidence_selector_0 import get_delete_indices, \
-    SegmentedPair2
+from trainer_v2.custom_loop.attention_helper.evidence_selector_0 import get_delete_indices
+from data_generator2.segmented_enc.es.common import PHSegmentedPair
 from trainer_v2.custom_loop.attention_helper.model_shortcut import load_nli14_attention_extractor
 from trainer_v2.custom_loop.attention_helper.runner.attn_reasonable import enum_segmentations
 import numpy as np
@@ -40,9 +40,9 @@ def do_for_split(attn_extractor, split):
             attn_score: np.array = res[i]
             delete_indices_list = get_delete_indices(attn_score, e)
 
-            e_out = SegmentedPair2(e.p_tokens, e.h_tokens, e.st, e.ed,
-                                   delete_indices_list[0], delete_indices_list[1],
-                                   e.nli_pair)
+            e_out = PHSegmentedPair(e.p_tokens, e.h_tokens, e.st, e.ed,
+                                    delete_indices_list[0], delete_indices_list[1],
+                                    e.nli_pair)
             output.append(e_out)
             ticker.tick()
     save_path = get_evidence_selected0_path(split)

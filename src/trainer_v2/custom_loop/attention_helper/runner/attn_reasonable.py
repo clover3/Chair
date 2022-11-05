@@ -4,17 +4,18 @@ from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens
 from data_generator2.segmented_enc.seg_encoder_common import get_random_split_location
 from dataset_specific.mnli.mnli_reader import MNLIReader, NLIPairData
 from trainer_v2.custom_loop.attention_helper.attention_extractor import AttentionExtractor, AttentionScoresDetailed
-from trainer_v2.custom_loop.attention_helper.evidence_selector_0 import SegmentedPair, get_delete_indices
+from trainer_v2.custom_loop.attention_helper.evidence_selector_0 import get_delete_indices
+from data_generator2.segmented_enc.es.common import HSegmentedPair
 from trainer_v2.custom_loop.attention_helper.model_shortcut import load_nli14_attention_extractor
 
 
-def enum_segmentations(nli_pair_iter: Iterable[NLIPairData]) -> List[SegmentedPair]:
+def enum_segmentations(nli_pair_iter: Iterable[NLIPairData]) -> List[HSegmentedPair]:
     tokenizer = get_tokenizer()
     for item in nli_pair_iter:
         p_tokens = tokenizer.tokenize(item.premise)
         h_tokens = tokenizer.tokenize(item.hypothesis)
         st, ed = get_random_split_location(h_tokens)
-        yield SegmentedPair(p_tokens, h_tokens, st, ed, item)
+        yield HSegmentedPair(p_tokens, h_tokens, st, ed, item)
 
 
 def main():

@@ -1,4 +1,5 @@
 import os
+import signal
 import sys
 import time
 from typing import Callable, Any
@@ -27,6 +28,12 @@ class JobRunnerS:
         self.worker_time_limit = worker_time_limit
         self.st = time.time()
         exist_or_mkdir(self.out_path)
+        self.last_job_id = None
+        signal.signal(signal.SIGTERM, self.sig_term_handler)
+
+    def sig_term_handler(self, *args):
+        if self.last_job_id is not None:
+            self.cancel_allocation(self.last_job_id)
 
     def start(self):
         if len(sys.argv) == 1:
@@ -35,10 +42,14 @@ class JobRunnerS:
             self.run_one_job()
 
     def pool_job(self) -> int:
-        return self.task_manager_proxy.pool_job(self.job_name, self.max_job, self.machine)
+        new_job_id = self.task_manager_proxy.pool_job(self.job_name, self.max_job, self.machine)
+        self.last_job_id = new_job_id
+        return new_job_id
 
     def report_done_and_pool_job(self, job_id) -> int:
-        return self.task_manager_proxy.report_done_and_pool_job(self.job_name, self.max_job, self.machine, job_id)
+        new_job_id = self.task_manager_proxy.report_done_and_pool_job(self.job_name, self.max_job, self.machine, job_id)
+        self.last_job_id = new_job_id
+        return new_job_id
 
     def auto_runner(self):
         worker = self.worker_factory(self.out_path)
@@ -51,7 +62,7 @@ class JobRunnerS:
             except Exception as e:
                 update_type = "ERROR"
                 msg = str(e)
-                self.task_manager_proxy.sub_job_update(self.job_name, self.max_job, update_type, msg)
+                self.task_manager_proxy.sub_job_update(self.job_name, self.max_job, update_type, msg, job_id)
                 if not self.keep_on_exception:
                     raise
             n_job_done += 1
@@ -70,6 +81,11 @@ class JobRunnerS:
                     halt_run = True
 
         return halt_run
+
+    def cancel_allocation(self, job_id):
+        ret = self.task_manager_proxy.cancel_allocation(self.job_name, job_id)
+        print("cancel allocation", ret)
+
 
     def run_one_job(self):
         worker = self.worker_factory(self.out_path)

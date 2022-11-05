@@ -69,6 +69,34 @@ def get_classification_dataset(file_path,
                                  file_path, is_for_training)
 
 
+def get_sequence_labeling_dataset(file_path,
+                                  run_config: RunConfig2,
+                                  model_config: ModelConfigType,
+                                  is_for_training,
+                                  ) -> tf.data.Dataset:
+    seq_length = model_config.max_seq_length
+
+    def select_data_from_record(record):
+        for k, v in record.items():
+            record[k] = tf.cast(v, tf.int32)
+        entry = (record['input_ids'], record['segment_ids']), record['label_ids']
+        return entry
+
+    def decode_record(record):
+        name_to_features = {
+            'input_ids': tf.io.FixedLenFeature([seq_length], tf.int64),
+            'input_mask': tf.io.FixedLenFeature([seq_length], tf.int64),
+            'segment_ids': tf.io.FixedLenFeature([seq_length], tf.int64),
+            'label_ids': tf.io.FixedLenFeature([seq_length], tf.int64),
+        }
+        record = tf.io.parse_single_example(record, name_to_features)
+        return select_data_from_record(record)
+
+    return create_dataset_common(decode_record, run_config,
+                                 file_path, is_for_training)
+
+
+
 ModelConfig2SegT = TypeVar('ModelConfig2SegT', bound=ModelConfig2Seg)
 
 

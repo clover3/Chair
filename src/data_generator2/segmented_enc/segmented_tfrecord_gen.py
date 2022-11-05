@@ -42,3 +42,12 @@ def encode_triplet(triplet, label: int):
     features["segment_ids"] = create_int_feature(segment_ids)
     features['label_ids'] = create_int_feature([label])
     return features
+
+
+def encode_seq_prediction(input_ids, input_mask, segment_ids, label_ids):
+    features = OrderedDict()
+    features["input_ids"] = create_int_feature(input_ids)
+    features["input_mask"] = create_int_feature(input_mask)
+    features["segment_ids"] = create_int_feature(segment_ids)
+    features['label_ids'] = create_int_feature(label_ids)
+    return features

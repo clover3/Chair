@@ -97,15 +97,19 @@ class EvalConfig(SubConfig):
 class PredictConfig(SubConfig):
     def __init__(self,
                  model_save_path="saved_model_ex",
+                 predict_save_path="output.pickle"
                  ):
         self.model_save_path = model_save_path
+        self.predict_save_path = predict_save_path
 
     def print_info(self):
         c_log.info("Model to use for predict: {}".format(self.model_save_path))
 
     @classmethod
     def from_args(self, args):
-        return PredictConfig(model_save_path=args.output_dir)
+
+        return PredictConfig(model_save_path=args.output_dir,
+                             predict_save_path=args.predict_save_path)
 
 
 class CommonRunConfig(SubConfig):

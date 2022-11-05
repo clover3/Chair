@@ -3,7 +3,7 @@ from typing import List
 
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from bert_api.segmented_instance.segmented_text import SegmentedText, word_segment_w_indices
-from cache import save_list_to_jsonl
+from cache import save_list_to_jsonl, save_list_to_jsonl_w_fn
 from cpath import output_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from alignment.data_structure.related_eval_instance import RelatedEvalInstance
@@ -20,7 +20,7 @@ def reform_segment_to_word_level(tokenizer, segment: SegmentedInstance) -> Segme
 
 def reform_rei(tokenizer, rei: RelatedEvalInstance) -> RelatedEvalInstance:
     new_seg = reform_segment_to_word_level(tokenizer, rei.seg_instance)
-    return RelatedEvalInstance(rei.problem_id, rei.query_info, new_seg, rei.score)
+    return RelatedEvalInstance(rei.problem_id, new_seg, rei.score)
 
 
 def do_for_dataset(source_dataset, out_name):
@@ -28,7 +28,7 @@ def do_for_dataset(source_dataset, out_name):
     tokenizer = get_tokenizer()
     new_problems: List[RelatedEvalInstance] = [reform_rei(tokenizer, p) for p in problems]
     save_path = os.path.join(output_path, "qtype", "MMDE_{}_problems.json".format(out_name))
-    save_list_to_jsonl(new_problems, save_path)
+    save_list_to_jsonl_w_fn(new_problems, save_path, RelatedEvalInstance.to_json)
 
 
 def main():

@@ -27,6 +27,26 @@ def split_stack_flatten_encode_stack(encoder, input_list,
     return rep_stacked
 
 
+def split_stack_flatten_encode_sequence(encoder, input_list,
+                                        total_seq_length, window_length):
+    num_window = int(total_seq_length / window_length)
+    assert total_seq_length % window_length == 0
+    batch_size, _ = get_shape_list2(input_list[0])
+
+    def r3to2(arr):
+        return tf.reshape(arr, [batch_size * num_window, window_length])
+
+    input_list_stacked = split_stack_input(input_list, total_seq_length, window_length)
+    input_list_flatten = list(map(r3to2, input_list_stacked))  # [batch_size * num_window, window_length]
+    rep_flatten = encoder(input_list_flatten)  # [batch_size * num_window, dim]
+    _, _, rep_dim = get_shape_list2(rep_flatten)
+
+    rep4d = tf.reshape(rep_flatten, [batch_size, num_window, -1, rep_dim])
+    rep3d = tf.reshape(rep_flatten, [batch_size, -1, rep_dim])
+    return rep3d
+
+
+
 class StackedInputMapper(tf.keras.layers.Layer):
     def __init__(self, encoder, total_seq_length, window_length):
         super(StackedInputMapper, self).__init__()

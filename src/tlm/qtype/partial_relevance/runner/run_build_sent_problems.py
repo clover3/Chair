@@ -3,7 +3,7 @@ from typing import Callable, List
 
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from bert_api.segmented_instance.segmented_text import word_segment_w_indices
-from cache import save_list_to_jsonl
+from cache import save_list_to_jsonl_w_fn
 from cpath import output_path
 from epath import job_man_dir
 from alignment.data_structure.related_eval_instance import RelatedEvalInstance
@@ -27,14 +27,13 @@ def build():
         if score >= 0.5:
             new_p = RelatedEvalInstance(
                 old_p.problem_id,
-                old_p.query_info,
                 old_p.seg_instance,
                 score)
             new_items.append(new_p)
 
     print("{} sentences -> {} problems".format(len(problems_wo_scores), len(new_items)))
     save_path = os.path.join(output_path, "qtype", "MMDE_dev_sent_problems.json")
-    save_list_to_jsonl(new_items, save_path)
+    save_list_to_jsonl_w_fn(new_items, save_path, RelatedEvalInstance.to_json)
 
 
 def main():

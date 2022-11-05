@@ -83,7 +83,7 @@ def build_sentence_as_doc(info_path,
             si = SegmentedInstance(text1, text2)
             problem_id = "{}-{}-{}".format(query_id, doc_id, sent_idx)
             dummy_score = 0
-            rei = RelatedEvalInstance(problem_id, query_info, si, dummy_score)
+            rei = RelatedEvalInstance(problem_id, si, dummy_score)
             all_items.append(rei)
     return all_items
 

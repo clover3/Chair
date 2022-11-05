@@ -1,4 +1,6 @@
 from typing import List, Tuple, Dict
+
+from alignment.data_structure.matrix_scorer_if import ContributionSummary
 from list_lib import left
 from misc_lib import get_second
 from data_generator.tokenizer_wo_tf import JoinEncoder
@@ -6,7 +8,6 @@ from data_generator.tokenizer_wo_tf import JoinEncoder
 from bert_api.segmented_instance.seg_instance import SegmentedInstance
 from bert_api.bert_masking_common import BERTMaskIF
 
-from alignment.data_structure import ContributionSummary
 
 
 def indices_to_mask_dict(indices: List[Tuple[int, int]]) -> Dict[Tuple[int, int], int]:

@@ -1,57 +1,11 @@
-from typing import NamedTuple, List
+from typing import List
 
 import numpy as np
 
-from dataset_specific.mnli.mnli_reader import NLIPairData
-from list_lib import list_equal
+from data_generator2.segmented_enc.es.common import HSegmentedPair
 
 
-class SegmentedPair(NamedTuple):
-    p_tokens: List[str]
-    h_tokens: List[str]
-    st: int
-    ed: int
-    nli_pair: NLIPairData
-
-    def get_first_h_tokens(self):
-        return self.h_tokens[:self.st], self.h_tokens[self.ed:]
-
-    def get_first_h_tokens_w_mask(self):
-        return self.h_tokens[:self.st] + ["[MASK]"] + self.h_tokens[self.ed:]
-
-    def get_second_h_tokens(self):
-        return self.h_tokens[self.st: self.ed]
-
-
-class SegmentedPair2(NamedTuple):
-    p_tokens: List[str]
-    h_tokens: List[str]
-    h_st: int
-    h_ed: int
-    p_del_indices1: List[int]
-    p_del_indices2: List[int]
-    nli_pair: NLIPairData
-
-    def get_partial_prem(self, segment_idx: int) -> List[str]:
-        assert segment_idx == 0 or segment_idx == 1
-
-        p_tokens_new = list(self.p_tokens)
-        del_indices = [self.p_del_indices1, self.p_del_indices2][segment_idx]
-        for i in del_indices:
-            p_tokens_new[i] = "[MASK]"
-        return p_tokens_new
-
-    def get_partial_hypo(self, segment_idx: int) -> List[str]:
-        if segment_idx == 0:
-            return self.h_tokens[:self.h_st] + ["[MASK]"] + self.h_tokens[self.h_ed:]
-        elif segment_idx == 1:
-            return self.h_tokens[self.h_st: self.h_ed]
-        else:
-            raise Exception()
-
-
-
-def get_delete_indices(attn_merged, e: SegmentedPair) -> List[List[int]]:
+def get_delete_indices(attn_merged, e: HSegmentedPair) -> List[List[int]]:
     """
     Select indices to delete, in the order of smaller attention weights.
     :param attn_merged: np.array, [seq_len, seq_len]
@@ -65,10 +19,6 @@ def get_delete_indices(attn_merged, e: SegmentedPair) -> List[List[int]]:
     h_split_st = h_st + e.st
     h_split_ed = h_st + e.ed
     h_ed = h_st + len(e.h_tokens)
-    # assert list_equal(tokens_all[p_st: p_ed], e.p_tokens)
-    # assert list_equal(tokens_all[h_st: h_ed], e.h_tokens)
-    # assert list_equal(tokens_all[h_st: h_split_st], e.h_tokens[:e.st])
-    # assert list_equal(tokens_all[h_split_st: h_split_ed], e.h_tokens[e.st: e.ed])
     h_part1_from = np.concatenate([attn_merged[p_st:p_ed, h_st: h_split_st],
                                    attn_merged[p_st:p_ed, h_split_ed: h_ed]],
                                   axis=1)
