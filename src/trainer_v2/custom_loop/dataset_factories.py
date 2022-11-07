@@ -96,7 +96,6 @@ def get_sequence_labeling_dataset(file_path,
                                  file_path, is_for_training)
 
 
-
 ModelConfig2SegT = TypeVar('ModelConfig2SegT', bound=ModelConfig2Seg)
 
 

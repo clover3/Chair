@@ -2,6 +2,7 @@ from typing import Dict
 
 import tensorflow as tf
 
+from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
 from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
@@ -9,7 +10,7 @@ from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.trainer_if import TrainerIF
 
 
-class Trainer(TrainerIF):
+class TrainerCopyVer(TrainerIF):
     def __init__(self, bert_params, model_config,
                  run_config: RunConfig2,
                  inner_model: ClassificationModelIF):
@@ -46,7 +47,11 @@ class Trainer(TrainerIF):
         self.loss_fn_inner = tf.keras.losses.SparseCategoricalCrossentropy(reduction=tf.keras.losses.Reduction.NONE)
 
     def set_keras_model(self, model):
-        self.keras_model = model
+        self.inner_model.build_model(self.bert_params, self.model_config)
+        c_log.info("Build model again")
+        self.inner_model.get_keras_model().set_weights(model.get_weights())
+        c_log.info("Copying weights from src")
+        self.keras_model = self.inner_model
 
     def loss_fn(self, labels, predictions):
         per_example_loss = self.loss_fn_inner(labels, predictions)
@@ -80,5 +85,3 @@ class Trainer(TrainerIF):
             self.inner_model.callback({'step': self.optimizer.iterations})
         except AttributeError:
             pass
-
-

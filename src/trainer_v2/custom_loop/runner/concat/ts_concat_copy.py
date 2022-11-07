@@ -8,7 +8,8 @@ from trainer_v2.custom_loop.definitions import ModelConfigType
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import FuzzyLogicLayerSingle
 from trainer_v2.custom_loop.neural_network_def.two_seg_concat import TwoSegConcat2
-from trainer_v2.custom_loop.per_task.trainer import Trainer, TrainerCopyVer
+from trainer_v2.custom_loop.per_task.trainer import Trainer
+from trainer_v2.custom_loop.per_task.trainer_copy import TrainerCopyVer
 from trainer_v2.custom_loop.run_config2 import get_run_config2_nli, RunConfig2
 from trainer_v2.custom_loop.train_loop import tf_run
 from trainer_v2.custom_loop.trainer_if import TrainerIF

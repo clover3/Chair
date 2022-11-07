@@ -16,6 +16,22 @@ class EvidencePair(NamedTuple):
         return len(self.p_del_indices1) == 0 and len(self.p_del_indices2) == 0
 
 
+def get_st_ed(segment_ids):
+    seg2_start = None
+    seg2_end = None
+    for i, t in enumerate(segment_ids):
+        if segment_ids[i] == 1 and seg2_start is None:
+            seg2_start = i
+        elif segment_ids[i] == 0 and seg2_start is not None:
+            seg2_end = i
+            break
+    if seg2_start is None:
+        seg2_start = len(segment_ids)
+    if seg2_end is None:
+        seg2_end = len(segment_ids)
+    return seg2_start, seg2_end
+
+
 class PHSegmentedPairParser:
     def __init__(self, segment_len):
         self.segment_len = segment_len
@@ -31,21 +47,6 @@ class PHSegmentedPairParser:
 
         input_ids2 = input_ids[self.segment_len:]
         segment_ids2 = segment_ids[self.segment_len:]
-
-        def get_st_ed(segment_ids):
-            seg2_start = None
-            seg2_end = None
-            for i in range(self.segment_len):
-                if segment_ids[i] == 1 and seg2_start is None:
-                    seg2_start = i
-                elif segment_ids[i] == 0 and seg2_start is not None:
-                    seg2_end = i
-                    break
-            if seg2_start is None:
-                seg2_start = self.segment_len
-            if seg2_end is None:
-                seg2_end = self.segment_len
-            return seg2_start, seg2_end
 
         def split(input_ids, segment_ids):
             seg2_start, seg2_end = get_st_ed(segment_ids)

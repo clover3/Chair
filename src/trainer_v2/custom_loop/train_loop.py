@@ -91,8 +91,9 @@ def tf_run_train(run_config: RunConfig2,
     c_log.debug("tf_run_inner initializing dataset")
     train_dataset = dataset_factory(run_config.dataset_config.train_files_path, True)
     eval_dataset = dataset_factory(run_config.dataset_config.eval_files_path, False)
-    eval_batches = distribute_dataset(strategy, eval_dataset)
+    print(train_dataset)
     dist_train_dataset = distribute_dataset(strategy, train_dataset)
+    eval_batches = distribute_dataset(strategy, eval_dataset)
     #
     c_log.debug("Building models")
     with strategy.scope():
