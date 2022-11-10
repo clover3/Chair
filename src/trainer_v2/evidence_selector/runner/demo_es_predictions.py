@@ -37,24 +37,36 @@ def main(args):
             probs_1 = true_probs[:segment_len]
             probs_2 = true_probs[segment_len:]
             probs_i = [probs_1, probs_2]
+            print()
             print("p_tokens:", ids_to_text(tokenizer, pair.p_tokens))
             for prem_i in [0, 1]:
                 h_tokens = [pair.h1, pair.h2][prem_i]
                 print("h{}_tokens: {}".format(prem_i, ids_to_text(tokenizer, h_tokens)))
                 p_scores = probs_i[prem_i][1: 1 + len(pair.p_tokens)]
                 other_scores = probs_i[prem_i][1 + len(pair.p_tokens):]
-                del_indices = np.argsort(p_scores)
-                n_del = int(len(p_scores) * 0.8)
-                p_tokens_del = list(pair.p_tokens)
-                for i in del_indices[:n_del]:
-                    p_tokens_del[i] = MASK_ID
+                p_tokens = pair.p_tokens
+                # p_tokens_del = delete_low80(MASK_ID, p_scores, p_tokens)
+                p_tokens_del = list(p_tokens)
+
+                for idx, s in enumerate(p_scores):
+                    if s < 0.5:
+                        p_tokens_del[idx] = MASK_ID
                 print("p{}: {}".format(prem_i, ids_to_text(tokenizer, p_tokens_del)))
-                print(" ".join(map(two_digit_float, p_scores)))
+                # print(" ".join(map(two_digit_float, p_scores)))
 
 
 
         break
     pass
+
+
+def delete_low80(MASK_ID, p_scores, p_tokens):
+    del_indices = np.argsort(p_scores)
+    n_del = int(len(p_scores) * 0.8)
+    p_tokens_del = list(p_tokens)
+    for i in del_indices[:n_del]:
+        p_tokens_del[i] = MASK_ID
+    return p_tokens_del
 
 
 if __name__ == "__main__":

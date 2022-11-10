@@ -1,7 +1,7 @@
 import sys
 
 from bert_api.predictor_v2 import Predictor
-from rpc.bert_like_server import BertLikeServer
+from rpc.bert_like_server import RPCServerWrap
 from tf_v2_support import disable_eager_execution
 
 PORT_UKP = 8123
@@ -14,7 +14,7 @@ def run_server(model_path):
         sout = predictor.predict(payload)
         return sout
 
-    server = BertLikeServer(predict)
+    server = RPCServerWrap(predict)
     print("server started")
     server.start(PORT_UKP)
 

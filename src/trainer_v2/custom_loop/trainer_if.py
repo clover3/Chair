@@ -40,3 +40,7 @@ class TrainerIF(ABC):
     @abstractmethod
     def train_callback(self):
         pass
+
+    @abstractmethod
+    def get_eval_object(self, batches, strategy):
+        pass

@@ -2,7 +2,7 @@
 import sys
 import traceback
 
-from rpc.bert_like_server import BertLikeServer
+from rpc.bert_like_server import RPCServerWrap
 from tlm.next_sent.preditor import Predictor
 
 PORT = 8123
@@ -21,7 +21,7 @@ def run_server(model_path):
             print(e)
         return []
 
-    server = BertLikeServer(predict)
+    server = RPCServerWrap(predict)
     print("server started")
     server.start(PORT)
 

@@ -1,8 +1,11 @@
 import os
+import time
 import warnings
 from typing import Tuple, Dict, Callable, List
 
 import tensorflow as tf
+
+from misc_lib import ceil_divide
 from trainer_v2.chair_logging import c_log, IgnoreFilter
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
 from trainer_v2.custom_loop.run_config2 import RunConfig2
@@ -27,34 +30,39 @@ def tf_run_predict(run_config: RunConfig2,
     return prediction
 
 
+# Example : src/trainer_v2/evidence_selector/runner/run_pep_server.py
 class InferenceHelper:
-    def __init__(self, model, strategy, batch_size=16):
-        self.model = model
+    def __init__(self,
+                 model_factory,
+                 dataset_factory,
+                 strategy, batch_size=16):
         self.batch_size = batch_size
         self.strategy = strategy
+        self.dataset_factory = dataset_factory
+        with strategy.scope():
+            self.model = model_factory()
 
-    def predict(self, dataset):
+    def predict(self, payload: List):
+        st = time.time()
+        dataset = self.dataset_factory(payload)
+        def reform(*x):
+            return x,
+
+        dataset = dataset.map(reform)
+        dataset = dataset.batch(self.batch_size)
+
         if self.strategy is not None:
             dataset = distribute_dataset(self.strategy, dataset)
-        model = self.model
-        output = model.predict(dataset)
-        if self.strategy is not None:
-            output = self.strategy.reduce(output)
+        dataset_len = len(payload)
+        maybe_step = ceil_divide(dataset_len, self.batch_size)
+        verbose = 1 if maybe_step > 15 else 0
+        output = self.model.predict(dataset, steps=maybe_step, verbose=verbose)
+
+        # if self.strategy is not None:
+        #     output = self.strategy.reduce(output)
+        ed = time.time()
+        print("Took {0:2f} for {1} items".format(ed-st, len(payload)))
         return output
-
-    def enum_batch_prediction(self, dataset):
-        if self.strategy is not None:
-            dataset = distribute_dataset(self.strategy, dataset)
-
-        @tf.function
-        def dist_pred(batch):
-            return self.model(batch)
-
-        for batch in dataset:
-            x, y = batch
-            output = self.strategy.run(dist_pred, (x,))
-            x = self.strategy.gather(x, axis=0)
-            yield x, output
 
 
 class InferenceHelperSimple:
@@ -67,3 +75,7 @@ class InferenceHelperSimple:
             x, y = batch
             output = self.model.predict_on_batch(x)
             yield x, output
+
+
+
+

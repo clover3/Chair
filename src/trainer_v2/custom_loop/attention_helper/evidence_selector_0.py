@@ -2,8 +2,9 @@ from typing import List
 
 import numpy as np
 
-from data_generator2.segmented_enc.es.common import HSegmentedPair
+from data_generator2.segmented_enc.es.common import HSegmentedPair, PHSegmentedPair
 
+SegmentedPair2 = PHSegmentedPair
 
 def get_delete_indices(attn_merged, e: HSegmentedPair) -> List[List[int]]:
     """

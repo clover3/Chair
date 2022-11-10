@@ -2,7 +2,7 @@
 import cpath
 import port_info
 from cpath import output_path
-from rpc.bert_like_server import BertLikeServer
+from rpc.bert_like_server import RPCServerWrap
 from tf_v2_support import disable_eager_execution
 from tlm.model_cnfig import JsonConfig
 from tlm.qtype.model_server.qde_server import Predictor
@@ -30,7 +30,7 @@ def run_server():
     def predict(payload):
         return predictor.predict(payload)
 
-    server = BertLikeServer(predict)
+    server = RPCServerWrap(predict)
     print("server started with port {}".format(port_info.QDE_PORT))
     server.start(port_info.QDE_PORT)
 

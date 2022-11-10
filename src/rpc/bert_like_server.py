@@ -3,7 +3,7 @@ from xmlrpc.server import SimpleXMLRPCRequestHandler
 from xmlrpc.server import SimpleXMLRPCServer
 
 
-class BertLikeServer:
+class RPCServerWrap:
     def __init__(self, predict_fn):
         self.predict_fn = predict_fn
 

@@ -2,7 +2,7 @@ import cpath
 import port_info
 from cpath import output_path
 from models.transformer.bert_common_v2 import create_initializer
-from rpc.bert_like_server import BertLikeServer
+from rpc.bert_like_server import RPCServerWrap
 from tf_v2_support import disable_eager_execution
 from tf_v2_support import placeholder
 from tlm.model.dual_model_common import dual_model_prefix1, dual_model_prefix2
@@ -147,7 +147,7 @@ def run_server():
     def predict(payload):
         return predictor.predict(payload)
 
-    server = BertLikeServer(predict)
+    server = RPCServerWrap(predict)
     print("server started with port {}".format(port_info.QDE_PORT))
     server.start(port_info.QDE_PORT)
 

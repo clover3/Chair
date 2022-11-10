@@ -2,7 +2,7 @@ import cpath
 import tlm.model.base as bert
 from cpath import output_path
 from models.transformer import hyperparams
-from rpc.bert_like_server import BertLikeServer
+from rpc.bert_like_server import RPCServerWrap
 from tf_v2_support import disable_eager_execution
 from tf_v2_support import placeholder
 from trainer.tf_module import *
@@ -116,7 +116,7 @@ def run_server():
         sout = predictor.predict(payload)
         return sout
 
-    server = BertLikeServer(predict)
+    server = RPCServerWrap(predict)
     print("server started")
     server.start(8123)
 

@@ -1,3 +1,4 @@
+import os
 import sys
 import tensorflow as tf
 from cpath import get_bert_config_path
@@ -10,8 +11,7 @@ from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
 from trainer_v2.custom_loop.modeling_common.network_utils import split_stack_input
 from trainer_v2.custom_loop.neural_network_def.seq_pred import SeqPrediction
 from trainer_v2.custom_loop.per_task.rl_trainer import PolicyGradientTrainer
-from trainer_v2.evidence_selector.enviroment import dummy_environment
-from trainer_v2.reinforce.monte_carlo_policy_function import SA
+from trainer_v2.evidence_selector.enviroment import PEPEnvironment
 from trainer_v2.evidence_selector.seq_pred_policy_gradient import SeqPredREINFORCE
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2_nli
 from trainer_v2.custom_loop.train_loop import tf_run
@@ -52,14 +52,17 @@ def main(args):
 
     model_config = ModelConfig300_2()
     task_model = SeqPrediction()
-    environment: Callable[[List[SA]], List[float]] = dummy_environment
+    server = "localhost"
+    if "PEP_SERVER" in os.environ:
+        server = os.environ["PEP_SERVER"]
+    c_log.info("PEP_SERVER: {}".format(server))
+    pep_env = PEPEnvironment(server)
     run_config: RunConfig2 = get_run_config2_nli(args)
     run_config.print_info()
     window_length = model_config.max_seq_length
-
     reinforce = SeqPredREINFORCE(window_length, build_state_dataset,
                                  run_config.common_run_config.batch_size,
-                                 environment
+                                 pep_env.get_item_results,
                                  )
 
     trainer: PolicyGradientTrainer = PolicyGradientTrainer(bert_params,

@@ -854,8 +854,20 @@ class RecentCounter:
             return True
 
 
-
 def warn_value_one_of(split, expected_value_list):
     if split not in expected_value_list:
         msg = ", ".join(map(str, expected_value_list))
         print("Only following values are expected: {}".format(msg))
+
+
+def tensor_to_list(t):
+    try:
+        t = t.numpy()
+    except AttributeError:
+        pass
+
+    try:
+        t = t.tolist()
+    except AttributeError:
+        pass
+    return t

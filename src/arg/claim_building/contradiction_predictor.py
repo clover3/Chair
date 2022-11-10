@@ -3,7 +3,7 @@ import sys
 from data_generator.shared_setting import BertNLI
 from explain.nli_ex_predictor import NLIExPredictor
 from models.transformer import hyperparams
-from rpc.bert_like_server import BertLikeServer
+from rpc.bert_like_server import RPCServerWrap
 
 PORT_CONFLICT_EX = 8122
 
@@ -23,7 +23,7 @@ def run_server(model_path):
         ex_logits = ex_logits.tolist()
         return list(zip(sout, ex_logits))
 
-    server = BertLikeServer(predict)
+    server = RPCServerWrap(predict)
     print("server started")
     server.start(PORT_CONFLICT_EX)
 

@@ -33,23 +33,23 @@ SA = Tuple[State, Action]
 
 
 def monte_carlo_explore(
-        environment: Callable[[List[SA]], List[float]],
+        get_reward: Callable[[List[SA]], List[float]],
         policy_function: PolicyFunction,
         state_list: List[RLStateI]) -> List[Tuple[SA, List[SA], float, List[float]]]:
     # y is not used
     # Sample y_s
-    c_log.info("monte_carlo_explore")
-    pk = PromiseKeeper(environment)
+    c_log.debug("monte_carlo_explore")
+    pk = PromiseKeeper(get_reward)
 
     def get_reward_future(sa: Tuple[State, Action]) -> MyFuture:
         return MyPromise(sa, pk).future()
 
     batch_size = len(state_list)
-    c_log.info(" - Computing mean actions")
+    c_log.debug(" - Computing mean actions")
     y_hat: List[Action] = policy_function.get_mean_action(state_list)
-    c_log.info(" - Sampling actions")
+    c_log.debug(" - Sampling actions")
     y_s_list: List[List[Action]] = policy_function.sample_actions(state_list)
-    c_log.info(" - building action candidates")
+    c_log.debug(" - building action candidates")
     e_list = []
     for i in range(batch_size):
         x = state_list[i]
@@ -59,9 +59,9 @@ def monte_carlo_explore(
         rf_list = [get_reward_future(sa) for sa in sa_list]
         e = sa, sa_list, reward_future, rf_list
         e_list.append(e)
-    c_log.info(" - Running action candidates")
+    c_log.debug(" - Running action candidates")
     pk.do_duty()
-    c_log.info("monte_carlo_explore DONE")
+    c_log.debug("monte_carlo_explore DONE")
 
     def unpack_future(e: Tuple[SA, List[SA], MyFuture, List[MyFuture]]):
         sa, sa_list, reward_future, rf_list = e

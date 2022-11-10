@@ -4,8 +4,6 @@ import warnings
 from typing import Tuple, Dict, Callable, List
 
 import tensorflow as tf
-from tensorflow.python.distribute.distribute_lib import Strategy
-
 from cpath import get_bert_config_path
 from misc_lib import RecentCounter
 from taskman_client.task_proxy import get_task_manager_proxy
@@ -26,59 +24,6 @@ def distributed_train_step(strategy, train_step_fn, dist_inputs: Tuple):
     return loss
 
 
-class EvalObject:
-    def __init__(self, model, eval_batches, dist_strategy: Strategy,
-                 loss_fn,
-                 eval_metrics,
-                 eval_steps=10):
-        self.loss = tf.keras.metrics.Mean(name='dev_loss')
-        self.metrics: Dict[str, tf.keras.metrics.Metric] = eval_metrics
-        self.eval_batches = eval_batches
-        self.model = model
-        self.dist_strategy: Strategy = dist_strategy
-        self.loss_fn = loss_fn
-        self.eval_steps = eval_steps
-
-    @tf.function
-    def eval_fn(self, item):
-        x, y = item
-        prediction = self.model(x, training=False)
-        loss = self.loss_fn(y, prediction)
-        self.loss.update_state(loss)
-        pred = tf.argmax(prediction, axis=1)
-        for m in self.metrics.values():
-            m.update_state(y, pred)
-
-    def do_eval(self):
-        for m in self.metrics.values():
-            m.reset_state()
-
-        max_step = sum(1 for _ in self.eval_batches)
-
-        if self.eval_steps >= 0:
-            slice_step = self.eval_steps
-        else:
-            slice_step = max_step
-
-        # print("Max_step {}".format(max_step))
-        # eval_batches = itertools.islice(self.eval_batches, slice_step)
-        # print("type(eval_batches)", type(eval_batches))
-        # cnt = 0
-        # for idx, e_batch in enumerate(eval_batches):
-        #     args = (e_batch, )
-        #     per_replica = self.dist_strategy.run(self.eval_fn, args=args)
-        #     cnt += 1
-        # print("do_eval {} steps".format(cnt))
-        iterator = iter(self.eval_batches)
-        for idx in range(slice_step):
-            args = next(iterator),
-            per_replica = self.dist_strategy.run(self.eval_fn, args=args)
-
-        eval_loss = self.loss.result().numpy()
-        metrics = self.metrics
-        metric_res = fetch_metric_result(metrics)
-        return eval_loss, metric_res
-
 
 def tf_run_train(run_config: RunConfig2,
                  trainer: TrainerIF,
@@ -91,7 +36,6 @@ def tf_run_train(run_config: RunConfig2,
     c_log.debug("tf_run_inner initializing dataset")
     train_dataset = dataset_factory(run_config.dataset_config.train_files_path, True)
     eval_dataset = dataset_factory(run_config.dataset_config.eval_files_path, False)
-    print(train_dataset)
     dist_train_dataset = distribute_dataset(strategy, train_dataset)
     eval_batches = distribute_dataset(strategy, eval_dataset)
     #
@@ -100,11 +44,7 @@ def tf_run_train(run_config: RunConfig2,
         trainer.build_model()
         model = trainer.get_keras_model()
         c_log.debug("Initializing eval object")
-        eval_object = EvalObject(model,
-                                 eval_batches,
-                                 strategy,
-                                 trainer.loss_fn,
-                                 trainer.get_eval_metrics())
+        eval_object = trainer.get_eval_object(eval_batches, strategy)
 
         train_itr = iter(dist_train_dataset)
 

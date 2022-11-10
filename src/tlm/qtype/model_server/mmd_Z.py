@@ -1,6 +1,6 @@
 from cpath import output_path
 from port_info import MMD_Z_PORT
-from rpc.bert_like_server import BertLikeServer
+from rpc.bert_like_server import RPCServerWrap
 from tf_v2_support import disable_eager_execution
 from tlm.qtype.model_server.mmd_server import PredictorClsDense
 from trainer.tf_module import *
@@ -19,7 +19,7 @@ def run_server():
         sout = predictor.predict(payload)
         return sout
 
-    server = BertLikeServer(predict)
+    server = RPCServerWrap(predict)
     print("server started")
     server.start(MMD_Z_PORT)
 

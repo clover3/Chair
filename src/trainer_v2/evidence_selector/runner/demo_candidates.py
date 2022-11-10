@@ -8,6 +8,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
 from misc_lib import two_digit_float
 from trainer_v2.custom_loop.dataset_factories import get_classification_dataset
 from trainer_v2.custom_loop.definitions import ModelConfig600_3
+from trainer_v2.custom_loop.inference import InferenceHelperSimple
 from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model
 from trainer_v2.custom_loop.run_config2 import get_run_config_for_predict
 from trainer_v2.evidence_selector.calc_candidate_evidences import EvidenceCompare
@@ -31,7 +32,7 @@ def main(args):
         return get_classification_dataset(input_files, run_config, ModelConfig600_3(), is_for_training)
 
     parser = PHSegmentedPairParser(300)
-    evidence_compare = EvidenceCompare(model, parser)
+    evidence_compare = EvidenceCompare(parser)
     predict_dataset = build_dataset(run_config.dataset_config.eval_files_path, False)
     tokenizer = get_tokenizer()
 
@@ -41,10 +42,14 @@ def main(args):
         tolerance = 0.05
         return max(tolerance, err) + tolerance * (num_tokens / max_num_tokens)
 
-    for group in evidence_compare.enum_grouped(predict_dataset):
+    inference = InferenceHelperSimple(model)
+    batch_prediction_enum = inference.enum_batch_prediction(predict_dataset)
+
+    for group in evidence_compare.enum_grouped(batch_prediction_enum):
         base_item: ScoredEvidencePair = group[0]
         base_pair = base_item.pair
         base_pair: EvidencePair = base_pair
+        print("\n")
         print("Prem: ", ids_to_text(tokenizer, base_pair.p_tokens))
         # print("Hypo1: ", ids_to_text(tokenizer, base_pair.h1))
         # print("Hypo2: ", ids_to_text(tokenizer, base_pair.h2))
@@ -54,7 +59,7 @@ def main(args):
         for prem_i in [0, 1]:
             print("Hypo{}: {}".format(prem_i+1, ids_to_text(tokenizer, [base_pair.h1, base_pair.h2][prem_i])))
             print("Prem {}".format(prem_i+1))
-            print(base_l_y[prem_i])
+            print("Local label", base_l_y[prem_i])
 
             def evidence_score(item: ScoredEvidencePair) -> float:
                 pair = item.pair

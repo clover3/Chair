@@ -1,25 +1,15 @@
 import os
 import pickle
-from typing import List, Callable, Iterable, Dict, Tuple, NamedTuple, OrderedDict, Iterator
+from typing import List, Callable, OrderedDict, Iterator
 
 from cpath import output_path
 from data_generator2.segmented_enc.es.common import get_evidence_pred_encode_fn
 from epath import job_man_dir
 from misc_lib import exist_or_mkdir
 from tf_util.record_writer_wrap import write_records_w_encode_fn
+from trainer_v2.evidence_selector.evidence_scoring import cross_entropy, length_loss
 from trainer_v2.evidence_selector.evidence_candidates import ScoredEvidencePair, EvidencePair
 import numpy as np
-
-
-def cross_entropy(pred_prob, gold_prob) -> float:
-    eps = 0.0000001
-    v = - pred_prob * np.log(gold_prob) - (1-pred_prob) * np.log(1 - gold_prob + eps)
-    return float(np.sum(v))
-
-
-def length_loss(num_del_tokens, max_num_tokens):
-    num_tokens = max_num_tokens - num_del_tokens
-    return num_tokens / max_num_tokens
 
 
 def iter_all_candidate_grouped() -> Iterator[List[ScoredEvidencePair]]:
@@ -32,6 +22,8 @@ def iter_all_candidate_grouped() -> Iterator[List[ScoredEvidencePair]]:
             yield from records_valid
         except FileNotFoundError as e:
             print("Skip Job {}".format(job_id))
+
+
 
 
 def get_train_item(prediction_loss, group: List[ScoredEvidencePair]) -> EvidencePair:

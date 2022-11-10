@@ -1,7 +1,7 @@
 import sys
 
 from bert_api.predictor import Predictor
-from rpc.bert_like_server import BertLikeServer
+from rpc.bert_like_server import RPCServerWrap
 
 PORT_CONFLICT_EX = 8122
 
@@ -13,7 +13,7 @@ def run_server(model_path):
         sout = predictor.predict(payload)
         return sout
 
-    server = BertLikeServer(predict)
+    server = RPCServerWrap(predict)
     print("server started")
     server.start(PORT_CONFLICT_EX)
 
