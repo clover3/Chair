@@ -1,9 +1,6 @@
 from collections import defaultdict
 from typing import List, Dict
-
-from alignment.ists_eval.eval_helper import load_ists_predictions
 from dataset_specific.ists.parse import AlignmentLabelUnit, AlignmentPredictionList
-from dataset_specific.ists.path_helper import load_ists_label
 from misc_lib import get_f1
 
 
@@ -26,8 +23,8 @@ def count_fanout(sub_align: list[AlignmentLabelUnit]) -> float:
 
 class AlignmentIndexed:
     def __init__(self, edge12, edge21, alu_list):
-        self.edge12 = edge12
-        self.edge21 = edge21
+        self.edge12: Dict[int, Dict[int, str]] = edge12
+        self.edge21: Dict[int, Dict[int, str]] = edge21
         self.alu_list = alu_list
 
     @classmethod
@@ -51,8 +48,8 @@ def jaccard_set(l1: List[str], l2: List[str]):
 
 
 def get_align_dict(sub_align: List[AlignmentLabelUnit]):
-    edge12: Dict[int, Dict[int, List[str]]] = defaultdict(dict)
-    edge21: Dict[int, Dict[int, List[str]]] = defaultdict(dict)
+    edge12: Dict[int, Dict[int, str]] = defaultdict(dict)
+    edge21: Dict[int, Dict[int, str]] = defaultdict(dict)
     for align in sub_align:
         tokens1 = align.chunk_text1.split()
         tokens2 = align.chunk_text2.split()
@@ -214,15 +211,3 @@ def calc_f1(gold: AlignmentPredictionList,
         'recall': recall,
         'f1': f1,
     }
-
-
-def main():
-    pred: AlignmentPredictionList = load_ists_predictions("headlines", "train", "em")
-    gold: AlignmentPredictionList = load_ists_label("headlines", "train")
-    for mode in ["", "type", "score"]:
-        scores = calc_f1(gold, pred, mode)
-        print(scores)
-
-
-if __name__ == "__main__":
-    main()

@@ -1,5 +1,5 @@
 from alignment.data_structure.matrix_scorer_if import MatrixScorerIF2
-from alignment.ists_eval.eval_helper import solve_and_save_eval_mini, solve_and_save_eval_ht
+from alignment.ists_eval.matrix_eval_helper import solve_and_save_eval_mini, solve_and_save_eval_ht
 from alignment.ists_eval.eval_utils import score_matrix_to_alignment_by_threshold
 from alignment.matrix_scorers2.methods.probe_scorer import get_probe_solver
 

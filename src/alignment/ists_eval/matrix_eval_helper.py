@@ -46,7 +46,6 @@ def solve_and_save_eval_mini50(solver: MatrixScorerIF2,
     solve_and_save_eval_part(n_problem, run_name, score_matrix_to_alignment_fn, solver)
 
 
-
 def solve_and_save_eval_part(n_problem, run_name, score_matrix_to_alignment_fn, solver):
     genre = "headlines"
     split = "train"

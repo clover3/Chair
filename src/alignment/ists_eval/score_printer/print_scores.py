@@ -1,4 +1,4 @@
-from alignment.ists_eval.eval_helper import load_ists_predictions
+from alignment.ists_eval.matrix_eval_helper import load_ists_predictions
 from alignment.ists_eval.f1_calc import calc_f1
 from dataset_specific.ists.parse import AlignmentPredictionList
 from dataset_specific.ists.path_helper import load_ists_label

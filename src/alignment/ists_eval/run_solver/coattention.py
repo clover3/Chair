@@ -1,4 +1,4 @@
-from alignment.ists_eval.eval_helper import solve_and_save_eval_headlines_2d
+from alignment.ists_eval.matrix_eval_helper import solve_and_save_eval_headlines_2d
 from alignment.matrix_scorers2.methods.coattention_solver import get_co_attention_solver
 
 
