@@ -1,4 +1,4 @@
-from alignment.ists_eval.chunked_eval import ISTSChunkedSolver
+from alignment.ists_eval.chunked_eval import ISTSChunkedSolver, ISTSChunkedSolverNB
 from alignment.ists_eval.chunked_solver.solver_common import get_similarity_table
 from alignment.ists_eval.eval_utils import score_matrix_to_alignment_by_rank
 from dataset_specific.ists.parse import iSTSProblemWChunk, AlignmentPrediction
@@ -6,10 +6,7 @@ from typing import List
 from list_lib import lmap
 
 
-class ExactMatchSolver(ISTSChunkedSolver):
-    def batch_solve(self, problems: List[iSTSProblemWChunk]) -> List[AlignmentPrediction]:
-        return lmap(self.solve_one, problems)
-
+class ExactMatchSolver(ISTSChunkedSolverNB):
     def solve_one(self, problem: iSTSProblemWChunk) -> AlignmentPrediction:
         def tokenize_normalize(chunk):
             tokens = chunk.lower().split()

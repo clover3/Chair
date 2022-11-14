@@ -5,7 +5,7 @@ import scipy.special
 import spacy
 
 from bert_api.segmented_instance.segmented_text import SegmentedText, seg_to_text
-from bert_api.task_clients.nli_interface.nli_interface import NLIPredictorSig, NLIInput
+from bert_api.task_clients.nli_interface.nli_interface import NLIPredictorFromSegTextSig, NLIInput
 from contradiction.medical_claims.token_tagging.intersection_search.deletion_tools import Subsequence, \
     do_local_search_addition
 from contradiction.medical_claims.token_tagging.intersection_search.intersect_search_if import IntersectionSearchIF
@@ -49,7 +49,7 @@ def align_spacy_tokens_segmented_text(tokenizer, spacy_tokens: Iterable, t: Segm
 
 class TreeDeletionSearch(IntersectionSearchIF):
     def __init__(self, predict, verbose=False):
-        self.predict: NLIPredictorSig = predict
+        self.predict: NLIPredictorFromSegTextSig = predict
         self.tokenizer = get_tokenizer()
         self.spacy_nlp = spacy.load("en_core_web_sm")
         self.verbose = verbose

@@ -3,7 +3,7 @@ from typing import List, Tuple, Any, NamedTuple
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import ceil_divide, tensor_to_list
-from port_info import PEP1_PORT
+from port_info import LOCAL_DECISION_PORT
 from trainer_v2.chair_logging import c_log
 from trainer_v2.evidence_selector.evidence_candidates import get_st_ed
 from trainer_v2.evidence_selector.evidence_scoring import cross_entropy, length_loss
@@ -47,7 +47,7 @@ class PEPEnvironment:
             state_raw = state.input_ids, state.segment_ids
             return state_raw, action
 
-        client = PEPClient(self.server, PEP1_PORT)
+        client = PEPClient(self.server, LOCAL_DECISION_PORT)
         ret = client.request(list(map(transform, items)))
         return ret
 
@@ -178,7 +178,7 @@ class PEPClient:
 def main():
     item = [0 for _ in range(300)]
     payload = [(item, (item, item))] * 5
-    client = PEPClient("localhost", PEP1_PORT)
+    client = PEPClient("localhost", LOCAL_DECISION_PORT)
     output = client.request(payload)
     for e in output:
         print(e)

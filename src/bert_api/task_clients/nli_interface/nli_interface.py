@@ -1,5 +1,4 @@
-from typing import List, Callable, NamedTuple
-
+from typing import List, Callable, Iterable, Dict, Tuple, NamedTuple
 import scipy.special
 
 from bert_api.segmented_instance.segmented_text import SegmentedText, get_word_level_segmented_text_from_str
@@ -42,7 +41,7 @@ def load_nli_input_from_jsonl(save_path) -> List[NLIInput]:
     return load_list_from_jsonl(save_path, from_json)
 
 
-NLIPredictorSig = Callable[[List[NLIInput]], List[List[float]]]
+NLIPredictorFromSegTextSig = Callable[[List[NLIInput]], List[List[float]]]
 
 
 def predict_from_text_pair(client: SQLBasedCacheClientS, tokenizer, text1, text2):

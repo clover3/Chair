@@ -6,7 +6,7 @@ from cpath import at_output_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.es.common import PHSegmentedPair
 from data_generator2.segmented_enc.es.path_helper import get_evidence_selected0_path
-from port_info import PEP1_PORT
+from port_info import LOCAL_DECISION_PORT
 from tlm.data_gen.base import combine_with_sep_cls
 from trainer_v2.evidence_selector.enviroment import PEPClient
 
@@ -35,7 +35,7 @@ def main():
             pep_payload.append((action, state))
             info.append((tokens, e.nli_pair.get_label_as_int()))
 
-    client = PEPClient("localhost", PEP1_PORT)
+    client = PEPClient("localhost", LOCAL_DECISION_PORT)
     output = client.request(pep_payload)
 
     for out, info in zip(output, info):

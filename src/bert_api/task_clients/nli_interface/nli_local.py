@@ -1,13 +1,13 @@
 import os
 from typing import List
 
-from bert_api.task_clients.nli_interface.nli_interface import NLIPredictorSig, NLIInput
+from bert_api.task_clients.nli_interface.nli_interface import NLIPredictorFromSegTextSig, NLIInput
 from cpath import data_path, pjoin, output_path
 from data_generator.tokenizer_wo_tf import EncoderUnitPlain
 
 
 # Return probabilities
-def get_local_nli_client() -> NLIPredictorSig:
+def get_local_nli_client() -> NLIPredictorFromSegTextSig:
     from bert_api.predictor import Predictor
 
     max_seq_length = 300

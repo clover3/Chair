@@ -7,7 +7,7 @@ import numpy as np
 import scipy.special
 
 from bert_api.segmented_instance.segmented_text import SegmentedText, seg_to_text
-from bert_api.task_clients.nli_interface.nli_interface import NLIPredictorSig, NLIInput
+from bert_api.task_clients.nli_interface.nli_interface import NLIPredictorFromSegTextSig, NLIInput
 from data_generator.NLI.enlidef import ENTAILMENT, nli_label_list, NEUTRAL, nli_probs_str
 from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens
 from list_lib import get_max_idx
@@ -27,7 +27,7 @@ def delete_random_word(s: SegmentedText) -> SegmentedText:
 
 class WordDeletionSearch(IntersectionSearchIF):
     def __init__(self, predict):
-        self.predict: NLIPredictorSig = predict
+        self.predict: NLIPredictorFromSegTextSig = predict
         self.tokenizer = get_tokenizer()
 
     def predict_single(self, single: NLIInput) -> int:
@@ -105,7 +105,7 @@ def sample_subseq_to_delete(segment: SegmentedText):
 
 class SeqDeletionSearch(IntersectionSearchIF):
     def __init__(self, predict, signal_fn):
-        self.predict: NLIPredictorSig = predict
+        self.predict: NLIPredictorFromSegTextSig = predict
         self.tokenizer = get_tokenizer()
         self.signal_fn = signal_fn
 
@@ -150,7 +150,7 @@ class SeqDeletionSearch(IntersectionSearchIF):
 
 class PhraseSearch(IntersectionSearchIF):
     def __init__(self, predict):
-        self.predict: NLIPredictorSig = predict
+        self.predict: NLIPredictorFromSegTextSig = predict
         self.tokenizer = get_tokenizer()
 
     def get_probs(self, single: NLIInput) -> List[float]:

@@ -1,8 +1,6 @@
-
 import sys
 import traceback
-
-from port_info import PEP1_PORT
+from port_info import LOCAL_DECISION_PORT
 from rpc.bert_like_server import RPCServerWrap
 from typing import List, Callable, Iterable, Dict, Tuple, NamedTuple
 import tensorflow as tf
@@ -53,7 +51,7 @@ def run_server(args):
 
     server = RPCServerWrap(predict)
     print("server started")
-    server.start(PEP1_PORT)
+    server.start(LOCAL_DECISION_PORT)
 
 
 if __name__ == "__main__":

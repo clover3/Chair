@@ -5,7 +5,7 @@ from cpath import get_bert_config_path
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.dataset_factories import build_dataset_repeat_segs
-from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config, ModelConfig300
+from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config, ModelConfig300_3
 from trainer_v2.custom_loop.neural_network_def.inner_network import AsymDebug
 from trainer_v2.custom_loop.per_task.trainer import Trainer
 from trainer_v2.custom_loop.run_config2 import get_run_config2_nli, RunConfig2
@@ -22,7 +22,7 @@ def main(args):
     run_config.print_info()
 
     bert_params = load_bert_config(get_bert_config_path())
-    model_config = ModelConfig300()
+    model_config = ModelConfig300_3()
     inner = AsymDebug()
     trainer = Trainer(bert_params, model_config, run_config, inner)
 

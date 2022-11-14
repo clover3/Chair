@@ -40,8 +40,8 @@ def count_cases():
 
 
 def main2():
-    # dataset_list = ["dev_sw"]
-    dataset_list = ["dev"]
+    dataset_list = ["dev_sw"]
+    # dataset_list = ["dev"]
     # method_list = ["random", "gradient", "attn_perturbation"]
     method_list = ["exact_match", "random"]
     # method_list = ["exact_match", "exact_match_noise0.1"]

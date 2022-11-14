@@ -24,12 +24,14 @@ def count_paired_comparison(dataset_list, method_list, metric_list,
             for i1, i2 in pairs:
                 method1 = method_list[i1]
                 method2 = method_list[i2]
+                print(method1, method2, metric)
                 scores1: List[float] = get_score_for_method(dataset, method1, metric)
                 scores2: List[float] = get_score_for_method(dataset, method2, metric)
                 pred_list_1: List[List[int]] = get_prediction_for_method(dataset, method1)
                 pred_list_2: List[List[int]] = get_prediction_for_method(dataset, method2)
                 assert len(scores1) == len(scores2)
                 assert len(pred_list_1) == len(pred_list_2)
+                print(len(scores1), len(pred_list_2))
                 assert len(scores1) == len(pred_list_2)
                 counter = Counter()
                 for i in range(len(scores1)):

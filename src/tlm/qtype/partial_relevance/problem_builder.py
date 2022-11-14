@@ -50,10 +50,10 @@ def build_eval_instances(info_path,
 
 
 def build_sentence_as_doc(info_path,
-                         raw_prediction_path,
-                         sentence_segment_fn,
-                         word_segment_fn,
-                         n_item=None) -> List[RelatedEvalInstance]:
+                          raw_prediction_path,
+                          sentence_segment_fn,
+                          word_segment_fn,
+                          n_item=None) -> List[RelatedEvalInstance]:
     query_info_dict: Dict[str, QueryInfo] = load_query_info_dict("dev")
     f_handler = get_format_handler("qc")
     data_info: Dict = load_combine_info_jsons(info_path, f_handler.get_mapping(), f_handler.drop_kdp())

@@ -12,7 +12,7 @@ from cache import load_from_pickle
 from list_lib import list_equal
 from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.definitions import ModelConfigType
+from trainer_v2.custom_loop.definitions import ModelConfig300_3
 
 
 class RunConfig:
@@ -26,11 +26,6 @@ class RunConfig:
     init_checkpoint = ""
 
 
-class ModelConfig300(ModelConfigType):
-    max_seq_length = 300
-    num_classes = 3
-
-
 class BERT_CLS(NamedTuple):
     l_bert: tf.keras.layers.Layer
     pooler: tf.keras.layers.Dense
@@ -42,7 +37,7 @@ class BERT_CLS(NamedTuple):
 
 
 class BertClassifier:
-    def __init__(self, bert_params, config: ModelConfig300):
+    def __init__(self, bert_params, config: ModelConfig300_3):
         l_bert = BertModelLayer.from_params(bert_params, name="bert")
         max_seq_len = config.max_seq_length
         num_classes = config.num_classes

@@ -56,11 +56,14 @@ def score_matrix_to_alignment_by_rank(matrix: List[List[float]], problem) -> Tup
         if i not in aligned_1 and j not in aligned_2:
             left_items.append(i)
             right_items.append(j)
+            aligned_1.add(i)
+            aligned_2.add(j)
             labels.append([ALIGN_EQUI])
 
     for i in range(n_left):
         if i not in aligned_1:
             left_items.append(i)
+            aligned_1.add(i)
             right_items.append(None)
             labels.append([ALIGN_NOALI])
 
@@ -68,6 +71,7 @@ def score_matrix_to_alignment_by_rank(matrix: List[List[float]], problem) -> Tup
         if i not in aligned_2:
             left_items.append(None)
             right_items.append(i)
+            aligned_2.add(i)
             labels.append([ALIGN_NOALI])
 
     return get_alignment_label_units(left_items, right_items, labels, problem)

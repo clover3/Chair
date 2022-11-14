@@ -30,7 +30,7 @@ def tf_run_predict(run_config: RunConfig2,
     return prediction
 
 
-# Example : src/trainer_v2/evidence_selector/runner/run_pep_server.py
+# Example : src/trainer_v2/evidence_selector/runner/run_local_decision_server.py
 class InferenceHelper:
     def __init__(self,
                  model_factory,

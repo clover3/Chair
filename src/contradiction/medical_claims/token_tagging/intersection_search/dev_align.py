@@ -6,7 +6,7 @@ from typing import List, Tuple
 import numpy as np
 
 from bert_api.segmented_instance.segmented_text import SegmentedText, get_word_level_segmented_text_from_str
-from bert_api.task_clients.nli_interface.nli_interface import NLIPredictorSig, NLIInput
+from bert_api.task_clients.nli_interface.nli_interface import NLIPredictorFromSegTextSig, NLIInput
 from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_client
 from contradiction.medical_claims.token_tagging.intersection_search.deletion_tools import Subsequence, do_local_search
 from contradiction.medical_claims.token_tagging.problem_loader import AlamriProblem, load_alamri_problem
@@ -118,7 +118,7 @@ def build_hypo_row(probs, scores, tokens):
 
 
 
-def search_many_perturbation(predict: NLIPredictorSig, t1, t2) -> List[Tuple[Subsequence, Logits]]:
+def search_many_perturbation(predict: NLIPredictorFromSegTextSig, t1, t2) -> List[Tuple[Subsequence, Logits]]:
     records: List[Tuple[Subsequence, Logits]] = []
     # Goal: Modify t2 to get entailed information
     #
@@ -214,7 +214,7 @@ def dev_get_scores_by_many_perturbations(predict_fn, t_text1, t_text2):
     return scores
 
 
-def enum_small_segments(predict: NLIPredictorSig,
+def enum_small_segments(predict: NLIPredictorFromSegTextSig,
                         t1: SegmentedText,
                         t2: SegmentedText,
                         target_label,

@@ -3,7 +3,7 @@ from tensorflow import keras
 
 from models.transformer.bert_common_v2 import get_shape_list2
 from trainer_v2.bert_for_tf2 import BertModelLayer
-from trainer_v2.custom_loop.modeling_common.bert_common import load_stock_weights, define_bert_input, ModelConfig300, \
+from trainer_v2.custom_loop.modeling_common.bert_common import load_stock_weights, define_bert_input, ModelConfig300_3, \
     BERT_CLS, load_bert_checkpoint
 from trainer_v2.custom_loop.neural_network_def.asymmetric import BERTAsymmetricProjectMean
 from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
@@ -33,7 +33,7 @@ class TwoSegConcat(ClassificationModelIF):
         super(TwoSegConcat, self).__init__()
         self.ld_combine_layer = ld_combine_layer
 
-    def build_model(self, bert_params, config: ModelConfig300):
+    def build_model(self, bert_params, config: ModelConfig300_3):
         num_window = 2
         prefix = "encoder"
         l_bert = BertModelLayer.from_params(bert_params, name="{}/bert".format(prefix))
@@ -78,7 +78,7 @@ class TwoSegConcat2(ClassificationModelIF):
         super(TwoSegConcat2, self).__init__()
         self.combine_local_decisions_layer = combine_local_decisions_layer
 
-    def build_model(self, bert_params, config: ModelConfig300):
+    def build_model(self, bert_params, config: ModelConfig300_3):
         num_window = 2
         prefix = "encoder"
         l_bert = BertModelLayer.from_params(bert_params, name="{}/bert".format(prefix))
@@ -123,7 +123,7 @@ class TwoSegConcat2(ClassificationModelIF):
         super(TwoSegConcat2, self).__init__()
         self.combine_local_decisions_layer = combine_local_decisions_layer
 
-    def build_model(self, bert_params, config: ModelConfig300):
+    def build_model(self, bert_params, config: ModelConfig300_3):
         num_window = 2
         prefix = "encoder"
         l_bert = BertModelLayer.from_params(bert_params, name="{}/bert".format(prefix))

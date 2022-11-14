@@ -5,7 +5,7 @@ from trainer_v2.custom_loop.run_config2 import get_eval_run_config2
 import sys
 import traceback
 
-from port_info import PEP1_PORT
+from port_info import LOCAL_DECISION_PORT
 from rpc.bert_like_server import RPCServerWrap
 from typing import List, Callable, Iterable, Dict, Tuple, NamedTuple
 import tensorflow as tf
@@ -62,6 +62,7 @@ def run_server(args):
     item = [0 for _ in range(model_config.max_seq_length)]
     payload = [(item, item)] * 4
     output = predict(payload)
+
 
 if __name__ == "__main__":
     args = flags_parser.parse_args(sys.argv[1:])
