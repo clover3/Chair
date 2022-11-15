@@ -53,7 +53,7 @@ def score_matrix_to_alignment_by_rank(matrix: List[List[float]], problem) -> Tup
     right_items = []
     labels = []
     for i, j, score in items:
-        if i not in aligned_1 and j not in aligned_2:
+        if i not in aligned_1 and j not in aligned_2 and score > 0:
             left_items.append(i)
             right_items.append(j)
             aligned_1.add(i)
@@ -105,13 +105,16 @@ def get_alignment_label_units(indices1: List[int],
     n_chunk2 = len(problem.chunks2)
 
     def valid_chunk1(j):
-        return j < n_chunk1 and indices1[j] is not None
+        return indices1[j] is not None
 
     def valid_chunk2(j):
-        return j < n_chunk2 and indices2[j] is not None
+        return indices2[j] is not None
 
+    assert len(indices1) == len(indices2)
+    assert len(indices1) == len(labels)
+    n_line = len(indices1)
     aligns: List[AlignmentLabelUnit] = []
-    for j in range(max(n_chunk1, n_chunk2)):
+    for j in range(n_line):
         if valid_chunk1(j) and valid_chunk2(j):
             i1 = indices1[j]
             i2 = indices2[j]
@@ -120,11 +123,11 @@ def get_alignment_label_units(indices1: List[int],
                 problem.chunks1[i1], problem.chunks2[i2],
                 labels[j], 5)
         elif valid_chunk1(j):
-                i1 = indices1[j]
-                u = AlignmentLabelUnit(
-                    problem.chunk_tokens_ids1[i1], [0],
-                    problem.chunks1[i1], "-not aligned-",
-                    [ALIGN_NOALI], 0)
+            i1 = indices1[j]
+            u = AlignmentLabelUnit(
+                problem.chunk_tokens_ids1[i1], [0],
+                problem.chunks1[i1], "-not aligned-",
+                [ALIGN_NOALI], 0)
         elif valid_chunk2(j):
             i2 = indices2[j]
             u = AlignmentLabelUnit(
@@ -132,6 +135,7 @@ def get_alignment_label_units(indices1: List[int],
                 "-not aligned-", problem.chunks2[i2],
                 [ALIGN_NOALI], 0)
         else:
+
             assert False
         aligns.append(u)
     return problem.problem_id, aligns

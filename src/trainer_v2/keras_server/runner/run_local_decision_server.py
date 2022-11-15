@@ -34,7 +34,7 @@ def run_server(args):
 
     predictor = InferenceHelper(model_factory, dataset_factory, strategy)
 
-    def predict(payload: List[Tuple[List[int], List[int]]]):
+    def predict(payload: List[Tuple[List[int], List[int]]]) -> List[Tuple[List[List[float]], List[float]]]:
         try:
             stacked_output = predictor.predict(payload)
             l_decisions, g_decision_l = stacked_output

@@ -45,7 +45,7 @@ class Word2VecSolver(ISTSChunkedSolverNB):
     def similar(self, word1, word2) -> float:
         try:
             s = self.w2v.similarity(word1, word2)
-            print("{} {} {}".format(s, word1, word2))
+            # print("{} {} {}".format(s, word1, word2))
             return s
         except KeyError:
             msg = "KeyError {} {}".format(word1, word2)
@@ -55,5 +55,5 @@ class Word2VecSolver(ISTSChunkedSolverNB):
                 msg += " missing {}".format(word2)
             if word1 == word2:
                 return 1
-            print(msg)
+            # print(msg)
             return 0

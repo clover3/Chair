@@ -18,4 +18,4 @@ def do_word2vec():
 
 if __name__ == "__main__":
     do_exact_match()
-    do_word2vec()
+    # do_word2vec()

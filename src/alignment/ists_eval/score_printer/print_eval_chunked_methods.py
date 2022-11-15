@@ -17,18 +17,24 @@ def show_scores(genre, run_name_list, split):
         row = [run_name]
         for mode in mode_list:
             scores = calc_f1(gold, pred, mode)
-            row.append(scores['f1'])
+            # s = [scores['f1'], scores["precision"], scores["recall"]]
+            s = scores["f1"]
+            row.append(s)
         table.append(row)
     print_table(table)
 
 
 def main():
-    run_name_list = ["random_chunked",
-                     "location_chunked",
-                     "exact_match_chunked",
-                     "w2v_chunked",
-                     "coattention_chunked",
-                     ]
+    run_name_list = [
+        # "random_chunked",
+        # "location_chunked",
+        "exact_match_chunked",
+        "w2v_chunked",
+        # "coattention_chunked",
+        "base_nli_chunked",
+        "pep_chunked",
+        "pep_word2vec_chunked"
+    ]
     genre = "headlines"
     split = "train"
     show_scores(genre, run_name_list, split)

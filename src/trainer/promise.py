@@ -1,3 +1,4 @@
+import abc
 import time
 from typing import List, Callable, Generic, Iterable, Tuple
 from typing import TypeVar
@@ -115,6 +116,43 @@ def parent_child_pattern(p_list: List[Parent],
         output_list: List[OutputType] = list_future(fl)
         output.append((p, output_list))
     return output
+
+
+ChildInput = TypeVar("ChildInput")
+ChildOutput = TypeVar("ChildOutput")
+
+
+# Batch Align Solver Adapter
+class EnumSubJobInterface(abc.ABC):
+    @abc.abstractmethod
+    def neural_worker(self, items: List[ChildInput]) -> List[ChildOutput]:
+        pass
+
+    @abc.abstractmethod
+    def reduce(self, item, middle_output: List[ChildOutput]) -> OutputType:
+        pass
+
+    @abc.abstractmethod
+    def enum_child(self, item: Parent) -> List[ChildInput]:
+        pass
+
+
+def enum_sub_job(p_list: List[Parent], adapter: EnumSubJobInterface) -> List[Tuple[Parent, OutputType]]:
+    pk = PromiseKeeper(adapter.neural_worker)
+    future_list_list: List[List[MyFuture[ChildOutput]]] = []
+    for p in p_list:
+        future_list: List[MyFuture[ChildOutput]] = [MyPromise(c, pk).future() for c in adapter.enum_child(p)]
+        future_list_list.append(future_list)
+
+    pk.do_duty(False, False)
+
+    output_list: List[OutputType] = []
+    for p, fl in zip(p_list, future_list_list):
+        middle_output_list: List[ChildOutput] = list_future(fl)
+        output: OutputType = adapter.reduce(p, middle_output_list)
+        output_list.append(output)
+    return output_list
+
 
 
 def parent_child_reduce_pattern(p_list: List[Parent],

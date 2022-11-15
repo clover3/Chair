@@ -21,7 +21,7 @@ class RESTProxy:
         """
         self.host = host
         self.port = port
-        self.url_format = "http://{}:{}".format(host, port)
+        self.url_format = "https://{}:{}".format(host, port)
         self.list = Queue()
         self.executor = Thread(target=self._execute, daemon=True, name="Executor-{}-{}".format(host, port))
         self.executor.start()
