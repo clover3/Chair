@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from trainer_v2.custom_loop.definitions import ModelConfig600_3
 from trainer_v2.custom_loop.inference import InferenceHelper
-from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model
+from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model, dataset_factory_600_3
 from trainer_v2.custom_loop.run_config2 import get_eval_run_config2
 from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 from trainer_v2.train_util.arg_flags import flags_parser
@@ -20,19 +20,7 @@ def run_server(args):
     def model_factory():
         model: tf.keras.models.Model = load_local_decision_model(run_config.get_model_path())
         return model
-    model_config = ModelConfig600_3()
-
-    def dataset_factory(payload: List):
-        def generator():
-            for item in payload:
-                yield tuple(item)
-
-        int_list = tf.TensorSpec(shape=(model_config.max_seq_length,), dtype=tf.int32)
-        output_signature = (int_list, int_list)
-        dataset = tf.data.Dataset.from_generator(generator, output_signature=output_signature)
-        return dataset
-
-    predictor = InferenceHelper(model_factory, dataset_factory, strategy)
+    predictor = InferenceHelper(model_factory, dataset_factory_600_3, strategy)
 
     def predict(payload: List[Tuple[List[int], List[int]]]) -> List[Tuple[List[List[float]], List[float]]]:
         try:
@@ -40,7 +28,7 @@ def run_server(args):
             l_decisions, g_decision_l = stacked_output
             output = []
             for i in range(len(payload)):
-                output.append((l_decisions[i].tolist(), g_decision_l[0].tolist()))
+                output.append((l_decisions[i].tolist(), g_decision_l[0][i].tolist()))
             return output
 
         except Exception as e:

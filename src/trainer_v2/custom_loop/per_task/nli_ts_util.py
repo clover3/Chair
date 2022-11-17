@@ -12,6 +12,7 @@ from data_generator2.segmented_enc.two_seg_by_mask import ConcatWMasInference
 from misc_lib import ceil_divide
 from tlm.data_gen.base import get_basic_input_feature_as_list
 from trainer_v2.chair_logging import c_log
+from trainer_v2.custom_loop.definitions import ModelConfig600_3
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
 from trainer_v2.custom_loop.train_loop import load_model_by_dir_or_abs
 
@@ -296,3 +297,13 @@ def enum_hypo_token_wmask(sb_tokenize, space_tokenized_tokens, window_size, offs
         yield tokens, mask, st, ed
         st += window_size
 
+
+def dataset_factory_600_3(payload: List):
+    def generator():
+        for item in payload:
+            yield tuple(item)
+    model_config = ModelConfig600_3()
+    int_list = tf.TensorSpec(shape=(model_config.max_seq_length,), dtype=tf.int32)
+    output_signature = (int_list, int_list)
+    dataset = tf.data.Dataset.from_generator(generator, output_signature=output_signature)
+    return dataset

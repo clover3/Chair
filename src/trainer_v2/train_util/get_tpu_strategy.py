@@ -22,7 +22,7 @@ def device_list_summary(device_list):
         return str(device_list)
 
 
-def get_strategy(use_tpu, tpu_name=None):
+def get_strategy(use_tpu=False, tpu_name=None):
     if use_tpu:
         strategy = get_tpu_strategy_inner(tpu_name)
     else:

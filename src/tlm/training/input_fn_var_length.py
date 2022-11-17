@@ -179,7 +179,7 @@ def save_record():
     features = {
         "query": create_int_feature([1, 2, 3]),
         "doc1": create_int_feature([1, 2, 3, 4,]),
-        "doc2": create_int_feature([1, 2, 3, 4 ,5])
+        "doc2": create_int_feature([1, 2, 3, 4,5])
     }
     for _ in range(300):
         writer.write_feature(OrderedDict(features))

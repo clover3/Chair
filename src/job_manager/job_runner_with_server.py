@@ -87,9 +87,13 @@ class JobRunnerS:
         print("cancel allocation", ret)
 
 
-    def run_one_job(self):
+    def run_one_job(self, job_id=None):
         worker = self.worker_factory(self.out_path)
-        worker.work(int(sys.argv[1]))
+        if job_id is None:
+            job_id = int(sys.argv[1])
+        worker.work(job_id)
+
+
 
 
 class DummyWorker(WorkerInterface):

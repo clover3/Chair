@@ -28,3 +28,10 @@ class BERTClient:
         for tokens_a, tokens_b in payload_list:
             conv_payload_list.append(self.encoder.encode_token_pairs(tokens_a, tokens_b))
         return self.proxy.send(conv_payload_list)
+
+    def request_multiple_from_ids_pairs(self, payload_list: List[Tuple[List[int], List[int]]]):
+        conv_payload_list = []
+        for ids_a, ids_b in payload_list:
+            conv_payload_list.append(self.encoder.encode_from_ids(ids_a, ids_b))
+        return self.proxy.send(conv_payload_list)
+
