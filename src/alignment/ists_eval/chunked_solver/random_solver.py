@@ -1,6 +1,7 @@
 import random
+
 from alignment.ists_eval.chunked_eval import ISTSChunkedSolverNB
-from alignment.ists_eval.eval_utils import get_alignment_label_units
+from alignment.ists_eval.prediction_helper import get_alignment_label_units
 from dataset_specific.ists.parse import iSTSProblemWChunk, AlignmentPrediction, ALIGN_EQUI
 
 

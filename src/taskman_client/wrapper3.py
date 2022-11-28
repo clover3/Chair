@@ -20,6 +20,23 @@ def get_hp_str_from_flag(flags):
     return s
 
 
+class TaskReporting:
+    def __init__(self, job_name):
+        self.job_name = job_name
+
+        machine = get_local_machine_name()
+        hostname = webtool_host
+        self.task_proxy = TaskProxy(hostname, webtool_port, machine)
+
+    def __enter__(self):
+        self.task_proxy.task_start(self.job_name)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.task_proxy.task_complete(self.job_name)
+        print(exc_type, exc_val, exc_tb)
+
+
+
 g_task_proxy: TaskProxy = None
 def report_run3(func):
     def func_wrapper(args):

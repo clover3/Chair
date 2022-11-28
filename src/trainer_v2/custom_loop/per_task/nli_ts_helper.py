@@ -1,5 +1,5 @@
 import os
-from typing import Callable, List, Iterable, Tuple
+from typing import Callable, List, Tuple
 
 from cpath import common_model_dir_root
 from taskman_client.task_proxy import get_local_machine_name
@@ -10,7 +10,7 @@ from trainer_v2.custom_loop.per_task.nli_ts_util import get_two_seg_concat_encod
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 
-EncoderType = Callable[[List, List, List], Iterable[Tuple]]
+EncoderType = Callable[[List, List, List], Tuple[List, List]]
 
 
 def get_encode_fn(encoder_name, model) -> EncoderType:

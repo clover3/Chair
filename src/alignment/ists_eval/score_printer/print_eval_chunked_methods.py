@@ -1,5 +1,3 @@
-from collections import defaultdict
-from typing import List, Dict
 from alignment.ists_eval.f1_calc import calc_f1
 from alignment.ists_eval.matrix_eval_helper import load_ists_predictions
 from dataset_specific.ists.parse import AlignmentPredictionList
@@ -28,12 +26,14 @@ def main():
     run_name_list = [
         # "random_chunked",
         # "location_chunked",
-        "exact_match_chunked",
-        "w2v_chunked",
+        # "exact_match_chunked",
+        # "w2v_chunked",
         # "coattention_chunked",
-        "base_nli_chunked",
-        "pep_chunked",
-        "pep_word2vec_chunked"
+        # "base_nli_chunked",
+        # "pep_chunked",
+        "pep_nli_partial_chunked",
+        "base_nli_partial_chunked"
+        # "pep_word2vec_chunked"
     ]
     genre = "headlines"
     split = "train"

@@ -42,6 +42,14 @@ class AlignmentLabelUnit(NamedTuple):
         s3 = f"{self.chunk_text1} <==> {self.chunk_text2}"
         return " // ".join([s0, s1, s2, s3])
 
+    def sort_key(self):
+        def zero_to_inf(v):
+            if v== 0:
+                return 100000
+            else:
+                return v
+
+        return zero_to_inf(self.chunk_token_id1[0]), zero_to_inf(self.chunk_token_id2[0])
 
 AlignmentPrediction = Tuple[str, List[AlignmentLabelUnit]]
 AlignmentPredictionList = List[AlignmentPrediction]
