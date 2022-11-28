@@ -5,10 +5,10 @@ import spacy
 from alignment.lexical_alignment.runner.show_alignment_pred import get_extract_edges_top3
 from bert_api import SegmentedInstance
 from bert_api.segmented_instance.segmented_text import token_list_to_segmented_text
-from contradiction.ie_align.srl.spacy_segmentation import spacy_segment
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import transpose
 from ptorch.ists.ists_predictor import get_ists_predictor
+from trainer_v2.epr.spacy_segmentation import spacy_segment
 from visualize.html_visual import Cell, HtmlVisualizer
 
 

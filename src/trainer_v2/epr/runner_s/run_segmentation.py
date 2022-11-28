@@ -4,6 +4,7 @@ from epath import job_man_dir
 from job_manager.job_runner_with_server import JobRunnerS
 from misc_lib import ceil_divide
 from trainer_v2.epr.segmentation import SegmentWorker
+from trainer_v2.epr.spacy_segmentation import spacy_segment
 
 
 def segment_nli_common(dataset, dataset_name, item_per_job, split):
@@ -12,7 +13,7 @@ def segment_nli_common(dataset, dataset_name, item_per_job, split):
     def get_worker(out_dir):
         worker = SegmentWorker(out_dir,
                                item_per_job,
-                               dataset)
+                               dataset, spacy_segment)
         return worker
 
     num_item = len(dataset)

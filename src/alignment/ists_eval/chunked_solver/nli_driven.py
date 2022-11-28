@@ -1,15 +1,13 @@
-import abc
+from typing import List, Tuple
 
 from alignment.ists_eval.chunked_eval import ISTSChunkedSolver, ISTSChunkedSolverNB
 from dataset_specific.ists.parse import iSTSProblemWChunk, AlignmentPrediction, ALIGN_EQUI, ALIGN_SPE1, ALIGN_SPE2, \
     AlignmentLabelUnit, ALIGN_SIMI, ALIGN_NOALI
-from typing import List, TypeVar, Tuple
-from list_lib import lmap, foreach
+from list_lib import lmap
 from misc_lib import timed_lmap
-from trainer.promise import EnumSubJobInterface, MyFuture, PromiseKeeper
+from trainer.promise import MyFuture, PromiseKeeper
 from trainer.promise_ex import PromiseKeeperOnFuture
 from trainer_v2.keras_server.name_short_cuts import NLIPredictorSig
-
 
 
 # Option 1: Work on aligned outputs of Exact match or word2vec
@@ -101,6 +99,7 @@ class NLIDrivenSolver(ISTSChunkedSolver):
             my_future_list.append((alignment, nli_p1_MyFuture, nli_p2_MyFuture))
 
         pk.do_duty()
+
         def is_entailment(probs):
             return probs[0] > 0.5
 

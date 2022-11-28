@@ -2,8 +2,8 @@ from typing import Iterable
 
 import spacy
 
-from contradiction.ie_align.srl.spacy_segmentation import spacy_segment
 from contradiction.medical_claims.token_tagging.problem_loader import iter_unique_text
+from trainer_v2.epr.spacy_segmentation import spacy_segment
 
 
 def main():

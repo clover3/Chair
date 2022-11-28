@@ -4,17 +4,17 @@ from typing import List
 import spacy
 
 from cache import save_list_to_jsonl
-from contradiction.ie_align.srl.spacy_segmentation import spacy_segment
 from data_generator.job_runner import WorkerInterface
 from misc_lib import TimeEstimator
 
 
 class SegmentWorker(WorkerInterface):
-    def __init__(self, out_dir, item_per_job, dataset):
+    def __init__(self, out_dir, item_per_job, dataset, segment_fn):
         self.nlp = spacy.load("en_core_web_sm")
         self.out_dir = out_dir
         self.dataset = dataset
         self.item_per_job = item_per_job
+        self.segment_fn = segment_fn
 
 
     def work(self, job_id):
@@ -41,7 +41,7 @@ class SegmentWorker(WorkerInterface):
 
     def segment(self, text) -> List[str]:
         spacy_tokens = self.nlp(text)
-        span_list = spacy_segment(spacy_tokens)
+        span_list = self.segment_fn(spacy_tokens)
         return list(map(str, span_list))
 
 
