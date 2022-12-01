@@ -21,10 +21,13 @@ def main():
         p_tokens = tokenizer.tokenize(sent1)
         h_first = tokenizer.tokenize(sent2_1)
         h_second = tokenizer.tokenize(sent2_2)
+        print(p_tokens)
+        print(h_first)
+        print(h_second)
         x = encode_fn(p_tokens, h_first, h_second)
         print(x)
+        print("Sending...")
         res_list = proxy.send([x])
-        print(res_list)
         result = res_list[0]
         print(result)
         l_decisions, g_decision = result

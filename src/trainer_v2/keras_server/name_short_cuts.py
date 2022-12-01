@@ -21,12 +21,34 @@ def get_nli14_predictor() -> NLIPredictorSig:
     return client.request_multiple
 
 
+def tokenize_w_mask_preserving(full_tokenizer, text):
+    split_tokens = []
+    for sp_tokens in text.split():
+        if sp_tokens == "[MASK]":
+            split_tokens.append(sp_tokens)
+        else:
+            for token in full_tokenizer.basic_tokenizer.tokenize(sp_tokens):
+                for sub_token in full_tokenizer.wordpiece_tokenizer.tokenize(token):
+                    split_tokens.append(sub_token)
+    return split_tokens
+
+
 def get_pep_client() -> NLIPredictorSig:
     model_config = ModelConfig600_3()
     client = BERTClient("localhost", LOCAL_DECISION_PORT, model_config.max_seq_length)
+    full_tokenizer = client.encoder.encoder.ft
 
-    def predict(items) -> List[List[float]]:
-        result = client.request_multiple(items)
+    def encode_tuple(t: Tuple[str, str]) -> Tuple[List, List]:
+        def encode_one(s: str):
+            tokens = tokenize_w_mask_preserving(full_tokenizer, s)
+            return full_tokenizer.convert_tokens_to_ids(tokens)
+
+        s1, s2 = t
+        return encode_one(s1), encode_one(s2)
+
+    def predict(items: List[Tuple[str, str]]) -> List[List[float]]:
+        tokenized = list(map(encode_tuple, items))
+        result = client.request_multiple_from_ids_pairs(tokenized)
         output = []
         for local_decision, g_decision in result:
             output.append(local_decision[0])

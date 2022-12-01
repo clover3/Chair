@@ -19,6 +19,7 @@ common_model_dir_root = FilePath(os.path.join(output_path, 'model'))
 prediction_dir = FilePath(os.path.join(output_path, "prediction"))
 
 qtype_root_dir = FilePath(os.path.join(output_path, "qtype"))
+word2vec_path = os.path.join(data_path, "GoogleNews-vectors-negative300.bin")
 
 
 def pjoin(file_path: FilePath, file_name) -> FilePath:

@@ -97,15 +97,14 @@ class PartialNLIDrivenSolver(ISTSChunkedSolver):
             entail_d[s1, s2] = f1.get()
         return entail_d
 
-    def chunk_pair_score(self, c1, c2):
+    def chunk_pair_similarity(self, c1, c2):
         s1 = score_chunk_pair_exact_match(c1, c2)
         s2 = self.chunk_helper.score_chunk_pair(c1, c2)
-        # s2 = 0
         return s1 + s2 * 0.1
 
     def solve_one(self, problem: iSTSProblemWChunk) -> AlignmentPrediction:
         self.print(str(problem))
-        table: List[List[float]] = get_similarity_table(problem, self.chunk_pair_score)
+        table: List[List[float]] = get_similarity_table(problem, self.chunk_pair_similarity)
         pair_scores: List[Tuple[int, int, float]] = get_sorted_table_scores(table)
         k = int(len(table) * 1.5)
         top_k_pair_scores = pair_scores[:k]

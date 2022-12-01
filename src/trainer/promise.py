@@ -14,7 +14,7 @@ class PromiseKeeper:
                  ):
         self.X_list = []
         self.list_fn = list_fn
-        self.time_estimate = time_estimate
+        self.time_estimate: float = time_estimate
 
     def do_duty(self, log_size=False, reset=True):
         x_list = list([X.X for X in self.X_list])

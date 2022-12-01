@@ -7,7 +7,7 @@ from alignment.ists_eval.matrix_eval_helper import load_headline_2d
 from alignment.ists_eval.path_helper import get_ists_save_path
 from alignment.ists_eval.prediction_helper import score_matrix_to_alignment_by_threshold
 from dataset_specific.ists.parse import AlignmentPredictionList, iSTSProblem, AlignmentLabelUnit
-from dataset_specific.ists.path_helper import load_ists_problems, load_ists_label
+from dataset_specific.ists.path_helper import load_ists_label, load_ists_problems
 from list_lib import pairzip, left, lmap
 from tab_print import print_table
 

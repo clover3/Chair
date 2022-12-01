@@ -1,11 +1,7 @@
-import os
-
 from contradiction.ists.save_path_helper import get_qrel_path
-from cpath import output_path
 from dataset_specific.ists.parse import AlignmentPredictionList
 from dataset_specific.ists.path_helper import load_ists_label
-from dataset_specific.ists.split_info import genre_list, split_list
-from misc_lib import exist_or_mkdir
+from dataset_specific.ists.split_info import ists_genre_list, ists_split_list
 from trec.trec_parse import write_trec_relevance_judgement
 from trec.types import TrecRelevanceJudgementEntry
 
@@ -47,8 +43,8 @@ def do_for_genre_split(genre, split):
 
 def main():
 
-    for genre in genre_list:
-        for split in split_list:
+    for genre in ists_genre_list:
+        for split in ists_split_list:
             if genre == "answers-students" and split == "train":
                 continue
             try:

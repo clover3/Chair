@@ -3,6 +3,7 @@ from typing import List
 import gensim
 
 from alignment.ists_eval.chunked_eval import ISTSChunkedSolverNB
+from alignment.ists_eval.chunked_solver.exact_match_solver import score_chunk_pair_exact_match
 from alignment.ists_eval.chunked_solver.solver_common import get_similarity_table
 from alignment.ists_eval.prediction_helper import score_matrix_to_alignment_by_rank
 from dataset_specific.ists.parse import iSTSProblemWChunk, AlignmentPrediction
@@ -52,6 +53,11 @@ class Word2VecChunkHelper:
             scores.append(max(similarity_list))
 
         return scores
+
+    def chunk_pair_similarity_w_em(self, c1, c2):
+        s1 = score_chunk_pair_exact_match(c1, c2)
+        s2 = self.score_chunk_pair(c1, c2)
+        return s1 + s2 * 0.1
 
 
 class Word2VecSolver(ISTSChunkedSolverNB):

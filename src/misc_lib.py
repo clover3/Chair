@@ -871,3 +871,7 @@ def tensor_to_list(t):
     except AttributeError:
         pass
     return t
+
+def read_non_empty_lines_stripped(save_path):
+    lines = open(save_path, "r").readlines()
+    return [l.strip() for l in lines if l.strip()]

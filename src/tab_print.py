@@ -29,3 +29,20 @@ def save_table_as_csv(output_rows, save_path):
 
     for row in output_rows:
         csv_writer.writerow(map(str, row))
+
+
+def concat_table_horizontally(table_list):
+    if len(table_list) == 0:
+        return []
+    l = len(table_list[0])
+    for t in table_list:
+        assert len(t) == l
+
+    new_table = []
+    for row_i in range(l):
+        new_row = []
+        for j in range(len(table_list)):
+            new_row.extend(table_list[j][row_i])
+            new_row.append("")
+        new_table.append(new_row)
+    return new_table
