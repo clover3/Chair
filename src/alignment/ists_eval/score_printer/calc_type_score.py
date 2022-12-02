@@ -1,10 +1,10 @@
 import os
 
-from alignment.ists_eval.eval_analysis_f1_calc import calc_type_specific_f1, calc_confucion
+from alignment.ists_eval.eval_analysis_f1_calc import calc_type_specific_f1, calc_confucion, print_failure_outer
 from alignment.ists_eval.matrix_eval_helper import load_ists_predictions
 from alignment.ists_eval.path_helper import get_ists_save_path
 from dataset_specific.ists.parse import AlignmentPredictionList, type_list, ALIGN_EQUI, ALIGN_SPE1, ALIGN_SPE2
-from dataset_specific.ists.path_helper import load_ists_label
+from dataset_specific.ists.path_helper import load_ists_label, load_ists_problems_w_chunk
 from dataset_specific.ists.split_info import ists_enum_split_genre_combs
 from tab_print import print_table, concat_table_horizontally
 
@@ -74,5 +74,16 @@ def do_print_confusion():
             print_table(table)
 
 
+def show_error():
+    run_name1 = "pep_w_context"
+    run_name2 = "base_wo_context"
+    for split, genre in [("train", "images"), ("train", "headlines")]:
+        problems = load_ists_problems_w_chunk(genre, split)
+        gold: AlignmentPredictionList = load_ists_label(genre, split)
+        pred: AlignmentPredictionList = load_ists_predictions(genre, split, run_name1)
+        pred2: AlignmentPredictionList = load_ists_predictions(genre, split, run_name2)
+        print_failure_outer(gold, pred, pred2, problems)
+
+
 if __name__ == "__main__":
-    do_print_confusion()
+    show_error()

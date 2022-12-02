@@ -42,7 +42,7 @@ def load_ists_label(genre, split) -> AlignmentPredictionList:
     return parse_label_file(get_ists_label_path(genre, split))
 
 
-def load_ists_problems_w_chunk(genre, split) -> List[iSTSProblemWChunk]:
+def load_ists_problems_w_chunk(genre: object, split: object) -> List[iSTSProblemWChunk]:
     def read_for_part(sent_name):
         file_path = get_ists_chunk_path(genre, split, sent_name)
         return parse_chunks(file_path)
