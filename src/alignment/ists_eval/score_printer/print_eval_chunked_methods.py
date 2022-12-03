@@ -69,7 +69,7 @@ def main_2():
     for split, genre in ists_enum_split_genre_combs():
         row = ["{}_{}".format(genre, split), ]
         head = ["dataset"]
-        for nli_type in ["base", "pep"]:
+        for nli_type in ["base", "pep", "em"]:
             for label_predictor_type in ["w_context", "wo_context"]:
                 run_name = f"{nli_type}_{label_predictor_type}"
                 head.append(run_name)

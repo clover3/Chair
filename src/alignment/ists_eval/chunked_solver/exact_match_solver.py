@@ -29,3 +29,4 @@ class ExactMatchSolver(ISTSChunkedSolverNB):
 
         table = get_similarity_table(problem, score_chunk_pair_exact_match)
         return score_matrix_to_alignment_by_rank(table, problem)
+

@@ -3,6 +3,7 @@ from typing import Iterable, Callable, Dict, Iterator
 from typing import List, Tuple
 
 from alignment.ists_eval.chunked_eval import ISTSChunkedSolver
+from alignment.ists_eval.chunked_solver.em_based_nli import get_em_base_nli
 from alignment.ists_eval.chunked_solver.nli_partial import NLIPred, get_sorted_table_scores, greedy_alignment_building
 from alignment.ists_eval.chunked_solver.solver_common import get_similarity_table
 from alignment.ists_eval.chunked_solver.word2vec_solver import Word2VecChunkHelper
@@ -225,7 +226,8 @@ def get_solver(nli_model_type, label_classifier_type) -> NLISolver3Batch:
     chunk_helper = Word2VecChunkHelper(word2vec_path)
     nli_predictor_d = {
         'base': get_nli14_cache_client,
-        'pep': get_pep_cache_client
+        'pep': get_pep_cache_client,
+        'em': get_em_base_nli,
     }
 
     label_predictor_d = {

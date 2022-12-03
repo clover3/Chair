@@ -3,7 +3,7 @@ from typing import List, Dict
 
 from alignment.ists_eval.f1_calc import AlignmentIndexed, dict_bool_check, jaccard_set, get_align_dict
 from dataset_specific.ists.parse import AlignmentLabelUnit, AlignmentPredictionList, type_list, ALIGN_NOALI, \
-    iSTSProblemWChunk
+    iSTSProblemWChunk, simplify_type
 from list_lib import index_by_fn
 from misc_lib import get_f1
 
@@ -150,13 +150,8 @@ def get_failure_msg(
         ali_gold: List[AlignmentLabelUnit],
         ) -> List:
     # Print when pred is wrong, ref is correct
-    def simplify_type(type_l):
-        for s in type_list:
-            if s in type_l:
-                return s
-
-    wrong_indices = get_wrong_indices(ali_gold, ali_pred, simplify_type)
-    wrong_indices_ref = get_wrong_indices(ali_gold, ali_ref, simplify_type)
+    wrong_indices = get_wrong_indices(ali_gold, ali_pred)
+    wrong_indices_ref = get_wrong_indices(ali_gold, ali_ref)
 
 
     msg_list = []
@@ -191,7 +186,7 @@ def get_corresponding_align_unit(ali_gold, align_unit):
     return gold_align
 
 
-def get_wrong_indices(ali_gold, ali_pred, simplify_type):
+def get_wrong_indices(ali_gold, ali_pred):
     align1 = AlignmentIndexed.from_alignment_list(ali_pred)
     align2 = AlignmentIndexed.from_alignment_list(ali_gold)
     wrong_indices = []
