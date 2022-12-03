@@ -18,6 +18,12 @@ ALIGN_NOALI = "NOALI"
 type_list = [ALIGN_EQUI, ALIGN_OPPO, ALIGN_SPE1, ALIGN_SPE2, ALIGN_SIMI, ALIGN_REL, ALIGN_NOALI]
 
 
+def simplify_type(type_l):
+    for s in type_list:
+        if s in type_l:
+            return s
+
+
 def types_to_str(types):
     if len(types) == 2:
         return "_".join(types)

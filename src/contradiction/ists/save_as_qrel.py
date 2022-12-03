@@ -14,7 +14,6 @@ def do_for_genre_split(genre, split):
         no_align_list1 = []
         no_align_list2 = []
         for alignment in per_problem:
-
             type_labels = [l.strip() for l in alignment.align_types]
             if "noali" not in type_labels:
                 continue
@@ -42,7 +41,6 @@ def do_for_genre_split(genre, split):
 
 
 def main():
-
     for genre in ists_genre_list:
         for split in ists_split_list:
             if genre == "answers-students" and split == "train":

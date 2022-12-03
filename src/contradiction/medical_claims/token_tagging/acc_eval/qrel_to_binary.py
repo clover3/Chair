@@ -3,8 +3,8 @@ from typing import List, Tuple
 # TODO load trec_qrel
 from cache import save_list_to_jsonl_w_fn
 from contradiction.medical_claims.token_tagging.path_helper import get_sbl_qrel_path, get_sbl_binary_label_path
-from contradiction.token_tagging.acc_eval.label_loaders import SentTokenLabel
 from contradiction.medical_claims.token_tagging.problem_loader import load_alamri_problem
+from contradiction.token_tagging.acc_eval.defs import SentTokenLabel
 from trec.qrel_parse import load_qrels_flat_per_query
 from trec.types import DocID
 

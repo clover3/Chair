@@ -1,65 +1,10 @@
 from collections import defaultdict
 from typing import List, Dict
 
-from cache import load_list_from_jsonl, save_list_to_jsonl_w_fn
+from contradiction.token_tagging.acc_eval.defs import SentTokenLabel, SentTokenBPrediction
 from evals.basic_func import get_acc_prec_recall, i2b
 from list_lib import index_by_fn
 from misc_lib import average
-
-
-class SentTokenLabel:
-    def __init__(self, qid, labels):
-        self.qid: str = qid
-        self.labels: List[int] = labels
-
-    def to_json(self):
-        return {
-            'qid': self.qid,
-            'labels': self.labels,
-        }
-
-    @classmethod
-    def from_json(cls, j):
-        qid = j['qid']
-        labels = j['labels']
-        assert type(qid) == str
-        for item in labels:
-            assert type(item) == int
-        return SentTokenLabel(qid, labels)
-
-
-class SentTokenBPrediction:
-    def __init__(self, qid, predictions):
-        self.qid: str = qid
-        self.predictions: List[int] = predictions
-
-    def to_json(self):
-        return {
-            'qid': self.qid,
-            'predictions': self.predictions,
-        }
-
-    @classmethod
-    def from_json(cls, j):
-        qid = j['qid']
-        predictions = j['predictions']
-        assert type(qid) == str
-        for item in predictions:
-            assert type(item) == int
-        return SentTokenBPrediction(qid, predictions)
-
-
-def save_sent_token_binary_predictions(predictions: List[SentTokenBPrediction], save_path):
-    return save_list_to_jsonl_w_fn(predictions, save_path, SentTokenBPrediction.to_json)
-
-
-def load_sent_token_binary_predictions(save_path):
-    return load_list_from_jsonl(save_path, SentTokenBPrediction.from_json)
-
-
-def load_sent_token_label(file_path) -> List[SentTokenLabel]:
-    label_list: List[SentTokenLabel] = load_list_from_jsonl(file_path, SentTokenLabel.from_json)
-    return label_list
 
 
 def calculate_acc_inner(label_list: List[SentTokenLabel], prediction_list: List[SentTokenBPrediction]):

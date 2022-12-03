@@ -1,9 +1,10 @@
 from typing import List
 
 from contradiction.medical_claims.token_tagging.acc_eval.path_helper import load_sbl_binary_label
-from contradiction.medical_claims.token_tagging.path_helper import get_binary_save_path, get_binary_save_path_w_opt
-from contradiction.token_tagging.acc_eval.label_loaders import SentTokenLabel, load_sent_token_binary_predictions, \
-    calc_prec_rec_acc
+from contradiction.medical_claims.token_tagging.path_helper import get_binary_save_path_w_opt
+from contradiction.token_tagging.acc_eval.defs import SentTokenLabel
+from contradiction.token_tagging.acc_eval.eval_codes import calc_prec_rec_acc
+from contradiction.token_tagging.acc_eval.parser import load_sent_token_binary_predictions
 
 
 def show_test_score(run_name, tag_type, metric):

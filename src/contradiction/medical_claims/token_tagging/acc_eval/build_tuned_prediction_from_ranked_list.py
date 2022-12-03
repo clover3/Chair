@@ -1,10 +1,10 @@
 from typing import List, Dict
 
 from contradiction.medical_claims.token_tagging.acc_eval.path_helper import load_sbl_binary_label
-from contradiction.token_tagging.acc_eval.label_loaders import SentTokenLabel, SentTokenBPrediction, calculate_acc, \
-    save_sent_token_binary_predictions, calc_prec_rec_acc
-from contradiction.medical_claims.token_tagging.path_helper import get_save_path2, get_binary_save_path, \
-    get_binary_save_path_w_opt
+from contradiction.medical_claims.token_tagging.path_helper import get_save_path2, get_binary_save_path_w_opt
+from contradiction.token_tagging.acc_eval.defs import SentTokenLabel, SentTokenBPrediction
+from contradiction.token_tagging.acc_eval.eval_codes import calc_prec_rec_acc
+from contradiction.token_tagging.acc_eval.parser import save_sent_token_binary_predictions
 from trec.trec_parse import load_ranked_list_grouped
 from trec.types import TrecRankedListEntry
 

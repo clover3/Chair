@@ -10,6 +10,7 @@ from list_lib import left, right
 from misc_lib import average, tprint
 
 ESig = Tuple[NLIInput, Tuple[int, int]]
+ESig2 = Tuple[Tuple[str, str], Tuple[int, int]]
 
 
 def overlap_window_attribution(l2: int, output_):
@@ -64,3 +65,43 @@ def get_batch_partial_seg_solver(sel_score_fn) -> BatchSolver:
     predict_fn = get_nli_client("localhost")
     adapter = PartialSegSolvingAdapter(predict_fn, sel_score_fn)
     return BatchSolver(adapter)
+
+
+
+class PartialSegSolvingAdapter2(BSAdapterIF):
+    def __init__(self, predict_fn, sel_score_fn):
+        self.tokenizer = get_tokenizer()
+        self.predict_fn = predict_fn
+        self.sel_score_fn = sel_score_fn
+
+    def neural_worker(self, items: List[ESig2]):
+        indice_list: List[Tuple[int, int]] = right(items)
+        nli_input_list: List[Tuple[str, str]] = left(items)
+        tprint("Sending {} items".format(len(items)))
+        probs_list: List[List[float]] = self.predict_fn(nli_input_list)
+        tprint("Done")
+        return list(zip(probs_list, indice_list))
+
+    def reduce(self, t1: List[str], t2: List[str],
+               output: List[Tuple[List[float], Tuple[int, int]]]) -> List[float]:
+
+        l2 = len(t2)
+        output_t = [(self.sel_score_fn(probs), (st, ed)) for probs, (st, ed) in output]
+        ret = overlap_window_attribution(l2, output_t)
+        return ret
+
+    def enum_child(self, text1_tokens, text2_tokens) -> List[ESig2]:
+        es_list = []
+        text1 = " ".join(text1_tokens)
+
+        l2 = len(text2_tokens)
+        for window_size in [1, 3, 6]:
+            for offset in range(0, min(window_size, 3)):
+                st = offset
+                while st < l2:
+                    ed = min(st + window_size, l2)
+                    t2_sub = " ".join(text2_tokens[st:ed])
+                    es = (text1, t2_sub), (st, ed)
+                    es_list.append(es)
+                    st = st + window_size
+        return es_list
