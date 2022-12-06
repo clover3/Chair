@@ -1,12 +1,14 @@
 import os
 import random
+from typing import List, Tuple
+
 from cache import load_pickle_from, save_list_to_jsonl_w_fn
 from data_generator.NLI.nli_info import nli_tokenized_path
 from misc_lib import TimeEstimator, ceil_divide
 from port_info import KERAS_NLI_PORT
-from trainer_v2.custom_loop.per_task.cip.cip_common import get_nli_baseline_pred_save_path, Prediction
+from trainer_v2.custom_loop.per_task.cip.cip_common import Prediction
+from trainer_v2.custom_loop.per_task.cip.path_helper import get_nli_baseline_pred_save_path
 from trainer_v2.keras_server.bert_like_client import BERTClient
-from typing import List, Tuple
 
 
 def main():

@@ -1,4 +1,3 @@
-import os
 import random
 from collections import defaultdict
 from typing import Tuple, NamedTuple, List
@@ -6,9 +5,8 @@ from typing import Tuple, NamedTuple, List
 import numpy as np
 
 from cache import named_tuple_to_json
-from cpath import output_path
 from data_generator.special_tokens import MASK_ID
-from misc_lib import exist_or_mkdir, SuccessCounter
+from misc_lib import SuccessCounter
 from trainer.promise import MyFuture, list_future
 
 
@@ -97,25 +95,6 @@ class Prediction(NamedTuple):
         return Prediction(j['prem'], j['hypo'], j['label'], j['pred'])
 
 
-def get_nlits_segmentation_trial_save_path(split):
-    save_dir = os.path.join(output_path, "nlits")
-    exist_or_mkdir(save_dir)
-    return os.path.join(save_dir, "segmentations_{}.jsonl".format(split))
-
-
-def get_nli_baseline_pred_save_path(split):
-    save_dir = os.path.join(output_path, "nlits")
-    exist_or_mkdir(save_dir)
-    return os.path.join(save_dir, "baseline_{}.jsonl".format(split))
-
-
-
-def get_nlits_segmentation_trial_subjob_save_dir():
-    save_dir = os.path.join(output_path, "nlits", "subjob")
-    exist_or_mkdir(save_dir)
-    return save_dir
-
-
 def get_statistics(iterate_comparison):
     suc_counters = defaultdict(SuccessCounter)
     for comparison in iterate_comparison:
@@ -127,7 +106,7 @@ def get_statistics(iterate_comparison):
             seg1_pred = local_d[0]
             seg2_pred = local_d[1]
             ts_global_pred = np.argmax(global_d)
-            if full_pred != ts_global_pred and ts_global_pred == comparison.label:
+            if full_pred != ts_global_pred and full_pred == comparison.label:
                 suc_counters['bad_seg_rate'].suc()
                 any_bad_seg = True
             else:

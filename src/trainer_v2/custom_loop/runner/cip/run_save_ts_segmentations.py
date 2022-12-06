@@ -1,7 +1,9 @@
 import os
 import random
 from typing import List, Tuple, Callable
+
 import tensorflow as tf
+
 import cpath
 from cache import load_pickle_from, save_list_to_jsonl_w_fn
 from data_generator.NLI.nli_info import nli_tokenized_path
@@ -14,9 +16,10 @@ from trainer.promise import PromiseKeeper, MyPromise
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.inference import InferenceHelper
 from trainer_v2.custom_loop.per_task.cip.cip_common import get_random_split_location, split_into_two, \
-    SegmentationTrialInputs, SegmentationTrials, get_nlits_segmentation_trial_save_path, \
-    get_nlits_segmentation_trial_subjob_save_dir
+    SegmentationTrialInputs, SegmentationTrials
 from trainer_v2.custom_loop.per_task.cip.nlits_direct import reslice_local_global_decisions, TS600_3_Encoder
+from trainer_v2.custom_loop.per_task.cip.path_helper import get_nlits_segmentation_trial_save_path, \
+    get_nlits_segmentation_trial_subjob_save_dir
 from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model, dataset_factory_600_3
 from trainer_v2.keras_server.nlits_client import NLITSClient
 from trainer_v2.train_util.get_tpu_strategy import get_strategy2

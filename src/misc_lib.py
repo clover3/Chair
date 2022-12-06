@@ -5,7 +5,7 @@ import time
 from _testcapi import INT_MAX
 from collections import Counter, OrderedDict, defaultdict
 from time import gmtime, strftime
-from typing import Iterable, TypeVar, Callable, Dict, List, Any, Tuple
+from typing import Iterable, TypeVar, Callable, Dict, List, Any, Tuple, Iterator
 
 from base_type import FilePath
 
@@ -65,7 +65,7 @@ def TEL(l: List[A]) -> List[A]:
         ticker.tick()
 
 
-def TELI(l: Iterable[A], data_size) -> Iterable[A]:
+def TELI(l: Iterable[A], data_size) -> Iterator[A]:
     ticker = TimeEstimator(data_size)
     for e in l:
         yield e

@@ -53,7 +53,7 @@ class RunConfigEx:
         if self.is_debug_run:
             c_log.warning("DEBUGGING in use")
 
-        if self.device_config.use_tpu():
+        if self.device_config.use_tpu:
             if self.steps_per_execution == 1 and self.is_debug_run:
                 c_log.warning("Using tpu with steps_per_execution == 1")
 

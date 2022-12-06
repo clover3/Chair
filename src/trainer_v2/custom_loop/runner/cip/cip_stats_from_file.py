@@ -2,9 +2,9 @@ import os
 from typing import List, Iterator
 
 from cache import load_list_from_jsonl
-from list_lib import list_equal
 from trainer_v2.custom_loop.per_task.cip.cip_common import SegmentationTrials, \
-    get_nli_baseline_pred_save_path, Prediction, Comparison, get_statistics, \
+    Prediction, Comparison, get_statistics
+from trainer_v2.custom_loop.per_task.cip.path_helper import get_nli_baseline_pred_save_path, \
     get_nlits_segmentation_trial_subjob_save_dir
 
 

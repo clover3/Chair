@@ -40,6 +40,7 @@ class TrainConfig(SubConfig):
                  model_save_path="saved_model_ex",
                  init_checkpoint="",
                  checkpoint_type="bert",
+                 do_shuffle=True,
                  ):
         self.learning_rate = learning_rate
         self.eval_every_n_step = eval_every_n_step
@@ -47,6 +48,7 @@ class TrainConfig(SubConfig):
         self.model_save_path = model_save_path
         self.init_checkpoint = init_checkpoint
         self.checkpoint_type = checkpoint_type
+        self.do_shuffle = do_shuffle
 
         if steps_per_epoch == -1:
             self.steps_per_epoch = train_step
@@ -143,20 +145,14 @@ class CommonRunConfig(SubConfig):
 
 class DeviceConfig(SubConfig):
     def __init__(self, use_tpu, tpu_name, force_use_gpu=False):
-        self._use_tpu = use_tpu
+        self.use_tpu = use_tpu
         self.tpu_name = tpu_name
-        self._force_use_gpu = force_use_gpu
+        self.force_use_gpu = force_use_gpu
 
     @classmethod
     def from_args(cls, args):
         device_config = DeviceConfig(args.use_tpu, args.tpu_name)
         return device_config
-
-    def use_tpu(self):
-        return self._use_tpu
-
-    def force_use_gpu(self):
-        return self._force_use_gpu
 
 
 class RunConfig2:
@@ -197,7 +193,7 @@ class RunConfig2:
         for sub_config in self.get_sub_configs():
             sub_config.print_info()
 
-        if self.device_config.use_tpu():
+        if self.device_config.use_tpu:
             if self.common_run_config.steps_per_execution == 1 and not self.common_run_config.is_debug_run:
                 c_log.warning("Using tpu with steps_per_execution == 1")
 
@@ -251,6 +247,29 @@ def _get_run_config2_nli_train(args):
     train_config = TrainConfig(
         model_save_path=args.output_dir,
         train_step=num_epochs * steps_per_epoch,
+        steps_per_epoch=steps_per_epoch,
+        init_checkpoint=args.init_checkpoint
+    )
+    common_run_config = CommonRunConfig.from_args(args)
+    input_file_config = DatasetConfig.from_args(args)
+    device_config = DeviceConfig.from_args(args)
+
+    run_config = RunConfig2(common_run_config=common_run_config,
+                            dataset_config=input_file_config,
+                            train_config=train_config,
+                            device_config=device_config
+                            )
+
+    update_run_config(config_j, run_config)
+    return run_config
+
+
+def get_run_config2_train(args):
+    config_j = load_json_wrap(args)
+    steps_per_epoch = 1
+    train_config = TrainConfig(
+        model_save_path=args.output_dir,
+        train_step=1,
         steps_per_epoch=steps_per_epoch,
         init_checkpoint=args.init_checkpoint
     )
