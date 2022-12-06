@@ -1,13 +1,14 @@
 import os
 import random
 from typing import List, Tuple
+
 from cache import load_pickle_from
 from data_generator.NLI.nli_info import nli_tokenized_path
 from port_info import KERAS_NLI_PORT, LOCAL_DECISION_PORT
+from pp.cip.cip_common import get_random_split_location, split_into_two, Comparison, \
+    ComparisonF, get_statistics
 from trainer.promise import PromiseKeeper, MyPromise
 from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.per_task.cip.cip_common import get_random_split_location, split_into_two, Comparison, \
-    ComparisonF, get_statistics
 from trainer_v2.keras_server.bert_like_client import BERTClient
 from trainer_v2.keras_server.nlits_client import NLITSClient
 

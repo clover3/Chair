@@ -228,7 +228,7 @@ def get_run_config2_nli(args):
     if args.action == "train":
         return _get_run_config2_nli_train(args)
     elif args.action == "eval":
-        return _get_run_config2_nli_eval(args)
+        return _get_run_config2_eval(args)
     else:
         raise ValueError(args.action)
 
@@ -264,6 +264,16 @@ def _get_run_config2_nli_train(args):
     return run_config
 
 
+def get_run_config2(args):
+    if args.action == "train":
+        return get_run_config2_train(args)
+    elif args.action == "eval":
+        return _get_run_config2_eval(args)
+    else:
+        raise ValueError(args.action)
+
+
+
 def get_run_config2_train(args):
     config_j = load_json_wrap(args)
     steps_per_epoch = 1
@@ -297,7 +307,7 @@ def update_run_config(config_j, run_config):
             c_log.info("Overwrite {} as {}".format(key, value))
 
 
-def _get_run_config2_nli_eval(args):
+def _get_run_config2_eval(args):
     config_j = load_json_wrap(args)
     common_run_config = CommonRunConfig.from_args(args)
     input_file_config = DatasetConfig.from_args(args)

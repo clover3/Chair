@@ -1,11 +1,10 @@
 import os
-from typing import List, Iterator
+from typing import Iterator, List
 
 from cache import load_list_from_jsonl
-from trainer_v2.custom_loop.per_task.cip.cip_common import SegmentationTrials, \
-    Prediction, Comparison, get_statistics
-from trainer_v2.custom_loop.per_task.cip.path_helper import get_nli_baseline_pred_save_path, \
-    get_nlits_segmentation_trial_subjob_save_dir
+from trainer_v2.per_project.cip.cip_common import Comparison, SegmentationTrials, Prediction
+from trainer_v2.per_project.cip.path_helper import get_nlits_segmentation_trial_subjob_save_dir, \
+    get_nli_baseline_pred_save_path
 
 
 def iter_cip_preds() -> Iterator[Comparison]:
@@ -23,11 +22,3 @@ def iter_cip_preds() -> Iterator[Comparison]:
 
     for base, seg_trials in zip(iter_base_outputs(), iter_seg_trials()):
         yield Comparison(base.prem, base.hypo, base.label, base.pred, seg_trials.seg_outputs, seg_trials.st_ed_list)
-
-
-def main():
-    get_statistics(iter_cip_preds())
-
-
-if __name__ == "__main__":
-    main()

@@ -4,8 +4,8 @@ from typing import List, Callable
 import numpy as np
 
 from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
-from trainer_v2.custom_loop.per_task.cip.cip_common import split_into_two
-from trainer_v2.custom_loop.per_task.cip.tfrecord_gen import LabeledInstance, build_encoded, \
+from trainer_v2.per_project.cip.cip_common import split_into_two
+from trainer_v2.per_project.cip.tfrecord_gen import LabeledInstance, build_encoded, \
     SelectOneToOne, ItemSelector, encode_three
 
 

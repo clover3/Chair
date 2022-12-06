@@ -1,15 +1,9 @@
 import os
-import sys
-import traceback
-import cpath
-from typing import List, Callable, Iterable, Dict, Tuple, NamedTuple
-import tensorflow as tf
+from typing import List, Tuple
 
+import cpath
 from data_generator2.encoder_unit import EncoderUnitK
 from trainer_v2.custom_loop.definitions import ModelConfig600_3
-from trainer_v2.custom_loop.inference import InferenceHelper
-from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model
-from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
 def reslice_local_global_decisions(stacked_output):

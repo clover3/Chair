@@ -11,9 +11,9 @@ from misc_lib import TELI
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from tlm.data_gen.bert_data_gen import create_int_feature
 from tlm.data_gen.rank_common import join_two_input_ids
-from trainer_v2.custom_loop.per_task.cip.cip_common import Comparison, split_into_two
-from trainer_v2.custom_loop.per_task.cip.path_helper import get_cip_dataset_path
-from trainer_v2.custom_loop.runner.cip.cip_stats_from_file import iter_cip_preds
+from trainer_v2.per_project.cip.cip_common import Comparison, split_into_two
+from trainer_v2.per_project.cip.path_helper import get_cip_dataset_path
+from trainer_v2.per_project.cip.precomputed_cip import iter_cip_preds
 
 
 def parse_fail(comparison: Comparison):

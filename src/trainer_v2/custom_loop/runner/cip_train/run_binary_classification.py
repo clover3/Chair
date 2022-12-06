@@ -7,23 +7,24 @@ from trainer_v2.custom_loop.dataset_factories import get_classification_dataset
 from trainer_v2.custom_loop.definitions import ModelConfig300_2
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
 from trainer_v2.custom_loop.neural_network_def.classification_trainer import StandardBertCls
-from trainer_v2.custom_loop.per_task.trainer import Trainer
-from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2_train
+from trainer_v2.custom_loop.per_task.trainer import Trainer, get_precision_recall_factories, get_tp_fp_tn_fn_factories
+from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
 from trainer_v2.custom_loop.train_loop import tf_run
-from trainer_v2.custom_loop.trainer_if import TrainerIF
 from trainer_v2.train_util.arg_flags import flags_parser
 
 
 @report_run3
 def main(args):
-    c_log.info("Start train Classification")
-    run_config: RunConfig2 = get_run_config2_train(args)
+    c_log.info("Start {}".format(__file__))
+    run_config: RunConfig2 = get_run_config2(args)
     run_config.print_info()
 
     bert_params = load_bert_config(get_bert_config_path())
     model_config = ModelConfig300_2()
     task_model = StandardBertCls()
-    trainer: TrainerIF = Trainer(bert_params, model_config, run_config, task_model)
+    trainer: Trainer = Trainer(bert_params, model_config, run_config, task_model)
+    trainer.eval_metrics_factory.update(get_precision_recall_factories())
+    trainer.eval_metrics_factory.update(get_tp_fp_tn_fn_factories())
 
     def build_dataset(input_files, is_for_training):
         return get_classification_dataset(input_files, run_config, model_config, is_for_training)

@@ -56,6 +56,22 @@ class EvalObject:
         return eval_loss, metric_res
 
 
+def get_precision_recall_factories():
+    return {
+        'precision': lambda: tf.keras.metrics.Precision(name='precision', dtype=None),
+        'recall': lambda: tf.keras.metrics.Recall(name='recall', dtype=None),
+    }
+
+
+def get_tp_fp_tn_fn_factories():
+    return {
+        'TrueNegatives': lambda: tf.keras.metrics.TrueNegatives(name='TrueNegatives', dtype=None),
+        'FalseNegatives': lambda: tf.keras.metrics.FalseNegatives(name='FalseNegatives', dtype=None),
+        'TruePositives': lambda: tf.keras.metrics.TruePositives(name='TruePositives', dtype=None),
+        'FalsePositives': lambda: tf.keras.metrics.FalsePositives(name='FalsePositives', dtype=None),
+    }
+
+
 class Trainer(TrainerIF):
     def __init__(self, bert_params, model_config,
                  run_config: RunConfig2,

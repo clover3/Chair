@@ -2,7 +2,7 @@ import sys
 from collections import OrderedDict
 from typing import Callable
 
-from trainer_v2.custom_loop.per_task.cip.tfrecord_gen import LabeledInstance, encode_together, build_encoded, \
+from trainer_v2.per_project.cip.tfrecord_gen import LabeledInstance, encode_together, build_encoded, \
     SelectOneToOne, ItemSelector, SelectUpToK, SelectAll, encode_separate, encode_three
 
 

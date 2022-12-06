@@ -15,13 +15,13 @@ from port_info import LOCAL_DECISION_PORT
 from trainer.promise import PromiseKeeper, MyPromise
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.inference import InferenceHelper
-from trainer_v2.custom_loop.per_task.cip.cip_common import get_random_split_location, split_into_two, \
-    SegmentationTrialInputs, SegmentationTrials
-from trainer_v2.custom_loop.per_task.cip.nlits_direct import reslice_local_global_decisions, TS600_3_Encoder
-from trainer_v2.custom_loop.per_task.cip.path_helper import get_nlits_segmentation_trial_save_path, \
-    get_nlits_segmentation_trial_subjob_save_dir
 from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model, dataset_factory_600_3
 from trainer_v2.keras_server.nlits_client import NLITSClient
+from trainer_v2.per_project.cip.cip_common import get_random_split_location, split_into_two, \
+    SegmentationTrialInputs, SegmentationTrials
+from trainer_v2.per_project.cip.nlits_direct import TS600_3_Encoder, reslice_local_global_decisions
+from trainer_v2.per_project.cip.path_helper import get_nlits_segmentation_trial_save_path, \
+    get_nlits_segmentation_trial_subjob_save_dir
 from trainer_v2.train_util.get_tpu_strategy import get_strategy2
 
 

@@ -5,8 +5,8 @@ import numpy as np
 
 from data_generator.special_tokens import MASK_ID
 from data_generator.tokenizer_wo_tf import get_tokenizer, ids_to_text
-from trainer_v2.custom_loop.per_task.cip.cip_common import Comparison
-from trainer_v2.custom_loop.runner.cip.cip_stats_from_file import iter_cip_preds
+from trainer_v2.per_project.cip.cip_common import Comparison
+from trainer_v2.per_project.cip.precomputed_cip import iter_cip_preds
 
 
 def print_failure(iterator: Iterator[Comparison]):
