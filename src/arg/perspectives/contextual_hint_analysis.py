@@ -1,24 +1,11 @@
 
 
-
-
-# TODO foreach of the claim
-# TODO   get_relevant_unigrams_for_claim
-# TODO   get ranked_list for claim
-# TODO      for doc in ranked_list
-# TODO         for all term,
-# TODO         update tf,df of (term, controversy), (term,no controversy)
-# TODO         update tf,df of (term)
-# TODO
-# TODO
-# TODO
-# TODO
 from collections import Counter
 from typing import List, Tuple
 
 import math
 import nltk
-from arg.perspectives.clueweb_helper import ClaimRankedList, load_doc, load_tf, save_tf, preload_tf, \
+from arg.perspectives.clueweb_db import ClaimRankedList, load_doc, load_tf, save_tf, preload_tf, \
     preload_docs
 from scipy.stats import ttest_ind
 

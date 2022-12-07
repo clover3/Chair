@@ -10,9 +10,6 @@ from arg.perspectives.load import load_claim_ids_for_split, get_claim_perspectiv
 from list_lib import flatten
 
 
-# TODO : Load all clusters for each claim
-
-
 class Instance(NamedTuple):
     pid1: int
     pid2: int

@@ -35,12 +35,6 @@ def rerun_jobs(sh_format_path, model_sub_path,
 
 def main():
     info_path = sys.argv[1]
-    # TODO remove
-    # sh_format_path = sys.argv[2]
-    # model_name = sys.argv[3]
-    # step = int(sys.argv[4])
-    # model_sub_path = "{}/model.ckpt-{}".format(model_name, step)
-    # TODO remove end
 
     run_info = json.load(open(info_path, "r"))
     job_info_list = run_info['job_info_list']
