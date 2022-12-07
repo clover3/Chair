@@ -4,11 +4,11 @@ from typing import Dict, List, Tuple
 import math
 from krovetzstemmer import Stemmer
 
-from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
+from adhoc.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from arg.perspectives.collection_based_classifier import predict_interface
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import claims_to_dict, load_perspective_pool
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 # num_doc = 541
 # avdl = 11.74
 from list_lib import dict_value_map
@@ -25,7 +25,7 @@ def load_collection_tf():
 
 
 def get_perspective_tf():
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
     c = Counter()
     for e in load_perspective_pool():
         pId = e['pId']
@@ -85,7 +85,7 @@ def predict_by_lm(claim_tf: Dict[int, Counter],
     bg_tf_stemmed = stem_counter(bg_tf, stemmer.stem)
     bg_ctf = sum(bg_tf.values())
 
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
     not_found = set()
     def scorer(lucene_score, query_id) -> NamedNumber:
         claim_id, p_id = query_id.split("_")

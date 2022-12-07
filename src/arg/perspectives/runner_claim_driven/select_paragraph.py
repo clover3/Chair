@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
+from adhoc.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids
 from arg.perspectives.select_paragraph_claim import select_paragraph
 from cache import save_to_pickle, load_from_pickle

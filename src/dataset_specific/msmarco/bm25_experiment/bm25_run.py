@@ -1,4 +1,4 @@
-from arg.bm25 import BM25
+from adhoc.bm25_class import BM25
 from cache import load_from_pickle
 from cpath import at_output_dir
 from dataset_specific.msmarco.common import at_working_dir, load_per_query_docs, MSMarcoDoc, \

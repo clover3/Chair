@@ -2,7 +2,7 @@ import random
 from collections import Counter
 from typing import List, Tuple
 
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.qck.decl import QCKQuery, QCKCandidate
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap, get_max_idx, lflatten
@@ -24,7 +24,7 @@ class MaxSentEncoder:
     def __init__(self, bm25_module, max_seq_length, include_title=False):
         self.max_seq_length = max_seq_length
         self.bm25_module = bm25_module
-        pc_tokenize = PCTokenizer()
+        pc_tokenize = KrovetzNLTKTokenizer()
         self.tokenize_stem = pc_tokenize.tokenize_stem
         self.include_title = include_title
         bert_tokenizer = get_tokenizer()
@@ -72,7 +72,7 @@ class MaxSegEncoder:
     def __init__(self, bm25_module, max_seq_length, include_title=False):
         self.max_seq_length = max_seq_length
         self.bm25_module = bm25_module
-        pc_tokenize = PCTokenizer()
+        pc_tokenize = KrovetzNLTKTokenizer()
         self.tokenize_stem = pc_tokenize.tokenize_stem
         self.include_title = include_title
         bert_tokenizer = get_tokenizer()
@@ -180,7 +180,7 @@ class SegScorer:
     def __init__(self, bm25_module, max_seq_length):
         self.max_seq_length = max_seq_length
         self.bm25_module = bm25_module
-        pc_tokenize = PCTokenizer()
+        pc_tokenize = KrovetzNLTKTokenizer()
         self.tokenize_stem = pc_tokenize.tokenize_stem
         self.bert_tokenizer = get_tokenizer()
 

@@ -3,7 +3,7 @@ from typing import Iterable, List
 
 import spacy
 
-from arg.bm25 import BM25Bare
+from adhoc.bm25_class import BM25Bare
 from arg.counter_arg import header
 from arg.counter_arg.enum_all_argument import enum_all_argument
 from arg.counter_arg.header import Passage

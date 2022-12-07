@@ -1,7 +1,7 @@
 from collections import Counter
 from typing import List, Tuple, NamedTuple
 
-from arg.bm25 import BM25
+from adhoc.bm25_class import BM25
 from cache import load_from_pickle
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lflatten

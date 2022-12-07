@@ -4,7 +4,7 @@ from math import log
 
 import spacy
 
-from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
+from adhoc.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from cache import save_to_pickle, load_pickle_from
 from dataset_specific.msmarco.common import load_queries
 from epath import job_man_dir

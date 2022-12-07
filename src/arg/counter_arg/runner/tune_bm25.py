@@ -1,4 +1,4 @@
-from arg.bm25 import BM25
+from adhoc.bm25_class import BM25
 from arg.counter_arg.eval import run_eval, EvalCondition
 from arg.counter_arg.methods import bm25_predictor
 from arg.counter_arg.methods.bm25_predictor import get_bm25_module

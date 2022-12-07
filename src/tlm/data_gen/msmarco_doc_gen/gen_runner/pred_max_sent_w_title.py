@@ -1,4 +1,4 @@
-from arg.bm25 import BM25
+from adhoc.bm25_class import BM25
 from cache import load_from_pickle
 from data_generator.job_runner import JobRunner
 from epath import job_man_dir

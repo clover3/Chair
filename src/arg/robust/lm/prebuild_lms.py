@@ -3,7 +3,7 @@ import pickle
 from collections import Counter
 from typing import List, Dict
 
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 from data_generator.data_parser import trec
 from data_generator.data_parser.robust2 import load_robust_qrel, load_bm25_best
 from data_generator.job_runner import JobRunner
@@ -44,7 +44,7 @@ class Worker:
         n_docs = len(self.doc_ids)
         docs_per_job = int((n_docs+n_jobs) / 5)
         self.docs_per_job = docs_per_job
-        self.tokenizer = PCTokenizer()
+        self.tokenizer = KrovetzNLTKTokenizer()
         self.out_dir = out_dir
 
     def work(self, job_id):

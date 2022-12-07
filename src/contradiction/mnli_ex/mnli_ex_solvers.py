@@ -1,7 +1,7 @@
 import random
 from typing import List, Tuple
 
-from arg.clueweb12_B13_termstat import ClueIDF
+from adhoc.clueweb12_B13_termstat import ClueIDF
 from attribution.attrib_types import TokenScores
 from contradiction.mnli_ex.load_mnli_ex_data import MNLIExEntry
 from contradiction.mnli_ex.solver_common import MNLIExSolver

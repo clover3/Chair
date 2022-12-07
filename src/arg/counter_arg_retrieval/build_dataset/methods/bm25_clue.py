@@ -1,5 +1,5 @@
-from arg.bm25 import BM25
-from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat_stemmed_from_pickle, cdf
+from adhoc.bm25_class import BM25
+from adhoc.clueweb12_B13_termstat import load_clueweb12_B13_termstat_stemmed_from_pickle, cdf
 
 
 def build_bm25():

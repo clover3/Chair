@@ -2,7 +2,7 @@ import os
 import pickle
 from typing import List
 
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from dataset_specific.msmarco.common import MSMarcoDataReader, MSMarcoDoc, load_per_query_docs
 from list_lib import lmap, drop_empty_elem
@@ -59,7 +59,7 @@ class MultipleTokenizeWorker:
         self.candidate_docs_d = candidate_docs_d
         self.out_dir = out_dir
         self.bert_tokenizer = get_tokenizer()
-        self.stem_tokenizer = PCTokenizer()
+        self.stem_tokenizer = KrovetzNLTKTokenizer()
         self.max_sent_length = max_sent_length
         self.max_title_length = max_title_length
         self.ms_reader = MSMarcoDataReader(split)

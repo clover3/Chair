@@ -2,7 +2,7 @@ from typing import List
 
 from krovetzstemmer import Stemmer
 
-from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat_stemmed, cdf
+from adhoc.clueweb12_B13_termstat import load_clueweb12_B13_termstat_stemmed, cdf
 from contradiction.medical_claims.token_tagging.online_solver_common import make_ranked_list_w_solver2
 from contradiction.medical_claims.token_tagging.path_helper import get_save_path2
 from contradiction.medical_claims.token_tagging.problem_loader import load_alamri_problem, AlamriProblem

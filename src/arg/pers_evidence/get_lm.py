@@ -3,7 +3,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from arg.pers_evidence.common import get_qck_queries
 from arg.perspectives.load import evidence_gold_dict_str_qid, load_evidence_dict, splits
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.qck.decl import QCKQuery
 from arg.qck.filter_qk import text_list_to_lm
 from list_lib import lmap
@@ -16,7 +16,7 @@ def main():
 
 def get_query_lms(split) -> Dict[str, Counter]:
     evi_dict: Dict[int, str] = load_evidence_dict()
-    tokenzier = PCTokenizer()
+    tokenzier = KrovetzNLTKTokenizer()
     queries = get_qck_queries(split)
     evi_gold_dict: Dict[str, List[int]] = evidence_gold_dict_str_qid()
 

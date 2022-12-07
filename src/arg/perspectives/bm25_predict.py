@@ -3,11 +3,11 @@ from typing import Dict, List, Tuple
 
 # num_doc = 541
 # avdl = 11.74
-from arg.bm25 import BM25
+from adhoc.bm25_class import BM25
 from arg.perspectives.collection_based_classifier import predict_interface
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import claims_to_dict
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 # num_doc = 541
 # avdl = 11.74
 from cache import load_from_pickle, save_to_pickle
@@ -92,7 +92,7 @@ def predict_by_bm25_rm(bm25_module: BM25,
                        top_k) -> List[Tuple[str, List[Dict]]]:
 
     cid_to_text: Dict[int, str] = claims_to_dict(claims)
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
 
     def stem_merge(score_list: List[Tuple[str, float]]) -> Counter:
         c = Counter()

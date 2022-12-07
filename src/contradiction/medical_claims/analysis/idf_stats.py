@@ -3,7 +3,7 @@ from collections import Counter
 
 from krovetzstemmer import Stemmer
 
-from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat_stemmed, clue_cdf
+from adhoc.clueweb12_B13_termstat import load_clueweb12_B13_termstat_stemmed, clue_cdf
 from cache import load_cache, save_to_pickle
 from contradiction.medical_claims.token_tagging.problem_loader import load_alamri_split
 from tab_print import print_table
@@ -91,7 +91,6 @@ def main():
 
 
 def main2():
-
     def idf(df):
         return math.log((clue_cdf - df + 0.5) / (df + 0.5))
 

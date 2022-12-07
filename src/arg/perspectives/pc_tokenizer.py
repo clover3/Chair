@@ -6,23 +6,8 @@ from typing import List
 import nltk
 from krovetzstemmer import Stemmer
 
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 from models.classic.stemming import StemmedToken
-
-
-class PCTokenizer:
-    def __init__(self):
-        self.stemmer = Stemmer()
-
-    def tokenize_stem(self, text: str) -> List[str]:
-        tokens = nltk.tokenize.word_tokenize(text)
-        stemmed_tokens = []
-        for t in tokens:
-            try:
-                stemmed_tokens.append(self.stemmer.stem(t))
-            except:
-                pass
-
-        return stemmed_tokens
 
 
 class PCTokenizerEx:
@@ -63,7 +48,7 @@ def pc_tokenize_ex(text) -> List[StemmedToken]:
 
 
 def test_pc_tokenizer():
-    t = PCTokenizer()
+    t = KrovetzNLTKTokenizer()
     text_list = ["The graduated response is a violation of the basic right to due process",
                  "ISP will not cooperate with a graduated response policy"]
 

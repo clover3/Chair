@@ -2,7 +2,7 @@ import json
 from typing import Dict
 
 from arg.perspectives.load import claims_to_dict, get_all_claims
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 from exec_lib import run_func_with_config
 from models.classic.stopword import load_stopwords_for_query
 
@@ -16,7 +16,7 @@ def main(config):
     word_list_d: Dict = json.load(open(word_list_path, "r"))
 
 
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
 
     for query_id in word_list_d:
         claim = claim_d[int(query_id)]

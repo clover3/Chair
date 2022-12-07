@@ -6,7 +6,7 @@ from arg.perspectives.bm25_predict import get_bm25_module
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids, load_claim_ids_for_split, splits, \
     get_claim_perspective_id_dict2
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 from cache import save_to_pickle
 from list_lib import lmap, left
 from trec.types import TrecRankedListEntry
@@ -45,7 +45,7 @@ def get_eval_candidates(split, top_k=50) -> List[Tuple[int, List[Dict]]] :
     # split -> claims
     d_ids = load_claim_ids_for_split(split)
     claims: List[Dict] = get_claims_from_ids(d_ids)
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
 
     def get_candidates(c: Dict) -> Tuple[int, List[Dict]]:
         cid = c["cId"]
@@ -76,7 +76,7 @@ def get_extended_eval_candidate(split) -> Dict[int, List[int]]:
     d_ids = load_claim_ids_for_split(split)
     claims: List[Dict] = get_claims_from_ids(d_ids)
     cid_to_pids: Dict[int, List[int]] = get_claim_perspective_id_dict2()
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
 
     def get_tf_idf(c: Counter):
         r = Counter()

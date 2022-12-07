@@ -5,7 +5,7 @@ from typing import List, Counter, Dict, Callable, Tuple
 import math
 import nltk
 
-from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
+from adhoc.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from arg.perspectives.collection_interface import CollectionInterface
 from arg.perspectives.declaration import PerspectiveCandidate
 from arg.perspectives.ranked_list_interface import DynRankedListInterface

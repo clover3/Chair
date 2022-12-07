@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from arg.clueweb12_B13_termstat import ClueIDF
+from adhoc.clueweb12_B13_termstat import ClueIDF
 from contradiction.mnli_ex.load_mnli_ex_data import load_mnli_ex
 from dataset_specific.mnli.mnli_reader import MNLIReader
 from list_lib import lmap

@@ -2,7 +2,7 @@ import sys
 
 from arg.claim_building.count_ngram import load_n_gram_from_pickle, is_single_char_n_gram
 from arg.claim_building.ngram_growth import df_to_idf
-from arg.clueweb12_B13_termstat import load_subword_term_stat
+from adhoc.clueweb12_B13_termstat import load_subword_term_stat
 from cache import load_from_pickle
 from misc_lib import average
 

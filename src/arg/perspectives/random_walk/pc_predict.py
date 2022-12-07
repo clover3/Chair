@@ -3,7 +3,7 @@ from typing import Dict, List, Tuple, Iterator
 
 import spacy
 
-from arg.bm25 import BM25
+from adhoc.bm25_class import BM25
 from arg.perspectives.collection_based_classifier import predict_interface
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import claims_to_dict

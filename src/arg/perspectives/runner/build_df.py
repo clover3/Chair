@@ -3,7 +3,7 @@ from typing import List
 
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import get_claim_perspective_id_dict
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.perspectives.split_helper import train_split
 from cache import save_to_pickle
 from list_lib import lmap, flatten
@@ -14,7 +14,7 @@ def build_df():
     claims, val = train_split()
     gold = get_claim_perspective_id_dict()
 
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
     df = Counter()
 
     dl_list = []

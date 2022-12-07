@@ -1,6 +1,6 @@
 from collections import Counter
 
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 from cache import save_to_pickle
 from dataset_specific.msmarco.common import at_working_dir
 from misc_lib import Averager, TimeEstimator
@@ -8,7 +8,7 @@ from misc_lib import Averager, TimeEstimator
 
 def get_df():
     doc_f = open(at_working_dir("msmarco-docs.tsv"), encoding="utf8")
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
     line_itr = doc_f
     df = Counter()
 

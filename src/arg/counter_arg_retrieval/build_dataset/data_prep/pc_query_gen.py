@@ -1,6 +1,6 @@
 from typing import List
 
-from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
+from adhoc.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import get_all_claim_d
 from clueweb.sydney_path import index_list

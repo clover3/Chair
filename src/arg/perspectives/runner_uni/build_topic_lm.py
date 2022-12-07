@@ -4,7 +4,7 @@ from typing import List, NamedTuple, Iterable
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import get_claim_perspective_id_dict, load_claims_for_sub_split, load_claim_ids_for_split, \
     get_claims_from_ids
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.perspectives.split_helper import train_split
 from list_lib import lmap, foreach, left
 from models.classic.lm_util import get_lm_log, subtract, least_common, smooth, average_counters, tokens_to_freq
@@ -37,7 +37,7 @@ def build_gold_lms_for_split(split) -> List[ClaimLM]:
 
 def build_gold_lms(claims) -> List[ClaimLM]:
     gold = get_claim_perspective_id_dict()
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
 
     def get_cluster_lm(cluster: List[int]) -> Counter:
         p_text_list: List[str] = lmap(perspective_getter, cluster)
@@ -57,7 +57,7 @@ def build_gold_lms(claims) -> List[ClaimLM]:
 
 
 def build_baseline_lms(claims):
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
 
     def get_claim_lm(claim):
         cid = claim["cId"]

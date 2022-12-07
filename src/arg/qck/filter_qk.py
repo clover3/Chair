@@ -3,7 +3,7 @@ from typing import List, Dict
 
 import math
 
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.qck.decl import QKUnit, KDP
 from list_lib import lmap, lfilter, right
 from misc_lib import average, TimeEstimator
@@ -11,7 +11,7 @@ from models.classic.lm_util import average_counters, get_lm_log, tokens_to_freq
 from models.classic.stopword import load_stopwords_for_query
 
 
-def text_list_to_lm(tokenizer: PCTokenizer, text_list: List[str]) -> Counter:
+def text_list_to_lm(tokenizer: KrovetzNLTKTokenizer, text_list: List[str]) -> Counter:
     tokens_list: List[List[str]] = lmap(tokenizer.tokenize_stem, text_list)
     counter_list = lmap(tokens_to_freq, tokens_list)
     counter = average_counters(counter_list)
@@ -27,7 +27,7 @@ class LMScorer:
         self.alpha = alpha
         self.log_odd_d: Dict[str, Counter] = {k: Counter() for k in query_lms.keys()}
         self.stopwords = load_stopwords_for_query()
-        self.tokenizer = PCTokenizer()
+        self.tokenizer = KrovetzNLTKTokenizer()
 
     def score(self, query_id, raw_tokens) -> float:
         stemmed_tokens = self.filter_and_stem(raw_tokens)

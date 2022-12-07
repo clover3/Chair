@@ -5,7 +5,7 @@ from typing import NamedTuple
 
 from arg.counter_arg.eval import get_eval_payload_from_dp, prepare_eval_data
 from arg.counter_arg.header import Passage
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 from list_lib import left, foreach
 from list_lib import lmap
 from models.classic.lm_util import tokens_to_freq, average_counters, get_lm_log, smooth, subtract, least_common
@@ -18,7 +18,7 @@ class RelevanceModel(NamedTuple):
 
 
 def build_lm(split) -> Iterable[RelevanceModel]:
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
     problems, candidate_pool_d = prepare_eval_data(split)
     payload: List[Passage] = get_eval_payload_from_dp(problems)
     for query, problem in zip(payload, problems):

@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 import nltk
 
-from arg.bm25 import BM25
+from adhoc.bm25_class import BM25
 from arg.counter_arg.header import Passage
 from arg.counter_arg.methods.bm25_predictor import BasicTF
 from arg.counter_arg.methods.tool import get_term_importance, sent_tokenize_newline

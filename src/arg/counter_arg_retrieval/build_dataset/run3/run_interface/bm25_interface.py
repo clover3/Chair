@@ -2,7 +2,7 @@ import unicodedata
 from collections import Counter
 from typing import List, Tuple
 
-from arg.bm25 import BM25
+from adhoc.bm25_class import BM25
 from list_lib import flatten
 
 

@@ -1,4 +1,4 @@
-from arg.bm25 import BM25
+from adhoc.bm25_class import BM25
 from cache import load_from_pickle
 from tab_print import print_table
 from tlm.data_gen.msmarco_doc_gen.max_sent_encode import SegScorer, PassageScoreTuner

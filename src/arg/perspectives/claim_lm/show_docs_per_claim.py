@@ -6,7 +6,7 @@ from arg.perspectives.claim_lm.passage_common import iterate_passages
 from arg.perspectives.clueweb_db import load_doc
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids, get_claim_perspective_id_dict
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms
 from base_type import FilePath
 from cache import save_to_pickle
@@ -139,7 +139,7 @@ def join_docs_and_lm():
         c = Cell(token, s)
         return c
 
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
     for c in claims:
         q_res: List[SimpleRankedListEntry] = ranked_list[str(c['cId'])]
         html_visualizer.write_headline("{} : {}".format(c['cId'], c['text']))
@@ -206,7 +206,7 @@ def doc_lm_scoring():
 
     html_visualizer = HtmlVisualizer("doc_lm_doc_level.html")
 
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
     random_passages = []
     num_pos_sum = 0
     num_pos_exists = 0
@@ -313,7 +313,7 @@ def a_relevant():
     stopwords = load_stopwords_for_query()
     alpha = 0.3
 
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
     all_passages = []
     entries = []
     for c in claims:

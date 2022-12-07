@@ -4,8 +4,8 @@ from typing import List, Dict
 
 from krovetzstemmer import Stemmer
 
-from arg.bm25 import BM25
-from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat_stemmed, cdf
+from adhoc.bm25_class import BM25
+from adhoc.clueweb12_B13_termstat import load_clueweb12_B13_termstat_stemmed, cdf
 from arg.perspectives.load import d_n_claims_per_split2
 from arg.perspectives.load import load_claim_ids_for_split
 from arg.perspectives.qck.qck_common import get_qck_candidate_from_ranked_list_path

@@ -8,7 +8,7 @@ import math
 import nltk
 from arg.pf_common.select_paragraph import subword_tokenize_functor, enum_paragraph
 
-from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
+from adhoc.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from arg.pf_common.base import TPDataPoint, ParagraphFeature, Paragraph, ScoreParagraph, DPID
 from arg.pf_common.ranked_list_interface import RankedListInterface
 from arg.pf_common.text_processing import re_tokenize

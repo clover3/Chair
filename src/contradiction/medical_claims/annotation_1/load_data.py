@@ -41,6 +41,26 @@ def get_test_group_no():
     return list(range(13, num_review))
 
 
+def load_split_no(split):
+    if split == "dev":
+        return get_dev_group_no()
+    elif split == "test":
+        return get_test_group_no()
+    else:
+        assert False
+
+
+def load_reviews_for_split(split) -> List[Tuple[int, Review]]:
+    reviews: List[Review] = load_parsed()
+    split_group_no_list = load_split_no(split)
+    output = []
+    for group_no, review in enumerate(reviews):
+        if group_no in split_group_no_list:
+            output.append((group_no, review))
+    return output
+
+
+
 def load_reviews_dev_split():
     reviews: List[Review] = load_parsed()
     dev_group_no_list = get_dev_group_no()

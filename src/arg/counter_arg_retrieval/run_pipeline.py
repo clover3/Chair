@@ -3,8 +3,8 @@ from collections import Counter
 from typing import List, Dict, Tuple
 from typing import NamedTuple
 
-from arg.bm25 import BM25Bare
-from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat_stemmed, cdf
+from adhoc.bm25_class import BM25Bare
+from adhoc.clueweb12_B13_termstat import load_clueweb12_B13_termstat_stemmed, cdf
 from arg.perspectives.pc_tokenizer import pc_tokenize_ex
 from clueweb.html_to_text import get_text_from_html
 from galagos.parse import load_query_json_as_dict

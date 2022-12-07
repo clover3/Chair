@@ -1,11 +1,11 @@
 from collections import Counter
 from typing import List, Iterable, Dict, Callable, Any
 
-from arg.bm25 import BM25
+from adhoc.bm25_class import BM25
 from arg.counter_arg import header
 from arg.counter_arg.enum_all_argument import enum_all_argument
 from arg.counter_arg.header import ArguDataID, Passage
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
 from cache import load_from_pickle, save_to_pickle
 from list_lib import lmap
 from misc_lib import NamedNumber
@@ -83,7 +83,7 @@ def get_bm25_module(split):
 
 
 def count_df(passages: Iterable[Passage]) -> Counter:
-    tokenizer = PCTokenizer()
+    tokenizer = KrovetzNLTKTokenizer()
     df = Counter()
     for p in passages:
         tokens = tokenizer.tokenize_stem(p.text)

@@ -6,7 +6,7 @@ from typing import List, Set, Iterable, Callable
 import math
 import nltk
 
-from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
+from adhoc.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from arg.perspectives.basic_analysis import load_data_point
 from arg.perspectives.declaration import ParagraphClaimPersFeature, PerspectiveCandidate
 from arg.perspectives.ranked_list_interface import StaticRankedListInterface

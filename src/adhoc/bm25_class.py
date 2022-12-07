@@ -3,7 +3,7 @@ from collections import Counter
 from math import log
 
 from adhoc.bm25 import BM25_verbose
-from arg.perspectives.pc_tokenizer import PCTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from misc_lib import NamedNumber
 
 
@@ -64,7 +64,7 @@ class BM25Bare:
 class BM25:
     def __init__(self, df, num_doc, avdl, k1=0.01, k2=100, b=0.6):
         self.core = BM25Bare(df, num_doc, avdl, k1, k2, b)
-        self.tokenizer = PCTokenizer()
+        self.tokenizer = KrovetzNLTKTokenizer()
 
     def score(self, query, text) -> NamedNumber:
         q_terms = self.tokenizer.tokenize_stem(query)

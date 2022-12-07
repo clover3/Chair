@@ -6,7 +6,7 @@ import math
 import nltk
 
 from adhoc.bm25 import compute_K
-from arg.clueweb12_B13_termstat import load_clueweb12_B13_termstat
+from adhoc.clueweb12_B13_termstat import load_clueweb12_B13_termstat
 from arg.perspectives.basic_analysis import get_candidates
 from arg.perspectives.clueweb_db import load_doc
 from arg.perspectives.load import get_claims_from_ids, load_train_claim_ids
