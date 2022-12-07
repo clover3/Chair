@@ -21,7 +21,7 @@ def get_random_system_stat(n_pos, n_all):
 def main():
     cip1 = {'acc': 0.5251, 'precision': 0.09634754, 'recall': 0.6058861, 'TrueNegatives': 19110.0, 'FalseNegatives': 1232.0, 'TruePositives': 1894.0, 'FalsePositives': 17764.0, 'loss': 0.17211385}
     cip2 = {'acc': 0.57535, 'precision': 0.10163256, 'recall': 0.565579, 'TrueNegatives': 21246.0, 'FalseNegatives': 1358.0, 'TruePositives': 1768.0, 'FalsePositives': 15628.0, 'loss': 0.16854888}
-
+    cip3 = {'acc': 0.61175, 'precision': 0.10421187, 'recall': 0.5223928, 'TrueNegatives': 22837.0, 'FalseNegatives': 1493.0, 'TruePositives': 1633.0, 'FalsePositives': 14037.0, 'loss': 0.16177635}
     n_pos = 3126
     n_all = 40000
     n_neg = n_all - n_pos
@@ -30,6 +30,7 @@ def main():
     scores = {
         'cip1': cip1,
         'cip2': cip2,
+        'cip3': cip3,
         'random': random_s
     }
 

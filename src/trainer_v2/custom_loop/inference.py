@@ -1,7 +1,7 @@
 import os
 import time
 import warnings
-from typing import Tuple, Dict, Callable, List
+from typing import Tuple, Dict, Callable, List, Iterable
 
 import tensorflow as tf
 
@@ -9,6 +9,7 @@ from misc_lib import ceil_divide
 from trainer_v2.chair_logging import c_log, IgnoreFilter
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
 from trainer_v2.custom_loop.run_config2 import RunConfig2
+from trainer_v2.custom_loop.train_loop import load_model_by_dir_or_abs
 from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 
 
@@ -77,5 +78,25 @@ class InferenceHelperSimple:
             yield x, output
 
 
+class BERTInferenceHelper:
+    def __init__(self,
+                 model_save_path,
+                 max_seq_length,
+                 strategy,
+                 ):
+        model_factory = lambda: load_model_by_dir_or_abs(model_save_path)
 
+        def dataset_factory(payload: Iterable):
+            def generator():
+                yield from payload
+
+            int_list = tf.TensorSpec(shape=(max_seq_length,), dtype=tf.int32)
+            output_signature = (int_list, int_list)
+            dataset = tf.data.Dataset.from_generator(generator, output_signature=output_signature)
+            return dataset
+
+        self.inf_helper = InferenceHelper(model_factory, dataset_factory, strategy)
+
+    def predict(self, items):
+        return self.inf_helper.predict(items)
 

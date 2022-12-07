@@ -176,8 +176,7 @@ def encode_separate_core(hypo, seq_length, st, ed):
 def encode_three(seq_length, e: LabeledInstance) -> OrderedDict:
     hypo: List[int] = e.comparison.hypo
     hypo1, hypo2 = split_into_two(hypo, e.st, e.ed)
-    input_ids = [CLS_ID] + hypo + [SEP_ID] + hypo1 + [SEP_ID] + hypo2 + [SEP_ID]
-    segment_ids = [0] * (len(hypo) + 2) + [1] * (len(hypo1) + 1) + [2] * (len(hypo2) + 1)
+    input_ids, segment_ids = join_three_input_ids(hypo, hypo1, hypo2)
     input_ids = pad_to_length(input_ids, seq_length)
     input_mask = pad_to_length([1] * len(input_ids), seq_length)
     segment_ids = pad_to_length(segment_ids, seq_length)
@@ -187,5 +186,11 @@ def encode_three(seq_length, e: LabeledInstance) -> OrderedDict:
     features["segment_ids"] = create_int_feature(segment_ids)
     features['label_ids'] = create_int_feature([e.label])
     return features
+
+
+def join_three_input_ids(t1, t2, t3):
+    input_ids = [CLS_ID] + t1 + [SEP_ID] + t2 + [SEP_ID] + t3 + [SEP_ID]
+    segment_ids = [0] * (len(t1) + 2) + [1] * (len(t2) + 1) + [2] * (len(t3) + 1)
+    return input_ids, segment_ids
 
 
