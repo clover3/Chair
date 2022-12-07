@@ -1,3 +1,5 @@
+import os
+
 import requests
 
 from taskman_client.host_defs import webtool_host, webtool_port
@@ -57,6 +59,9 @@ def report_run3(func):
             task_proxy.tpu_name = flags.tpu_name
 
         job_id = flags.job_id if flags.job_id >= 0 else None
+        if job_id is None:
+            if 'SLURM_JOBID' in os.environ:
+                job_id = int(os.environ['SLURM_JOBID'])
         try:
             msg = flags_str
             task_proxy.task_start(run_name, msg, job_id)

@@ -1,5 +1,5 @@
 import random
-from collections import defaultdict
+from collections import defaultdict, Counter
 from typing import Tuple, NamedTuple, List
 
 import numpy as np
@@ -7,6 +7,7 @@ import numpy as np
 from cache import named_tuple_to_json
 from data_generator.special_tokens import MASK_ID
 from misc_lib import SuccessCounter
+from tab_print import print_table
 from trainer.promise import MyFuture, list_future
 
 
@@ -96,6 +97,7 @@ class Prediction(NamedTuple):
 
 
 def get_statistics(iterate_comparison):
+    confusion = Counter()
     suc_counters = defaultdict(SuccessCounter)
     for comparison in iterate_comparison:
         full_pred = np.argmax(comparison.full_pred_probs)
@@ -108,6 +110,7 @@ def get_statistics(iterate_comparison):
             ts_global_pred = np.argmax(global_d)
             if full_pred != ts_global_pred and full_pred == comparison.label:
                 suc_counters['bad_seg_rate'].suc()
+                confusion[(full_pred, ts_global_pred)] += 1
                 any_bad_seg = True
             else:
                 suc_counters['bad_seg_rate'].fail()
@@ -118,3 +121,10 @@ def get_statistics(iterate_comparison):
     for key, suc_counter in suc_counters.items():
         print(key, suc_counter.get_suc_prob())
 
+    table = []
+    for i in range(3):
+        row = []
+        for j in range(3):
+            row.append(confusion[i,j])
+        table.append(row)
+    print_table(table)

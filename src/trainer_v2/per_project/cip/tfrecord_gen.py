@@ -1,4 +1,3 @@
-import itertools
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import Iterator, NamedTuple
@@ -13,7 +12,7 @@ from tlm.data_gen.bert_data_gen import create_int_feature
 from tlm.data_gen.rank_common import join_two_input_ids
 from trainer_v2.per_project.cip.cip_common import Comparison, split_into_two
 from trainer_v2.per_project.cip.path_helper import get_cip_dataset_path
-from trainer_v2.per_project.cip.precomputed_cip import iter_cip_preds
+from trainer_v2.per_project.cip.precomputed_cip import get_cip_pred_splits_iter
 
 
 def parse_fail(comparison: Comparison):
@@ -122,16 +121,7 @@ def count_iter(itr: Iterator, name) -> Iterator:
 def build_encoded(dataset_name,
                   item_selector: ItemSelector,
                   encode_fn: Callable[[LabeledInstance], OrderedDict]):
-    k_validation = 4000
-    iter: Iterator[Comparison] = iter_cip_preds()
-    val_itr = itertools.islice(iter, k_validation)
-    train_itr = itertools.islice(iter, k_validation, None)
-    n_train_itr_size = 384702
-
-    todo = [
-        ("train_val", val_itr, k_validation),
-        ("train", train_itr, n_train_itr_size)
-    ]
+    todo = get_cip_pred_splits_iter()
     for split, itr, src_size in todo:
         labeled_instance_itr: Iterator[LabeledInstance] = item_selector.select(itr)
         labeled_instance_itr = count_iter(labeled_instance_itr, split)
@@ -163,11 +153,9 @@ def encode_together(seq_length, e: LabeledInstance) -> OrderedDict:
 
 def encode_separate(seq_length, e: LabeledInstance) -> OrderedDict:
     hypo: List[int] = e.comparison.hypo
-    hypo1, hypo2 = split_into_two(hypo, e.st, e.ed)
-    pair = join_two_input_ids(hypo1, hypo2)
-    input_ids = pad_to_length(pair.input_ids, seq_length)
-    input_mask = pad_to_length([1] * len(pair.input_ids), seq_length)
-    segment_ids = pad_to_length(pair.seg_ids, seq_length)
+    st = e.st
+    ed = e.ed
+    input_ids, input_mask, segment_ids = encode_separate_core(hypo, seq_length, st, ed)
     features = OrderedDict()
     features["input_ids"] = create_int_feature(input_ids)
     features["input_mask"] = create_int_feature(input_mask)
@@ -175,6 +163,14 @@ def encode_separate(seq_length, e: LabeledInstance) -> OrderedDict:
     features['label_ids'] = create_int_feature([e.label])
     return features
 
+
+def encode_separate_core(hypo, seq_length, st, ed):
+    hypo1, hypo2 = split_into_two(hypo, st, ed)
+    pair = join_two_input_ids(hypo1, hypo2)
+    input_ids = pad_to_length(pair.input_ids, seq_length)
+    input_mask = pad_to_length([1] * len(pair.input_ids), seq_length)
+    segment_ids = pad_to_length(pair.seg_ids, seq_length)
+    return input_ids, input_mask, segment_ids
 
 
 def encode_three(seq_length, e: LabeledInstance) -> OrderedDict:

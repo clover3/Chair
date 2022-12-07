@@ -25,11 +25,14 @@ def seq300wrap(
 
 
 def main():
-    seq300wrap("cip1", SelectOneToOne(), encode_together)
-    seq300wrap("cip2", SelectUpToK(10), encode_together)
-    seq300wrap("cip1_eval", SelectAll(), encode_together)
-    seq300wrap("cip3", SelectOneToOne(), encode_separate)
-    seq300wrap("cip4", SelectOneToOne(), encode_three)
+    # seq300wrap("cip1", SelectOneToOne(), encode_together)
+    # seq300wrap("cip2", SelectUpToK(10), encode_together)
+    # seq300wrap("cip1_eval", SelectAll(), encode_together)
+    # seq300wrap("cip3", SelectOneToOne(), encode_separate)
+    # seq300wrap("cip3_eval", SelectAll(), encode_separate)
+
+    # seq300wrap("cip4", SelectOneToOne(), encode_three)
+    seq300wrap("cip4_eval", SelectAll(), encode_three)
 
 #
 

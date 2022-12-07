@@ -875,3 +875,13 @@ def tensor_to_list(t):
 def read_non_empty_lines_stripped(save_path):
     lines = open(save_path, "r").readlines()
     return [l.strip() for l in lines if l.strip()]
+
+
+def pause_hook(itr: Iterator, n):
+    cnt = 0
+    for e in itr:
+        yield e
+        if cnt % n == 0 and cnt != 0 :
+            input("Enter something to continue")
+        cnt += 1
+
