@@ -3,7 +3,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from arg.pers_evidence.common import get_qck_queries
 from arg.perspectives.load import evidence_gold_dict_str_qid, load_evidence_dict, splits
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.qck.decl import QCKQuery
 from arg.qck.filter_qk import text_list_to_lm
 from list_lib import lmap

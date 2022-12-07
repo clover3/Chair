@@ -6,7 +6,7 @@ from arg.perspectives.claim_lm.passage_common import iterate_passages
 from arg.perspectives.clueweb_db import load_doc
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids, get_claim_perspective_id_dict
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms
 from base_type import FilePath
 from cache import save_to_pickle

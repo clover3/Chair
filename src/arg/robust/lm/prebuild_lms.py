@@ -3,7 +3,7 @@ import pickle
 from collections import Counter
 from typing import List, Dict
 
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from data_generator.data_parser import trec
 from data_generator.data_parser.robust2 import load_robust_qrel, load_bm25_best
 from data_generator.job_runner import JobRunner

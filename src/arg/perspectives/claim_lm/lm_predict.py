@@ -3,7 +3,7 @@ from typing import List, Dict, Tuple
 
 from arg.perspectives.collection_based_classifier import predict_interface
 from arg.perspectives.evaluate import perspective_getter
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.perspectives.runner_uni.build_topic_lm import ClaimLM
 from list_lib import lmap
 from misc_lib import NamedNumber

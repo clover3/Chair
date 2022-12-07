@@ -7,7 +7,7 @@ from adhoc.bm25_class import BM25
 from arg.perspectives.collection_based_classifier import predict_interface
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import claims_to_dict
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 # num_doc = 541
 # avdl = 11.74
 from cache import load_from_pickle, save_to_pickle

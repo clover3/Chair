@@ -2,7 +2,7 @@ import random
 from collections import Counter
 from typing import List, Tuple
 
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.qck.decl import QCKQuery, QCKCandidate
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import lmap, get_max_idx, lflatten

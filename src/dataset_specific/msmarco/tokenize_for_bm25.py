@@ -3,7 +3,7 @@ import pickle
 from collections import Counter
 from typing import List
 
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from dataset_specific.msmarco.common import MSMarcoDataReader, MSMarcoDoc, load_per_query_docs
 from list_lib import lmap, drop_empty_elem

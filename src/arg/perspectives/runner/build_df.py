@@ -3,7 +3,7 @@ from typing import List
 
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import get_claim_perspective_id_dict
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.perspectives.split_helper import train_split
 from cache import save_to_pickle
 from list_lib import lmap, flatten

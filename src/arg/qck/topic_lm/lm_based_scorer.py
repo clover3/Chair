@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections import Counter
 from typing import List, Tuple
 
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.qck.token_scoring.decl import ScoreVector, TokenScore
 from list_lib import right
 from models.classic.lm_util import get_log_odd2, average_counters

@@ -2,7 +2,7 @@ import json
 from typing import Dict
 
 from arg.perspectives.load import claims_to_dict, get_all_claims
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from exec_lib import run_func_with_config
 from models.classic.stopword import load_stopwords_for_query
 

@@ -3,7 +3,7 @@ from typing import List, Dict, Counter
 from arg.perspectives.claim_lm.show_docs_per_claim import preload_docs
 from arg.perspectives.clueweb_db import load_doc
 from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms
 from base_type import FilePath
 from galagos.parse import load_galago_ranked_list

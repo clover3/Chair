@@ -2,7 +2,7 @@ from collections import Counter
 from typing import List
 
 from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids, claims_to_dict
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.perspectives.random_walk.runner.show_biased_random_walk import normalize_counter_to_sum1
 from cache import load_from_pickle, save_to_pickle
 

@@ -1,6 +1,6 @@
 from collections import Counter
 
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from cache import save_to_pickle
 from dataset_specific.msmarco.common import at_working_dir
 from misc_lib import Averager, TimeEstimator

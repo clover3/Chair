@@ -5,7 +5,7 @@ from typing import NamedTuple
 
 from arg.counter_arg.eval import get_eval_payload_from_dp, prepare_eval_data
 from arg.counter_arg.header import Passage
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from list_lib import left, foreach
 from list_lib import lmap
 from models.classic.lm_util import tokens_to_freq, average_counters, get_lm_log, smooth, subtract, least_common

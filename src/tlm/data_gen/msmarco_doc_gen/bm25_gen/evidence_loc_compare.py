@@ -1,6 +1,6 @@
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from dataset_specific.msmarco.analyze_code.doc_passage_join import get_passage_dict
 from dataset_specific.msmarco.common import load_query_group, QueryID
 import csv

@@ -2,7 +2,7 @@ from collections import Counter
 from typing import List, Tuple
 
 from arg.perspectives.load import get_perspective_dict
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.perspectives.runner_uni.build_topic_lm import ClaimLM
 from cache import load_from_pickle
 from list_lib import flatten, left

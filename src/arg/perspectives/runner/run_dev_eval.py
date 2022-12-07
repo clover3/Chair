@@ -10,7 +10,7 @@ from arg.perspectives.lm_predict import predict_by_lm, load_collection_tf, get_p
 from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids
 from arg.perspectives.next_sent_predictor import pc_predict_by_bert_next_sent
 from arg.perspectives.pc_para_predictor import predict_by_para_scorer
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.perspectives.random_walk.pc_predict import pc_predict_from_vector_query, pc_predict_vector_query_and_reweight
 from arg.perspectives.relevance_based_predictor import predict_from_dict, predict_from_two_dict, prediction_to_dict
 from arg.perspectives.reweight_predict import predict_by_reweighter

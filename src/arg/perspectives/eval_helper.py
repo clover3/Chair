@@ -6,7 +6,7 @@ from arg.perspectives.bm25_predict import get_bm25_module
 from arg.perspectives.evaluate import perspective_getter
 from arg.perspectives.load import get_claims_from_ids, load_dev_claim_ids, load_claim_ids_for_split, splits, \
     get_claim_perspective_id_dict2
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from cache import save_to_pickle
 from list_lib import lmap, left
 from trec.types import TrecRankedListEntry

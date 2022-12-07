@@ -5,7 +5,7 @@ from arg.perspectives.basic_analysis import get_candidates
 from arg.perspectives.declaration import PerspectiveCandidate
 from arg.perspectives.load import get_claims_from_ids, load_test_claim_ids, load_dev_claim_ids, load_train_claim_ids, \
     claims_to_dict
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from cache import save_to_pickle
 from list_lib import dict_value_map, right, left
 from misc_lib import group_by

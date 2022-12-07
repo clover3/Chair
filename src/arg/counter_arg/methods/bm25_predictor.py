@@ -5,7 +5,7 @@ from adhoc.bm25_class import BM25
 from arg.counter_arg import header
 from arg.counter_arg.enum_all_argument import enum_all_argument
 from arg.counter_arg.header import ArguDataID, Passage
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from cache import load_from_pickle, save_to_pickle
 from list_lib import lmap
 from misc_lib import NamedNumber

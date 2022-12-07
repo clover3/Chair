@@ -5,7 +5,7 @@ from typing import List, Dict, Tuple
 from scipy.stats import pearsonr
 
 from arg.perspectives.clueweb_db import load_doc
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms_for_sub_split, ClaimLM
 from datastore.interface import preload_man
 from datastore.table_names import TokenizedCluewebDoc

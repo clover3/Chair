@@ -3,7 +3,7 @@ from typing import List, Dict
 
 import math
 
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.qck.decl import QKUnit, KDP
 from list_lib import lmap, lfilter, right
 from misc_lib import average, TimeEstimator

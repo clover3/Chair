@@ -6,7 +6,7 @@ from typing import List
 import nltk
 from krovetzstemmer import Stemmer
 
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from models.classic.stemming import StemmedToken
 
 

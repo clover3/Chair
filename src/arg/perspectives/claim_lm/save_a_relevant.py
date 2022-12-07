@@ -4,7 +4,7 @@ from typing import List, Dict, Tuple
 from arg.perspectives.claim_lm.passage_common import iterate_passages
 from arg.perspectives.claim_lm.show_docs_per_claim import preload_docs
 from arg.perspectives.load import load_train_claim_ids, get_claims_from_ids, load_dev_claim_ids
-from arg.perspectives.kn_tokenizer import KrovetzNLTKTokenizer
+from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from arg.perspectives.runner_uni.build_topic_lm import build_gold_lms
 from base_type import FilePath
 from cache import save_to_pickle
