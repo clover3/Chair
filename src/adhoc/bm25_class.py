@@ -62,9 +62,10 @@ class BM25Bare:
 
 
 class BM25:
-    def __init__(self, df, num_doc, avdl, k1=0.01, k2=100, b=0.6):
+    def __init__(self, df, num_doc, avdl, k1=0.01, k2=100, b=0.6,
+                 drop_stopwords=False):
         self.core = BM25Bare(df, num_doc, avdl, k1, k2, b)
-        self.tokenizer = KrovetzNLTKTokenizer()
+        self.tokenizer = KrovetzNLTKTokenizer(drop_stopwords)
 
     def score(self, query, text) -> NamedNumber:
         q_terms = self.tokenizer.tokenize_stem(query)

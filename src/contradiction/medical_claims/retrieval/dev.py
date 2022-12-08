@@ -1,58 +1,48 @@
-from abc import ABC, abstractmethod
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from contradiction.medical_claims.retrieval.bm25_system import BM25BioClaim
+from contradiction.medical_claims.retrieval.eval_helper import solve_bio_claim_and_save, build_qrel, \
+    get_bioclaim_retrieval_corpus
 
-from contradiction.medical_claims.annotation_1.load_data import load_reviews_for_split
-from contradiction.medical_claims.load_corpus import Review
+"""
+Task 1. Given an RQ, retrieve all relevant documents
+     Method 1. Term-matching based (DONE)
+     Method 2. Large-LM approach
+     Method 3. NLI driven approach
 
+Task 2. Given an RQ, build a contradictory pair
+  How to check polarity?
+     Append 'YES' or 'No' to the question and do NLI classification.
+     Method 1. Large-LM approach
+     Method 2. NLITS
+"""
 
-class BioClaimRetrievalSystem(ABC):
-    def score(self, question, claim) -> float:
-        pass
-
-
-Queries = List[Tuple[str, str]]
-Docs = List[Tuple[str, str]]
-
-
-def get_bioclaim_retrieval_corpus(split) -> Tuple[Queries, Docs]:
-    review_list: List[Tuple[int, Review]] = load_reviews_for_split(split)
-    queries = []
-    claims = []
-
-    claim_unique = set()
-    for group_no, r in review_list:
-        query = r.claim_list[0].question
-        qid = str(group_no)
-        queries.append((qid, query))
-        for c in r.claim_list:
-            doc_id = c.pmid
-            assert doc_id not in claim_unique
-            claim_unique.add(doc_id)
-            claims.append((doc_id, c.text))
-
-    return queries, claims
+from contradiction.medical_claims.retrieval.path_helper import get_retrieval_qrel_path, get_retrieval_save_path
+from list_lib import right
+from runnable.trec.trec_eval_like import trec_eval_like_core
+from trec.qrel_parse import load_qrels_flat_per_query
+from trec.trec_parse import save_qrel, load_ranked_list_grouped
 
 
-def solve_BioClaim(system: BioClaimRetrievalSystem, split):
-    pass
+def do_save_qrel():
+    for split in ["dev", "test"]:
+        save_qrel(build_qrel(split), get_retrieval_qrel_path(split))
 
 
 def main():
-    # TODO  Task 1. Given an RQ, retrieve all relevant documents
-    #   Method 1. Term-matching based
-    #   Method 2. Large-LM approach
-    #   Method 3. NLI driven approach
+    _, claims = get_bioclaim_retrieval_corpus("dev")
+
+    system = BM25BioClaim(right(claims))
+    solve_bio_claim_and_save(system.score, "dev", "bm25")
 
 
-    # TODO  Task 2. Given an RQ, build a contradictory pair
-    #   How to check polarity?
-    #      Append 'YES' or 'No' to the question and do NLI classification.
-    #      Method 1. Large-LM approach
-    #      Method 2. NLITS
+def analyze():
+    rl = load_ranked_list_grouped(get_retrieval_save_path("bm25_2"))
+    qrel = load_qrels_flat_per_query(get_retrieval_qrel_path("dev"))
 
-
-    return NotImplemented
+    for k in [1, 5, 10, 20, 50, 100]:
+        metric = "R{}".format(k)
+        s = trec_eval_like_core(qrel, rl, metric)
+        print(metric, s)
 
 
 if __name__ == "__main__":
-    main()
+    analyze()

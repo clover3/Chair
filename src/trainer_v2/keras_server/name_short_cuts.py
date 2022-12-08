@@ -7,6 +7,7 @@ from port_info import KERAS_NLI_PORT, LOCAL_DECISION_PORT
 from trainer_v2.custom_loop.definitions import ModelConfig300_3, ModelConfig600_3
 from trainer_v2.keras_server.bert_like_client import BERTClient
 
+IDS = List[int]
 NLIPredictorSig = Callable[[List[Tuple[str, str]]], List[List[float]]]
 
 
@@ -38,8 +39,8 @@ def get_pep_client() -> NLIPredictorSig:
     client = BERTClient("localhost", LOCAL_DECISION_PORT, model_config.max_seq_length)
     full_tokenizer = client.encoder.encoder.ft
 
-    def encode_tuple(t: Tuple[str, str]) -> Tuple[List, List]:
-        def encode_one(s: str):
+    def encode_tuple(t: Tuple[str, str]) -> Tuple[IDS, IDS]:
+        def encode_one(s: str) -> IDS:
             tokens = tokenize_w_mask_preserving(full_tokenizer, s)
             return full_tokenizer.convert_tokens_to_ids(tokens)
 
@@ -47,7 +48,7 @@ def get_pep_client() -> NLIPredictorSig:
         return encode_one(s1), encode_one(s2)
 
     def predict(items: List[Tuple[str, str]]) -> List[List[float]]:
-        tokenized = list(map(encode_tuple, items))
+        tokenized: List[Tuple[IDS, IDS]] = list(map(encode_tuple, items))
         result = client.request_multiple_from_ids_pairs(tokenized)
         output = []
         for local_decision, g_decision in result:

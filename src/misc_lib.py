@@ -130,6 +130,13 @@ def exist_or_mkdir(dir_path):
         os.mkdir(dir_path)
 
 
+def path_join(*args):
+    if len(args) > 1:
+        parent_path = os.path.join(*args[:-1])
+        exist_or_mkdir(parent_path)
+    return os.path.join(*args)
+
+
 def delete_if_exist(path):
     if os.path.exists(path):
         shutil.rmtree(path)

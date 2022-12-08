@@ -13,6 +13,7 @@ def write_trec_relevance_judgement(entries: Iterable[TrecRelevanceJudgementEntry
         f.write(line)
     f.close()
 
+save_qrel = write_trec_relevance_judgement
 
 def write_trec_ranked_list_entry(entries: Iterable[TrecRankedListEntry], save_path: str):
     f = open(save_path, "w")

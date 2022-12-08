@@ -1,6 +1,9 @@
-from typing import List, Dict, Callable
+from collections import defaultdict
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from list_lib import index_by_fn, all_equal
+from misc_lib import get_second
+from trainer.promise import PromiseKeeper
 from trec.types import TrecRankedListEntry
 
 
@@ -10,6 +13,16 @@ def assign_rank(l: List[TrecRankedListEntry]) -> List[TrecRankedListEntry]:
     for _rank, e in enumerate(l):
         rank = _rank + 1
         e = TrecRankedListEntry(e.query_id, e.doc_id, rank, e.score, e.run_name)
+        l_out.append(e)
+    return l_out
+
+
+def build_ranked_list(qid, run_name, scored_docs: List[Tuple[str, float]]) -> List[TrecRankedListEntry]:
+    scored_docs.sort(key=get_second, reverse=True)
+    l_out = []
+    for _rank, (doc_id, score) in enumerate(scored_docs):
+        rank = _rank + 1
+        e = TrecRankedListEntry(qid, doc_id, rank, score, run_name)
         l_out.append(e)
     return l_out
 
@@ -54,4 +67,34 @@ def ensemble_ranked_list(rlg_list: List[Dict[str, List[TrecRankedListEntry]]],
 
         d_out[qid] = assign_rank(e_list)
     return d_out
+
+
+def batch_rerank(
+        queries: List[Tuple[str, str]],
+        docs_d: Dict[str, str],
+        rlg: Dict[str, List[TrecRankedListEntry]],
+        scorer: Callable[[List[Tuple[str, str]]], List[float]],
+        run_name: str
+) -> List[TrecRankedListEntry]:
+    pk = PromiseKeeper(scorer)
+    qid_doc_id_future_list = []
+    for qid, query_text in queries:
+        for e in rlg[qid]:
+            doc_text = docs_d[e.doc_id]
+            score_future = pk.get_future((query_text, doc_text))
+            e = qid, e.doc_id, score_future
+            qid_doc_id_future_list.append(e)
+    pk.do_duty(True)
+    per_qid: Dict[str, List] = defaultdict(list)
+    for qid, doc_id, score_future in qid_doc_id_future_list:
+        s: float = score_future.get()
+        per_qid[qid].append((doc_id, s))
+
+    tr_entries: List[TrecRankedListEntry] = []
+    for qid, scored_docs in per_qid.items():
+        rl = build_ranked_list(qid, run_name, scored_docs)
+        tr_entries.extend(rl)
+    return tr_entries
+
+
 
