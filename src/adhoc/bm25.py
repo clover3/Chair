@@ -29,7 +29,7 @@ def BM25_3(f, qf, df, N, dl, avdl):
 
 def BM25_verbose(f, qf, df, N, dl, avdl, b, my_k1, my_k2):
     K = my_k1 * ((1-b) + b * (float(dl)/float(avdl)))
-    first = log((N-df+0.5)/(df + 0.5))
+    first = log((N-df+0.5)/(df + 0.5) + 1)
     second = ((my_k1 + 1) * f) / (K + f)
     third = ((my_k2+1) * qf) / (my_k2 + qf)
     return first * second * third

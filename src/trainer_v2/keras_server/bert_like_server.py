@@ -5,6 +5,7 @@ from typing import List, Tuple
 import tensorflow as tf
 
 from rpc.bert_like_server import RPCServerWrap
+from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.inference import InferenceHelper
 from trainer_v2.custom_loop.train_loop import load_model_by_dir_or_abs
 
@@ -36,11 +37,11 @@ def run_keras_bert_like_server(port, model_path, model_config, strategy):
             return output
 
         except Exception as e:
-            print("Exception in user code:")
-            print(traceback.print_exc(file=sys.stdout))
-            print(e)
+            c_log.warn("Exception in user code:")
+            c_log.warn(traceback.print_exc(file=sys.stdout))
+            c_log.warn(e)
         return []
 
     server = RPCServerWrap(predict)
-    print("server started")
+    c_log.info("server started")
     server.start(port)

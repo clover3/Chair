@@ -2,6 +2,8 @@ import socketserver
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 from xmlrpc.server import SimpleXMLRPCServer
 
+from trainer_v2.chair_logging import c_log
+
 
 class RPCServerWrap:
     def __init__(self, predict_fn):
@@ -14,14 +16,14 @@ class RPCServerWrap:
         class RPCThreading(socketserver.ThreadingMixIn, SimpleXMLRPCServer):
             pass
 
-        print("Preparing server")
+        c_log.info("Preparing server")
         server = RPCThreading(("0.0.0.0", port),
                                     requestHandler=RequestHandler,
                                     allow_none=True,
                                     )
         server.register_introspection_functions()
         server.register_function(self.predict, 'predict')
-        print("Waiting")
+        c_log.info("Waiting")
         server.serve_forever()
 
     def predict(self, payload):

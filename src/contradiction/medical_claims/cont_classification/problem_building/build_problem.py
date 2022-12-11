@@ -6,7 +6,8 @@ from typing import List, Dict, Tuple, Iterator
 
 from cache import named_tuple_to_json, save_list_to_jsonl_w_fn
 from contradiction.medical_claims.annotation_1.load_data import load_reviews_for_split
-from contradiction.medical_claims.cont_classification.defs import ContProblem
+from contradiction.medical_claims.cont_classification.defs import ContProblem, NOTE_POS_PAIR, NOTE_NEG_TYPE1_YS, \
+    NOTE_NEG_TYPE1_NO, NOTE_NEG_TYPE2
 from contradiction.medical_claims.cont_classification.path_helper import get_problem_path, get_problem_note_path
 from contradiction.medical_claims.load_corpus import Review, Claim
 from contradiction.medical_claims.pilot.pilot_annotation import enum_true_instance
@@ -59,7 +60,7 @@ def build_problem_set(split, scorer) -> Tuple[List[ContProblem], Dict]:
         pairs = pairs[:n_per_topic]
         for c1, c2 in pairs:
             p = ContProblem(c1.question, c1.text, c2.text, 1)
-            claim_pair_note[p.signature()] = "pos pair"
+            claim_pair_note[p.signature()] = NOTE_POS_PAIR
             problems.append(p)
     # True YES/NO Pair
 
@@ -77,11 +78,11 @@ def build_problem_set(split, scorer) -> Tuple[List[ContProblem], Dict]:
         yes_claims, no_claims = separate_yes_no(review.claim_list)
         random.shuffle(yes_claims)
         pair_itr = itertools.combinations(yes_claims, 2)
-        add_problems(pair_itr, "neg from same group yes", 5)
+        add_problems(pair_itr, NOTE_NEG_TYPE1_YS, 5)
 
         random.shuffle(no_claims)
         pair_itr = itertools.combinations(no_claims, 2)
-        add_problems(pair_itr, "neg from same group no", 5)
+        add_problems(pair_itr, NOTE_NEG_TYPE1_NO, 5)
 
     # For each question, select YES/NO by high similarity
     def iter_claims_that_are_not_group_no(exclude_group_no):
@@ -105,7 +106,20 @@ def build_problem_set(split, scorer) -> Tuple[List[ContProblem], Dict]:
                 c2 = c2_opposite_itr[max_idx]
                 yield c1, c2
 
-        add_problems(get_pair_itr(), "neg from different group", 5)
+        add_problems(get_pair_itr(), NOTE_NEG_TYPE2, 5)
+
+    pos_problems = [p for p in problems if p.label]
+    neg_problems = [p for p in problems if not p.label]
+    print("{} pos_problems".format(len(pos_problems)))
+    print("{} neg_problems".format(len(neg_problems)))
+
+    indices = list(range(len(neg_problems)))
+    random.shuffle(indices)
+    sel_indices = indices[:len(pos_problems)]
+    neg_problems = [p for i, p in enumerate(neg_problems) if i in sel_indices]
+    problems = pos_problems + neg_problems
+    note_hash = [p.signature() for p in problems]
+    claim_pair_note = {k: v for k, v in claim_pair_note.items() if k in note_hash}
 
     return problems, claim_pair_note
 

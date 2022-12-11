@@ -1,8 +1,7 @@
-import json
 from collections import Counter
 
 from contradiction.medical_claims.cont_classification.path_helper import load_cont_classification_problems, \
-    get_problem_note_path
+    load_problem_notes
 
 
 def main():
@@ -10,7 +9,7 @@ def main():
         print(split)
         counter = Counter()
         problems = load_cont_classification_problems(split)
-        note_dict = json.load(open(get_problem_note_path(split), "r"))
+        note_dict = load_problem_notes(split)
         for p in problems:
             counter[p.label] += 1
             note_text = note_dict[p.signature()]

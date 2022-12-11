@@ -36,3 +36,14 @@ def get_acc_prec_recall(pred: List[bool], gold: List[bool]) -> Dict:
         'fp': fp,
         'fn': fn
     }
+
+
+def get_acc_prec_recall_i(pred: List[int], gold: List[int]) -> Dict:
+    def convert(labels):
+        for l in labels:
+            if l not in [0, 1]:
+                print("WARNING there is label {}".format(l))
+        return [bool(l) for l in labels]
+
+    return get_acc_prec_recall(convert(pred), convert(gold))
+
