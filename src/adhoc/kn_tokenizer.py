@@ -11,7 +11,7 @@ class KrovetzNLTKTokenizer:
         self.stemmer = Stemmer()
         if drop_stopwords:
             self.stopword = load_stopwords()
-            print("Drop stopwords")
+            # print("Drop stopwords")
         else:
             self.stopword = None
 

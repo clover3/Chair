@@ -1,4 +1,4 @@
-from contradiction.medical_claims.retrieval.bm25_system import BM25BioClaim
+from contradiction.medical_claims.retrieval.bm25_system import BM25BioClaim, BM25Clueweb
 from contradiction.medical_claims.retrieval.eval_helper import solve_bio_claim_and_save, build_qrel, \
     get_bioclaim_retrieval_corpus
 
@@ -28,10 +28,8 @@ def do_save_qrel():
 
 
 def main():
-    _, claims = get_bioclaim_retrieval_corpus("dev")
-
-    system = BM25BioClaim(right(claims))
-    solve_bio_claim_and_save(system.score, "dev", "bm25")
+    system = BM25Clueweb()
+    solve_bio_claim_and_save(system.score, "dev", "bm25_clue")
 
 
 def analyze():
@@ -44,5 +42,13 @@ def analyze():
         print(metric, s)
 
 
+def task_tuned():
+    split = "test"
+    _, claims = get_bioclaim_retrieval_corpus(split)
+
+    system = BM25BioClaim(right(claims))
+    solve_bio_claim_and_save(system.score, split, "bm25_{}".format(split))
+
+
 if __name__ == "__main__":
-    analyze()
+    task_tuned()

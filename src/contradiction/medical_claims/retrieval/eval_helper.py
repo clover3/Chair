@@ -13,6 +13,8 @@ Queries = List[Tuple[str, str]]
 Docs = List[Tuple[str, str]]
 
 
+# Build Claim ID
+
 def get_bioclaim_retrieval_corpus(split) -> Tuple[Queries, Docs]:
     review_list: List[Tuple[int, Review]] = load_reviews_for_split(split)
     queries = []
@@ -25,9 +27,14 @@ def get_bioclaim_retrieval_corpus(split) -> Tuple[Queries, Docs]:
         queries.append((qid, query))
         for c in r.claim_list:
             doc_id = c.pmid
-            if doc_id in claim_unique:
-                assert claim_unique[doc_id] == c.text
-            else:
+            do_add = True
+            while doc_id in claim_unique:
+                if claim_unique[doc_id] == c.text:
+                    do_add = False
+                    break
+                doc_id = c.pmid + "_2"
+
+            if do_add:
                 claim_unique[doc_id] = c.text
                 claims.append((doc_id, c.text))
 
@@ -78,7 +85,6 @@ def batch_solve_bioclaim(scorer: BatchTextPairScorer, split, run_name, mini_debu
             score_f = pk.get_future((query, claim))
             qid_doc_id_future_list.append((qid, doc_id, score_f))
 
-    c_log.info("")
     pk.do_duty(True)
     score_d = {}
     for qid, doc_id, f in qid_doc_id_future_list:

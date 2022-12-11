@@ -19,6 +19,19 @@ def average(l):
     return sum(l) / len(l)
 
 
+def weighted_sum(scores, weights):
+    if len(scores) != len(weights):
+        raise IndexError
+
+    w_sum = 0
+    sw_sum = 0
+    for s, w in zip(scores, weights):
+        sw_sum += s * w
+        w_sum += w
+
+    return sw_sum / w_sum
+
+
 def threshold05(s) -> int:
     return 1 if s >= 0.5 else 0
 

@@ -4,6 +4,7 @@ from bert_api.task_clients.nli_interface.nli_predictors_path import get_pep_cach
     get_nli14_cache_sqlite_path
 from datastore.sql_based_cache_client import SQLBasedCacheClientS
 from port_info import KERAS_NLI_PORT, LOCAL_DECISION_PORT
+from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.definitions import ModelConfig300_3, ModelConfig600_3
 from trainer_v2.keras_server.bert_like_client import BERTClient
 
@@ -34,7 +35,7 @@ def tokenize_w_mask_preserving(full_tokenizer, text):
     return split_tokens
 
 
-def get_pep_client() -> NLIPredictorSig:
+def get_pep_client(verbose=False) -> NLIPredictorSig:
     model_config = ModelConfig600_3()
     client = BERTClient("localhost", LOCAL_DECISION_PORT, model_config.max_seq_length)
     full_tokenizer = client.encoder.encoder.ft
@@ -48,8 +49,12 @@ def get_pep_client() -> NLIPredictorSig:
         return encode_one(s1), encode_one(s2)
 
     def predict(items: List[Tuple[str, str]]) -> List[List[float]]:
+        c_log.debug("Encoding items...")
         tokenized: List[Tuple[IDS, IDS]] = list(map(encode_tuple, items))
+        c_log.debug("Sending items...")
         result = client.request_multiple_from_ids_pairs(tokenized)
+        c_log.debug("Recieved.")
+
         output = []
         for local_decision, g_decision in result:
             output.append(local_decision[0])

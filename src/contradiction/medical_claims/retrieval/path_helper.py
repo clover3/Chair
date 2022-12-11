@@ -10,3 +10,4 @@ def get_retrieval_save_path(save_name):
 def get_retrieval_qrel_path(split):
     save_path = path_join(output_path, "alamri_annotation1", "retrieval_qrel", split + ".qrel")
     return save_path
+

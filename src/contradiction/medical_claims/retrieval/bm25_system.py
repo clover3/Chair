@@ -12,7 +12,8 @@ from misc_lib import Averager
 class BM25Clueweb(BioClaimRetrievalSystem):
     def __init__(self):
         tf, df = load_clueweb12_B13_termstat_stemmed()
-        self.bm25 = BM25(df, avdl=11.7, num_doc=cdf, k1=0.00001, k2=100, b=0.5)
+        self.bm25 = BM25(df, avdl=11.7, num_doc=cdf, k1=0.00001, k2=100, b=0.5,
+                         drop_stopwords=True)
 
     def score(self, question: str, claim: str) -> float:
         return self.bm25.score(question, claim)
