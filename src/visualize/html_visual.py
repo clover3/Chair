@@ -5,6 +5,7 @@ from typing import List, NamedTuple
 
 import cpath
 from cpath import output_path
+from misc_lib import path_join
 
 
 def normalize255(v, max):
@@ -137,7 +138,7 @@ class HtmlVisualizer(VisualizerCommon):
                  script_include=[],
                  ):
         if os.path.basename(filename) == filename:
-            save_path = os.path.join(output_path, "visualize", filename)
+            save_path = path_join(output_path, "visualize", filename)
         else:
             save_path = filename
         self.f_html = open(save_path, "w", encoding="utf-8")

@@ -53,7 +53,7 @@ def get_pep_client(verbose=False) -> NLIPredictorSig:
         tokenized: List[Tuple[IDS, IDS]] = list(map(encode_tuple, items))
         c_log.debug("Sending items...")
         result = client.request_multiple_from_ids_pairs(tokenized)
-        c_log.debug("Recieved.")
+        c_log.debug("Received.")
 
         output = []
         for local_decision, g_decision in result:

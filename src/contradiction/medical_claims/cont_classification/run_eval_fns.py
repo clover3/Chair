@@ -20,6 +20,8 @@ def run_cont_solver_and_save(solver: ContClassificationSolverIF, run_name, split
 def run_cont_prob_solver_and_save(solver: ContClassificationProbabilityScorer, run_name, split):
     c_log.info(f"run_cont_prob_solver_and_save({run_name}, {split})")
     problems: List[ContProblem] = load_cont_classification_problems(split)
+    c_log.warn(f"run_cont_prob_solver_and_save() is in debugging mode only using 10 items")
+    problems = problems[:10]
     scores: List[float] = solver.solve_batch(problems)
     if len(scores) != len(problems):
         raise IndexError()
@@ -28,11 +30,11 @@ def run_cont_prob_solver_and_save(solver: ContClassificationProbabilityScorer, r
     save_predictions(run_name, split, predictions)
 
 
-def do_eval(run_name, split) -> Dict:
+def do_eval(run_name, split, adjust_to_prediction_length=False) -> Dict:
     problems: List[ContProblem] = load_cont_classification_problems(split)
     predictions: List[int] = load_predictions(run_name, split)
 
-    if len(predictions) != len(problems):
+    if len(predictions) != len(problems) and not adjust_to_prediction_length:
         raise IndexError()
 
     labels: List[int] = [p.label for p in problems]

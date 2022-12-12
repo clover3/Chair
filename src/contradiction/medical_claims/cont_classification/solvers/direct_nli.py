@@ -226,3 +226,33 @@ def get_nli_q3() -> NLITestComps:
         return (condition1 + condition2) / 2
 
     return NLITestComps(get_nli14_predictor(), test_fns, combine)
+
+
+def get_nli_q4() -> NLITestComps:
+    test_fns = [
+        # IF YES/NO
+        TestComp("entail(t1, q+ys)", get_c_q_add_word(0, "? Yes"), get_entail),
+        TestComp("entail(t2, q+no)", get_c_q_add_word(1, "? No"), get_entail),
+        # IF YES/NO
+        TestComp("entail(t1, q+no)", get_c_q_add_word(0, "? No"), get_entail),
+        TestComp("entail(t2, q+ys)", get_c_q_add_word(1, "? Yes"), get_entail),
+
+        # IF YES/NO
+        TestComp("cont(t1, q+no)", get_c_q_add_word(0, "? No"), get_cont),
+        TestComp("cont(t2, q+ys)", get_c_q_add_word(1, "? Yes"), get_cont),
+        TestComp("cont(t1, q+ys)", get_c_q_add_word(0, "? Yes"), get_cont),
+        TestComp("cont(t2, q+no)", get_c_q_add_word(1, "? No"), get_cont),
+    ]
+    def combine(score_d):
+        t1_is_yes = max(score_d["entail(t1, q+ys)"], score_d["cont(t1, q+no)"])
+        t1_is_no = max(score_d["entail(t1, q+no)"], score_d["cont(t1, q+ys)"])
+
+        t2_is_no = max(score_d["entail(t2, q+no)"], score_d["cont(t2, q+ys)"])
+        t2_is_yes = max(score_d["entail(t2, q+ys)"], score_d["cont(t2, q+no)"])
+
+        opt1 = (t1_is_yes + t2_is_no) / 2
+        opt2 = (t1_is_no + t2_is_yes) / 2
+        condition1 = max(opt1, opt2)
+        return condition1
+
+    return NLITestComps(get_nli14_predictor(), test_fns, combine)

@@ -89,6 +89,8 @@ def token_level_attribution(scores: List[float], intervals: List[Tuple[int, int]
     return scores
 
 
+
+
 class NLIBasedRelevanceMultiSeg:
     def __init__(
             self,

@@ -39,7 +39,7 @@ class NLIVisualize(TaskVisualizationPolicyI):
     def make_prediction_summary_str(self, base_prob):
         return make_nli_prediction_summary_str(base_prob)
 
-    def prob_to_color(self, prob):
+    def prob_to_color(self, prob) -> List[int]:
         color_mapping = {
             0: 2,  # Red = Contradiction
             1: 1,  # Green = Neutral

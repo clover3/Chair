@@ -6,7 +6,8 @@ def main():
     split = "dev"
     run_name_list = [
         "majority", "random", "bm25_tuned",
-        "nli", "nli_q", "nli_q1",  "nli_q2",  "nli_q3"
+        "nli", "nli_q", "nli_q1",  "nli_q2",  "nli_q3", "nli_q4",
+        "tnli1"
     ]
 
     metric_names = ["accuracy", "precision", "recall", "f1", "tp", "fp", "tn", "fn"]
@@ -14,7 +15,7 @@ def main():
     table = []
     table.append(["run_name"] + metric_names)
     for run_name in run_name_list:
-        scores = do_eval(run_name, split)
+        scores = do_eval(run_name, split, True)
         row = [run_name]
         for metric in metric_names:
             s = scores[metric]

@@ -44,7 +44,7 @@ class PartialSegSolver(TokenScoringSolverIF):
         return scores1, scores2
 
 
-class WordSegSolver(TokenScoringSolverIF):
+class WordSegAlignSolver(TokenScoringSolverIF):
     def __init__(self, predict_fn):
         self.predict_fn = predict_fn
         self.tokenizer = get_tokenizer()
@@ -80,3 +80,36 @@ class WordSegSolver(TokenScoringSolverIF):
             match_matrix.append(match_row)
 
         return convert_align_to_mismatch(np.array(match_matrix))
+
+
+class WordSegSolver(TokenScoringSolverIF):
+    def __init__(self, predict_fn):
+        self.predict_fn = predict_fn
+        self.tokenizer = get_tokenizer()
+        c_log.setLevel(logging.WARN)
+
+    def solve(self, text1_tokens: List[str], text2_tokens: List[str]) -> Tuple[List[float], List[float]]:
+        text1 = " ".join(text1_tokens)
+        text2 = " ".join(text2_tokens)
+        pairs: List[Tuple[str, str]] = []
+        for token in text1_tokens:
+            pairs.append((text2, token))
+        for token in text2_tokens:
+            pairs.append((text1, token))
+
+        probs = self.predict_fn(pairs)
+
+        i = 0
+        scores1 = []
+        for token in text1_tokens:
+            pred = probs[i]
+            scores1.append(pred[1])
+            i += 1
+
+        scores2 = []
+        for token in text2_tokens:
+            pred = probs[i]
+            scores2.append(pred[1])
+            i += 1
+
+        return scores1, scores2
