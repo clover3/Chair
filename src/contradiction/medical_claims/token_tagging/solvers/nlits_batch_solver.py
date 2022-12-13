@@ -227,6 +227,29 @@ class NLITSAdapter3(NLITSAdapter):
         return es_list
 
 
+class NLITSAdapter4(NLITSAdapter):
+    def __init__(self,
+                 nlits: LocalDecisionNLICore,
+                 score_reducer: ScoreReducerI):
+        super(NLITSAdapter4, self).__init__(nlits, score_reducer)
+
+    def enum_child(self, t1, t2):
+        p_tokens = list(flatten(map(self.tokenizer.tokenize, t1)))
+        n_seg = len(t2)
+        es_list = []
+        for offset in [0, 1, 2]:
+            for window_size in [1, 3, 6]:
+                if window_size >= n_seg:
+                    break
+                for h_tokens, st, ed in enum_hypo_tokens(
+                        self.tokenizer,
+                        t2, window_size, offset):
+                    x = self.nlits.encode_fn(p_tokens, h_first, h_second)
+                    es = ESTwoPiece(x, t1, t2, [h_first, h_second], st, ed)
+                    es_list.append(es)
+        return es_list
+
+
 class NLITSAdapterWMask(NLITSAdapter):
     def __init__(self,
                  nlits: LocalDecisionNLICore,

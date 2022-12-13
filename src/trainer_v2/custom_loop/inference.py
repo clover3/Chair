@@ -1,6 +1,7 @@
 import os
 import time
 import warnings
+from collections import Counter
 from typing import Tuple, Dict, Callable, List, Iterable
 
 import tensorflow as tf
@@ -100,3 +101,16 @@ class BERTInferenceHelper:
     def predict(self, items):
         return self.inf_helper.predict(items)
 
+
+class SanityChecker:
+    def __init__(self):
+        c_log.debug("Using basic SanityChecker")
+        self.window = []
+
+    def update(self, labels):
+        self.window.extend(labels)
+        n_label_diverse = len(Counter(self.window))
+        if n_label_diverse == 1 and len(self.window) > 100:
+            c_log.warn("[WARNING] There were {} predictions which were all {}".format(len(self.window), n_label_diverse))
+
+        self.window = self.window[:100]

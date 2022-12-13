@@ -51,5 +51,11 @@ def load_predictions(run_name, split) -> List[int]:
     return predictions
 
 
+def load_raw_predictions(run_name, split) -> List[int]:
+    save_path = get_raw_prediction_save_path(run_name, split)
+    predictions: List[int] = json.load(open(save_path, "r"))
+    return predictions
+
+
 def load_problem_notes(split):
     return json.load(open(get_problem_note_path(split), "r"))

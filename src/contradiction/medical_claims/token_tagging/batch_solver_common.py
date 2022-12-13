@@ -15,8 +15,9 @@ class BatchTokenScoringSolverIF(ABC):
         pass
 
 
-def make_ranked_list_w_batch_solver(problems: List[AlamriProblem],
-                                    run_name, save_path, tag_type, solver: BatchTokenScoringSolverIF):
+def make_ranked_list_w_batch_solver(
+        problems: List[AlamriProblem],
+        run_name, save_path, tag_type, solver: BatchTokenScoringSolverIF):
     all_ranked_list = []
     payload = []
     for p in problems:

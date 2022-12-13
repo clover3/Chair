@@ -1,17 +1,18 @@
 import itertools
 import logging
-from typing import List
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import Dict, Tuple
 
-from contradiction.medical_claims.cont_classification.solvers.token_nli import TokenLevelInference, \
-    max_reduce_then_softmax, nc_max_e_avg_reduce_then_softmax
+from contradiction.medical_claims.cont_classification.solvers.token_nli import nc_max_e_avg_reduce_then_softmax
+from contradiction.medical_claims.token_level_inference import TokenLevelInference
 import numpy as np
-from contradiction.medical_claims.retrieval.nli_system import enum_subseq_136
+
+from contradiction.medical_claims.cont_classification.tli_devs.tli_visualize import til_to_table
+from trainer_v2.per_project.tli.enum_subseq import enum_subseq_136
 from dataset_specific.mnli.mnli_reader import MNLIReader
 from explain.pairing.run_visualizer.show_cls_probe import NLIVisualize
 from trainer_v2.chair_logging import c_log
 from trainer_v2.keras_server.name_short_cuts import get_pep_client
-from visualize.html_visual import HtmlVisualizer, Cell
+from visualize.html_visual import HtmlVisualizer
 
 
 def main():
@@ -19,10 +20,6 @@ def main():
     nli_predict_fn = get_pep_client()
     tli_module = TokenLevelInference(nli_predict_fn, enum_subseq_136)
     nli_visualize = NLIVisualize()
-    def prob_to_color(prob) -> str:
-        color_score = nli_visualize.prob_to_color(prob)
-        color = "".join([("%02x" % int(v)) for v in color_score])
-        return color
 
     reader = MNLIReader()
     pair_itr_gen = lambda : itertools.islice(reader.get_train(), 30)
@@ -37,19 +34,10 @@ def main():
         prem = pair.premise
         hypo = pair.hypothesis
         tli: np.array = tli_dict[prem, hypo]
-        color_array: List[str] = list(map(prob_to_color, tli))
-        cell_str_array = list(map(nli_visualize.get_cell_str, tli))
-        row1 = [Cell(t) for t in hypo.split()]
-        row2 = []
-        row3 = []
-        for cell_str, color in zip(cell_str_array, color_array):
-            cell = Cell(cell_str, 255, target_color=color)
-            row2.append(cell)
-            row3.append(Cell(cell_str))
+        table = til_to_table(hypo, tli)
 
         probs_from_tli = nc_max_e_avg_reduce_then_softmax(tli)
         pred_str = nli_visualize.make_prediction_summary_str(probs_from_tli)
-        table = [row1, row2, row3]
         html.write_paragraph("Prem: " + pair.premise)
         html.write_paragraph("Hypo: " + pair.hypothesis)
         html.write_paragraph("Gold: " + pair.label)

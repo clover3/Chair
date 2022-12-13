@@ -17,9 +17,10 @@ def solve_mismatch_ecc(args, solver_factory):
 
 def solve_ecc(args, solver_factory, tag_type, target_label):
     run_config = get_run_config_for_predict(args)
-    run_config.print_info()
-    solver = solver_factory(run_config, target_label)
     run_name = args.run_name
+    c_log.info(f"solve_ecc({run_name}, {tag_type})")
+    solver = solver_factory(run_config, target_label)
+    run_config.print_info()
     save_path = get_save_path2(run_name, tag_type)
     problems: List[AlamriProblem] = load_alamri_problem()
     c_log.info("Using {} problems".format(len(problems)))

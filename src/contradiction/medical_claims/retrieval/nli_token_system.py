@@ -1,12 +1,10 @@
-from collections import defaultdict
-from typing import List, Iterable, Callable, Dict, Tuple, Set, Iterator
+from typing import List, Tuple
 
 from adhoc.bm25_class import BM25
-from misc_lib import average, weighted_sum
-from port_info import LOCAL_DECISION_PORT
+from misc_lib import weighted_sum
 from trainer.promise import PromiseKeeper, MyFuture, list_future
-from trainer_v2.chair_logging import c_log
 from trainer_v2.keras_server.name_short_cuts import NLIPredictorSig, get_pep_client
+from trainer_v2.per_project.tli.enum_subseq import enum_subseq_136, token_level_attribution
 
 
 class NLIBasedRelevance:
@@ -59,36 +57,6 @@ class NLIBasedRelevance:
         for t in bm25_tokens:
             idf_sum += self.bm25.term_idf_factor(t)
         return idf_sum
-
-
-def enum_subseq(tokens_length: int, window_size, offset=0) -> Iterator[Tuple[int, int]]:
-    st = offset
-    while st < tokens_length:
-        ed = min(st + window_size, tokens_length)
-        yield st, ed
-        st += window_size
-
-
-def enum_subseq_136(tokens_length: int) -> Iterator[Tuple[int, int]]:
-    for offset in [0, 1, 2]:
-        for window_size in [1, 3, 6]:
-            yield from enum_subseq(tokens_length, window_size, offset)
-
-
-def token_level_attribution(scores: List[float], intervals: List[Tuple[int, int]]) -> List[float]:
-    scores_building = defaultdict(list)
-
-    for s, (st, ed) in zip(scores, intervals):
-        for i in range(st, ed):
-            scores_building[i].append(s)
-
-    n_seq = max(scores_building.keys()) + 1
-    scores = []
-    for i in range(n_seq):
-        scores.append(average(scores_building[i]))
-    return scores
-
-
 
 
 class NLIBasedRelevanceMultiSeg:

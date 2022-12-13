@@ -4,7 +4,7 @@ from adhoc.bm25_class import BM25
 from contradiction.medical_claims.retrieval.bm25_system import build_stats, BM25Clueweb
 from contradiction.medical_claims.retrieval.eval_helper import solve_bioclaim, batch_solve_bioclaim, \
     solve_bio_claim_and_save, get_bioclaim_retrieval_corpus
-from contradiction.medical_claims.retrieval.nli_system import NLIBasedRelevance, NLIBasedRelevanceMultiSeg
+from contradiction.medical_claims.retrieval.nli_token_system import NLIBasedRelevance, NLIBasedRelevanceMultiSeg
 from contradiction.medical_claims.retrieval.path_helper import get_retrieval_save_path
 from list_lib import right
 from trainer_v2.chair_logging import c_log
@@ -97,24 +97,43 @@ def nlits_clue_idf():
 
 
 def nli14_enum():
-    split = "dev"
+    split = "test"
     run_name = "nli14_enum_idf"
     nli_predict_fn = get_nli14_cache_client()
     solve_save_bioclaim_w_nli_enum(nli_predict_fn, run_name, split)
 
 
 def nlits_enum():
-    split = "dev"
+    split = "test"
     run_name = "nlits_enum_idf"
     nli_predict_fn = get_pep_cache_client()
     solve_save_bioclaim_w_nli_enum(nli_predict_fn, run_name, split)
 
 
+def common_run(split, nli_type, use_idf):
+    run_name = f"{split}_{nli_type}" + ("_idf" if use_idf else "")
+    if nli_type == "nli":
+        nli_predict_fn = get_nli14_cache_client()
+    elif nli_type == "nli_pep":
+        nli_predict_fn = get_pep_cache_client()
+    else:
+        assert False
+
+    solve_save_bioclaim_w_nli_enum(nli_predict_fn, run_name, split, use_idf)
+
+
 
 def main():
-    c_log.setLevel(logging.DEBUG)
-    nlits_enum()
-    # nli14_enum()
+    c_log.setLevel(logging.INFO)
+    split = "test"
+    todo = [
+        # ("nli", False),
+        ("nli_pep", False),
+        # ("nli_pep", True),
+        ("nli_pep", True)
+    ]
+    for nli_type, use_idf in todo:
+        common_run(split, nli_type, use_idf)
 
 
 if __name__ == "__main__":

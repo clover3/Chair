@@ -36,9 +36,11 @@ class TaskVisualizationPolicyI(abc.ABC):
 
 
 class NLIVisualize(TaskVisualizationPolicyI):
+    @classmethod
     def make_prediction_summary_str(self, base_prob):
         return make_nli_prediction_summary_str(base_prob)
 
+    @classmethod
     def prob_to_color(self, prob) -> List[int]:
         color_mapping = {
             0: 2,  # Red = Contradiction
@@ -48,6 +50,7 @@ class NLIVisualize(TaskVisualizationPolicyI):
         color_score = [255 * prob[color_mapping[i]] for i in range(3)]
         return color_score
 
+    @classmethod
     def get_cell_str(self, prob):
         def prob_to_one_digit(p):
             v = int(p * 10 + 0.05)

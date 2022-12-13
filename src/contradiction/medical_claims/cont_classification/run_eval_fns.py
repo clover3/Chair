@@ -1,9 +1,12 @@
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
+from sklearn.metrics import precision_recall_curve, auc
+
 from contradiction.medical_claims.cont_classification.defs import ContProblem, ContClassificationSolverIF, \
     ContClassificationProbabilityScorer, NOTE_NEG_TYPE1_YS, NOTE_NEG_TYPE1_NO, NOTE_NEG_TYPE2, NOTE_POS_PAIR
 from contradiction.medical_claims.cont_classification.path_helper import load_cont_classification_problems, \
-    save_predictions, get_prediction_save_path, load_predictions, save_raw_predictions, load_problem_notes
+    save_predictions, get_prediction_save_path, load_predictions, save_raw_predictions, load_problem_notes, \
+    load_raw_predictions
 from evals.basic_func import get_acc_prec_recall_i
 from trainer_v2.chair_logging import c_log
 
@@ -20,8 +23,8 @@ def run_cont_solver_and_save(solver: ContClassificationSolverIF, run_name, split
 def run_cont_prob_solver_and_save(solver: ContClassificationProbabilityScorer, run_name, split):
     c_log.info(f"run_cont_prob_solver_and_save({run_name}, {split})")
     problems: List[ContProblem] = load_cont_classification_problems(split)
-    c_log.warn(f"run_cont_prob_solver_and_save() is in debugging mode only using 10 items")
-    problems = problems[:10]
+    # c_log.warn(f"run_cont_prob_solver_and_save() is in debugging mode only using 10 items")
+    # problems = problems[:10]
     scores: List[float] = solver.solve_batch(problems)
     if len(scores) != len(problems):
         raise IndexError()
@@ -35,7 +38,7 @@ def do_eval(run_name, split, adjust_to_prediction_length=False) -> Dict:
     predictions: List[int] = load_predictions(run_name, split)
 
     if len(predictions) != len(problems) and not adjust_to_prediction_length:
-        raise IndexError()
+        raise IndexError("Run {} has only {} items".format(run_name, len(predictions)))
 
     labels: List[int] = [p.label for p in problems]
 
@@ -97,3 +100,15 @@ def tune_scores(solver: ContClassificationSolverIF, split, target_metric):
 
     print(f"Best of {max_score} at {max_t}")
 
+
+def eval_auc(run_name, split, adjust_to_prediction_length=False) -> float:
+    problems: List[ContProblem] = load_cont_classification_problems(split)
+    predictions: List[float] = load_raw_predictions(run_name, split)
+
+    if len(predictions) != len(problems) and not adjust_to_prediction_length:
+        raise IndexError("Run {} has only {} items".format(run_name, len(predictions)))
+
+    labels: List[int] = [p.label for p in problems]
+
+    prec_list, recall_list, _ = precision_recall_curve(labels, predictions)
+    return auc(recall_list, prec_list)
