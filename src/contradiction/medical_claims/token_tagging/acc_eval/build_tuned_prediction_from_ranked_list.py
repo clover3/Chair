@@ -81,16 +81,20 @@ def show_true_rate():
 
 
 def main():
-    mismatch_run_list = ["random", "nlits86", "psearch", "coattention", "senli", "deletion", "exact_match"]
     # show_true_rate()
-    conflict_run_list = ["random", "nlits86", "psearch", "senli", "deletion", "exact_match"]
+    run_list = ["random", "nlits87", "psearch", "coattention", "word2vec_em",
+                "lime",
+                "deletion", "exact_match", "word_seg"]
     tag = "conflict"
     # tag = "mismatch"
     metric_to_opt = 'accuracy'
 
-    for run_name in conflict_run_list:
+    for run_name in run_list:
         print(run_name)
-        build_save(run_name, tag, metric_to_opt)
+        try:
+            build_save(run_name, tag, metric_to_opt)
+        except FileNotFoundError as e:
+            print(e)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,14 @@ KERAS_BERT_LIKE_INPUT_SIG = List[Tuple[List[int], List[int]]]
 
 
 def run_keras_bert_like_server(port, model_path, model_config, strategy):
+    predict = get_keras_bert_like_predict_fn(model_path, model_config, strategy)
+
+    server = RPCServerWrap(predict)
+    c_log.info("server started")
+    server.start(port)
+
+
+def get_keras_bert_like_predict_fn(model_path, model_config, strategy):
     def model_factory():
         return load_model_by_dir_or_abs(model_path)
 
@@ -42,6 +50,4 @@ def run_keras_bert_like_server(port, model_path, model_config, strategy):
             c_log.warn(e)
         return []
 
-    server = RPCServerWrap(predict)
-    c_log.info("server started")
-    server.start(port)
+    return predict

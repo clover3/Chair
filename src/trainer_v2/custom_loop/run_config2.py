@@ -144,7 +144,7 @@ class CommonRunConfig(SubConfig):
 
 
 class DeviceConfig(SubConfig):
-    def __init__(self, use_tpu, tpu_name, force_use_gpu=False):
+    def __init__(self, use_tpu=False, tpu_name="", force_use_gpu=False):
         self.use_tpu = use_tpu
         self.tpu_name = tpu_name
         self.force_use_gpu = force_use_gpu
@@ -355,6 +355,20 @@ def get_run_config_for_predict(args):
                             )
 
     update_run_config(config_j, run_config)
+    return run_config
+
+
+def get_run_config_for_predict_empty():
+    common_run_config = CommonRunConfig()
+    pred_config = PredictConfig()
+    device_config = DeviceConfig()
+
+    run_config = RunConfig2(common_run_config=common_run_config,
+                            dataset_config=None,
+                            predict_config=pred_config,
+                            device_config=device_config
+                            )
+
     return run_config
 
 

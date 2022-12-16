@@ -2,11 +2,14 @@ from typing import List, Callable, Tuple
 
 from bert_api.task_clients.nli_interface.nli_predictors_path import get_pep_cache_sqlite_path, \
     get_nli14_cache_sqlite_path
+from cpath import get_canonical_model_path2
 from datastore.sql_based_cache_client import SQLBasedCacheClientS
 from port_info import KERAS_NLI_PORT, LOCAL_DECISION_PORT
 from trainer_v2.chair_logging import c_log
+from trainer_v2.custom_loop.attention_helper.model_shortcut import nli14_model_path
 from trainer_v2.custom_loop.definitions import ModelConfig300_3, ModelConfig600_3
-from trainer_v2.keras_server.bert_like_client import BERTClient
+from trainer_v2.keras_server.bert_like_client import BERTClient, BERTClientCore
+from trainer_v2.keras_server.bert_like_server import get_keras_bert_like_predict_fn
 
 IDS = List[int]
 NLIPredictorSig = Callable[[List[Tuple[str, str]]], List[List[float]]]
@@ -94,3 +97,10 @@ def get_cached_client(forward_fn_raw, hooking_fn, sqlite_path):
                                         0.035,
                                         sqlite_path)
     return cache_client
+
+
+def get_nli14_direct(strategy):
+    model_path = nli14_model_path()
+    model_config = ModelConfig300_3()
+    predict_fn = get_keras_bert_like_predict_fn(model_path, model_config, strategy)
+    return BERTClientCore(predict_fn, model_config.max_seq_length).request_multiple

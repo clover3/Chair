@@ -1,9 +1,9 @@
+import os
 import subprocess
+from typing import Dict
 
-from taskman_client.task_proxy import get_local_machine_name
 
-
-def trec_eval_wrap(label_path, prediction_path, metric_opt):
+def trec_eval_wrap(label_path, prediction_path, metric_opt=""):
     exe = get_trec_eval_path()
     cmd = [exe, ]
     if metric_opt:
@@ -17,7 +17,20 @@ def trec_eval_wrap(label_path, prediction_path, metric_opt):
 
 
 def get_trec_eval_path():
-    if get_local_machine_name() == "GOSFORD":
+    if os.name == 'nt':
         return "C:\\work\\Tool\\trec_eval\\trec_eval.exe"
     else:
         return "trec_eval"
+
+
+def run_trec_eval_parse(
+        prediction_path, qrel_path,
+        metric_opt=""
+) -> Dict[str, str]:
+    stdout, _ = trec_eval_wrap(qrel_path, prediction_path, metric_opt)
+    msg = stdout.decode("utf-8")
+    ret = {}
+    for line in msg.strip().split("\n"):
+        metric, _s_all, number = line.split()
+        ret[metric] = number
+    return ret

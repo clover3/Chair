@@ -67,7 +67,6 @@ def get_batch_partial_seg_solver(sel_score_fn) -> BatchSolver:
     return BatchSolver(adapter)
 
 
-
 class PartialSegSolvingAdapter2(BSAdapterIF):
     def __init__(self, predict_fn, sel_score_fn):
         self.tokenizer = get_tokenizer()

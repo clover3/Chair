@@ -83,9 +83,10 @@ class WordSegAlignSolver(TokenScoringSolverIF):
 
 
 class WordSegSolver(TokenScoringSolverIF):
-    def __init__(self, predict_fn):
+    def __init__(self, target_idx, predict_fn):
         self.predict_fn = predict_fn
         self.tokenizer = get_tokenizer()
+        self.target_idx = target_idx
         c_log.setLevel(logging.WARN)
 
     def solve(self, text1_tokens: List[str], text2_tokens: List[str]) -> Tuple[List[float], List[float]]:
@@ -103,13 +104,13 @@ class WordSegSolver(TokenScoringSolverIF):
         scores1 = []
         for token in text1_tokens:
             pred = probs[i]
-            scores1.append(pred[1])
+            scores1.append(pred[self.target_idx])
             i += 1
 
         scores2 = []
         for token in text2_tokens:
             pred = probs[i]
-            scores2.append(pred[1])
+            scores2.append(pred[self.target_idx])
             i += 1
 
         return scores1, scores2

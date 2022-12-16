@@ -86,9 +86,9 @@ def do_agreement_analysis(pair_d, all_annots):
 
     answer1, answer2 = zip(*enum_paired())
     print("cohens_kappa", cohens_kappa(answer1, answer2))
-    for sent_type_idx in range(4):
-        answer1, answer2 = zip(*enum_paired(sent_type_idx))
-        print("cohens_kappa for {}".format(sent_type_idx), cohens_kappa(answer1, answer2))
+    # for sent_type_idx in range(4):
+    #     answer1, answer2 = zip(*enum_paired(sent_type_idx))
+    #     print("cohens_kappa for {}".format(sent_type_idx), cohens_kappa(answer1, answer2))
 
 
 def do_virtual_prec_recall(pair_d, all_annots):
@@ -145,11 +145,11 @@ def combine_prec_recall(per_sent_scores):
 
 def main():
     all_annots = load_annots_w_processing()
-    # print_annot_stats(all_annots)
+    print_annot_stats(all_annots)
     print_annot_stats_grouped(all_annots)
     pair_d = get_pair_dict()
-    do_virtual_prec_recall(pair_d, all_annots)
-    # do_agreement_analysis(pair_d, all_annots)
+    # do_virtual_prec_recall(pair_d, all_annots)
+    do_agreement_analysis(pair_d, all_annots)
 
 
 
