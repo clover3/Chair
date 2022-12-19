@@ -2,7 +2,7 @@ import sys
 from typing import Any
 from typing import List, Callable, Dict
 
-from scipy.stats import stats
+from scipy import stats
 
 from evals.metrics import get_metric_fn
 from misc_lib import average
