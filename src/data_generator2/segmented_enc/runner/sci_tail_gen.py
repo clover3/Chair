@@ -1,13 +1,28 @@
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.runner.snli_gen import gen_concat_two_seg
+from data_generator2.segmented_enc.seg_encoder_common import TwoSegConcatEncoder, BasicConcatEncoder
 from dataset_specific.mnli.sci_tail import SciTailReaderTFDS
 
 
-def main():
+def do_sci_tail_tfrecord_gen(data_name, encoder):
     reader = SciTailReaderTFDS()
-    data_name = "sci_tail_sg1"
     for split in ["validation", "train", "test"]:
-        gen_concat_two_seg(reader, data_name, split)
+        gen_concat_two_seg(reader, encoder, data_name, split)
 
+
+def main():
+    tokenizer = get_tokenizer()
+    encoder = TwoSegConcatEncoder(tokenizer, 300 * 2)
+    data_name = "sci_tail_sg1"
+    do_sci_tail_tfrecord_gen(data_name, encoder)
+
+
+
+def main():
+    tokenizer = get_tokenizer()
+    encoder = BasicConcatEncoder(tokenizer, 300)
+    data_name = "sci_tail1"
+    do_sci_tail_tfrecord_gen(data_name, encoder)
 
 
 if __name__ == "__main__":
