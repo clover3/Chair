@@ -3,7 +3,7 @@ from collections import OrderedDict
 from typing import Callable
 
 from trainer_v2.per_project.cip.tfrecord_gen import LabeledInstance, encode_together, build_encoded, \
-    SelectOneToOne, ItemSelector, SelectUpToK, SelectAll, encode_separate, encode_three
+    SelectOneToOne, ItemSelector, SelectUpToK, SelectAll, encode_separate, encode_three, encode_four
 
 
 def seq300wrap(
@@ -32,9 +32,10 @@ def main():
     # seq300wrap("cip3_eval", SelectAll(), encode_separate)
 
     # seq300wrap("cip4", SelectOneToOne(), encode_three)
-    seq300wrap("cip4_eval", SelectAll(), encode_three)
+    # seq300wrap("cip4_eval", SelectAll(), encode_three)
+    # seq300wrap("cip_d5", SelectOneToOne(), encode_four)
+    seq300wrap("cip_d5_eval", SelectAll(), encode_four)
 
 #
-
 if __name__ == "__main__":
     main()

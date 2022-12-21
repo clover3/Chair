@@ -194,3 +194,30 @@ def join_three_input_ids(t1, t2, t3):
     return input_ids, segment_ids
 
 
+def encode_four(seq_length, e: LabeledInstance) -> OrderedDict:
+    hypo: List[int] = e.comparison.hypo
+    hypo1, hypo2 = split_into_two(hypo, e.st, e.ed)
+    input_ids, segment_ids = join_four_input_ids([e.comparison.prem, hypo, hypo1, hypo2])
+    input_ids = pad_to_length(input_ids, seq_length)
+    input_mask = pad_to_length([1] * len(input_ids), seq_length)
+    segment_ids = pad_to_length(segment_ids, seq_length)
+    features = OrderedDict()
+    features["input_ids"] = create_int_feature(input_ids)
+    features["input_mask"] = create_int_feature(input_mask)
+    features["segment_ids"] = create_int_feature(segment_ids)
+    features['label_ids'] = create_int_feature([e.label])
+    return features
+
+
+def join_four_input_ids(t_list):
+    input_ids = [CLS_ID]
+    segment_ids = [0]
+    for seg_id, t in enumerate(t_list):
+        input_ids.extend(t)
+        segment_ids.extend([seg_id] * len(t))
+        input_ids.append(SEP_ID)
+        segment_ids.append(seg_id)
+
+    return input_ids, segment_ids
+
+

@@ -42,5 +42,15 @@ def main():
     do_snli_tfrecord_gen(data_name, encoder)
 
 
+def step_cal():
+    reader = SNLIReaderTFDS()
+
+    batch_size = 16
+    data_size = reader.get_data_size("train")
+    for i in range(1, 5):
+        n_step = int(data_size * i / batch_size)
+        print(f"{i} epoch will have {n_step} steps")
+
+
 if __name__ == "__main__":
-    main()
+    step_cal()

@@ -12,6 +12,16 @@ def fetch_metric_result(metrics: Dict[str, tf.keras.metrics.Metric]):
     metric_res = {}
     for name, m in metrics.items():
         metric_res[name] = m.result().numpy()
+
+    if "precision" in metrics and "recall" in metrics and "f1" not in metrics:
+        try:
+            p = metric_res["precision"]
+            r = metric_res["recall"]
+            f1 = (2 * p * r) / (p + r + 1e-7)
+            metrics['f1'] = f1
+        except:
+            pass
+
     return metric_res
 
 
