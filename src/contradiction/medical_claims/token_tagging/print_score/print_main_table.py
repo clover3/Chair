@@ -5,17 +5,17 @@ from tab_print import print_table
 
 def show_for_mismatch():
     run_list = ["random", "exact_match", "word2vec_em",
-                "coattention", "lime", "deletion",
-                "word_seg", "nlits87"
+                "coattention", "lime",
+                "word_seg", "nlits87", "davinci"
                 ]
 
     column_list = [
         ("map", "mismatch"),
-        ("map", "conflict"),
-        ("f1", "mismatch"),
-        ("f1", "conflict"),
         ("accuracy", "mismatch"),
+        ("f1", "mismatch"),
+        ("map", "conflict"),
         ("accuracy", "conflict"),
+        ("f1", "conflict"),
     ]
     split = "test"
     scorer = BioClaimMapCalc(split)

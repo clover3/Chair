@@ -35,7 +35,7 @@ class BioClaimMapCalc:
 def show_for_mismatch():
     run_list = ["random", "exact_match",
                 "coattention", "lime", "word_seg", "word2vec_em",
-                "psearch", "nlits86", "nlits87"
+                "psearch", "nlits86", "nlits87", "davinci"
                 ]
     split = "test"
     scorer = BioClaimMapCalc(split)

@@ -7,9 +7,9 @@ def main():
     judgment_path = get_sbl_qrel_path(split)
     metric = "map"
     tag = "mismatch"
-    run1_list = ["nlits86", ]
+    run1_list = ["nlits87", ]
 
-    run2 = "nlits86_cip3"
+    run2 = "nlits87_cip5"
     if metric == "map":
         do_stat_test_map(judgment_path, metric, run1_list, run2, tag)
     elif metric == "f1":

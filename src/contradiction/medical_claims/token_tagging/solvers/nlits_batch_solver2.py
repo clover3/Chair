@@ -1,6 +1,7 @@
 from contradiction.medical_claims.token_tagging.batch_solver_common import BSAdapterIF, NeuralOutput, BatchSolver
 from contradiction.medical_claims.token_tagging.solvers.nlits_batch_solver import NLITSAdapter, ScoreReducerI, \
     ESTwoPiece
+from cpath import get_canonical_model_path2
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from list_lib import flatten
 from trainer_v2.custom_loop.per_task.nli_ts_helper import get_local_decision_nlits_core
@@ -8,14 +9,15 @@ from trainer_v2.custom_loop.per_task.nli_ts_util import LocalDecisionNLICore, en
 from typing import List, Iterable, Callable, Dict, Tuple, Set, TypeVar
 
 from trainer_v2.custom_loop.run_config2 import RunConfig2
-from trainer_v2.per_project.cip.cip_module import get_cip3
+from trainer_v2.per_project.cip.cip_module import get_cip3, get_cip_enc_four
 
 CIPInput = TypeVar("CIPInput")
 
 def es_to_cip(tokenizer, e: ESTwoPiece):
+    p_tokens = list(flatten(map(tokenizer.tokenize, e.t1)))
     h_tokens = list(flatten(map(tokenizer.tokenize, e.t2)))
     first, second = e.h_tokens_list
-    return h_tokens, first, second
+    return p_tokens, h_tokens, first, second
 
 
 class NLITSAdapterCIP(BSAdapterIF):
@@ -87,7 +89,18 @@ def weighted_sum_neg(items: List[Tuple[float, float]]):
 
 def get_batch_solver_nlits_cip(run_config: RunConfig2, encoder_name: str, target_label):
     nlits = get_local_decision_nlits_core(run_config, encoder_name)
-    cip = get_cip3(run_config)
+    model_save_path = get_canonical_model_path2("nli_cip3_0", "model_3780")
+    cip = get_cip3(run_config, model_save_path)
+    reducer = WeightedReducer(target_label, weighted_sum_neg)
+    adapter = NLITSAdapterCIP(nlits, cip, reducer)
+    solver = BatchSolver(adapter)
+    return solver
+
+
+def get_batch_solver_nlits_cip5(run_config: RunConfig2, encoder_name: str, target_label):
+    nlits = get_local_decision_nlits_core(run_config, encoder_name)
+    model_save_path = get_canonical_model_path2("nli_cip5_0", "model_3780")
+    cip = get_cip_enc_four(run_config, model_save_path)
     reducer = WeightedReducer(target_label, weighted_sum_neg)
     adapter = NLITSAdapterCIP(nlits, cip, reducer)
     solver = BatchSolver(adapter)

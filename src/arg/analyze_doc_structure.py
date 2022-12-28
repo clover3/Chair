@@ -6,6 +6,8 @@ from nltk import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
 
 from crawl.crawl_ukp_docs import get_topic_doc_save_path
+
+import contradiction.medical_claims.token_tagging.gpt_solver.index_span
 from data_generator.argmining.document_stat import load_with_doc
 from misc_lib import average
 
@@ -114,7 +116,7 @@ def match(content, labeld_data):
     iv = dict()
 
     all_sent_from_docs = []
-    for elem in soup.find_all('p'):
+    for elem in contradiction.medical_claims.token_tagging.gpt_solver.index_span.find_all('p'):
         text = elem.get_text()
         for sent in sent_tokenize(text):
             sent_id = len(all_sent_from_docs)

@@ -85,9 +85,10 @@ def main():
     run_list = ["random", "nlits87", "psearch", "coattention", "word2vec_em",
                 "lime",
                 "deletion", "exact_match", "word_seg"]
+    run_list = ["davinci"]
     tag = "conflict"
     # tag = "mismatch"
-    metric_to_opt = 'accuracy'
+    metric_to_opt = 'f1'
 
     for run_name in run_list:
         print(run_name)

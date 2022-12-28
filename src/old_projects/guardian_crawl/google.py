@@ -4,6 +4,7 @@ import pickle
 import requests
 from bs4 import BeautifulSoup
 
+import contradiction.medical_claims.token_tagging.gpt_solver.index_span
 from cpath import data_path
 from list_lib import flatten
 from misc_lib import *
@@ -15,7 +16,7 @@ from collections import defaultdict
 def parse_html(html_doc):
     soup = BeautifulSoup(html_doc, 'html.parser')
     web_result = soup.find('div', attrs = {'class':'srg'})
-    inst_list = web_result.find_all('div', attrs = {'class':'g'})
+    inst_list = contradiction.medical_claims.token_tagging.gpt_solver.index_span.find_all('div', attrs = {'class': 'g'})
     for inst in inst_list:
         r = inst.find('div', attrs = {'class':'r'}).find('a')
         yield r['href']
@@ -69,7 +70,7 @@ def parse_wayback_response(html):
     soup = BeautifulSoup(html, 'html.parser')
     print(soup)
     print(soup.find('calendar-layout'))
-    valid_days = soup.find_all('div', attrs = {'class':'calendar-day'})
+    valid_days = contradiction.medical_claims.token_tagging.gpt_solver.index_span.find_all('div', attrs = {'class': 'calendar-day'})
     for day in valid_days:
         print(day)
 
