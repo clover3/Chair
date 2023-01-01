@@ -1,8 +1,12 @@
+import os
 from collections import OrderedDict
 from typing import List, Dict
 
+from cpath import output_path
 from data_generator2.segmented_enc.seg_encoder_common import SingleEncoderInterface, PairEncoderInterface
 from dataset_specific.mnli.mnli_reader import NLIPairData
+from misc_lib import path_join, exist_or_mkdir
+from tf_util.record_writer_wrap import write_records_w_encode_fn
 from tlm.data_gen.bert_data_gen import create_int_feature
 
 
@@ -51,3 +55,11 @@ def encode_seq_prediction(input_ids, input_mask, segment_ids, label_ids):
     features["segment_ids"] = create_int_feature(segment_ids)
     features['label_ids'] = create_int_feature(label_ids)
     return features
+
+
+def gen_concat_two_seg(reader, encoder, data_name, split):
+    output_dir = path_join(output_path, "tfrecord", data_name)
+    exist_or_mkdir(output_dir)
+    save_path = os.path.join(output_dir, split)
+    encode_fn = get_encode_fn_from_encoder(encoder)
+    write_records_w_encode_fn(save_path, encode_fn, reader.load_split(split), reader.get_data_size(split))

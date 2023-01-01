@@ -10,10 +10,10 @@ def show_for_mismatch():
                 ]
 
     column_list = [
-        ("map", "mismatch"),
+        # ("map", "mismatch"),
         ("accuracy", "mismatch"),
         ("f1", "mismatch"),
-        ("map", "conflict"),
+        # ("map", "conflict"),
         ("accuracy", "conflict"),
         ("f1", "conflict"),
     ]

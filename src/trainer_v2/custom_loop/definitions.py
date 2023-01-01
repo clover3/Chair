@@ -24,6 +24,11 @@ class ModelConfig300_3(ModelConfigType):
     num_classes = 3
 
 
+class ModelConfig150_3(ModelConfigType):
+    max_seq_length = 150
+    num_classes = 3
+
+
 class ModelConfig600_3(ModelConfigType):
     max_seq_length = 600
     num_classes = 3

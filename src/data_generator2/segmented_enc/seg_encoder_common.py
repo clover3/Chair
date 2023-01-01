@@ -6,7 +6,8 @@ from arg.qck.encode_common import encode_single
 from data_generator.tokenizer_wo_tf import get_continuation_voca_ids, FullTokenizer
 from data_generator2.segmented_enc.sent_split_by_spacy import split_spacy_tokens
 from misc_lib import CountWarning, SuccessCounter
-from tlm.data_gen.base import get_basic_input_feature_as_list, combine_with_sep_cls, concat_triplet_windows
+from tlm.data_gen.base import get_basic_input_feature_as_list, combine_with_sep_cls, concat_triplet_windows, \
+    combine_with_sep_cls2
 
 
 def is_only_0_or_1(l):
@@ -64,6 +65,22 @@ class BasicConcatEncoder(PairEncoderInterface):
 
     def encode(self, tokens1, tokens2) -> Tuple[List, List, List]:
         tokens, segment_ids = combine_with_sep_cls(self.max_seq_length, tokens1, tokens2)
+        triplet = get_basic_input_feature_as_list(self.tokenizer, self.max_seq_length, tokens, segment_ids)
+        return triplet
+
+    def encode_from_text(self, text1, text2) -> Tuple[List, List, List]:
+        # returns input_ids, input_mask, segment_ids
+        return self.encode(self.tokenizer.tokenize(text1), self.tokenizer.tokenize(text2))
+
+
+class BasicConcatEncoder2(PairEncoderInterface):
+    def __init__(self, tokenizer, max_seq_length):
+        self.max_seq_length = max_seq_length
+        self.tokenizer = tokenizer
+        self.counter_warning = CountWarning()
+
+    def encode(self, tokens1, tokens2) -> Tuple[List, List, List]:
+        tokens, segment_ids = combine_with_sep_cls2(self.max_seq_length, tokens1, tokens2)
         triplet = get_basic_input_feature_as_list(self.tokenizer, self.max_seq_length, tokens, segment_ids)
         return triplet
 
@@ -508,3 +525,73 @@ class ChunkIndicatingEncoder(SingleEncoderInterface):
     def encode_from_text(self, text):
         # returns input_ids, input_mask, segment_ids
         return self.encode(self.tokenizer.tokenize(text))
+
+
+def get_n_random_split_location(tokens, k) -> List[int]:
+    good_loc = []
+    for i in range(len(tokens)):
+        cur_t = tokens[i]
+        if not cur_t.endswith("##") and i+1 < len(tokens):
+            good_loc.append(i+1)
+
+    locations = random.sample(good_loc, min(k, len(good_loc)))
+    return locations
+
+
+def n_seg_random_split(tokens, n) -> List[List[str]]:
+    locations = get_n_random_split_location(tokens, n-1)
+    locations.sort()
+    cursor = 0
+    seg_list = []
+    for i, loc in enumerate(locations):
+        seg = tokens[cursor: loc]
+        assert loc > cursor
+        cursor = loc
+        if i > 0:
+            seg = ["[MASK]"] + seg
+
+        seg = seg + ["[MASK]"]
+        seg_list.append(seg)
+
+    seg = tokens[cursor:]
+    if locations:
+        seg = ["[MASK]"] + seg
+    seg_list.append(seg)
+    assert len(seg_list) <= n
+    return seg_list
+
+
+class NSegConcatEncoder(PairEncoderInterface):
+    def __init__(self, tokenizer, total_max_seq_length, n_segment):
+        segment_len = int(total_max_seq_length / n_segment)
+        self.segment_len = segment_len
+        self.n_segment = n_segment
+
+        self.tokenizer = tokenizer
+        self.counter_warning = CountWarning()
+        if total_max_seq_length % 2:
+            raise ValueError()
+
+    def encode(self, tokens1, tokens2) -> Tuple[List, List, List]:
+        seg_list: List[List[str]] = n_seg_random_split(tokens2, self.n_segment)
+        while len(seg_list) < self.n_segment:
+            empty_seq = []
+            seg_list.append(empty_seq)
+
+        assert len(seg_list) == self.n_segment
+
+        triplet_list = []
+        for part_of_tokens2 in seg_list:
+            tokens, segment_ids = combine_with_sep_cls2(self.segment_len, tokens1, part_of_tokens2)
+            if len(tokens) > self.segment_len:
+                self.counter_warning.add_warn()
+
+            triplet = get_basic_input_feature_as_list(self.tokenizer, self.segment_len,
+                                                      tokens, segment_ids)
+            triplet_list.append(triplet)
+        return concat_triplet_windows(triplet_list, self.segment_len)
+
+    def encode_from_text(self, text1, text2) -> Tuple[List, List, List]:
+        # returns input_ids, input_mask, segment_ids
+        return self.encode(self.tokenizer.tokenize(text1), self.tokenizer.tokenize(text2))
+

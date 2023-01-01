@@ -1,6 +1,6 @@
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from data_generator2.segmented_enc.runner.snli_gen import gen_concat_two_seg
-from data_generator2.segmented_enc.seg_encoder_common import TwoSegConcatEncoder, BasicConcatEncoder
+from data_generator2.segmented_enc.segmented_tfrecord_gen import gen_concat_two_seg
+from data_generator2.segmented_enc.seg_encoder_common import TwoSegConcatEncoder, BasicConcatEncoder, NSegConcatEncoder
 from dataset_specific.mnli.sci_tail import SciTailReaderTFDS
 
 
@@ -25,5 +25,12 @@ def main():
     do_sci_tail_tfrecord_gen(data_name, encoder)
 
 
+def sci_tail_sg2():
+    tokenizer = get_tokenizer()
+    encoder = NSegConcatEncoder(tokenizer, 600, 4)
+    data_name = "sci_tail_sg2"
+    do_sci_tail_tfrecord_gen(data_name, encoder)
+
+
 if __name__ == "__main__":
-    main()
+    sci_tail_sg2()

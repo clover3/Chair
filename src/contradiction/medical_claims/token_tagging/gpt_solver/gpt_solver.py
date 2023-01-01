@@ -83,6 +83,8 @@ class GPTSolverFileRead(TokenScoringSolverIF):
         claim1 = " ".join(tokens1)
         claim2 = " ".join(tokens2)
         prompt: str = self.prompt_template.format(claim1, claim2)
+        print(prompt)
+        exit()
         j_response = self.j_d[claim1, claim2]
         return get_score_from_j(prompt, tokens1, tokens2,
                      j_response, self.claim2_pattern)

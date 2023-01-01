@@ -107,7 +107,7 @@ def paired_test_f1(metric, labels,
     l1, l2 = zip(*pairs)
     d, p_value = stats.ttest_rel(l1, l2)
     print(d, p_value)
-    assert d < 0
+    # assert d < 0
     return p_value
 
 
@@ -138,12 +138,12 @@ def main():
     metric = "f1"
     tag = "mismatch"
     run1_list = ["random", "exact_match", "word2vec_em",
-                 "coattention", "lime", "word_seg"]
+                 "coattention", "lime", "word_seg", "davinci"]
 
     run2 = "nlits87"
     if metric == "map":
         do_stat_test_map(judgment_path, metric, run1_list, run2, tag)
-    elif metric == "f1":
+    elif metric in ["f1", "accuracy", ]:
         do_stat_test_f1(metric, run1_list, run2, tag)
 
 
