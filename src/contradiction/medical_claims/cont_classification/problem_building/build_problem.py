@@ -11,8 +11,8 @@ from contradiction.medical_claims.cont_classification.defs import ContProblem, N
 from contradiction.medical_claims.cont_classification.path_helper import get_problem_path, get_problem_note_path
 from contradiction.medical_claims.load_corpus import Review, Claim
 from contradiction.medical_claims.pilot.pilot_annotation import enum_true_instance
-from contradiction.medical_claims.retrieval.bm25_system import BM25BioClaim
-from contradiction.medical_claims.retrieval.eval_helper import get_bioclaim_retrieval_corpus
+from trainer_v2.per_project.tli.bioclaim_qa.bm25_system import BM25BioClaim
+from trainer_v2.per_project.tli.bioclaim_qa.eval_helper import get_bioclaim_retrieval_corpus
 from list_lib import get_max_idx, right
 
 

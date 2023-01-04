@@ -3,7 +3,7 @@ from collections import Counter
 from adhoc.bm25_class import BM25
 from adhoc.clueweb12_B13_termstat import cdf, load_clueweb12_B13_termstat_stemmed
 from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
-from contradiction.medical_claims.retrieval.defs import BioClaimRetrievalSystem
+from trainer_v2.per_project.tli.bioclaim_qa.defs import BioClaimRetrievalSystem
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from misc_lib import Averager

@@ -1,5 +1,5 @@
-from contradiction.medical_claims.retrieval.bm25_system import BM25BioClaim, BM25Clueweb
-from contradiction.medical_claims.retrieval.eval_helper import solve_bio_claim_and_save, build_qrel, \
+from trainer_v2.per_project.tli.bioclaim_qa.bm25_system import BM25BioClaim, BM25Clueweb
+from trainer_v2.per_project.tli.bioclaim_qa.eval_helper import solve_bio_claim_and_save, build_qrel, \
     get_bioclaim_retrieval_corpus
 
 """
@@ -15,7 +15,7 @@ Task 2. Given an RQ, build a contradictory pair
      Method 2. NLITS
 """
 
-from contradiction.medical_claims.retrieval.path_helper import get_retrieval_qrel_path, get_retrieval_save_path
+from trainer_v2.per_project.tli.bioclaim_qa.path_helper import get_retrieval_qrel_path, get_retrieval_save_path
 from list_lib import right
 from runnable.trec.trec_eval_like import trec_eval_like_core
 from trec.qrel_parse import load_qrels_flat_per_query

@@ -1,6 +1,6 @@
 from contradiction.medical_claims.cont_classification.defs import ContClassificationSolverNB, ContProblem
-from contradiction.medical_claims.retrieval.bm25_system import BM25BioClaim
-from contradiction.medical_claims.retrieval.eval_helper import get_bioclaim_retrieval_corpus
+from trainer_v2.per_project.tli.bioclaim_qa.bm25_system import BM25BioClaim
+from trainer_v2.per_project.tli.bioclaim_qa.eval_helper import get_bioclaim_retrieval_corpus
 from list_lib import right
 
 

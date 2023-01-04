@@ -1,8 +1,8 @@
 import logging
 
-from contradiction.medical_claims.retrieval.eval_helper import solve_bioclaim, batch_solve_bioclaim
-from contradiction.medical_claims.retrieval.nli_direct import NLIAsRelevance, get_entail_cont, get_entail
-from contradiction.medical_claims.retrieval.path_helper import get_retrieval_save_path
+from trainer_v2.per_project.tli.bioclaim_qa.eval_helper import solve_bioclaim, batch_solve_bioclaim
+from trainer_v2.per_project.tli.bioclaim_qa.nli_direct import NLIAsRelevance, get_entail_cont, get_entail
+from trainer_v2.per_project.tli.bioclaim_qa.path_helper import get_retrieval_save_path
 from list_lib import right
 from trainer_v2.chair_logging import c_log
 from trainer_v2.keras_server.name_short_cuts import NLIPredictorSig, get_pep_client, get_cached_client, \

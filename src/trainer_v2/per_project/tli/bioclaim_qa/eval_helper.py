@@ -2,7 +2,7 @@ from typing import List, Callable, Tuple
 
 from contradiction.medical_claims.annotation_1.load_data import load_reviews_for_split
 from contradiction.medical_claims.load_corpus import Review
-from contradiction.medical_claims.retrieval.path_helper import get_retrieval_save_path
+from trainer_v2.per_project.tli.bioclaim_qa.path_helper import get_retrieval_save_path
 from trainer.promise import PromiseKeeper
 from trainer_v2.chair_logging import c_log
 from trec.ranked_list_util import build_ranked_list
