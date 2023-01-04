@@ -4,7 +4,7 @@ from misc_lib import get_first
 from trainer_v2.custom_loop.run_config2 import get_run_config_for_predict_empty
 from trainer_v2.keras_server.bert_like_client import BERTClientCore
 from trainer_v2.keras_server.bert_like_server import get_keras_bert_like_predict_fn
-from trainer_v2.keras_server.name_short_cuts import get_nli14_client, get_nli14_cache_client, get_nli14_direct, \
+from trainer_v2.keras_server.name_short_cuts import get_keras_nli_300_client, get_nli14_cache_client, get_nli14_direct, \
     get_cached_client
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 import numpy as np

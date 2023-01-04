@@ -4,7 +4,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 from contradiction.medical_claims.cont_classification.defs import ContClassificationSolverIF, ContProblem, \
     ContClassificationProbabilityScorer
 
-from trainer_v2.keras_server.name_short_cuts import NLIPredictorSig, get_nli14_predictor
+from trainer_v2.keras_server.name_short_cuts import NLIPredictorSig, get_keras_nli_300_predictor
 
 
 class NLIClassifier(ContClassificationProbabilityScorer):
@@ -26,7 +26,7 @@ class NLIClassifier(ContClassificationProbabilityScorer):
 
 
 def get_nli14_classifier() -> ContClassificationProbabilityScorer:
-    return NLIClassifier(get_nli14_predictor())
+    return NLIClassifier(get_keras_nli_300_predictor())
 
 
 class TestComp(NamedTuple):
@@ -171,7 +171,7 @@ def get_nli_q1() -> NLITestComps:
         TestComp("not neutral(t2, q)", get_c2_q, get_one_minus_neutral),
         TestComp("cont(t1, t2)", get_c1_c2, get_cont),
     ]
-    return NLITestComps(get_nli14_predictor(), test_fns, do_average)
+    return NLITestComps(get_keras_nli_300_predictor(), test_fns, do_average)
 
 
 def get_nli_q2() -> NLITestComps:
@@ -198,7 +198,7 @@ def get_nli_q2() -> NLITestComps:
         condition2 = score_d["cont(t1, t2)"]
         return (condition1 + condition2) / 2
 
-    return NLITestComps(get_nli14_predictor(), test_fns, combine)
+    return NLITestComps(get_keras_nli_300_predictor(), test_fns, combine)
 
 
 def get_nli_q3() -> NLITestComps:
@@ -225,7 +225,7 @@ def get_nli_q3() -> NLITestComps:
         condition2 = score_d["cont(t1, t2)"]
         return (condition1 + condition2) / 2
 
-    return NLITestComps(get_nli14_predictor(), test_fns, combine)
+    return NLITestComps(get_keras_nli_300_predictor(), test_fns, combine)
 
 
 def get_nli_q4() -> NLITestComps:
@@ -255,4 +255,4 @@ def get_nli_q4() -> NLITestComps:
         condition1 = max(opt1, opt2)
         return condition1
 
-    return NLITestComps(get_nli14_predictor(), test_fns, combine)
+    return NLITestComps(get_keras_nli_300_predictor(), test_fns, combine)

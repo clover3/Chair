@@ -36,7 +36,10 @@ class ScitailEntry(NamedTuple):
         )
 
 
-def load_scitail_jsonl(split) -> List[ScitailEntry]:
+def load_scitail_structured(split) -> List[ScitailEntry]:
     return load_list_from_jsonl(get_scitail_jsonl_path(split), ScitailEntry.from_json)
 
 
+def get_scitail_questions():
+    e_list = load_scitail_structured("train")
+    return [e.question for e in e_list]

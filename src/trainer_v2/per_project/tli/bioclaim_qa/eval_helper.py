@@ -56,6 +56,12 @@ TextPairScorer = Callable[[str, str], float]
 BatchTextPairScorer = Callable[[List[Tuple[str, str]]], List[float]]
 
 
+def get_batch_text_scorer(text_pair_scorer: TextPairScorer) -> BatchTextPairScorer:
+    def batch_score(items):
+        return [text_pair_scorer(a, b) for a, b in items]
+    return batch_score
+
+
 def solve_bioclaim(scorer: TextPairScorer, split, run_name)\
         -> List[TrecRankedListEntry]:
     queries, claims = get_bioclaim_retrieval_corpus(split)
@@ -93,7 +99,11 @@ def batch_solve_bioclaim(scorer: BatchTextPairScorer, split, run_name, mini_debu
     rl_flat = []
     for qid, _ in queries:
         scored_docs = []
+        doc_id_set = set()
         for doc_id, claim in docs:
+            if doc_id in doc_id_set:
+                continue
+            doc_id_set.add(doc_id)
             score = score_d[qid, doc_id]
             scored_docs.append((doc_id, score))
 
@@ -104,6 +114,7 @@ def batch_solve_bioclaim(scorer: BatchTextPairScorer, split, run_name, mini_debu
 
 def solve_bio_claim_and_save(scorer: TextPairScorer, split, run_name):
     rl_flat = solve_bioclaim(scorer, split, run_name)
-    write_trec_ranked_list_entry(rl_flat, get_retrieval_save_path(run_name))
+    save_name = f"{run_name}_{split}"
+    write_trec_ranked_list_entry(rl_flat, get_retrieval_save_path(save_name))
 
 

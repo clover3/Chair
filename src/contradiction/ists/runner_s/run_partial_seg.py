@@ -3,14 +3,14 @@ import os
 from contradiction.ists.predict_common import eval_ists_noali_headlines_train_batch
 from contradiction.medical_claims.token_tagging.batch_solver_common import BatchSolver
 from contradiction.medical_claims.token_tagging.solvers.partial_search_solver import PartialSegSolvingAdapter2
-from trainer_v2.keras_server.name_short_cuts import get_nli14_predictor
+from trainer_v2.keras_server.name_short_cuts import get_keras_nli_300_predictor
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 
 def get_batch_partial_seg_solver(sel_score_fn) -> BatchSolver:
-    predict_fn = get_nli14_predictor()
+    predict_fn = get_keras_nli_300_predictor()
     adapter = PartialSegSolvingAdapter2(predict_fn, sel_score_fn)
     return BatchSolver(adapter)
 

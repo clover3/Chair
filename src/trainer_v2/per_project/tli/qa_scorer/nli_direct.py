@@ -37,6 +37,19 @@ class NLIAsRelevance:
         return output
 
 
+class NLIAsRelevanceRev:
+    def __init__(
+            self,
+            nli_predict_fn: NLIPredictorSig,
+            probs_to_score
+    ):
+        self.inner = NLIAsRelevance(nli_predict_fn, probs_to_score)
+
+    def batch_predict(self, q_d_pairs: List[Tuple[str, str]]) -> List[float]:
+        d_q_pairs = [(d, q) for q, d in q_d_pairs]
+        return self.inner.batch_predict(d_q_pairs)
+
+
 def get_entail_cont(probs: NLIPred):
     return probs[0] + probs[1]
 

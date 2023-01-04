@@ -1,10 +1,10 @@
 import logging
 
 from adhoc.bm25_class import BM25
-from trainer_v2.per_project.tli.bioclaim_qa.bm25_system import build_stats, BM25Clueweb
+from trainer_v2.per_project.tli.qa_scorer.bm25_system import build_stats, BM25TextPairScorerClueWeb
 from trainer_v2.per_project.tli.bioclaim_qa.eval_helper import solve_bioclaim, batch_solve_bioclaim, \
     solve_bio_claim_and_save, get_bioclaim_retrieval_corpus
-from trainer_v2.per_project.tli.bioclaim_qa.nli_token_system import NLIBasedRelevance, NLIBasedRelevanceMultiSeg
+from trainer_v2.per_project.tli.qa_scorer.nli_token_system import NLIBasedRelevance, NLIBasedRelevanceMultiSeg
 from trainer_v2.per_project.tli.bioclaim_qa.path_helper import get_retrieval_save_path
 from list_lib import right
 from trainer_v2.chair_logging import c_log
@@ -50,11 +50,12 @@ def solve_save_bioclaim_w_nli_enum(nli_predict_fn, run_name, split, idf_weightin
     else:
         module = NLIBasedRelevanceMultiSeg(nli_predict_fn)
     rl_flat = batch_solve_bioclaim(module.batch_predict, split, run_name)
-    write_trec_ranked_list_entry(rl_flat, get_retrieval_save_path(run_name))
+    save_name = f"{run_name}_{split}"
+    write_trec_ranked_list_entry(rl_flat, get_retrieval_save_path(save_name))
 
 
 def solve_save_bioclaim_w_nli_clue_idf(nli_predict_fn, run_name, split):
-    module = NLIBasedRelevance(nli_predict_fn, BM25Clueweb().bm25)
+    module = NLIBasedRelevance(nli_predict_fn, BM25TextPairScorerClueWeb().bm25)
     rl_flat = batch_solve_bioclaim(module.batch_predict, split, run_name)
     write_trec_ranked_list_entry(rl_flat, get_retrieval_save_path(run_name))
 
@@ -122,16 +123,16 @@ def common_run(split, nli_type, use_idf):
     solve_save_bioclaim_w_nli_enum(nli_predict_fn, run_name, split, use_idf)
 
 
-
 def main():
     c_log.setLevel(logging.INFO)
     split = "test"
     todo = [
         # ("nli", False),
+        # ("nli", True),
         ("nli_pep", False),
-        # ("nli_pep", True),
         ("nli_pep", True)
     ]
+
     for nli_type, use_idf in todo:
         common_run(split, nli_type, use_idf)
 

@@ -4,7 +4,7 @@ import numpy as np
 from contradiction.medical_claims.cont_classification.defs import ContProblem
 from contradiction.medical_claims.cont_classification.path_helper import load_cont_classification_problems
 from tab_print import print_table
-from trainer_v2.keras_server.name_short_cuts import get_nli14_predictor
+from trainer_v2.keras_server.name_short_cuts import get_keras_nli_300_predictor
 
 
 def get_true_pairs_w_word(problems, word):
@@ -40,7 +40,7 @@ def count_predictions(pair_list, predict_fn):
 def main():
     split = "dev"
     problems: List[ContProblem] = load_cont_classification_problems(split)
-    predict_fn = get_nli14_predictor()
+    predict_fn = get_keras_nli_300_predictor()
     conditions = [
         (get_true_pairs_w_word(problems, ""), ""),
         (get_true_pairs_w_word(problems, "? yes"), "yes"),

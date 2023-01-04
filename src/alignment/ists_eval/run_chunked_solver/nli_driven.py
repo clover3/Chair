@@ -4,7 +4,7 @@ from alignment.ists_eval.chunked_eval import chunked_solve_and_save_eval
 from alignment.ists_eval.chunked_solver.exact_match_solver import ExactMatchSolver
 from alignment.ists_eval.chunked_solver.nli_driven import NLIDrivenSolver
 from alignment.ists_eval.chunked_solver.word2vec_solver import Word2VecSolver
-from trainer_v2.keras_server.name_short_cuts import get_nli14_predictor, NLIPredictorSig, get_pep_client
+from trainer_v2.keras_server.name_short_cuts import get_keras_nli_300_predictor, NLIPredictorSig, get_pep_client
 
 
 def pep_word2vec():
@@ -24,7 +24,7 @@ def main_pep():
 
 def main_nli():
     nli_type = "base_nli"
-    nli_predictor: NLIPredictorSig = get_nli14_predictor()
+    nli_predictor: NLIPredictorSig = get_keras_nli_300_predictor()
     solver = NLIDrivenSolver(nli_predictor, ExactMatchSolver())
     chunked_solve_and_save_eval(solver, "{}_chunked".format(nli_type), "headlines", "train")
 

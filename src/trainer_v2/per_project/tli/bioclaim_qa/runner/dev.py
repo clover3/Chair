@@ -1,4 +1,4 @@
-from trainer_v2.per_project.tli.bioclaim_qa.bm25_system import BM25BioClaim, BM25Clueweb
+from trainer_v2.per_project.tli.qa_scorer.bm25_system import BM25TextPairScorer, BM25TextPairScorerClueWeb
 from trainer_v2.per_project.tli.bioclaim_qa.eval_helper import solve_bio_claim_and_save, build_qrel, \
     get_bioclaim_retrieval_corpus
 
@@ -22,16 +22,6 @@ from trec.qrel_parse import load_qrels_flat_per_query
 from trec.trec_parse import save_qrel, load_ranked_list_grouped
 
 
-def do_save_qrel():
-    for split in ["dev", "test"]:
-        save_qrel(build_qrel(split), get_retrieval_qrel_path(split))
-
-
-def main():
-    system = BM25Clueweb()
-    solve_bio_claim_and_save(system.score, "dev", "bm25_clue")
-
-
 def analyze():
     rl = load_ranked_list_grouped(get_retrieval_save_path("bm25_2"))
     qrel = load_qrels_flat_per_query(get_retrieval_qrel_path("dev"))
@@ -42,11 +32,21 @@ def analyze():
         print(metric, s)
 
 
+def do_save_qrel():
+    for split in ["dev", "test"]:
+        save_qrel(build_qrel(split), get_retrieval_qrel_path(split))
+
+
+def main():
+    system = BM25TextPairScorerClueWeb()
+    solve_bio_claim_and_save(system.score, "dev", "bm25_clue")
+
+
 def task_tuned():
     split = "test"
     _, claims = get_bioclaim_retrieval_corpus(split)
 
-    system = BM25BioClaim(right(claims))
+    system = BM25TextPairScorer(right(claims))
     solve_bio_claim_and_save(system.score, split, "bm25_{}".format(split))
 
 

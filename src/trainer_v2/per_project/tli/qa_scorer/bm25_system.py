@@ -3,13 +3,13 @@ from collections import Counter
 from adhoc.bm25_class import BM25
 from adhoc.clueweb12_B13_termstat import cdf, load_clueweb12_B13_termstat_stemmed
 from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
-from trainer_v2.per_project.tli.bioclaim_qa.defs import BioClaimRetrievalSystem
+from trainer_v2.per_project.tli.qa_scorer.defs import QAScorer
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from misc_lib import Averager
 
 
-class BM25Clueweb(BioClaimRetrievalSystem):
+class BM25TextPairScorerClueWeb(QAScorer):
     def __init__(self):
         tf, df = load_clueweb12_B13_termstat_stemmed()
         self.bm25 = BM25(df, avdl=11.7, num_doc=cdf, k1=0.00001, k2=100, b=0.5,
@@ -32,7 +32,7 @@ def build_stats(text_list: List[str]):
     return df, cdf, avg_dl.get_average()
 
 
-class BM25BioClaim(BioClaimRetrievalSystem):
+class BM25TextPairScorer(QAScorer):
     def __init__(self, texts):
         df, cdf, avdl = build_stats(texts)
         self.bm25 = BM25(df, avdl=avdl, num_doc=cdf, k1=0.00001, k2=100, b=0.5,

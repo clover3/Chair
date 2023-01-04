@@ -1,9 +1,9 @@
 from contradiction.medical_claims.token_tagging.visualizer.deletion_score_to_html import make_nli_prediction_summary_str
-from trainer_v2.keras_server.name_short_cuts import get_nli14_predictor
+from trainer_v2.keras_server.name_short_cuts import get_keras_nli_300_predictor
 
 
 def main():
-    predict = get_nli14_predictor()
+    predict = get_keras_nli_300_predictor()
     while True:
         sent1 = input("Premise: ")
         sent2 = input("Hypothesis: ")

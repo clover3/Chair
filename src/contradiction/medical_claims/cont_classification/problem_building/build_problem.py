@@ -11,7 +11,7 @@ from contradiction.medical_claims.cont_classification.defs import ContProblem, N
 from contradiction.medical_claims.cont_classification.path_helper import get_problem_path, get_problem_note_path
 from contradiction.medical_claims.load_corpus import Review, Claim
 from contradiction.medical_claims.pilot.pilot_annotation import enum_true_instance
-from trainer_v2.per_project.tli.bioclaim_qa.bm25_system import BM25BioClaim
+from trainer_v2.per_project.tli.qa_scorer.bm25_system import BM25TextPairScorer
 from trainer_v2.per_project.tli.bioclaim_qa.eval_helper import get_bioclaim_retrieval_corpus
 from list_lib import get_max_idx, right
 
@@ -127,7 +127,7 @@ def build_problem_set(split, scorer) -> Tuple[List[ContProblem], Dict]:
 def main():
     for split in ["dev", "test"]:
         _, claims = get_bioclaim_retrieval_corpus(split)
-        system = BM25BioClaim(right(claims))
+        system = BM25TextPairScorer(right(claims))
         problems, claim_pair_note = build_problem_set(split, system.score)
         save_list_to_jsonl_w_fn(problems, get_problem_path(split), named_tuple_to_json)
         json.dump(claim_pair_note, open(get_problem_note_path(split), "w"))

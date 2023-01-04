@@ -15,14 +15,14 @@ IDS = List[int]
 NLIPredictorSig = Callable[[List[Tuple[str, str]]], List[List[float]]]
 
 
-def get_nli14_client():
+def get_keras_nli_300_client():
     model_config = ModelConfig300_3()
     client = BERTClient("localhost", KERAS_NLI_PORT, model_config.max_seq_length)
     return client
 
 
-def get_nli14_predictor() -> NLIPredictorSig:
-    client = get_nli14_client()
+def get_keras_nli_300_predictor() -> NLIPredictorSig:
+    client = get_keras_nli_300_client()
     return client.request_multiple
 
 
@@ -79,7 +79,7 @@ def get_pep_cache_client(hooking_fn=None) -> NLIPredictorSig:
 
 
 def get_nli14_cache_client(hooking_fn=None) -> NLIPredictorSig:
-    forward_fn_raw: NLIPredictorSig = get_nli14_predictor()
+    forward_fn_raw: NLIPredictorSig = get_keras_nli_300_predictor()
     sqlite_path = get_nli14_cache_sqlite_path()
     cache_client = get_cached_client(forward_fn_raw, hooking_fn, sqlite_path)
     return cache_client.predict
@@ -104,3 +104,4 @@ def get_nli14_direct(strategy):
     model_config = ModelConfig300_3()
     predict_fn = get_keras_bert_like_predict_fn(model_path, model_config, strategy)
     return BERTClientCore(predict_fn, model_config.max_seq_length).request_multiple
+

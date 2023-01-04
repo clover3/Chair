@@ -2,7 +2,7 @@ from contradiction.medical_claims.cont_classification.run_eval_fns import run_co
     run_cont_prob_solver_and_save
 from contradiction.medical_claims.cont_classification.solvers.direct_nli import get_nli14_classifier, NLIWQuestion, \
     get_nli_q1, get_nli_q2, get_nli_q3, get_nli_q4
-from trainer_v2.keras_server.name_short_cuts import get_nli14_predictor
+from trainer_v2.keras_server.name_short_cuts import get_keras_nli_300_predictor
 
 
 def main():

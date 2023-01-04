@@ -4,13 +4,13 @@ from contradiction.medical_claims.token_tagging.online_solver_common import make
 from contradiction.medical_claims.token_tagging.path_helper import get_save_path2
 from contradiction.medical_claims.token_tagging.problem_loader import load_alamri_problem, AlamriProblem
 from contradiction.medical_claims.token_tagging.solvers.search_solver import WordSegSolver
-from trainer_v2.keras_server.name_short_cuts import get_nli14_client
+from trainer_v2.keras_server.name_short_cuts import get_keras_nli_300_client
 
 
 def word_seg_solver(run_name, tag_type, target_idx):
     save_path = get_save_path2(run_name, tag_type)
     problems: List[AlamriProblem] = load_alamri_problem()
-    predict_fn = get_nli14_client().request_multiple
+    predict_fn = get_keras_nli_300_client().request_multiple
     solver = WordSegSolver(target_idx, predict_fn)
     make_ranked_list_w_solver2(problems, run_name, save_path, tag_type, solver)
 

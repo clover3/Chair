@@ -1,5 +1,5 @@
 from contradiction.medical_claims.cont_classification.defs import ContClassificationSolverNB, ContProblem
-from trainer_v2.per_project.tli.bioclaim_qa.bm25_system import BM25BioClaim
+from trainer_v2.per_project.tli.qa_scorer.bm25_system import BM25TextPairScorer
 from trainer_v2.per_project.tli.bioclaim_qa.eval_helper import get_bioclaim_retrieval_corpus
 from list_lib import right
 
@@ -7,7 +7,7 @@ from list_lib import right
 class BM25Classifier(ContClassificationSolverNB):
     def __init__(self, split):
         _, claims = get_bioclaim_retrieval_corpus(split)
-        inner = BM25BioClaim(right(claims))
+        inner = BM25TextPairScorer(right(claims))
         self.bm25 = inner.bm25
         self.threshold = 1
 
