@@ -1,6 +1,5 @@
 from typing import Dict, Tuple
-from contradiction.medical_claims.cont_classification.solvers.token_nli import nc_max_e_avg_reduce_then_softmax
-from contradiction.medical_claims.token_level_inference import TokenLevelInference
+from trainer_v2.per_project.tli.token_level_inference import TokenLevelInference, nc_max_e_avg_reduce_then_softmax
 
 import logging
 import numpy as np

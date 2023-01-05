@@ -1,10 +1,10 @@
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
-from contradiction.medical_claims.token_level_inference import TokenLevelInference, Numpy1D
-from contradiction.medical_claims.token_tagging.batch_solver_common import BatchTokenScoringSolverIF, ECCInput, \
-    ECCOutput
+from trainer_v2.per_project.tli.token_level_inference import TokenLevelInference, Numpy1D
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.per_project.tli.enum_subseq import enum_subseq_136
+from contradiction.medical_claims.token_tagging.batch_solver_common import BatchTokenScoringSolverIF, ECCInput, \
+    ECCOutput
 
 
 class NLITSDualBatchSolver(BatchTokenScoringSolverIF):

@@ -2,11 +2,11 @@ import itertools
 import logging
 from typing import Dict, Tuple
 
-from contradiction.medical_claims.cont_classification.solvers.token_nli import nc_max_e_avg_reduce_then_softmax
-from contradiction.medical_claims.token_level_inference import TokenLevelInference
+from trainer_v2.per_project.tli.tli_visualize import til_to_table
+
+from trainer_v2.per_project.tli.token_level_inference import TokenLevelInference, nc_max_e_avg_reduce_then_softmax
 import numpy as np
 
-from contradiction.medical_claims.cont_classification.tli_devs.tli_visualize import til_to_table
 from trainer_v2.per_project.tli.enum_subseq import enum_subseq_136
 from dataset_specific.mnli.mnli_reader import MNLIReader
 from explain.pairing.run_visualizer.show_cls_probe import NLIVisualize

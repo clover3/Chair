@@ -112,7 +112,7 @@ def nlits_enum():
 
 
 def common_run(split, nli_type, use_idf):
-    run_name = f"{split}_{nli_type}" + ("_idf" if use_idf else "")
+    run_name = f"{nli_type}" + ("_idf" if use_idf else "")
     if nli_type == "nli":
         nli_predict_fn = get_nli14_cache_client()
     elif nli_type == "nli_pep":
@@ -125,12 +125,12 @@ def common_run(split, nli_type, use_idf):
 
 def main():
     c_log.setLevel(logging.INFO)
-    split = "test"
+    split = "dev"
     todo = [
-        # ("nli", False),
-        # ("nli", True),
-        ("nli_pep", False),
-        ("nli_pep", True)
+        ("nli", False),
+        ("nli", True),
+        # ("nli_pep", False),
+        # ("nli_pep", True)
     ]
 
     for nli_type, use_idf in todo:

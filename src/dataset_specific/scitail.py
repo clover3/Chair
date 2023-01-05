@@ -26,6 +26,15 @@ class ScitailEntry(NamedTuple):
     def get_label_as_int(self):
         return scitail_label_list.index(self.label)
 
+    def get_relevance_label(self):
+        if self.label == "entails":
+            return 1
+        elif self.label == "neutral":
+            return 0
+        else:
+            assert False
+
+
     @classmethod
     def from_json(cls, j):
         return ScitailEntry(

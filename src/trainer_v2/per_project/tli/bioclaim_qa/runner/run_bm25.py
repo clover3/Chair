@@ -17,7 +17,7 @@ def task_tuned(split):
 
 
 def main():
-    split = "test"
+    split = "dev"
     not_tuned(split)
     task_tuned(split)
 

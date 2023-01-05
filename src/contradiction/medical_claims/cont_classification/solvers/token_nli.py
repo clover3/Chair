@@ -1,10 +1,10 @@
 from typing import List, Callable, Dict, Tuple
 import numpy as np
 from contradiction.medical_claims.cont_classification.defs import ContClassificationProbabilityScorer, ContProblem
-from contradiction.medical_claims.cont_classification.tli_devs.tli_visualize import til_to_table
+from trainer_v2.per_project.tli.tli_visualize import til_to_table
 from trainer_v2.per_project.tli.enum_subseq import enum_subseq_1, enum_subseq_136, enum_subseq_136_ex
-from contradiction.medical_claims.token_level_inference import Numpy2D, Numpy1D, TokenLevelInference, \
-    TokenLevelInferenceExclusion, mask_to_str
+from trainer_v2.per_project.tli.token_level_inference import Numpy2D, Numpy1D, TokenLevelInference, \
+    TokenLevelInferenceExclusion, mask_to_str, nc_max_e_avg_reduce_then_softmax
 from explain.pairing.run_visualizer.show_cls_probe import NLIVisualize
 from trainer_v2.chair_logging import c_log
 from trainer_v2.keras_server.name_short_cuts import NLIPredictorSig, get_pep_cache_client
@@ -42,22 +42,6 @@ Step 1. only enum individual word
     
 """
 
-
-# Input: [N, 3]
-# Output: [3]
-def max_reduce_then_softmax(tli_p_h: np.array) -> np.array:
-    raw_logits = np.max(tli_p_h, axis=0)  # [3]
-    probs = scipy.special.softmax(raw_logits)
-    return probs
-
-
-def nc_max_e_avg_reduce_then_softmax(tli_p_h: np.array) -> np.array:
-    e_logit = np.mean(tli_p_h[:, 0], axis=0)
-    n_logit = np.max(tli_p_h[:, 1], axis=0)
-    c_logit = np.max(tli_p_h[:, 2], axis=0)
-    raw_logits = np.stack([e_logit, n_logit, c_logit])
-    probs = scipy.special.softmax(raw_logits)
-    return probs
 
 
 class TokenLevelClassifier(ContClassificationProbabilityScorer):

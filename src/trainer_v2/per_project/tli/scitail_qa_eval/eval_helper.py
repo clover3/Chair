@@ -10,12 +10,7 @@ def load_scitail_qa_label(split):
     entries: List[ScitailEntry] = load_scitail_structured(split)
     output = []
     for e in entries:
-        if e.label == "entails":
-            output.append(1)
-        elif e.label == "neutral":
-            output.append(0)
-        else:
-            assert False
+        output.append(e.get_relevance_label())
     return output
 
 

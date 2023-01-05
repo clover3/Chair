@@ -2,7 +2,7 @@ from adhoc.bm25_class import BM25
 from dataset_specific.scitail import get_scitail_questions
 from trainer_v2.keras_server.name_short_cuts import get_nli14_cache_client, get_pep_cache_client
 from trainer_v2.per_project.tli.qa_scorer.bm25_system import build_stats
-from trainer_v2.per_project.tli.qa_scorer.nli_token_system import NLIBasedRelevanceMultiSeg, NLIBasedRelevance
+from trainer_v2.per_project.tli.qa_scorer.nli_token_system import NLIBasedRelevanceMultiSeg
 from trainer_v2.per_project.tli.scitail_qa_eval.eval_helper import batch_solve_save_scitail_qa
 
 
@@ -14,17 +14,16 @@ def common_run(nli_type, use_idf):
     else:
         assert False
 
-    run_name = f"{nli_type}" + ("_idf" if use_idf else "")
+    run_name = f"{nli_type}_enum" + ("_idf" if use_idf else "")
     if use_idf:
         df, cdf, avdl = build_stats(get_scitail_questions())
         bm25 = BM25(df, avdl=avdl, num_doc=cdf, k1=0.00001, k2=100, b=0.5,
                     drop_stopwords=True)
-        module = NLIBasedRelevance(nli_predict_fn, bm25)
+        module = NLIBasedRelevanceMultiSeg(nli_predict_fn, bm25)
     else:
-        module = NLIBasedRelevance(nli_predict_fn)
+        module = NLIBasedRelevanceMultiSeg(nli_predict_fn)
 
     batch_solve_save_scitail_qa(module.batch_predict, run_name)
-
 
 def main():
     todo = [
@@ -36,7 +35,6 @@ def main():
 
     for nli_type, use_idf in todo:
         common_run(nli_type, use_idf)
-
 
 
 if __name__ == "__main__":

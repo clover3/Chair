@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import List, Tuple, Dict
 
 import numpy as np
+import scipy.special
 
 from trainer_v2.chair_logging import c_log
 
@@ -157,3 +158,20 @@ class TokenLevelInferenceExclusion:
 
 def mask_to_str(i_arr):
     return "".join(map(str, i_arr))
+
+
+def max_reduce_then_softmax(tli_p_h: np.array) -> np.array:
+    raw_logits = np.max(tli_p_h, axis=0)  # [3]
+    probs = scipy.special.softmax(raw_logits)
+    return probs
+
+
+# Input: [N, 3]
+# Output: [3]
+def nc_max_e_avg_reduce_then_softmax(tli_p_h: np.array) -> np.array:
+    e_logit = np.mean(tli_p_h[:, 0], axis=0)
+    n_logit = np.max(tli_p_h[:, 1], axis=0)
+    c_logit = np.max(tli_p_h[:, 2], axis=0)
+    raw_logits = np.stack([e_logit, n_logit, c_logit])
+    probs = scipy.special.softmax(raw_logits)
+    return probs

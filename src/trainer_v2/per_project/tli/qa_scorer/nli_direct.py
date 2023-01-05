@@ -1,7 +1,4 @@
 from typing import List, Iterable, Callable, Dict, Tuple, Set, Iterator
-
-from adhoc.bm25_class import BM25
-from misc_lib import average, weighted_sum
 from trainer.promise import PromiseKeeper, MyFuture, list_future
 from trainer_v2.keras_server.name_short_cuts import NLIPredictorSig
 

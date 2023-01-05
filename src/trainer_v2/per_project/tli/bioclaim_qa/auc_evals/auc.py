@@ -50,10 +50,9 @@ def do_eval(split, run_name):
     for qid, _ in label_d:
         all_qid.add(qid)
 
-
     def get_label(qid, doc_id):
         if not qid in all_qid:
-            raise KeyError
+            raise KeyError(qid)
 
         if (qid, doc_id) in label_d:
             return label_d[qid, doc_id]
@@ -65,27 +64,27 @@ def do_eval(split, run_name):
 
 
 def main():
-    run_list = ["bm25_test", "test_nli", "test_nli_pep", "test_nli_pep_idf", ]
 
     fig, ax = plt.subplots()
-
-    color_d = {
-        "bm25_test": 'red',
-        "test_nli": "blue",
-        "test_nli_pep": "gray",
-        "test_nli_pep_idf": "yellow",
-    }
+    run_name_list = [
+        "bm25_tuned", "nli_direct_rev", "nli", "nli_idf", "nli_pep_idf"
+    ]
+    split = "dev"
 
     table = []
-    for run_name in run_list:
+    for run_name in run_name_list:
+        save_name = f"{run_name}_{split}"
         print(run_name)
-        prec_list, recall_list = do_eval("test", run_name)
-        r = auc(recall_list, prec_list)
-        ax.plot(recall_list, prec_list, color=color_d[run_name])
-        table.append((run_name, r))
+        try:
+            prec_list, recall_list = do_eval(split, save_name)
+            r = auc(recall_list, prec_list)
+            ax.plot(recall_list, prec_list, label=run_name)
+            table.append((run_name, r))
+        except FileNotFoundError:
+            pass
 
     print_table(table)
-
+    ax.legend()
     ax.set_title('Precision-Recall Curve')
     ax.set_ylabel('Precision')
     ax.set_xlabel('Recall')
