@@ -2,8 +2,8 @@ import logging
 
 from adhoc.bm25_class import BM25
 from trainer_v2.per_project.tli.qa_scorer.bm25_system import build_stats, BM25TextPairScorerClueWeb
-from trainer_v2.per_project.tli.bioclaim_qa.eval_helper import solve_bioclaim, batch_solve_bioclaim, \
-    solve_bio_claim_and_save, get_bioclaim_retrieval_corpus
+from trainer_v2.per_project.tli.bioclaim_qa.eval_helper import batch_solve_bioclaim, \
+    get_bioclaim_retrieval_corpus
 from trainer_v2.per_project.tli.qa_scorer.nli_token_system import NLIBasedRelevance, NLIBasedRelevanceMultiSeg
 from trainer_v2.per_project.tli.bioclaim_qa.path_helper import get_retrieval_save_path
 from list_lib import right
@@ -15,15 +15,16 @@ from cpath import output_path
 from misc_lib import path_join
 
 
-def exist_c_log():
-    global c_lod
-
-
-
+g_pep_client = None
 def get_pep_cache_client(hooking_fn=None) -> NLIPredictorSig:
-    forward_fn_raw: NLIPredictorSig = get_pep_client()
-    sqlite_path = path_join(output_path, "nli", "bioclaim_nlits")
-    cache_client = get_cached_client(forward_fn_raw, hooking_fn, sqlite_path)
+    global g_pep_client
+    if g_pep_client is None:
+        forward_fn_raw: NLIPredictorSig = get_pep_client()
+        sqlite_path = path_join(output_path, "nli", "bioclaim_nlits")
+        cache_client = get_cached_client(forward_fn_raw, hooking_fn, sqlite_path)
+        g_pep_client = cache_client
+    else:
+        cache_client = g_pep_client
     return cache_client.predict
 
 
@@ -37,7 +38,8 @@ def solve_save_bioclaim_w_nli(nli_predict_fn, run_name, split, idf_weighting=Tru
     else:
         module = NLIBasedRelevance(nli_predict_fn)
     rl_flat = batch_solve_bioclaim(module.batch_predict, split, run_name)
-    write_trec_ranked_list_entry(rl_flat, get_retrieval_save_path(run_name))
+    save_name = f"{run_name}_{split}"
+    write_trec_ranked_list_entry(rl_flat, get_retrieval_save_path(save_name))
 
 
 def solve_save_bioclaim_w_nli_enum(nli_predict_fn, run_name, split, idf_weighting=True):
@@ -60,59 +62,12 @@ def solve_save_bioclaim_w_nli_clue_idf(nli_predict_fn, run_name, split):
     write_trec_ranked_list_entry(rl_flat, get_retrieval_save_path(run_name))
 
 
-def nli_dev():
-    split = "dev"
-    run_name = "pep_idf"
-    nli_predict_fn = get_pep_cache_client()
-
-    solve_save_bioclaim_w_nli(nli_predict_fn, run_name, split)
-
-
-def nli14():
-    split = "dev"
-    run_name = "nli14_idf"
-    nli_predict_fn = get_nli14_cache_client()
-    solve_save_bioclaim_w_nli(nli_predict_fn, run_name, split)
-
-
-def nli14_no_idf():
-    split = "dev"
-    run_name = "nli14"
-    nli_predict_fn = get_nli14_cache_client()
-    solve_save_bioclaim_w_nli(nli_predict_fn, run_name, split, False)
-
-
-def nli14_clue_idf():
-    split = "dev"
-    run_name = "nli14_clue"
-    nli_predict_fn = get_nli14_cache_client()
-    solve_save_bioclaim_w_nli_clue_idf(nli_predict_fn, run_name, split)
-
-
-def nlits_clue_idf():
-    split = "dev"
-    run_name = "pep_clue"
-    nli_predict_fn = get_pep_cache_client()
-    solve_save_bioclaim_w_nli_clue_idf(nli_predict_fn, run_name, split)
-
-
-
-def nli14_enum():
-    split = "test"
-    run_name = "nli14_enum_idf"
-    nli_predict_fn = get_nli14_cache_client()
-    solve_save_bioclaim_w_nli_enum(nli_predict_fn, run_name, split)
-
-
-def nlits_enum():
-    split = "test"
-    run_name = "nlits_enum_idf"
-    nli_predict_fn = get_pep_cache_client()
-    solve_save_bioclaim_w_nli_enum(nli_predict_fn, run_name, split)
-
-
-def common_run(split, nli_type, use_idf):
+def common_run(split, nli_type, use_idf, do_enum):
     run_name = f"{nli_type}" + ("_idf" if use_idf else "")
+    if do_enum:
+        run_name = run_name + "_enum"
+
+    print(run_name)
     if nli_type == "nli":
         nli_predict_fn = get_nli14_cache_client()
     elif nli_type == "nli_pep":
@@ -120,12 +75,13 @@ def common_run(split, nli_type, use_idf):
     else:
         assert False
 
-    solve_save_bioclaim_w_nli_enum(nli_predict_fn, run_name, split, use_idf)
+    if do_enum:
+        solve_save_bioclaim_w_nli_enum(nli_predict_fn, run_name, split, use_idf)
+    else:
+        solve_save_bioclaim_w_nli(nli_predict_fn, run_name, split, use_idf)
 
 
 def main():
-    c_log.setLevel(logging.INFO)
-    split = "dev"
     todo = [
         ("nli", False),
         ("nli", True),
@@ -133,8 +89,11 @@ def main():
         # ("nli_pep", True)
     ]
 
-    for nli_type, use_idf in todo:
-        common_run(split, nli_type, use_idf)
+    for nli_type in ["nli"]:
+        for use_idf in [True, False]:
+            for do_enum in [True, False]:
+                common_run("dev", nli_type, use_idf, do_enum)
+                common_run("test", nli_type, use_idf, do_enum)
 
 
 if __name__ == "__main__":

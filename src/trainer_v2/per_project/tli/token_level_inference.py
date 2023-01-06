@@ -175,3 +175,12 @@ def nc_max_e_avg_reduce_then_softmax(tli_p_h: np.array) -> np.array:
     raw_logits = np.stack([e_logit, n_logit, c_logit])
     probs = scipy.special.softmax(raw_logits)
     return probs
+
+
+def nc_max_e_avg_reduce_then_norm(tli_p_h: np.array) -> np.array:
+    e_logit = np.mean(tli_p_h[:, 0], axis=0)
+    n_logit = np.max(tli_p_h[:, 1], axis=0)
+    c_logit = np.max(tli_p_h[:, 2], axis=0)
+    raw_logits = np.stack([e_logit, n_logit, c_logit])
+    probs = raw_logits / np.sum(raw_logits)
+    return probs

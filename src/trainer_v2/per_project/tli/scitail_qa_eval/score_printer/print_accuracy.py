@@ -24,7 +24,8 @@ def main():
         "nli_rev_direct",
         "scitail_rev_direct",
         "nli_pep",
-        "nli_pep_idf"
+        "nli_pep_idf",
+        "tnli2"
     ]
     column_head = ["run_name", "accuracy", "precision", "recall", "f1",]
     table = [column_head]

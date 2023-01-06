@@ -4,7 +4,7 @@ from explain.pairing.run_visualizer.show_cls_probe import NLIVisualize
 from visualize.html_visual import Cell
 
 
-def til_to_table(hypo, tli):
+def til_to_table(hypo: str, tli) -> List[List[Cell]]:
     def prob_to_color(prob) -> str:
         color_score = NLIVisualize.prob_to_color(prob)
         color = "".join([("%02x" % int(v)) for v in color_score])

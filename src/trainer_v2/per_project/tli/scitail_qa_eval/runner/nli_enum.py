@@ -27,10 +27,10 @@ def common_run(nli_type, use_idf):
 
 def main():
     todo = [
-        # ("nli", False),
-        # ("nli", True),
-        ("nli_pep", False),
-        ("nli_pep", True)
+        ("nli", False),
+        ("nli", True),
+        # ("nli_pep", False),
+        # ("nli_pep", True)
     ]
 
     for nli_type, use_idf in todo:
