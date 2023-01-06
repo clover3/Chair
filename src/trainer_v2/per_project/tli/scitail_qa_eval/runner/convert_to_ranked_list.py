@@ -56,7 +56,8 @@ def main():
         "nli_pep_idf"
     ]
     run_name_list = [
-        "tnli2",
+        "nli_enum",
+        "nli_enum_idf",
     ]
     for run_name in run_name_list:
         for split in ["dev", "test"]:
