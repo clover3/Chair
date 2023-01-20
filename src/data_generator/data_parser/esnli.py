@@ -47,7 +47,7 @@ def load_gold(split_name):
     return result
 
 
-def parse_judgement(split_name):
+def parse_judgement(split_name) -> List[Dict]:
     r: List[Dict] = load_split(split_name)
     for entry in r:
         all_indice = []

@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from adhoc.clueweb12_B13_termstat import ClueIDF
 from attribution.attrib_types import TokenScores
-from contradiction.mnli_ex.load_mnli_ex_data import MNLIExEntry
+from contradiction.mnli_ex.nli_ex_common import NLIExEntry
 from contradiction.mnli_ex.solver_common import MNLIExSolver
 from data_generator.tokenizer_wo_tf import get_tokenizer
 
@@ -12,7 +12,7 @@ class IdfScorer2(MNLIExSolver):
     def __init__(self):
         self.idf_module = ClueIDF()
 
-    def explain(self, data: List[MNLIExEntry], target_label) -> List[Tuple[TokenScores, TokenScores]]:
+    def explain(self, data: List[NLIExEntry], target_label) -> List[Tuple[TokenScores, TokenScores]]:
         if target_label != "mismatch":
             print("IdfScorer2 is implemented only for mismatch")
         explains: List[Tuple[TokenScores, TokenScores]] = []
@@ -45,7 +45,7 @@ def raw_scores_to_paired(raw_scores: List[float]):
 
 
 class ExactMatchScorer(MNLIExSolver):
-    def explain(self, data: List[MNLIExEntry], target_label) -> List[Tuple[TokenScores, TokenScores]]:
+    def explain(self, data: List[NLIExEntry], target_label) -> List[Tuple[TokenScores, TokenScores]]:
         if target_label != "mismatch":
             print("IdfScorer2 is implemented only for mismatch")
         explains: List[Tuple[TokenScores, TokenScores]] = []
@@ -78,7 +78,7 @@ class RandomScorer2(MNLIExSolver):
     def __init__(self):
         self.tokenizer = get_tokenizer()
 
-    def explain(self, data: List[MNLIExEntry], target_label) -> List[Tuple[TokenScores, TokenScores]]:
+    def explain(self, data: List[NLIExEntry], target_label) -> List[Tuple[TokenScores, TokenScores]]:
         explains: List[Tuple[TokenScores, TokenScores]] = []
         for entry in data:
             scores_pair = get_random_score_from_text(entry.premise), get_random_score_from_text(entry.hypothesis)

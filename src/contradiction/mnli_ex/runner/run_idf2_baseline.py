@@ -2,7 +2,8 @@ from typing import List, Tuple
 
 from attribution.attrib_types import TokenScores
 from cache import save_to_pickle, load_from_pickle
-from contradiction.mnli_ex.load_mnli_ex_data import load_mnli_ex, MNLIExEntry
+from contradiction.mnli_ex.load_mnli_ex_data import load_mnli_ex
+from contradiction.mnli_ex.nli_ex_common import NLIExEntry
 from contradiction.mnli_ex.mnli_ex_solvers import IdfScorer2, RandomScorer2, ExactMatchScorer
 from contradiction.mnli_ex.solver_common import MNLIExSolver
 from explain.eval_all import eval_nli_explain
@@ -14,7 +15,7 @@ solver_factory_d = {
 }
 
 
-def nli_baseline_predict(problems: List[MNLIExEntry], explain_tag, method_name):
+def nli_baseline_predict(problems: List[NLIExEntry], explain_tag, method_name):
     solver: MNLIExSolver = solver_factory_d[method_name]()
     pred_list: List[Tuple[TokenScores, TokenScores]] = solver.explain(problems, explain_tag)
     return pred_list
@@ -35,7 +36,7 @@ def nli_baseline_predict_and_save(split, target_tag, method_name):
 def load_labels_as_tuples(split, label) -> List[Tuple[List[int], List[int]]] :
     e_list = load_mnli_ex(split, label)
 
-    def get(e: MNLIExEntry) -> Tuple[List[int], List[int]]:
+    def get(e: NLIExEntry) -> Tuple[List[int], List[int]]:
         return e.p_indices, e.h_indices
 
     return list(map(get, e_list))

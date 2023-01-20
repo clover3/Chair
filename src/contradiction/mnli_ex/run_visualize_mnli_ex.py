@@ -2,7 +2,8 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from contradiction.medical_claims.token_tagging.path_helper import get_sbl_vak_qrel_path
 from contradiction.medical_claims.token_tagging.problem_loader import AlamriProblem
-from contradiction.mnli_ex.load_mnli_ex_data import load_mnli_ex, MNLIExEntry
+from contradiction.mnli_ex.load_mnli_ex_data import load_mnli_ex
+from contradiction.mnli_ex.nli_ex_common import NLIExEntry
 from contradiction.mnli_ex.path_helper import get_save_path, get_mnli_ex_trec_style_label_path
 from contradiction.token_visualize import TextPair, print_html
 from data_generator.tokenizer_wo_tf import get_tokenizer
@@ -12,7 +13,7 @@ from trec.trec_parse import load_ranked_list
 from trec.types import QRelsDict, TrecRankedListEntry
 
 
-def to_text_pair(p: MNLIExEntry) -> TextPair:
+def to_text_pair(p: NLIExEntry) -> TextPair:
     return TextPair(p.data_id, p.premise, p.hypothesis)
 
 
@@ -65,7 +66,7 @@ def main():
     label = "c"
     split = "dev"
     save_name = "{}_{}_{}".format(split, run_name, tag_type)
-    problems: List[MNLIExEntry] = load_mnli_ex(split, tag_type)
+    problems: List[NLIExEntry] = load_mnli_ex(split, tag_type)
     text_pairs: List[TextPair] = list(map(to_text_pair, problems))
 
     qrel: QRelsDict = load_qrels_structured(get_mnli_ex_trec_style_label_path(label, split))
