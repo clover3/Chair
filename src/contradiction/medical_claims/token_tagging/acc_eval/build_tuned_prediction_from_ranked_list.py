@@ -1,27 +1,11 @@
-from typing import List, Dict
+from typing import List
 
 from contradiction.medical_claims.token_tagging.acc_eval.path_helper import load_sbl_binary_label
 from contradiction.medical_claims.token_tagging.path_helper import get_save_path2, get_binary_save_path_w_opt
-from contradiction.token_tagging.acc_eval.defs import SentTokenLabel, SentTokenBPrediction
+from contradiction.token_tagging.acc_eval.defs import SentTokenLabel, SentTokenBPrediction, convert_to_binary
 from contradiction.token_tagging.acc_eval.eval_codes import calc_prec_rec_acc
 from contradiction.token_tagging.acc_eval.parser import save_sent_token_binary_predictions
 from trec.trec_parse import load_ranked_list_grouped
-from trec.types import TrecRankedListEntry
-
-
-def convert_to_binary(rlg: Dict[str, List[TrecRankedListEntry]],
-                      threshold) -> List[SentTokenBPrediction]:
-    output = []
-    for qid, entries in rlg.items():
-        score_d = {}
-        for e in entries:
-            score_d[int(e.doc_id)] = 1 if e.score >= threshold else 0
-
-        maybe_len = max(score_d) + 1
-        scores = [score_d[i] for i in range(maybe_len)]
-
-        output.append(SentTokenBPrediction(qid, scores))
-    return output
 
 
 def pairing_check(stl_list: List[SentTokenLabel]):
@@ -52,9 +36,13 @@ def build_save(run_name, tag_type, metric_to_opt):
         predictions: List[SentTokenBPrediction] = convert_to_binary(rlg, t)
         return calc_prec_rec_acc(labels, predictions)
 
+    search_interval = range(102)
+    if run_name == "senli":
+        search_interval = range(-500, 500, 5)
+
     max_t = None
     max_f1 = -1
-    for i in range(102):
+    for i in search_interval:
         t = 0.01 * i
         metrics = apply_threshold_eval(t)
         if metrics[metric_to_opt] > max_f1:
@@ -85,10 +73,11 @@ def main():
     run_list = ["random", "nlits87", "psearch", "coattention", "word2vec_em",
                 "lime",
                 "deletion", "exact_match", "word_seg"]
-    run_list = ["davinci"]
+    run_list = ["senli"]
     tag = "conflict"
     # tag = "mismatch"
     metric_to_opt = 'f1'
+    metric_to_opt = 'accuracy'
 
     for run_name in run_list:
         print(run_name)

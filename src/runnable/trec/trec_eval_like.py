@@ -29,6 +29,14 @@ def trec_eval_like_core(qrels, ranked_list, metric):
     return score
 
 
+def trec_eval_like_func(judgment_path, ranked_list_path, metric):
+    qrels = load_qrels_flat_per_query(judgment_path)
+    ranked_list: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranked_list_path)
+    score = trec_eval_like_core(qrels, ranked_list, metric)
+    return score
+
+
+
 def main():
     judgment_path = sys.argv[1]
     ranked_list_path = sys.argv[2]

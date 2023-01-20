@@ -1,11 +1,10 @@
-import os
 from typing import List
 
 from contradiction.medical_claims.token_tagging.batch_solver_common import BatchTokenScoringSolverIF
 from contradiction.medical_claims.token_tagging.online_solver_common import TokenScoringSolverIF
 from contradiction.medical_claims.token_tagging.trec_entry_helper import convert_token_scores_to_trec_entries
 from contradiction.mnli_ex.load_mnli_ex_data import load_mnli_ex, MNLIExEntry
-from cpath import output_path
+from contradiction.mnli_ex.path_helper import get_save_path_ex
 from misc_lib import TEL
 from trec.trec_parse import write_trec_ranked_list_entry
 
@@ -54,13 +53,13 @@ def make_ranked_list_w_batch_solver(problems: List[MNLIExEntry],
     write_trec_ranked_list_entry(all_ranked_list, save_path)
 
 
-def get_save_path(save_name):
-    save_path = os.path.join(output_path, "mnli_ex", "ranked_list", save_name + ".txt")
-    return save_path
-
-
 def solve_mnli_tag(split, run_name, solver: TokenScoringSolverIF, tag_type):
     problems: List[MNLIExEntry] = load_mnli_ex(split, tag_type)
-    save_name = "{}_{}_{}".format(split, run_name, tag_type)
-    save_path = get_save_path(save_name)
+    save_path = get_save_path_ex(split, run_name, tag_type)
     make_ranked_list_w_solver_mnli(problems, solver, run_name, save_path)
+
+
+def solve_mnli_tag_batch(split, run_name, solver: BatchTokenScoringSolverIF, tag_type):
+    problems: List[MNLIExEntry] = load_mnli_ex(split, tag_type)
+    save_path = get_save_path_ex(split, run_name, tag_type)
+    make_ranked_list_w_batch_solver(problems, run_name, save_path, solver)

@@ -6,8 +6,6 @@ from trainer_v2.train_util.arg_flags import flags_parser
 import sys
 
 
-
-
 def main(args):
     run_config = get_run_config_for_predict(args)
     tokenizer = get_tokenizer()

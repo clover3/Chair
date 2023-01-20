@@ -17,8 +17,6 @@ def print_failure(iterator: Iterator[Comparison]):
     confusion = Counter()
     n_print = 0
     for i, item in enumerate(iterator):
-        if i < 54:
-            continue
         printed = False
         for ts_probs, ts_info in zip(item.ts_pred_probs, item.ts_input_info_list):
             l_probs, g_probs = ts_probs

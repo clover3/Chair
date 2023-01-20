@@ -1,4 +1,6 @@
-from typing import List
+from typing import List, Dict
+
+from trec.types import TrecRankedListEntry
 
 
 class SentTokenLabel:
@@ -41,3 +43,18 @@ class SentTokenBPrediction:
         for item in predictions:
             assert type(item) == int
         return SentTokenBPrediction(qid, predictions)
+
+
+def convert_to_binary(rlg: Dict[str, List[TrecRankedListEntry]],
+                      threshold) -> List[SentTokenBPrediction]:
+    output = []
+    for qid, entries in rlg.items():
+        score_d = {}
+        for e in entries:
+            score_d[int(e.doc_id)] = 1 if e.score >= threshold else 0
+
+        maybe_len = max(score_d) + 1
+        scores = [score_d[i] for i in range(maybe_len)]
+
+        output.append(SentTokenBPrediction(qid, scores))
+    return output

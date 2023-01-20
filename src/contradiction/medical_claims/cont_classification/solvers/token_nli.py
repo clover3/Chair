@@ -278,6 +278,105 @@ class TokenLevelSolverExEnum(ContClassificationProbabilityScorer):
         self.html.write_table(table)
 
 
+class TokenLevelSolverExEnum2(ContClassificationProbabilityScorer):
+    def __init__(self,
+                 nli_predict_fn: NLIPredictorSig,
+                 combine_tli: Callable[[Numpy2D], Numpy1D],
+                 enum_subseq: Callable,
+                 enum_subseq_ex: Callable,
+                 target_label,
+                 ):
+        self.nli_predict_fn = nli_predict_fn
+        self.tli_module = TokenLevelInference(nli_predict_fn, enum_subseq)
+        self.tli_ex_module = TokenLevelInferenceExclusion(nli_predict_fn, enum_subseq_ex)
+        self.target_label = target_label
+        self.combine_tli: Callable[[Numpy2D], Numpy1D] = combine_tli
+        self.html = HtmlVisualizer("tli_ex_debug.html")
+
+    def get_target_label(self, probs: np.array) -> float:
+        pred = np.argmax(probs)
+        if pred == self.target_label:
+            return 1
+        else:
+            return 0
+        # return probs[self.target_label]
+
+    def solve_batch(self, problems: List[ContProblem]) -> List[float]:
+
+        tli_payload = []
+        for p in problems:
+            tli_payload.append((p.question + "? Yes", p.claim1_text))
+            tli_payload.append((p.question + "? Yes", p.claim2_text))
+            tli_payload.append((p.question + "? No", p.claim1_text))
+            tli_payload.append((p.question + "? No", p.claim2_text))
+
+        c_log.debug("Computing TLI...")
+        tli_d: Dict[Tuple[str, str], Numpy2D] = self.tli_module.do_batch_return_dict(tli_payload)
+        c_log.debug("Computing TLI Done")
+
+        out_scores: List[float] = []
+
+        def int_mask(float_arr):
+            return [1 if f >= 0.5 else 0 for f in float_arr]
+
+        def get_condition_mask(p):
+            tli_q_c1_ys = tli_d[p.claim1_text, p.question + "? Yes"]
+            tli_q_c2_ys = tli_d[p.claim2_text, p.question + "? Yes"]
+            tli_q_c1_no = tli_d[p.claim1_text, p.question + "? No"]
+            tli_q_c2_no = tli_d[p.claim2_text, p.question + "? No"]
+
+            # Step 2. Identify condition tokens in claims
+            #     - If a token in the claim is not entailed by the question, then it is condition
+            ex_mask1 = int_mask(np.minimum(tli_q_c1_ys[:, 1], tli_q_c1_no[:, 1]))  # [len(C1)]
+            ex_mask2 = int_mask(np.minimum(tli_q_c2_ys[:, 1], tli_q_c2_no[:, 1]))  # [len(C1)]
+            return ex_mask1, ex_mask2
+
+        tli_ex_payload = []
+        for p in problems:
+            ex_mask1, ex_mask2 = get_condition_mask(p)
+            tli_ex_payload.append((p.claim1_text, p.claim2_text, ex_mask2))
+            tli_ex_payload.append((p.claim2_text, p.claim1_text, ex_mask1))
+
+        tli_ex_d: Dict[Tuple[str, str, str], Numpy2D] = self.tli_ex_module.do_batch_return_dict(tli_ex_payload)
+
+        # Step 3. Check if two claims are contradictory if condition tokens are excluded
+        for p, tli_ex in zip(problems, tli_ex_payload):
+            ex_mask1, ex_mask2 = get_condition_mask(p)
+
+            tli_q_c1_ys = tli_d[p.claim1_text, p.question + "? Yes"]
+            tli_q_c2_ys = tli_d[p.claim2_text, p.question + "? Yes", ]
+            tli_q_c1_no = tli_d[p.claim1_text, p.question + "? No"]
+            tli_q_c2_no = tli_d[p.claim2_text, p.question + "? No"]
+            ex_mask1_str = mask_to_str(ex_mask1)  # [len(C1)]
+            ex_mask2_str = mask_to_str(ex_mask2)  # [len(C1)]
+
+            tli_c1_c2 = tli_ex_d[p.claim1_text, p.claim2_text, ex_mask2_str]
+            tli_c2_c1 = tli_ex_d[p.claim2_text, p.claim1_text, ex_mask1_str]
+            self.html.write_paragraph("Q: {}".format(p.question))
+            self.log_tli("q c1 ys", p.claim1_text, tli_q_c1_ys)
+            self.log_tli("q c2 ys", p.claim2_text, tli_q_c2_ys)
+            self.log_tli("q c1 no", p.claim1_text, tli_q_c1_no)
+            self.log_tli("q c2 no", p.claim2_text, tli_q_c2_no)
+            self.log_tli("c1 c2", p.claim2_text, tli_c1_c2)
+            self.log_tli("c2 c1", p.claim1_text, tli_c2_c1)
+
+            probs1: Numpy1D = self.combine_tli(tli_c1_c2)
+            probs2: Numpy1D = self.combine_tli(tli_c2_c1)
+            probs: Numpy1D = (probs1 + probs2) / 2
+            label_probs: float = self.get_target_label(probs)
+            self.html.write_paragraph("Final probs: {}".format(
+                NLIVisualize.make_prediction_summary_str(probs)))
+
+            out_scores.append(label_probs)
+
+        return out_scores
+
+    def log_tli(self, msg, hypo, tli):
+        table = til_to_table(hypo, tli)
+        self.html.write_paragraph(msg)
+        self.html.write_table(table)
+
+
 class TokenLevelSolverExDirect(ContClassificationProbabilityScorer):
     def __init__(self,
                  nli_predict_fn: NLIPredictorSig,

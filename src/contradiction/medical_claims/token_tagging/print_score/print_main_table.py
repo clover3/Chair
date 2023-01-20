@@ -5,6 +5,7 @@ from tab_print import print_table
 
 def show_for_mismatch():
     run_list = ["random", "exact_match", "word2vec_em",
+                "senli",
                 "coattention", "lime",
                 "word_seg", "nlits87", "davinci"
                 ]

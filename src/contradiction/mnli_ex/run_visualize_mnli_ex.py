@@ -3,8 +3,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 from contradiction.medical_claims.token_tagging.path_helper import get_sbl_vak_qrel_path
 from contradiction.medical_claims.token_tagging.problem_loader import AlamriProblem
 from contradiction.mnli_ex.load_mnli_ex_data import load_mnli_ex, MNLIExEntry
-from contradiction.mnli_ex.ranking_style_helper import get_save_path
-from contradiction.mnli_ex.trec_style_helper import get_mnli_ex_trec_style_label_path
+from contradiction.mnli_ex.path_helper import get_save_path, get_mnli_ex_trec_style_label_path
 from contradiction.token_visualize import TextPair, print_html
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import group_by

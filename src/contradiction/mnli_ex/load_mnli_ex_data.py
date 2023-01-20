@@ -1,8 +1,10 @@
 import csv
 import os
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Iterator
 
+from contradiction.token_tagging.acc_eval.defs import SentTokenLabel
 from cpath import data_path
+from data_generator.NLI.enlidef import prefix_d, is_mnli_ex_target
 
 
 def parse_comma_sep_indices(s):
@@ -28,13 +30,6 @@ class MNLIExEntry(NamedTuple):
             parse_comma_sep_indices(d['h_indices']),
         )
 
-prefix_d = {
-    "match": "e",
-    "mismatch": "n",
-    "conflict": "c",
-}
-
-mnli_ex_tags = ["match", "mismatch", "conflict"]
 
 def load_mnli_ex(split, label) -> List[MNLIExEntry]:
     tag_prefix = prefix_d[label]
@@ -54,4 +49,32 @@ def load_mnli_ex(split, label) -> List[MNLIExEntry]:
             data.append(entry)
 
     return list(map(MNLIExEntry.from_dict, data))
+
+
+def mnli_ex_entry_to_sent_token_label(e: MNLIExEntry, tag_type) -> Iterator[SentTokenLabel]:
+    todo = [
+        ("prem", e.p_indices, e.premise),
+        ("hypo", e.h_indices, e.hypothesis)
+    ]
+    for sent_type, indices, text in todo:
+        if is_mnli_ex_target(tag_type, sent_type):
+            n_tokens = len(text.split())
+            binary = [1 if i in indices else 0 for i in range(n_tokens)]
+            yield SentTokenLabel(
+                get_mnli_ex_entry_qid(e, sent_type),
+                binary
+            )
+
+
+def get_mnli_ex_entry_qid(e, sent_type):
+    query_id = "{}_{}".format(e.data_id, sent_type)
+    return query_id
+
+
+def load_mnli_ex_binary_label(split, tag_type) -> List[SentTokenLabel]:
+    entries = load_mnli_ex(split, tag_type)
+    output: List[SentTokenLabel] = []
+    for e in entries:
+        output.extend(mnli_ex_entry_to_sent_token_label(e, tag_type))
+    return output
 

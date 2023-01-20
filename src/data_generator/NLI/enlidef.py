@@ -7,6 +7,8 @@ CONTRADICTION = 2
 MARK_PREM = 2
 MARK_HYPO = 3
 nli_label_list = ["entailment", "neutral", "contradiction", ]
+enli_tags = ["match", "mismatch",  "conflict"]
+
 
 def get_target_class(explain_tag):
     target_class = {
@@ -44,3 +46,26 @@ def nli_probs_str(probs):
 
 snli_train_size = 550152
 mnli_train_size = 392702
+prefix_d = {
+    "match": "e",
+    "mismatch": "n",
+    "conflict": "c",
+}
+mnli_ex_tags = ["match", "mismatch", "conflict"]
+
+
+def is_mnli_ex_target(tag_type, sent_type):
+    assert sent_type in ["prem", "hypo"]
+    if tag_type == "conflict":
+        return True
+    elif tag_type == "match":
+        if sent_type == "prem":
+            return True
+        else:
+            return False
+    elif tag_type == "mismatch":
+        if sent_type == "hypo":
+            return True
+        else:
+            return False
+    return

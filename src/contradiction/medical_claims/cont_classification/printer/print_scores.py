@@ -5,10 +5,12 @@ from tab_print import print_table
 def main():
     split = "dev"
     run_name_list = [
-        "majority", "random", "bm25_tuned",
-        "nli", "nli_q", "nli_q3", "nli_q4",
-        "tnli1", "tnli3",
-        "tnli4", "tnli5"
+        # "majority", "random", "bm25_tuned",
+        "nli", "nli_q", "nli_q3", "nli_q3_debug",
+        # , "nli_q4",
+        # "tnli1", "tnli3",
+        # "tnli4", "tnli5"
+        "nli_postfix_ignore"
     ]
 
     metric_names = ["accuracy", "precision", "recall", "f1", "tp", "fp", "tn", "fn"]
