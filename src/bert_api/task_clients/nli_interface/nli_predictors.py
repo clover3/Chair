@@ -8,6 +8,7 @@ from cpath import pjoin, data_path
 from data_generator.tokenizer_wo_tf import EncoderUnitPlain
 from datastore.sql_based_cache_client import SQLBasedCacheClientS, SQLBasedLazyCacheClientS
 from port_info import NLI_PORT
+from trainer_v2.keras_server.name_short_cuts import NLIPredictorSig
 
 
 def get_nli_client_by_server() -> NLIPredictorFromSegTextSig:
@@ -88,3 +89,4 @@ def get_nli_lazy_client(option, hooking_fn=None) -> SQLBasedLazyCacheClientS:
                                             get_nli_cache_sqlite_path(),
                                             save_interval=1)
     return cache_client
+

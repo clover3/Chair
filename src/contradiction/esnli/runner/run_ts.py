@@ -35,7 +35,7 @@ def main(args):
         do_for_label(run_config, tag_type, split)
 
     num_jobs = len(todo_list)
-    runner = JobRunnerF(job_man_dir, num_jobs, "esnli_ts", work_fn)
+    runner = JobRunnerF(job_man_dir, num_jobs, "esnli_ts2", work_fn)
     runner.auto_runner()
 
 

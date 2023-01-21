@@ -1,8 +1,13 @@
+import logging
 import sys
 
+from contradiction.esnli.runner.run_ts import get_todo
 from contradiction.medical_claims.token_tagging.solvers.search_solver import PartialSegSolver, WordSegSolver
 from contradiction.solve_run_helper import solve_esnli_tag
 from data_generator.NLI.enlidef import get_target_class, enli_tags
+from epath import job_man_dir
+from job_manager.job_runner_with_server import JobRunnerF
+from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.definitions import ModelConfig300_3
 from trainer_v2.custom_loop.run_config2 import get_eval_run_config2
 from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
@@ -29,11 +34,16 @@ def do_for_label(predict_fn, tag_type, split):
 
 
 def main(args):
+    c_log.setLevel(logging.WARN)
+    todo_list = get_todo()
     predict_fn = get_predictor(args)
-    for split in ["dev", "test"]:
-        for tag_type in enli_tags:
-            do_for_label(predict_fn, tag_type, split)
+    def work_fn(job_id):
+        tag_type, split = todo_list[job_id]
+        do_for_label(predict_fn, tag_type, split)
 
+    num_jobs = len(todo_list)
+    runner = JobRunnerF(job_man_dir, num_jobs, "esnli_snli7", work_fn)
+    runner.auto_runner()
 
 
 if __name__ == "__main__":

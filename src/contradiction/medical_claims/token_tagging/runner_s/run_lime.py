@@ -31,6 +31,7 @@ class LimeWorker(WorkerInterface):
 
 
 def for_tag(tag_type, job_name):
+    print(tag_type, job_name)
     target_idx = {"mismatch": 1,
                   "conflict": 2}[tag_type]
     problems: List[AlamriProblem] = load_alamri_problem()
@@ -54,7 +55,7 @@ def main2():
 def main():
     c_log.info("Start {}".format(__file__))
     tag_type = "conflict"
-    job_name = "lime_token_tagging_conflict"
+    job_name = "lime_token_tagging_conflict_2"
     for_tag(tag_type, job_name)
 
 

@@ -32,10 +32,14 @@ class BioClaimMapCalc:
         return s
 
 
-def show_for_mismatch():
-    run_list = ["random", "exact_match",
-                "coattention", "lime", "word_seg", "word2vec_em",
-                "psearch", "nlits86", "nlits87", "davinci"
+def main():
+    run_list = ["random",
+                "exact_match",
+                "deletion",
+                "coattention",
+                "senli",
+                "lime", "word_seg", "word2vec_em",
+                "nlits87", "davinci", "lime"
                 ]
     split = "test"
     scorer = BioClaimMapCalc(split)
@@ -52,4 +56,4 @@ def show_for_mismatch():
 
 
 if __name__ == "__main__":
-    show_for_mismatch()
+    main()

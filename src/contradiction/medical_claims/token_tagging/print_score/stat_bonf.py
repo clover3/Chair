@@ -26,7 +26,6 @@ def load_run(run, tag):
     return ranked_list
 
 
-
 def paired_test_map(metric, qrels, ranked_list_1, ranked_list_2):
     metric_fn = get_metric_fn(metric)
     score_d1 = get_score_per_query(qrels, metric_fn, ranked_list_1)
@@ -50,8 +49,6 @@ def paired_test_map(metric, qrels, ranked_list_1, ranked_list_2):
     return p_value
 
 
-
-
 def do_stat_test_map(judgment_path, metric, run1_list, run2, tag):
     qrels = load_qrels_flat_per_query_0_1_only(judgment_path)
     ranked_list_2 = load_run(run2, tag)
@@ -68,8 +65,8 @@ def do_stat_test_map(judgment_path, metric, run1_list, run2, tag):
 
 
 def calc_metric_per_query(label_list: List[SentTokenLabel],
-                      prediction_list: List[SentTokenBPrediction],
-                      metric: str) -> List[Tuple[str, float]]:
+                          prediction_list: List[SentTokenBPrediction],
+                          metric: str) -> List[Tuple[str, float]]:
     label_d = index_by_fn(lambda x: x.qid, label_list)
     output: List[Tuple[str, float]] = []
     for p in prediction_list:
@@ -134,23 +131,40 @@ def do_stat_test_f1(metric, run1_list, run2, tag):
             pass
     print_table(table)
 
+    name_for_pvalue = [f"{run1}_{tag}_{metric}" for run1 in run1_list]
+    return p_value_list, name_for_pvalue
+
 
 def main():
     split = "test"
-    judgment_path = get_sbl_qrel_path(split)
-    metric = "f1"
-    tag = "mismatch"
     run1_list = ["exact_match", "word2vec_em",
                  "coattention", "lime", "deletion", "word_seg",
                  "davinci"
                  ]
 
+    mismatch_only = ["exact_match", "word2vec_em", "coattention",]
+
     run2 = "nlits87"
-    
-    if metric == "map":
-        do_stat_test_map(judgment_path, metric, run1_list, run2, tag)
-    elif metric in ["f1", "accuracy", ]:
-        do_stat_test_f1(metric, run1_list, run2, tag)
+    all_p_values = []
+    names_all = []
+    for metric in ["accuracy", "f1"]:
+        for tag in ["mismatch", "conflict"]:
+            if tag == "conflict":
+                run1_list_selected = [run_name for run_name in run1_list if run_name not in mismatch_only]
+            else:
+                run1_list_selected = run1_list
+            p_values, names = do_stat_test_f1(metric, run1_list_selected, run2, tag)
+            all_p_values.extend(p_values)
+            names_all.extend(names)
+
+
+    reject, pvalue_corrected, alpha_sick, alpha_bonf = multipletests(all_p_values,
+                                                                     method="bonferroni"
+                                                                     )
+
+    for name, corrected_p_value in zip(names_all, pvalue_corrected):
+        print(name, corrected_p_value, corrected_p_value < 0.05)
+
 
 
 if __name__ == "__main__":

@@ -34,3 +34,38 @@ class DeletionSolver(TokenScoringSolverIF):
             score = get_score_for(t1, t2_sub)
             scores2.append(score)
         return scores1, scores2
+
+
+class DeletionSolverKeras(TokenScoringSolverIF):
+    def __init__(self, predict_fn, target_idx):
+        self.predict_fn = predict_fn
+        self.tokenizer = get_tokenizer()
+        self.target_idx = target_idx
+
+    def solve_one(self, text1_tokens: List[str], text2_tokens: List[str]) -> List[float]:
+        def join_token_pairs(tokens1, tokens2):
+            return " ".join(tokens1), " ".join(tokens2)
+
+        base_pair = join_token_pairs(text1_tokens, text2_tokens)
+        payload: List[Tuple[str, str]] = []
+        payload.append(base_pair)
+        for i in range(len(text2_tokens)):
+            new_tokens2 = text2_tokens[i:] + text2_tokens[i+1:]
+            payload.append(join_token_pairs(text1_tokens, new_tokens2))
+
+        probs = self.predict_fn(payload)
+        probs_d = dict(zip(payload, probs))
+        base_prob = probs_d[base_pair]
+        scores = []
+        for i in range(len(text2_tokens)):
+            new_tokens2 = text2_tokens[i:] + text2_tokens[i+1:]
+            case_input = join_token_pairs(text1_tokens, new_tokens2)
+            case_prob = probs_d[case_input]
+            score = base_prob[self.target_idx] - case_prob[self.target_idx]
+            scores.append(score)
+        return scores
+
+    def solve(self, text1_tokens: List[str], text2_tokens: List[str]) -> Tuple[List[float], List[float]]:
+        s2 = self.solve_one(text1_tokens, text2_tokens)
+        s1 = self.solve_one(text2_tokens, text1_tokens)
+        return s1, s2

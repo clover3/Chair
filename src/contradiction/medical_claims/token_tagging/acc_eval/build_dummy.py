@@ -27,31 +27,13 @@ def pairing_check(stl_list: List[SentTokenLabel]):
             print(group_no, problem_no, "has no prem")
 
 
-def build_save(run_name, tag_type, metric_to_opt):
-    rl_path = get_save_path2(run_name, tag_type)
+def build_save(src_run_name, out_run_name, tag_type, metric_to_opt):
+    rl_path = get_save_path2(src_run_name, tag_type)
     rlg = load_ranked_list_grouped(rl_path)
-    labels: List[SentTokenLabel] = load_sbl_binary_label(tag_type, "val")
 
-    def apply_threshold_eval(t):
-        predictions: List[SentTokenBPrediction] = convert_to_binary(rlg, t)
-        return calc_prec_rec_acc(labels, predictions)
-
-    search_interval = range(102)
-    if run_name in ["lime", "deletion", "senli"]:
-        search_interval = range(-500, 500, 5)
-
-    max_t = None
-    max_f1 = -1
-    for i in search_interval:
-        t = 0.01 * i
-        metrics = apply_threshold_eval(t)
-        if metrics[metric_to_opt] > max_f1:
-            max_f1 = metrics[metric_to_opt]
-            max_t = t
-        # print(t, metrics[metric_to_opt], metrics['precision'], metrics['recall'])
-    print("{}={} at t={}".format(metric_to_opt, max_f1, max_t))
+    max_t = +10e8
     predictions = convert_to_binary(rlg, max_t)
-    save_path = get_binary_save_path_w_opt(run_name, tag_type, metric_to_opt)
+    save_path = get_binary_save_path_w_opt(out_run_name, tag_type, metric_to_opt)
     save_sent_token_binary_predictions(predictions, save_path)
 
 
@@ -70,23 +52,18 @@ def show_true_rate():
 
 def main():
     # show_true_rate()
-    run_list = ["random", "nlits87", "psearch", "coattention", "word2vec_em",
-                "lime",
-                "deletion", "exact_match", "word_seg"]
-    run_list = ["deletion"]
+    run_list = ["lime"]
     # tag = "conflict"
-    tag_list = ["mismatch", "conflict"]
-    # metric_to_opt = 'f1'
-    metric_list = ["accuracy", "f1"]
-
+    tag = "mismatch"
+    metric_to_opt = 'f1'
+    # metric_to_opt = 'accuracy'
+    out_run_name = "majority"
     for run_name in run_list:
         print(run_name)
-        for tag in tag_list:
-            for metric in metric_list:
-                try:
-                    build_save(run_name, tag, metric)
-                except FileNotFoundError as e:
-                    print(e)
+        try:
+            build_save(run_name, out_run_name, tag, metric_to_opt)
+        except FileNotFoundError as e:
+            print(e)
 
 
 if __name__ == "__main__":

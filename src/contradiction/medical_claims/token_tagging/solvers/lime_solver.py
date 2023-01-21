@@ -40,8 +40,8 @@ class LimeSolver(TokenScoringSolverIF):
             payload = [(text1, text) for text in text_list]
             return np.array(self.predict_fn(payload))
 
-        target_label = 1
         len_seq = len(text2_tokens)
+        target_label = self.target_label
         exp = explainer.explain_instance(entry, classifier_fn, labels=(target_label,),
                                          num_features=len_seq, num_samples=500)
         scored_items = list(exp.local_exp[target_label])
