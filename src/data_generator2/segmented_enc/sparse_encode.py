@@ -53,11 +53,15 @@ def read():
 
     def decode_record(record):
         record = tf.io.parse_single_example(record, name_to_features)
-        return tf.sparse.SparseTensor(
+        tensor = tf.sparse.SparseTensor(
             indices=tf.expand_dims(record['sparse_tensor_indices'], axis=1),
             values=record['sparse_tensor_values'],
             dense_shape=[vector_len, ]
         )
+        return {
+            'input_ids': record['input_ids'],
+            'tensor': tf.sparse.to_dense(tensor),
+        }
     dataset = tf.data.TFRecordDataset([record_path])
     # raw_example = next(iter(dataset))
     # parsed = tf.train.Example.FromString(raw_example.numpy())
@@ -68,8 +72,6 @@ def read():
 
     for item in dataset:
         print(item)
-
-
 
 
 if __name__ == "__main__":

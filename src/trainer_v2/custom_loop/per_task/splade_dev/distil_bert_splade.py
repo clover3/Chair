@@ -5,6 +5,8 @@ import re
 import h5py
 from bert.loader import bert_prefix
 import numpy as np
+from transformers import TFAutoModelForMaskedLM, AutoTokenizer
+
 
 from cache import save_to_pickle, load_from_pickle
 from cpath import get_bert_config_path, data_path
@@ -31,6 +33,7 @@ def load_weights_from_hdf5(model, h5_path, map_to_stock_fn, n_expected_restore):
     param_values = keras.backend.batch_get_value(model.weights)
     for ndx, (param_value, param) in enumerate(zip(param_values, bert_params)):
         stock_name = map_to_stock_fn(param.name, prefix)
+        print("{} -> {}".format(param.name, stock_name))
 
         if stock_name in param_storage:
             ckpt_value = param_storage[stock_name]
@@ -48,6 +51,8 @@ def load_weights_from_hdf5(model, h5_path, map_to_stock_fn, n_expected_restore):
         else:
             c_log.info("loader: No value for:[{}], i.e.:[{}] in:[{}]".format(param.name, stock_name, h5_path))
             skip_count += 1
+
+    print(weight_value_tuples[0][1])
     keras.backend.batch_set_value(weight_value_tuples)
     if n_expected_restore is not None and n_expected_restore == len(weight_value_tuples):
         pass
@@ -137,13 +142,15 @@ def vocab_vector_to_text(vector):
             scores.append("{0}: {1:.2f}".format(i, v))
     return " ".join(scores)
 
-def main(args):
+
+def main4(args):
     run_config: RunConfig2 = get_run_config2_nli(args)
     run_config.print_info()
 
     checkpoint_path = run_config.train_config.init_checkpoint
     config_path = os.path.join(data_path, "config", 'distilbert.json')
     bert_params = load_bert_config(config_path)
+    bert_params.use_token_type = False
     max_seq_len = bert_params.max_position_embeddings
     l_bert = BertModelLayer.from_params(bert_params, name="bert")
     l_input_ids = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="input_ids")
@@ -178,7 +185,6 @@ def main(args):
 
 
 def main(args):
-    from transformers import TFAutoModelForMaskedLM, AutoTokenizer
     run_config: RunConfig2 = get_run_config2_nli(args)
     run_config.print_info()
 
@@ -188,9 +194,17 @@ def main(args):
         model_type_or_dir, from_pt=True, output_loading_info=True)
     # TFDistilBertForMaskedLM
     print("Model", model)
-    model.summary()
-    query = "what is thermal stress?"
+    model_save_path = "C:\work\code\chair\output\model\\runs\distilsplade_max_tf"
+
+    model.save(model_save_path)
+    return
     tokenizer = AutoTokenizer.from_pretrained(model_type_or_dir)
+
+    model.summary()
+
+
+def predict_verfiy(model, tokenizer):
+    query = "what is thermal stress?"
     q_tokens = tokenizer(query)
     print("q_tokens", q_tokens)
     # tokens = ["[CLS]"] + q_tokens + ["[SEP]"]
@@ -211,8 +225,32 @@ def main(args):
     print("error: {}".format(error))
 
 
+def load_from_tf_checkpoint():
+    model_type_or_dir = "C:\work\code\chair\output\model\\runs\distilsplade_max_tf"
+    tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+    model = tf.keras.models.load_model(model_type_or_dir)
+    query = "what is thermal stress?"
+    encoded_input = tokenizer(query)
+    print("q_tokens", encoded_input)
+    print("input_ids", encoded_input["input_ids"])
+    print("attention_mask", encoded_input["attention_mask"])
+    input_ids = tf.expand_dims(encoded_input["input_ids"], axis=0)
+    attention_mask = tf.expand_dims(encoded_input["attention_mask"], axis=0)
+    output = model({'input_ids': input_ids, 'attention_mask': attention_mask})
+    mask = tf.cast(tf.expand_dims(encoded_input['attention_mask'], axis=0), tf.float32)
+    print(output)
+    logits = output['logits']
+    tf_out = splade_max(logits, mask).numpy()
+    torch_out = load_from_pickle("torch_splade_out")
+
+    print("tf____out", vocab_vector_to_text(tf_out[0]))
+    print("torch_out", vocab_vector_to_text(torch_out))
+    error = np.sum(tf_out - torch_out)
+    print("error: {}".format(error))
+
+
+
 if __name__ == "__main__":
     args = flags_parser.parse_args(sys.argv[1:])
-    main(args)
-
+    main4(args)
 
