@@ -2,7 +2,7 @@ import os
 from misc_lib import path_join
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from trainer_v2.custom_loop.run_config2 import get_run_config2
-from trainer_v2.per_project.transparency.splade_regression.data_generator.data_encoding import get_vector_regression_encode_fn
+from trainer_v2.per_project.transparency.splade_regression.data_generator.encode_fns import get_vector_regression_encode_fn_batched
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.regression_loader import VectorRegressionLoader, \
     apply_batch
 from trainer_v2.train_util.arg_flags import flags_parser
@@ -26,7 +26,7 @@ def main():
     save_dir = path_join("output", "splade", "regression_tfrecord")
     max_seq_length = 512
     save_path = os.path.join(save_dir, "all2.tfrecord")
-    encode_batched = get_vector_regression_encode_fn(max_seq_length)
+    encode_batched = get_vector_regression_encode_fn_batched(max_seq_length)
     n_item = int(10000 * 3 / batch_size) * max_partition
     write_records_w_encode_fn(save_path, encode_batched, batch_iter, n_item)
 

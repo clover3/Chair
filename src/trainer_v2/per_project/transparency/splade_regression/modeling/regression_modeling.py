@@ -1,3 +1,5 @@
+from typing import Dict
+
 import tensorflow as tf
 from transformers import TFAutoModelForMaskedLM
 
@@ -15,19 +17,16 @@ class ReluSigmoidMaxReduce(tf.keras.layers.Layer):
         return values
 
 
-def get_regression_model(run_config):
-    input_ids = tf.keras.layers.Input(shape=(None,), dtype=tf.int32)
-    attention_mask = tf.keras.layers.Input(shape=(None,), dtype=tf.int32)
+def get_regression_model(model_config: Dict):
+    input_ids = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="input_ids")
+    attention_mask = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="attention_mask")
     new_inputs = {
         'input_ids': input_ids,
         'attention_mask': attention_mask
     }
-    model = TFAutoModelForMaskedLM.from_pretrained("distilbert-base-uncased")
+    model = TFAutoModelForMaskedLM.from_pretrained(model_config["model_type"])
     mlm_out = model(new_inputs)
     activation_layer = ReluSigmoidMaxReduce()
     new_out = activation_layer(mlm_out.logits, attention_mask)
     new_model = tf.keras.models.Model(inputs=new_inputs, outputs=[new_out])
-    new_model.summary()
-    optimizer = AdamWeightDecay(learning_rate=run_config.train_config.learning_rate)
-    new_model.compile(optimizer=optimizer, loss=tf.keras.losses.MeanSquaredError())
     return new_model

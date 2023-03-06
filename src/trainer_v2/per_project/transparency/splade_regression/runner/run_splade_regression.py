@@ -1,17 +1,15 @@
 import sys
-
-from cpath import get_bert_config_path
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.dataset_factories import get_classification_dataset
-from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config, ModelConfig300_3
-from trainer_v2.custom_loop.neural_network_def.classification_trainer import StandardBertCls
-from trainer_v2.custom_loop.run_config2 import get_run_config2_nli, RunConfig2, get_run_config2
+from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
 from trainer_v2.custom_loop.train_loop import tf_run
 from trainer_v2.custom_loop.trainer_if import TrainerIF
+from trainer_v2.per_project.transparency.splade_regression.data_loaders.dataset_factories import \
+    get_vector_regression_dataset
 from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import get_regression_model
 from trainer_v2.per_project.transparency.splade_regression.trainer_huggingface_init import TrainerHuggingfaceInit
 from trainer_v2.train_util.arg_flags import flags_parser
+from transformers import AutoTokenizer
 
 
 @report_run3
@@ -20,16 +18,21 @@ def main(args):
     run_config: RunConfig2 = get_run_config2(args)
     run_config.print_info()
 
-    model_config = None
+    model_config = {
+        "model_type": "distilbert-base-uncased",
+    }
+    vocab_size = AutoTokenizer.from_pretrained(model_config["model_type"]).vocab_size
+
     def model_factory():
-        new_model = get_regression_model(run_config)
+        new_model = get_regression_model(model_config)
         return new_model
 
     trainer: TrainerIF = TrainerHuggingfaceInit(
         model_config, run_config, model_factory)
 
     def build_dataset(input_files, is_for_training):
-        return NotImplemented
+        return get_vector_regression_dataset(
+            input_files, vocab_size, run_config, is_for_training)
 
     tf_run(run_config, trainer, build_dataset)
 

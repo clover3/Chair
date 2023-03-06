@@ -2,6 +2,7 @@ from typing import Dict
 
 import tensorflow as tf
 
+from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
 from trainer_v2.custom_loop.run_config2 import RunConfig2
@@ -15,27 +16,30 @@ class TrainerHuggingfaceInit(TrainerIF):
         self.model_config = model_config
         self.run_config = run_config
         self.eval_metrics = {}
-        self.eval_metrics_factory = {
-            'acc': lambda: tf.keras.metrics.Accuracy(name='accuracy', dtype=None)
-        }
+        self.eval_metrics_factory = {}
         self.batch_size = run_config.common_run_config.batch_size
         self.model_factory = model_factory
 
         # These variables will be initialized by build_model()
         self.train_metrics = None
+        self.model = None
         self.optimizer = None
-        self.loss_fn_inner = None
+        self.loss_fn_inner = tf.keras.losses.MeanSquaredError(reduction=tf.keras.losses.Reduction.NONE)
 
     def build_model(self):
         if self.run_config.is_training():
             self.model = self.model_factory()
             self.model.summary(140)
             self.train_metrics = {}
-            self.optimizer = self.model.optimizer
+            self.optimizer = AdamWeightDecay(learning_rate=self.run_config.train_config.learning_rate)
+            self.model.optimizer = self.optimizer
         else:
             pass
         for k, v in self.eval_metrics_factory.items():
             self.eval_metrics[k] = v()
+
+    def do_init_checkpoint(self, init_checkpoint):
+        c_log.info("Init checkpoint is handled by huggingface")
 
     def set_keras_model(self, model):
         self.model = model

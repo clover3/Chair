@@ -1,19 +1,13 @@
-import os
 from collections import OrderedDict
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 from data_generator.create_feature import create_int_feature, create_float_feature
-from misc_lib import path_join
-from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.dataset_factories import parse_file_path
-from trainer_v2.custom_loop.definitions import ModelConfigType
-from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
-import tensorflow as tf
 
-from trainer_v2.train_util.arg_flags import flags_parser
+from trainer_v2.per_project.transparency.splade_regression.data_generator.dataset_factories import main
+from trainer_v2.per_project.transparency.splade_regression.data_loaders.regression_loader import XEncoded
 
 
-def get_vector_regression_encode_fn(max_seq_length):
+def get_vector_regression_encode_fn_batched(max_seq_length):
     def pad_truncate(items, target_len) -> List[List]:
         truncated = [t[:target_len] for t in items]
         pad_len_list = [target_len - len(t) for t in truncated]
@@ -80,58 +74,33 @@ def get_vector_regression_encode_fn(max_seq_length):
     return encode_batched
 
 
-def get_vector_regression_dataset(
-        file_path,
-        run_config: RunConfig2,
-        is_for_training,
-) -> tf.data.Dataset:
-    ragged_list_keys = ["input_ids", "attention_mask", 'y_values', 'y_indices']
+def get_vector_regression_encode_fn(max_seq_length):
+    def pad_truncate(seq: List[int]) -> List[int]:
+        seq = seq[:max_seq_length]
+        pad_len = max_seq_length - len(seq)
+        seq = seq + [0] * pad_len
+        return seq
 
-    def decode_record(record):
-        def get_value_types(key):
-            if key == "y_values":
-                return tf.float32
-            else:
-                return tf.int64
+    def encode_fn(item: Tuple[XEncoded, Any]) -> OrderedDict:
+        X, Y = item
+        input_ids, attention_mask = X
+        assert len(input_ids) == len(attention_mask)
+        input_ids = pad_truncate(input_ids)
+        attention_mask = pad_truncate(attention_mask)
+        indices, values = Y
+        assert len(indices) == 1
+        indices = indices[0]
 
-        name_to_features = {}
-        for key in ragged_list_keys:
-            name_to_features[key] = tf.io.RaggedFeature(
-                value_key=key + "_flat_values", dtype=get_value_types(key), partitions=[
-                tf.io.RaggedFeature.RowLengths(key + "_len_info")])
+        features = OrderedDict()
+        features["input_ids"] = create_int_feature(input_ids)
+        features["attention_mask"] = create_int_feature(attention_mask)
+        features["y_indices"] = create_int_feature(indices)
+        features["y_values"] = create_float_feature(values)
+        # Keys:
+        # y_values_flat_values, y_values_len_info, y_indices_flat_values, y_indices_len_info
+        return features
 
-        record = tf.io.parse_single_example(record, name_to_features)
-        return record
-
-    input_files: List[str] = parse_file_path(file_path)
-    if len(input_files) > 1:
-        c_log.info("{} inputs files".format(len(input_files)))
-    elif len(input_files) == 0:
-        c_log.error("No input files found - Maybe you dont' want this ")
-        raise FileNotFoundError(input_files)
-    dataset = tf.data.TFRecordDataset(input_files, num_parallel_reads=len(input_files))
-    # if do_shuffle:
-    #     dataset = dataset.shuffle(config.shuffle_buffer_size)
-    # if do_repeat:
-    #     dataset = dataset.repeat()
-    dataset = dataset.map(decode_record,
-                          num_parallel_calls=tf.data.AUTOTUNE)
-    dataset = dataset.prefetch(tf.data.AUTOTUNE)
-    return dataset
-
-
-def main():
-    args = flags_parser.parse_args("")
-    run_config = get_run_config2(args)
-    save_dir = path_join("output", "splade", "regression_tfrecord")
-    save_path = os.path.join(save_dir, "all2.tfrecord")
-    dataset = get_vector_regression_dataset(save_path, run_config, False)
-    print(dataset)
-    for item in dataset:
-        for key in item:
-            print(key, item[key].shape, item[key], )
-
-        break
+    return encode_fn
 
 
 if __name__ == "__main__":
