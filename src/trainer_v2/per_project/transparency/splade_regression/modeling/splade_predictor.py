@@ -37,6 +37,7 @@ class SPLADEWrap:
         tf_out = splade_max(output['logits'], mask).numpy()
         return tf_out
 
+
 def get_splade():
     model_dir = get_canonical_model_path("distilsplade_max_tf")
     return SPLADEWrap(model_dir)

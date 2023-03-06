@@ -23,7 +23,6 @@ def encode_example(pair) -> OrderedDict:
 
 def write():
     def iterate_dummy_data():
-
         for i in range(10):
             input_ids = [1] * (i+1)
             sparse_feature = np.zeros([30222])
