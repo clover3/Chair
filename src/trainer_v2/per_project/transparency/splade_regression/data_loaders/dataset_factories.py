@@ -96,10 +96,28 @@ def get_vector_regression_dataset(
 
         X = {
             "input_ids": record["input_ids"],
-            "attention_mask": record["attention_mask"],
+            "segment_ids": record["attention_mask"],
         }
-        Y = tf.sparse.to_dense(tensor)
+        # Y = tf.sparse.to_dense(tensor)
+        Y = tf.zeros([1], tf.float32)
+        return X, Y
 
+    return create_dataset_common(decode_record, run_config, file_path, is_for_training)
+
+
+def get_dummy_vector_regression_dataset(
+        file_path,
+        vector_len: int,
+        run_config: RunConfig2,
+        is_for_training,
+) -> tf.data.Dataset:
+    def decode_record(record):
+        X = {
+            "input_ids": tf.zeros([600, ], tf.int64),
+            "segment_ids": tf.zeros([600, ], tf.int64),
+        }
+        # Y = tf.sparse.to_dense(tensor)
+        Y = tf.zeros([1], tf.float32)
         return X, Y
 
     return create_dataset_common(decode_record, run_config, file_path, is_for_training)

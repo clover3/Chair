@@ -1,16 +1,13 @@
 import logging
+import math
 import os
-import warnings
 from typing import Tuple, Dict, Callable, List
 
 import tensorflow as tf
-from cpath import get_bert_config_path
 from misc_lib import RecentCounter
 from taskman_client.task_proxy import get_task_manager_proxy
-from trainer_v2.chair_logging import c_log, IgnoreFilter
-from trainer_v2.custom_loop.modeling_common.bert_common import is_interesting_step, load_bert_config
+from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
-from trainer_v2.custom_loop.per_task.trainer import Trainer
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result, get_strategy_from_config, eval_tensor, \
     summarize_metric
@@ -42,6 +39,9 @@ def tf_run_train(run_config: RunConfig2,
     c_log.debug("Building models")
     with strategy.scope():
         trainer.build_model()
+        c_log.info("Loading checkpoints: {}".format(run_config.train_config.init_checkpoint))
+        trainer.do_init_checkpoint(run_config.train_config.init_checkpoint)
+
         model = trainer.get_keras_model()
         c_log.debug("Initializing eval object")
         eval_object = trainer.get_eval_object(eval_batches, strategy)
@@ -52,8 +52,6 @@ def tf_run_train(run_config: RunConfig2,
             current_step = eval_tensor(model.optimizer.iterations)
             return os.path.join(model_save_dir, "model_{}".format(current_step))
 
-        c_log.info("Loading checkpoints: {}".format(run_config.train_config.init_checkpoint))
-        trainer.do_init_checkpoint(run_config.train_config.init_checkpoint)
         current_step = eval_tensor(model.optimizer.iterations)
         c_log.info("Current step = {}".format(current_step))
 
@@ -87,9 +85,12 @@ def tf_run_train(run_config: RunConfig2,
             f_do_eval = eval_rc.is_over_interval(step_idx)
             f_do_save = save_rc.is_over_interval(step_idx) and not run_config.common_run_config.is_debug_run
 
+
             if f_do_save:
+                c_log.debug("save_fn()")
                 save_fn()
 
+            c_log.debug("eval_tensor(model.optimizer.iterations)")
             current_step = eval_tensor(model.optimizer.iterations)
             c_log.debug("Current step = {}".format(current_step))
 
@@ -105,13 +106,13 @@ def tf_run_train(run_config: RunConfig2,
                 steps_to_execute = conf_steps_per_execution
             c_log.debug("Execute {} steps".format(steps_to_execute))
             train_loss = distributed_train_step(train_itr, steps_to_execute)
-
             step_idx += steps_to_execute
             c_log.debug("step_idx={} optimizer_iter={}".format(step_idx, model.optimizer.iterations))
             per_step_msg = "step {0}".format(step_idx)
 
             trainer.train_callback()
             msg = summarize_metric(fetch_metric_result(metrics))
+            print(msg)
             per_step_msg += " loss={0:.6f} ".format(train_loss)
             per_step_msg += msg
 
@@ -251,22 +252,12 @@ def tf_run(run_config: RunConfig2,
         return ret
 
 
-def adjust_logging():
-    msgs = [
-        # "UserWarning: `layer.apply` is deprecated and will be removed in a future version",
-        "`model.compile_metrics` will be empty until you train or evaluate the model."
-    ]
-    tf_logging = logging.getLogger("tensorflow")
-    tf_logging.addFilter(IgnoreFilter(msgs))
-    warnings.filterwarnings("ignore", '`layer.updates` will be removed in a future version. ')
-    # warnings.filterwarnings("ignore", "`layer.apply` is deprecated")
-
-
-def tf_run_for_bert(dataset_factory, model_config,
-                    run_config: RunConfig2, inner):
-    adjust_logging()
-    run_config.print_info()
-
-    bert_params = load_bert_config(get_bert_config_path())
-    trainer = Trainer(bert_params, model_config, run_config, inner)
-    tf_run(run_config, trainer, dataset_factory)
+def is_interesting_step(step_idx):
+    if step_idx == 0:
+        return True
+    interval = int(math.pow(10, int(math.log10(step_idx) - 1)))
+    if step_idx < 100:
+        return True
+    elif step_idx % interval == 0:
+        return True
+    return False

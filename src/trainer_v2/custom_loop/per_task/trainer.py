@@ -11,7 +11,7 @@ from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result
 from trainer_v2.custom_loop.trainer_if import TrainerIF
 
 
-class EvalObject:
+class ClassificationEvalObject:
     def __init__(self, model, eval_batches, dist_strategy: Strategy,
                  loss_fn,
                  eval_metrics,
@@ -145,9 +145,9 @@ class Trainer(TrainerIF):
             pass
 
     def get_eval_object(self, eval_batches, strategy):
-        eval_object = EvalObject(self.get_keras_model(),
-                                 eval_batches,
-                                 strategy,
-                                 self.loss_fn,
-                                 self.get_eval_metrics())
+        eval_object = ClassificationEvalObject(self.get_keras_model(),
+                                               eval_batches,
+                                               strategy,
+                                               self.loss_fn,
+                                               self.get_eval_metrics())
         return eval_object

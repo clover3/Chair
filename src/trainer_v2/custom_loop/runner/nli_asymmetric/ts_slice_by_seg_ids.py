@@ -6,7 +6,7 @@ from trainer_v2.custom_loop.dataset_factories import get_two_seg_data
 from trainer_v2.custom_loop.neural_network_def.asymmetric2 import ESSliceSegs
 from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig2SegProject
 from trainer_v2.custom_loop.run_config2 import get_run_config2_nli, RunConfig2
-from trainer_v2.custom_loop.train_loop import tf_run_for_bert
+from trainer_v2.custom_loop.train_loop_addon import tf_run_for_bert
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import FuzzyLogicLayer
 
 from taskman_client.wrapper3 import report_run3

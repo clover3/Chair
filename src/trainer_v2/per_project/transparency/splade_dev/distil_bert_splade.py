@@ -3,7 +3,6 @@ import pickle
 import sys
 import re
 import h5py
-from bert.loader import bert_prefix
 import numpy as np
 from transformers import TFAutoModelForMaskedLM, AutoTokenizer
 

@@ -1,4 +1,3 @@
-import math
 import re
 from typing import NamedTuple
 
@@ -229,17 +228,6 @@ def load_pooler(pooler: tf.keras.layers.Dense, ckpt_path):
 
     assert len(loaded_weights) == 2
     keras.backend.batch_set_value(weight_value_tuples)
-
-
-def is_interesting_step(step_idx):
-    if step_idx == 0:
-        return True
-    interval = int(math.pow(10, int(math.log10(step_idx) - 1)))
-    if step_idx < 100:
-        return True
-    elif step_idx % interval == 0:
-        return True
-    return False
 
 
 def load_bert_config(bert_config_file):

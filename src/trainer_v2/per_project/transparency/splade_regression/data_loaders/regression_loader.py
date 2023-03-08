@@ -8,9 +8,10 @@ from typing import List, Dict, Tuple, Iterable, Any
 
 from transformers import AutoTokenizer
 
+from misc_lib import path_join
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.run_config2 import RunConfig2
-from trainer_v2.per_project.transparency.splade_regression.iterate_data import iterate_triplet
+from trainer_v2.per_project.transparency.splade_regression.data_loaders.iterate_data import iterate_triplet
 
 
 def read_vector_json(file_path):
@@ -45,8 +46,9 @@ def iterate_triplet_and_scores(text_path, vector_dir, max_n, line_per_job) \
 
 
 def iterate_triplet_and_scores_per_partition(
-        text_path, vector_dir, partition_no, line_per_job) \
+        partitioned_format_str, vector_dir, partition_no) \
         -> Iterable[Tuple[Triplet, Dict]]:
+    text_path = partitioned_format_str.format(partition_no)
     text_itr = iterate_triplet(text_path)
     try:
         file_name = f"{partition_no}.jsonl"
@@ -101,8 +103,11 @@ class VectorRegressionLoader:
             self.batch_size = 16
 
     def iterate_text_j(self, partition=None) -> Iterable[Tuple[str, Tuple[List[List[int]], List[float]]]]:
-        pair_itr = iterate_triplet_and_scores(
-            self.text_path, self.vector_dir, self.max_partition, self.line_per_job)
+        if partition is not None:
+            pair_itr = iterate_triplet_and_scores_per_partition(self.text_path, self.vector_dir, partition)
+        else:
+            pair_itr = iterate_triplet_and_scores(
+                self.text_path, self.vector_dir, self.max_partition, self.line_per_job)
         for triplet, j in pair_itr:
             query, d1, d2 = triplet
             text_d = {

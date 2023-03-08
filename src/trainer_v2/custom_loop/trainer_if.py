@@ -44,3 +44,15 @@ class TrainerIF(ABC):
     @abstractmethod
     def get_eval_object(self, batches, strategy):
         pass
+
+
+
+class EvalObjectIF:
+    @abstractmethod
+    def do_eval(self):
+        pass
+
+
+class EmptyEvalObject(EvalObjectIF):
+    def do_eval(self):
+        return 0, {}

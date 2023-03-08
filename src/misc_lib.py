@@ -905,3 +905,14 @@ def pause_hook(itr: Iterator, n):
             input("Enter something to continue")
         cnt += 1
 
+
+def print_length_stats_from_counters(counter):
+    n_all = sum(counter.values())
+    keys = list(counter.keys())
+    keys.sort()
+    acc = 0
+    for key in keys:
+        acc += counter[key]
+        percent = acc / n_all
+        print("L <= {0} : {1:.2f}".format(key, percent))
+

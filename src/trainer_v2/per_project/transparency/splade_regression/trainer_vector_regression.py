@@ -6,10 +6,10 @@ from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
 from trainer_v2.custom_loop.run_config2 import RunConfig2
-from trainer_v2.custom_loop.trainer_if import TrainerIF
+from trainer_v2.custom_loop.trainer_if import TrainerIF, EmptyEvalObject
 
 
-class TrainerHuggingfaceInit(TrainerIF):
+class TrainerVectorRegression(TrainerIF):
     def __init__(self, model_config,
                  run_config: RunConfig2,
                  model_factory):
@@ -31,7 +31,10 @@ class TrainerHuggingfaceInit(TrainerIF):
             self.model = self.model_factory()
             self.model.summary(140)
             self.train_metrics = {}
-            self.optimizer = AdamWeightDecay(learning_rate=self.run_config.train_config.learning_rate)
+            self.optimizer = AdamWeightDecay(
+                learning_rate=self.run_config.train_config.learning_rate,
+                exclude_from_weight_decay=[]
+            )
             self.model.optimizer = self.optimizer
         else:
             pass
@@ -39,7 +42,9 @@ class TrainerHuggingfaceInit(TrainerIF):
             self.eval_metrics[k] = v()
 
     def do_init_checkpoint(self, init_checkpoint):
-        c_log.info("Init checkpoint is handled by huggingface")
+        pass
+        # self._build_model_real(init_checkpoint)
+
 
     def set_keras_model(self, model):
         self.model = model
@@ -75,4 +80,9 @@ class TrainerHuggingfaceInit(TrainerIF):
             pass
 
     def get_eval_object(self, eval_batches, strategy):
-        return None
+        # self.loss_eval = EvalObject(self.model, eval_batches, strategy, self.loss_fn_inner, [])
+        return EmptyEvalObject()
+
+
+# Eval by pairwise loss
+#

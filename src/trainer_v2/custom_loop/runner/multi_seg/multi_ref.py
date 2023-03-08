@@ -9,7 +9,8 @@ from trainer_v2.custom_loop.neural_network_def.segmented_enc import FuzzyLogicLa
 from cpath import get_bert_config_path
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
 from trainer_v2.custom_loop.per_task.reference_model import RefModelTrainer
-from trainer_v2.custom_loop.train_loop import tf_run, adjust_logging
+from trainer_v2.custom_loop.train_loop import tf_run
+from trainer_v2.custom_loop.train_loop_addon import adjust_logging
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.custom_loop.dataset_factories import get_two_seg_data
 from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig2SegProject

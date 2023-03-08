@@ -11,7 +11,7 @@ from trainer_v2.custom_loop.dataset_factories import get_two_seg_data
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import FuzzyLogicLayerOnLogits
 from trainer_v2.custom_loop.neural_network_def.asymmetric2 import TwoSegmentRawLogits
 from trainer_v2.custom_loop.run_config2 import get_run_config2_nli, RunConfig2
-from trainer_v2.custom_loop.train_loop import tf_run_for_bert
+from trainer_v2.custom_loop.train_loop_addon import tf_run_for_bert
 from trainer_v2.train_util.arg_flags import flags_parser
 
 

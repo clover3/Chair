@@ -8,7 +8,7 @@ from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warn
 from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result, eval_tensor
-from trainer_v2.custom_loop.trainer_if import TrainerIF
+from trainer_v2.custom_loop.trainer_if import TrainerIF, EmptyEvalObject
 from trainer_v2.reinforce.monte_carlo_policy_function import PolicyFunction
 from trainer_v2.evidence_selector.seq_pred_policy_gradient import SeqPredREINFORCE
 
@@ -125,12 +125,6 @@ class PolicyGradientTrainer(TrainerIF):
                 # other model code would go here
                 tf.summary.scalar(key, value, step=current_step)
             self.summary_writer.flush()
-
-
-
-class EmptyEvalObject:
-    def do_eval(self):
-        return 0, {}
 
 
 class PGRLEvalObject:
