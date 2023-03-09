@@ -74,22 +74,28 @@ def get_vector_regression_encode_fn_batched(max_seq_length):
     return encode_batched
 
 
-def get_vector_regression_encode_fn(max_seq_length):
-    def pad_truncate(seq: List[int]) -> List[int]:
-        seq = seq[:max_seq_length]
-        pad_len = max_seq_length - len(seq)
-        seq = seq + [0] * pad_len
-        return seq
+def pad_truncate(seq, max_seq_length):
+    seq = seq[:max_seq_length]
+    pad_len = max_seq_length - len(seq)
+    seq = seq + [0] * pad_len
+    return seq
+
+
+def get_vector_regression_encode_fn(max_text_seq_length, max_vector_indices):
 
     def encode_fn(item: Tuple[XEncoded, Any]) -> OrderedDict:
         X, Y = item
         input_ids, attention_mask = X
         assert len(input_ids) == len(attention_mask)
-        input_ids = pad_truncate(input_ids)
-        attention_mask = pad_truncate(attention_mask)
+        input_ids = pad_truncate(input_ids, max_text_seq_length)
+        attention_mask = pad_truncate(attention_mask, max_text_seq_length)
         indices, values = Y
         assert len(indices) == 1
         indices = indices[0]
+
+        indices = pad_truncate(indices, max_vector_indices)
+        values = pad_truncate(values, max_vector_indices)
+
 
         features = OrderedDict()
         features["input_ids"] = create_int_feature(input_ids)

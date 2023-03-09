@@ -87,7 +87,6 @@ class VectorRegressionLoader:
             checkpoint_model_name="distilbert-base-uncased",
             vector_len=30522,
             max_length=512,
-            run_config: RunConfig2 = None,
     ):
         self.text_path = text_path
         self.vector_dir = vector_dir
@@ -97,10 +96,6 @@ class VectorRegressionLoader:
         self.tokenizer = AutoTokenizer.from_pretrained(checkpoint_model_name)
 
         self.max_length = max_length
-        if run_config is not None:
-            self.batch_size = run_config.common_run_config.batch_size
-        else:
-            self.batch_size = 16
 
     def iterate_text_j(self, partition=None) -> Iterable[Tuple[str, Tuple[List[List[int]], List[float]]]]:
         if partition is not None:
@@ -147,7 +142,7 @@ class VectorRegressionLoader:
         itr: Iterable[Tuple[XEncoded, Any]] = map(self.apply_tokenize, itr)
         return itr
 
-    def iterate_batched_xy(self, partition=None) -> Iterable[Dict[int, List]]:
+    def iterate_batched_xy(self, partition=None, batch_size=None) -> Iterable[Dict[int, List]]:
         itr = self.iterate_text_j(partition)
         itr = map(self.apply_tokenize, itr)
         itr = map(self.build_sparse_tensor, itr)

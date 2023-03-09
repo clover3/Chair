@@ -44,8 +44,11 @@ def get_strategy2(use_tpu, tpu_name=None, force_use_gpu=False):
         if force_use_gpu and not gpu_devices:
             raise Exception("GPU devices not found")
         c_log.info(device_list_summary(gpu_devices))
-        atexit.register(strategy._extended._cross_device_ops._pool.close)  # type: ignore
-        atexit.register(strategy._extended._host_cross_device_ops._pool.close)  # type: ignore
+        try:
+            atexit.register(strategy._extended._cross_device_ops._pool.close)  # type: ignore
+            atexit.register(strategy._extended._host_cross_device_ops._pool.close)  # type: ignore
+        except AttributeError:
+            pass
     return strategy
 
 

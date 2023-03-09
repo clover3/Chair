@@ -98,7 +98,9 @@ class Trainer(TrainerIF):
             self.inner_model.build_model(self.bert_params, self.model_config)
             self.keras_model = self.inner_model.get_keras_model()
             self.keras_model.summary(140)
-            optimizer = AdamWeightDecay(learning_rate=run_config.train_config.learning_rate)
+            optimizer = AdamWeightDecay(learning_rate=run_config.train_config.learning_rate,
+                                        exclude_from_weight_decay=[],
+                                        )
             self.keras_model.optimizer = optimizer
             self.train_metrics = {}
             self.optimizer = optimizer

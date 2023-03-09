@@ -1,5 +1,7 @@
 import os
-from misc_lib import path_join, TimeEstimator
+import sys
+
+from misc_lib import path_join, TimeEstimator, exist_or_mkdir
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from trainer_v2.custom_loop.run_config2 import get_run_config2
 from trainer_v2.per_project.transparency.splade_regression.data_generator.encode_fns import get_vector_regression_encode_fn
@@ -14,18 +16,24 @@ def main():
     run_config = get_run_config2(args)
     text_path_format_str = partitioned_triplet_path_format_str()
     vector_dir = path_join("data", "splade", "splade_encode")
-    max_partition = 1000
+    max_partition = 5280
     max_seq_length = 256
+    max_vector_indices = 512
+
+    start_partition = int(sys.argv[1])
+    end_partition = int(sys.argv[2])
 
     data_loader = VectorRegressionLoader(
         text_path_format_str, vector_dir,
-        max_partition=max_partition,
-        run_config=run_config)
+        max_partition=max_partition)
 
-    encode_fn = get_vector_regression_encode_fn(max_seq_length)
-    save_dir = path_join("output", "splade", "regression_tfrecord_partition")
-    ticker = TimeEstimator(max_partition)
-    for partition in range(max_partition):
+    encode_fn = get_vector_regression_encode_fn(max_seq_length, max_vector_indices)
+    save_dir = path_join("output", "splade", "tfrecord3")
+    exist_or_mkdir(save_dir)
+
+    num_partition = end_partition - start_partition
+    ticker = TimeEstimator(num_partition)
+    for partition in range(start_partition, end_partition):
         itr: Iterable[Tuple] = data_loader.iterate_tokenized(partition)
         save_path = os.path.join(save_dir, str(partition))
         write_records_w_encode_fn(save_path, encode_fn, itr)

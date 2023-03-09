@@ -3,6 +3,7 @@ from typing import Dict
 import tensorflow as tf
 
 from trainer_v2.chair_logging import c_log
+from trainer_v2.custom_loop.eval_util import EvalObject
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
 from trainer_v2.custom_loop.run_config2 import RunConfig2
@@ -80,8 +81,8 @@ class TrainerVectorRegression(TrainerIF):
             pass
 
     def get_eval_object(self, eval_batches, strategy):
-        # self.loss_eval = EvalObject(self.model, eval_batches, strategy, self.loss_fn_inner, [])
-        return EmptyEvalObject()
+        return EvalObject(self.model, eval_batches, strategy, self.loss_fn_inner, [])
+        # return EmptyEvalObject()
 
 
 # Eval by pairwise loss

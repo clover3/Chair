@@ -75,31 +75,30 @@ def get_vector_regression_dataset_from_batched(
 
 def get_vector_regression_dataset(
         file_path,
-        vector_len: int,
+        dataset_info,
         run_config: RunConfig2,
         is_for_training,
 ) -> tf.data.Dataset:
+    max_seq_length = dataset_info['max_seq_length']
+    max_vector_indices = dataset_info["max_vector_indices"]
+
     def decode_record(record):
         name_to_features = {
-            "input_ids": tf.io.RaggedFeature(tf.int64),
-            "attention_mask": tf.io.RaggedFeature(tf.int64),
-            "y_indices": tf.io.RaggedFeature(tf.int64),
-            "y_values": tf.io.RaggedFeature(tf.float32),
+            "input_ids": tf.io.FixedLenFeature(max_seq_length, tf.int64),
+            "attention_mask": tf.io.FixedLenFeature(max_seq_length, tf.int64),
+            "y_indices": tf.io.FixedLenFeature(max_vector_indices, tf.int64),
+            "y_values": tf.io.FixedLenFeature(max_vector_indices, tf.float32),
         }
+        def cast_i(t):
+            return tf.cast(t, tf.int32)
 
         record = tf.io.parse_single_example(record, name_to_features)
-        tensor = tf.sparse.SparseTensor(
-            indices=tf.expand_dims(record['y_indices'], axis=1),
-            values=record['y_values'],
-            dense_shape=[vector_len, ]
-        )
-
         X = {
-            "input_ids": record["input_ids"],
-            "segment_ids": record["attention_mask"],
+            "input_ids": cast_i(record["input_ids"]),
+            "attention_mask": cast_i(record["attention_mask"]),
         }
-        # Y = tf.sparse.to_dense(tensor)
-        Y = tf.zeros([1], tf.float32)
+        Y = tf.scatter_nd(tf.expand_dims(record["y_indices"], 1),
+                          record["y_values"], [dataset_info["vocab_size"]])
         return X, Y
 
     return create_dataset_common(decode_record, run_config, file_path, is_for_training)
@@ -107,17 +106,19 @@ def get_vector_regression_dataset(
 
 def get_dummy_vector_regression_dataset(
         file_path,
-        vector_len: int,
+        dataset_info,
         run_config: RunConfig2,
         is_for_training,
 ) -> tf.data.Dataset:
+    max_seq_length = dataset_info['max_seq_length']
+    max_vector_indices = dataset_info["max_vector_indices"]
+
     def decode_record(record):
         X = {
-            "input_ids": tf.zeros([600, ], tf.int64),
-            "segment_ids": tf.zeros([600, ], tf.int64),
+            "input_ids": tf.zeros([max_seq_length, ], tf.int32),
+            "attention_mask": tf.zeros([max_seq_length, ], tf.int32),
         }
-        # Y = tf.sparse.to_dense(tensor)
-        Y = tf.zeros([1], tf.float32)
+        Y = tf.zeros([dataset_info["vocab_size"]], tf.float32)
         return X, Y
 
     return create_dataset_common(decode_record, run_config, file_path, is_for_training)

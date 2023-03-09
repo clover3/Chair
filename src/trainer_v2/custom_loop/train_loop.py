@@ -21,6 +21,23 @@ def distributed_train_step(strategy, train_step_fn, dist_inputs: Tuple):
     return loss
 
 
+class ModelSaver:
+    def __init__(self, model, model_save_dir, get_current_step_fn):
+        self.get_current_step_fn = get_current_step_fn
+        self.model_save_dir = model_save_dir
+        self.model = model
+        self.n_saved = 0
+
+    def save(self):
+        model_save_path = self.get_model_save_path()
+        self.model.save(model_save_path)
+        c_log.info("Model saved at {}".format(model_save_path))
+        self.n_saved += 1
+
+    def get_model_save_path(self):
+        current_step = self.get_current_step_fn()
+        return os.path.join(self.model_save_dir, "model_{}".format(current_step))
+
 
 def tf_run_train(run_config: RunConfig2,
                  trainer: TrainerIF,
@@ -28,14 +45,13 @@ def tf_run_train(run_config: RunConfig2,
                  ):
     c_log.debug("tf_run_train ENTRY")
     strategy = get_strategy_from_config(run_config)
-    model_save_dir: str = run_config.train_config.model_save_path
-
     c_log.debug("tf_run_inner initializing dataset")
     train_dataset = dataset_factory(run_config.dataset_config.train_files_path, True)
     eval_dataset = dataset_factory(run_config.dataset_config.eval_files_path, False)
     dist_train_dataset = distribute_dataset(strategy, train_dataset)
     eval_batches = distribute_dataset(strategy, eval_dataset)
     #
+
     c_log.debug("Building models")
     with strategy.scope():
         trainer.build_model()
@@ -43,22 +59,19 @@ def tf_run_train(run_config: RunConfig2,
         trainer.do_init_checkpoint(run_config.train_config.init_checkpoint)
 
         model = trainer.get_keras_model()
-        c_log.debug("Initializing eval object")
         eval_object = trainer.get_eval_object(eval_batches, strategy)
 
         train_itr = iter(dist_train_dataset)
 
-        def get_model_save_path():
-            current_step = eval_tensor(model.optimizer.iterations)
-            return os.path.join(model_save_dir, "model_{}".format(current_step))
+        def get_current_step():
+            return eval_tensor(model.optimizer.iterations)
+
+        saver = ModelSaver(
+            model, run_config.train_config.model_save_path, get_current_step
+        )
 
         current_step = eval_tensor(model.optimizer.iterations)
         c_log.info("Current step = {}".format(current_step))
-
-        def save_fn():
-            model_save_path = get_model_save_path()
-            model.save(model_save_path)
-            c_log.info("Model saved at {}".format(model_save_path))
 
         conf_steps_per_execution = run_config.common_run_config.steps_per_execution
 
@@ -85,12 +98,10 @@ def tf_run_train(run_config: RunConfig2,
             f_do_eval = eval_rc.is_over_interval(step_idx)
             f_do_save = save_rc.is_over_interval(step_idx) and not run_config.common_run_config.is_debug_run
 
-
             if f_do_save:
                 c_log.debug("save_fn()")
-                save_fn()
+                saver.save()
 
-            c_log.debug("eval_tensor(model.optimizer.iterations)")
             current_step = eval_tensor(model.optimizer.iterations)
             c_log.debug("Current step = {}".format(current_step))
 
@@ -112,7 +123,6 @@ def tf_run_train(run_config: RunConfig2,
 
             trainer.train_callback()
             msg = summarize_metric(fetch_metric_result(metrics))
-            print(msg)
             per_step_msg += " loss={0:.6f} ".format(train_loss)
             per_step_msg += msg
 
@@ -126,7 +136,7 @@ def tf_run_train(run_config: RunConfig2,
                 c_log.info(per_step_msg)
 
         c_log.info("Training completed")
-        save_fn()
+        saver.save()
 
 
 def get_latest_model_path_from_dir_path(save_dir):

@@ -13,11 +13,11 @@ def main():
         "max_seq_length": 256
     }
     vocab_size = AutoTokenizer.from_pretrained(model_config["model_type"]).vocab_size
-    strategy = get_strategy()
+    strategy = get_strategy(True, "v2-1")
 
     eval_pairwise_triplet = load_pairwise_eval_data()
     with strategy.scope():
-        new_model = get_regression_model(model_config)
+        new_model = get_regression_model(model_config, False)
         dataset: tf.data.Dataset = build_pairwise_eval_dataset(
             eval_pairwise_triplet, model_config["model_type"], 16, model_config["max_seq_length"])
         dataset = strategy.experimental_distribute_dataset(dataset)

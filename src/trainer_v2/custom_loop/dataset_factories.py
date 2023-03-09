@@ -31,7 +31,9 @@ def create_dataset_common(decode_record: Callable,
     elif len(input_files) == 0:
         c_log.error("No input files found - Maybe you dont' want this ")
         raise FileNotFoundError(input_files)
-    dataset = tf.data.TFRecordDataset(input_files, num_parallel_reads=len(input_files))
+
+    num_parallel_reads = min(len(input_files), 4)
+    dataset = tf.data.TFRecordDataset(input_files, num_parallel_reads=num_parallel_reads)
     if do_shuffle:
         dataset = dataset.shuffle(config.shuffle_buffer_size)
     if do_repeat:

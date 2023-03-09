@@ -1,5 +1,6 @@
 import logging.config
 import os
+import re
 import sys
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -30,5 +31,17 @@ class IgnoreFilter(logging.Filter):
     def filter(self, record):
         for pattern in self.targets:
             if pattern in record.msg:
+                return False
+        return True
+
+
+class IgnoreFilterRE(logging.Filter):
+    def __init__(self, re_list):
+        self.re_list = re_list
+        super(IgnoreFilterRE).__init__()
+
+    def filter(self, record):
+        for re_pattern in self.re_list:
+            if re.search(re_pattern, record.msg) is not None:
                 return False
         return True
