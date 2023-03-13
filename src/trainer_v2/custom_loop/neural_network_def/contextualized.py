@@ -8,10 +8,10 @@ from trainer_v2.custom_loop.modeling_common.bert_common import define_bert_input
     load_stock_weights_encoder_only
 from trainer_v2.custom_loop.modeling_common.network_utils import MeanProjectionEnc, MeanProjection, SplitSegmentIDLayer, \
     TileAfterExpandDims, VectorThreeFeature, TwoLayerDense, SplitSegmentIDLayerWVar, SplitSegmentIDWMeanLayer
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 
 
-class BERTAsymmetricContextualizedSlice(ClassificationModelIF):
+class BERTAsymmetricContextualizedSlice(BertBasedModelIF):
     def __init__(self, decision_combine_layer):
         super(BERTAsymmetricContextualizedSlice, self).__init__()
         self.decision_combine_layer = decision_combine_layer
@@ -73,7 +73,7 @@ class BERTAsymmetricContextualizedSlice(ClassificationModelIF):
         load_stock_weights_encoder_only(self.l_bert_like, init_checkpoint, n_expected_restore=197 - n_embedding_vars)
 
 
-class BERTAsymmetricContextualizedSlice2(ClassificationModelIF):
+class BERTAsymmetricContextualizedSlice2(BertBasedModelIF):
     def __init__(self, decision_combine_layer):
         super(BERTAsymmetricContextualizedSlice2, self).__init__()
         self.decision_combine_layer = decision_combine_layer
@@ -138,7 +138,7 @@ class BERTAsymmetricContextualizedSlice2(ClassificationModelIF):
         load_stock_weights_encoder_only(self.l_bert_like, init_checkpoint, n_expected_restore=197 - n_embedding_vars)
 
 
-class BERTAsymmetricContextualizedSlice3(ClassificationModelIF):
+class BERTAsymmetricContextualizedSlice3(BertBasedModelIF):
     def __init__(self, decision_combine_layer):
         super(BERTAsymmetricContextualizedSlice3, self).__init__()
         self.decision_combine_layer = decision_combine_layer
@@ -194,7 +194,7 @@ class BERTAsymmetricContextualizedSlice3(ClassificationModelIF):
             load_stock_weights(l_bert, init_checkpoint, n_expected_restore=197)
 
 
-class BERTAsymmetricContextualizedSlice4(ClassificationModelIF):
+class BERTAsymmetricContextualizedSlice4(BertBasedModelIF):
     # No upper encoder
     def __init__(self, decision_combine_layer):
         super(BERTAsymmetricContextualizedSlice4, self).__init__()
@@ -251,7 +251,7 @@ class BERTAsymmetricContextualizedSlice4(ClassificationModelIF):
             load_stock_weights(l_bert, init_checkpoint, n_expected_restore=197)
 
 
-class BERTAsymmetricContextualizedSlice5(ClassificationModelIF):
+class BERTAsymmetricContextualizedSlice5(BertBasedModelIF):
     def __init__(self, decision_combine_layer):
         super(BERTAsymmetricContextualizedSlice5, self).__init__()
         self.decision_combine_layer = decision_combine_layer
@@ -312,7 +312,7 @@ class BERTAsymmetricContextualizedSlice5(ClassificationModelIF):
         load_stock_weights_encoder_only(self.l_bert_like, init_checkpoint, n_expected_restore=197 - n_embedding_vars)
 
 
-class BAContextualizedSlice6(ClassificationModelIF):
+class BAContextualizedSlice6(BertBasedModelIF):
     # No upper encoder
     # Trainable lowe encoder
     def __init__(self, decision_combine_layer):
@@ -371,7 +371,7 @@ class BAContextualizedSlice6(ClassificationModelIF):
             load_stock_weights(l_bert, init_checkpoint, n_expected_restore=197)
 
 
-class BAContextualizedSlice7(ClassificationModelIF):
+class BAContextualizedSlice7(BertBasedModelIF):
     # Segments are NOT separated.
     # Segment representation: mean of projected vectors.
     # Trainable lowe encoder

@@ -4,11 +4,11 @@ from models.transformer.bert_common_v2 import get_shape_list2
 from trainer_v2.bert_for_tf2.spit_attn_probs.bert_layer import BertModelLayerSAP, BertClsSAP
 from trainer_v2.custom_loop.modeling_common.bert_common import ModelConfig300_3, define_bert_input, \
     load_bert_checkpoint
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import split_stack_flatten_encode_stack
 
 
-class TwoSegConcat2SAP(ClassificationModelIF):
+class TwoSegConcat2SAP(BertBasedModelIF):
     def __init__(self, combine_local_decisions_layer):
         super(TwoSegConcat2SAP, self).__init__()
         self.combine_local_decisions_layer = combine_local_decisions_layer

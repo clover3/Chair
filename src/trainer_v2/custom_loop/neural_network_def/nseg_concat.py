@@ -7,11 +7,11 @@ from trainer_v2.custom_loop.definitions import ModelConfigType
 from trainer_v2.custom_loop.modeling_common.bert_common import load_stock_weights, define_bert_input, ModelConfig300_3, \
     BERT_CLS, load_bert_checkpoint
 from trainer_v2.custom_loop.neural_network_def.asymmetric import BERTAsymmetricProjectMean
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import split_stack_flatten_encode_stack
 
 
-class NSegConcat(ClassificationModelIF):
+class NSegConcat(BertBasedModelIF):
     def __init__(self, n_seg, combine_local_decisions_layer):
         super(NSegConcat, self).__init__()
         self.combine_local_decisions_layer = combine_local_decisions_layer

@@ -1,14 +1,14 @@
 from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.custom_loop.definitions import ModelConfigType
 from trainer_v2.custom_loop.modeling_common.bert_common import define_bert_input, load_stock_weights
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import split_stack_flatten_encode_stack, \
     split_stack_flatten_encode_sequence
 import tensorflow as tf
 from tensorflow import keras
 
 
-class SeqPrediction(ClassificationModelIF):
+class SeqPrediction(BertBasedModelIF):
     def __init__(self):
         super(SeqPrediction, self).__init__()
 
@@ -32,7 +32,7 @@ class SeqPrediction(ClassificationModelIF):
         load_stock_weights(self.l_bert, init_checkpoint, n_expected_restore=197)
 
 
-class TwoSegSeqPrediction(ClassificationModelIF):
+class TwoSegSeqPrediction(BertBasedModelIF):
     def __init__(self):
         super(TwoSegSeqPrediction, self).__init__()
 

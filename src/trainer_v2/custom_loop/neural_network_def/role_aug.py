@@ -9,7 +9,7 @@ from trainer_v2.custom_loop.modeling_common.bert_common import load_stock_weight
     load_stock_weights_encoder_only, load_stock_weights_embedding
 from trainer_v2.custom_loop.modeling_common.network_utils import VectorThreeFeature, \
     MeanProjectionEnc, TwoLayerDense, ChunkAttentionMaskLayer
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig2SegProject
 
 
@@ -32,7 +32,7 @@ class DummyZeroLayer(tf.keras.layers.Layer):
         return tf.zeros([B, L, self.out_dimension])
 
 
-class ChunkStartRole(ClassificationModelIF):
+class ChunkStartRole(BertBasedModelIF):
     def __init__(self,
                  combine_local_decisions_layer,
                  lower_project_layer,

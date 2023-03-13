@@ -16,8 +16,6 @@ from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.run_config2 import get_run_config2, RunConfig2
 
 
-
-
 @report_run3
 def main(args):
     c_log.info("Start {}".format(__file__))
@@ -46,7 +44,6 @@ def main(args):
         dataset = build_dataset()
         train_steps = 10000
         new_model.fit(dataset, epochs=1, steps_per_epoch=train_steps)
-
 
 
 if __name__ == "__main__":

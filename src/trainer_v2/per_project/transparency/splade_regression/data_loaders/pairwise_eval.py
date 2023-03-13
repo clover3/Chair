@@ -12,10 +12,8 @@ from trainer_v2.per_project.transparency.splade_regression.path_helper import pa
 pairwise_roles = ["q", "d1", "d2"]
 
 
-def load_pairwise_eval_data() -> List[Tuple[str, str, str]]:
+def load_pairwise_eval_data(target_partition: List[int]) -> List[Tuple[str, str, str]]:
     c_log.info("load_pairwise_eval_data")
-    # target_partition = list(range(1000, 1010))
-    target_partition = list(range(1000, 1001))
     partitioned_format_str = partitioned_triplet_path_format_str()
     triplet_list = []
     for i in target_partition:
@@ -41,35 +39,6 @@ class PairwiseAccuracy(tf.keras.metrics.Mean):
         is_correct = tf.cast(tf.less(s2, s1), tf.float32)
         is_correct_f = tf.reduce_mean(is_correct)
         super(PairwiseAccuracy, self).update_state(is_correct_f)
-
-#
-# def build_pairwise_eval_dataset(
-#         triplet_list, checkpoint_model_name, batch_size, max_seq_length):
-#     c_log.info("build_pairwise_eval_dataset")
-#     tokenizer = AutoTokenizer.from_pretrained(checkpoint_model_name)
-#     encoded_data = defaultdict(list)
-#     for q, d1, d2 in triplet_list:
-#         mapping = {
-#             "q": q,
-#             "d1": d1,
-#             "d2": d2
-#         }
-#         for role, text in mapping.items():
-#             encoded = tokenizer(text,
-#                     padding="max_length", max_length=max_seq_length)
-#             encoded_data[role].append(dict_to_tuple(encoded))
-#
-#     def get_generator(role) -> Iterable[Tuple]:
-#         yield from encoded_data[role]
-#
-#     eval_dataset = {}
-#     for role in pairwise_roles:
-#         int_list = tf.TensorSpec([None], dtype=tf.int32)
-#         output_signature = (int_list, int_list)
-#         dataset = tf.data.Dataset.from_generator(lambda : get_generator(role), output_signature=output_signature)
-#         dataset = dataset.batch(batch_size)
-#         eval_dataset[role] = dataset
-#     return eval_dataset
 
 
 # each instance is (query, d_pos, d_neg), where each of documents are (input_ids, attention_masks)
@@ -123,7 +92,7 @@ class PairwiseEval:
 
         s1 = score(q_enc, d1_enc)
         s2 = score(q_enc, d2_enc)
-
+        print(s1, s2)
         for m in self.metrics.values():
             m.update_state(s1, s2)
 

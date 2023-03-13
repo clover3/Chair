@@ -15,10 +15,7 @@ def main():
     text_path = path_join("data", "msmarco", "splade_triplets", "raw.tsv")
     vector_dir = path_join("data", "splade", "splade_encode")
     max_partition = 10
-    data_loader = VectorRegressionLoader(
-        text_path, vector_dir,
-        max_partition=max_partition,
-        run_config=run_config)
+    data_loader = VectorRegressionLoader(text_path, vector_dir, max_partition=max_partition)
     counter = Counter()
     itr: Iterable[Tuple] = data_loader.iterate_tokenized()
     for item in itr:

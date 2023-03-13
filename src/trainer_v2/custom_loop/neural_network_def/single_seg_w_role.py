@@ -7,7 +7,7 @@ from models.transformer.bert_common_v2 import get_shape_list2
 from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.custom_loop.modeling_common.bert_common import define_bert_input, load_bert_checkpoint, \
     load_stock_weights, load_pooler, load_stock_weights_bert_like
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 from trainer_v2.custom_loop.neural_network_def.var_local_decisions import NLC, transform_inputs_for_ts, keep_seg_12, \
     TransformInputsForTS
 
@@ -107,7 +107,7 @@ class RoleLayer1(tf.keras.layers.Layer):
         return tf.concat([role_vector, role_vector], axis=0)
 
 
-class SingleSegWRole(ClassificationModelIF):
+class SingleSegWRole(BertBasedModelIF):
     def __init__(self, combine_ld):
         super(SingleSegWRole, self).__init__()
         self.combine_ld = combine_ld

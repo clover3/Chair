@@ -6,11 +6,11 @@ from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.custom_loop.modeling_common.bert_common import load_stock_weights, define_bert_input, ModelConfig300_3, \
     BERT_CLS, load_bert_checkpoint
 from trainer_v2.custom_loop.neural_network_def.asymmetric import BERTAsymmetricProjectMean
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import split_stack_flatten_encode_stack
 
 
-class AsymmetricMeanPool(ClassificationModelIF):
+class AsymmetricMeanPool(BertBasedModelIF):
     def __init__(self, inner_network=BERTAsymmetricProjectMean):
         super(AsymmetricMeanPool, self).__init__()
         self.inner_network = inner_network
@@ -28,7 +28,7 @@ class AsymmetricMeanPool(ClassificationModelIF):
         load_stock_weights(l_bert2, init_checkpoint, n_expected_restore=197)
 
 
-class TwoSegConcat(ClassificationModelIF):
+class TwoSegConcat(BertBasedModelIF):
     def __init__(self, ld_combine_layer):
         super(TwoSegConcat, self).__init__()
         self.ld_combine_layer = ld_combine_layer
@@ -73,7 +73,7 @@ class TwoSegConcat(ClassificationModelIF):
         load_bert_checkpoint(self.bert_cls, init_checkpoint)
 
 
-class TwoSegConcat2(ClassificationModelIF):
+class TwoSegConcat2(BertBasedModelIF):
     def __init__(self, combine_local_decisions_layer):
         super(TwoSegConcat2, self).__init__()
         self.combine_local_decisions_layer = combine_local_decisions_layer
@@ -118,7 +118,7 @@ class TwoSegConcat2(ClassificationModelIF):
 
 
 
-class TwoSegConcat2(ClassificationModelIF):
+class TwoSegConcat2(BertBasedModelIF):
     def __init__(self, combine_local_decisions_layer):
         super(TwoSegConcat2, self).__init__()
         self.combine_local_decisions_layer = combine_local_decisions_layer

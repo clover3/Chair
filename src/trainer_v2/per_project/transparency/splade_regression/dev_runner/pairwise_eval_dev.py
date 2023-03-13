@@ -12,10 +12,10 @@ def main():
         "model_type": "distilbert-base-uncased",
         "max_seq_length": 256
     }
-    vocab_size = AutoTokenizer.from_pretrained(model_config["model_type"]).vocab_size
     strategy = get_strategy(True, "v2-1")
+    target_partition = list(range(1000, 1001))
 
-    eval_pairwise_triplet = load_pairwise_eval_data()
+    eval_pairwise_triplet = load_pairwise_eval_data(target_partition)
     with strategy.scope():
         new_model = get_regression_model(model_config, False)
         dataset: tf.data.Dataset = build_pairwise_eval_dataset(

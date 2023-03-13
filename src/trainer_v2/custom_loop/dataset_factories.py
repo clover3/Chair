@@ -45,6 +45,37 @@ def create_dataset_common(decode_record: Callable,
     return dataset
 
 
+def create_dataset_common_inner(
+        decode_record: Callable,
+        file_path: str,
+        do_shuffle,
+        do_repeat,
+        batch_size,
+        shuffle_buffer_size,
+        drop_remainder
+):
+    input_files: List[str] = parse_file_path(file_path)
+    if len(input_files) > 1:
+        c_log.info("{} inputs files".format(len(input_files)))
+    elif len(input_files) == 0:
+        c_log.error("No input files found - Maybe you dont' want this ")
+        raise FileNotFoundError(input_files)
+
+    num_parallel_reads = min(len(input_files), 4)
+    dataset = tf.data.TFRecordDataset(input_files, num_parallel_reads=num_parallel_reads)
+    if do_shuffle:
+        dataset = dataset.shuffle(shuffle_buffer_size)
+    if do_repeat:
+        dataset = dataset.repeat()
+    dataset = dataset.map(decode_record,
+                          num_parallel_calls=tf.data.AUTOTUNE)
+
+    if batch_size is not None:
+        dataset = dataset.batch(batch_size, drop_remainder=drop_remainder)
+    dataset = dataset.prefetch(tf.data.AUTOTUNE)
+    return dataset
+
+
 def get_classification_dataset(file_path,
                                run_config: RunConfig2,
                                model_config: ModelConfigType,

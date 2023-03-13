@@ -7,10 +7,7 @@ from trainer_v2.custom_loop.neural_network_def.asymmetric import BERTAssymetric
 from trainer_v2.custom_loop.neural_network_def.siamese import BERTSiamese, BERTSiameseMean, BERTSiameseL
 
 
-class ClassificationModelIF(ABC):
-    def __init__(self):
-        pass
-
+class BertBasedModelIF(ABC):
     @abstractmethod
     def build_model(self, bert_params, model_config):
         pass
@@ -24,7 +21,7 @@ class ClassificationModelIF(ABC):
         pass
 
 
-class Siamese(ClassificationModelIF):
+class Siamese(BertBasedModelIF):
     def build_model(self, bert_params, model_config):
         network = BERTSiamese(bert_params, model_config)
         self.network = network
@@ -41,7 +38,7 @@ class Siamese(ClassificationModelIF):
         do_model_sanity_check(self.network.bert_cls.l_bert, msg)
 
 
-class SiameseL(ClassificationModelIF):
+class SiameseL(BertBasedModelIF):
     def build_model(self, bert_params, model_config):
         network = BERTSiameseL(bert_params, model_config)
         self.network = network
@@ -53,7 +50,7 @@ class SiameseL(ClassificationModelIF):
         load_bert_checkpoint(self.network.bert_cls, init_checkpoint)
 
 
-class Asymmetric(ClassificationModelIF):
+class Asymmetric(BertBasedModelIF):
     def build_model(self, bert_params, model_config):
         network = BERTAssymetric(bert_params, model_config)
         self.network = network
@@ -67,7 +64,7 @@ class Asymmetric(ClassificationModelIF):
         load_bert_checkpoint(bert_cls2, init_checkpoint)
 
 
-class AsymDebug(ClassificationModelIF):
+class AsymDebug(BertBasedModelIF):
     def build_model(self, bert_params, model_config):
         classifier = BERT_AssymetricDebug(bert_params, model_config)
         self.network = classifier
@@ -81,7 +78,7 @@ class AsymDebug(ClassificationModelIF):
         load_bert_checkpoint(bert_cls2, init_checkpoint)
 
 
-class SiameseMeanProject(ClassificationModelIF):
+class SiameseMeanProject(BertBasedModelIF):
     def build_model(self, bert_params, model_config):
         network = BERTSiameseMean(bert_params, model_config)
         self.network = network

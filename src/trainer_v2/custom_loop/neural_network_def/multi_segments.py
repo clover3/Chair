@@ -9,12 +9,12 @@ from trainer_v2.bert_for_tf2.w_mask.model_bert_mask import BertModelLayerWMask, 
 from trainer_v2.custom_loop.modeling_common.bert_common import load_stock_weights
 from trainer_v2.custom_loop.modeling_common.network_utils import VectorThreeFeature, \
     TwoLayerDense, ChunkAttentionMaskLayer
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig2SegProject
 
 
 # Projection + Mean+ Concat
-class SingleSegment(ClassificationModelIF):
+class SingleSegment(BertBasedModelIF):
     def __init__(self, combine_local_decisions_layer):
         super(SingleSegment, self).__init__()
         self.combine_local_decisions_layer = combine_local_decisions_layer
@@ -87,7 +87,7 @@ def create_attention_mask(from_vector, input_mask):
     return mask  # [B, F, T]
 
 
-class SingleSegment2(ClassificationModelIF):
+class SingleSegment2(BertBasedModelIF):
     def __init__(self, combine_local_decisions_layer):
         super(SingleSegment2, self).__init__()
         self.combine_local_decisions_layer = combine_local_decisions_layer
@@ -150,7 +150,7 @@ class SingleSegment2(ClassificationModelIF):
         load_stock_weights_nc(l_bert2, init_checkpoint, n_expected_restore=197)
 
 
-class TwoChunk(ClassificationModelIF):
+class TwoChunk(BertBasedModelIF):
     def __init__(self, combine_local_decisions_layer):
         super(TwoChunk, self).__init__()
         self.combine_local_decisions_layer = combine_local_decisions_layer
@@ -219,7 +219,7 @@ class TwoChunk(ClassificationModelIF):
         load_stock_weights_for_wmask(l_bert2, init_checkpoint, n_expected_restore=197)
 
 
-class ChunkStartEncoder(ClassificationModelIF):
+class ChunkStartEncoder(BertBasedModelIF):
     # This expect segment_ids2 to indicate start of chunk
     # Each chunks can only attend to oneself.
     def __init__(self, combine_local_decisions_layer):

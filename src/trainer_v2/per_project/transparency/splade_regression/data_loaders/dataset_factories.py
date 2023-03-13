@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from misc_lib import path_join
 from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.dataset_factories import parse_file_path, create_dataset_common
+from trainer_v2.custom_loop.dataset_factories import parse_file_path, create_dataset_common, create_dataset_common_inner
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
 from trainer_v2.train_util.arg_flags import flags_parser
 
@@ -73,6 +73,14 @@ def get_vector_regression_dataset_from_batched(
     return create_dataset_common_no_batch(decode_record, run_config, file_path, is_for_training)
 
 
+def get_batch_size(run_config, is_training_split):
+    batch_size = run_config.common_run_config.batch_size
+    if not is_training_split:
+        if run_config.common_run_config.eval_batch_size is not None:
+            batch_size = run_config.common_run_config.eval_batch_size
+    return batch_size
+
+
 def get_vector_regression_dataset(
         file_path,
         dataset_info,
@@ -101,6 +109,33 @@ def get_vector_regression_dataset(
                           record["y_values"], [dataset_info["vocab_size"]])
         return X, Y
 
+    return create_dataset_common_inner(
+        decode_record,
+        file_path=file_path,
+        do_shuffle=is_for_training,
+        do_repeat=False,
+        batch_size=get_batch_size(run_config, is_for_training),
+        shuffle_buffer_size=run_config.dataset_config.shuffle_buffer_size,
+        drop_remainder=True
+    )
+
+
+def get_three_text_dataset(
+        file_path,
+        dataset_info,
+        run_config: RunConfig2,
+        is_for_training,
+) -> tf.data.Dataset:
+    max_seq_length = dataset_info['max_seq_length']
+    def decode_record(record):
+        name_to_features = {}
+        for idx in range(3):
+            name_to_features[f"input_ids_{idx}"] = tf.io.FixedLenFeature(max_seq_length, tf.int64)
+            name_to_features[f"attention_mask_{idx}"] = tf.io.FixedLenFeature(max_seq_length, tf.int64)
+
+        record = tf.io.parse_single_example(record, name_to_features)
+        return record
+
     return create_dataset_common(decode_record, run_config, file_path, is_for_training)
 
 
@@ -111,7 +146,6 @@ def get_dummy_vector_regression_dataset(
         is_for_training,
 ) -> tf.data.Dataset:
     max_seq_length = dataset_info['max_seq_length']
-    max_vector_indices = dataset_info["max_vector_indices"]
 
     def decode_record(record):
         X = {

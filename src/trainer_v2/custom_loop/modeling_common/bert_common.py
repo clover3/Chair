@@ -165,7 +165,7 @@ def _load_stock_weights(bert, ckpt_path, map_to_stock_fn, n_expected_restore):
             ("loader: No value for:[{}], i.e.:[{}] in:[{}]".format(param.name, stock_name, ckpt_path))
             skip_count += 1
     keras.backend.batch_set_value(weight_value_tuples)
-    if n_expected_restore is not None and n_expected_restore == len(weight_value_tuples):
+    if n_expected_restore is None or n_expected_restore == len(weight_value_tuples):
         pass
     else:
         c_log.warn("Done loading {} BERT weights from: {} into {} (prefix:{}). "

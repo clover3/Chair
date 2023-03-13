@@ -8,13 +8,13 @@ from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.bert_common import define_bert_input, load_stock_weights, \
     load_stock_weights_encoder_only
 from trainer_v2.custom_loop.modeling_common.network_utils import ChunkAttentionMaskLayerFreeP, TwoLayerDense
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 
 KerasDense = tf.keras.layers.Dense
 
 
 
-class CtxChunkInteraction2(ClassificationModelIF):
+class CtxChunkInteraction2(BertBasedModelIF):
     # Encoder2's output is directly compared
     def __init__(self, decision_combine_layer):
         super(CtxChunkInteraction2, self).__init__()
@@ -99,7 +99,7 @@ class CtxChunkInteraction2(ClassificationModelIF):
 
 
 
-class CtxChunkInteraction3(ClassificationModelIF):
+class CtxChunkInteraction3(BertBasedModelIF):
     # Encoder2's output is directly compared
     def __init__(self, decision_combine_layer):
         super(CtxChunkInteraction3, self).__init__()
@@ -172,7 +172,7 @@ class CtxChunkInteraction3(ClassificationModelIF):
         load_stock_weights_encoder_only(self.l_transformer, init_checkpoint, n_expected_restore=197 - n_embedding_vars)
 
 
-class CtxChunkInteraction4(ClassificationModelIF):
+class CtxChunkInteraction4(BertBasedModelIF):
     # Encoder2's output is directly compared
     def __init__(self, decision_combine_layer):
         super(CtxChunkInteraction4, self).__init__()
@@ -236,7 +236,7 @@ class CtxChunkInteraction4(ClassificationModelIF):
 
 
 
-class CtxChunkInteraction5(ClassificationModelIF):
+class CtxChunkInteraction5(BertBasedModelIF):
     # Encoder2's output is directly compared
     def __init__(self, decision_combine_layer):
         super(CtxChunkInteraction5, self).__init__()
@@ -316,7 +316,7 @@ class ChunkAttentionMaskFreePH(tf.keras.layers.Layer):
 
 
 
-class CtxChunkInteraction6(ClassificationModelIF):
+class CtxChunkInteraction6(BertBasedModelIF):
     # Encoder2's output is directly compared
     def __init__(self, decision_combine_layer):
         super(CtxChunkInteraction6, self).__init__()

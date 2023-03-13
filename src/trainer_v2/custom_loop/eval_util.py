@@ -1,5 +1,6 @@
 from tensorflow.python.distribute.distribute_lib import Strategy
 
+from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result
 import tensorflow as tf
 from typing import List, Iterable, Callable, Dict, Tuple, Set
@@ -10,7 +11,7 @@ from trainer_v2.custom_loop.trainer_if import EvalObjectIF
 class EvalObject(EvalObjectIF):
     def __init__(self, model, eval_batches, dist_strategy: Strategy,
                  loss_fn,
-                 eval_metrics,
+                 eval_metrics: Dict,
                  eval_steps=10):
         self.loss = tf.keras.metrics.Mean(name='dev_loss')
         self.metrics: Dict[str, tf.keras.metrics.Metric] = eval_metrics
@@ -48,4 +49,21 @@ class EvalObject(EvalObjectIF):
         eval_loss = self.loss.result().numpy()
         metrics = self.metrics
         metric_res = fetch_metric_result(metrics)
+        return eval_loss, metric_res
+
+
+class MultipleEvalObject(EvalObjectIF):
+    def __init__(self, loss_eval_object: EvalObjectIF,
+                 other_eval_object: List[EvalObjectIF]):
+        self.loss_eval_object: EvalObjectIF = loss_eval_object
+        self.other_eval_object: List[EvalObjectIF] = other_eval_object
+
+    def do_eval(self):
+        eval_loss, metric_res = self.loss_eval_object.do_eval()
+
+        for eo in self.other_eval_object:
+            _, metric_res_i = eo.do_eval()
+            for key, value in metric_res_i.items():
+                metric_res[key] = value
+
         return eval_loss, metric_res

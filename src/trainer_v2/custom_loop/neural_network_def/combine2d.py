@@ -6,7 +6,7 @@ from tensorflow import keras
 from models.transformer.bert_common_v2 import get_shape_list2
 from trainer_v2.bert_for_tf2.w_mask.model_bert_mask import load_stock_weights_nc
 from trainer_v2.custom_loop.modeling_common.network_utils import VectorThreeFeature, TwoLayerDense
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 from trainer_v2.custom_loop.neural_network_def.lattice_based import MonoCombiner3d
 from trainer_v2.custom_loop.neural_network_def.no_attn import BertModelLayerNoAttn
 from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig2SegProject
@@ -57,7 +57,7 @@ class SortLattice(tf.keras.layers.Layer):
         return tf.reduce_max(inputs, axis=1)
 
 
-class SingleToken2D(ClassificationModelIF):
+class SingleToken2D(BertBasedModelIF):
     def __init__(self, combine_ld1_layer, combine_ld2_layer):
         super(SingleToken2D, self).__init__()
         self.combine_ld1_layer = combine_ld1_layer
@@ -110,7 +110,7 @@ class SingleToken2D(ClassificationModelIF):
         load_stock_weights_nc(l_bert2, init_checkpoint, n_expected_restore=77)
 
 
-class SingleToken2DEmbOnly(ClassificationModelIF):
+class SingleToken2DEmbOnly(BertBasedModelIF):
     def __init__(self, combine_ld1_layer_factory, combine_ld2_layer_factory):
         super(SingleToken2DEmbOnly, self).__init__()
         self.combine_ld1_layer_factory = combine_ld1_layer_factory
@@ -168,7 +168,7 @@ class SingleToken2DEmbOnly(ClassificationModelIF):
         load_stock_weights_nc(l_bert2, init_checkpoint, n_expected_restore=5)
 
 
-class SingleToken2DNoPE(ClassificationModelIF):
+class SingleToken2DNoPE(BertBasedModelIF):
     def __init__(self, combine_ld1_layer, combine_ld2_layer):
         super(SingleToken2DNoPE, self).__init__()
         self.combine_ld1_layer = combine_ld1_layer
@@ -221,7 +221,7 @@ class SingleToken2DNoPE(ClassificationModelIF):
         load_stock_weights_nc(l_bert2, init_checkpoint, n_expected_restore=76)
 
 
-class SingleToken2DWeighting(ClassificationModelIF):
+class SingleToken2DWeighting(BertBasedModelIF):
     def __init__(self, combine_ld2_layer_factory):
         super(SingleToken2DWeighting, self).__init__()
         self.combine_ld2_layer_factory = combine_ld2_layer_factory

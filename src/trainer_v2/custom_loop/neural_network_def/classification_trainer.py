@@ -1,8 +1,8 @@
 from trainer_v2.custom_loop.modeling_common.bert_common import BertClassifier, load_bert_checkpoint
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 
 
-class StandardBertCls(ClassificationModelIF):
+class StandardBertCls(BertBasedModelIF):
     def build_model(self, bert_params, model_config):
         bert_classifier = BertClassifier(bert_params, model_config)
         self.bert_classifier = bert_classifier

@@ -1,10 +1,10 @@
 from trainer_v2.bert_for_tf2.spit_attn_probs.bert_layer import BertModelLayerSAP, BertClsSAP
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_checkpoint, define_bert_input
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 import tensorflow as tf
 
 
-class BertSAP(ClassificationModelIF):
+class BertSAP(BertBasedModelIF):
     def build_model(self, bert_params, model_config):
         l_bert = BertModelLayerSAP.from_params(bert_params, name="bert")
         pooler = tf.keras.layers.Dense(bert_params.hidden_size, activation=tf.nn.tanh, name="bert/pooler/dense")

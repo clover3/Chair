@@ -5,7 +5,7 @@ from models.transformer.bert_common_v2 import get_shape_list2
 from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.custom_loop.definitions import ModelConfigType
 from trainer_v2.custom_loop.modeling_common.bert_common import define_bert_input, BERT_CLS, load_bert_checkpoint
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import split_stack_flatten_encode_stack
 
 
@@ -22,7 +22,7 @@ class NLC4(NLC):
     num_local_classes = 4
 
 
-class TSCVarLD(ClassificationModelIF):
+class TSCVarLD(BertBasedModelIF):
     # TSC: Two Segment Concat
     # VarLD: Variable Local decisions
     def __init__(self, combine_ld):
@@ -105,7 +105,7 @@ def keep_seg_12(l_input_ids, l_token_type_ids):
 
 
 # Variable Local Decision Combiner with Single segment input
-class SingleVarLD(ClassificationModelIF):
+class SingleVarLD(BertBasedModelIF):
     def __init__(self, combine_ld):
         super(SingleVarLD, self).__init__()
         self.combine_ld = combine_ld
@@ -147,7 +147,7 @@ class SingleVarLD(ClassificationModelIF):
         load_bert_checkpoint(self.bert_cls, init_checkpoint)
 
 
-class BaselineNLI(ClassificationModelIF):
+class BaselineNLI(BertBasedModelIF):
     def __init__(self):
         super(BaselineNLI, self).__init__()
 

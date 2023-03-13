@@ -7,10 +7,10 @@ from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.custom_loop.definitions import ModelConfig300_3
 from trainer_v2.custom_loop.modeling_common.bert_common import BERT_CLS, load_bert_checkpoint
 from trainer_v2.custom_loop.modeling_common.network_utils import TwoLayerDense
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 
 
-class SpanLevelReasoning(ClassificationModelIF):
+class SpanLevelReasoning(BertBasedModelIF):
     def __init__(self):
         super(SpanLevelReasoning, self).__init__()
 

@@ -17,8 +17,7 @@ def main():
     max_partition = 1
     data_loader = VectorRegressionLoader(
         text_path, vector_dir,
-        max_partition=max_partition,
-        run_config=run_config)
+        max_partition=max_partition)
     batch_size = run_config.common_run_config.batch_size
     itr: Iterable[Tuple] = data_loader.iterate_tokenized()
     batch_iter = apply_batch(itr, batch_size)

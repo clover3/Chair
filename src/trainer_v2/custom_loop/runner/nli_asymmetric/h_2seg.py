@@ -1,7 +1,7 @@
 import os
 import sys
 
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from taskman_client.wrapper3 import report_run3
@@ -22,7 +22,7 @@ def main(args):
 
     combine_fn = FuzzyLogicLayer
     model_config = ModelConfig2SegProject()
-    inner: ClassificationModelIF = BERTEvenSegmented(combine_fn)
+    inner: BertBasedModelIF = BERTEvenSegmented(combine_fn)
 
     def dataset_factory(input_files, is_for_training):
         return get_two_seg_data(input_files, run_config, model_config, is_for_training)

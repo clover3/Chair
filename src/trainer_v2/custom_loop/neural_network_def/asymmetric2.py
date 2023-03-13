@@ -9,12 +9,12 @@ from trainer_v2.custom_loop.modeling_common.bert_common import load_stock_weight
 from trainer_v2.custom_loop.modeling_common.network_utils import VectorThreeFeature, \
     MeanProjectionEnc, SplitSegmentID
 from trainer_v2.custom_loop.neural_network_def.asymmetric import BERTAsymmetricProjectMean
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import StackedInputMapper
 from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig2SegProject, ModelConfigTwoProject
 
 
-class AsymmetricMeanPool(ClassificationModelIF):
+class AsymmetricMeanPool(BertBasedModelIF):
     def __init__(self, inner_network=BERTAsymmetricProjectMean):
         super(AsymmetricMeanPool, self).__init__()
         self.inner_network = inner_network
@@ -32,7 +32,7 @@ class AsymmetricMeanPool(ClassificationModelIF):
         load_stock_weights(l_bert2, init_checkpoint, n_expected_restore=197)
 
 
-class BERTEvenSegmented(ClassificationModelIF):
+class BERTEvenSegmented(BertBasedModelIF):
     def __init__(self, combine_local_decisions_layer):
         super(BERTEvenSegmented, self).__init__()
         self.combine_local_decisions_layer = combine_local_decisions_layer
@@ -94,7 +94,7 @@ class BERTEvenSegmentedWCallback(BERTEvenSegmented):
 
 
 # Projection + Mean+ Concat
-class BERTAsymmetricPMC(ClassificationModelIF):
+class BERTAsymmetricPMC(BertBasedModelIF):
     def __init__(self):
         super(BERTAsymmetricPMC, self).__init__()
 
@@ -152,7 +152,7 @@ class BERTAsymmetricPMC(ClassificationModelIF):
 
 
 
-class TwoSegmentRawLogits(ClassificationModelIF):
+class TwoSegmentRawLogits(BertBasedModelIF):
     def __init__(self, combine_local_decisions_layer):
         super(TwoSegmentRawLogits, self).__init__()
         self.combine_local_decisions_layer = combine_local_decisions_layer
@@ -205,7 +205,7 @@ class TwoSegmentRawLogits(ClassificationModelIF):
         load_stock_weights(l_bert2, init_checkpoint, n_expected_restore=197)
 
 
-class ESSliceSegs(ClassificationModelIF):
+class ESSliceSegs(BertBasedModelIF):
     def __init__(self, combine_local_decisions_layer):
         super(ESSliceSegs, self).__init__()
         self.combine_local_decisions_layer = combine_local_decisions_layer
@@ -260,7 +260,7 @@ class ESSliceSegs(ClassificationModelIF):
 
 
 
-class ESRoled(ClassificationModelIF):
+class ESRoled(BertBasedModelIF):
     def __init__(self, combine_local_decisions_layer):
         super(ESRoled, self).__init__()
         self.combine_local_decisions_layer = combine_local_decisions_layer

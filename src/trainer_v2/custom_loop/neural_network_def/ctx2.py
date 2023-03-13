@@ -9,12 +9,12 @@ from trainer_v2.custom_loop.modeling_common.bert_common import define_bert_input
     load_stock_weights_encoder_only
 from trainer_v2.custom_loop.modeling_common.network_utils import MeanProjectionEnc, TileAfterExpandDims, \
     VectorThreeFeature, TwoLayerDense, ChunkAttentionMaskLayerFreeP
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 
 KerasDense = tf.keras.layers.Dense
 
 
-class CtxSingle(ClassificationModelIF):
+class CtxSingle(BertBasedModelIF):
     # Encoder2's output is directly compared
     def __init__(self, decision_combine_layer):
         super(CtxSingle, self).__init__()
@@ -78,7 +78,7 @@ class ModelConfigCtxChunk:
     window_len = 4
 
 
-class CtxChunkInteraction(ClassificationModelIF):
+class CtxChunkInteraction(BertBasedModelIF):
     # Encoder2's output is directly compared
     def __init__(self, decision_combine_layer):
         super(CtxChunkInteraction, self).__init__()

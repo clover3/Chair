@@ -5,7 +5,7 @@ import tensorflow as tf
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
-from trainer_v2.custom_loop.neural_network_def.inner_network import ClassificationModelIF
+from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result, eval_tensor
 from trainer_v2.custom_loop.trainer_if import TrainerIF, EmptyEvalObject
@@ -22,7 +22,7 @@ def init_summary(save_dir):
 class PolicyGradientTrainer(TrainerIF):
     def __init__(self, bert_params: object, model_config: object,
                  run_config: RunConfig2,
-                 inner_model: ClassificationModelIF,
+                 inner_model: BertBasedModelIF,
                  policy_func_factory: Callable[[tf.keras.models.Model], PolicyFunction],
                  reinforce: SeqPredREINFORCE,
                  ):
