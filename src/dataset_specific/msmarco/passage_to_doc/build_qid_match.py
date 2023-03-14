@@ -7,7 +7,7 @@
 from typing import List, Tuple
 
 from dataset_specific.msmarco.common import load_queries, QueryID
-from dataset_specific.msmarco.passage_to_doc.resource_loader import load_qrel
+from dataset_specific.msmarco.passage.passage_resource_loader import load_qrel
 from list_lib import left
 from misc_lib import tprint
 

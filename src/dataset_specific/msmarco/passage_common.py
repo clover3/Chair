@@ -13,3 +13,5 @@ def enum_two_column_tsv(tsv_path):
         for line in f:
             data_id, text = line.split("\t")
             yield data_id, text
+
+

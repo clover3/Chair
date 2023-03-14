@@ -99,11 +99,10 @@ class PairwiseEval:
     def do_eval(self):
         c_log.info("PairwiseEval::do_eval")
 
-        num_steps = 2
         iterator = iter(self.triplet_encoded)
 
-        for idx in range(num_steps):
-            args = next(iterator),
+        for item in iterator:
+            args = item,
             per_replica = self.strategy.run(self.eval_fn, args=args)
 
         metrics = self.metrics

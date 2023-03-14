@@ -4,6 +4,7 @@ from typing import List, Dict, Any, Tuple
 from data_generator.create_feature import create_int_feature, create_float_feature
 
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.regression_loader import XEncoded
+from trainer_v2.per_project.transparency.transformers_utils import pad_truncate
 
 
 def get_vector_regression_encode_fn_batched(max_seq_length):
@@ -73,13 +74,6 @@ def get_vector_regression_encode_fn_batched(max_seq_length):
     return encode_batched
 
 
-def pad_truncate(seq, max_seq_length):
-    seq = seq[:max_seq_length]
-    pad_len = max_seq_length - len(seq)
-    seq = seq + [0] * pad_len
-    return seq
-
-
 def get_vector_regression_encode_fn(max_text_seq_length, max_vector_indices):
     def encode_fn(item: Tuple[XEncoded, Any]) -> OrderedDict:
         X, Y = item
@@ -106,17 +100,4 @@ def get_vector_regression_encode_fn(max_text_seq_length, max_vector_indices):
 
     return encode_fn
 
-
-def get_three_text_encode_fn(max_text_seq_length):
-    def encode_fn(three_item: Tuple[Dict]) -> OrderedDict:
-        features = OrderedDict()
-        for idx, item in enumerate(three_item):
-            assert len(item['input_ids']) == len(item['attention_mask'])
-            input_ids = pad_truncate(item['input_ids'], max_text_seq_length)
-            attention_mask = pad_truncate(item['attention_mask'], max_text_seq_length)
-            features[f"input_ids_{idx}"] = create_int_feature(input_ids)
-            features[f"attention_mask_{idx}"] = create_int_feature(attention_mask)
-        return features
-
-    return encode_fn
 

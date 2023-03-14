@@ -3,6 +3,7 @@ import sys
 import tensorflow as tf
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.chair_logging import c_log, IgnoreFilter, IgnoreFilterRE
+from trainer_v2.custom_loop.per_task.trainer_vector_regression import TrainerVectorRegression
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
 from trainer_v2.custom_loop.train_loop import tf_run
 from trainer_v2.custom_loop.trainer_if import TrainerIF
@@ -10,14 +11,13 @@ from trainer_v2.per_project.transparency.splade_regression.data_loaders.dataset_
     get_vector_regression_dataset, get_dummy_vector_regression_dataset
 from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import get_regression_model, \
     get_regression_model2, get_dummy_regression_model
-from trainer_v2.per_project.transparency.splade_regression.trainer_vector_regression import TrainerVectorRegression
-from trainer_v2.custom_loop.prediction_trainer import ModelV3IF
+from trainer_v2.custom_loop.prediction_trainer import ModelV2IF
 from trainer_v2.train_util.arg_flags import flags_parser
 from transformers import AutoTokenizer
 import numpy as np
 
 
-class DistilBertVR(ModelV3IF):
+class DistilBertVR(ModelV2IF):
     def __init__(self, model_config):
         self.model_config = model_config
         self.model: tf.keras.models.Model = None

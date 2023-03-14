@@ -13,7 +13,6 @@ from typing import Iterable, Tuple
 
 def main():
     args = flags_parser.parse_args("")
-    run_config = get_run_config2(args)
     text_path_format_str = partitioned_triplet_path_format_str()
     vector_dir = path_join("data", "splade", "splade_encode")
     max_partition = 5280
@@ -28,7 +27,7 @@ def main():
         max_partition=max_partition)
 
     encode_fn = get_vector_regression_encode_fn(max_seq_length, max_vector_indices)
-    save_dir = path_join("output", "splade", "tfrecord3")
+    save_dir = path_join("output", "splade", "splade_regression2")
     exist_or_mkdir(save_dir)
 
     num_partition = end_partition - start_partition

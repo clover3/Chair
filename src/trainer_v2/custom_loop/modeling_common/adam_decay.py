@@ -79,7 +79,6 @@ class AdamWeightDecay(tf.keras.optimizers.Adam):
         self.gradient_clip_norm = gradient_clip_norm
         self._include_in_weight_decay = include_in_weight_decay
         self._exclude_from_weight_decay = exclude_from_weight_decay
-        logging.info('gradient_clip_norm=%f', gradient_clip_norm)
 
     @classmethod
     def from_config(cls, config):

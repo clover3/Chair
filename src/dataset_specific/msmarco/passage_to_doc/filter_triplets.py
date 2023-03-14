@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
 from cache import load_from_pickle, save_to_pickle
-from dataset_specific.msmarco.passage_to_doc.resource_loader import enumerate_triple
+from dataset_specific.msmarco.passage.passage_resource_loader import enumerate_triple
 from galagos.types import QueryID
 from misc_lib import TimeEstimator
 

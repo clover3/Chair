@@ -7,20 +7,20 @@ from cpath import get_bert_config_path
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config, load_stock_weights_encoder_only, \
     load_stock_weights_bert_like
+from trainer_v2.custom_loop.per_task.trainer_vector_regression import TrainerVectorRegression
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
 from trainer_v2.custom_loop.train_loop import tf_run
 from trainer_v2.custom_loop.trainer_if import TrainerIF
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.dataset_factories import \
     get_vector_regression_dataset
 from trainer_v2.per_project.transparency.splade_regression.modeling.bert_vector_regression import BertVectorRegression
-from trainer_v2.per_project.transparency.splade_regression.trainer_vector_regression import TrainerVectorRegression
-from trainer_v2.custom_loop.prediction_trainer import ModelV3IF
+from trainer_v2.custom_loop.prediction_trainer import ModelV2IF
 from trainer_v2.train_util.arg_flags import flags_parser
 from transformers import AutoTokenizer
 import numpy as np
 
 
-class BERT_VR(ModelV3IF):
+class BERT_VR(ModelV2IF):
     def __init__(self, dataset_info):
         self.dataset_info = dataset_info
         self.inner_model = None

@@ -916,3 +916,20 @@ def print_length_stats_from_counters(counter):
         percent = acc / n_all
         print("L <= {0} : {1:.2f}".format(key, percent))
 
+
+def write_to_lines(items: Iterable, save_path: str):
+    with open(save_path, "w") as f:
+        for item in items:
+            f.write("{}\n".format(item))
+
+
+def select_first_second(itr: Iterable[Tuple[str, str, str, str]])\
+        -> Iterable[Tuple[str, str]]:
+    for first, second, _third, _fourth in itr:
+        yield first, second
+
+
+def select_third_fourth(itr: Iterable[Tuple[str, str, str, str]])\
+        -> Iterable[Tuple[str, str]]:
+    for _first, _second, third, fourth in itr:
+        yield third, fourth

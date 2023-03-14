@@ -11,7 +11,7 @@ from trainer_v2.custom_loop.trainer_if import TrainerIF
 
 # Purpose of ModelV3IF: to define custom init checkpoint functions
 #   build_model: defines keras model
-class ModelV3IF(ABC):
+class ModelV2IF(ABC):
     @abstractmethod
     def build_model(self, run_config):
         pass
@@ -27,7 +27,7 @@ class ModelV3IF(ABC):
 
 class PredictionTrainerCommon(TrainerIF):
     def __init__(self, run_config: RunConfig2,
-                 inner_model: ModelV3IF):
+                 inner_model: ModelV2IF):
         self.run_config = run_config
         self.eval_metrics = {}
         self.eval_metrics_factory = {}

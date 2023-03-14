@@ -1,6 +1,6 @@
 from data_generator.job_runner import JobRunner
 from dataset_specific.msmarco.common import load_query_group
-from dataset_specific.msmarco.passage_to_doc.resource_loader import load_qrel, load_queries_as_d
+from dataset_specific.msmarco.passage.passage_resource_loader import load_qrel, load_queries_as_d
 from epath import job_man_dir
 from tlm.data_gen.adhoc_datagen import LeadingN
 from tlm.data_gen.msmarco_doc_gen.gen_worker_for_passage_based import PairGenerator, MMDWorkerForPassageBased

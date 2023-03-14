@@ -4,7 +4,7 @@ from transformers import AutoTokenizer
 
 from misc_lib import path_join
 from tf_util.record_writer_wrap import write_records_w_encode_fn
-from trainer_v2.per_project.transparency.splade_regression.data_generator.encode_fns import get_three_text_encode_fn
+from trainer_v2.hg_utils import get_multi_text_encode_fn
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.pairwise_eval import load_pairwise_eval_data
 
 
@@ -25,7 +25,7 @@ def main():
     save_dir = path_join("output", "splade", "regression_pairwise")
     max_seq_length = 256
     save_path = os.path.join(save_dir, f"{st}_{ed}")
-    encode_fn = get_three_text_encode_fn(max_seq_length)
+    encode_fn = get_multi_text_encode_fn(max_seq_length, n_text=3)
     n_item = 10000 * num_partitions
     write_records_w_encode_fn(save_path, encode_fn, itr, n_item)
 

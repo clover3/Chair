@@ -1,3 +1,4 @@
+
 import os
 import sys
 
@@ -54,7 +55,7 @@ def validate_dir(dir_path, idx_range):
 
 if __name__ == "__main__":
     if len(sys.argv) == 4:
-        dir_path = os.path.join("/mnt/nfs/work3/youngwookim/data/bert_tf/", sys.argv[1])
+        dir_path = sys.argv[1]
         st = int(sys.argv[2])
         ed = int(sys.argv[3])
         validate_dir(dir_path, range(st, ed))
