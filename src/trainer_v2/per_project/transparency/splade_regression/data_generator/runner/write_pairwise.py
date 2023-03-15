@@ -4,8 +4,8 @@ from transformers import AutoTokenizer
 
 from misc_lib import path_join
 from tf_util.record_writer_wrap import write_records_w_encode_fn
-from trainer_v2.hg_utils import get_multi_text_encode_fn
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.pairwise_eval import load_pairwise_eval_data
+from trainer_v2.per_project.transparency.transformers_utils import get_multi_text_encode_fn
 
 
 def main():

@@ -8,7 +8,7 @@ from misc_lib import path_join
 from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.dataset_factories import \
     get_vector_regression_dataset
-from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import get_regression_model
+from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import get_transformer_sparse_encoder
 from trainer_v2.train_util.arg_flags import flags_parser
 
 from taskman_client.wrapper3 import report_run3
@@ -39,7 +39,7 @@ def main(args):
         return get_vector_regression_dataset(input_files, dataset_info, run_config, True)
 
     with strategy.scope():
-        new_model = get_regression_model(model_config, True)
+        new_model = get_transformer_sparse_encoder(model_config, True)
         new_model.compile(loss="MSE", optimizer="adam")
         dataset = build_dataset()
         train_steps = 10000

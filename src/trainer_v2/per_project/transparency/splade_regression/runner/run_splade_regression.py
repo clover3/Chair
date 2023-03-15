@@ -8,9 +8,8 @@ from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
 from trainer_v2.custom_loop.train_loop import tf_run
 from trainer_v2.custom_loop.trainer_if import TrainerIF
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.dataset_factories import \
-    get_vector_regression_dataset, get_dummy_vector_regression_dataset
-from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import get_regression_model, \
-    get_regression_model2, get_dummy_regression_model
+    get_vector_regression_dataset
+from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import get_transformer_sparse_encoder
 from trainer_v2.custom_loop.prediction_trainer import ModelV2IF
 from trainer_v2.train_util.arg_flags import flags_parser
 from transformers import AutoTokenizer
@@ -24,7 +23,7 @@ class DistilBertVR(ModelV2IF):
         pass
 
     def build_model(self, run_config):
-        self.model = get_regression_model(self.model_config, run_config.is_training())
+        self.model = get_transformer_sparse_encoder(self.model_config, run_config.is_training())
 
     def get_keras_model(self) -> tf.keras.models.Model:
         return self.model

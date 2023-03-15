@@ -13,7 +13,7 @@ from trainer_v2.custom_loop.train_loop import tf_run
 from trainer_v2.custom_loop.trainer_if import TrainerIF
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.dataset_factories import \
     get_vector_regression_dataset
-from trainer_v2.per_project.transparency.splade_regression.modeling.bert_vector_regression import BertVectorRegression
+from trainer_v2.per_project.transparency.splade_regression.modeling.bert_sparse_encoder import BertSparseEncoder
 from trainer_v2.custom_loop.prediction_trainer import ModelV2IF
 from trainer_v2.train_util.arg_flags import flags_parser
 from transformers import AutoTokenizer
@@ -28,7 +28,7 @@ class BERT_VR(ModelV2IF):
 
     def build_model(self, run_config):
         bert_params = load_bert_config(get_bert_config_path())
-        self.inner_model = BertVectorRegression(bert_params, self.dataset_info)
+        self.inner_model = BertSparseEncoder(bert_params, self.dataset_info)
 
     def get_keras_model(self) -> tf.keras.models.Model:
         return self.inner_model.model

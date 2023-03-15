@@ -108,3 +108,4 @@ class PairwiseEval:
         metrics = self.metrics
         metric_res = fetch_metric_result(metrics)
         return 0.0, metric_res
+

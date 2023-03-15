@@ -10,17 +10,10 @@ from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.dataset_factories import get_three_text_dataset
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.pairwise_eval import load_pairwise_eval_data, \
     PairwiseEval, build_pairwise_eval_dataset
-from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import get_regression_model
+from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import get_transformer_sparse_encoder
 from trainer_v2.train_util.arg_flags import flags_parser
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
-
-def dict_to_tuple(features):
-    t_list = []
-    for idx in range(3):
-        t = features[f"input_ids_{idx}"], features[f"attention_mask_{idx}"]
-        t_list.append(t)
-    return tuple(t_list)
 
 
 def main(args):
@@ -36,9 +29,9 @@ def main(args):
         c_log.info("loading model from %s", run_config.eval_config.model_save_path)
         new_model = tf.keras.models.load_model(run_config.eval_config.model_save_path)
         dataset: tf.data.Dataset = get_three_text_dataset(
-            run_config.dataset_config.eval_files_path, model_config, run_config, False
+            run_config.dataset_config.eval_files_path, model_config, run_config,
+            is_for_training=False, return_as_tuple=True
         )
-        dataset = dataset.map(dict_to_tuple)
         dataset = strategy.experimental_distribute_dataset(dataset)
         eval_obj = PairwiseEval(dataset, strategy, new_model)
         _, ret = eval_obj.do_eval()

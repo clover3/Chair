@@ -12,7 +12,7 @@ from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.dataset_factories import get_three_text_dataset
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.pairwise_eval import load_pairwise_eval_data, \
     PairwiseEval, build_pairwise_eval_dataset
-from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import get_regression_model
+from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import get_transformer_sparse_encoder
 from trainer_v2.train_util.arg_flags import flags_parser
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 

@@ -8,7 +8,7 @@ from trainer_v2.custom_loop.train_loop import tf_run
 from trainer_v2.custom_loop.trainer_if import TrainerIF
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.dataset_factories import \
     get_vector_regression_dataset, get_dummy_vector_regression_dataset
-from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import get_regression_model, \
+from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import get_transformer_sparse_encoder, \
     get_regression_model2, get_dummy_regression_model
 from trainer_v2.per_project.transparency.splade_regression.trainer_vector_regression import TrainerVectorRegression
 from trainer_v2.train_util.arg_flags import flags_parser

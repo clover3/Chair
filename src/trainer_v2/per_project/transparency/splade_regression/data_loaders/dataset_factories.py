@@ -125,18 +125,91 @@ def get_three_text_dataset(
         dataset_info,
         run_config: RunConfig2,
         is_for_training,
+        return_as_tuple: bool
+) -> tf.data.Dataset:
+    return get_multi_text_dataset(
+        file_path,
+        dataset_info,
+        run_config,
+        is_for_training=is_for_training,
+        num_texts=3,
+        return_as_tuple=return_as_tuple
+    )
+
+
+def get_text_pair_dataset(
+        file_path,
+        dataset_info,
+        run_config: RunConfig2,
+        is_for_training,
+        return_as_tuple
+) -> tf.data.Dataset:
+    return get_multi_text_dataset(
+        file_path,
+        dataset_info,
+        run_config,
+        is_for_training=is_for_training,
+        num_texts=2,
+        return_as_tuple=return_as_tuple
+    )
+
+
+
+def dict_to_tuple(features, num_texts):
+    t_list = []
+    for idx in range(num_texts):
+        t = features[f"input_ids_{idx}"], features[f"attention_mask_{idx}"]
+        t_list.append(t)
+    return tuple(t_list)
+
+
+def get_multi_text_dataset(
+        file_path,
+        dataset_info,
+        run_config: RunConfig2,
+        is_for_training,
+        num_texts,
+        return_as_tuple
 ) -> tf.data.Dataset:
     max_seq_length = dataset_info['max_seq_length']
     def decode_record(record):
         name_to_features = {}
-        for idx in range(3):
+        for idx in range(num_texts):
             name_to_features[f"input_ids_{idx}"] = tf.io.FixedLenFeature(max_seq_length, tf.int64)
             name_to_features[f"attention_mask_{idx}"] = tf.io.FixedLenFeature(max_seq_length, tf.int64)
 
         record = tf.io.parse_single_example(record, name_to_features)
         return record
 
-    return create_dataset_common(decode_record, run_config, file_path, is_for_training)
+    dataset = create_dataset_common(decode_record, run_config, file_path, is_for_training)
+    if return_as_tuple:
+        dataset = dataset.map(lambda x: dict_to_tuple(x, num_texts))
+    return dataset
+
+
+def get_text_pair_dataset2(
+        file_path,
+        dataset_info,
+        run_config: RunConfig2,
+        is_for_training,
+) -> tf.data.Dataset:
+    max_seq_length = dataset_info['max_seq_length']
+    def decode_record(record):
+        name_to_features = {}
+        name_to_features["input_ids_0"] = tf.io.FixedLenFeature(max_seq_length, tf.int64)
+        name_to_features["attention_mask_0"] = tf.io.FixedLenFeature(max_seq_length, tf.int64)
+        name_to_features["input_ids_1"] = tf.io.FixedLenFeature(max_seq_length, tf.int64)
+        name_to_features["attention_mask_1"] = tf.io.FixedLenFeature(max_seq_length, tf.int64)
+        record = tf.io.parse_single_example(record, name_to_features)
+
+        i0 = record["input_ids_0"]
+        a0 = record["attention_mask_0"]
+        i1 = record["input_ids_1"]
+        a1 = record["attention_mask_1"]
+        return (i0, a0, i1, a1),
+
+    dataset = create_dataset_common(decode_record, run_config, file_path, is_for_training)
+    return dataset
 
 
 def get_dummy_vector_regression_dataset(

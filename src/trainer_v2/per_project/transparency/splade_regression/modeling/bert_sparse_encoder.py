@@ -6,7 +6,7 @@ from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import ReluSigmoidMaxReduce
 
 
-class BertVectorRegression:
+class BertSparseEncoder:
     def __init__(self, bert_params, dataset_info: Dict):
         l_bert = BertModelLayer.from_params(bert_params, name="bert")
         max_seq_len = dataset_info['max_seq_length']
@@ -24,3 +24,18 @@ class BertVectorRegression:
         model = keras.Model(inputs=(l_input_ids, attention_mask), outputs=output, name="bert_model")
         self.model: keras.Model = model
         self.l_bert = l_bert
+
+
+class DummySparseEncoder:
+    def __init__(self, dataset_info: Dict):
+        max_seq_len = dataset_info['max_seq_length']
+        num_classes = dataset_info['vocab_size']
+
+        l_input_ids = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="input_ids")
+        attention_mask = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="attention_mask")
+        l_token_type_ids = tf.zeros_like(l_input_ids)
+
+        batch_size, _ = tf.shape(l_input_ids)
+        output = tf.zeros([batch_size, num_classes])
+        model = keras.Model(inputs=(l_input_ids, attention_mask), outputs=output, name="dummy_encoder")
+        self.model: keras.Model = model
