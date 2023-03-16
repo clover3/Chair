@@ -39,7 +39,18 @@ def load_queries_as_d(split):
     return output
 
 
-def load_msmarco_sample_dev_as_pairs():
-    quad_tsv_path = path_join("data", "msmarco", "sample_dev", "corpus.tsv")
+def load_msmarco_sample_dev_as_pairs() -> Iterable[Tuple[str, str]]:
+    quad_tsv_path = path_join("data", "msmarco", "sample_dev100", "corpus.tsv")
     tuple_itr: Iterable[Tuple[str, str]] = select_third_fourth(tsv_iter(quad_tsv_path))
     return tuple_itr
+
+
+def load_msmarco_sample_a_as_pairs() -> Iterable[Tuple[str, str]]:
+    quad_tsv_path = path_join("data", "msmarco", "sample_dev1000", "corpus.tsv")
+    tuple_itr: Iterable[Tuple[str, str]] = select_third_fourth(tsv_iter(quad_tsv_path))
+    return tuple_itr
+
+
+def load_msmarco_collection()-> Iterable[Tuple[str, str]]:
+    tsv_path = path_join("data", "msmarco", "collection.tsv")
+    return tsv_iter(tsv_path)

@@ -1,8 +1,8 @@
 from typing import List
-
 import nltk as nltk
 from krovetzstemmer import Stemmer
-
+from collections import Counter
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 from models.classic.stopword import load_stopwords
 
 
@@ -29,3 +29,13 @@ class KrovetzNLTKTokenizer:
         return stemmed_tokens
 
 
+def count_df(docs: Iterable[str]) -> Counter:
+    tokenizer = KrovetzNLTKTokenizer()
+    df = Counter()
+    for p in docs:
+        tokens = tokenizer.tokenize_stem(p)
+
+        for term in set(tokens):
+            df[term] += 1
+
+    return df

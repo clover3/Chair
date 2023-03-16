@@ -9,7 +9,7 @@ from trec.ranked_list_util import build_ranked_list
 from trec.trec_parse import write_trec_ranked_list_entry
 from trec.types import TrecRankedListEntry, QRelsDict
 
-
+# Build ranked list by combining scores and qid_pid' assume they are paired
 arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument("--scores_path",)
 arg_parser.add_argument("--qid_pid_path" )
@@ -42,7 +42,7 @@ def read_scores(scores_path):
 # def dev_splade():
 #     run_name = "splade"
 #     scores_path = at_output_dir("lines_scores", "splade_dev_sample.txt")
-#     qid_pid_path = path_join("data", "msmarco", "sample_dev", "corpus.tsv")
+#     qid_pid_path = path_join("data", "msmarco", "sample_dev100", "corpus.tsv")
 #     qid_pid: List[Tuple[str, str]] = list(select_first_second(tsv_iter(qid_pid_path)))
 #     save_path = at_output_dir("ranked_list", "splade_mmp_dev_sample.txt")
 #     build_ranked_list_from_qid_pid_scores(qid_pid, run_name, save_path, scores_path)

@@ -40,6 +40,7 @@ class BERT_VR(ModelV2IF):
             load_stock_weights_bert_like(self.inner_model.l_bert, init_checkpoint, n_expected_restore=197)
 
 
+@report_run3
 def main(args):
     c_log.info(__file__)
 

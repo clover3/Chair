@@ -16,11 +16,9 @@ class TrainerVectorRegression(PredictionTrainerCommon):
     def __init__(self, run_config: RunConfig2,
                  inner_model: ModelV2IF):
         super(TrainerVectorRegression, self).__init__(run_config, inner_model)
-        print("TrainerVectorRegression")
         self.loss_fn_inner = squared_error
 
     def get_eval_object(self, eval_batches, strategy):
-        print("Pass self.loss_fn to eval object")
         loss_eval_obj = EvalObject(self.model, eval_batches, strategy, self.loss_fn, {})
         other_eval_objects = []
 
