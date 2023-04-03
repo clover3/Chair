@@ -84,7 +84,21 @@ def do_agreement_analysis(pair_d, all_annots):
                     b2 = token_idx in indices2
                     yield b1, b2
 
+    def count_pair():
+        cnt = 0
+        for hit_id, entries in grouped.items():
+            if len(entries) <= 1:
+                continue
+            assn1 = entries[0]
+            assn2 = entries[1]
+            cnt += 1
+
+        return cnt
+
+
     answer1, answer2 = zip(*enum_paired())
+    print("Number of claim pairs with multiple annotations: {}".format(count_pair()))
+    print(f"Number of common annotations: {len(answer1)}, {len(answer2)}")
     print("cohens_kappa", cohens_kappa(answer1, answer2))
     # for sent_type_idx in range(4):
     #     answer1, answer2 = zip(*enum_paired(sent_type_idx))

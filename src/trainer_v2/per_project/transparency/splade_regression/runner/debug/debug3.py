@@ -23,7 +23,6 @@ def main(args):
     tf.config.experimental_connect_to_cluster(resolver)
     tf.tpu.experimental.initialize_tpu_system(resolver)
     strategy = tf.distribute.TPUStrategy(resolver)
-    # strategy = tf.distribute.MirroredStrategy()
     model_checkpoint = "distilbert-base-cased"
     seq_length = 300
     def decode_record(record):

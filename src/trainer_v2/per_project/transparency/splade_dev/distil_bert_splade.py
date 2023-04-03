@@ -1,5 +1,4 @@
 import os
-import pickle
 import sys
 import re
 import h5py
@@ -7,13 +6,12 @@ import numpy as np
 from transformers import TFAutoModelForMaskedLM, AutoTokenizer
 
 
-from cache import save_to_pickle, load_from_pickle
-from cpath import get_bert_config_path, data_path
+from cache import load_from_pickle
+from cpath import data_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config, ModelConfig300_3, BertClassifier
-from trainer_v2.custom_loop.per_task.trainer import Trainer
+from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
 from trainer_v2.custom_loop.run_config2 import get_run_config2_nli, RunConfig2
 from trainer_v2.train_util.arg_flags import flags_parser
 import tensorflow as tf

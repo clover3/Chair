@@ -7,10 +7,6 @@ from misc_lib import path_join, TimeEstimator
 from trec.types import QRelsDict
 
 
-# TODO
-#   Sample k queries k=1K (from 60K)
-#   Load top-k passages k=100
-
 
 def sample_query_doc(
         top1000_iter: Iterable, qrels_dict: QRelsDict,

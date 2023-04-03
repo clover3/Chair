@@ -53,7 +53,7 @@ def build_save(run_name, tag_type, metric_to_opt):
     predictions = convert_to_binary(rlg, max_t)
     save_path = get_binary_save_path_w_opt(run_name, tag_type, metric_to_opt)
     save_sent_token_binary_predictions(predictions, save_path)
-
+    return max_t
 
 def show_true_rate():
     labels: List[SentTokenLabel] = load_sbl_binary_label("mismatch", "val")
@@ -73,18 +73,19 @@ def main():
     run_list = ["random", "nlits87", "psearch", "coattention", "word2vec_em",
                 "lime",
                 "deletion", "exact_match", "word_seg"]
-    run_list = ["deletion"]
+    run_list = ["senli"]
     # tag = "conflict"
     tag_list = ["mismatch", "conflict"]
     # metric_to_opt = 'f1'
     metric_list = ["accuracy", "f1"]
 
     for run_name in run_list:
-        print(run_name)
         for tag in tag_list:
             for metric in metric_list:
+                print(run_name, tag, metric)
                 try:
-                    build_save(run_name, tag, metric)
+                    t = build_save(run_name, tag, metric)
+                    print("{0}/{1}/{2}:{3:.2f}".format(run_name, tag, metric, t))
                 except FileNotFoundError as e:
                     print(e)
 

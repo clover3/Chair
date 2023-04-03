@@ -1,5 +1,5 @@
 import re
-from typing import NamedTuple
+from typing import NamedTuple, List
 
 import numpy as np
 import tensorflow as tf
@@ -228,6 +228,56 @@ def load_pooler(pooler: tf.keras.layers.Dense, ckpt_path):
 
     assert len(loaded_weights) == 2
     keras.backend.batch_set_value(weight_value_tuples)
+
+
+# cls/predictions/transform/dense/kernel
+# cls/predictions/transform/dense/bias
+# cls/predictions/transform/LayerNorm/gamma
+# cls/predictions/transform/LayerNorm/beta
+# cls/predictions/output_bias
+
+
+def load_params(weights_list: List[List],
+                ckpt_path: str, name_mapping, n_expected_restore: int):
+    ckpt_reader = tf.train.load_checkpoint(ckpt_path)
+    stock_weights = set(ckpt_reader.get_variable_to_dtype_map().keys())
+    loaded_weights = set()
+    skip_count = 0
+    weight_value_tuples = []
+    skipped_weight_value_tuples = []
+    for weights in weights_list:
+        param_values = keras.backend.batch_get_value(weights)
+
+        for param_value, param in zip(param_values, weights):
+            c_log.debug(param.name)
+            stock_name = name_mapping(param.name)
+            if ckpt_reader.has_tensor(stock_name):
+                ckpt_value = ckpt_reader.get_tensor(stock_name)
+                if param_value.shape != ckpt_value.shape:
+                    c_log.warn("loader: Skipping weight:[{}] as the weight shape:[{}] is not compatible "
+                               "with the checkpoint:[{}] shape:{}".format(param.name, param.shape,
+                                                                          stock_name, ckpt_value.shape))
+                    skipped_weight_value_tuples.append((param, ckpt_value))
+                    continue
+
+                weight_value_tuples.append((param, ckpt_value))
+                loaded_weights.add(stock_name)
+            else:
+                c_log.warn("loader: No value for:[{}], i.e.:[{}] in:[{}]".format(param.name, stock_name, ckpt_path))
+                skip_count += 1
+    keras.backend.batch_set_value(weight_value_tuples)
+    if n_expected_restore is None or n_expected_restore == len(weight_value_tuples):
+        pass
+    else:
+        c_log.warn("Done loading {} weights from {}. "
+                   "Count of weights not found in the checkpoint was: [{}]. "
+                   "Count of weights with mismatched shape: [{}]".format(
+            len(weight_value_tuples), ckpt_path, skip_count, len(skipped_weight_value_tuples)))
+
+        c_log.warn("Unused weights from checkpoint:",
+                   "\n\t" + "\n\t".join(sorted(stock_weights.difference(loaded_weights))))
+        raise ValueError("Checkpoint load exception")
+    return skipped_weight_value_tuples
 
 
 def load_bert_config(bert_config_file):

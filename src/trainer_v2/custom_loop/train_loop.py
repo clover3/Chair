@@ -118,7 +118,7 @@ def tf_run_train(run_config: RunConfig2,
             c_log.debug("Execute {} steps".format(steps_to_execute))
             train_loss = distributed_train_step(train_itr, steps_to_execute)
             step_idx += steps_to_execute
-            c_log.debug("step_idx={} optimizer_iter={}".format(step_idx, model.optimizer.iterations))
+            c_log.debug("step_idx={}".format(step_idx))
             per_step_msg = "step {0}".format(step_idx)
 
             trainer.train_callback()
