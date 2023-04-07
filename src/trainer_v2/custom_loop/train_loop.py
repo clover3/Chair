@@ -11,7 +11,7 @@ from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result, get_strategy_from_config, eval_tensor, \
     summarize_metric
-from trainer_v2.custom_loop.trainer_if import TrainerIF
+from trainer_v2.custom_loop.trainer_if import TrainerIF, TrainerIFBase
 
 
 @tf.function
@@ -40,7 +40,7 @@ class ModelSaver:
 
 
 def tf_run_train(run_config: RunConfig2,
-                 trainer: TrainerIF,
+                 trainer: TrainerIFBase,
                  dataset_factory: Callable[[str, bool], tf.data.Dataset]
                  ):
     c_log.debug("tf_run_train ENTRY")

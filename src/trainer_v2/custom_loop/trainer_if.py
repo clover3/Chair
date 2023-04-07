@@ -4,7 +4,7 @@ from typing import Dict
 import tensorflow as tf
 
 
-class TrainerIF(ABC):
+class TrainerIFBase(ABC):
     @abstractmethod
     def build_model(self):
         pass
@@ -19,10 +19,6 @@ class TrainerIF(ABC):
 
     @abstractmethod
     def train_step(self, item):
-        pass
-
-    @abstractmethod
-    def loss_fn(self, labels, predictions):
         pass
 
     @abstractmethod
@@ -45,6 +41,11 @@ class TrainerIF(ABC):
     def get_eval_object(self, batches, strategy):
         pass
 
+
+class TrainerIF(TrainerIFBase):
+    @abstractmethod
+    def loss_fn(self, labels, predictions):
+        pass
 
 
 class EvalObjectIF:

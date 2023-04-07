@@ -20,7 +20,8 @@ def main():
     encode_fn = get_multi_text_encode_fn(max_seq_length, n_text=2)
     n_item = 1000 * 1000
     write_records_w_encode_fn(save_path, encode_fn, itr, n_item)
-    #
+
+
 
 if __name__ == "__main__":
     main()

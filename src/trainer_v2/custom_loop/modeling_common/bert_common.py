@@ -173,7 +173,7 @@ def _load_stock_weights(bert, ckpt_path, map_to_stock_fn, n_expected_restore):
                    "Count of weights with mismatched shape: [{}]".format(
             len(weight_value_tuples), ckpt_path, bert, prefix, skip_count, len(skipped_weight_value_tuples)))
 
-        c_log.warn("Unused weights from checkpoint:",
+        c_log.warn("Unused weights from checkpoint: %s",
                    "\n\t" + "\n\t".join(sorted(stock_weights.difference(loaded_weights))))
         raise ValueError("Checkpoint load exception")
     return skipped_weight_value_tuples

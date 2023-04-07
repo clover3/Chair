@@ -12,6 +12,7 @@ from models.classic.stopword import load_stopwords
 InvIndex = Dict[str, List[Tuple[str, int]]]
 IntInvIndex = Dict[str, List[Tuple[int, int]]]
 
+
 def identity(item):
     return item
 

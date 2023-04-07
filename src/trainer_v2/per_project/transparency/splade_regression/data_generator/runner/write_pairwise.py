@@ -30,7 +30,5 @@ def main():
     write_records_w_encode_fn(save_path, encode_fn, itr, n_item)
 
 
-
-
 if __name__ == "__main__":
     main()
