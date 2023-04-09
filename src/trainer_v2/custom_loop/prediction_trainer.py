@@ -23,6 +23,9 @@ class ModelV2IF(ABC):
     def init_checkpoint(self, model_path):
         pass
 
+    def get_train_metrics(self):
+        return {}
+
 
 class TrainerCommon(TrainerIFBase):
     def __init__(self, run_config: RunConfig2,
@@ -48,7 +51,7 @@ class TrainerCommon(TrainerIFBase):
             self.model = self.inner_model.get_keras_model()
 
             self.model.summary(140)
-            self.train_metrics = {}
+            self.train_metrics = self.inner_model.get_train_metrics()
             self.optimizer = self.get_optimizer()
             self.model.optimizer = self.optimizer
         else:

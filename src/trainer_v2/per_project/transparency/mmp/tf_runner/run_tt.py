@@ -1,4 +1,7 @@
 import logging
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 import sys
 from trainer_v2.chair_logging import c_log, IgnoreFilter, IgnoreFilterRE
 import tensorflow as tf

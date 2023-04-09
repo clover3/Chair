@@ -106,13 +106,11 @@ def main():
                 two_digit_float(score),
                 " ".join(per_term_info))
 
-            # print(summary)
+            print(summary)
             if pid == pos_doc_id:
                 break
 
         print("Not found:", not_found_counter)
-
-
 
 
 if __name__ == "__main__":

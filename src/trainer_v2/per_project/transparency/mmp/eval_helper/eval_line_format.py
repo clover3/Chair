@@ -3,7 +3,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 from pytrec_eval import RelevanceEvaluator
 
 from cpath import output_path, at_output_dir
-from dataset_specific.msmarco.passage.build_ranked_list import build_ranked_list_from_qid_pid_scores
+from dataset_specific.msmarco.passage.runner.build_ranked_list import build_ranked_list_from_qid_pid_scores
 from misc_lib import path_join, average, TELI
 
 from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, load_msmarco_sub_samples
@@ -33,19 +33,66 @@ def eval_dev100_for_tune(dataset, run_name):
     return average(scores)
 
 
+def eval_dev100_mrr(dataset, run_name):
+    metric = "recip_rank"
+    scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
+    qid_pid_path = path_join("data", "msmarco", dataset, "corpus.tsv")
+    judgment_path = path_join("data", "msmarco", "qrels.dev.tsv")
+    ranked_list_path = path_join(output_path, "ranked_list", f"{run_name}_{dataset}.txt")
+    c_log.debug("build_ranked_list_from_qid_pid_scores")
+    build_ranked_list_from_qid_pid_scores(qid_pid_path, run_name, ranked_list_path, scores_path)
+    ranked_list: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranked_list_path)
+    doc_scores = convert_ranked_list(ranked_list)
+    c_log.debug("load_qrels_structured")
+    qrels = load_qrels_structured(judgment_path)
+    evaluator = RelevanceEvaluator(qrels, {metric})
+    score_per_query = evaluator.evaluate(doc_scores)
+    scores = [score_per_query[qid][metric] for qid in score_per_query]
+    return average(scores)
+
+
 def predict_and_save_scores(score_fn: Callable[[str, str], float],
                             dataset: str,
                             run_name: str,
                             data_size=0,
                             ):
     itr = iter(load_msmarco_sub_samples(dataset))
-    scores_path = path_join(output_path, "lines_scores", "tune", f"{run_name}_{dataset}.txt")
+    scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
     f = open(scores_path, "w")
     if data_size:
         itr = TELI(itr, data_size)
     for q, d in itr:
         score = score_fn(q, d)
         f.write("{}\n".format(score))
+
+
+def apply_batch(l: Iterable, batch_size: int) -> Iterable[List]:
+    cur_batch = []
+    for item in l:
+        cur_batch.append(item)
+        if len(cur_batch) >= batch_size:
+            yield cur_batch
+            cur_batch = []
+    yield cur_batch
+
+
+def predict_and_batch_save_scores(
+        score_fn: Callable[[List[Tuple[str, str]]], List[float]],
+                            dataset: str,
+                            run_name: str,
+                            data_size=0,
+                            ):
+    itr = iter(load_msmarco_sub_samples(dataset))
+    max_batch_size = 1024
+    scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
+    f = open(scores_path, "w")
+    if data_size:
+        itr = TELI(itr, data_size)
+
+    for batch in apply_batch(itr, max_batch_size):
+        scores = score_fn(batch)
+        for x, s in zip(batch, scores):
+            f.write("{}\n".format(s))
 
 
 def main():
