@@ -3,9 +3,6 @@ import sys
 import tensorflow as tf
 
 from misc_lib import path_join
-from trainer_v2.custom_loop.per_task.splade_regression.regression_loader import VectorRegressionLoader
-
-from trainer_v2.custom_loop.per_task.splade_regression.regression_modeling import get_regression_model
 from trainer_v2.train_util.arg_flags import flags_parser
 
 from taskman_client.wrapper3 import report_run3

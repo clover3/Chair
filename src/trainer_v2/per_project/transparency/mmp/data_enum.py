@@ -4,6 +4,8 @@ from dataset_specific.msmarco.passage.grouped_reader import get_train_query_grou
 from dataset_specific.msmarco.passage.passage_resource_loader import load_qrel
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
+from trainer_v2.chair_logging import c_log
+
 
 def enum_pos_neg_sample(group_range: Iterable):
     qrel = load_qrel("train")
@@ -26,7 +28,9 @@ def enum_pos_neg_sample(group_range: Iterable):
 
     for group_no in group_range:
         try:
+            c_log.info("Loading from group %s", group_no)
             d = get_train_query_grouped_dict_10K(group_no)
+            c_log.info("Done")
             for query_id, entries in d.items():
                 try:
                     pos_docs, neg_docs = split_pos_neg_entries(query_id, entries)

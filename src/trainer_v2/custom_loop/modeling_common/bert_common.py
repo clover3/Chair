@@ -56,6 +56,27 @@ class BertClassifier:
         self.pooler = pooler
 
 
+class BertClassifier2:
+    def __init__(self, bert_params, config: ModelConfig300_3):
+        l_bert = BertModelLayer.from_params(bert_params, name="bert")
+        max_seq_len = config.max_seq_length
+        num_classes = config.num_classes
+
+        l_input_ids = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="input_ids")
+        l_token_type_ids = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="segment_ids")
+        seq_out = l_bert([l_input_ids, l_token_type_ids])  # [batch_size, max_seq_len, hidden_size]
+        self.seq_out = seq_out
+        first_token = seq_out[:, 0, :]
+        pooler = tf.keras.layers.Dense(bert_params.hidden_size, activation=tf.nn.tanh, name="bert/pooler/dense")
+        pooled = pooler(first_token)
+        output = tf.keras.layers.Dense(num_classes, activation=tf.nn.softmax)(pooled)
+        model = keras.Model(inputs=(l_input_ids, l_token_type_ids), outputs=output, name="bert_model")
+        self.model: keras.Model = model
+        self.bert_cls = BERT_CLS(l_bert, pooler)
+        self.l_bert = l_bert
+        self.pooler = pooler
+
+
 class ModelSanity:
     def __init__(self):
         self.vector = np.array(load_from_pickle("layer11_output_dense_kernel"))

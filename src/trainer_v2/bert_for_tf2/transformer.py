@@ -246,3 +246,66 @@ class TransformerEncoderLayer(Layer):
         return final_output
 
 
+
+class TransformerEncoderLayer2(Layer):
+    """
+    Multi-headed, multi-layer Transformer from 'Attention is All You Need' (arXiv: 1706.03762).
+
+    Implemented for BERT, with support for ALBERT (sharing encoder layer params).
+
+    See also: https://github.com/tensorflow/tensor2tensor/blob/master/tensor2tensor/models/transformer.py
+    """
+
+    class Params(SingleTransformerEncoderLayer.Params):
+        num_layers     = None
+        out_layer_ndxs = None   # [-1]
+
+        shared_layer   = False  # False for BERT, True for ALBERT
+
+    def _construct(self, **kwargs):
+        super()._construct(**kwargs)
+        self.encoder_layers   = []
+        self.shared_layer     = None  # for ALBERT
+        self.supports_masking = True
+
+    def build(self, input_shape):
+        self.input_spec = keras.layers.InputSpec(shape=input_shape)
+
+        # create all transformer encoder sub-layers
+        if self.params.shared_layer:
+            # ALBERT: share params
+            self.shared_layer = SingleTransformerEncoderLayer.from_params(self.params, name="layer_shared")
+        else:
+            # BERT
+            for layer_ndx in range(self.params.num_layers):
+                encoder_layer = SingleTransformerEncoderLayer.from_params(
+                    self.params,
+                    name="layer_{}".format(layer_ndx),
+                )
+                self.encoder_layers.append(encoder_layer)
+
+        super(TransformerEncoderLayer2, self).build(input_shape)
+
+    def call(self, inputs, mask=None, training=None):
+        layer_output = inputs
+
+        layer_outputs = []
+        attention_probs_list = []
+        for layer_ndx in range(self.params.num_layers):
+            encoder_layer = self.encoder_layers[layer_ndx] if self.encoder_layers else self.shared_layer
+            layer_input = layer_output
+            layer_output = encoder_layer(layer_input, mask=mask, training=training)
+            layer_outputs.append(layer_output)
+
+        if self.params.out_layer_ndxs is None:
+            # return the final layer only
+            final_output = layer_output
+        else:
+            final_output = []
+            for ndx in self.params.out_layer_ndxs:
+                final_output.append(layer_outputs[ndx])
+            final_output = tuple(final_output)
+
+        return final_output
+
+
