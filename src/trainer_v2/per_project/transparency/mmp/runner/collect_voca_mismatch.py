@@ -4,22 +4,22 @@ from adhoc.bm25_class import BM25
 from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from cpath import output_path
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, load_qrel
+from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, load_qrel, enum_all_when_corpus
 from misc_lib import path_join, get_second, two_digit_float, pause_hook
 from trainer_v2.chair_logging import c_log
 
 
-def get_data_iter():
+def grouped_0_iter():
     source_corpus_path = path_join("data", "msmarco", "passage", "grouped_10K", "0")
     return tsv_iter(source_corpus_path)
 
 
-def main():
+
+def collect_show_voca_mismatch(itr):
     c_log.info("Loading term stats")
     cdf, df = load_msmarco_passage_term_stat()
     bm25 = BM25(df, cdf, 25)
 
-    itr = get_data_iter()
     per_query_dict = defaultdict(list)
     n_record = 0
     try:
@@ -111,6 +111,12 @@ def main():
                 break
 
         print("Not found:", not_found_counter)
+
+
+def main():
+    # itr = grouped_0_iter()
+    itr = enum_all_when_corpus()
+    collect_show_voca_mismatch(itr)
 
 
 if __name__ == "__main__":

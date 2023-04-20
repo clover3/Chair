@@ -37,7 +37,29 @@ def eval_dev100_mrr(dataset, run_name):
     metric = "recip_rank"
     scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
     qid_pid_path = path_join("data", "msmarco", dataset, "corpus.tsv")
+    return eval_from_score_lines_dev(dataset, metric, qid_pid_path, run_name, scores_path)
+
+
+def eval_train_when_0(run_name):
+    dataset = "train_when_0"
+    metric = "recip_rank"
+    scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
+    qid_pid_path = path_join(output_path, "msmarco", "passage", "when_full", "0")
+    return eval_from_score_lines_train(dataset, metric, qid_pid_path, run_name, scores_path)
+
+
+
+def eval_from_score_lines_dev(dataset, metric, qid_pid_path, run_name, scores_path):
     judgment_path = path_join("data", "msmarco", "qrels.dev.tsv")
+    return eval_from_score_lines_inner(dataset, metric, qid_pid_path, judgment_path, run_name, scores_path)
+
+
+def eval_from_score_lines_train(dataset, metric, qid_pid_path, run_name, scores_path):
+    judgment_path = path_join("data", "msmarco", "qrels.train.tsv")
+    return eval_from_score_lines_inner(dataset, metric, qid_pid_path, judgment_path, run_name, scores_path)
+
+
+def eval_from_score_lines_inner(dataset, metric, qid_pid_path, judgment_path, run_name, scores_path):
     ranked_list_path = path_join(output_path, "ranked_list", f"{run_name}_{dataset}.txt")
     c_log.debug("build_ranked_list_from_qid_pid_scores")
     build_ranked_list_from_qid_pid_scores(qid_pid_path, run_name, ranked_list_path, scores_path)
@@ -47,6 +69,7 @@ def eval_dev100_mrr(dataset, run_name):
     qrels = load_qrels_structured(judgment_path)
     evaluator = RelevanceEvaluator(qrels, {metric})
     score_per_query = evaluator.evaluate(doc_scores)
+    c_log.debug("Computed scores for %d queries", len(score_per_query))
     scores = [score_per_query[qid][metric] for qid in score_per_query]
     return average(scores)
 
@@ -57,6 +80,10 @@ def predict_and_save_scores(score_fn: Callable[[str, str], float],
                             data_size=0,
                             ):
     itr = iter(load_msmarco_sub_samples(dataset))
+    predict_and_save_scores_w_itr(score_fn, dataset, run_name, itr, data_size)
+
+
+def predict_and_save_scores_w_itr(score_fn, dataset, run_name, itr, data_size):
     scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
     f = open(scores_path, "w")
     if data_size:

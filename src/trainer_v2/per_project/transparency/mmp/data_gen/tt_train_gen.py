@@ -1,13 +1,12 @@
 import math
 from collections import Counter, OrderedDict
-from typing import Dict
 
 from transformers import AutoTokenizer
 from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
 from tlm.data_gen.bert_data_gen import create_int_feature, create_float_feature
 from trainer_v2.per_project.transparency.transformers_utils import pad_truncate
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import Tuple
 
 
 def get_convert_to_bow():
@@ -107,4 +106,5 @@ def get_encode_fn_for_word_encoder_qtw():
         return feature
 
     return encode_fn
+
 
