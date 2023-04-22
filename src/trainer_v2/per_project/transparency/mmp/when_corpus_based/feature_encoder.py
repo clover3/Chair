@@ -18,8 +18,10 @@ class BM25TFeatureEncoder:
         t_terms = self.tokenizer.tokenize_stem(text)
         q_tf = Counter(q_terms)
         t_tf = Counter(t_terms)
-        dl = sum(t_tf.values())
+        return self.get_tt_weight_feature_from_tfs(q_tf, t_tf)
 
+    def get_tt_weight_feature_from_tfs(self, q_tf, t_tf):
+        dl = sum(t_tf.values())
         score = 0
         d = {}
         for q_term, q_cnt in q_tf.items():
@@ -41,7 +43,6 @@ class BM25TFeatureEncoder:
                                  my_k2=self.bm25_bare.k2
                                  )
                 score += t
-
         feature_ids: List[str] = list(d.keys())
         feature_values: List[float] = list(d.values())
         return score, feature_ids, feature_values

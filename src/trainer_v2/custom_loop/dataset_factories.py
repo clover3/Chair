@@ -169,6 +169,38 @@ def get_two_seg_data(file_path,
                                  is_for_training)
 
 
+def get_pairwise_dataset(
+        file_path,
+        run_config: RunConfig2,
+        model_config: ModelConfigType,
+        is_for_training,
+    ) -> tf.data.Dataset:
+
+    def decode_record(record):
+        name_to_features = {
+        }
+        for i in range(2):
+            def fixed_len_feature():
+                return tf.io.FixedLenFeature([model_config.max_seq_length], tf.int64)
+            name_to_features[f'input_ids{i+1}'] = fixed_len_feature()
+            name_to_features[f'token_type_ids{i+1}'] = fixed_len_feature()
+
+        record = tf.io.parse_single_example(record, name_to_features)
+        return reform_example(record)
+
+    def reform_example(record):
+        for k, v in record.items():
+            if v.dtype == tf.int64:
+                record[k] = tf.cast(v, tf.int32)
+        x = record['input_ids1'], record['token_type_ids1'], record['input_ids2'], record['token_type_ids2']
+        return x, tf.constant(1)
+
+    return create_dataset_common(decode_record,
+                                 run_config,
+                                 file_path,
+                                 is_for_training)
+
+
 def build_dataset_repeat_segs(input_files, run_config, model_config, is_for_training):
     dataset = get_classification_dataset(input_files, run_config, model_config, is_for_training)
 

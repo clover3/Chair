@@ -31,9 +31,10 @@ def main():
         j = json.loads(line)
         logits = j['logits']
         aligns = j['aligns']
-        for index, token_id, score in aligns:
-            non_zero_tf[token_id] += 1
-            term_score_sum[token_id] += score
+        if logits[0] > 0.5:
+            for index, token_id, score in aligns:
+                non_zero_tf[token_id] += 1
+                term_score_sum[token_id] += score
 
     entries = []
     for t in non_zero_tf:

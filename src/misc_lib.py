@@ -933,3 +933,15 @@ def select_third_fourth(itr: Iterable[Tuple[str, str, str, str]])\
         -> Iterable[Tuple[str, str]]:
     for _first, _second, third, fourth in itr:
         yield third, fourth
+
+
+def batch_iter_from_entry_iter(entry_iter: Iterable, batch_size: int):
+    batch = []
+    for entry in entry_iter:
+        batch.append(entry),
+        if len(batch) == batch_size:
+            yield batch
+            batch = []
+
+    if batch:
+        yield batch

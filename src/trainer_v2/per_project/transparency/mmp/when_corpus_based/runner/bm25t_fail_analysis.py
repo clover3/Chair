@@ -10,7 +10,7 @@ from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, l
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import build_table, get_bm25t_when
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import predict_and_save_scores, \
-    predict_and_save_scores_w_itr, eval_train_when_0
+    predict_and_save_scores_w_itr, eval_on_train_when_0
 from cpath import output_path
 from misc_lib import path_join, select_third_fourth
 from trec.qrel_parse import load_qrels_structured

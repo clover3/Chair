@@ -341,7 +341,9 @@ class TranslationTable3:
         get_doc_score = ScoringLayer2(bert_params.hidden_size)
         s1, ex_tf1  = get_doc_score([q_rep, d1_rep, bow_reps['q'], bow_reps['d1']])
         s2, ex_tf2  = get_doc_score([q_rep, d2_rep, bow_reps['q'], bow_reps['d2']])
-        loss_cont = tf.maximum(1 - (s1 - s2), 0)
+
+        margin = 1
+        loss_cont = tf.maximum(margin - (s1 - s2), 0)
         loss_tf1 = get_tf_loss(ex_tf1)
         loss_tf2 = get_tf_loss(ex_tf2)
         verbosity_loss = loss_tf1 + loss_tf2

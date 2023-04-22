@@ -1,5 +1,4 @@
 import logging
-import sys
 
 from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, load_msmarco_sub_samples
 from taskman_client.task_proxy import get_task_manager_proxy
@@ -13,14 +12,16 @@ from misc_lib import path_join, select_third_fourth
 
 def main():
     c_log.setLevel(logging.DEBUG)
-    run_name = sys.argv[1]
-    param_path = sys.argv[2]
+    param_path = path_join(
+        output_path, "msmarco", "passage", "when_trained")
     bm25t = get_bm25t_when_trained(param_path)
+    run_name = "bm25t_when_trained"
     dataset = "train_when_0"
     n_item = 230958
     itr = load_msmarco_sub_samples(dataset)
     predict_and_save_scores_w_itr(bm25t.score, dataset, run_name, itr, n_item)
     score = eval_on_train_when_0(run_name)
+
     c_log.info("Mapping was used {} times".format(bm25t.n_mapping_used))
     print(f"MRR:\t{score}")
     proxy = get_task_manager_proxy()

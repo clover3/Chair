@@ -5,7 +5,7 @@ import numpy as np
 
 b = 1.5 # set the value of b
 k1 = 0.1
-x = np.linspace(0, 10, 1000) # generate 1000 points between 0 and 10
+x = np.linspace(0, 5, 100) # generate 1000 points between 0 and 10
 
 y = (x+k1*x)/(x+k1 * (1-b + b * 1)) # calculate the corresponding values of y
 

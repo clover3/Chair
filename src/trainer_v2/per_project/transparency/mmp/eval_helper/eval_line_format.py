@@ -40,7 +40,7 @@ def eval_dev100_mrr(dataset, run_name):
     return eval_from_score_lines_dev(dataset, metric, qid_pid_path, run_name, scores_path)
 
 
-def eval_train_when_0(run_name):
+def eval_on_train_when_0(run_name):
     dataset = "train_when_0"
     metric = "recip_rank"
     scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")

@@ -72,8 +72,8 @@ class TrainConfig(SubConfig):
         return TrainConfig(0, 0, 2e-5, -1)
 
     def print_info(self):
-        if self.init_checkpoint is None:
-            c_log.warning("No checkpoint specified!")
+        pass
+
 
 
 class EvalConfig(SubConfig):

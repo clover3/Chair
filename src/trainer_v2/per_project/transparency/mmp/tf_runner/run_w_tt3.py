@@ -55,7 +55,6 @@ class TranslationTableWBert(ModelV2IF):
     def get_train_metrics(self):
         return self.metrics
 
-
 class Trainer(TrainerIFBase):
     def __init__(self, run_config: RunConfig2,
                  inner_model: TranslationTableWBert):
@@ -97,13 +96,14 @@ class Trainer(TrainerIFBase):
     def get_keras_model(self):
         return self.model
 
+    @tf.function
     def train_step(self, item):
         model = self.get_keras_model()
         with tf.GradientTape() as tape:
             predictions, losses, verbosity_loss = model(item, training=True)
             loss = tf.reduce_mean(losses)
-            # self.train_metrics['verbosity_loss'].update_state(verbosity_loss)
-            # self.train_metrics['acc_loss'].update_state(losses - verbosity_loss)
+            self.train_metrics['verbosity_loss'].update_state(verbosity_loss)
+            self.train_metrics['acc_loss'].update_state(losses - verbosity_loss)
 
         gradients = tape.gradient(loss, model.trainable_variables)
         apply_gradient_warning_less(self.optimizer, gradients, model.trainable_variables)

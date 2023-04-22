@@ -7,6 +7,8 @@ from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import
 
 
 def main():
+    global_align_path = path_join(
+        output_path, "msmarco", "passage", "when_global_align_filter")
 
     f = open(global_align_path, "w")
     itr = load_align_weights()

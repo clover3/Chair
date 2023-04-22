@@ -3,7 +3,7 @@ import sys
 from cpath import output_path
 from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sub_samples
 from misc_lib import path_join
-from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import eval_train_when_0, \
+from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import eval_on_train_when_0, \
     predict_and_save_scores_w_itr
 from trainer_v2.per_project.transparency.mmp.when_corpus_based.feature_encoder import BM25TFeatureEncoder
 from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import get_mmp_bm25, get_candidate_voca
@@ -50,7 +50,7 @@ def main():
     n_item = 230958
     itr = load_msmarco_sub_samples(dataset)
     predict_and_save_scores_w_itr(scorer.score, dataset, run_name, itr, n_item)
-    score = eval_train_when_0(run_name)
+    score = eval_on_train_when_0(run_name)
     print(f"MRR:\t{score}")
 
 

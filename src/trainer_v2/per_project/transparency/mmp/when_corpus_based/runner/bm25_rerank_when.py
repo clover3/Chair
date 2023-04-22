@@ -7,7 +7,7 @@ from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, l
 from misc_lib import write_to_lines, TELI, select_third_fourth
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import eval_dev100_mrr, \
-    predict_and_save_scores_w_itr, eval_train_when_0
+    predict_and_save_scores_w_itr, eval_on_train_when_0
 from cpath import output_path
 from misc_lib import path_join
 
@@ -25,7 +25,7 @@ def main():
     n_item = 230958
     itr = load_msmarco_sub_samples(dataset)
     predict_and_save_scores_w_itr(bm25.score, dataset, run_name, itr, n_item)
-    score = eval_train_when_0(run_name)
+    score = eval_on_train_when_0(run_name)
     print(f"MRR:\t{score}")
 
 
