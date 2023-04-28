@@ -3,7 +3,7 @@ from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
 from trainer_v2.per_project.transparency.mmp.tt_model.net_common import get_tt_scorer, find_layer
 from trainer_v2.per_project.transparency.mmp.tt_model.tt1 import TranslationTableInferenceQTW, \
-    TTInfQTWAsym, ScoringLayer2, ScoringLayerSigmoidCap
+    TTInfQTWAsym, ScoringLayer2, ScoringLayerSigmoidCap, ScoringLayer4
 from trainer_v2.per_project.transparency.mmp.tt_model.model_conf_defs import InputShapeConfigTT100_4
 import tensorflow as tf
 
@@ -95,6 +95,21 @@ def get_tt9_scorer(model_path):
     d_encoder = find_layer(paired_model, "term_vector_1")
     def scoring_layer_factory():
         return ScoringLayerSigmoidCap(bert_params.hidden_size)
+    tt_v_inf = TTInfQTWAsym(bert_params, input_shape, q_encoder, d_encoder, scoring_layer_factory)
+    score_fn = get_tt_scorer(tt_v_inf.model)
+    c_log.info("Defining network")
+    return score_fn
+
+
+def get_tt10_scorer(model_path):
+    input_shape = InputShapeConfigTT100_4()
+    bert_params = load_bert_config(get_bert_config_path())
+    c_log.info("Loading model from %s", model_path)
+    paired_model = tf.keras.models.load_model(model_path)
+    q_encoder = find_layer(paired_model, "term_vector")
+    d_encoder = find_layer(paired_model, "term_vector_1")
+    def scoring_layer_factory():
+        return ScoringLayer4(bert_params.hidden_size)
     tt_v_inf = TTInfQTWAsym(bert_params, input_shape, q_encoder, d_encoder, scoring_layer_factory)
     score_fn = get_tt_scorer(tt_v_inf.model)
     c_log.info("Defining network")

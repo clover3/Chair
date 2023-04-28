@@ -197,6 +197,121 @@ class ScoringLayerSigmoidCap(tf.keras.layers.Layer):
         return s, d_expanded_tf
 
 
+class ScoringLayer4(tf.keras.layers.Layer):
+    def __init__(self, interaction_rep_size, **kwargs):
+        super(ScoringLayer4, self).__init__(**kwargs)
+        self.k1 = 0.1
+        self.b = 1.2
+        self.avdl = 50
+        self.alpha = 0.2
+
+    def call(self, inputs):
+        q_rep, d_rep, q_bow, d_bow = inputs
+        batch_size, num_window, _ = get_shape_list2(q_bow['input_ids'])
+        batch_size, num_window, hidden_size = get_shape_list2(q_rep)
+        if "qtw" in q_bow:
+            qtw = q_bow['qtw']
+        else:
+            qtw = tf.ones([batch_size, num_window])
+
+        def get_null_mask(input_ids):  # [B, MaxTerm]
+            all_zero = tf.reduce_all(input_ids == 0, axis=2)
+            m = tf.cast(tf.logical_not(all_zero), tf.float32)
+            return m
+
+        def check_exact_match(q_input_ids, d_input_ids):
+            q_repeat = tf.tile(tf.expand_dims(q_input_ids, axis=2), [1, 1, num_window, 1])  # [B, M, M, W]
+            d_repeat = tf.tile(tf.expand_dims(d_input_ids, axis=1), [1, num_window, 1, 1])
+            em = tf.reduce_all(tf.equal(q_repeat, d_repeat), axis=3)  # [B, M, M]
+            return tf.cast(em, tf.float32)
+
+        # [B, M]
+        def get_expanded_doc_tf(d_expanded_tf, q_bow, d_bow):
+            em_f = check_exact_match(q_bow['input_ids'], d_bow['input_ids'])  # exact match as float (0.0 or 1.0)
+            tf_print("d_expanded_tf", d_expanded_tf)
+            d_tf = d_expanded_tf + em_f
+            tf_multiplier = tf.tile(tf.expand_dims(d_bow['tfs'], axis=1), [1, num_window, 1])
+            tf_multiplier = tf.cast(tf_multiplier, tf.float32)
+            expanded_term_df = tf.reduce_max(d_tf * tf_multiplier, axis=2)
+            return expanded_term_df
+
+        def bm25_like(qtw, d_tf, dl):
+            denom = d_tf + d_tf * self.k1
+            nom = d_tf + self.k1 * ((1 - self.b) + self.b * dl / self.avdl)
+            dtw = denom / (nom + 1e-8)
+            return tf.reduce_sum(qtw * dtw, axis=1)
+
+        m_q = get_null_mask(q_bow['input_ids'])
+        m_d = get_null_mask(d_bow['input_ids'])
+        mask = tf.expand_dims(m_q, axis=2) * tf.expand_dims(m_d, axis=1)
+
+        d_t = tf.transpose(d_rep, [0, 2, 1])
+        qd_term_dot_output = tf.matmul(q_rep, d_t)  # [B, M, M]
+        d_expanded_tf = tf.nn.sigmoid(qd_term_dot_output) * self.alpha
+        d_expanded_tf = mask * d_expanded_tf
+        d_tf = get_expanded_doc_tf(d_expanded_tf, q_bow, d_bow)  # [B, M]
+        dl = tf.cast(tf.reduce_sum(d_bow['tfs'], axis=1, keepdims=True), tf.float32)
+        s = bm25_like(qtw, d_tf, dl)
+        return s, d_expanded_tf
+
+
+class ScoringLayer5(tf.keras.layers.Layer):
+    def __init__(self, interaction_rep_size, **kwargs):
+        super(ScoringLayer5, self).__init__(**kwargs)
+        self.k1 = 0.1
+        self.b = 1.2
+        self.avdl = 50
+        self.alpha = 0.2
+
+    def call(self, inputs):
+        q_rep, d_rep, q_bow, d_bow = inputs
+        batch_size, num_window, _ = get_shape_list2(q_bow['input_ids'])
+        batch_size, num_window, hidden_size = get_shape_list2(q_rep)
+        if "qtw" in q_bow:
+            qtw = q_bow['qtw']
+        else:
+            qtw = tf.ones([batch_size, num_window])
+
+        def get_null_mask(input_ids):  # [B, MaxTerm]
+            all_zero = tf.reduce_all(input_ids == 0, axis=2)
+            m = tf.cast(tf.logical_not(all_zero), tf.float32)
+            return m
+
+        def check_exact_match(q_input_ids, d_input_ids):
+            q_repeat = tf.tile(tf.expand_dims(q_input_ids, axis=2), [1, 1, num_window, 1])  # [B, M, M, W]
+            d_repeat = tf.tile(tf.expand_dims(d_input_ids, axis=1), [1, num_window, 1, 1])
+            em = tf.reduce_all(tf.equal(q_repeat, d_repeat), axis=3)  # [B, M, M]
+            return tf.cast(em, tf.float32)
+
+        # [B, M]
+        def get_expanded_doc_tf(d_expanded_tf, q_bow, d_bow):
+            em_f = check_exact_match(q_bow['input_ids'], d_bow['input_ids'])  # exact match as float (0.0 or 1.0)
+            tf_print("d_expanded_tf", d_expanded_tf)
+            d_tf = d_expanded_tf + em_f
+            tf_multiplier = tf.tile(tf.expand_dims(d_bow['tfs'], axis=1), [1, num_window, 1])
+            tf_multiplier = tf.cast(tf_multiplier, tf.float32)
+            expanded_term_df = tf.reduce_max(d_tf * tf_multiplier, axis=2)
+            return expanded_term_df
+
+        def bm25_like(qtw, d_tf, dl):
+            denom = d_tf + d_tf * self.k1
+            nom = d_tf + self.k1 * ((1 - self.b) + self.b * dl / self.avdl)
+            dtw = denom / (nom + 1e-8)
+            return tf.reduce_sum(qtw * dtw, axis=1)
+
+        m_q = get_null_mask(q_bow['input_ids'])
+        m_d = get_null_mask(d_bow['input_ids'])
+        mask = tf.expand_dims(m_q, axis=2) * tf.expand_dims(m_d, axis=1)
+
+        d_t = tf.transpose(d_rep, [0, 2, 1])
+        qd_term_dot_output = tf.matmul(q_rep, d_t)  # [B, M, M]
+        d_expanded_tf = tf.nn.gelu(qd_term_dot_output) * self.alpha
+        d_expanded_tf = mask * d_expanded_tf
+        d_tf = get_expanded_doc_tf(d_expanded_tf, q_bow, d_bow)  # [B, M]
+        dl = tf.cast(tf.reduce_sum(d_bow['tfs'], axis=1, keepdims=True), tf.float32)
+        s = bm25_like(qtw, d_tf, dl)
+        return s, d_expanded_tf
+
 
 def contrastive_loss(pos_score, neg_score):
     t = tf.stack([pos_score, neg_score], axis=1)

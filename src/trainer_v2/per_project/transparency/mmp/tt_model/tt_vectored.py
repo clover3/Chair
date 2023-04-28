@@ -30,9 +30,12 @@ def load_word_embedding(
 
 class TTVectorBasedTrainNetwork:
     def __init__(
-            self, bert_params,
+            self,
+            bert_params,
             config: InputShapeConfigTT,
             loss_fn,
+            scoring_layer_factory,
+            alpha=0.1
     ):
         q_term_encoder = TermVector(bert_params, "query")
         d_term_encoder = TermVector(bert_params, "doc")
@@ -47,7 +50,7 @@ class TTVectorBasedTrainNetwork:
         q_rep = q_term_encoder(bow_reps['q']['input_ids'])
         d1_rep = d_term_encoder(bow_reps['d1']['input_ids'])
         d2_rep = d_term_encoder(bow_reps['d2']['input_ids'])
-        get_doc_score = ScoringLayer2(bert_params.hidden_size)
+        get_doc_score = scoring_layer_factory()
         s1, ex_tf1 = get_doc_score([q_rep, d1_rep, bow_reps['q'], bow_reps['d1']])
         s2, ex_tf2 = get_doc_score([q_rep, d2_rep, bow_reps['q'], bow_reps['d2']])
         pairwise_loss = loss_fn(s1, s2)
@@ -55,9 +58,7 @@ class TTVectorBasedTrainNetwork:
         loss_tf1 = get_tf_loss(ex_tf1)
         loss_tf2 = get_tf_loss(ex_tf2)
         verbosity_loss = tf.maximum(loss_tf1 + loss_tf2, 1)
-        tf.summary.scalar('verbosity_loss', tf.reduce_mean(verbosity_loss))
         self.pairwise_loss = pairwise_loss
-        alpha = 0.1
         loss = pairwise_loss + alpha * verbosity_loss
         output_d = {
             's1': s1,
@@ -82,15 +83,15 @@ class TTVectorBasedTrainNetwork:
         load_word_embedding(self.q_term_encoder.embeddings_layer, ckpt)
 
 
-class TTVectorBasedTrainNetwork:
+class TTVectorBasedTrainNetworkTrainable:
     def __init__(
             self, bert_params,
             config: InputShapeConfigTT,
             loss_fn,
             scoring_layer_factory,
     ):
-        q_term_encoder = TermVector(bert_params, "query")
-        d_term_encoder = TermVector(bert_params, "doc")
+        q_term_encoder = TermVector(bert_params, "query", True)
+        d_term_encoder = TermVector(bert_params, "doc", True)
         self.q_term_encoder = q_term_encoder
         self.d_term_encoder = d_term_encoder
 
@@ -110,7 +111,6 @@ class TTVectorBasedTrainNetwork:
         loss_tf1 = get_tf_loss(ex_tf1)
         loss_tf2 = get_tf_loss(ex_tf2)
         verbosity_loss = tf.maximum(loss_tf1 + loss_tf2, 1)
-        tf.summary.scalar('verbosity_loss', tf.reduce_mean(verbosity_loss))
         self.pairwise_loss = pairwise_loss
         alpha = 0.1
         loss = pairwise_loss + alpha * verbosity_loss

@@ -33,7 +33,7 @@ class TermEncoder(tf.keras.layers.Layer):
 
 
 class TermVector(tf.keras.layers.Layer):
-    def __init__(self, bert_params, role):
+    def __init__(self, bert_params, role, trainable=False):
         super(TermVector, self).__init__()
         self.interaction_rep_size = bert_params.hidden_size
 
@@ -43,7 +43,7 @@ class TermVector(tf.keras.layers.Layer):
                 output_dim=bert_params.hidden_size,
                 mask_zero=bert_params.mask_zero,
                 name=name,
-                trainable=False
+                trainable=trainable
             )
         self.embeddings_layer = init_word_embedding(f"{role}_term_embedding")
         self.dense = tf.keras.layers.Dense(self.interaction_rep_size,
