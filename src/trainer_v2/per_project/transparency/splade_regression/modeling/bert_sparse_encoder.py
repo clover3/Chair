@@ -5,27 +5,62 @@ import tensorflow as tf
 from bert import Layer
 from tensorflow import keras
 from trainer_v2.bert_for_tf2 import BertModelLayer
+from trainer_v2.per_project.transparency.mmp.tt_model.regs import FLOPS
 from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import ReluSigmoidMaxReduce
 import numpy as np
 
-class BertSparseEncoder:
+
+class BertSparseEncoder(tf.keras.layers.Layer):
     def __init__(self, bert_params, dataset_info: Dict):
-        l_bert = BertModelLayer.from_params(bert_params, name="bert")
-        max_seq_len = dataset_info['max_seq_length']
-        num_classes = dataset_info['vocab_size']
+        super(BertSparseEncoder, self).__init__()
+        self.num_classes = dataset_info['vocab_size']
+        self.l_bert = BertModelLayer.from_params(bert_params, name="bert")
 
-        l_input_ids = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="input_ids")
-        attention_mask = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="attention_mask")
+        self.project = tf.keras.layers.Dense(self.num_classes, name="logits")
+        self.activation_layer = ReluSigmoidMaxReduce()
+
+    def call(self, l_input_ids, attention_mask):
         l_token_type_ids = tf.zeros_like(l_input_ids)
-        seq_out = l_bert([l_input_ids, l_token_type_ids])  # [batch_size, max_seq_len, hidden_size]
-        self.seq_out = seq_out
-        logits = tf.keras.layers.Dense(num_classes, name="bert/project")(seq_out)
-        activation_layer = ReluSigmoidMaxReduce()
-        output = activation_layer(logits, attention_mask)
+        seq_out = self.l_bert([l_input_ids, l_token_type_ids])  # [batch_size, max_seq_len, hidden_size]
+        logits = self.project(seq_out)
+        output = self.activation_layer(logits, attention_mask)
+        return output
 
-        model = keras.Model(inputs=(l_input_ids, attention_mask), outputs=output, name="bert_model")
+
+class PairwiseTrainBertSparseEncoder:
+    def __init__(self, bert_params, dataset_info: Dict):
+        max_seq_len = dataset_info['max_seq_length']
+        self.encoder = BertSparseEncoder(bert_params, dataset_info)
+        num_text = 3
+        inputs = []
+        vectors = []
+        for idx in range(num_text):
+            l_input_ids = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name=f"input_ids_{idx}")
+            attention_mask = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name=f"attention_mask_{idx}")
+            vector = self.encoder(l_input_ids, attention_mask)
+            vectors.append(vector)
+            inputs.append((l_input_ids, attention_mask))
+
+        q = vectors[0]
+        d1 = vectors[1]
+        d2 = vectors[2]
+
+        reg_fn = FLOPS()
+        reg_loss = reg_fn(q) + reg_fn(d1) + reg_fn(d2)
+        s1 = tf.reduce_sum(q*d1, axis=1)
+        s2 = tf.reduce_sum(q*d2, axis=1)
+        s1_2 = tf.stack([s1, s2], axis=1)
+        pref = -tf.nn.log_softmax(s1_2, axis=1)
+
+        pair_loss = tf.reduce_mean(pref[:, 0], axis=0)
+        loss = pair_loss + reg_loss
+
+        output = (s1, s2), loss
+        model = keras.Model(inputs=inputs, outputs=output, name="bert_model")
+        self.reg_fn = reg_fn
         self.model: keras.Model = model
-        self.l_bert = l_bert
+        # self.model.alpha = self.alpha
+        self.l_bert = self.encoder.l_bert
 
 
 class DummySparseEncoder:

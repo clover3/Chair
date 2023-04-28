@@ -4,7 +4,7 @@ import re
 import h5py
 import numpy as np
 from transformers import TFAutoModelForMaskedLM, AutoTokenizer
-
+from transformers.utils import PaddingStrategy
 
 from cache import load_from_pickle
 from cpath import data_path
@@ -150,7 +150,7 @@ def main4(args):
     bert_params.use_token_type = False
     max_seq_len = bert_params.max_position_embeddings
     l_bert = BertModelLayer.from_params(bert_params, name="bert")
-    l_input_ids = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="input_ids")
+    l_input_ids = keras.layers.Input(shape=(7,), dtype='int32', name="input_ids")
     seq_out = l_bert(l_input_ids)  # [batch_size, max_seq_len, hidden_size]
     Dense = tf.keras.layers.Dense
     LayerNorm = tf.keras.layers.LayerNormalization
@@ -162,13 +162,17 @@ def main4(args):
         model, checkpoint_path, name_mapping, n_expected_restore=106)
     print(skipped_weight_value_tuples)
     query = "what is thermal stress?"
-    tokenizer = get_tokenizer()
-    q_tokens = tokenizer.tokenize(query)
-    tokens = ["[CLS]"] + q_tokens + ["[SEP]"]
-    input_ids = tokenizer.convert_tokens_to_ids(tokens)
-    print(input_ids)
-    input_ids = input_ids + [0] * (max_seq_len - len(input_ids))
-    input_ids = np.expand_dims(np.array(input_ids), 0)
+    tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+    q_tokens = tokenizer(query, return_tensors="tf",
+                         max_length=max_seq_len)
+    input_ids = q_tokens["input_ids"]
+    print(q_tokens["input_ids"])
+
+    # tokens = ["[CLS]"] + q_tokens + ["[SEP]"]
+    # input_ids = tokenizer.convert_tokens_to_ids(tokens)
+    # print(input_ids)
+    # input_ids = input_ids + [0] * (max_seq_len - len(input_ids))
+    # input_ids = np.expand_dims(np.array(input_ids), 0)
     output = model(input_ids)
     mask = tf.cast((input_ids != 0), tf.float32)
     print("mask", mask.dtype)

@@ -96,7 +96,7 @@ class TaskManagerProxy(RESTProxy):
             'job_name': job_name,
             'machine': machine,
         }
-        r = self.post("/task/pool_job", data)
+        r = self.post("/task/pool_job", data, timeout=30)
         return r['job_id']
 
     def query_job_group_status(self, job_name) -> Dict:
@@ -113,7 +113,7 @@ class TaskManagerProxy(RESTProxy):
             'machine': machine,
             'job_id': job_id
         }
-        r = self.post("/task/sub_job_done_and_pool_job", data)
+        r = self.post("/task/sub_job_done_and_pool_job", data, timeout=30)
         return r['job_id']
 
     def sub_job_update(self, job_name, machine, update_type, msg, job_id):

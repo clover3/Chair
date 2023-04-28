@@ -17,8 +17,8 @@ from trainer_v2.custom_loop.train_loop import tf_run, tf_run_train
 from trainer_v2.custom_loop.trainer_if import TrainerIF, TrainerIFBase
 from trainer_v2.per_project.transparency.mmp.tt_model.dataset_factories_bow import get_bow_pairwise_dataset, \
     get_bow_pairwise_dataset_qtw
-from trainer_v2.per_project.transparency.mmp.tt_model.tt1 import TranslationTableQTW, InputShapeConfigTT100_4, \
-    InputShapeConfigTT
+from trainer_v2.per_project.transparency.mmp.tt_model.tt1 import TranslationTableQTW
+from trainer_v2.per_project.transparency.mmp.tt_model.model_conf_defs import InputShapeConfigTT, InputShapeConfigTT100_4
 from trainer_v2.train_util.arg_flags import flags_parser
 
 

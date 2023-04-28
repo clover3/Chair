@@ -8,7 +8,7 @@ from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
 from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.dataset_factories import get_three_text_dataset
-from trainer_v2.per_project.transparency.splade_regression.data_loaders.pairwise_eval import load_pairwise_eval_data, \
+from trainer_v2.per_project.transparency.splade_regression.data_loaders.pairwise_eval import load_pairwise_mmp_data, \
     PairwiseEval, build_pairwise_eval_dataset
 from trainer_v2.per_project.transparency.splade_regression.modeling.regression_modeling import get_transformer_sparse_encoder
 from trainer_v2.train_util.arg_flags import flags_parser

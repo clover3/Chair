@@ -4,7 +4,7 @@ from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import predict_and_save_scores, \
     eval_dev100_mrr, predict_and_batch_save_scores
-from trainer_v2.per_project.transparency.mmp.tt_model.load_tt_predictor import get_tt_scorer_1_6
+from trainer_v2.per_project.transparency.mmp.tt_model.load_tt_predictor import get_tt_scorer_6
 from trainer_v2.train_util.arg_flags import flags_parser
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
@@ -17,7 +17,7 @@ def main(args):
     strategy = get_strategy(args.use_tpu, args.tpu_name)
     with strategy.scope():
         c_log.info("Building scorer")
-        score_fn = get_tt_scorer_1_6(model_path)
+        score_fn = get_tt_scorer_6(model_path)
     predict_and_batch_save_scores(score_fn, dataset, run_name, 100*100)
     score = eval_dev100_mrr(dataset, run_name)
 

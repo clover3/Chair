@@ -1,71 +1,15 @@
-from typing import Dict
-
 import tensorflow as tf
 from tensorflow import keras
 
 from models.transformer.bert_common_v2 import get_shape_list2
-from trainer_v2.bert_for_tf2 import BertModelLayer
-from trainer_v2.custom_loop.modeling_common.bert_common import BERT_CLS
-from trainer_v2.custom_loop.modeling_common.network_utils import vector_three_feature
-
-
-class InputShapeConfigTT:
-    max_terms: int
-    max_subword_per_word: int
-
-
-class InputShapeConfigTT100_4(InputShapeConfigTT):
-    max_terms = 100
-    max_subword_per_word = 4
-
+from trainer_v2.per_project.transparency.mmp.tt_model.encoders import TermEncoder
+from trainer_v2.per_project.transparency.mmp.tt_model.model_conf_defs import InputShapeConfigTT
+from trainer_v2.per_project.transparency.mmp.tt_model.net_common import pairwise_hinge
 
 
 def tf_print(*args):
     # tf.print(*args)
     pass
-
-
-class TermEncoder(tf.keras.layers.Layer):
-    def __init__(self, bert_params):
-        super(TermEncoder, self).__init__()
-        self.interaction_rep_size = bert_params.hidden_size
-
-        l_bert = BertModelLayer.from_params(bert_params, name="bert")
-        pooler = tf.keras.layers.Dense(bert_params.hidden_size, activation=tf.nn.tanh, name="bert/pooler/dense")
-        self.bert_cls = BERT_CLS(l_bert, pooler)
-        self.l_bert = l_bert
-        self.dense1 = tf.keras.layers.Dense(self.interaction_rep_size,
-                                            kernel_initializer=tf.keras.initializers.TruncatedNormal(
-                                                stddev=1e-3)
-                                            )
-        # self.layernorm = tf.keras.layers.LayerNormalization(name="layernorm")
-
-    def call(self, inputs):
-        input_ids = inputs  # [B, max_term, term_len]
-        batch_size, num_terms, window_len = get_shape_list2(input_ids)
-        input_ids_flat = tf.reshape(input_ids, [-1, window_len])
-        dummy_segment_ids = tf.zeros_like(input_ids_flat, tf.int32)
-        cls = self.bert_cls.apply([input_ids_flat, dummy_segment_ids])
-        item_rep = self.dense1(cls)
-        item_rep = tf.reshape(item_rep, [batch_size, num_terms, self.interaction_rep_size])
-        return item_rep
-
-
-class DummyTermEncoder(tf.keras.layers.Layer):
-    def __init__(self, bert_params):
-        super(DummyTermEncoder, self).__init__()
-        self.interaction_rep_size = bert_params.hidden_size
-        l_bert = BertModelLayer.from_params(bert_params, name="bert")
-        pooler = tf.keras.layers.Dense(bert_params.hidden_size, activation=tf.nn.tanh, name="bert/pooler/dense")
-        self.bert_cls = BERT_CLS(l_bert, pooler)
-
-
-    def call(self, inputs):
-        input_ids = inputs  # [B, max_term, term_len]
-        batch_size, num_terms, window_len = get_shape_list2(input_ids)
-        item_rep = tf.zeros([batch_size, num_terms, self.interaction_rep_size])
-        return item_rep
-
 
 
 class ScoringLayer(tf.keras.layers.Layer):
@@ -76,7 +20,6 @@ class ScoringLayer(tf.keras.layers.Layer):
         self.avdl = 50
         self.alpha = 1 / interaction_rep_size
         self.beta = 0.1
-        print(f": Alpha={self.alpha} beta={self.beta}")
 
     def call(self, inputs):
         q_rep, d_rep, q_bow, d_bow = inputs
@@ -145,7 +88,6 @@ class ScoringLayer2(tf.keras.layers.Layer):
         self.avdl = 50
         self.alpha = 0.2
         self.beta = 0.1
-        print(f"beta={self.beta}")
 
     def call(self, inputs):
         q_rep, d_rep, q_bow, d_bow = inputs
@@ -172,6 +114,64 @@ class ScoringLayer2(tf.keras.layers.Layer):
             em_f = check_exact_match(q_bow['input_ids'], d_bow['input_ids'])  # exact match as float (0.0 or 1.0)
             tf_print("d_expanded_tf", d_expanded_tf)
             d_tf = (d_expanded_tf * self.alpha) * self.beta + em_f * (1-self.beta)
+            tf_multiplier = tf.tile(tf.expand_dims(d_bow['tfs'], axis=1), [1, num_window, 1])
+            tf_multiplier = tf.cast(tf_multiplier, tf.float32)
+            expanded_term_df = tf.reduce_sum(d_tf * tf_multiplier, axis=2)
+            return expanded_term_df
+
+        def bm25_like(qtw, d_tf, dl):
+            denom = d_tf + d_tf * self.k1
+            nom = d_tf + self.k1 * ((1 - self.b) + self.b * dl / self.avdl)
+            dtw = denom / (nom + 1e-8)
+            return tf.reduce_sum(qtw * dtw, axis=1)
+
+        m_q = get_null_mask(q_bow['input_ids'])
+        m_d = get_null_mask(d_bow['input_ids'])
+        mask = tf.expand_dims(m_q, axis=2) * tf.expand_dims(m_d, axis=1)
+
+        d_t = tf.transpose(d_rep, [0, 2, 1])
+        qd_term_dot_output = tf.matmul(q_rep, d_t)  # [B, M, M]
+        d_expanded_tf = tf.nn.sigmoid(qd_term_dot_output) * self.alpha
+        d_expanded_tf = mask * d_expanded_tf
+        d_tf = get_expanded_doc_tf(d_expanded_tf, q_bow, d_bow)  # [B, M]
+        dl = tf.cast(tf.reduce_sum(d_bow['tfs'], axis=1, keepdims=True), tf.float32)
+        s = bm25_like(qtw, d_tf, dl)
+        return s, d_expanded_tf
+
+
+class ScoringLayerSigmoidCap(tf.keras.layers.Layer):
+    def __init__(self, interaction_rep_size, **kwargs):
+        super(ScoringLayerSigmoidCap, self).__init__(**kwargs)
+        self.k1 = 0.1
+        self.b = 1.2
+        self.avdl = 50
+        self.alpha = 0.2
+
+    def call(self, inputs):
+        q_rep, d_rep, q_bow, d_bow = inputs
+        batch_size, num_window, _ = get_shape_list2(q_bow['input_ids'])
+        batch_size, num_window, hidden_size = get_shape_list2(q_rep)
+        if "qtw" in q_bow:
+            qtw = q_bow['qtw']
+        else:
+            qtw = tf.ones([batch_size, num_window])
+
+        def get_null_mask(input_ids):  # [B, MaxTerm]
+            all_zero = tf.reduce_all(input_ids == 0, axis=2)
+            m = tf.cast(tf.logical_not(all_zero), tf.float32)
+            return m
+
+        def check_exact_match(q_input_ids, d_input_ids):
+            q_repeat = tf.tile(tf.expand_dims(q_input_ids, axis=2), [1, 1, num_window, 1])  # [B, M, M, W]
+            d_repeat = tf.tile(tf.expand_dims(d_input_ids, axis=1), [1, num_window, 1, 1])
+            em = tf.reduce_all(tf.equal(q_repeat, d_repeat), axis=3)  # [B, M, M]
+            return tf.cast(em, tf.float32)
+
+        # [B, M]
+        def get_expanded_doc_tf(d_expanded_tf, q_bow, d_bow):
+            em_f = check_exact_match(q_bow['input_ids'], d_bow['input_ids'])  # exact match as float (0.0 or 1.0)
+            tf_print("d_expanded_tf", d_expanded_tf)
+            d_tf = d_expanded_tf + em_f
             tf_multiplier = tf.tile(tf.expand_dims(d_bow['tfs'], axis=1), [1, num_window, 1])
             tf_multiplier = tf.cast(tf_multiplier, tf.float32)
             expanded_term_df = tf.reduce_sum(d_tf * tf_multiplier, axis=2)
@@ -266,10 +266,9 @@ def define_inputs(num_window, window_len):
 
 
 def get_tf_loss(ex_tf):
-    gamma = 1 / 5
     ex_tf_abs = tf.abs(ex_tf)
     loss_sum = tf.reduce_sum(tf.reduce_sum(ex_tf_abs, axis=2), axis=1)
-    return loss_sum * gamma
+    return loss_sum
 
 
 class TranslationTableQTW:
@@ -314,7 +313,7 @@ class TranslationTableQTW2:
         get_doc_score = ScoringLayer(bert_params.hidden_size)
         s1, ex_tf1  = get_doc_score([q_rep, d1_rep, bow_reps['q'], bow_reps['d1']])
         s2, ex_tf2  = get_doc_score([q_rep, d2_rep, bow_reps['q'], bow_reps['d2']])
-        loss_cont = tf.maximum(1 - (s1 - s2), 0)
+        loss_cont = pairwise_hinge(s1, s2)
         loss_tf1 = get_tf_loss(ex_tf1)
         loss_tf2 = get_tf_loss(ex_tf2)
         loss = loss_cont + loss_tf1 + loss_tf2
@@ -421,4 +420,44 @@ class TranslationTableInferenceQTW:
         model = keras.Model(inputs=inputs, outputs=output, name="bow_translation_table")
         self.model: keras.Model = model
         self.bert_cls = term_encoder.bert_cls
+
+
+
+class TTInfQTWAsym:
+    def __init__(
+            self, bert_params, config: InputShapeConfigTT,
+            q_encoder, d_encoder,
+            scoring_layer_factory,
+    ):
+        window_len = config.max_subword_per_word
+        num_window = config.max_terms
+        role_list = ["q", "d"]
+
+        inputs = []
+        bow_reps = {}
+        for role in role_list:
+            input_ids = keras.layers.Input(shape=(num_window * window_len,), dtype='int32', name=f"{role}_input_ids")
+            input_ids_stacked = tf.reshape(
+                input_ids, [-1, num_window, window_len],
+                name=f"{role}_input_ids_stacked")
+            tfs = keras.layers.Input(shape=(num_window,), dtype='int32', name=f"{role}_tfs")
+            qtw = keras.layers.Input(shape=(num_window,), dtype='float32', name=f"{role}_qtw")
+            bow_reps[role] = {
+                'input_ids': input_ids_stacked,
+                'tfs': tfs,
+                'qtw': qtw
+            }
+            inputs.append(input_ids)
+            inputs.append(tfs)
+            inputs.append(qtw)
+
+        batch_size, _, _ = get_shape_list2(bow_reps['q']['input_ids'])
+        q_rep = q_encoder(bow_reps['q']['input_ids'])
+        d1_rep = d_encoder(bow_reps['d']['input_ids'])
+
+        get_doc_score = scoring_layer_factory()
+        score, d_expanded_tf = get_doc_score([q_rep, d1_rep, bow_reps['q'], bow_reps['d']])
+        output = [score]
+        model = keras.Model(inputs=inputs, outputs=output, name="bow_translation_table")
+        self.model: keras.Model = model
 

@@ -1,8 +1,9 @@
 from cpath import get_bert_config_path
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
 from trainer_v2.per_project.transparency.mmp.data_gen.tt_train_gen import get_convert_to_bow_qtw
-from trainer_v2.per_project.transparency.mmp.tt_model.tt1 import InputShapeConfigTT100_4, TranslationTableInferenceQTW, \
-    DummyTermEncoder
+from trainer_v2.per_project.transparency.mmp.tt_model.tt1 import TranslationTableInferenceQTW
+from trainer_v2.per_project.transparency.mmp.tt_model.model_conf_defs import InputShapeConfigTT100_4
+from trainer_v2.per_project.transparency.mmp.tt_model.encoders import DummyTermEncoder
 import tensorflow as tf
 
 

@@ -4,7 +4,7 @@ from transformers import AutoTokenizer
 
 from misc_lib import path_join
 from tf_util.record_writer_wrap import write_records_w_encode_fn
-from trainer_v2.per_project.transparency.splade_regression.data_loaders.pairwise_eval import load_pairwise_eval_data
+from trainer_v2.per_project.transparency.splade_regression.data_loaders.pairwise_eval import load_pairwise_mmp_data
 from trainer_v2.per_project.transparency.transformers_utils import get_multi_text_encode_fn
 
 
@@ -15,7 +15,7 @@ def main():
     ed = 1010
     target_partition = list(range(1000, 1010))
     num_partitions = len(target_partition)
-    triplet_list = load_pairwise_eval_data(target_partition)
+    triplet_list = load_pairwise_mmp_data(target_partition)
 
     def tokenize_triplet(triplet):
         t1, t2, t3 = triplet

@@ -13,7 +13,7 @@ def main():
     hidden_size = 10
     num_term = 10
     batch_size = 2
-    sl = ScoringLayer()
+    sl = ScoringLayer(hidden_size)
     num_window = num_term
     max_token_per_term = 4
     padding = [0] * max_token_per_term
@@ -67,8 +67,9 @@ def main():
     print("d_tf", d_tf)
 
 
-    output = sl([q_rep, d_rep, q_bow, d_bow])
-    print("output", output)
+    scores, ex_tf = sl([q_rep, d_rep, q_bow, d_bow])
+    print("score", scores)
+    print("ex_tf", ex_tf)
 
 
 if __name__ == "__main__":

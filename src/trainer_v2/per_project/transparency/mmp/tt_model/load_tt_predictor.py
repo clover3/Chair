@@ -1,13 +1,11 @@
-from typing import List
-
 from cpath import get_bert_config_path
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
-from trainer_v2.per_project.transparency.mmp.data_gen.tt_train_gen import get_convert_to_bow_qtw
-from trainer_v2.per_project.transparency.mmp.tt_model.tt1 import InputShapeConfigTT100_4, TranslationTableInferenceQTW, \
-    DummyTermEncoder
+from trainer_v2.per_project.transparency.mmp.tt_model.net_common import get_tt_scorer, find_layer
+from trainer_v2.per_project.transparency.mmp.tt_model.tt1 import TranslationTableInferenceQTW, \
+    TTInfQTWAsym, ScoringLayer2, ScoringLayerSigmoidCap
+from trainer_v2.per_project.transparency.mmp.tt_model.model_conf_defs import InputShapeConfigTT100_4
 import tensorflow as tf
-
 
 
 def get_term_encoder_from_model_by_shape(model, hidden_size):
@@ -31,36 +29,74 @@ def get_term_encoder_from_model_by_shape(model, hidden_size):
 def SpecI():
     return tf.TensorSpec([None], dtype=tf.int32)
 
-def get_tt_scorer(model_path):
-    SpecI = tf.TensorSpec([None], dtype=tf.int32)
-    SpecF = tf.TensorSpec([None], dtype=tf.float32)
-    convert_to_bow = get_convert_to_bow_qtw()
+
+def load_translation_table_inference_qtw(model_path):
     input_shape = InputShapeConfigTT100_4()
     bert_params = load_bert_config(get_bert_config_path())
     c_log.info("Loading model from %s", model_path)
     tt_model = tf.keras.models.load_model(model_path)
     term_encoder = get_term_encoder_from_model_by_shape(
         tt_model, bert_params.hidden_size)
-    sig = (SpecI, SpecI, SpecF, SpecI, SpecI, SpecF),
+    tti = TranslationTableInferenceQTW(bert_params, input_shape, term_encoder)
+    return tti
 
-    def score_fn(qd_list: List):
-        def generator():
-            for query, document in qd_list:
-                x = []
-                for text in [query, document]:
-                    tfs, input_ids, qtw = convert_to_bow(text)
-                    for l in [input_ids, tfs, qtw]:
-                        x.append(tf.constant(l))
-                yield tuple(x),
 
-        dataset = tf.data.Dataset.from_generator(
-            generator,
-            output_signature=sig)
-        dataset = dataset.batch(16)
-        output = tti.model.predict(dataset)
-        return output
+def get_tt_scorer_1(model_path):
+    input_shape = InputShapeConfigTT100_4()
+    bert_params = load_bert_config(get_bert_config_path())
+    c_log.info("Loading model from %s", model_path)
+    tt_model = tf.keras.models.load_model(model_path)
+    term_encoder = get_term_encoder_from_model_by_shape(
+        tt_model, bert_params.hidden_size)
+    tti = TranslationTableInferenceQTW(bert_params, input_shape, term_encoder)
+    score_fn = get_tt_scorer(tti.model)
 
     c_log.info("Defining network")
-    tti = TranslationTableInferenceQTW(bert_params, input_shape, term_encoder)
+    return score_fn
+
+
+def get_tt_scorer_6(model_path):
+    input_shape = InputShapeConfigTT100_4()
+    bert_params = load_bert_config(get_bert_config_path())
+    c_log.info("Loading model from %s", model_path)
+    paired_model = tf.keras.models.load_model(model_path)
+    q_encoder = find_layer(paired_model, "term_encoder")
+    d_encoder = find_layer(paired_model, "term_encoder_1")
+    def scoring_layer_factory():
+        return ScoringLayer2(bert_params.hidden_size)
+    tti = TTInfQTWAsym(bert_params, input_shape, q_encoder, d_encoder, scoring_layer_factory)
+    score_fn = get_tt_scorer(tti.model)
+
+    c_log.info("Defining network")
+    return score_fn
+
+
+def get_tt_vector_scorer(model_path):
+    input_shape = InputShapeConfigTT100_4()
+    bert_params = load_bert_config(get_bert_config_path())
+    c_log.info("Loading model from %s", model_path)
+    paired_model = tf.keras.models.load_model(model_path)
+    q_encoder = find_layer(paired_model, "term_vector")
+    d_encoder = find_layer(paired_model, "term_vector_1")
+    def scoring_layer_factory():
+        return ScoringLayer2(bert_params.hidden_size)
+    tt_v_inf = TTInfQTWAsym(bert_params, input_shape, q_encoder, d_encoder, scoring_layer_factory)
+    score_fn = get_tt_scorer(tt_v_inf.model)
+    c_log.info("Defining network")
+    return score_fn
+
+
+def get_tt9_scorer(model_path):
+    input_shape = InputShapeConfigTT100_4()
+    bert_params = load_bert_config(get_bert_config_path())
+    c_log.info("Loading model from %s", model_path)
+    paired_model = tf.keras.models.load_model(model_path)
+    q_encoder = find_layer(paired_model, "term_vector")
+    d_encoder = find_layer(paired_model, "term_vector_1")
+    def scoring_layer_factory():
+        return ScoringLayerSigmoidCap(bert_params.hidden_size)
+    tt_v_inf = TTInfQTWAsym(bert_params, input_shape, q_encoder, d_encoder, scoring_layer_factory)
+    score_fn = get_tt_scorer(tt_v_inf.model)
+    c_log.info("Defining network")
     return score_fn
 

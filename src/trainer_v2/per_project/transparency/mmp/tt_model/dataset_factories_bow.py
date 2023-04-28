@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from trainer_v2.custom_loop.dataset_factories import parse_file_path, create_dataset_common, create_dataset_common_inner
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
-from trainer_v2.per_project.transparency.mmp.tt_model.tt1 import InputShapeConfigTT
+from trainer_v2.per_project.transparency.mmp.tt_model.model_conf_defs import InputShapeConfigTT
 from trainer_v2.per_project.transparency.splade_regression.data_loaders.dataset_factories import get_batch_size
 
 

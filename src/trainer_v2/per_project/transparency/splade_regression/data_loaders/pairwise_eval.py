@@ -12,7 +12,7 @@ from trainer_v2.per_project.transparency.splade_regression.path_helper import pa
 pairwise_roles = ["q", "d1", "d2"]
 
 
-def load_pairwise_eval_data(target_partition: List[int]) -> List[Tuple[str, str, str]]:
+def load_pairwise_mmp_data(target_partition: List[int]) -> List[Tuple[str, str, str]]:
     c_log.info("load_pairwise_eval_data")
     partitioned_format_str = partitioned_triplet_path_format_str()
     triplet_list = []
@@ -21,7 +21,6 @@ def load_pairwise_eval_data(target_partition: List[int]) -> List[Tuple[str, str,
         text_itr = iterate_triplet(text_path)
         for triplet in text_itr:
             triplet_list.append(triplet)
-
     return triplet_list
 
 

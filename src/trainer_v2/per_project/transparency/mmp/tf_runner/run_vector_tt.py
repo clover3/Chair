@@ -1,5 +1,12 @@
 import logging
 import os
+from typing import Optional
+
+from trainer_v2.per_project.transparency.mmp.trainer_d_out import TrainerDOut
+from trainer_v2.per_project.transparency.mmp.tt_model.net_common import pairwise_hinge
+from trainer_v2.per_project.transparency.mmp.tt_model.tt1 import ScoringLayer2
+from trainer_v2.per_project.transparency.mmp.tt_model.tt_vectored import TTVectorBasedTrainNetwork
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import sys
@@ -15,22 +22,31 @@ from trainer_v2.custom_loop.prediction_trainer import ModelV2IF
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
 from trainer_v2.custom_loop.train_loop import tf_run, tf_run_train
 from trainer_v2.custom_loop.trainer_if import TrainerIF, TrainerIFBase
-from trainer_v2.per_project.transparency.mmp.tt_model.dataset_factories_bow import get_bow_pairwise_dataset
-from trainer_v2.per_project.transparency.mmp.tt_model.tt1 import TranslationTable
+from trainer_v2.per_project.transparency.mmp.tt_model.dataset_factories_bow import get_bow_pairwise_dataset, \
+    get_bow_pairwise_dataset_qtw
 from trainer_v2.per_project.transparency.mmp.tt_model.model_conf_defs import InputShapeConfigTT, InputShapeConfigTT100_4
 from trainer_v2.train_util.arg_flags import flags_parser
 
 
-class TranslationTableWBert(ModelV2IF):
+class TranslationTableVector(ModelV2IF):
     def __init__(self, input_shape: InputShapeConfigTT):
-        self.inner_model = None
+        self.inner_model: Optional[TTVectorBasedTrainNetwork] = None
         self.model: tf.keras.models.Model = None
         self.input_shape: InputShapeConfigTT = input_shape
+        self.train_metrics = None
+        self.log_var = ["verbosity_loss", 'pairwise_loss', "loss"]
 
     def build_model(self, run_config):
         bert_params = load_bert_config(get_bert_config_path())
-        print(bert_params)
-        self.inner_model = TranslationTable(bert_params, self.input_shape)
+        def scoring_layer_factory():
+            return ScoringLayer2(bert_params.hidden_size)
+
+        self.inner_model = TTVectorBasedTrainNetwork(
+            bert_params,
+            self.input_shape,
+            pairwise_hinge,
+            scoring_layer_factory
+        )
 
     def get_keras_model(self) -> tf.keras.models.Model:
         return self.inner_model.model
@@ -39,7 +55,7 @@ class TranslationTableWBert(ModelV2IF):
         if init_checkpoint is None:
             c_log.info("Checkpoint is not specified. ")
         else:
-            load_bert_checkpoint(self.inner_model.bert_cls, init_checkpoint)
+            self.inner_model.init_embeddings(init_checkpoint)
 
 
 @report_run3
@@ -48,10 +64,10 @@ def main(args):
     run_config: RunConfig2 = get_run_config2(args)
     run_config.print_info()
     input_shape = InputShapeConfigTT100_4()
-    BertUsingModel = TranslationTableWBert(input_shape)
-    trainer: TrainerIFBase = PairwiseTrainer(run_config, BertUsingModel)
+    bert_using_model = TranslationTableVector(input_shape)
+    trainer: TrainerIFBase = TrainerDOut(run_config, bert_using_model)
     def build_dataset(input_files, is_for_training):
-        return get_bow_pairwise_dataset(
+        return get_bow_pairwise_dataset_qtw(
             input_files, input_shape, run_config, is_for_training)
 
     run_name = str(run_config.common_run_config.run_name)
