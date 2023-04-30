@@ -8,7 +8,7 @@ from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
 from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, load_msmarco_sub_samples
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import build_table, get_bm25t_when
+from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import build_table_when_avg, get_bm25t_when
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import predict_and_save_scores, \
     predict_and_save_scores_w_itr, eval_on_train_when_0
 from cpath import output_path
@@ -19,7 +19,7 @@ from trec.qrel_parse import load_qrels_structured
 def main():
     c_log.setLevel(logging.DEBUG)
     mapping = defaultdict(dict)
-    mapping['when'] = build_table()
+    mapping['when'] = build_table_when_avg()
     cdf, df = load_msmarco_passage_term_stat()
     avdl = 25
     N = cdf

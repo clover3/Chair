@@ -12,7 +12,7 @@ from dataset_specific.msmarco.passage.passage_resource_loader import enum_groupe
     MMPPosNegSampler
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.bm25t import BM25T
-from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import build_table, get_mmp_bm25
+from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import build_table_when_avg, get_mmp_bm25
 from trec.qrel_parse import load_qrels_structured
 
 

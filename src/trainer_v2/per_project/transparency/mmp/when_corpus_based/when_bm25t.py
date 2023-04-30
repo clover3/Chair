@@ -21,6 +21,10 @@ def get_mmp_bm25():
 def load_align_weights() -> Iterable[GlobalAlign]:
     global_align_path = path_join(
         output_path, "msmarco", "passage", "when_local_avg_align")
+    return load_global_aligns(global_align_path)
+
+
+def load_global_aligns(global_align_path):
     itr = tsv_iter(global_align_path)
 
     def parse_row(row):
@@ -32,12 +36,17 @@ def load_align_weights() -> Iterable[GlobalAlign]:
     return map(parse_row, itr)
 
 
-def build_table() -> Dict[str, float]:
+def build_table_when_avg():
+    global_align_itr: Iterable[GlobalAlign] = load_align_weights()
+    return build_table_inner(global_align_itr)
+
+
+def build_table_inner(global_align_itr: Iterable[GlobalAlign]) -> Dict[str, float]:
     stemmer = Stemmer()
     min_tf = 0
     out_mapping: Dict[str, float] = {}
     n_all = 0
-    for t in load_align_weights():
+    for t in global_align_itr:
         n_all += 1
         rate = t.n_pos_appear / t.n_appear
         if t.n_appear >= min_tf and t.score > 0.01 and rate > 0.6:
@@ -111,7 +120,7 @@ def build_table3(term):
 
 def get_bm25t_when():
     mapping = defaultdict(dict)
-    mapping['when'] = build_table()
+    mapping['when'] = build_table_when_avg()
     bm25 = get_mmp_bm25()
     bm25t = BM25T(mapping, bm25.core)
     # given a raw word, if raw word exactly matches

@@ -8,7 +8,7 @@ from misc_lib import path_join, batch_iter_from_entry_iter
 
 from dataset_specific.msmarco.passage.passage_resource_loader import enum_grouped, enum_when_corpus_tokenized, FourItem
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import build_table
+from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import build_table_when_avg
 from trainer_v2.per_project.transparency.mmp.when_corpus_based.gradient_computer import \
     GoldPairBasedSamplerFromTokenized
 import tensorflow as tf
@@ -23,7 +23,7 @@ def main():
     except IndexError:
         run_name = "manual_grad"
     mapping: Dict[str, Dict[str, float]] = defaultdict(dict)
-    mapping['when'] = build_table()
+    mapping['when'] = build_table_when_avg()
     c_log.setLevel(logging.DEBUG)
     itr: Iterable[FourItem] = enum_when0_tokenized()
     itr: Iterable[List[FourItem]] = enum_grouped(itr)

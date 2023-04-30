@@ -12,9 +12,13 @@ from misc_lib import path_join
 #  Count term frequency in "when" corpus
 def enum_when_corpus():
     for job_no in range(11):
-        save_dir = path_join("output", "msmarco", "passage", "when")
-        save_path = path_join(save_dir, str(job_no))
-        yield from tsv_iter(save_path)
+        yield from enum_when_corpus_part(job_no)
+
+
+def enum_when_corpus_part(job_no):
+    save_dir = path_join("output", "msmarco", "passage", "when")
+    save_path = path_join(save_dir, str(job_no))
+    yield from tsv_iter(save_path)
 
 
 def main():
