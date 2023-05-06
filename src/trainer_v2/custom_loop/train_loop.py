@@ -262,6 +262,24 @@ def tf_run(run_config: RunConfig2,
         return ret
 
 
+
+def tf_run2(
+        run_config: RunConfig2,
+        trainer: TrainerIFBase,
+        build_dataset,
+    ):
+    run_name = str(run_config.common_run_config.run_name)
+    c_log.info("Run name: %s", run_name)
+
+    if run_config.common_run_config.is_debug_run:
+        c_log.setLevel(logging.DEBUG)
+
+    if run_config.is_training():
+        return tf_run_train(run_config, trainer, build_dataset)
+    else:
+        raise Exception("Only training is supported")
+
+
 def is_interesting_step(step_idx):
     if step_idx == 0:
         return True

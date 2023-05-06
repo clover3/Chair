@@ -63,6 +63,8 @@ class TrainerDOut(TrainerCommon):
         super(TrainerDOut, self).__init__(run_config, inner_model)
         self.train_summary_writer = None
         self.train_metrics: Dict[str, tf.keras.metrics.Metric] = {}
+        self.do_log = not run_config.device_config.use_tpu
+        self.use_tpu = run_config.device_config.use_tpu
 
     def get_optimizer(self):
         return AdamWeightDecay(
@@ -73,8 +75,13 @@ class TrainerDOut(TrainerCommon):
     def build_model(self):
         super(TrainerDOut, self).build_model()
         train_log_dir = path_join(self.run_config.train_config.model_save_path, "train_log")
-        # self.train_summary_writer = tf.summary.create_file_writer(train_log_dir, name="train")
-        # self.train_summary_writer.set_as_default()
+        if self.do_log:
+            if self.use_tpu:
+                create_file_writer = tf.summary.experimental.create_file_writer
+            else:
+                create_file_writer = tf.summary.create_file_writer
+            self.train_summary_writer = create_file_writer(train_log_dir, name="train")
+            self.train_summary_writer.set_as_default()
         for key in self.inner_model.log_var:
             self.train_metrics[key] = tf.keras.metrics.Mean(name=key)
 
@@ -89,8 +96,8 @@ class TrainerDOut(TrainerCommon):
         for k, v in output_d.items():
             if k in self.inner_model.log_var:
                 self.train_metrics[k].update_state(tf.reduce_mean(v))
-        #         tf.summary.scalar(k, tf.reduce_mean(v), step=step)
-        # tf.summary.scalar('constant', 1.0, step=step)
+                if self.do_log:
+                    tf.summary.scalar(k, tf.reduce_mean(v), step=step)
         apply_gradient_warning_less(self.optimizer, gradients, model.trainable_variables)
         return loss
 

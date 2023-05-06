@@ -4,7 +4,6 @@ from math import log
 
 from adhoc.bm25 import BM25_verbose
 from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
-from misc_lib import NamedNumber
 
 
 class BM25Bare:
@@ -21,7 +20,7 @@ class BM25Bare:
         df = self.df[term]
         return log((N - df + 0.5) / (df + 0.5))
 
-    def score_inner(self, q_tf, t_tf) -> NamedNumber:
+    def score_inner(self, q_tf, t_tf) -> float:
         dl = sum(t_tf.values())
         score_sum = 0
         info = []
@@ -39,26 +38,7 @@ class BM25Bare:
             score_sum += t
             info.append((q_term, t))
 
-        ideal_score = 0
-        for q_term, qtf in q_tf.items():
-            max_t = BM25_verbose(f=qtf,
-                         qf=qtf,
-                         df=self.df[q_term],
-                         N=self.N,
-                         dl=dl,
-                         avdl=self.avdl,
-                         b=self.b,
-                         my_k1=self.k1,
-                         my_k2=self.k2
-                         )
-            ideal_score += max_t
-
-        info_log = "Ideal Score={0:.1f} ".format(ideal_score)
-        info.sort(key=lambda x: x[1], reverse=True)
-        for q_term, t in info:
-            if t > 0.001:
-                info_log += "{0}({1:.2f}) ".format(q_term, t)
-        return NamedNumber(score_sum, info_log)
+        return score_sum
 
 
 class BM25:
@@ -67,7 +47,7 @@ class BM25:
         self.core = BM25Bare(df, num_doc, avdl, k1, k2, b)
         self.tokenizer = KrovetzNLTKTokenizer(drop_stopwords)
 
-    def score(self, query, text) -> NamedNumber:
+    def score(self, query, text) -> float:
         q_terms = self.tokenizer.tokenize_stem(query)
         t_terms = self.tokenizer.tokenize_stem(text)
         q_tf = Counter(q_terms)
@@ -77,5 +57,5 @@ class BM25:
     def term_idf_factor(self, term):
         return self.core.term_idf_factor(term)
 
-    def score_inner(self, q_tf, t_tf) -> NamedNumber:
+    def score_inner(self, q_tf, t_tf) -> float:
         return self.core.score_inner(q_tf, t_tf)

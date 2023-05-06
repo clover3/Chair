@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
 from trainer_v2.custom_loop.run_config2 import RunConfig2
-from trainer_v2.custom_loop.trainer_if import TrainerIF, TrainerIFBase
+from trainer_v2.custom_loop.trainer_if import TrainerIF, TrainerIFBase, EmptyEvalObject
 
 
 # Purpose of ModelV3IF: to define custom init checkpoint functions
@@ -25,6 +25,34 @@ class ModelV2IF(ABC):
 
     def get_train_metrics(self):
         return {}
+
+    def init_train_metrics(self):
+        pass
+
+
+class ModelV3IF(ABC):
+    @abstractmethod
+    def build_model(self, run_config):
+        pass
+
+    @abstractmethod
+    def get_keras_model(self) -> tf.keras.models.Model:
+        pass
+
+    @abstractmethod
+    def init_checkpoint(self, model_path):
+        pass
+
+    def get_train_metrics(self):
+        return {}
+
+    def get_train_metrics_for_summary(self):
+        return {}
+
+    @abstractmethod
+    def get_loss_fn(self):
+        pass
+
 
 
 class TrainerCommon(TrainerIFBase):
@@ -82,6 +110,10 @@ class TrainerCommon(TrainerIFBase):
             self.model.callback({'step': self.optimizer.iterations})
         except AttributeError:
             pass
+
+    def get_eval_object(self, eval_batches, strategy):
+        eval_object = EmptyEvalObject()
+        return eval_object
 
 
 class PredictionTrainerCommon(TrainerCommon):

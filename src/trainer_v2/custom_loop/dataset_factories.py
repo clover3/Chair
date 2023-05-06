@@ -201,6 +201,50 @@ def get_pairwise_dataset(
                                  is_for_training)
 
 
+def read_pairwise_as_pointwise(
+        file_path,
+        run_config: RunConfig2,
+        model_config: ModelConfigType,
+        is_for_training,
+    ) -> tf.data.Dataset:
+
+    def decode_record(record):
+        name_to_features = {
+        }
+        for i in range(2):
+            def fixed_len_feature():
+                return tf.io.FixedLenFeature([model_config.max_seq_length], tf.int64)
+            name_to_features[f'input_ids{i+1}'] = fixed_len_feature()
+            name_to_features[f'token_type_ids{i+1}'] = fixed_len_feature()
+
+        record = tf.io.parse_single_example(record, name_to_features)
+        return reform_example(record)
+
+    def reform_example(record):
+        # x = record['input_ids1'], record['token_type_ids1'], record['input_ids2'], record['token_type_ids2']
+        return record, tf.constant(1)
+
+    dataset = create_dataset_common(
+        decode_record,
+        run_config,
+        file_path,
+        is_for_training)
+
+    def concat_items(x, y):
+        input_ids = tf.concat([x['input_ids1'], x['input_ids2']], axis=0)
+        token_type_ids = tf.concat([x['token_type_ids1'], x['token_type_ids2']], axis=0)
+        y_new = tf.concat([y, y], axis=0)
+        zero = tf.zeros_like(input_ids, tf.int32)
+        return {
+            'input_ids': input_ids,
+            'token_type_ids': token_type_ids,
+            'target_q_term_mask': zero,
+            'target_d_term_mask': zero,
+        }
+
+    return dataset.map(concat_items)
+
+
 def build_dataset_repeat_segs(input_files, run_config, model_config, is_for_training):
     dataset = get_classification_dataset(input_files, run_config, model_config, is_for_training)
 

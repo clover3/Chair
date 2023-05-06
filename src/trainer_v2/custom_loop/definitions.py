@@ -34,6 +34,11 @@ class ModelConfig600_3(ModelConfigType):
     num_classes = 3
 
 
+class ModelConfig256_1(ModelConfigType):
+    max_seq_length = 256
+    num_classes = 1
+    model_type = "bert-base-uncased"
+
 class ModelConfig2Seg:
     max_seq_length1 = 200
     max_seq_length2 = 100
