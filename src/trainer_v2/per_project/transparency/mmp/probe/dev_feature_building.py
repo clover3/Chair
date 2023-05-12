@@ -3,7 +3,7 @@ from cpath import output_path
 from misc_lib import path_join
 from trainer_v2.chair_logging import c_log
 
-from trainer_v2.per_project.transparency.mmp.feature_extractor.feature_building import ProbeOnBERT
+from trainer_v2.per_project.transparency.mmp.probe.probe_network import ProbeOnBERT
 
 
 def main():

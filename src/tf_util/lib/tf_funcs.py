@@ -29,3 +29,9 @@ def show_tfrecord(fn, n_display=5):
         cnt += 1
         if cnt >= n_display:  ##
             break
+
+
+def reduce_max(tensor, axis_arr):
+    for axis in axis_arr:
+        tensor = tf.reduce_max(tensor, axis)
+    return tensor

@@ -892,9 +892,14 @@ def tensor_to_list(t):
         pass
     return t
 
+
 def read_non_empty_lines_stripped(save_path):
-    lines = open(save_path, "r").readlines()
+    lines = open(save_path, "r", encoding="utf-8").readlines()
     return [l.strip() for l in lines if l.strip()]
+
+
+def readlines_s(save_path):
+    return read_non_empty_lines_stripped(save_path)
 
 
 def pause_hook(itr: Iterator, n):

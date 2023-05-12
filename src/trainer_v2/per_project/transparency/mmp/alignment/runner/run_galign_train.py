@@ -1,13 +1,14 @@
 import logging
 import os
-
-from trainer_v2.custom_loop.dataset_factories import read_pairwise_as_pointwise
 from trainer_v2.custom_loop.definitions import ModelConfig256_1
+from trainer_v2.per_project.transparency.mmp.alignment.dataset_factory import read_galign
 from trainer_v2.per_project.transparency.mmp.trainer_d_out2 import TrainerDOut2
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from trainer_v2.per_project.transparency.mmp.feature_extractor.feature_building import ProbeOnBERT, ProbeLossFromDict
+from trainer_v2.per_project.transparency.mmp.probe.probe_network import ProbeOnBERT, ProbeLossFromDict
+from trainer_v2.per_project.transparency.mmp.probe.align_network import AlignLossFromDict, GAlignNetwork, AddLosses, \
+    ProbeLossOnSeq
 
 import sys
 from trainer_v2.chair_logging import c_log, IgnoreFilter, IgnoreFilterRE
@@ -23,26 +24,22 @@ from trainer_v2.per_project.transparency.mmp.tt_model.model_conf_defs import Inp
 from trainer_v2.train_util.arg_flags import flags_parser
 
 
-class ProbeModel(ModelV3IF):
-    def __init__(self, input_shape: InputShapeConfigTT):
-        self.inner_model = None
+class GAlignModel(ModelV3IF):
+    def __init__(self):
+        self.network = None
         self.model: tf.keras.models.Model = None
         self.loss = None
-        self.input_shape: InputShapeConfigTT = input_shape
-        self.log_var = ["loss"]
-
-        for i in [0, 1, 12]:
-            self.log_var.append("layer_{}_loss".format(i))
 
     def build_model(self, run_config):
         init_checkpoint = run_config.train_config.init_checkpoint
         c_log.info("Loading model from {}".format(init_checkpoint))
         ranking_model = tf.keras.models.load_model(init_checkpoint, compile=False)
-        self.inner_model = ProbeOnBERT(ranking_model)
-        self.loss = ProbeLossFromDict()
+        self.network = GAlignNetwork(ranking_model)
+        loss_list = [AlignLossFromDict(), ProbeLossOnSeq(), ProbeLossFromDict()]
+        self.loss = AddLosses(loss_list)
 
     def get_keras_model(self) -> tf.keras.models.Model:
-        return self.inner_model.model
+        return self.network.model
 
     def init_checkpoint(self, init_checkpoint):
         pass
@@ -51,7 +48,9 @@ class ProbeModel(ModelV3IF):
         return {}
 
     def get_train_metrics_for_summary(self):
-        return self.inner_model.get_metrics()
+        metrics = self.network.get_align_metrics()
+        metrics.update(self.network.get_probe_metrics())
+        return metrics
 
     def get_loss_fn(self):
         return self.loss
@@ -62,12 +61,11 @@ def main(args):
     c_log.info(__file__)
     run_config: RunConfig2 = get_run_config2(args)
     run_config.print_info()
-    input_shape = InputShapeConfigTT100_4()
-    model_v2 = ProbeModel(input_shape)
-    trainer: TrainerIFBase = TrainerDOut2(run_config, model_v2)
+    model_v3 = GAlignModel()
+    trainer: TrainerIFBase = TrainerDOut2(run_config, model_v3)
 
     def build_dataset(input_files, is_for_training):
-        return read_pairwise_as_pointwise(
+        return read_galign(
             input_files, run_config, ModelConfig256_1(), is_for_training)
 
     tf_run2(run_config, trainer, build_dataset)

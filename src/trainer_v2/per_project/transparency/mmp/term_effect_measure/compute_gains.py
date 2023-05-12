@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 import numpy as np
 
+from misc_lib import TEL
+
 
 @dataclass
 class EffectiveRankedListInfo:
@@ -21,7 +23,11 @@ def ed(arr):
 #NI = NotImplemented
 
 def fetch(terms: List[str], tf: Counter):
+    # if len(tf) > len(terms):
     return [tf[t] for t in terms]
+    # else:
+    #
+    #     return [tf[t] for t in tf if t in terms]
 
 
 class ScoringModel:
@@ -66,7 +72,7 @@ def compute_alignment_gains(
     """
 
     gain_per_qid = []
-    for e_ranked_list in e_ranked_list_list:
+    for e_ranked_list in TEL(e_ranked_list_list):
         qid = e_ranked_list.qid
         # We have only one term per query as target
         # shape [len(effective_docs)]

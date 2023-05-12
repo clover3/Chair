@@ -1,8 +1,9 @@
 from typing import Dict
+from cpath import output_path
+from misc_lib import path_join
 
 import tensorflow as tf
 
-from misc_lib import path_join
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
 from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
@@ -11,6 +12,10 @@ from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result
 from trainer_v2.custom_loop.trainer_if import TrainerIFBase, EmptyEvalObject, EvalObjectIF
 from typing import List, Iterable, Callable, Dict, Tuple, Set
+
+
+def get_train_log_dir(run_name):
+    return path_join(output_path, "log", run_name)
 
 
 Metric = tf.keras.metrics.Metric
@@ -22,7 +27,7 @@ class TrainerDOut2(TrainerIFBase):
         self.eval_metrics = {}
         self.eval_metrics_factory = {}
         self.batch_size = run_config.common_run_config.batch_size
-        self.inner_model = inner_model
+        self.inner_model: ModelV3IF = inner_model
 
         # These variables will be initialized by build_model()
         self.train_metrics = None
@@ -30,8 +35,8 @@ class TrainerDOut2(TrainerIFBase):
         self.optimizer = None
         self.train_summary_writer = None
         self.train_metrics: Dict[str, Metric] = {}
-        self.do_log = not run_config.device_config.use_tpu
         self.use_tpu = run_config.device_config.use_tpu
+        self.do_log = not self.use_tpu
 
     def get_optimizer(self):
         return AdamWeightDecay(
@@ -41,7 +46,8 @@ class TrainerDOut2(TrainerIFBase):
 
     def build_model(self):
         super(TrainerDOut2, self).build_model()
-        train_log_dir = path_join(self.run_config.train_config.model_save_path, "train_log")
+        run_name = self.run_config.common_run_config.run_name
+        train_log_dir = get_train_log_dir(run_name)
         self.inner_model.build_model(self.run_config)
         self.model = self.inner_model.get_keras_model()
         self.model.summary(140)
@@ -49,6 +55,7 @@ class TrainerDOut2(TrainerIFBase):
         self.optimizer = self.get_optimizer()
         self.model.optimizer = self.optimizer
 
+        self.train_metrics_summary = self.inner_model.get_train_metrics_for_summary()
         if self.do_log:
             if self.use_tpu:
                 create_file_writer = tf.summary.experimental.create_file_writer
@@ -56,7 +63,6 @@ class TrainerDOut2(TrainerIFBase):
                 create_file_writer = tf.summary.create_file_writer
             self.train_summary_writer = create_file_writer(train_log_dir, name="train")
             self.train_summary_writer.set_as_default()
-            self.train_metrics_summary = self.inner_model.get_train_metrics_for_summary()
         self.loss_fn = self.inner_model.get_loss_fn()
 
     def train_step(self, item):

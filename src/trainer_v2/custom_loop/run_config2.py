@@ -324,6 +324,8 @@ def _get_run_config2_eval(args):
     return run_config
 
 
+
+
 def get_eval_run_config2(args):
     config_j = load_json_wrap(args)
     common_run_config = CommonRunConfig.from_args(args)
@@ -384,3 +386,11 @@ def load_json_wrap(args):
     except TypeError as e:
         config_j = {}
     return config_j
+
+
+def get_run_config_for_eval_empty():
+    run_config = RunConfig2(
+        CommonRunConfig(),
+        DatasetConfig("", ""),
+        eval_config=EvalConfig()
+    )

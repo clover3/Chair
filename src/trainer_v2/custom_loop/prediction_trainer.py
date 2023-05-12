@@ -8,7 +8,7 @@ from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.trainer_if import TrainerIF, TrainerIFBase, EmptyEvalObject
 
 
-# Purpose of ModelV3IF: to define custom init checkpoint functions
+# Purpose of ModelV2IF: to define custom init checkpoint functions
 #   build_model: defines keras model
 class ModelV2IF(ABC):
     @abstractmethod
