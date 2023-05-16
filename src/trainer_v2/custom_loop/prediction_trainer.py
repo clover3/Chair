@@ -3,6 +3,7 @@ from typing import Dict
 
 import tensorflow as tf
 
+import trainer_v2.per_project.transparency.mmp.probe.probe_common
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.trainer_if import TrainerIF, TrainerIFBase, EmptyEvalObject
@@ -99,10 +100,10 @@ class TrainerCommon(TrainerIFBase):
     def train_step(self, item):
         pass
 
-    def get_train_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
+    def get_train_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
         return self.train_metrics
 
-    def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
+    def get_eval_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
         return self.eval_metrics
 
     def train_callback(self):

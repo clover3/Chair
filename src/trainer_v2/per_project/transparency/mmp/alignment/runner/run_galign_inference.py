@@ -15,7 +15,7 @@ from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2, get_
 from trainer_v2.custom_loop.train_loop import tf_run2, load_model_by_dir_or_abs
 from trainer_v2.train_util.arg_flags import flags_parser
 
-# TODO: Evaluated align prediction accuracy in
+#: Evaluated align prediction accuracy in
 #      Contextual setup (holdout)
 #      Context-less setup (term enum)
 

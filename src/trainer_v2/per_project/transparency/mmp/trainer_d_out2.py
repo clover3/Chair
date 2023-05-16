@@ -1,4 +1,6 @@
 from typing import Dict
+
+import trainer_v2.per_project.transparency.mmp.probe.probe_common
 from cpath import output_path
 from misc_lib import path_join
 
@@ -15,10 +17,10 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
 def get_train_log_dir(run_name):
-    return path_join(output_path, "log", run_name)
+    return path_join(output_path, "tf_log", run_name)
 
 
-Metric = tf.keras.metrics.Metric
+Metric = trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric
 
 class TrainerDOut2(TrainerIFBase):
     def __init__(self, run_config: RunConfig2,
@@ -99,10 +101,10 @@ class TrainerDOut2(TrainerIFBase):
     def get_keras_model(self):
         return self.model
 
-    def get_train_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
+    def get_train_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
         return {}
 
-    def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
+    def get_eval_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
         return self.eval_metrics
 
     def train_callback(self):

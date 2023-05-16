@@ -1,6 +1,8 @@
 from typing import Dict
 
 import tensorflow as tf
+
+import trainer_v2.per_project.transparency.mmp.probe.probe_common
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
 from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
@@ -30,10 +32,10 @@ class PairwiseTrainer(TrainerCommon):
         apply_gradient_warning_less(self.optimizer, gradients, model.trainable_variables)
         return loss
 
-    def get_train_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
+    def get_train_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
         return self.train_metrics
 
-    def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
+    def get_eval_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
         return self.eval_metrics
 
     def train_callback(self):

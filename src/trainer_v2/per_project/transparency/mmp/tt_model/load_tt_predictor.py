@@ -1,7 +1,8 @@
 from cpath import get_bert_config_path
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
-from trainer_v2.per_project.transparency.mmp.tt_model.net_common import get_tt_scorer, find_layer
+from trainer_v2.per_project.transparency.mmp.tt_model.net_common import get_tt_scorer
+from tf_util.lib.tf_funcs import find_layer
 from trainer_v2.per_project.transparency.mmp.tt_model.tt1 import TranslationTableInferenceQTW, \
     TTInfQTWAsym, ScoringLayer2, ScoringLayerSigmoidCap, ScoringLayer4
 from trainer_v2.per_project.transparency.mmp.tt_model.model_conf_defs import InputShapeConfigTT100_4

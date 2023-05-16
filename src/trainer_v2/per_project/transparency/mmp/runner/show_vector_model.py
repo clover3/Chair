@@ -10,7 +10,7 @@ from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import
     eval_dev100_mrr, predict_and_batch_save_scores
 from trainer_v2.per_project.transparency.mmp.tt_model.encoders import TermVector
 from trainer_v2.per_project.transparency.mmp.tt_model.load_tt_predictor import get_tt10_scorer
-from trainer_v2.per_project.transparency.mmp.tt_model.net_common import find_layer
+from tf_util.lib.tf_funcs import find_layer
 from trainer_v2.train_util.arg_flags import flags_parser
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 import tensorflow as tf

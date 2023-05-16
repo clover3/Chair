@@ -54,7 +54,7 @@ def build_inference_model2(paired_model):
 def get_scorer(model_path):
     max_seq_length = 256
     c_log.info("Loading model from %s", model_path)
-    paired_model = tf.keras.models.load_model(model_path)
+    paired_model = tf.keras.models.load_model(model_path, compile=False)
     inference_model = build_inference_model2(paired_model)
 
     qd_encoder = get_qd_encoder(max_seq_length)

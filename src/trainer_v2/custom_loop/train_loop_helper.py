@@ -4,11 +4,12 @@ import tensorflow as tf
 from tensorflow.python.eager import context
 from tensorflow.python.framework import ops
 
+import trainer_v2.per_project.transparency.mmp.probe.probe_common
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.train_util.get_tpu_strategy import get_strategy2
 
 
-def fetch_metric_result(metrics: Dict[str, tf.keras.metrics.Metric]):
+def fetch_metric_result(metrics: Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]):
     metric_res = {}
     for name, m in metrics.items():
         metric_res[name] = m.result().numpy()

@@ -3,6 +3,8 @@ from typing import Dict
 
 import tensorflow as tf
 
+import trainer_v2.per_project.transparency.mmp.probe.probe_common
+
 
 class EvalerIF(ABC):
     @abstractmethod
@@ -18,7 +20,7 @@ class EvalerIF(ABC):
         pass
 
     @abstractmethod
-    def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
+    def get_eval_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
         pass
 
 

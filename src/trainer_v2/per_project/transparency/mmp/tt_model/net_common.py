@@ -41,8 +41,3 @@ def get_tt_scorer(tti: tf.keras.models.Model):
     return score_fn
 
 
-def find_layer(model, name):
-    for l in model.layers:
-        if l.name == name:
-            return l
-    raise KeyError("{} is not found".format(name))

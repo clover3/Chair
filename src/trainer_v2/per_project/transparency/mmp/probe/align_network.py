@@ -4,14 +4,14 @@ import tensorflow as tf
 from keras.utils import losses_utils
 from transformers import shape_list
 
+import trainer_v2.per_project.transparency.mmp.probe.probe_common
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.probe.probe_network import identify_layers, \
-    combine_qd_mask, TFBertLayerFlat, build_probs_from_tensor_d, build_probe_from_layer_features, ProbeMAE, \
-    ProbePairwiseAcc
-from tf_util.lib.tf_funcs import reduce_max
-from trainer_v2.per_project.transparency.mmp.tt_model.net_common import find_layer
+from trainer_v2.per_project.transparency.mmp.probe.probe_common import combine_qd_mask, build_paired_inputs_concat, \
+    compute_probe_loss, ProbeMAE, ProbePairwiseAcc, build_probs_from_tensor_d, build_probe_from_layer_features, \
+    identify_layers, TFBertLayerFlat
+from tf_util.lib.tf_funcs import reduce_max, find_layer
 
-Metric = tf.keras.metrics.Metric
+Metric = trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric
 
 
 def get_attn_mask_bias(attn_mask, dtype):
@@ -80,7 +80,7 @@ def build_align_features(out_d, qd_target_mask, q_mask, d_mask) -> Dict[str, tf.
     return out_feature_set
 
 
-class AlignAcc(tf.keras.metrics.Metric):
+class AlignAcc(trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric):
     def __init__(self, pred_parent, pred_key, name, **kwargs):
         super(AlignAcc, self).__init__(name=name, **kwargs)
         self.correct = self.add_weight(name='correct', initializer='zeros')
@@ -129,24 +129,38 @@ class ProbeLossOnSeq(tf.keras.losses.Loss):
         delta = 0.5
         self.base_loss_fn = tf.keras.losses.Huber(delta=delta, reduction=losses_utils.ReductionV2.NONE)
 
+
     def __call__(self, *args, **kwargs):
         return self.call(*args, **kwargs)
 
     def call(self, output_d):
         logit_probe_on_align_feature = output_d['logit_probe_on_align_feature']
         logits = output_d['logits']
+        return compute_probe_loss(logits, logit_probe_on_align_feature, self.base_loss_fn)
 
+
+class ProbeLossFromDict(tf.keras.losses.Loss):
+    def __init__(self, name='probe_loss_from_dict'):
+        super().__init__(name=name)
+        delta = 0.5
+        self.base_loss_fn = tf.keras.losses.Huber(delta=delta, reduction=losses_utils.ReductionV2.NONE)
+
+    def __call__(self, *args, **kwargs):
+        return self.call(*args, **kwargs)
+
+    def call(self, output_d):
+        input_mask = output_d['input_mask']
+        probe_on_hidden = output_d['logit_probe_on_hidden']
+        probe_on_attn_like = output_d['logit_probe_on_attn_like']
+        logits = output_d['logits']
+        sample_weight = tf.cast(input_mask, tf.float32)
         def loss_fn(target, pred):
-            losses = self.base_loss_fn(target, pred)
-            return tf.reduce_mean(losses)
+            return self.base_loss_fn(target, pred, sample_weight=sample_weight)
 
-        loss_d = {}
-        for k, v in logit_probe_on_align_feature.items():
-            loss_d[f"probe/{k}_loss"] = loss_fn(logits, v)
-
-        loss_d_values = loss_d.values()
-        loss = tf.reduce_sum(list(loss_d_values))
-        return loss
+        all_d = {}
+        all_d.update(probe_on_hidden)
+        all_d.update(probe_on_attn_like)
+        return compute_probe_loss(logits, all_d, loss_fn)
 
 
 class AlignLossFromDict(tf.keras.losses.Loss):
@@ -265,24 +279,9 @@ class GAlignNetwork:
         bert_config = bert_main_layer._config
         layers_d = identify_layers(bert_main_layer, target_layer_no)
 
-
         # Part 1. Build inputs
         keys = ["input_ids", "token_type_ids", "q_term_mask", "d_term_mask", "label", "is_valid"]
-        input_d = {}
-        inputs = []
-        for i in [1, 2]:
-            for key in keys:
-                field_name = key + str(i)
-                input_tensor = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name=field_name)
-                inputs.append(input_tensor)
-                input_d[field_name] = input_tensor
-
-        input_concat_d = {}
-        for key in keys:
-            t1 = input_d[key + "1"]
-            t2 = input_d[key + "2"]
-            t_concat = tf.concat([t1, t2], axis=0)
-            input_concat_d[key] = t_concat
+        input_concat_d, inputs = build_paired_inputs_concat(keys)
 
         input_ids = input_concat_d["input_ids"]
         segment_ids = input_concat_d["token_type_ids"]
@@ -295,8 +294,12 @@ class GAlignNetwork:
 
         qd_target_mask = combine_qd_mask(q_term_mask, d_term_mask)
         c_log.info("bert_main_layer")
+        bert_input = {
+            'input_ids': input_ids,
+            'token_type_ids': segment_ids
+        }
         bert_outputs = bert_main_layer(
-            [input_ids, segment_ids],
+            bert_input,
             output_attentions=True,
             output_hidden_states=True)
         logits = orig_classifier(bert_outputs.pooler_output)
@@ -315,12 +318,10 @@ class GAlignNetwork:
         dtype = embedding.dtype
         attn_mask_bias = get_attn_mask_bias(attn_mask, dtype)
 
-        c_log.info("TFBertLayerFlat")
         bert_flat = TFBertLayerFlat(bert_config, layers_d)
         per_layer_feature_tensors = bert_flat(embedding, attn_mask_bias, qd_target_mask)
 
         # Part 4. Probes
-        c_log.info("probe_on_hidden")
         hidden_tensor_d = {}
         for i, hidden_layer in enumerate(hidden):
             if 3 < i < 10:
@@ -330,11 +331,9 @@ class GAlignNetwork:
 
         probe_on_hidden: Dict[str, tf.Tensor] = build_probs_from_tensor_d(hidden_tensor_d)
 
-        c_log.info("probe_on_attn_like")
         probe_on_attn_like = build_probe_from_layer_features(
             per_layer_feature_tensors, bert_config.hidden_size, n_out_dim)
         #  dd
-        c_log.info("build_align_features")
         align_feature_d = build_align_features(per_layer_feature_tensors,
                              qd_target_mask, q_term_mask, d_term_mask)
 

@@ -6,9 +6,8 @@ from trainer_v2.per_project.transparency.mmp.trainer_d_out2 import TrainerDOut2
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from trainer_v2.per_project.transparency.mmp.probe.probe_network import ProbeOnBERT, ProbeLossFromDict
 from trainer_v2.per_project.transparency.mmp.probe.align_network import AlignLossFromDict, GAlignNetwork, AddLosses, \
-    ProbeLossOnSeq
+    ProbeLossOnSeq, ProbeLossFromDict
 
 import sys
 from trainer_v2.chair_logging import c_log, IgnoreFilter, IgnoreFilterRE
@@ -20,7 +19,6 @@ from trainer_v2.custom_loop.prediction_trainer import ModelV2IF, ModelV3IF
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
 from trainer_v2.custom_loop.train_loop import tf_run2
 from trainer_v2.custom_loop.trainer_if import TrainerIF, TrainerIFBase
-from trainer_v2.per_project.transparency.mmp.tt_model.model_conf_defs import InputShapeConfigTT, InputShapeConfigTT100_4
 from trainer_v2.train_util.arg_flags import flags_parser
 
 
@@ -35,7 +33,11 @@ class GAlignModel(ModelV3IF):
         c_log.info("Loading model from {}".format(init_checkpoint))
         ranking_model = tf.keras.models.load_model(init_checkpoint, compile=False)
         self.network = GAlignNetwork(ranking_model)
-        loss_list = [AlignLossFromDict(), ProbeLossOnSeq(), ProbeLossFromDict()]
+        loss_list = [
+            AlignLossFromDict(),
+            ProbeLossOnSeq(),
+            ProbeLossFromDict(),
+        ]
         self.loss = AddLosses(loss_list)
 
     def get_keras_model(self) -> tf.keras.models.Model:

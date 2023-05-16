@@ -4,6 +4,8 @@ import os
 from typing import Tuple, Dict, Callable, List
 
 import tensorflow as tf
+
+import trainer_v2.per_project.transparency.mmp.probe.probe_common
 from misc_lib import RecentCounter
 from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
@@ -191,7 +193,7 @@ def tf_run_eval(run_config: RunConfig2,
         trainer.set_keras_model(model)
         loss_metric = tf.keras.metrics.Mean(name='loss')
 
-        metrics: Dict[str, tf.keras.metrics.Metric] = trainer.get_eval_metrics()
+        metrics: Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric] = trainer.get_eval_metrics()
 
     c_log.debug("tf_run_inner initializing dataset")
     eval_dataset = build_dataset(run_config.dataset_config.eval_files_path, False)

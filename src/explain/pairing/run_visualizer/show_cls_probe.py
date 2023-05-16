@@ -74,11 +74,6 @@ class MMDVisualize(TaskVisualizationPolicyI):
         return make_relevance_prediction_summary_str(base_prob)
 
     def prob_to_color(self, rel):
-        color_mapping = {
-            0: 0,  # Red = Contradiction
-            1: 2,  # Green = Neutral
-            2: 1  # Blue = Entailment
-        }
         mag = min(int(abs(rel) * 255 / 10), 255)
         mag = 255 - mag
         if rel > 0:
@@ -89,6 +84,31 @@ class MMDVisualize(TaskVisualizationPolicyI):
         color_score = [prob[color_mapping[0]], prob[color_mapping[0]], 1]
         color_score = [255 * v for v in color_score]
         return color_score
+
+    def get_cell_str(self, rel):
+        return "{0:.1f}".format(rel)
+        s = "{0:.2f}".format(prob[1])
+        if s[0] == 1:
+            return "1.0"
+        else:
+            return s[1:]
+
+
+class RegressionVisualize(TaskVisualizationPolicyI):
+    def __init__(self, base_p):
+        self.base_p = base_p
+
+    def make_prediction_summary_str(self, base_prob):
+        return make_relevance_prediction_summary_str(base_prob)
+
+    def prob_to_color(self, rel):
+        mag = min(int(abs(rel) * 255 / 10), 255)
+        mag = 255 - mag
+        if rel > 0:
+            return [mag, mag, 255]
+        else:
+            return [255, mag, mag]
+
 
     def get_cell_str(self, rel):
         return "{0:.1f}".format(rel)
@@ -249,6 +269,8 @@ def print_html(output_d, save_name):
 
         rows = [row[:display_len] for row in rows]
         html.write_table(rows)
+
+
 
 def estimator_pickle_to_stacked(pickle_path):
     v = EstimatorPredictionViewer(pickle_path)

@@ -2,6 +2,8 @@ import logging
 import os
 
 from tensorflow.python.ops.summary_ops_v2 import create_file_writer
+
+import trainer_v2.per_project.transparency.mmp.probe.probe_common
 from cpath import output_path
 from misc_lib import path_join
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
@@ -39,7 +41,7 @@ class LinearV3:
 
 
 
-Metric = tf.keras.metrics.Metric
+Metric = trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric
 class ProbeMAE(Metric):
     def __init__(self, name, **kwargs):
         super(ProbeMAE, self).__init__(name=name, **kwargs)

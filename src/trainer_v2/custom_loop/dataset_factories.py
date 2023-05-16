@@ -174,6 +174,7 @@ def get_pairwise_dataset(
         run_config: RunConfig2,
         model_config: ModelConfigType,
         is_for_training,
+        add_dummy_y=True
     ) -> tf.data.Dataset:
 
     def decode_record(record):
@@ -186,7 +187,9 @@ def get_pairwise_dataset(
             name_to_features[f'token_type_ids{i+1}'] = fixed_len_feature()
 
         record = tf.io.parse_single_example(record, name_to_features)
-        return reform_example(record)
+        if add_dummy_y:
+            record = reform_example(record)
+        return record
 
     def reform_example(record):
         for k, v in record.items():
@@ -233,13 +236,9 @@ def read_pairwise_as_pointwise(
     def concat_items(x, y):
         input_ids = tf.concat([x['input_ids1'], x['input_ids2']], axis=0)
         token_type_ids = tf.concat([x['token_type_ids1'], x['token_type_ids2']], axis=0)
-        y_new = tf.concat([y, y], axis=0)
-        zero = tf.zeros_like(input_ids, tf.int32)
         return {
             'input_ids': input_ids,
             'token_type_ids': token_type_ids,
-            'target_q_term_mask': zero,
-            'target_d_term_mask': zero,
         }
 
     return dataset.map(concat_items)

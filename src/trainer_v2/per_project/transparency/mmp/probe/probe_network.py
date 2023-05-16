@@ -1,15 +1,14 @@
-import math
 import tensorflow as tf
 from keras.utils import losses_utils
-from transformers import BertConfig, TFBertMainLayer
-from transformers.models.bert.modeling_tf_bert import TFBertLayer
-from transformers.tf_utils import stable_softmax, shape_list
+from transformers import TFBertMainLayer, PretrainedConfig, BertConfig
+from transformers.tf_utils import shape_list
 from typing import Dict, Any
 
-from list_lib import dict_value_map
-from models.transformer.bert_common_v2 import create_attention_mask_from_input_mask
+from cpath import get_bert_config_path
+from models.transformer.bert_common_v2 import create_attention_mask_from_input_mask, get_shape_list
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.tt_model.net_common import find_layer
+from tf_util.lib.tf_funcs import find_layer
+
 
 # define a model which encode first layer
 # Features that we will extract
@@ -40,178 +39,11 @@ from trainer_v2.per_project.transparency.mmp.tt_model.net_common import find_lay
 # > > TFBertSelfOutput
 # > TFBertIntermediate Begin
 # > TFBertOutput Begin
-class TFBertLayerFlat(tf.keras.layers.Layer):
-    def __init__(self, config: BertConfig, layers_d):
-        super(TFBertLayerFlat, self).__init__()
-
-        self.query = layers_d['query']
-        self.key = layers_d['key']
-        self.value = layers_d['value']
-        self.attn_out_dense = layers_d['attn_out_dense']
-        self.attn_out_layernorm = layers_d['attn_out_layernorm']
-
-        self.intermediate_dense = layers_d['intermediate_dense']
-        self.intermediate_act_fn = layers_d['intermediate_act_fn']
-
-        self.bert_out_dense = layers_d['bert_out_dense']
-        self.bert_out_layernorm = layers_d['bert_out_layernorm']
-
-        self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
-        self.num_attention_heads = config.num_attention_heads
-        self.all_head_size = config.num_attention_heads * self.attention_head_size
-        self.sqrt_att_head_size = math.sqrt(self.attention_head_size)
-
-    def transpose_for_scores(self, tensor: tf.Tensor, batch_size: int) -> tf.Tensor:
-        # Reshape from [batch_size, seq_length, all_head_size] to [batch_size, seq_length, num_attention_heads, attention_head_size]
-        tensor = tf.reshape(tensor=tensor, shape=(batch_size, -1, self.num_attention_heads, self.attention_head_size))
-        # Transpose the tensor from [batch_size, seq_length, num_attention_heads, attention_head_size] to [batch_size, num_attention_heads, seq_length, attention_head_size]
-        return tf.transpose(tensor, perm=[0, 2, 1, 3])
-
-    def call(
-        self,
-        layer_input_vector: tf.Tensor,
-        attn_mask_bias: tf.Tensor,
-        target_mask: tf.Tensor,
-    ):
-        target_mask_ex = tf.cast(tf.expand_dims(target_mask, axis=1), tf.float32)
-
-        batch_size = shape_list(layer_input_vector)[0]
-        # H: number of head
-        # D: dimension per head
-        # hidden_states: [B, M, H*D]
-
-        #  > TFBertAttention Begin
-        #  > > TFBertSelfAttention Begin
-        mixed_query_layer = self.query(inputs=layer_input_vector)
-        # [B, H, M, D]
-        key_layer = self.transpose_for_scores(self.key(inputs=layer_input_vector), batch_size)
-        value_layer = self.transpose_for_scores(self.value(inputs=layer_input_vector), batch_size)
-        query_layer = self.transpose_for_scores(mixed_query_layer, batch_size)
-
-        attention_scores = tf.matmul(query_layer, key_layer, transpose_b=True) # [B, H, M, M]
-        dk = tf.cast(self.sqrt_att_head_size, dtype=attention_scores.dtype)
-        attention_scores = tf.divide(attention_scores, dk)
-        attention_scores = tf.add(attention_scores, attn_mask_bias)
-
-        attention_probs = stable_softmax(logits=attention_scores, axis=-1)  # [B, H, M, M]
-        attention_output = tf.matmul(attention_probs, value_layer)
-        attention_output = tf.transpose(attention_output, perm=[0, 2, 1, 3])
-        attention_output = tf.reshape(tensor=attention_output, shape=(batch_size, -1, self.all_head_size))
-
-        attention_probs_tm = attention_probs * target_mask_ex
-        attention_output_tm = tf.matmul(attention_probs_tm, value_layer)
-        attention_output_tm = tf.transpose(attention_output_tm, perm=[0, 2, 1, 3])
-        attention_output_tm = tf.reshape(tensor=attention_output_tm, shape=(batch_size, -1, self.all_head_size))
-
-        #  > > TFBertSelfAttention End
-
-        #  > > TFBertSelfOutput Begin
-        # (batch_size, seq_len_q, all_head_size)
-        g_attention_output = self.attn_out_dense(inputs=attention_output)
-        g_attention_output_tm = self.attn_out_dense(inputs=attention_output_tm)
-
-        g_attention_output_add_residual = self.attn_out_layernorm(inputs=g_attention_output + layer_input_vector)
-        g_attention_output_add_residual_tm = self.attn_out_layernorm(inputs=g_attention_output_tm + layer_input_vector)
-
-        #  > > TFBertSelfOutput End
-        # > TFBertAttention End
-
-        # > TFBertIntermediate Begin
-        hidden_states = self.intermediate_dense(inputs=g_attention_output_add_residual)
-        hidden_states_tm = self.intermediate_dense(inputs=g_attention_output_add_residual_tm)
-        intermediate_output = self.intermediate_act_fn(hidden_states)
-        intermediate_output_tm = self.intermediate_act_fn(hidden_states_tm)
-
-        # > TFBertOutput Begin
-        bert_out_first = self.bert_out_dense(inputs=intermediate_output)
-        bert_out_first_tm = self.bert_out_dense(inputs=intermediate_output_tm)
-
-        bert_out_last = self.bert_out_layernorm(inputs=bert_out_first + g_attention_output_add_residual)
-        bert_out_last_tm = self.bert_out_layernorm(inputs=bert_out_first_tm + g_attention_output_add_residual_tm)
-        layer_output = bert_out_last
-        out_d = {
-            'query_layer': query_layer,
-            'key_layer': key_layer,
-            'value_layer': value_layer,
-            'attention_scores': attention_scores,
-            'attention_probs': attention_probs,
-            'attention_output': attention_output,
-            'g_attention_output': g_attention_output,
-            'g_attention_output_add_residual': g_attention_output_add_residual,
-            'intermediate_output': intermediate_output,
-            'bert_out_last': bert_out_last,
-
-            'attention_probs_tm': attention_probs_tm,
-            'attention_output_tm': attention_output_tm,
-            'g_attention_output_tm': g_attention_output_tm,
-            'g_attention_output_add_residual_tm': g_attention_output_add_residual_tm,
-            'intermediate_output_tm': intermediate_output_tm,
-            'bert_out_last_tm': bert_out_last_tm
-        }
-
-        out_d = stop_gradient_for_dict(out_d)
-        return out_d
-
-
-def build_probs_from_tensor_d(d: Dict[str, tf.Tensor], out_dim=1) -> Dict[str, tf.Tensor]:
-    probe_tensor = {}
-    for k, feature_tensor in d.items():
-        probe_name = k
-        dense = tf.keras.layers.Dense(out_dim, name=probe_name)
-        probe_tensor[probe_name] = dense(feature_tensor)
-    return probe_tensor
-
-
-def build_probe_from_layer_features(out_d, all_head_size, out_dim):
-    bhmd_features = ['query_layer', 'key_layer', 'value_layer']
-    bhmm_features = ['attention_scores', 'attention_probs',
-                     'attention_scores_tm', 'attention_probs_tm',]
-    bmd_features = ['attention_output', 'g_attention_output', 'g_attention_output_add_residual',
-                    'intermediate_output_tm', 'bert_out_last_tm',
-                    'attention_output_tm', 'g_attention_output_tm', 'g_attention_output_add_residual_tm',
-                    'intermediate_output_tm', 'bert_out_last_tm',
-                    ]
-    batch_size = shape_list(out_d['query_layer'])[0]
-    bhmd_feature_d = {k: out_d[k] for k in bhmd_features}
-    def reshape_bhmd(tensor):
-        t = tf.transpose(tensor, perm=[0, 2, 1, 3])
-        t = tf.reshape(tensor=t, shape=(batch_size, -1, all_head_size))
-        return t
-
-    bhmd_feature_d = dict_value_map(reshape_bhmd, bhmd_feature_d)
-    bhmd_probe_d = build_probs_from_tensor_d(bhmd_feature_d, out_dim)
-
-    bmd_feature_d = {k: out_d[k] for k in bmd_features}
-    bmd_probe_d = build_probs_from_tensor_d(bmd_feature_d, out_dim)
-
-    prediction_out_d = {}
-    prediction_out_d.update(bhmd_probe_d)
-    prediction_out_d.update(bmd_probe_d)
-    return prediction_out_d
-
-
-    # The goal of this classifier is to predict if given q tokens and d tokens are considered globally aligned
-
-
-def identify_layers(bert_main_layer: TFBertMainLayer, target_layer_no):
-    layer: TFBertLayer = bert_main_layer.encoder.layer[target_layer_no]
-    layers_d = identify_layers_from_bert_layer(layer)
-    return layers_d
-
-
-def identify_layers_from_bert_layer(layer: TFBertLayer):
-    layers_d = {}
-    self_attention = layer.attention.self_attention
-    layers_d['query'] = self_attention.query
-    layers_d['key'] = self_attention.key
-    layers_d['value'] = self_attention.value
-    layers_d['attn_out_dense'] = layer.attention.dense_output.dense
-    layers_d['attn_out_layernorm'] = layer.attention.dense_output.LayerNorm
-    layers_d['intermediate_dense'] = layer.intermediate.dense
-    layers_d['intermediate_act_fn'] = layer.intermediate.intermediate_act_fn
-    layers_d['bert_out_dense'] = layer.bert_output.dense
-    layers_d['bert_out_layernorm'] = layer.bert_output.LayerNorm
-    return layers_d
+from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
+from trainer_v2.per_project.transparency.mmp.probe.probe_common import build_paired_inputs_concat, compute_probe_loss, \
+    Metric, ProbeMAE, ProbePairwiseAcc, build_probs_from_tensor_d, build_probe_from_layer_features, identify_layers, \
+    TFBertLayerFlat
+from trainer_v2.per_project.transparency.mmp.trnsfmr_util import get_dummy_input_for_bert_layer
 
 
 def attention_mask_from_input_ids(input_ids):
@@ -221,96 +53,10 @@ def attention_mask_from_input_ids(input_ids):
     return attention_mask
 
 
-def stop_gradient_for_dict(d: Dict[str, tf.Tensor]):
-    return {k: tf.stop_gradient(v, name=f"{k}_stop_gradient") for k, v in d.items()}
-
-
-
 def compute_logit_loss(target_logit, pred_logit):
     error = tf.abs(target_logit - pred_logit)
     tolerance = 0.5
     return tf.maximum(error, tolerance)
-
-
-Metric = tf.keras.metrics.Metric
-class ProbeMAE(Metric):
-    def __init__(self, target_key, pred_parent, pred_key, name, **kwargs):
-        super(ProbeMAE, self).__init__(name=name, **kwargs)
-        self.mae = self.add_weight(name='mae', initializer='zeros')
-        self.count = self.add_weight(name='count', initializer='zeros')
-        # self.metric_inner = tf.keras.metrics.MeanAbsoluteError()
-        self.target_key = target_key
-        self.pred_parent = pred_parent
-        self.pred_key = pred_key
-
-    def update_state(self, output_d, _sample_weight=None):
-        y_true = output_d[self.target_key]
-        y_true_ex = tf.expand_dims(y_true, 1)
-        y_pred = output_d[self.pred_parent][self.pred_key]
-        input_mask = output_d['input_mask']
-        sample_weight = tf.cast(input_mask, tf.float32)
-        mae = tf.reduce_sum(tf.abs(y_true_ex - y_pred))
-        self.mae.assign_add(mae)
-        n_valid = tf.reduce_sum(tf.cast(sample_weight, tf.float32))
-        self.count.assign_add(n_valid)
-
-    def result(self):
-        return self.mae / self.count
-
-    def reset_state(self):
-        self.mae.assign(0.0)
-        self.count.assign(0.0)
-
-
-class ProbePairwiseAcc(Metric):
-    def __init__(self, target_key, pred_parent, pred_key, name, **kwargs):
-        super(ProbePairwiseAcc, self).__init__(name=name, **kwargs)
-        self.correct = self.add_weight(name='correct', initializer='zeros')
-        self.count = self.add_weight(name='count', initializer='zeros')
-        self.target_key = target_key
-        self.pred_parent = pred_parent
-        self.pred_key = pred_key
-
-    def update_state(self, output_d, _sample_weight=None):
-        y_pred = output_d[self.pred_parent][self.pred_key]  # [B*2, M, 1] or  [B, 1]
-        input_mask = output_d['input_mask']
-        shape_l = shape_list(y_pred)
-
-        if len(shape_l) == 3:
-            B2, M, One = shape_l
-            y_pred_paired = tf.reshape(y_pred, [2, -1, M, 1])
-            input_mask_paired = tf.reshape(input_mask, [2, -1, M, 1])
-        elif len(shape_l) == 2:
-            B2, One = shape_l
-            y_pred_paired = tf.reshape(y_pred, [2, -1, 1])
-            input_mask_paired = tf.ones_like(y_pred_paired, tf.int32)
-        else:
-            raise Exception()
-
-
-        y_pred_pos = y_pred_paired[0]
-        y_pred_neg = y_pred_paired[1]
-
-        input_mask_pos = input_mask_paired[0]
-        input_mask_neg = input_mask_paired[1]
-
-        input_mask_both = input_mask_pos * input_mask_neg
-        sample_weight = tf.cast(input_mask_both, tf.float32)
-        sample_weight_f = tf.cast(sample_weight, tf.float32)
-
-        is_correct = tf.cast(y_pred_pos > y_pred_neg, tf.float32)
-        correct_masked_f = tf.reduce_sum(is_correct * sample_weight_f)
-
-        self.correct.assign_add(correct_masked_f)
-        n_valid = tf.reduce_sum(sample_weight_f)
-        self.count.assign_add(n_valid)
-
-    def result(self):
-        return self.correct / self.count
-
-    def reset_state(self):
-        self.correct.assign(0.0)
-        self.count.assign(0.0)
 
 
 class ProbeLossFromDict(tf.keras.losses.Loss):
@@ -324,22 +70,59 @@ class ProbeLossFromDict(tf.keras.losses.Loss):
 
     def call(self, output_d):
         input_mask = output_d['input_mask']
-        probe_on_hidden = output_d['logit_probe_on_hidden']
-        probe_on_attn_like = output_d['logit_probe_on_attn_like']
+        probe_on_hidden = output_d['probe_on_hidden']
+        probe_on_attn_like = output_d['probe_on_attn_like']
         logits = output_d['logits']
-
+        sample_weight = tf.cast(input_mask, tf.float32)
         def loss_fn(target, pred):
             target_ex = tf.expand_dims(target, axis=1)
-            losses = self.base_loss_fn(target_ex, pred, sample_weight=sample_weight)
-            return tf.reduce_mean(losses)
+            return self.base_loss_fn(target_ex, pred, sample_weight=sample_weight)
+
+        all_d = {}
+        all_d.update(probe_on_hidden)
+        all_d.update(probe_on_attn_like)
+        return compute_probe_loss(logits, all_d, loss_fn)
+
+
+
+class ProbePairwise(tf.keras.losses.Loss):
+    def __init__(self, name='probe_loss_from_dict'):
+        super().__init__(name=name)
+        delta = 0.5
+        self.base_loss_fn = tf.keras.losses.Huber(delta=delta, reduction=losses_utils.ReductionV2.NONE)
+
+    def __call__(self, *args, **kwargs):
+        return self.call(*args, **kwargs)
+
+    def call(self, output_d):
+        input_mask = output_d['input_mask']
+        probe_on_hidden = output_d['probe_on_hidden']
+        probe_on_attn_like = output_d['probe_on_attn_like']
+        logits = output_d['logits'] # [B*2, 1]
+
+        logits_pair = tf.reshape(logits, [2, -1, 1, 1])
+        targets = logits_pair[0] - logits_pair[1]
+        pair_label = tf.cast(tf.less(0, targets), tf.int32)
+        B, _, _= get_shape_list(targets)
+
         sample_weight = tf.cast(input_mask, tf.float32)
+        margin = 0.5
+        f_pair_gap_large = tf.cast(tf.less(margin, tf.abs(targets)), tf.float32)
+        sample_weight = sample_weight * f_pair_gap_large
+
+        def loss_per_probe(pred):
+            pred_pair = tf.reshape(pred, [2, B, -1, 1])
+            pred_v = pred_pair[0] - pred_pair[1]
+            losses =  self.base_loss_fn(pair_label, pred_v, sample_weight=sample_weight)
+            return tf.reduce_mean(losses)
+
+        all_probe_d = {}
+        all_probe_d.update(probe_on_hidden)
+        all_probe_d.update(probe_on_attn_like)
 
         loss_d = {}
-        for k, v in probe_on_hidden.items():
-            loss_d[f"probe/{k}_loss"] = loss_fn(logits, v)
-        for k, v in probe_on_attn_like.items():
-            loss_d[f"probe/{k}_loss"] = loss_fn(logits, v)
-
+        for k, v in all_probe_d.items():
+            loss_d[f"probe/{k}_loss"] = loss_per_probe(logits, v)
         loss_d_values = loss_d.values()
         loss = tf.reduce_sum(list(loss_d_values))
         return loss
@@ -347,49 +130,63 @@ class ProbeLossFromDict(tf.keras.losses.Loss):
 
 # Probe predictor, Effect Predictor, G-Align predictor
 # Evaluation metric: Term effect measure
+def build_bert_layer(old_bert_layer):
+    new_bert_layer = TFBertMainLayer(old_bert_layer._config, name="bert")
+    param_values = tf.keras.backend.batch_get_value(old_bert_layer.weights)
+    _ = new_bert_layer(get_dummy_input_for_bert_layer())
+    tf.keras.backend.batch_set_value(zip(new_bert_layer.weights, param_values))
+    return new_bert_layer
+
 
 class ProbeOnBERT:
     def __init__(self, bert_model):
         n_out_dim = 1
         target_layer_no = 0
-
         # We skip dropout
-        bert_main_layer = find_layer(bert_model, "bert")
-        orig_classifier = find_layer(bert_model, "classifier")
-        bert_config = bert_main_layer._config
+        bert_main_layer_ckpt = find_layer(bert_model, "bert")
+        classifier_ckpt = find_layer(bert_model, "classifier")
+
+        classifier = classifier_ckpt
+        bert_main_layer = bert_main_layer_ckpt
+        # bert_main_layer_ckpt_param = bert_main_layer_ckpt.get_weights()
+        # classifier_ckpt_param = classifier_ckpt.get_weights()
+
+        bert_config = bert_main_layer_ckpt._config
+        # bert_main_layer = TFBertMainLayer(bert_config, name="bert")
+        # _ = bert_main_layer(get_dummy_input_for_bert_layer())
+        # bert_main_layer.set_weights(bert_main_layer_ckpt_param)
+
+        # classifier = tf.keras.layers.Dense(1)
+        # hidden_size = bert_config.hidden_size
+        # _ = classifier(tf.zeros([1, hidden_size]))
+        # classifier.set_weights(classifier_ckpt_param)
+
         c_log.info("identify_layers")
         layers_d = identify_layers(bert_main_layer, target_layer_no)
 
-        input_ids = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="input_ids")
-        segment_ids = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="token_type_ids")
-        q_term_mask = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="q_term_mask")
-        d_term_mask = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="d_term_mask")
+        keys = ["input_ids", "token_type_ids"]
+        input_concat_d, inputs = build_paired_inputs_concat(keys)
 
-        # d_term_mask_mask has either 0, -1, 1
-        d_term_mask = tf.abs(d_term_mask)
-
-        inputs = [
-            input_ids,
-            segment_ids,
-            q_term_mask,
-            d_term_mask
-        ]
-
-        qd_target_mask = combine_qd_mask(q_term_mask, d_term_mask)
-
+        input_ids = input_concat_d["input_ids"]
+        segment_ids = input_concat_d["token_type_ids"]
+        bert_input = {
+            'input_ids': input_ids,
+            'token_type_ids': segment_ids
+        }
         c_log.info("bert_main_layer")
         bert_outputs = bert_main_layer(
-            [input_ids, segment_ids],
+            bert_input,
             output_attentions=True,
             output_hidden_states=True)
-        logits = orig_classifier(bert_outputs.pooler_output)
+        logits = classifier(bert_outputs.pooler_output)
         logits = tf.stop_gradient(logits, "logits_stop_gradient")
-        attn = bert_outputs.attentions
         hidden = bert_outputs.hidden_states
         hidden = [tf.stop_gradient(h) for h in hidden]
 
-        input_mask = tf.cast(tf.equal(input_ids, 0), tf.int32)
+        input_mask = tf.cast(tf.not_equal(input_ids, 0), tf.int32)
         input_mask_shape = shape_list(input_mask)
+        B = input_mask_shape[0]
+        M = input_mask_shape[1]
         attn_mask = tf.reshape(
             input_mask, (input_mask_shape[0], 1, 1, input_mask_shape[1])
         )
@@ -399,6 +196,7 @@ class ProbeOnBERT:
 
         c_log.info("TFBertLayerFlat")
         layer1_hidden = hidden[1]
+        qd_target_mask = tf.zeros([B, M, M], tf.int32)
         bert_flat = TFBertLayerFlat(bert_config, layers_d)
         per_layer_feature_tensors = bert_flat(layer1_hidden, attn_mask_bias, qd_target_mask)
 
@@ -416,19 +214,16 @@ class ProbeOnBERT:
         probe_on_attn_like = build_probe_from_layer_features(
             per_layer_feature_tensors, bert_config.hidden_size, n_out_dim)
         #  dd
-        align_feature_d = {}
-        align_probe: Dict[str, tf.Tensor] = build_probe_from_layer_features(
-            align_feature_d, bert_config.hidden_size, n_out_dim)
         self.probe_model_output: Dict[str, Any] = {
             "probe_on_hidden": probe_on_hidden,  # Dict[str, tf.Tensor]
             "probe_on_attn_like": probe_on_attn_like,
-            "align_probe": align_probe,
             "logits": logits,
             "input_mask": input_mask,
-            "q_term_mask": q_term_mask,
-            "d_term_mask": d_term_mask
         }
         self.model = tf.keras.models.Model(inputs=inputs, outputs=self.probe_model_output)
+        self.model.bert_flat = bert_flat
+        self.model.bert_layer = bert_main_layer
+        self.model.classifier = classifier
 
     def get_attn_mask_bias(self, attn_mask, dtype):
         one_cst = tf.constant(1.0, dtype=dtype)
@@ -446,17 +241,16 @@ class ProbeOnBERT:
         }
         for probe_group in ["probe_on_hidden", "probe_on_attn_like"]:
             d = self.probe_model_output[probe_group]
-            # with tf.name_scope(probe_group):
             for pred_key, out_tensor in d.items():
                 group_short = short_mapping[probe_group]
                 metric_name = f"{group_short}/{pred_key}"
                 metric = ProbeMAE(target_key, probe_group, pred_key, name=metric_name)
                 output_d[metric_name] = metric
+
+                metric_name = f"{group_short}/{pred_key}/PairAcc"
+                metric = ProbePairwiseAcc(target_key, probe_group, pred_key, name=metric_name)
+                output_d[metric_name] = metric
+
         return output_d
 
 
-def combine_qd_mask(q_term_mask, d_term_mask):
-    a = tf.expand_dims(q_term_mask, axis=2)
-    b = tf.expand_dims(d_term_mask, axis=1)
-    qd_target_mask = a * b
-    return qd_target_mask

@@ -2,7 +2,7 @@ from typing import Dict
 
 from models.transformer.bert_common_v2 import get_shape_list2
 from trainer_v2.per_project.transparency.mmp.tt_model.encoders import TermVector
-from trainer_v2.per_project.transparency.mmp.tt_model.net_common import find_layer
+from tf_util.lib.tf_funcs import find_layer
 from trainer_v2.per_project.transparency.mmp.tt_model.tt1 import define_inputs, ScoringLayer2, \
     get_tf_loss
 from trainer_v2.per_project.transparency.mmp.tt_model.model_conf_defs import InputShapeConfigTT
