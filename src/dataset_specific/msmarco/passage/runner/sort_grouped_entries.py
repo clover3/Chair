@@ -21,7 +21,7 @@ def re_order_write_for_partition(save_root, partition_no):
 
 def main():
     save_root = path_join("data", "msmarco", "passage", "group_sorted_10K")
-    for i in range(110):
+    for i in range(110, 120):
         c_log.info("Work for {}".format(i))
         try:
             re_order_write_for_partition(save_root, i)

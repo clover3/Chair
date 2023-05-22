@@ -59,7 +59,7 @@ def get_bow_pairwise_dataset_qtw(
         decode_record,
         file_path=file_path,
         do_shuffle=is_for_training,
-        do_repeat=False,
+        do_repeat=is_for_training,
         batch_size=get_batch_size(run_config, is_for_training),
         shuffle_buffer_size=run_config.dataset_config.shuffle_buffer_size,
         drop_remainder=True

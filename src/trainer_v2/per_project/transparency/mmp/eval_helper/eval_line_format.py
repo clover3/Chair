@@ -1,13 +1,13 @@
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Callable, Dict, Tuple
 
 from pytrec_eval import RelevanceEvaluator
 
-from cpath import output_path, at_output_dir
+from cpath import output_path
 from dataset_specific.msmarco.passage.runner.build_ranked_list import build_ranked_list_from_qid_pid_scores
+from list_lib import apply_batch
 from misc_lib import path_join, average, TELI
 
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, load_msmarco_sub_samples
-from misc_lib import select_first_second
+from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sub_samples
 from runnable.trec.pytrec_eval_wrap import convert_ranked_list
 from trainer_v2.chair_logging import c_log
 from trec.qrel_parse import load_qrels_structured
@@ -93,16 +93,6 @@ def predict_and_save_scores_w_itr(score_fn, dataset, run_name, itr, data_size):
         f.write("{}\n".format(score))
 
 
-def apply_batch(l: Iterable, batch_size: int) -> Iterable[List]:
-    cur_batch = []
-    for item in l:
-        cur_batch.append(item)
-        if len(cur_batch) >= batch_size:
-            yield cur_batch
-            cur_batch = []
-    yield cur_batch
-
-
 def predict_and_batch_save_scores(
         score_fn: Callable[[List[Tuple[str, str]]], List[float]],
                             dataset: str,
@@ -112,10 +102,13 @@ def predict_and_batch_save_scores(
     itr = iter(load_msmarco_sub_samples(dataset))
     max_batch_size = 1024
     scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
+    score_and_save_score_lines(itr, score_fn, scores_path, max_batch_size, data_size)
+
+
+def score_and_save_score_lines(itr, score_fn, scores_path, max_batch_size, data_size):
     f = open(scores_path, "w")
     if data_size:
         itr = TELI(itr, data_size)
-
     for batch in apply_batch(itr, max_batch_size):
         scores = score_fn(batch)
         for x, s in zip(batch, scores):

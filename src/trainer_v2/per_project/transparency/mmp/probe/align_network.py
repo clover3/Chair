@@ -155,7 +155,8 @@ class ProbeLossFromDict(tf.keras.losses.Loss):
         logits = output_d['logits']
         sample_weight = tf.cast(input_mask, tf.float32)
         def loss_fn(target, pred):
-            return self.base_loss_fn(target, pred, sample_weight=sample_weight)
+            target_ex = tf.expand_dims(target, axis=1)
+            return self.base_loss_fn(target_ex, pred, sample_weight=sample_weight)
 
         all_d = {}
         all_d.update(probe_on_hidden)
@@ -330,12 +331,12 @@ class GAlignNetwork:
             hidden_tensor_d[key] = hidden_layer
 
         probe_on_hidden: Dict[str, tf.Tensor] = build_probs_from_tensor_d(hidden_tensor_d)
-
         probe_on_attn_like = build_probe_from_layer_features(
             per_layer_feature_tensors, bert_config.hidden_size, n_out_dim)
         #  dd
-        align_feature_d = build_align_features(per_layer_feature_tensors,
-                             qd_target_mask, q_term_mask, d_term_mask)
+        align_feature_d = build_align_features(
+            per_layer_feature_tensors,
+            qd_target_mask, q_term_mask, d_term_mask)
 
         align_feature_d_l = {"L_" + k: v for k, v in align_feature_d.items()}
         logit_probe_on_align_feature = build_probs_from_tensor_d(align_feature_d_l)

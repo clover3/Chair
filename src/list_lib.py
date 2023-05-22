@@ -188,3 +188,12 @@ def pairzip(l1: Iterable[A], l2: Iterable[B]) -> List[Tuple[A, B]]:
         output.append((a, b))
     return output
 
+
+def apply_batch(l: Iterable, batch_size: int) -> Iterable[List]:
+    cur_batch = []
+    for item in l:
+        cur_batch.append(item)
+        if len(cur_batch) >= batch_size:
+            yield cur_batch
+            cur_batch = []
+    yield cur_batch

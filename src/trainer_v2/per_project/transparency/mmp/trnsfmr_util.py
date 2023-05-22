@@ -1,10 +1,10 @@
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Iterable
 
 import tensorflow as tf
 from transformers import AutoTokenizer
 
 
-def get_qd_encoder(max_seq_length) -> Callable[[List[Tuple[str, str]]], tf.data.Dataset]:
+def get_qd_encoder(max_seq_length) -> Callable[[Iterable[Tuple[str, str]]], tf.data.Dataset]:
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
     SpecI = tf.TensorSpec([max_seq_length], dtype=tf.int32)
     sig = (SpecI, SpecI, ),

@@ -29,8 +29,11 @@ def get_strategy(use_tpu=False, tpu_name=None):
         c_log.debug("use_tpu={}".format(use_tpu))
         strategy = tf.distribute.MultiWorkerMirroredStrategy()
         c_log.info(device_list_summary(tf.config.list_logical_devices('GPU')))
-        atexit.register(strategy._extended._cross_device_ops._pool.close)  # type: ignore
-        atexit.register(strategy._extended._host_cross_device_ops._pool.close)  # type: ignore
+        try:
+            atexit.register(strategy._extended._cross_device_ops._pool.close)  # type: ignore
+            atexit.register(strategy._extended._host_cross_device_ops._pool.close)  # type: ignore
+        except AttributeError:
+            c_log.warning("Skip atexit.register")
     return strategy
 
 

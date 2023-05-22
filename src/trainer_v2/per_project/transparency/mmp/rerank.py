@@ -29,8 +29,8 @@ def build_inference_model(paired_model):
 
 def build_inference_model2(paired_model):
     c_log.info("build_inference_model2")
-    input_ids1 = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="input_ids1")
-    segment_ids1 = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="token_type_ids1")
+    input_ids1 = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="input_ids")
+    segment_ids1 = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="token_type_ids")
     inputs = [input_ids1, segment_ids1]
     input_1 = {
         'input_ids': input_ids1,
@@ -51,7 +51,7 @@ def build_inference_model2(paired_model):
     return new_model
 
 
-def get_scorer(model_path):
+def get_scorer(model_path, batch_size=16):
     max_seq_length = 256
     c_log.info("Loading model from %s", model_path)
     paired_model = tf.keras.models.load_model(model_path, compile=False)
@@ -60,9 +60,8 @@ def get_scorer(model_path):
     qd_encoder = get_qd_encoder(max_seq_length)
     def score_fn(qd_list: List):
         dataset = qd_encoder(qd_list)
-        dataset = dataset.batch(16)
+        dataset = dataset.batch(batch_size)
         output = inference_model.predict(dataset)
-        print(output.shape)
         return output
 
     c_log.info("Defining network")

@@ -47,8 +47,11 @@ class TimeEstimator:
         self.time_analyzed = None
         self.time_count = 0
         self.total_repeat = total_repeat
-        if sample_size == 10 and self.total_repeat > 10000:
-            sample_size = 100
+        if sample_size == 10:
+            if self.total_repeat > 1000000:
+                sample_size = 1000
+            if self.total_repeat > 10000:
+                sample_size = 100
         self.name = name
         self.base = 3
         self.sample_size = sample_size

@@ -204,6 +204,28 @@ def get_pairwise_dataset(
                                  is_for_training)
 
 
+def get_pointwise(
+            file_path,
+            run_config: RunConfig2,
+            model_config: ModelConfigType,
+            is_for_training,
+    ) -> tf.data.Dataset:
+
+    def decode_record(record):
+        name_to_features = {}
+        def fixed_len_feature():
+            return tf.io.FixedLenFeature([model_config.max_seq_length], tf.int64)
+        name_to_features[f'input_ids'] = fixed_len_feature()
+        name_to_features[f'token_type_ids'] = fixed_len_feature()
+        record = tf.io.parse_single_example(record, name_to_features)
+        return record
+
+    return create_dataset_common(decode_record,
+                                 run_config,
+                                 file_path,
+                                 is_for_training)
+
+
 def read_pairwise_as_pointwise(
         file_path,
         run_config: RunConfig2,

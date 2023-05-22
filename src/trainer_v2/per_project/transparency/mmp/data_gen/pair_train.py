@@ -36,6 +36,34 @@ def get_encode_fn_for_pair_train():
     return encode_fn
 
 
+def get_encode_fn_for_pointwise():
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+
+    def encode_text_pair(query, document):
+        encoded_input = tokenizer.encode_plus(
+            query,
+            document,
+            padding="max_length",
+            max_length=256,
+            truncation=True,
+        )
+
+        input_ids = encoded_input["input_ids"]
+        token_type_ids = encoded_input["token_type_ids"]
+        attention_mask = encoded_input["attention_mask"]
+        return input_ids, token_type_ids
+
+    def encode_fn(qd: Tuple[str, str]):
+        q, d = qd
+        feature: OrderedDict = OrderedDict()
+        input_ids, token_type_ids = encode_text_pair(q, d)
+        feature["input_ids"] = create_int_feature(input_ids)
+        feature["token_type_ids"] = create_int_feature(token_type_ids)
+        return feature
+    return encode_fn
+
+
+
 def get_encode_fn_for_galign_paired():
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
 

@@ -35,7 +35,7 @@ def probe_save_load():
     base_model_path = sys.argv[1]
     ranking_model = tf.keras.models.load_model(base_model_path, compile=False)
     network = ProbeOnBERT(ranking_model)
-    temp_model_save_path ="/tmp/galign"
+    temp_model_save_path ="/tmp/probe"
     network.model.save(temp_model_save_path)
     loaded_model = tf.keras.models.load_model(temp_model_save_path)
 

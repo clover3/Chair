@@ -20,22 +20,6 @@ from trec.trec_parse import load_ranked_list_grouped
 from trec.types import TrecRankedListEntry
 
 
-def get_scores(run_name):
-    judgment_path = path_join("data", "msmarco", "qrels.train.tsv")
-    dataset = "train_when_0"
-    metric = "recip_rank"
-    scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
-    qid_pid_path = path_join(output_path, "msmarco", "passage", "when_full", "0")
-    ranked_list_path = path_join(output_path, "ranked_list", f"{run_name}_{dataset}.txt")
-    build_ranked_list_from_qid_pid_scores(qid_pid_path, run_name, ranked_list_path, scores_path)
-    ranked_list: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranked_list_path)
-    doc_scores = convert_ranked_list(ranked_list)
-    qrels = load_qrels_structured(judgment_path)
-    evaluator = RelevanceEvaluator(qrels, {metric})
-    score_per_query = evaluator.evaluate(doc_scores)
-    scores = [score_per_query[qid][metric] for qid in score_per_query]
-    return scores
-
 def load_ranked_list(run_name):
     dataset = "train_when_0"
     ranked_list_path = path_join(output_path, "ranked_list", f"{run_name}_{dataset}.txt")
@@ -50,7 +34,6 @@ def convert_rl_format(entries):
     return per_q
 
 
-
 def change_sign(s1, s2):
     diff = s2 - s1
     if diff > 0.01:
@@ -61,17 +44,8 @@ def change_sign(s1, s2):
         return "="
 
 
-def main():
-    run1 = "bm25"
-    run2 = "year"
-
-    judgment_path = path_join("data", "msmarco", "qrels.train.tsv")
-    qrels = load_qrels_structured(judgment_path)
-
-    rlg1 = load_ranked_list(run1)
-    rlg2 = load_ranked_list(run2)
+def compare_two_runs_inner(qrels, rlg1, rlg2):
     counter = Counter()
-
     for key in rlg1:
         rel_d = ""
         for k, v in qrels[key].items():
@@ -101,33 +75,26 @@ def main():
             else:
                 print("Rank {} and {} is not expected".format(rel_rank1, rel_rank2))
 
-        reci_r1 = 1 / (rel_rank1+1 )
+        reci_r1 = 1 / (rel_rank1 + 1)
         reci_r2 = 1 / (rel_rank2 + 1)
 
         sign = change_sign(reci_r1, reci_r2)
         counter[sign] += 1
         if sign != "=":
-            print(f"Relevant doc : {rel_rank1} -> {rel_rank2} ({reci_r2-reci_r1})")
+            print(f"Relevant doc : {rel_rank1} -> {rel_rank2} ({reci_r2 - reci_r1})")
 
-
-        #
-        # for e in rl_1:
-        #     rank1 = doc_id_to_rank1[e.doc_id]
-        #     rank2 = doc_id_to_rank2[e.doc_id]
-        #
-        #     if rank1 > rel_rank1 and rank2 < rel_rank2:
-        #         print(f"new FP {rank1} -> {rank2}")
-        #     elif rank1 > rel_rank1 and rank2 > rel_rank2:
-        #         pass
-        #     elif rank1 < rel_rank1 and rank2 < rel_rank2:
-        #         pass
-        #     elif rank1 < rel_rank1 and rank2 > rel_rank2:
-        #         print(f"new TN {rank1} -> {rank2}")
-        #
-        # print()
-        #
-        #
     print(counter)
+
+def main():
+    run1 = "bm25"
+    run2 = "year"
+
+    judgment_path = path_join("data", "msmarco", "qrels.train.tsv")
+    qrels = load_qrels_structured(judgment_path)
+
+    rlg1 = load_ranked_list(run1)
+    rlg2 = load_ranked_list(run2)
+    compare_two_runs_inner(qrels, rlg1, rlg2)
 
 
 if __name__ == "__main__":

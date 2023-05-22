@@ -221,9 +221,6 @@ class ProbeOnBERT:
             "input_mask": input_mask,
         }
         self.model = tf.keras.models.Model(inputs=inputs, outputs=self.probe_model_output)
-        self.model.bert_flat = bert_flat
-        self.model.bert_layer = bert_main_layer
-        self.model.classifier = classifier
 
     def get_attn_mask_bias(self, attn_mask, dtype):
         one_cst = tf.constant(1.0, dtype=dtype)
