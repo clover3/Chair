@@ -110,7 +110,7 @@ class LocalDecisionNLICore:
             return tf.TensorSpec(input_i.type_spec.shape[1:], dtype=tf.int32)
         self.out_sig = [get_spec(input) for input in model.inputs]
 
-    def predict(self, input_list):
+    def predict(self, input_list: List[Tuple]):
         batch_size = self.batch_size
 
         while len(input_list) % batch_size:
@@ -119,7 +119,6 @@ class LocalDecisionNLICore:
         def generator():
             yield from input_list
 
-        # dataset = tf.data.Dataset.from_tensor_slices(input_list)
         dataset = tf.data.Dataset.from_generator(
             generator,
             output_signature=tuple(self.out_sig))
