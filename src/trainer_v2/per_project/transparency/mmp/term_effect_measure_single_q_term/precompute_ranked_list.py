@@ -6,7 +6,7 @@ from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passag
 from dataset_specific.msmarco.passage.passage_resource_loader import FourItem
 from list_lib import left
 from misc_lib import get_second, TELI
-from trainer_v2.per_project.transparency.mmp.term_effect_measure.compute_gains import EffectiveRankedListInfo
+from trainer_v2.per_project.transparency.mmp.term_effect_measure_single_q_term.compute_gains import EffectiveRankedListInfo
 
 
 def get_rel_pid(qrels, qid):

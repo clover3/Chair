@@ -4,7 +4,7 @@ from krovetzstemmer import Stemmer
 from transformers import AutoTokenizer
 from cpath import output_path
 from misc_lib import path_join
-from trainer_v2.per_project.transparency.mmp.term_effect_measure.compute_gains_resourced import load_resources
+from trainer_v2.per_project.transparency.mmp.term_effect_measure_single_q_term.compute_gains_resourced import load_resources
 
 
 def load_terms():

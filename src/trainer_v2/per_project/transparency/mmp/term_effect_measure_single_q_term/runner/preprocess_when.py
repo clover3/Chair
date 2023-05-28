@@ -6,8 +6,8 @@ from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, e
 from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
 from cpath import output_path
 from misc_lib import path_join
-from trainer_v2.per_project.transparency.mmp.term_effect_measure.path_helper import get_precompute_ranked_list_save_path
-from trainer_v2.per_project.transparency.mmp.term_effect_measure.precompute_ranked_list import precompute_ranked_list
+from trainer_v2.per_project.transparency.mmp.term_effect_measure_single_q_term.path_helper import get_precompute_ranked_list_save_path
+from trainer_v2.per_project.transparency.mmp.term_effect_measure_single_q_term.precompute_ranked_list import precompute_ranked_list
 from trec.qrel_parse import load_qrels_structured
 
 
