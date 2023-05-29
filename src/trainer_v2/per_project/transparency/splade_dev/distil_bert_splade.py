@@ -49,7 +49,6 @@ def load_weights_from_hdf5(model, h5_path, map_to_stock_fn, n_expected_restore):
             c_log.info("loader: No value for:[{}], i.e.:[{}] in:[{}]".format(param.name, stock_name, h5_path))
             skip_count += 1
 
-    print(weight_value_tuples[0][1])
     keras.backend.batch_set_value(weight_value_tuples)
     if n_expected_restore is not None and n_expected_restore == len(weight_value_tuples):
         pass

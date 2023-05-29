@@ -47,7 +47,8 @@ def print_html(output_d, save_name):
             skip = 6
             return "layer_{}".format(layer_no + skip - 1)
 
-    num_data = len(output_d['input_ids'])
+    num_data = len(output_d['input_mask'])
+    print("Num data", num_data)
     num_print = min(100, num_data)
 
     for data_idx in range(num_print):
@@ -64,7 +65,8 @@ def print_html(output_d, save_name):
         input_mask = get("input_mask")
 
         for token_id, mask_val in zip(input_ids, input_mask):
-            if not bool(token_id == 0) == bool(mask_val):
+            is_padding = (token_id == 0)
+            if is_padding and bool(mask_val):
                 print(input_ids)
                 print(input_mask)
                 print(token_id)
@@ -90,7 +92,8 @@ def print_html(output_d, save_name):
             layer_logit = logits_grouped_by_layer[layer_no][data_idx]
             row = [Cell(layer_no_to_name(layer_no))]
             for seq_idx in range(len(layer_logit)):
-                rel = layer_logit[seq_idx][0] - per_layer_mean[layer_no]
+                # rel = layer_logit[seq_idx][0] - per_layer_mean[layer_no]
+                rel = layer_logit[seq_idx][0]
                 cell_str = visualize_policy.get_cell_str(rel)
                 rel_w = rel * 10
                 color_score = visualize_policy.prob_to_color(rel_w)
@@ -101,7 +104,6 @@ def print_html(output_d, save_name):
             mid_pred_rows.append(row)
 
         rows.extend(mid_pred_rows[::-1])
-
         rows = [row[:display_len] for row in rows]
         html.write_table(rows)
 
@@ -178,7 +180,7 @@ def get_input_ids(args):
 
 
 def main(args):
-    run_name = "tp5"
+    run_name = "tp7"
     input_ids = get_input_ids(args)
     n_item = len(input_ids)
     n_pair = int(n_item / 2)

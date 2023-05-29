@@ -59,10 +59,7 @@ class TrainerDOut2(TrainerIFBase):
 
         self.train_metrics_summary = self.inner_model.get_train_metrics_for_summary()
         if self.do_log:
-            if self.use_tpu:
-                create_file_writer = tf.summary.experimental.create_file_writer
-            else:
-                create_file_writer = tf.summary.create_file_writer
+            create_file_writer = tf.summary.create_file_writer
             self.train_summary_writer = create_file_writer(train_log_dir, name="train")
             self.train_summary_writer.set_as_default()
         self.loss_fn = self.inner_model.get_loss_fn()

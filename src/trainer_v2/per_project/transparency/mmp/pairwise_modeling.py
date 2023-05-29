@@ -11,7 +11,7 @@ class ModelConfig(ModelConfigType):
     model_type = "bert-base-uncased"
 
 
-def get_model(model_config: ModelConfig, run_config, optimizer_factory):
+def get_transformer_pairwise_model(model_config: ModelConfig, run_config, optimizer_factory=None):
     is_training = run_config.is_training()
     input_ids1 = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="input_ids1")
     segment_ids1 = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="token_type_ids1")
@@ -41,12 +41,13 @@ def get_model(model_config: ModelConfig, run_config, optimizer_factory):
     inputs = [input_ids1, segment_ids1, input_ids2, segment_ids2 ,]
     pred = logits1 - logits2
     new_model = tf.keras.models.Model(inputs=inputs, outputs=pred)
-    optimizer = optimizer_factory(learning_rate=run_config.train_config.learning_rate)
-    new_model.compile(
-        optimizer=optimizer,
-        loss=tf.keras.losses.Hinge(),
-        steps_per_execution=run_config.common_run_config.steps_per_execution,
-    )
+    if optimizer_factory is not None:
+        optimizer = optimizer_factory(learning_rate=run_config.train_config.learning_rate)
+        new_model.compile(
+            optimizer=optimizer,
+            loss=tf.keras.losses.Hinge(),
+            steps_per_execution=run_config.common_run_config.steps_per_execution,
+        )
 
     return new_model
 

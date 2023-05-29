@@ -4,7 +4,7 @@
     <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="ignoredPackages">
         <value>
-          <list size="44">
+          <list size="106">
             <item index="0" class="java.lang.String" itemvalue="KrovetzStemmer" />
             <item index="1" class="java.lang.String" itemvalue="pycocotools" />
             <item index="2" class="java.lang.String" itemvalue="tensorflow-estimator" />
@@ -49,6 +49,68 @@
             <item index="41" class="java.lang.String" itemvalue="grpcio" />
             <item index="42" class="java.lang.String" itemvalue="google-cloud-core" />
             <item index="43" class="java.lang.String" itemvalue="google-auth" />
+            <item index="44" class="java.lang.String" itemvalue="google-pasta" />
+            <item index="45" class="java.lang.String" itemvalue="greenlet" />
+            <item index="46" class="java.lang.String" itemvalue="threadpoolctl" />
+            <item index="47" class="java.lang.String" itemvalue="googleapis-common-protos" />
+            <item index="48" class="java.lang.String" itemvalue="opt-einsum" />
+            <item index="49" class="java.lang.String" itemvalue="scikit-learn" />
+            <item index="50" class="java.lang.String" itemvalue="tabulate" />
+            <item index="51" class="java.lang.String" itemvalue="PyYAML" />
+            <item index="52" class="java.lang.String" itemvalue="python-dateutil" />
+            <item index="53" class="java.lang.String" itemvalue="params-flow" />
+            <item index="54" class="java.lang.String" itemvalue="promise" />
+            <item index="55" class="java.lang.String" itemvalue="cycler" />
+            <item index="56" class="java.lang.String" itemvalue="gast" />
+            <item index="57" class="java.lang.String" itemvalue="MarkupSafe" />
+            <item index="58" class="java.lang.String" itemvalue="pyasn1-modules" />
+            <item index="59" class="java.lang.String" itemvalue="sentencepiece" />
+            <item index="60" class="java.lang.String" itemvalue="certifi" />
+            <item index="61" class="java.lang.String" itemvalue="astunparse" />
+            <item index="62" class="java.lang.String" itemvalue="keras" />
+            <item index="63" class="java.lang.String" itemvalue="sacrebleu" />
+            <item index="64" class="java.lang.String" itemvalue="portalocker" />
+            <item index="65" class="java.lang.String" itemvalue="h5py" />
+            <item index="66" class="java.lang.String" itemvalue="tensorboard-data-server" />
+            <item index="67" class="java.lang.String" itemvalue="wrapt" />
+            <item index="68" class="java.lang.String" itemvalue="kiwisolver" />
+            <item index="69" class="java.lang.String" itemvalue="tf-slim" />
+            <item index="70" class="java.lang.String" itemvalue="psutil" />
+            <item index="71" class="java.lang.String" itemvalue="kaggle" />
+            <item index="72" class="java.lang.String" itemvalue="tensorboard" />
+            <item index="73" class="java.lang.String" itemvalue="idna" />
+            <item index="74" class="java.lang.String" itemvalue="oauth2client" />
+            <item index="75" class="java.lang.String" itemvalue="tensorflow-addons" />
+            <item index="76" class="java.lang.String" itemvalue="tensorflow-model-optimization" />
+            <item index="77" class="java.lang.String" itemvalue="py-params" />
+            <item index="78" class="java.lang.String" itemvalue="httplib2" />
+            <item index="79" class="java.lang.String" itemvalue="py-cpuinfo" />
+            <item index="80" class="java.lang.String" itemvalue="numpy" />
+            <item index="81" class="java.lang.String" itemvalue="pyasn1" />
+            <item index="82" class="java.lang.String" itemvalue="opencv-python-headless" />
+            <item index="83" class="java.lang.String" itemvalue="typeguard" />
+            <item index="84" class="java.lang.String" itemvalue="Keras-Preprocessing" />
+            <item index="85" class="java.lang.String" itemvalue="seqeval" />
+            <item index="86" class="java.lang.String" itemvalue="tensorflow-hub" />
+            <item index="87" class="java.lang.String" itemvalue="google-auth-httplib2" />
+            <item index="88" class="java.lang.String" itemvalue="tensorflow-datasets" />
+            <item index="89" class="java.lang.String" itemvalue="tf-estimator-nightly" />
+            <item index="90" class="java.lang.String" itemvalue="tensorflow-metadata" />
+            <item index="91" class="java.lang.String" itemvalue="uritemplate" />
+            <item index="92" class="java.lang.String" itemvalue="scipy" />
+            <item index="93" class="java.lang.String" itemvalue="six" />
+            <item index="94" class="java.lang.String" itemvalue="google-auth-oauthlib" />
+            <item index="95" class="java.lang.String" itemvalue="text-unidecode" />
+            <item index="96" class="java.lang.String" itemvalue="dill" />
+            <item index="97" class="java.lang.String" itemvalue="packaging" />
+            <item index="98" class="java.lang.String" itemvalue="pandas" />
+            <item index="99" class="java.lang.String" itemvalue="tqdm" />
+            <item index="100" class="java.lang.String" itemvalue="termcolor" />
+            <item index="101" class="java.lang.String" itemvalue="gin-config" />
+            <item index="102" class="java.lang.String" itemvalue="colorama" />
+            <item index="103" class="java.lang.String" itemvalue="pytz" />
+            <item index="104" class="java.lang.String" itemvalue="bert-for-tf2" />
+            <item index="105" class="java.lang.String" itemvalue="dm-tree" />
           </list>
         </value>
       </option>

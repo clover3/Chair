@@ -2,7 +2,7 @@
 import os
 
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
-from trainer_v2.per_project.transparency.mmp.pairwise_modeling import get_model, ModelConfig
+from trainer_v2.per_project.transparency.mmp.pairwise_modeling import get_transformer_pairwise_model, ModelConfig
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from transformers import TFAutoModelForSequenceClassification
@@ -43,7 +43,7 @@ def main(args):
         c_log.info("Building model")
         # optimizer_factory = tf.keras.optimizers.experimental.AdamW
         optimizer_factory = AdamWeightDecay
-        model = get_model(model_config, run_config, optimizer_factory)
+        model = get_transformer_pairwise_model(model_config, run_config, optimizer_factory)
 
         c_log.info("model.fit() train_step=%d", run_config.train_config.train_step)
         model.fit(train_dataset,

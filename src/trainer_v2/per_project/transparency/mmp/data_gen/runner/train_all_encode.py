@@ -2,6 +2,7 @@ import itertools
 import sys
 
 from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter
+from dataset_specific.msmarco.passage.path_helper import get_mmp_grouped_sorted_path
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from trainer_v2.per_project.transparency.mmp.data_gen.pair_train import get_encode_fn_for_pointwise
 from cpath import output_path
@@ -12,7 +13,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 def main():
     job_no = sys.argv[1]
-    quad_tsv_path = path_join("data", "msmarco", "passage", "group_sorted_10K", str(job_no))
+    quad_tsv_path = get_mmp_grouped_sorted_path(job_no)
     tuple_itr: Iterable[Tuple[str, str]] = select_third_fourth(tsv_iter(quad_tsv_path))
     save_dir = path_join("output", "msmarco", "passage", "mmp_train_split_all_tfrecord")
     save_path = path_join(save_dir, str(job_no))

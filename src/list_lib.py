@@ -197,3 +197,9 @@ def apply_batch(l: Iterable, batch_size: int) -> Iterable[List]:
             yield cur_batch
             cur_batch = []
     yield cur_batch
+
+
+def assert_length_equal(l1, l2):
+    if not len(l1) == len(l2):
+        msg = "Length {} does not equal {}".format(len(l1), len(l2))
+        raise ValueError(msg)

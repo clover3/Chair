@@ -1,5 +1,6 @@
 import logging
 import os
+import pickle
 
 from transformers import AutoTokenizer
 
@@ -42,7 +43,7 @@ def main(args):
 
 
     # save_to_pickle(dataset, "probe_dataset")
-    # save_to_pickle(output, "probe_inf_dev")
+    pickle.dump(output, open(run_config.predict_config.predict_save_path, "wb"))
 
 
 if __name__ == "__main__":

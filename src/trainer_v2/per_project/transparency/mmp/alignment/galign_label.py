@@ -1,6 +1,6 @@
 from cache import load_pickle_from
 from list_lib import pairzip
-from trainer_v2.per_project.transparency.mmp.term_effect_measure.path_helper import get_gain_save_path
+from trainer_v2.per_project.transparency.mmp.term_effect_measure_single_q_term.path_helper import get_gain_save_path
 from cpath import output_path
 from misc_lib import path_join, read_non_empty_lines_stripped, get_second
 import numpy as np

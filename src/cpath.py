@@ -110,3 +110,5 @@ def get_canonical_model_path2(name, sub_dir):
     return save_dir
 
 
+def torch_data_root():
+    return os.path.join(project_root, 'data', "torch_data")

@@ -1,7 +1,7 @@
 
 import os
 
-from trainer_v2.per_project.transparency.mmp.pairwise_modeling import ModelConfig, get_model
+from trainer_v2.per_project.transparency.mmp.pairwise_modeling import ModelConfig, get_transformer_pairwise_model
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -39,7 +39,7 @@ def main(args):
         else:
             eval_dataset = None
         c_log.info("Building model")
-        model = get_model(model_config, run_config, tf.keras.optimizers.Adam)
+        model = get_transformer_pairwise_model(model_config, run_config, tf.keras.optimizers.Adam)
 
         c_log.info("model.fit() train_step=%d", run_config.train_config.train_step)
         model.fit(train_dataset,

@@ -1,7 +1,7 @@
 import csv
 import gzip
 import random
-from typing import List, Iterable, Callable, Dict, Tuple, Set, Any
+from typing import List, Iterable, Callable, Dict, Tuple, Set, Any, Optional
 
 from cache import load_pickle_from
 from cpath import at_data_dir, data_path, output_path
@@ -96,6 +96,24 @@ def enum_grouped(iter: Iterable[FourItem]) -> Iterable[List[FourItem]]:
         group.append((qid, pid, query, text))
 
     yield group
+
+
+#
+def enum_grouped2(iter: Iterable[Tuple]) -> Iterable[List[Tuple]]:
+    prev_qid = None
+    group = []
+    for e in iter:
+        group_id = e[0]
+        if prev_qid is not None and prev_qid != group_id:
+            yield group
+            group = []
+
+        prev_qid = group_id
+        group.append(e)
+
+    yield group
+
+
 
 
 class MMPPosNegSampler:

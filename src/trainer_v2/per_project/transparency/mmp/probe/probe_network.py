@@ -148,18 +148,7 @@ class ProbeOnBERT:
 
         classifier = classifier_ckpt
         bert_main_layer = bert_main_layer_ckpt
-        # bert_main_layer_ckpt_param = bert_main_layer_ckpt.get_weights()
-        # classifier_ckpt_param = classifier_ckpt.get_weights()
-
         bert_config = bert_main_layer_ckpt._config
-        # bert_main_layer = TFBertMainLayer(bert_config, name="bert")
-        # _ = bert_main_layer(get_dummy_input_for_bert_layer())
-        # bert_main_layer.set_weights(bert_main_layer_ckpt_param)
-
-        # classifier = tf.keras.layers.Dense(1)
-        # hidden_size = bert_config.hidden_size
-        # _ = classifier(tf.zeros([1, hidden_size]))
-        # classifier.set_weights(classifier_ckpt_param)
 
         c_log.info("identify_layers")
         layers_d = identify_layers(bert_main_layer, target_layer_no)
@@ -193,7 +182,6 @@ class ProbeOnBERT:
         embedding = hidden[0]
         dtype = embedding.dtype
         attn_mask_bias = self.get_attn_mask_bias(attn_mask, dtype)
-
         c_log.info("TFBertLayerFlat")
         layer1_hidden = hidden[1]
         qd_target_mask = tf.zeros([B, M, M], tf.int32)
@@ -251,3 +239,101 @@ class ProbeOnBERT:
         return output_d
 
 
+class ProbeAndAttention:
+    def __init__(self, bert_model):
+        n_out_dim = 1
+        target_layer_no = 0
+        # We skip dropout
+        bert_main_layer_ckpt = find_layer(bert_model, "bert")
+        _ = bert_main_layer_ckpt(get_dummy_input_for_bert_layer())
+
+        bert_main_layer = bert_main_layer_ckpt
+        bert_config = bert_main_layer_ckpt._config
+
+        c_log.info("identify_layers")
+        layers_d = identify_layers(bert_main_layer, target_layer_no)
+
+        keys = ["input_ids", "token_type_ids"]
+        input_concat_d, inputs = build_paired_inputs_concat(keys)
+
+        input_ids = input_concat_d["input_ids"]
+        segment_ids = input_concat_d["token_type_ids"]
+        bert_input = {
+            'input_ids': input_ids,
+            'token_type_ids': segment_ids
+        }
+        c_log.info("bert_main_layer")
+        bert_outputs = bert_main_layer(
+            bert_input,
+            output_attentions=True,
+            output_hidden_states=True)
+        hidden = bert_outputs.hidden_states
+        hidden = [tf.stop_gradient(h) for h in hidden]
+        attentions = bert_outputs.attentions
+
+        input_mask = tf.cast(tf.not_equal(input_ids, 0), tf.int32)
+        input_mask_shape = shape_list(input_mask)
+        B = input_mask_shape[0]
+        M = input_mask_shape[1]
+        attn_mask = tf.reshape(
+            input_mask, (input_mask_shape[0], 1, 1, input_mask_shape[1])
+        )
+        embedding = hidden[0]
+        dtype = embedding.dtype
+        attn_mask_bias = self.get_attn_mask_bias(attn_mask, dtype)
+        c_log.info("TFBertLayerFlat")
+        layer1_hidden = hidden[1]
+        qd_target_mask = tf.zeros([B, M, M], tf.int32)
+        bert_flat = TFBertLayerFlat(bert_config, layers_d)
+        per_layer_feature_tensors = bert_flat(layer1_hidden, attn_mask_bias, qd_target_mask)
+
+        c_log.info("probe_on_hidden")
+        hidden_tensor_d = {}
+        for i, hidden_layer in enumerate(hidden):
+            if 3 < i < 10:
+                continue
+            key = 'layer_{}'.format(i)
+            hidden_tensor_d[key] = hidden_layer
+
+        probe_on_hidden: Dict[str, tf.Tensor] = build_probs_from_tensor_d(hidden_tensor_d)
+
+        c_log.info("probe_on_attn_like")
+        probe_on_attn_like = build_probe_from_layer_features(
+            per_layer_feature_tensors, bert_config.hidden_size, n_out_dim)
+        #  dd
+        self.probe_model_output: Dict[str, Any] = {
+            "probe_on_hidden": probe_on_hidden,  # Dict[str, tf.Tensor]
+            "probe_on_attn_like": probe_on_attn_like,
+            "input_ids": input_ids,
+            "input_mask": input_mask,
+            "attentions": attentions
+        }
+        self.model = tf.keras.models.Model(inputs=inputs, outputs=self.probe_model_output)
+
+    def get_attn_mask_bias(self, attn_mask, dtype):
+        one_cst = tf.constant(1.0, dtype=dtype)
+        ten_thousand_cst = tf.constant(-10000.0, dtype=dtype)
+        attn_mask = tf.cast(attn_mask, dtype=dtype)
+        attn_mask_bias = tf.multiply(tf.subtract(one_cst, attn_mask), ten_thousand_cst)
+        return attn_mask_bias
+
+    def get_probe_metrics(self) -> Dict[str, Metric]:
+        output_d = {}
+        target_key = 'logits'
+        short_mapping = {
+            "probe_on_hidden": "hidden",
+            "probe_on_attn_like": "attn"
+        }
+        for probe_group in ["probe_on_hidden", "probe_on_attn_like"]:
+            d = self.probe_model_output[probe_group]
+            for pred_key, out_tensor in d.items():
+                group_short = short_mapping[probe_group]
+                metric_name = f"{group_short}/{pred_key}"
+                metric = ProbeMAE(target_key, probe_group, pred_key, name=metric_name)
+                output_d[metric_name] = metric
+
+                metric_name = f"{group_short}/{pred_key}/PairAcc"
+                metric = ProbePairwiseAcc(target_key, probe_group, pred_key, name=metric_name)
+                output_d[metric_name] = metric
+
+        return output_d

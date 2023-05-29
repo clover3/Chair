@@ -4,7 +4,7 @@ from cache import save_to_pickle, load_from_pickle
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from misc_lib import NamedNumber
-from trainer_v2.per_project.transparency.mmp.term_effect_measure.core_code import EffectiveRankedListInfo
+from trainer_v2.per_project.transparency.mmp.term_effect_measure_single_q_term.core_code import EffectiveRankedListInfo
 
 
 def main():
