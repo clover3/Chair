@@ -3,20 +3,24 @@ import os
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import get_deep_model_score_path
 
 
-def main():
-    print("Does not exists: ")
-    for i in get_valid_mmp_split():
-        check_path = get_deep_model_score_path(i)
-        if not os.path.exists(check_path):
-            print(check_path)
-
-
-
-
 def get_valid_mmp_split():
     yield from range(0, 109)
     yield from range(113, 119)
 
+
+def get_mmp_split_w_deep_scores():
+    all_valid = list(get_valid_mmp_split())
+    has_deep_score = []
+    for i in all_valid:
+        check_path = get_deep_model_score_path(i)
+        if os.path.exists(check_path):
+            has_deep_score.append(i)
+    return has_deep_score
+
+
+def main():
+    has_deep_score = get_mmp_split_w_deep_scores()
+    print(" ".join(map(str, has_deep_score)))
 
 
 if __name__ == "__main__":

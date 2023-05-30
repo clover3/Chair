@@ -1,4 +1,5 @@
 import os
+import traceback
 
 import requests
 
@@ -91,3 +92,47 @@ def report_run3(func):
 
 def get_g_task_proxy() -> TaskProxy:
     return g_task_proxy
+
+
+class JobContext:
+    def __init__(self, run_name):
+        self.run_name = run_name
+        machine = get_local_machine_name()
+        self.task_proxy = TaskProxy(webtool_host, webtool_port, machine, None, None)
+        self.server_active = False
+    def __enter__(self):
+        try:
+            if 'SLURM_JOBID' in os.environ:
+                job_id = int(os.environ['SLURM_JOBID'])
+            else:
+                job_id = None
+
+            self.task_proxy.task_start(self.run_name, "", job_id)
+            self.server_active = True
+        except requests.exceptions.ConnectTimeout as e:
+            print(e)
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+
+        if not self.server_active:
+            return
+
+        if exc_type is None:
+            print("Run completed")
+            msg = ""
+            print("Now reporting task : ", self.run_name)
+            self.task_proxy.task_complete(self.run_name, str(msg))
+            print("Done")
+
+        else:
+            if exc_type == KeyboardInterrupt:
+                msg = "KeyboardInterrupt\n"
+            else:
+                msg = "Exception\n"
+            msg += str(exc_type) + "\n"
+
+            tb_str = ''.join(traceback.format_exception(exc_type, exc_val, exc_tb))
+            msg += tb_str + "\n"
+            self.task_proxy.task_interrupted(self.run_name, msg)
