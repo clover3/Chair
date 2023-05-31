@@ -48,7 +48,7 @@ def get_idx_of(input_ids, token_id):
     return -1
 
 
-def compute_alignment(
+def compute_alignment_for_taget_q_word_id(
         item: ModelEncoded,
         target_q_word_id: int,
         top_k=10,
@@ -98,3 +98,38 @@ def compute_alignment_first_layer(
         score = t[j].numpy().tolist()
         output.append((int(j), int(item.input_ids[j]), float(score)))
     return output
+
+
+def compute_alignment_any_pair(
+        item: ModelEncoded,
+        top_k=10,
+) -> List[Tuple[int, int, float]]:
+    d_start = get_seg2_start(item.token_type_ids)
+
+    SEP_ID = 102
+    def iter_query_indices():
+        # iterate through idx which is query segment, select save all pairs
+        for i in range(1, len(item.input_ids)):
+            if item.token_type_ids[i] == 0 and item.input_ids[i] != SEP_ID:
+                yield i
+            else:
+                break
+
+    query_indices: Iterable[int] = iter_query_indices()
+    attn_mul_grad = item.attentions * item.attention_grads
+    t = tf.reduce_sum(attn_mul_grad, axis=0)  # average over layers
+    t = tf.reduce_sum(t, axis=0)  # average over heads
+    output: List[Tuple[int, int, float]] = []
+
+    for idx in query_indices:
+        q_term = int(item.input_ids[idx])
+        t_reduced = t[:, idx] + t[idx, :]  #
+        # t = t[idx, :] #
+        rank = np.argsort(t_reduced)[::-1]
+        rank = [j for j in rank if item.input_ids[j] != 0 and j >= d_start]
+        for j in rank[:top_k]:
+            score = t_reduced[j].numpy().tolist()
+            d_term = int(item.input_ids[j])
+            output.append((q_term, d_term, float(score)))
+    return output
+

@@ -1,8 +1,21 @@
+from dataclasses import dataclass
 from typing import Tuple, List
 
 from scipy.stats import pearsonr
 
-TermEffectPerQuery = Tuple[List[float], List[float], List[Tuple[int, float]]]
+@dataclass
+class TermEffectPerQuery:
+    target_scores: List[float]
+    base_scores: List[float]
+    changes: List[Tuple[int, float]]
+
+    @classmethod
+    def from_json(cls, j_obj):
+        target_scores, base_scores, changes = j_obj
+        return TermEffectPerQuery(target_scores, base_scores, changes)
+
+    def to_json(self):
+        return [self.target_scores, self.base_scores, self.changes]
 
 
 def pearson_r_wrap(scores1: List[float], scores2: List[float]) -> float:

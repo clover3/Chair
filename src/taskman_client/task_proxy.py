@@ -106,6 +106,13 @@ class TaskManagerProxy(RESTProxy):
         r = self.post("/task/query_job_group_status", data)
         return r
 
+    def query_task_status(self, run_name) -> Dict:
+        data = {
+            'run_name': run_name,
+        }
+        r = self.post("/task/query_task_status", data)
+        return r
+
     def report_done_and_pool_job(self, job_name, max_job, machine, job_id) -> int:
         data = {
             'max_job': max_job,

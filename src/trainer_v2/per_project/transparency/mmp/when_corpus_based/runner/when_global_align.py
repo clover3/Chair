@@ -5,7 +5,7 @@ from transformers import AutoTokenizer
 
 from cpath import output_path
 from misc_lib import path_join
-from trainer_v2.per_project.transparency.mmp.alignment.global_align_by_avg import avg_summarize_local_aligns
+from trainer_v2.per_project.transparency.mmp.alignment.reduce_local_to_global import avg_summarize_local_aligns
 from trainer_v2.per_project.transparency.mmp.dev_analysis.when_term_frequency import enum_when_corpus
 
 # Build global alignment
@@ -45,7 +45,6 @@ def when_tf():
 
 def when_tf_l1():
     input_file_name = "when_tf_l1.jsonl"
-
     input_file_path = get_attn_score_jsonl_path(input_file_name)
     save_name = "when_tf_l1.avg_score_summary"
     save_path = get_avg_score_save_path(save_name)

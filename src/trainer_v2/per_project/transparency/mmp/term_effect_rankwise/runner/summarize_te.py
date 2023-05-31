@@ -5,8 +5,7 @@ from list_lib import lflatten
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helper import compare_fidelity, \
     pearson_r_wrap
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import get_te_save_path
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.runner.check_mmp_train_split_all_scores import \
-    get_mmp_split_w_deep_scores
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.split_iter import get_mmp_split_w_deep_scores
 
 
 def identity(t):

@@ -1,43 +1,17 @@
 import json
 import sys
-import tensorflow as tf
 from transformers import AutoTokenizer
 
 from cpath import output_path
-from misc_lib import path_join, TimeEstimator
-from trainer_v2.chair_logging import c_log
+from misc_lib import path_join
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config_for_predict
-from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 from trainer_v2.per_project.transparency.mmp.alignment.alignment_predictor import AlignmentPredictor, \
     compute_alignment_first_layer
 
-from trainer_v2.per_project.transparency.mmp.alignment.grad_extractor import GradExtractor, ModelEncoded
+from trainer_v2.per_project.transparency.mmp.alignment.grad_extractor import ModelEncoded
 from trainer_v2.per_project.transparency.mmp.dev_analysis.when_term_frequency import enum_when_corpus
 from trainer_v2.train_util.arg_flags import flags_parser
-from typing import Iterable, Callable, Any
-
-
-def extract_save_align(
-        compute_alignment_fn: Callable[[ModelEncoded], Any],
-        qd_itr, run_config, save_path, num_record):
-    ticker = TimeEstimator(num_record)
-    strategy = get_strategy_from_config(run_config)
-    out_f = open(save_path, "w")
-    c_log.info("{}".format(strategy))
-    tf.debugging.set_log_device_placement(True)
-    with strategy.scope():
-        extractor = GradExtractor(
-            run_config.predict_config.model_save_path,
-            run_config.common_run_config.batch_size,
-            strategy
-        )
-        me_itr: Iterable[ModelEncoded] = extractor.encode(qd_itr)
-        for me in me_itr:
-            aligns = compute_alignment_fn(me)
-            logits = me.logits.tolist()
-            out_info = {'logits': logits, 'aligns': aligns}
-            out_f.write(json.dumps(out_info) + "\n")
-            ticker.tick()
+from typing import Callable, Any
 
 
 # def main(args):

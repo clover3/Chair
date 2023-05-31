@@ -1,6 +1,6 @@
 from transformers import AutoTokenizer
 from cache import load_from_pickle
-from trainer_v2.per_project.transparency.mmp.alignment.alignment_predictor import compute_alignment
+from trainer_v2.per_project.transparency.mmp.alignment.alignment_predictor import compute_alignment_for_taget_q_word_id
 
 
 def main():
@@ -10,7 +10,7 @@ def main():
 
     target_q_word = "when"
     target_q_word_id = tokenizer.vocab[target_q_word]
-    alignment = compute_alignment(item, target_q_word_id)
+    alignment = compute_alignment_for_taget_q_word_id(item, target_q_word_id)
 
 
 if __name__ == "__main__":

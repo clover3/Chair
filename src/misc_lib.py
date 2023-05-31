@@ -141,6 +141,11 @@ class SuccessCounter:
         else:
             self.fail()
 
+    def get_summary(self):
+        n_fail = self.n_total - self.n_suc
+        return f"suc/fail/total={self.n_suc}/{n_fail}/{self.n_total}"
+
+
 def exist_or_mkdir(dir_path):
     if not os.path.exists(dir_path):
         os.mkdir(dir_path)

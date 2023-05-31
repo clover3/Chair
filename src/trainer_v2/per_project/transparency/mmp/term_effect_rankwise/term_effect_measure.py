@@ -3,6 +3,8 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 from typing import List, Callable, Dict, Tuple
 
+from krovetzstemmer import Stemmer
+
 from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, enum_grouped2
 from dataset_specific.msmarco.passage.path_helper import get_mmp_grouped_sorted_path
 from dataset_specific.msmarco.passage.runner.build_ranked_list import read_scores
@@ -11,7 +13,7 @@ from misc_lib import select_first_second
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helper import TermEffectPerQuery
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import get_deep_model_score_path, \
-    read_shallow_scores, load_mmp_tfs
+    read_shallow_scores, load_mmp_tfs, read_shallow_score_per_qid, read_deep_score_per_qid
 import psutil
 
 
@@ -65,6 +67,7 @@ class TermEffectMeasure:
         self.get_updated_score = get_updated_score_fn
         self.get_irl_fn: Callable[[str], IndexedRankedList] = get_irl_fn
         self.q_inv_index = q_inv_index
+        self.stemmer = Stemmer()
 
     def _get_qid_for_q_term(self, q_term) -> List[str]:
         return self.q_inv_index[q_term]
@@ -73,6 +76,8 @@ class TermEffectMeasure:
         return self.get_irl_fn(qid)
 
     def term_effect_measure(self, q_term, d_term) -> List[TermEffectPerQuery]:
+        q_term = self.stemmer.stem(q_term)
+        d_term = self.stemmer.stem(d_term)
         query_w_q_term: List[str] = self._get_qid_for_q_term(q_term)
         output = []
         for qid in query_w_q_term:
@@ -80,7 +85,7 @@ class TermEffectMeasure:
             old_scores: List[float] = ranked_list.get_shallow_model_base_scores()
 
             entry_indices = ranked_list.get_entries_w_term(d_term)
-            print("{} entries affected ".format(len(entry_indices)))
+            # print("{} entries affected ".format(len(entry_indices)))
             changes = []
             for entry_idx in entry_indices:
                 entry = ranked_list.entries[entry_idx]
@@ -88,7 +93,7 @@ class TermEffectMeasure:
                 changes.append((entry_idx, new_score))
 
             target_scores = ranked_list.get_deep_model_scores()
-            per_query = (target_scores, old_scores, changes)
+            per_query = TermEffectPerQuery(target_scores, old_scores, changes)
             output.append(per_query)
         return output
 
@@ -142,41 +147,52 @@ class IRLProxy:
         shallow_model_score_base: float
 
     def __init__(self, job_no):
-        c_log.info("Loading deep scores")
-        deep_score_grouped: List[List[QID_PID_SCORE]] = load_deep_scores(job_no)
-        c_log.info("Loading shallow scores")
-        shallow_scores: List[Tuple[str, List[Tuple[str, float]]]] = read_shallow_scores(job_no)
-        assert_length_equal(deep_score_grouped, shallow_scores)
-
-        qid_to_score_list = {}
-        for deep_score_group, shallow_score_group in zip(deep_score_grouped, shallow_scores):
-            qid_s, entries = shallow_score_group
-            assert_length_equal(deep_score_group, entries)
-            e_list: List[IRLProxy.Entry] = []
-            for e_d, e_s in zip(deep_score_group, entries):
-                qid_d, pid_d, score_d = e_d
-                pid_s, score_s = e_s
-                assert qid_s == qid_d
-                assert pid_d == pid_s
-                e = IRLProxy.Entry(
-                    doc_id=pid_s,
-                    deep_model_score=score_d,
-                    shallow_model_score_base=score_s,
-                )
-                e_list.append(e)
-            qid_to_score_list[qid_s] = e_list
-        self.qid_to_score_list = qid_to_score_list
+        pass
+        # c_log.info("Loading deep scores")
+        # deep_score_grouped: List[List[QID_PID_SCORE]] = load_deep_scores(job_no)
+        # c_log.info("Loading shallow scores")
+        # shallow_scores: List[Tuple[str, List[Tuple[str, float]]]] = read_shallow_scores(job_no)
+        # assert_length_equal(deep_score_grouped, shallow_scores)
+        #
+        # qid_to_score_list = {}
+        # for deep_score_group, shallow_score_group in zip(deep_score_grouped, shallow_scores):
+        #     qid_s, entries = shallow_score_group
+        #     assert_length_equal(deep_score_group, entries)
+        #     e_list: List[IRLProxy.Entry] = []
+        #     for e_d, e_s in zip(deep_score_group, entries):
+        #         qid_d, pid_d, score_d = e_d
+        #         pid_s, score_s = e_s
+        #         assert qid_s == qid_d
+        #         assert pid_d == pid_s
+        #         e = IRLProxy.Entry(
+        #             doc_id=pid_s,
+        #             deep_model_score=score_d,
+        #             shallow_model_score_base=score_s,
+        #         )
+        #         e_list.append(e)
+        #     qid_to_score_list[qid_s] = e_list
+        # self.qid_to_score_list = qid_to_score_list
 
     def get_irl(self, qid) -> IndexedRankedList:
-        score_list = self.qid_to_score_list[qid]
         qid_, pid_tfs = load_mmp_tfs(qid)
+        qid_s, pid_scores_s = read_shallow_score_per_qid(qid)
+        qid_d, pid_scores_d = read_deep_score_per_qid(qid)
+
+        assert qid_ == qid_s
+        assert qid_ == qid_d
+        assert_length_equal(pid_tfs, pid_scores_s)
+        assert_length_equal(pid_tfs, pid_scores_d)
+
         e_out_list = []
-        for e, (pid, tfs) in zip(score_list, pid_tfs):
-            assert e.doc_id == pid
+        for i in range(len(pid_tfs)):
+            pid_, tfs = pid_tfs[i]
+            pid_d, deep_model_score = pid_scores_d[i]
+            pid_s, shallow_model_score_base = pid_scores_d[i]
+            assert pid_ == pid_d
             e_out = IndexedRankedList.Entry(
-                doc_id=e.doc_id,
-                deep_model_score=e.deep_model_score,
-                shallow_model_score_base=e.shallow_model_score_base,
+                doc_id=pid_,
+                deep_model_score=deep_model_score,
+                shallow_model_score_base=shallow_model_score_base,
                 tfs=tfs
             )
             e_out_list.append(e_out)

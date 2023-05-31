@@ -16,12 +16,3 @@ def get_mmp_split_w_deep_scores():
         if os.path.exists(check_path):
             has_deep_score.append(i)
     return has_deep_score
-
-
-def main():
-    has_deep_score = get_mmp_split_w_deep_scores()
-    print(" ".join(map(str, has_deep_score)))
-
-
-if __name__ == "__main__":
-    main()

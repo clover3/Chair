@@ -32,19 +32,22 @@ def main():
     d_term = args.d_term
 
     run_name = f"{q_term}_{d_term}_{job_no}"
-
+    c_log.info("load_qtf_index ENTRY")
     with JobContext(run_name):
+        c_log.info("load bm25")
         bm25 = get_bm25_mmp_25_01_01()
+        c_log.info("load bm25 Done")
         sm = ScoringModel(bm25.core.k1, bm25.core.b, bm25.core.avdl, bm25.term_idf_factor)
         irl_proxy = IRLProxy(job_no)
+        c_log.info("load_qtf_index ENTRY")
         qtfs_index = load_qtf_index(job_no)
+        c_log.info("load_qtf_index DONE")
         tem = TermEffectMeasure(
             sm.get_updated_score_bm25,
             irl_proxy.get_irl,
             qtfs_index,
         )
-        c_log.info("Done loading resources")
-        c_log.info("Term effect for ({}, {}".format(q_term, d_term))
+        c_log.info("Term effect for ({}, {})".format(q_term, d_term))
         te_list = tem.term_effect_measure(q_term, d_term)
         save_term_effect(te_list, q_term, d_term, job_no)
         c_log.info("Done evaluating effects")

@@ -1,6 +1,7 @@
+import json
 import sys
 from dataclasses import dataclass
-from typing import Callable, Tuple, Optional
+from typing import Callable, Tuple, Optional, Any, Iterable
 import tensorflow as tf
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
@@ -10,9 +11,10 @@ from tensorflow import keras
 
 from cache import save_to_pickle
 from cpath import output_path
-from misc_lib import path_join
+from misc_lib import path_join, TimeEstimator
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
+from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 from trainer_v2.per_project.transparency.mmp.trnsfmr_util import get_qd_encoder, get_dummy_input_for_bert_layer
 
 
@@ -147,6 +149,31 @@ class GradExtractor:
         return attention_grads, attentions, hidden_states, logits
 
 
+def extract_save_align(
+        compute_alignment_fn: Callable[[ModelEncoded], Any],
+        qd_itr, strategy,
+        save_path, num_record,
+        model_save_path, batch_size,
+    ):
+    ticker = TimeEstimator(num_record)
+    out_f = open(save_path, "w")
+    c_log.info("{}".format(strategy))
+    tf.debugging.set_log_device_placement(True)
+    with strategy.scope():
+        extractor = GradExtractor(
+            model_save_path,
+            batch_size,
+            strategy
+        )
+        me_itr: Iterable[ModelEncoded] = extractor.encode(qd_itr)
+        for me in me_itr:
+            aligns = compute_alignment_fn(me)
+            logits = me.logits.tolist()
+            out_info = {'logits': logits, 'aligns': aligns}
+            out_f.write(json.dumps(out_info) + "\n")
+            ticker.tick()
+
+
 def main():
     # input_text_pairs = [("query", "document")]
     query = 'When Does Fear The Walking Dead Premiere'
@@ -161,3 +188,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

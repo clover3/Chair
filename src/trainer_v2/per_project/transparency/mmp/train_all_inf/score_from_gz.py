@@ -12,7 +12,7 @@ from trainer_v2.train_util.get_tpu_strategy import get_strategy
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
-def tsv_iter(gz_path) -> Iterable[Tuple]:
+def tsv_iter_from_gz(gz_path) -> Iterable[Tuple]:
     f = gzip.open(gz_path, 'rt', encoding='utf8')
     reader = csv.reader(f, delimiter='\t')
     return reader
@@ -26,7 +26,7 @@ def main():
     quad_tsv_path = path_join(data_path, "msmarco", "passage", "group_sorted_10K", f"{job_no}.gz")
     model_path = path_join("models", "mmp1")
     scores_path = path_join(output_path, "msmarco", "passage", "mmp_train_split_all_scores", f"{job_no}.scores")
-    tuple_itr: Iterable[Tuple[str, str]] = select_third_fourth(tsv_iter(quad_tsv_path))
+    tuple_itr: Iterable[Tuple[str, str]] = select_third_fourth(tsv_iter_from_gz(quad_tsv_path))
     flush_block_size = 1024
     batch_size = 256
     data_size = 1000 * 10000

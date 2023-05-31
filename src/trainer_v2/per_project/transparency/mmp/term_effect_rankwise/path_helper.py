@@ -95,7 +95,6 @@ def load_qtf_index(job_no) -> Dict[str, List[str]]:
     #     appear_rate = len(entries) / n_qids
     #     if appear_rate > 0.5:
     #         too_frequent_terms.append(appear_rate)
-
     return inv_index
 
 
@@ -115,3 +114,19 @@ def get_te_save_path(q_term, d_term, job_no):
     save_name = f"{q_term}_{d_term}_{job_no}.jsonl"
     save_path = path_join(term_effect_dir(), save_name)
     return save_path
+
+
+def read_shallow_score_per_qid(qid) -> Tuple[str, List[Tuple[str, float]]]:
+    save_path = get_shallow_score_save_path_by_qid(qid)
+    entries = []
+    for pid, score in tsv_iter(save_path):
+        entries.append((pid, float(score)))
+    return qid, entries
+
+
+def read_deep_score_per_qid(qid) -> Tuple[str, List[Tuple[str, float]]]:
+    save_path = get_deep_score_save_path_by_qid(qid)
+    entries = []
+    for qid, pid, score in tsv_iter(save_path):
+        entries.append((pid, float(score)))
+    return qid, entries
