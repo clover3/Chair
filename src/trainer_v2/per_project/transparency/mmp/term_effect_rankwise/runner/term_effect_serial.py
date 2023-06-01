@@ -53,7 +53,7 @@ def term_effect_serial_core(sm, q_term, d_term):
     elapsed = ed - st
     time_per_q = elapsed / n_query if n_query else 0
     time_per_qd = elapsed / n_qd if n_qd else 0
-    c_log.info(f"Elapsed={elapsed:.2f} t/q={time_per_q:.2f} t/qd={time_per_qd:.2f} n_jobs={n_job} n_query={n_query} n_qd={n_qd}")
+    c_log.info(f"({q_term}, {d_term}) t={elapsed:.2f} t/q={time_per_q:.2f} t/qd={time_per_qd:.2f} n_jobs={n_job} n_query={n_query} n_qd={n_qd}")
 
 
 

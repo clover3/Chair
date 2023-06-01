@@ -123,13 +123,15 @@ class TaskManagerProxy(RESTProxy):
         r = self.post("/task/sub_job_done_and_pool_job", data, timeout=30)
         return r['job_id']
 
-    def sub_job_update(self, job_name, machine, update_type, msg, job_id):
+    def sub_job_update(self, job_name, machine, update_type, msg, job_id, max_job=None):
         data = {
             'job_name': job_name,
             'machine': machine,
             'update_type': update_type,
             'msg': msg
         }
+        if max_job is not None:
+            data['max_job'] = max_job
         if job_id is not None:
             data['job_id'] = job_id
         return self.post("/task/sub_job_update", data)
@@ -141,7 +143,6 @@ class TaskManagerProxy(RESTProxy):
         }
         r = self.post("/task/cancel_allocation", data)
         return r['job_id']
-
 
 
 class TaskProxy:

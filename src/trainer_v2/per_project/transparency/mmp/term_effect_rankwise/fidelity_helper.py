@@ -24,13 +24,14 @@ def pearson_r_wrap(scores1: List[float], scores2: List[float]) -> float:
 
 
 def compare_fidelity(
-        term_effect_per_query: TermEffectPerQuery,
+        te: TermEffectPerQuery,
         fidelity_fn
 ):
-    target_score, old_score, changes = term_effect_per_query
-    new_score = list(old_score)
+    target_score = te.target_scores
+    old_score = te.base_scores
+    new_score = list(te.base_scores)
 
-    for idx, new_val in changes:
+    for idx, new_val in te.changes:
         new_score[idx] = new_val
 
     old_fidelity = fidelity_fn(target_score, old_score)

@@ -186,8 +186,8 @@ class IRLProxy:
         e_out_list = []
         for i in range(len(pid_tfs)):
             pid_, tfs = pid_tfs[i]
+            pid_s, shallow_model_score_base = pid_scores_s[i]
             pid_d, deep_model_score = pid_scores_d[i]
-            pid_s, shallow_model_score_base = pid_scores_d[i]
             assert pid_ == pid_d
             e_out = IndexedRankedList.Entry(
                 doc_id=pid_,
