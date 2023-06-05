@@ -14,6 +14,7 @@ def main():
     print("Waiting for task: {}".format(run_name))
     proxy = get_task_manager_proxy()
     info = proxy.query_task_status(run_name)
+    print(info)
     state = STATE_NOT_STARTED
     # {'server_error': False, 'started': True, 'terminated': True, 'task_error': False}
     while not info['terminated']:
@@ -23,6 +24,7 @@ def main():
 
         time.sleep(10)
         info = proxy.query_task_status(run_name)
+
 
     print(info)
     print("Task {} is terminated".format(run_name))

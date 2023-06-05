@@ -19,6 +19,8 @@ class TermEffectPerQuery:
 
 
 def pearson_r_wrap(scores1: List[float], scores2: List[float]) -> float:
+    if len(scores1) == 1 and len(scores2) == 1:
+        return 0
     r, p = pearsonr(scores1, scores2)
     return r
 

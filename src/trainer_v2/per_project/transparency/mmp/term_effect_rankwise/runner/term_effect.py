@@ -10,13 +10,14 @@ from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_me
     IRLProxy
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helper import TermEffectPerQuery
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import load_qtf_index, term_effect_dir, \
-    get_te_save_path
+    get_te_save_path_base
 from misc_lib import path_join
 
 
 def save_term_effect(te_list: List[TermEffectPerQuery], q_term, d_term, job_no):
-    save_path = get_te_save_path(q_term, d_term, job_no)
-    save_list_to_jsonl(te_list, save_path)
+    save_path = get_te_save_path_base(q_term, d_term, job_no)
+    te_list_j = [t.to_json() for t in te_list]
+    save_list_to_jsonl(te_list_j, save_path)
 
 
 parser = argparse.ArgumentParser()
@@ -38,7 +39,7 @@ def main():
         bm25 = get_bm25_mmp_25_01_01()
         c_log.info("load bm25 Done")
         sm = ScoringModel(bm25.core.k1, bm25.core.b, bm25.core.avdl, bm25.term_idf_factor)
-        irl_proxy = IRLProxy(job_no)
+        irl_proxy = IRLProxy(q_term)
         c_log.info("load_qtf_index ENTRY")
         qtfs_index = load_qtf_index(job_no)
         c_log.info("load_qtf_index DONE")
@@ -51,6 +52,8 @@ def main():
         te_list = tem.term_effect_measure(q_term, d_term)
         save_term_effect(te_list, q_term, d_term, job_no)
         c_log.info("Done evaluating effects")
+
+    tem.time_profile.print_time()
 
 
 if __name__ == "__main__":

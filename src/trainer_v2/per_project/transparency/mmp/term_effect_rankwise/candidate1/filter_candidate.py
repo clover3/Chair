@@ -12,37 +12,36 @@ from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter
 
 
 @dataclass
-class Entry:
-    q_term:str
+class CandidateEntry:
+    q_term: str
     d_term: str
     acc_score: float
     non_zero_tf_of_pair: int
-    corpus_tf_q_term_id:int
+    corpus_tf_q_term_id: int
     corpus_tf_d_term_id: int
 
 
-def main():
-    stemmer = Stemmer()
+def compute_metric(e: CandidateEntry):
+    return e.acc_score / e.corpus_tf_d_term_id
 
+
+def parse_row(row) -> CandidateEntry:
+    q_term, d_term, acc_score, non_zero_tf_of_pair, corpus_tf_q_term_id, corpus_tf_d_term_id = row
+    # Exclude if q_term and d_term are equal when stemmed
+    entry = CandidateEntry(
+        q_term, d_term, float(acc_score),
+        int(non_zero_tf_of_pair), int(corpus_tf_q_term_id), int(corpus_tf_d_term_id)
+    )
+    return entry
+
+
+def get_filtered_candidates_from_when_corpus() -> List[CandidateEntry]:
+    stemmer = Stemmer()
     candidate_path = path_join(
         output_path, "msmarco", "passage", "align_candidates", "global_pair_on_when.tsv")
-    save_path = path_join(
-        output_path, "msmarco", "passage", "align_candidates", "candidate1.tsv")
     rows = tsv_iter(candidate_path)
 
-    def compute_metric(e: Entry):
-        return e.acc_score / e.corpus_tf_d_term_id
-
-    def parse_row(row):
-        q_term, d_term, acc_score, non_zero_tf_of_pair, corpus_tf_q_term_id, corpus_tf_d_term_id = row
-        # Exclude if q_term and d_term are equal when stemmed
-        entry = Entry(
-            q_term, d_term, float(acc_score),
-            int(non_zero_tf_of_pair), int(corpus_tf_q_term_id), int(corpus_tf_d_term_id)
-        )
-        return entry
-
-    def is_same_stemmed(entry: Entry):
+    def is_same_stemmed(entry: CandidateEntry):
         q_stemmed = stemmer.stem(entry.q_term)
         d_stemmed = stemmer.stem(entry.d_term)
 
@@ -61,12 +60,20 @@ def main():
     def not_subtail(e):
         return e.q_term[0] != "#" and e.d_term[0] != '#'
 
+    def not_special_token(e):
+        return e.q_term not in ["[CLS]", "[SEP]", "[PAD]"] and e.d_term not in ["[CLS]", "[SEP]", "[PAD]"]
+
     items = map(parse_row, rows)
     items = filter(not_same, items)
     items = filter(not_subtail, items)
+    items = filter(not_special_token, items)
     items = filter(frequent, items)
-
     items = list(items)
+    return items
+
+
+def main():
+    items = get_filtered_candidates_from_when_corpus()
     items.sort(key=compute_metric, reverse=True)
 
     n_top = 3000
@@ -80,16 +87,16 @@ def main():
     random.shuffle(middle_items_all)
     middle_items = middle_items_all[:n_middle]
 
-    selected: List[Entry] = top_items + middle_items + bottom_items
+    selected: List[CandidateEntry] = top_items + middle_items + bottom_items
+
+    save_path = path_join(
+        output_path, "msmarco", "passage", "align_candidates", "candidate1.tsv")
 
     save_f = open(save_path, "w")
     for e in selected:
         row = e.q_term, e.d_term
         out_line = "\t".join(map(str, row))
         save_f.write(out_line + "\n")
-
-
-
 
 
 if __name__ == "__main__":

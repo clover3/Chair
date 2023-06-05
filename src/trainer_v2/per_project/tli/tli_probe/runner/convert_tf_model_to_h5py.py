@@ -8,7 +8,7 @@ def main():
     dir_path = get_canonical_model_path("nli14_0")
     save_path = path_join(dir_path, "model_12500.h5py")
 
-    convert_keras_model_to_h5py(save_path, tf_model_path)
+    convert_keras_model_to_h5(save_path, tf_model_path)
 
 
 if __name__ == "__main__":

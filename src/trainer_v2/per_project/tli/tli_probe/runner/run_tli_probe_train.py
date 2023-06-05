@@ -2,7 +2,7 @@ from trainer_v2.chair_logging import c_log
 import os
 from trainer_v2.custom_loop.definitions import ModelConfig256_1, ModelConfig300_3
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
-from trainer_v2.per_project.tli.tli_probe.runner.dev_init_model import load_weights_from_hdf5
+from trainer_v2.per_project.tli.model_load_h5 import load_weights_from_hdf5
 from trainer_v2.per_project.tli.tli_probe.tli_dataset import get_tli_dataset
 from trainer_v2.per_project.tli.tli_probe.tli_probe_network import TliProbe, ProbeBCE
 from trainer_v2.per_project.transparency.mmp.trainer_d_out2 import TrainerDOut2

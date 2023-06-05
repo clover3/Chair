@@ -110,7 +110,7 @@ def read_shallow_scores(job_id) -> List[Tuple[str, List[Tuple[str, float]]]]:
     return output
 
 
-def get_te_save_path(q_term, d_term, job_no):
+def get_te_save_path_base(q_term, d_term, job_no):
     save_name = f"{q_term}_{d_term}_{job_no}.jsonl"
     save_path = path_join(term_effect_dir(), save_name)
     return save_path
@@ -130,3 +130,41 @@ def read_deep_score_per_qid(qid) -> Tuple[str, List[Tuple[str, float]]]:
     for qid, pid, score in tsv_iter(save_path):
         entries.append((pid, float(score)))
     return qid, entries
+
+
+def escape(part_of_name):
+    todo  = [
+        ("#", "[SHARP]"),
+        ("*", "[ASTERISK]"),
+        ("\\", "[BKSLASH]"),
+        ("/", "[SLASH]"),
+        ("%", "[PERCENT]"),
+        ("?", "[QUESTIONMARK]"),
+        (";", "[SEMICOLON]"),
+        ("|", "[PIPE]"),
+        ("@", "[AT]"),
+        ("$", "[DOLLAR]"),
+        ("`", "[BACKTICK]"),
+    ]
+    name = part_of_name
+    for ch, text in todo:
+        name = name.replace(ch, text)
+    return name
+
+
+def get_te_save_path2(q_term, d_term, job_no):
+    q_term_es = escape(q_term)
+    d_term_es = escape(d_term)
+    save_name = f"{q_term_es}_{d_term_es}_{job_no}.jsonl.gz"
+    dir_path = path_join("output", "msmarco", "passage", "term_effect_space2", "content")
+    save_path = path_join(dir_path, save_name)
+    return save_path
+
+
+def get_fidelity_save_path2(q_term, d_term):
+    q_term_es = escape(q_term)
+    d_term_es = escape(d_term)
+    save_name = f"{q_term_es}_{d_term_es}.txt"
+    dir_path = path_join("output", "msmarco", "passage", "term_effect_space2", "fidelity")
+    save_path = path_join(dir_path, save_name)
+    return save_path

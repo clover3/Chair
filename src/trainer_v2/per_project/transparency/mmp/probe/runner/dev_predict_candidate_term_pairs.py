@@ -8,7 +8,7 @@ from taskman_client.wrapper3 import report_run3
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.dataset_factories import get_pairwise_dataset
 from trainer_v2.custom_loop.definitions import ModelConfig256_1
-from trainer_v2.per_project.tli.tli_probe.runner.dev_init_model import load_weights_from_hdf5
+from trainer_v2.per_project.tli.model_load_h5 import load_weights_from_hdf5
 from trainer_v2.per_project.transparency.mmp.pairwise_modeling import get_transformer_pairwise_model
 import tensorflow as tf
 from trainer_v2.per_project.transparency.mmp.pairwise_modeling import ModelConfig, get_transformer_pairwise_model

@@ -8,10 +8,8 @@ import tensorflow as tf
 
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
-from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 from trainer_v2.custom_loop.prediction_trainer import TrainerCommon, ModelV2IF, ModelV3IF
 from trainer_v2.custom_loop.run_config2 import RunConfig2
-from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result
 from trainer_v2.custom_loop.trainer_if import TrainerIFBase, EmptyEvalObject, EvalObjectIF
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 

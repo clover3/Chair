@@ -308,3 +308,10 @@ class ProbePairwiseAcc(Metric):
         self.correct.assign(0.0)
         self.count.assign(0.0)
 
+
+def get_attn_mask_bias(attn_mask, dtype):
+    one_cst = tf.constant(1.0, dtype=dtype)
+    ten_thousand_cst = tf.constant(-10000.0, dtype=dtype)
+    attn_mask = tf.cast(attn_mask, dtype=dtype)
+    attn_mask_bias = tf.multiply(tf.subtract(one_cst, attn_mask), ten_thousand_cst)
+    return attn_mask_bias

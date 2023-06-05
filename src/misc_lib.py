@@ -786,6 +786,9 @@ class TimeProfiler:
         self.init_time = self.last_time
         self.time_acc = Counter()
 
+    def reset_time_acc(self):
+        self.time_acc = Counter()
+
     def check(self, point_idx):
         prev_point = self.cur_point
 
@@ -797,7 +800,9 @@ class TimeProfiler:
         self.last_time = now
 
     def print_time(self):
-        for key, value in self.time_acc.items():
+        to_print = list(self.time_acc.items())
+        to_print.sort(key=get_second, reverse=True)
+        for key, value in to_print:
             print(key, value)
 
     def life_time(self):

@@ -8,19 +8,10 @@ import trainer_v2.per_project.transparency.mmp.probe.probe_common
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.probe.probe_common import combine_qd_mask, build_paired_inputs_concat, \
     compute_probe_loss, ProbeMAE, ProbePairwiseAcc, build_probs_from_tensor_d, build_probe_from_layer_features, \
-    identify_layers, TFBertLayerFlat
+    identify_layers, TFBertLayerFlat, get_attn_mask_bias
 from tf_util.lib.tf_funcs import reduce_max, find_layer
 
 Metric = trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric
-
-
-def get_attn_mask_bias(attn_mask, dtype):
-    one_cst = tf.constant(1.0, dtype=dtype)
-    ten_thousand_cst = tf.constant(-10000.0, dtype=dtype)
-    attn_mask = tf.cast(attn_mask, dtype=dtype)
-    attn_mask_bias = tf.multiply(tf.subtract(one_cst, attn_mask), ten_thousand_cst)
-    return attn_mask_bias
-
 
 
 def build_align_features(out_d, qd_target_mask, q_mask, d_mask) -> Dict[str, tf.Tensor]:
