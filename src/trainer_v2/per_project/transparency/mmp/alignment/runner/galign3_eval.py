@@ -1,4 +1,4 @@
-import os.path
+import os
 import sys
 import numpy as np
 from cache import load_pickle_from
@@ -21,8 +21,8 @@ def main():
     table = []
 
     eval_targets = [('majority', majority_pred)]
-    for k, v in output['align_probe'].items():
-        pred_score = v[:, 1]
+    for k, pred_score in output['align_probe'].items():
+        print(pred_score)
         pred_label = np.less(0, pred_score).astype(int)
         eval_targets.append((k, pred_label))
 
@@ -33,7 +33,6 @@ def main():
         for k in columns:
             all_scores[(method, k)] = eval_out[k]
             row.append(eval_out[k])
-
         table.append(row)
 
     print_table(table)
@@ -42,7 +41,6 @@ def main():
     run_name = os.path.basename(prediction_path)
     proxy = get_task_manager_proxy()
     proxy.report_number(run_name, sig_score, "g_attention_output", "f1")
-
 
 
 if __name__ == "__main__":

@@ -50,6 +50,9 @@ class ModelV3IF(ABC):
     def get_train_metrics_for_summary(self):
         return {}
 
+    def get_eval_metrics_for_summary(self):
+        return {}
+
     @abstractmethod
     def get_loss_fn(self):
         pass
@@ -100,10 +103,10 @@ class TrainerCommon(TrainerIFBase):
     def train_step(self, item):
         pass
 
-    def get_train_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
+    def get_train_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         return self.train_metrics
 
-    def get_eval_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
+    def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         return self.eval_metrics
 
     def train_callback(self):

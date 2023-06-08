@@ -1,10 +1,10 @@
 from typing import Dict
 
-import trainer_v2.per_project.transparency.mmp.probe.probe_common
 from cpath import output_path
 from misc_lib import path_join
 
 import tensorflow as tf
+# from tensorflow.keras.metrics import Metric
 
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
@@ -14,11 +14,15 @@ from trainer_v2.custom_loop.trainer_if import TrainerIFBase, EmptyEvalObject, Ev
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
-def get_train_log_dir(run_name):
+def get_tf_log_dir(run_name):
     return path_join(output_path, "tf_log", run_name)
 
 
-Metric = trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric
+def get_tf_log_dir_val(run_name):
+    return path_join(output_path, "tf_log", run_name + "_val")
+
+
+Metric = tf.keras.metrics.Metric
 
 class TrainerDOut2(TrainerIFBase):
     def __init__(self, run_config: RunConfig2,
@@ -47,7 +51,8 @@ class TrainerDOut2(TrainerIFBase):
     def build_model(self):
         super(TrainerDOut2, self).build_model()
         run_name = self.run_config.common_run_config.run_name
-        train_log_dir = get_train_log_dir(run_name)
+        train_log_dir = get_tf_log_dir(run_name)
+        eval_log_dir = get_tf_log_dir_val(run_name)
         self.inner_model.build_model(self.run_config)
         self.model = self.inner_model.get_keras_model()
         self.model.summary(140)
@@ -56,10 +61,11 @@ class TrainerDOut2(TrainerIFBase):
         self.model.optimizer = self.optimizer
 
         self.train_metrics_summary = self.inner_model.get_train_metrics_for_summary()
+        self.eval_metrics_summary = self.inner_model.get_eval_metrics_for_summary()
         if self.do_log:
             create_file_writer = tf.summary.create_file_writer
             self.train_summary_writer = create_file_writer(train_log_dir, name="train")
-            self.train_summary_writer.set_as_default()
+            self.eval_summary_writer = create_file_writer(eval_log_dir, name="eval")
         self.loss_fn = self.inner_model.get_loss_fn()
 
     def train_step(self, item):
@@ -71,10 +77,11 @@ class TrainerDOut2(TrainerIFBase):
         apply_gradient_warning_less(self.optimizer, gradients, model.trainable_variables)
 
         step = self.optimizer.iterations
-        for name, metric in self.train_metrics_summary.items():
-            metric.update_state(output_d)
-            if self.do_log:
-                self.make_summary_item(metric, name, step)
+        if self.do_log:
+            with self.train_summary_writer.as_default(step=step):
+                for name, metric in self.train_metrics_summary.items():
+                    metric.update_state(output_d)
+                    self.make_summary_item(metric, name, step)
         return loss
 
     def make_summary_item(self, metric, name, step):
@@ -96,10 +103,10 @@ class TrainerDOut2(TrainerIFBase):
     def get_keras_model(self):
         return self.model
 
-    def get_train_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
+    def get_train_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         return {}
 
-    def get_eval_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
+    def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         return self.eval_metrics
 
     def train_callback(self):
@@ -109,5 +116,49 @@ class TrainerDOut2(TrainerIFBase):
             pass
 
     def get_eval_object(self, eval_batches, strategy):
-        eval_object = EmptyEvalObject()
+        self.eval_batches = eval_batches
+        self.strategy = strategy
+        do_eval_fn = self.do_eval
+        class EvalObject(EvalObjectIF):
+            def do_eval(self):
+                return do_eval_fn()
+        eval_object = EvalObject()
         return eval_object
+
+    def do_eval(self):
+        model = self.get_keras_model()
+
+        for m in self.eval_metrics.values():
+            m.reset_state()
+
+        @tf.function
+        def eval_fn(item):
+            output_d = model(item, training=False)
+            loss = self.loss_fn(output_d)
+            for name, metric in self.eval_metrics_summary.items():
+                metric.update_state(output_d)
+            return loss
+
+        max_step = sum(1 for _ in self.eval_batches)
+        slice_step = max_step
+
+        iterator = iter(self.eval_batches)
+        total_loss = 0.0
+        n_step = 0.
+
+        for idx in range(slice_step):
+            args = next(iterator),
+            per_replica_losses = self.strategy.run(eval_fn, args=args)
+            loss = self.strategy.reduce(
+                tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None)
+            total_loss += loss
+            n_step += 1.
+
+        avg_loss = total_loss / n_step
+
+        step = self.optimizer.iterations
+        with self.eval_summary_writer.as_default(step=step):
+            for name, metric in self.eval_metrics_summary.items():
+                self.make_summary_item(metric, name, step)
+
+        return avg_loss, {}

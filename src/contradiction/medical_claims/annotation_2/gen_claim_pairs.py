@@ -10,24 +10,24 @@ from misc_lib import exist_or_mkdir
 
 
 def main():
-    save_dir = at_output_dir("alamri_annotation1", "grouped_pairs")
+    save_dir = at_output_dir("alamri_annotation2", "grouped_pairs")
     exist_or_mkdir(save_dir)
 
     summary = []
-    grouped_claim_pairs: List[Tuple[Review, List[Tuple[Claim, Claim]]]] = enum_true_instance(20)
+    grouped_claim_pairs: List[Tuple[Review, List[Tuple[Claim, Claim]]]] = enum_true_instance(0)
     for review_idx, (review, claim_pairs) in enumerate(grouped_claim_pairs):
         entries = []
         for claim1, claim2 in claim_pairs:
             entries.append((claim1.text, claim2.text))
 
         review_no = review_idx + 1
-        save_path = os.path.join(save_dir, "{}.csv".format(review_no))
-        csv_writer = csv.writer(open(save_path, "w", newline='', encoding="utf-8"))
+        pair_save_path = os.path.join(save_dir, "{}.csv".format(review_no))
+        csv_writer = csv.writer(open(pair_save_path, "w", newline='', encoding="utf-8"))
         foreach(csv_writer.writerow, entries)
         summary.append((str(review_no), review.pmid, str(len(claim_pairs))))
 
-    save_path = os.path.join(save_dir, 'summary.csv')
-    csv_writer = csv.writer(open(save_path, "w", newline='', encoding="utf-8"))
+    summary_save_path = os.path.join(save_dir, 'summary.csv')
+    csv_writer = csv.writer(open(summary_save_path, "w", newline='', encoding="utf-8"))
     foreach(csv_writer.writerow, summary)
 
 

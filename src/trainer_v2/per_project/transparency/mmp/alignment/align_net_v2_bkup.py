@@ -20,13 +20,7 @@ class ThresholdConfig:
 
 def build_probe_from_layer_features(out_d, all_head_size, out_dim):
     bhmd_features = ['query_layer', 'key_layer', 'value_layer']
-    bmd_features = [
-        # 'layer_input_vector',
-        'attention_output',
-        'g_attention_output', 'g_attention_output_add_residual',
-        # 'intermediate_output', 'bert_out_last'
-    ]
-
+    bmd_features = ['attention_output', 'g_attention_output', 'g_attention_output_add_residual']
     batch_size = shape_list(out_d['query_layer'])[0]
     bhmd_feature_d = {k: out_d[k] for k in bhmd_features}
     def reshape_bhmd(tensor):
@@ -42,22 +36,14 @@ def build_probe_from_layer_features(out_d, all_head_size, out_dim):
 
     all_features = []
     all_features.extend(bhmd_feature_d.values())
-    all_features.extend(bmd_feature_d.values())
+    all_features.extend(bmd_probe_d.values())
     all_feature = tf.concat(all_features, axis=2)
-    arr = []
-    arr.extend(bhmd_feature_d.values())
-    qkv_feature = tf.concat(arr, axis=2)
-
-    combined_feature_d = {
-        "all_concat": all_feature,
-        "qkv_feature": qkv_feature,
-    }
-    combined_probe = build_probs_from_tensor_d(combined_feature_d, out_dim)
+    all_concat_probe = build_probs_from_tensor_d({"all_concat": all_feature}, out_dim)
 
     prediction_out_d = {}
     prediction_out_d.update(bhmd_probe_d)
     prediction_out_d.update(bmd_probe_d)
-    prediction_out_d.update(combined_probe)
+    prediction_out_d.update(all_concat_probe)
     return prediction_out_d
 
 
@@ -135,7 +121,6 @@ class TFBertLayerFlat(tf.keras.layers.Layer):
         bert_out_last = self.bert_out_layernorm(inputs=bert_out_first + g_attention_output_add_residual)
         layer_output = bert_out_last
         out_d = {
-            'layer_input_vector': layer_input_vector,
             'query_layer': query_layer,
             'key_layer': key_layer,
             'value_layer': value_layer,
@@ -284,11 +269,11 @@ class AlignLossFromDict(tf.keras.losses.Loss):
         is_valid = output_d['is_valid']  # [B, 1]
         sample_weight_per_label = tf.cast(is_valid, tf.float32) # [B, 1]
         q_term_mask = tf.cast(output_d["q_term_mask"], tf.float32) # [B, M]
-        sample_weight = tf.expand_dims(sample_weight_per_label, axis=1)\
-                        * tf.expand_dims(q_term_mask, axis=2)
+        sample_weight = tf.expand_dims(sample_weight_per_label, axis=1) * tf.expand_dims(q_term_mask, axis=2)
 
         loss_d = {}
         for k, pred in align_probe.items():
+
             label_ex = tf.expand_dims(label, axis=1)
             label_ex = tf.tile(label_ex, [1, self.seq_len, 1])
             losses = self.base_loss_fn(label_ex, pred, sample_weight=sample_weight)

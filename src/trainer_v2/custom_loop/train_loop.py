@@ -141,6 +141,107 @@ def tf_run_train(run_config: RunConfig2,
         saver.save()
 
 
+
+def tf_run_train2(run_config: RunConfig2,
+                 trainer: TrainerIFBase,
+                 dataset_factory: Callable[[str, bool], tf.data.Dataset]
+                 ):
+    c_log.debug("tf_run_train ENTRY")
+    strategy = get_strategy_from_config(run_config)
+    c_log.debug("tf_run_inner initializing dataset")
+    train_dataset = dataset_factory(run_config.dataset_config.train_files_path, True)
+    eval_dataset = dataset_factory(run_config.dataset_config.eval_files_path, False)
+    dist_train_dataset = distribute_dataset(strategy, train_dataset)
+    eval_batches = distribute_dataset(strategy, eval_dataset)
+    #
+
+    c_log.debug("Building models")
+    with strategy.scope():
+        trainer.build_model()
+        c_log.info("Loading checkpoints: {}".format(run_config.train_config.init_checkpoint))
+        trainer.do_init_checkpoint(run_config.train_config.init_checkpoint)
+
+        model = trainer.get_keras_model()
+        eval_object = trainer.get_eval_object(eval_batches, strategy)
+
+        train_itr = iter(dist_train_dataset)
+
+        def get_current_step():
+            return eval_tensor(model.optimizer.iterations)
+
+        saver = ModelSaver(
+            model, run_config.train_config.model_save_path, get_current_step
+        )
+
+        current_step = eval_tensor(model.optimizer.iterations)
+        c_log.info("Current step = {}".format(current_step))
+
+        conf_steps_per_execution = run_config.common_run_config.steps_per_execution
+
+        @tf.function
+        def distributed_train_step(train_itr, steps_per_execution):
+            # try:
+            total_loss = 0.0
+            n_step = 0.
+            for _ in tf.range(steps_per_execution):
+                batch_item = next(train_itr)
+                per_replica_losses = strategy.run(trainer.train_step, args=(batch_item, ))
+                loss = strategy.reduce(
+                    tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None)
+                total_loss += loss
+                n_step += 1.
+
+            train_loss = total_loss / n_step
+            return train_loss
+        eval_rc = RecentCounter(run_config.train_config.eval_every_n_step, 0)
+        save_rc = RecentCounter(run_config.train_config.save_every_n_step, 0)
+        step_idx = current_step
+        c_log.info("START Training")
+        while step_idx < run_config.train_config.train_step:
+            f_do_eval = eval_rc.is_over_interval(step_idx)
+            f_do_save = save_rc.is_over_interval(step_idx) and not run_config.common_run_config.is_debug_run
+
+            if f_do_save:
+                c_log.debug("save_fn()")
+                saver.save()
+
+            current_step = eval_tensor(model.optimizer.iterations)
+            c_log.debug("Current step = {}".format(current_step))
+
+            metrics = trainer.get_train_metrics()
+            for m in metrics.values():
+                m.reset_state()
+
+            if step_idx == 0:
+                steps_to_execute = 1
+            elif step_idx % conf_steps_per_execution > 0:
+                steps_to_execute = conf_steps_per_execution - step_idx % conf_steps_per_execution
+            else:
+                steps_to_execute = conf_steps_per_execution
+            c_log.debug("Execute {} steps".format(steps_to_execute))
+            train_loss = distributed_train_step(train_itr, steps_to_execute)
+            step_idx += steps_to_execute
+            c_log.debug("step_idx={}".format(step_idx))
+            per_step_msg = "step {0}".format(step_idx)
+
+            trainer.train_callback()
+            msg = summarize_metric(fetch_metric_result(metrics))
+            per_step_msg += " loss={0:.6f} ".format(train_loss)
+            per_step_msg += msg
+
+            if f_do_eval:
+                eval_loss, eval_metrics = eval_object.do_eval()
+                per_step_msg += " dev: loss={0:.6f}".format(eval_loss)
+                msg = summarize_metric(eval_metrics)
+                per_step_msg += msg
+
+            if f_do_eval or is_interesting_step(step_idx):
+                c_log.info(per_step_msg)
+
+        c_log.info("Training completed")
+        saver.save()
+
+
 def get_latest_model_path_from_dir_path(save_dir):
     max_name = ""
     max_step = 0

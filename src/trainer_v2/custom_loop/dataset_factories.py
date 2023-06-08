@@ -37,7 +37,6 @@ def create_dataset_common(decode_record: Callable,
     if do_shuffle:
         dataset = dataset.shuffle(config.shuffle_buffer_size)
     if do_repeat:
-        print("do_repeat", do_repeat)
         dataset = dataset.repeat()
     dataset = dataset.map(decode_record,
                           num_parallel_calls=tf.data.AUTOTUNE)
