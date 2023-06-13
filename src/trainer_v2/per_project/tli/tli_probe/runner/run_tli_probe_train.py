@@ -49,7 +49,6 @@ class TliProbeModel(ModelV3IF):
         model = self.network.model
         load_weights_from_hdf5(model, init_checkpoint, name_mapping, 197 + 4)
 
-
     def get_train_metrics(self):
         return {}
 
@@ -79,5 +78,3 @@ def main(args):
 if __name__ == "__main__":
     args = flags_parser.parse_args(sys.argv[1:])
     main(args)
-
-

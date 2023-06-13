@@ -13,3 +13,8 @@ def load_nli14_attention_extractor():
 def nli14_model_path():
     model_path = get_canonical_model_path2("nli14_0", "model_12500")
     return model_path
+
+
+def nlits87_model_path():
+    model_path = get_canonical_model_path2("nli_ts_run87_0", "model_12500")
+    return model_path

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Union
 
 import numpy as np
 import scipy.special
@@ -46,8 +46,9 @@ class TokenLevelInference:
         tli2 = self.do_one(sent2, sent1)
         return tli1, tli2
 
-    def do_one(self, prem, hypo) -> np.array:
-        h_tokens = hypo.split()
+    def do_one(self, prem, hypo: Union[str, List[str]]) -> np.array:
+        h_tokens = self.tokenize_if_str(hypo)
+
         payload: List[Tuple[str, str]] = []
         payload_info: List[Tuple[int, int]] = []
         c_log.debug("do_one_side")
@@ -67,10 +68,20 @@ class TokenLevelInference:
 
         return token_level_vector_attribution(preds, payload_info)
 
-    def do_batch(self, pairs: List[Tuple[str, str]]) -> List[Numpy2D]:
+    def tokenize_if_str(self, hypo):
+        if isinstance(hypo, str):
+            h_tokens = hypo.split()
+        elif isinstance(hypo, list):
+            h_tokens = hypo
+        else:
+            c_log.warn("Hypo is neither str or list")
+            h_tokens = hypo.split()
+        return h_tokens
+
+    def do_batch(self, pairs: List[Tuple[str, Union[str, list]]]) -> List[Numpy2D]:
         payload: List[Tuple[str, str]] = []
         for prem, hypo in pairs:
-            h_tokens = hypo.split()
+            h_tokens = self.tokenize_if_str(hypo)
             subseq_list: List[Tuple[int, int]] = list(self.enum_subseq(len(h_tokens)))
             for st, ed in subseq_list:
                 h = " ".join(h_tokens[st:ed])
@@ -87,7 +98,7 @@ class TokenLevelInference:
 
         out_attrib_list = []
         for prem, hypo in pairs:
-            h_tokens = hypo.split()
+            h_tokens = self.tokenize_if_str(hypo)
             subseq_list: List[Tuple[int, int]] = list(self.enum_subseq(len(h_tokens)))
             preds_for_this_pair = []
             payload_info_for_this_pair = []

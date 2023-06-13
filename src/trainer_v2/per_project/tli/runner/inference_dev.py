@@ -10,13 +10,9 @@ from trainer_v2.per_project.tli.token_level_inference import TokenLevelInference
 from cpath import output_path
 from misc_lib import path_join
 
-import logging
 import numpy as np
-
-from misc_lib import SuccessCounter, batch_iter_from_entry_iter, TimeEstimator
 from trainer_v2.per_project.tli.enum_subseq import enum_subseq_136
 from dataset_specific.mnli.mnli_reader import MNLIReader
-from trainer_v2.chair_logging import c_log
 from trainer_v2.train_util.arg_flags import flags_parser
 
 NLIPredictorSig = Callable[[List[Tuple[str, str]]], List[List[float]]]

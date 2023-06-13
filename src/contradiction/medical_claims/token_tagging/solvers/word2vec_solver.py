@@ -6,6 +6,8 @@ import gensim
 from contradiction.medical_claims.token_tagging.online_solver_common import TokenScoringSolverIF
 from contradiction.medical_claims.token_tagging.solvers.ensemble_solver import EnsembleSolver
 from contradiction.medical_claims.token_tagging.solvers.exact_match_solver import ExactMatchSolver
+from cpath import data_path
+from misc_lib import path_join
 
 
 class Word2VecSolver(TokenScoringSolverIF):
@@ -21,14 +23,13 @@ class Word2VecSolver(TokenScoringSolverIF):
         scores = []
         for t1 in text1_tokens:
             similarity_list: List[float] = [self.similar(t1, t2) for t2 in text2_tokens]
-            scores.append(max(similarity_list))
+            scores.append(float(max(similarity_list)))
 
         return scores
 
     def similar(self, word1, word2) -> float:
         try:
             s = self.w2v.similarity(word1, word2)
-            print("{} {} {}".format(s, word1, word2))
             return s
         except KeyError:
             msg = "KeyError {} {}".format(word1, word2)
@@ -46,7 +47,13 @@ class Word2VecSolver(TokenScoringSolverIF):
 
 
 def get_word2vec_solver() -> Word2VecSolver:
-    word2vec_path = os.path.join("D:\\data\\embeddings\\GoogleNews-vectors-negative300.bin")
+    word2vec_path = path_join(data_path, "GoogleNews-vectors-negative300.bin")
+    if os.path.exists(word2vec_path):
+        pass
+    elif 'w2v_path' in os.environ:
+        word2vec_path = os.environ['w2v_path']
+    else:
+        word2vec_path = os.path.join("D:\\data\\embeddings\\GoogleNews-vectors-negative300.bin")
     return Word2VecSolver(word2vec_path)
 
 

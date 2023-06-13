@@ -1,4 +1,5 @@
-from contradiction.medical_claims.token_tagging.online_solver_common import TokenScoringSolverIF
+from contradiction.medical_claims.token_tagging.online_solver_common import TokenScoringSolverIF, \
+    TokenScoringSolverIFOneWay
 from list_lib import right, left
 from misc_lib import get_first
 from trainer_v2.custom_loop.run_config2 import get_run_config_for_predict_empty
@@ -20,7 +21,7 @@ def split(s):
 from lime import lime_text
 
 
-class LimeSolver(TokenScoringSolverIF):
+class LimeSolver(TokenScoringSolverIFOneWay):
     def __init__(self, predict_fn, target_label):
         self.predict_fn = predict_fn
         self.target_label = target_label

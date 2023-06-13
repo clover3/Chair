@@ -28,6 +28,12 @@ class TokenScoringSolverIF(ABC):
         return scores1, scores2
 
 
+class TokenScoringSolverIFOneWay(TokenScoringSolverIF):
+    @abstractmethod
+    def solve_one_way(self, text1_tokens: List[str], text2_tokens: List[str]):
+        pass
+
+
 class TokenScoringSolverIF2(ABC):
     @abstractmethod
     def solve(self, data_id: int, text1_tokens: List[str], text2_tokens: List[str]) -> Tuple[List[float], List[float]]:

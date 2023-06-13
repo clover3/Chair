@@ -2,7 +2,8 @@ from typing import List, Tuple
 
 from bert_api.segmented_instance.segmented_text import token_list_to_segmented_text, SegmentedText, \
     merge_subtoken_level_scores
-from contradiction.medical_claims.token_tagging.online_solver_common import TokenScoringSolverIF
+from contradiction.medical_claims.token_tagging.online_solver_common import TokenScoringSolverIF, \
+    TokenScoringSolverIFOneWay
 from cpath import pjoin, data_path, get_model_full_path
 from data_generator.NLI.enlidef import NEUTRAL
 from data_generator.bert_input_splitter import split_p_h_with_input_ids
@@ -13,14 +14,13 @@ from misc_lib import average
 from models.transformer import hyperparams
 
 
-class SENLISolver(TokenScoringSolverIF):
+class SENLISolver(TokenScoringSolverIFOneWay):
     def __init__(self, predictor, target_label=NEUTRAL, max_seq_length=300):
         self.predictor: NLIExPredictor = predictor
         self.tokenizer = get_tokenizer()
         self.target_label = target_label
         voca_path = pjoin(data_path, "bert_voca.txt")
         self.d_encoder = EncoderUnitPlain(max_seq_length, voca_path)
-
 
     def solve(self, text1_tokens: List[str], text2_tokens: List[str]) -> Tuple[List[float], List[float]]:
         t1: SegmentedText = token_list_to_segmented_text(self.tokenizer, text1_tokens)
@@ -42,6 +42,13 @@ class SENLISolver(TokenScoringSolverIF):
             print(len(conf_h), len(t2.tokens_ids))
         scores = merge_subtoken_level_scores(average, seg2_scores, t2)
         return scores
+
+    def solve_one_way(self, text1_tokens: List[str], text2_tokens: List[str]):
+        t1: SegmentedText = token_list_to_segmented_text(self.tokenizer, text1_tokens)
+        t2: SegmentedText = token_list_to_segmented_text(self.tokenizer, text2_tokens)
+        t2_scores = self.solve_for_second(t1, t2)
+        return t2_scores
+
 
 
 class SENLISolverAsym(TokenScoringSolverIF):

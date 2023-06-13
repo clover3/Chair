@@ -63,7 +63,7 @@ class InferenceHelper:
         # if self.strategy is not None:
         #     output = self.strategy.reduce(output)
         ed = time.time()
-        c_log.info("Took {0:2f} for {1} items".format(ed-st, len(payload)))
+        c_log.debug("Took {0:2f} for {1} items".format(ed-st, len(payload)))
         return output
 
 
