@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import List, Iterable, Callable, Dict, Tuple, Set
+
+from tqdm import tqdm
+
 from dataset_specific.scientsbank.pte_data_types import Question, PTEPredictionPerQuestion, PTEPredictionPerFacet, \
     PTEPredictionPerStudentAnswer, Facet, ReferenceAnswer
 from misc_lib import TEL, TimeEstimator

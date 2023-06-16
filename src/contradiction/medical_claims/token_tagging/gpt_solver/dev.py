@@ -1,8 +1,8 @@
 import json
 
-from contradiction.medical_claims.token_tagging.gpt_solver.gpt_solver import get_mismatch_prediction_prompt_template, \
-    get_score_from_j
-from contradiction.medical_claims.token_tagging.gpt_solver.open_ai_api import OpenAIProxy
+from contradiction.medical_claims.token_tagging.gpt_solver.gpt_solver import get_score_from_j
+from contradiction.medical_claims.token_tagging.gpt_solver.get_instruct_gpt_solver import get_mismatch_prediction_prompt_template
+from utils.open_ai_api import OpenAIProxy
 from cpath import output_path
 from misc_lib import path_join
 

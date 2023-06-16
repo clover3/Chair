@@ -1,30 +1,34 @@
 import json
 import math
 from collections import defaultdict, Counter
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 
-from contradiction.medical_claims.token_tagging.batch_solver_common import BatchTokenScoringSolverIF, ECCOutput, \
-    ECCInput
-from contradiction.medical_claims.token_tagging.gpt_solver.index_span import strip_index, IndexedSpan, split_indexed, \
-    find_all, find_all_as_index_span, strip_char_set
-from contradiction.medical_claims.token_tagging.gpt_solver.open_ai_api import OpenAIProxy
+from contradiction.medical_claims.token_tagging.batch_solver_common import ECCOutput
+from contradiction.medical_claims.token_tagging.gpt_solver.index_span import IndexedSpan, find_all_as_index_span, strip_char_set
+from utils.open_ai_api import OpenAIProxy
 from typing import List, Tuple, Dict
 
 from contradiction.medical_claims.token_tagging.online_solver_common import TokenScoringSolverIF
-from cpath import output_path
 from iter_util import load_jsonl
-from misc_lib import path_join, average
+from misc_lib import average
 
 
 class GPTSolver(TokenScoringSolverIF):
-    def __init__(self, open_ai_proxy: OpenAIProxy,
-                 prompt_template,
-                 claim2_pattern,
-                 log_path,
-                 ):
+    def __init__(
+            self,
+            open_ai_proxy: OpenAIProxy,
+            prompt_template,
+            claim2_pattern,
+            log_path,
+            parse_gpt_response_fn,
+            parse_answer_texts: Callable[[str], Tuple[str, str]]
+    ):
         self.proxy: OpenAIProxy = open_ai_proxy
         self.prompt_template = prompt_template
         self.log_file = open(log_path, "a")
         self.claim2_pattern = claim2_pattern
+        self.parse_gpt_response_fn = parse_gpt_response_fn
+        self.parse_answer_texts = parse_answer_texts
 
     def solve(self, tokens1, tokens2) -> ECCOutput:
         claim1 = " ".join(tokens1)
@@ -32,20 +36,20 @@ class GPTSolver(TokenScoringSolverIF):
         prompt: str = self.prompt_template.format(claim1, claim2)
         j = self.proxy.request(prompt)
         self.log_file.write(json.dumps(j) + "\n")
-        score_pair: ECCOutput = get_score_from_j(prompt, tokens1, tokens2, j, self.claim2_pattern)
-        return score_pair
+        completion_text = self.parse_gpt_response_fn(j)
+        claim1_answer, claim2_answer = self.parse_answer_texts(completion_text)
+        return get_score_from_answer_spans(tokens1, tokens2, claim1_answer, claim2_answer)
 
 
 class GPTRequester(TokenScoringSolverIF):
-    def __init__(self, open_ai_proxy: OpenAIProxy,
+    def __init__(self,
+                 open_ai_proxy: OpenAIProxy,
                  prompt_template,
-                 claim2_pattern,
                  log_path,
                  ):
         self.proxy: OpenAIProxy = open_ai_proxy
         self.prompt_template = prompt_template
-        self.log_file = open(log_path, "w")
-        self.claim2_pattern = claim2_pattern
+        self.log_file = open(log_path, "a")
 
     def solve(self, tokens1, tokens2) -> ECCOutput:
         claim1 = " ".join(tokens1)
@@ -63,45 +67,61 @@ class GPTRequester(TokenScoringSolverIF):
         return scores1, scores2
 
 
+def load_json_log(log_path) -> Dict[Tuple[str, str], Dict]:
+    j_d = {}
+    for j in load_jsonl(log_path):
+        key = j['claim1'], j['claim2']
+        j_d[key] = j['reponse']
+    return j_d
+
+
 class GPTSolverFileRead(TokenScoringSolverIF):
-    def __init__(self,
-                 prompt_template,
-                 claim2_pattern,
-                 log_path,
-                 ):
-        self.prompt_template = prompt_template
-        self.claim2_pattern = claim2_pattern
-
-        j_d = {}
-        for j in load_jsonl(log_path):
-            key = j['claim1'], j['claim2']
-            j_d[key] = j['reponse']
+    def __init__(
+            self,
+            j_d: Dict[Tuple[str, str], Dict],
+            parse_gpt_response_fn: Callable[[Dict], str],
+            parse_answer_texts: Callable[[str], Tuple[str, str]]
+    ):
+        self.parse_gpt_response_fn = parse_gpt_response_fn
+        self.parse_answer_texts = parse_answer_texts
         self.j_d = j_d
-
 
     def solve(self, tokens1, tokens2) -> ECCOutput:
         claim1 = " ".join(tokens1)
         claim2 = " ".join(tokens2)
-        prompt: str = self.prompt_template.format(claim1, claim2)
-        print(prompt)
-        exit()
         j_response = self.j_d[claim1, claim2]
-        return get_score_from_j(prompt, tokens1, tokens2,
-                     j_response, self.claim2_pattern)
+        completion_text = self.parse_gpt_response_fn(j_response)
+        claim1_answer, claim2_answer = self.parse_answer_texts(completion_text)
+        return get_score_from_answer_spans(tokens1, tokens2, claim1_answer, claim2_answer)
 
 
-def get_score_from_j(prompt, tokens1, tokens2,
-                     j_response, claim2_pattern):
+def get_parse_answer_texts_for_instruct(prompt, claim2_pattern):
+    def parse(completion_text):
+        return parse_answer_texts_from_completion_text(prompt, claim2_pattern, completion_text)
+    return parse
+
+
+def get_score_from_answer_spans(
+        tokens1: List[str], tokens2: List[str],
+        claim1_answer: str, claim2_answer: str) -> Tuple[List[float], List[float]]:
     claim1 = " ".join(tokens1)
     claim2 = " ".join(tokens2)
-    choice = j_response['choices'][0]
-    completion_text = choice['text']
-    logprobs = choice['logprobs']
-    tokens = logprobs['tokens']
-    token_logprobs = logprobs['token_logprobs']
-    text_offset = logprobs['text_offset']
-    full_text = prompt + completion_text
+    score_d1 = assign_scores_from_text(claim1, claim1_answer)
+    score_d2 = assign_scores_from_text(claim2, claim2_answer)
 
+    def d_to_arr(d: Dict, l: int) -> List[float]:
+        scores: List[float] = [0 for _ in range(l)]
+        for i, f in d.items():
+            scores[i] = f
+        return scores
+
+    scores1: List[float] = d_to_arr(score_d1, len(tokens1))
+    scores2: List[float] = d_to_arr(score_d2, len(tokens2))
+    return scores1, scores2
+
+
+def parse_answer_texts_from_completion_text(prompt, claim2_pattern, completion_text) -> Tuple[str, str]:
+    full_text = prompt + completion_text
     claim2_line_st: int = full_text.lower().find(claim2_pattern.lower())
     if claim2_line_st < 0:
         print("Fail to parse: ", completion_text)
@@ -113,35 +133,13 @@ def get_score_from_j(prompt, tokens1, tokens2,
     claim1_answer_st = len(prompt)
     claim1_answer_ed = claim2_line_st
     claim1_answer = IndexedSpan(full_text, claim1_answer_st, claim1_answer_ed)
-
     if not claim1_answer.to_text().strip():
         raise ValueError()
-
     if not claim2_answer.to_text().strip():
         raise ValueError()
-
-    # claim1_answer: str = full_text[len(prompt):claim2_line_st]
-    # claim2_answer: str = full_text[claim2_answer_st:]
     print("claim1_answer", claim1_answer.to_text())
     print("claim2_answer", claim2_answer.to_text())
-    assert len(tokens) == len(token_logprobs)
-    assert len(tokens) == len(text_offset)
-
-    # Record probability
-    # offset_to_prob: Dict[int, float] = get_offset_to_prob(full_text, text_offset, token_logprobs, tokens)
-
-    score_d1 = assign_scores(claim1, claim1_answer)
-    score_d2 = assign_scores(claim2, claim2_answer)
-
-    def d_to_arr(d: Dict, l: int) -> List[float]:
-        scores: List[float] = [0 for _ in range(l)]
-        for i, f in d.items():
-            scores[i] = f
-        return scores
-
-    scores1: List[float] = d_to_arr(score_d1, len(tokens1))
-    scores2: List[float] = d_to_arr(score_d2, len(tokens2))
-    return scores1, scores2
+    return claim1_answer.to_text(), claim2_answer.to_text()
 
 
 def get_offset_to_prob(full_text, text_offset, token_logprobs, tokens):
@@ -215,6 +213,38 @@ def assign_scores(claim: str, claim_answer: IndexedSpan):
         print("claim tokens:", c_tokens)
         print("GPT tokens:", mismatch_words)
 
+    return score_d
+
+
+def assign_scores_from_text(claim: str, claim_answer: str):
+    def token_norm(t) -> str:
+        strip_ch_set = " .,;'!?\"\'{}()"
+        st, ed = strip_char_set(t.lower(), 0, len(t), strip_ch_set)
+        return t.lower()[st:ed]
+
+    c_tokens = [token_norm(t) for t in claim.split()]
+    delimiter = guess_delimiter(claim_answer)
+    print('claim', claim)
+    print("Use {} as delimiter".format(delimiter))
+    mismatch_words = set()
+    for raw_chunk in claim_answer.split(delimiter):
+        chunk_text = token_norm(raw_chunk)
+        for t in chunk_text.split():
+            mismatch_words.add(token_norm(t))
+
+    score_d = {}
+    for i, t in enumerate(c_tokens):
+        if t in mismatch_words:
+            score_d[i] = 1
+        else:
+            score_d[i] = 0
+
+    n_common = sum(score_d.values())
+    n_gpt = len(mismatch_words)
+    if n_common < n_gpt:
+        print("GPT has output {} tokens but {} were matched".format(n_gpt, n_common))
+        print("claim tokens:", c_tokens)
+        print("GPT tokens:", mismatch_words)
 
     return score_d
 
@@ -255,72 +285,3 @@ def span_level_score_assign(chunk, claim, offset_to_prob, score_d, tokens):
             score_d[index] = prob
 
 
-def get_mismatch_prediction_prompt_template():
-    instruction = "In each of the examples, " \
-                  "two claims extracted from research paper abstracts will be shown. " \
-                  "The given two claims seem to be contradictory as they are implying" \
-                  " opposite results about the same question. " \
-                  "Precisely though, the two claims may have been obtained" \
-                  " for different population or intervention details " \
-                  "that make it possible that both claims to be true." \
-                  " We want to annotate the tokens (words) that" \
-                  " express different conditions."
-
-    problem = "Claim 1: {}\nClaim 2: {}"
-    later_template = "Condition tokens in Claim 1:"
-    return instruction + "\n\n" + problem + "\n\n" + later_template
-
-
-def get_conflict_prediction_prompt_template():
-    instruction = "In each of the examples, " \
-                  "two claims extracted from research paper abstracts will be shown. " \
-                  "The given two claims seem to be contradictory as they are implying" \
-                  " opposite results about the same question. " \
-                  "Precisely though, the two claims may have been obtained" \
-                  " for different population or intervention details " \
-                  "that make it possible that both claims to be true." \
-                  " We want to annotate the tokens (words) that" \
-                  " express opposite results."
-
-    problem = "Claim 1: {}\nClaim 2: {}"
-    later_template = "Opposite results tokens in Claim 1:"
-    return instruction + "\n\n" + problem + "\n\n" + later_template
-
-
-def get_gpt_solver_mismatch() -> GPTSolver:
-    log_path = path_join(output_path, "alamri_annotation1", "gpt", "davinci_mismatch.json")
-    return GPTSolver(OpenAIProxy("text-davinci-003"),
-                     get_mismatch_prediction_prompt_template(),
-                     "Condition tokens in Claim 2:",
-                     log_path)
-
-
-def get_gpt_requester_mismatch() -> GPTRequester:
-    log_path = path_join(output_path, "alamri_annotation1", "gpt", "davinci_req_mismatch.json")
-    return GPTRequester(OpenAIProxy("text-davinci-003"),
-                     get_mismatch_prediction_prompt_template(),
-                     "Condition tokens in Claim 2:",
-                     log_path)
-
-
-def get_gpt_requester_conflict() -> GPTRequester:
-    log_path = path_join(output_path, "alamri_annotation1", "gpt", "davinci_req_conflict.json")
-    return GPTRequester(OpenAIProxy("text-davinci-003"),
-                     get_conflict_prediction_prompt_template(),
-                     "Opposite results tokens in Claim 2:",
-                     log_path)
-
-
-
-def get_gpt_file_solver_mismatch() -> GPTSolverFileRead:
-    log_path = path_join(output_path, "alamri_annotation1", "gpt", "davinci_req_mismatch.mod.json")
-    return GPTSolverFileRead(get_mismatch_prediction_prompt_template(),
-                     "Condition tokens in Claim 2:",
-                     log_path)
-
-
-def get_gpt_file_solver_conflict() -> GPTSolverFileRead:
-    log_path = path_join(output_path, "alamri_annotation1", "gpt", "davinci_req_conflict.mod.json")
-    return GPTSolverFileRead(get_conflict_prediction_prompt_template(),
-                     "Opposite results tokens in Claim 2",
-                     log_path)

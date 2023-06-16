@@ -108,10 +108,14 @@ def load_scientsbank_split(split, filter_valid=True) -> List[Question]:
             f = open(file_path, "r")
             question: Question = parse_xml(f.read(), filter_valid)
             question_list.append(question)
+
+    question_list.sort(key=lambda q: q.id)
     if not question_list:
         raise ValueError()
     if select_subset:
         sel_size = int(len(question_list) * split.subset_portion)
+        if sel_size == 0:
+            sel_size = 1
         assert sel_size > 0
         question_list = question_list[:sel_size]
     return question_list
@@ -124,6 +128,8 @@ sci_ents_all_splits = ["train"] + sci_ents_test_split_list
 def get_split_spec(split_name):
     if split_name == "train_sub":
         return SplitSpec("train", use_subset=True, subset_portion=0.1)
+    elif split_name == "train_first":
+        return SplitSpec("train", use_subset=True, subset_portion=0.0001)
     elif split_name == "train":
         return SplitSpec("train", use_subset=False)
     else:

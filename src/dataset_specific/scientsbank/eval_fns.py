@@ -53,9 +53,16 @@ def evaluate(questions: List[Question], preds: List[PTEPredictionPerQuestion]) -
     cnt_list = []
     acc_list = []
 
+    total = None
     for target_class, paired in todo:
         golds, preds = zip(*paired)
         acc_prec_recall = get_acc_prec_recall(golds, preds)
+
+        prev_total = total
+        total = sum([acc_prec_recall[k] for k in ['tp', 'fp', 'tn', 'fn']])
+        if prev_total is not None:
+            assert total == prev_total
+
         f1_list.append(acc_prec_recall['f1'])
         acc_list.append(acc_prec_recall['accuracy'])
 
@@ -68,15 +75,16 @@ def evaluate(questions: List[Question], preds: List[PTEPredictionPerQuestion]) -
 
     assert_all_equal(acc_list)
 
-    total = sum(cnt_list)
+    g_total = sum(cnt_list)
     wsum = 0
     for f1, cnt in zip(f1_list, cnt_list):
-        weight = cnt / total
+        weight = cnt / g_total
         wsum += weight * f1
     d = {
         'accuracy': acc_list[0],
         "macro_f1": average(f1_list),
         "weighted": wsum,
+        "total": total
     }
     return d
 

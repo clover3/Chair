@@ -27,12 +27,11 @@ def main():
     tune_split = "train_sub"
     split = get_split_spec(tune_split)
     questions: List[Question] = load_scientsbank_split(split.split_name)
-    solver_name_list = ["em", "w2v", "coattention", "deletion", "senli", "nli14", "nlits"]
-
+    solver_name_list = ["em", "w2v", "coattention", "lime", "deletion", "senli", "nli14", "nlits"]
     def get_t_list(solver_name):
         if solver_name == "coattention":
             return [t * 0.002 for t in range(0, 40)]
-        elif solver_name in ["deletion", "senli"]:
+        elif solver_name in ["deletion", "senli", "lime"]:
             return [t * 0.1 for t in range(-10, 20)]
         else:
             return [t * 0.02 for t in range(0, 40)]
@@ -47,6 +46,7 @@ def main():
             change_preds(preds, t)
             eval_res = evaluate(questions, preds)
             score = eval_res['macro_f1']
+            print(t, score)
             records.append((t, score))
 
         records.sort(key=get_second, reverse=True)

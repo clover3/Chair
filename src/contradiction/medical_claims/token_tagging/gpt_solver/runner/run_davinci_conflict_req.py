@@ -1,6 +1,6 @@
 import os
 
-from contradiction.medical_claims.token_tagging.gpt_solver.gpt_solver import get_gpt_requester_conflict, get_gpt_file_solver_conflict
+from contradiction.medical_claims.token_tagging.gpt_solver.get_instruct_gpt_solver import get_gpt_requester_conflict
 from contradiction.medical_claims.token_tagging.runner_s.run_exact_match import solve_and_save
 
 

@@ -40,7 +40,6 @@ def main():
                         reltn_label[reltn, fe.label] += 1
                         reltn_set.add(reltn)
 
-
     print_dict_tab(counter)
 #
 #     print(reltn_set)
