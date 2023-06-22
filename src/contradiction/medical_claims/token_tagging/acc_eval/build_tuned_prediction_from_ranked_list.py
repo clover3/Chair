@@ -71,9 +71,9 @@ def show_true_rate():
 def main():
     # show_true_rate()
     run_list = ["random", "nlits87", "psearch", "coattention", "word2vec_em",
-                "lime",
-                "deletion", "exact_match", "word_seg"]
-    run_list = ["senli"]
+                "lime", "senli",
+                "deletion", "exact_match", "word_seg", "gpt-3.5-turbo"]
+    run_list = ["slr"]
     # tag = "conflict"
     tag_list = ["mismatch", "conflict"]
     # metric_to_opt = 'f1'

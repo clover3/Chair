@@ -51,6 +51,7 @@ class PairedIndicesLabel(NamedTuple):
         else:
             raise ValueError
 
+
 AlamriLabelUnitT = Tuple[Tuple[int, int], PairedIndicesLabel]
 
 

@@ -1,5 +1,5 @@
 from contradiction.medical_claims.token_tagging.gpt_solver.gpt_solver import GPTSolver, GPTRequester, GPTSolverFileRead, \
-    get_parse_answer_texts_for_instruct, load_json_log
+    get_parse_answer_texts_for_instruct, load_json_log, get_score_from_answer_spans
 from cpath import output_path
 from misc_lib import path_join
 from utils.open_ai_api import OpenAIProxy, parse_instruct_gpt_response
@@ -83,7 +83,8 @@ def get_gpt_file_solver_instruct_common(claim2_pattern, log_path, template):
     return GPTSolverFileRead(
         j_d,
         parse_instruct_gpt_response,
-        parse_answer
+        parse_answer,
+        get_score_from_answer_spans
     )
 
 

@@ -101,8 +101,6 @@ def show_agreement_after_drop():
     show_agreement_inner(hit_results, kendalltau_wrap, scheme2_question_d)
 
 
-
-
 def measure_correlation(hit_results: List[HitResult]):
     metric_fn = pearsonr_fixed
     answer_list_d = summarize_agreement(hit_results)

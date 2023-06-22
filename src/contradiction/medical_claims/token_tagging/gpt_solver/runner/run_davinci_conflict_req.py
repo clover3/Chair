@@ -1,7 +1,7 @@
 import os
 
 from contradiction.medical_claims.token_tagging.gpt_solver.get_instruct_gpt_solver import get_gpt_requester_conflict
-from contradiction.medical_claims.token_tagging.runner_s.run_exact_match import solve_and_save
+from contradiction.medical_claims.token_tagging.util import solve_and_save
 
 
 def main():

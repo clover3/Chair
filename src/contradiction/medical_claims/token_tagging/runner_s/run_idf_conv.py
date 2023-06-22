@@ -1,5 +1,6 @@
 from contradiction.medical_claims.token_tagging.eval_helper import do_ecc_eval_w_trec_eval
-from contradiction.medical_claims.token_tagging.runner_s.run_exact_match import solve_and_save, get_tf_idf_solver
+from contradiction.medical_claims.token_tagging.runner_s.run_exact_match import get_tf_idf_solver
+from contradiction.medical_claims.token_tagging.util import solve_and_save
 from contradiction.medical_claims.token_tagging.solvers.idf_solver import ConvolutionSolver
 from misc_lib import tprint
 

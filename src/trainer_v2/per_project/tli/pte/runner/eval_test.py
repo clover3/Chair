@@ -15,8 +15,8 @@ from trainer_v2.per_project.tli.pte.path_helper import get_score_save_path
 def main():
     solver_name_list = [
         "em", "w2v", "coattention", "lime", "deletion",
-        "senli", "nli14", "nlits", 'all_true', 'gpt-3.5-turbo']
-    no_tune = ['all_true', 'gpt-3.5-turbo']
+        "senli", "nli14", "nlits", 'all_true','all_false', 'slr', 'gpt-3.5-turbo']
+    no_tune = ['all_true', 'all_false', 'gpt-3.5-turbo']
 
     split_list = sci_ents_test_split_list
     head = ["run_name"] + split_list

@@ -12,8 +12,8 @@ def main():
     solver_name_list = [
         "em", "w2v", "coattention", "lime", "deletion",
         "senli", "nli14", "nlits"]
-    # split_todo = sci_ents_test_split_list
-    split_todo = ["train_0.0001"]
+    solver_name_list = ["slr"]
+    split_todo = sci_ents_test_split_list
     print(solver_name_list)
     for solver_name in solver_name_list:
         threshold = load_threshold(solver_name)

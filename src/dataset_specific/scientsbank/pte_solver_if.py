@@ -68,6 +68,9 @@ class PTESolverAllTrue(PTESolverIF):
 
 
 class PTESolverAllFalse(PTESolverIF):
+    def get_name(self):
+        return "all_false"
+
     def solve(self,
               reference_answer: str,
               student_answer: str,

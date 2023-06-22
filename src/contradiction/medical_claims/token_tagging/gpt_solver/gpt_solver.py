@@ -5,6 +5,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from contradiction.medical_claims.token_tagging.batch_solver_common import ECCOutput
 from contradiction.medical_claims.token_tagging.gpt_solver.index_span import IndexedSpan, find_all_as_index_span, strip_char_set
+from list_lib import lmap
 from utils.open_ai_api import OpenAIProxy
 from typing import List, Tuple, Dict
 
@@ -80,10 +81,12 @@ class GPTSolverFileRead(TokenScoringSolverIF):
             self,
             j_d: Dict[Tuple[str, str], Dict],
             parse_gpt_response_fn: Callable[[Dict], str],
-            parse_answer_texts: Callable[[str], Tuple[str, str]]
+            parse_answer_texts: Callable[[str], Tuple[str, str]],
+            get_score_from_answer_spans_fn
     ):
         self.parse_gpt_response_fn = parse_gpt_response_fn
         self.parse_answer_texts = parse_answer_texts
+        self.get_score_from_answer_spans = get_score_from_answer_spans_fn
         self.j_d = j_d
 
     def solve(self, tokens1, tokens2) -> ECCOutput:
@@ -92,7 +95,7 @@ class GPTSolverFileRead(TokenScoringSolverIF):
         j_response = self.j_d[claim1, claim2]
         completion_text = self.parse_gpt_response_fn(j_response)
         claim1_answer, claim2_answer = self.parse_answer_texts(completion_text)
-        return get_score_from_answer_spans(tokens1, tokens2, claim1_answer, claim2_answer)
+        return self.get_score_from_answer_spans(tokens1, tokens2, claim1_answer, claim2_answer)
 
 
 def get_parse_answer_texts_for_instruct(prompt, claim2_pattern):
@@ -117,6 +120,14 @@ def get_score_from_answer_spans(
 
     scores1: List[float] = d_to_arr(score_d1, len(tokens1))
     scores2: List[float] = d_to_arr(score_d2, len(tokens2))
+    return scores1, scores2
+
+
+def get_score_from_answer_spans_chat(
+        tokens1: List[str], tokens2: List[str],
+        claim1_answer: List[str], claim2_answer: List[str]) -> Tuple[List[float], List[float]]:
+    scores1 = assign_scores_from_text_list(tokens1, claim1_answer)
+    scores2 = assign_scores_from_text_list(tokens2, claim2_answer)
     return scores1, scores2
 
 
@@ -245,8 +256,81 @@ def assign_scores_from_text(claim: str, claim_answer: str):
         print("GPT has output {} tokens but {} were matched".format(n_gpt, n_common))
         print("claim tokens:", c_tokens)
         print("GPT tokens:", mismatch_words)
-
     return score_d
+
+
+def check_match_after(a_token, c_tokens, cursor):
+    for j in range(cursor, len(c_tokens)):
+        if a_token == c_tokens[j]:
+            return j
+    return -1
+
+
+def check_contain_match(a_token, c_tokens):
+    for j in range(0, len(c_tokens)):
+        if a_token in c_tokens[j]:
+            return j
+    return -1
+
+
+def align_tokens(c_tokens, a_tokens):
+    cursor = 0
+    match_list = []
+    not_matched = []
+    for i, a_token in enumerate(a_tokens):
+        match_fn_list = [
+            lambda : check_match_after(a_token, c_tokens, cursor),
+            lambda : check_match_after(a_token, c_tokens, 0),
+            lambda : check_contain_match(a_token, c_tokens)
+        ]
+
+        any_match = False
+        for fn_idx, match_fn in enumerate(match_fn_list):
+            j = match_fn()
+            if j >= 0:
+                match_list.append(j)
+                any_match = True
+                if fn_idx == 0:
+                    cursor = j + 1
+                break
+
+        if not any_match:
+            not_matched.append(a_token)
+    if not_matched:
+        print("Not matched : ", not_matched)
+    return match_list
+
+
+def assign_scores_from_text_list(claim_tokens: List[str], answer_list: List[str]) -> List[float]:
+    def token_norm(t) -> str:
+        strip_ch_set = " .,;'!?\"\'{}()"
+        st, ed = strip_char_set(t.lower(), 0, len(t), strip_ch_set)
+        return t.lower()[st:ed]
+
+    a_tokens = []
+    for answer in answer_list:
+        for t in answer.split():
+            a_tokens.append(token_norm(t))
+
+    c_tokens_norm = lmap(token_norm, claim_tokens)
+    match_list = align_tokens(c_tokens_norm, a_tokens)
+    score_arr = [0] * len(claim_tokens)
+
+    for i in match_list:
+        score_arr[i] = 1
+
+    n_common = sum(score_arr)
+    n_gpt = len(a_tokens)
+    if n_common < n_gpt:
+        print("GPT has output {} tokens but {} were matched".format(n_gpt, n_common))
+        print("claim tokens:", c_tokens_norm)
+        print("GPT tokens:", a_tokens)
+        print(score_arr)
+        print()
+    else:
+        pass
+
+    return score_arr
 
 
 def token_level_score_assign(claim, offset_to_prob, score_d,

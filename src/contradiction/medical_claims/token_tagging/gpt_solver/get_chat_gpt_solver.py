@@ -1,7 +1,8 @@
 import json
+from json import JSONDecodeError
 
 from contradiction.medical_claims.token_tagging.gpt_solver.gpt_solver import GPTSolver, GPTRequester, GPTSolverFileRead, \
-    get_parse_answer_texts_for_instruct, load_json_log
+    get_parse_answer_texts_for_instruct, load_json_log, get_score_from_answer_spans_chat
 from cpath import output_path
 from misc_lib import path_join
 from utils.open_ai_api import OpenAIProxy, parse_instruct_gpt_response, ENGINE_GPT_3_5, parse_chat_gpt_response
@@ -59,8 +60,25 @@ def get_chat_gpt_requester(engine, label) -> GPTRequester:
 
 
 def parse_from_json_answer(s):
-    j = json.loads(s)
-    return j['claim1'], j['claim2']
+    try:
+        j = json.loads(s)
+    except JSONDecodeError:
+        print(s)
+        raise
+
+    try:
+        c1 = j['claim1']
+        c2 = j['claim2']
+    except KeyError:
+        c1 = j['Claim1']
+        c2 = j['Claim2']
+
+    def reform(c):
+        if type(c) == str:
+            return [c]
+        else:
+            return c
+    return reform(c1), reform(c2)
 
 
 def get_chat_gpt_file_solver(engine, label) -> GPTSolverFileRead:
@@ -70,6 +88,7 @@ def get_chat_gpt_file_solver(engine, label) -> GPTSolverFileRead:
     return GPTSolverFileRead(
         j_d,
         parse_chat_gpt_response,
-        parse_answer
+        parse_answer,
+        get_score_from_answer_spans_chat
     )
 

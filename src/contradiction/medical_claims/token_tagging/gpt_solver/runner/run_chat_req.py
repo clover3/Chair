@@ -1,8 +1,9 @@
 import os
+import sys
 
 from contradiction.medical_claims.token_tagging.gpt_solver.get_chat_gpt_solver import get_chat_gpt_requester
 from contradiction.medical_claims.token_tagging.problem_loader import AlamriProblem, load_alamri_problem
-from contradiction.medical_claims.token_tagging.runner_s.run_exact_match import solve_and_save
+from contradiction.medical_claims.token_tagging.util import solve_and_save
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from misc_lib import TEL
@@ -21,10 +22,23 @@ def apply_solver(problems: List[AlamriProblem],
 def main():
     tag_type = "mismatch"
     engine = ENGINE_GPT_3_5
-    run_name = engine
     print("Get requester")
     solver = get_chat_gpt_requester(engine, tag_type)
-    problems: List[AlamriProblem] = load_alamri_problem()[:1]
+    problems: List[AlamriProblem] = load_alamri_problem()[50:]
+    print("apply solver")
+    apply_solver(problems, solver)
+
+
+def main():
+    tag_type = sys.argv[1]
+    do_for_label(tag_type)
+
+
+def do_for_label(tag_type):
+    engine = ENGINE_GPT_3_5
+    print("Get requester")
+    solver = get_chat_gpt_requester(engine, tag_type)
+    problems: List[AlamriProblem] = load_alamri_problem()
     print("apply solver")
     apply_solver(problems, solver)
 

@@ -7,32 +7,32 @@ def show_for_mismatch():
     run_list = ["random",
                 "majority",
                 "exact_match", "word2vec_em",
-                "senli",
-                "coattention", "lime", "deletion", "slr",
+                "senli", "slr",
+                "coattention", "lime", "deletion",
                 "word_seg", "nlits87", "davinci", "gpt-3.5-turbo"
                 ]
     column_list = [
         # ("map", "mismatch"),
-        ("f1", "mismatch"),
-        ("accuracy", "mismatch"),
-        ("f1", "conflict"),
-        ("accuracy", "conflict"),
+        ("precision", "mismatch"),
+        ("recall", "mismatch"),
+        ("precision", "conflict"),
+        ("recall", "conflict"),
     ]
 
     split = "test"
-    scorer = BioClaimMapCalc(split)
     head = ["run name"]
     head.extend(map(" ".join, column_list))
     table = [head]
+    metric_tuned_for = "f1"
 
     for run_name in run_list:
         row = [run_name]
         for metric, tag in column_list:
-            if metric == "map":
-                s = scorer.compute(run_name, tag)
-            else:
-                score_d = compute_binary_metrics_for_test(run_name, tag, metric)
+            score_d = compute_binary_metrics_for_test(run_name, tag, metric_tuned_for)
+            try:
                 s = score_d[metric]
+            except KeyError:
+                s = "-"
             row.append(s)
         table.append(row)
     print_table(table)

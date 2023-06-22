@@ -6,7 +6,7 @@ from krovetzstemmer import Stemmer
 from adhoc.clueweb12_B13_termstat import load_clueweb12_B13_termstat_stemmed, cdf
 from contradiction.medical_claims.token_tagging.eval_helper import do_ecc_eval_w_trec_eval
 from contradiction.medical_claims.token_tagging.online_solver_common import TokenScoringSolverIF
-from contradiction.medical_claims.token_tagging.runner_s.run_exact_match import solve_and_save
+from contradiction.medical_claims.token_tagging.util import solve_and_save
 from contradiction.medical_claims.token_tagging.tf_idf_discretize import daily_topic_rare
 from misc_lib import tprint
 

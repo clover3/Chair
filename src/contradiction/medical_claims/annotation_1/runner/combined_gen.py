@@ -15,6 +15,10 @@ from cpath import output_path
 def sel_by_longest():
     save_dir = get_sbl_label_json_path()
     annots: List[AlamriLabelUnitT] = load_annots_w_processing()
+    for pair_id, _ in annots:
+        group_no, inner_idx = pair_id
+        if group_no == 1:
+            print(pair_id)
     sel_by_longest_inner(annots, save_dir)
 
 
@@ -67,4 +71,5 @@ def sel_by_worker_id():
 
 
 if __name__ == "__main__":
+    # sel_by_longest()
     sel_by_worker_id()

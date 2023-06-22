@@ -111,7 +111,7 @@ def load_scientsbank_split(split, filter_valid=True) -> List[Question]:
 
     question_list.sort(key=lambda q: q.id)
     if not question_list:
-        raise ValueError()
+            raise ValueError()
     if select_subset:
         sel_size = int(len(question_list) * split.subset_portion)
         if sel_size == 0:

@@ -38,6 +38,7 @@ def main():
                 "deletion",
                 "coattention",
                 "senli",
+                "slr",
                 "lime", "word_seg", "word2vec_em",
                 "nlits87", "davinci", "lime"
                 ]
