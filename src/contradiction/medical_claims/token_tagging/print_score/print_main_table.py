@@ -3,9 +3,8 @@ from contradiction.medical_claims.token_tagging.print_score.print_MAP import Bio
 from tab_print import print_table
 
 
-def show_for_mismatch():
+def main():
     run_list = ["random",
-                "majority",
                 "exact_match", "word2vec_em",
                 "senli",
                 "coattention", "lime", "deletion", "slr",
@@ -39,4 +38,4 @@ def show_for_mismatch():
 
 
 if __name__ == "__main__":
-    show_for_mismatch()
+    main()

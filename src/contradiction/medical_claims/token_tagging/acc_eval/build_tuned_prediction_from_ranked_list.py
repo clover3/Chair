@@ -3,7 +3,7 @@ from typing import List
 from contradiction.medical_claims.token_tagging.acc_eval.path_helper import load_sbl_binary_label
 from contradiction.medical_claims.token_tagging.path_helper import get_save_path2, get_binary_save_path_w_opt
 from contradiction.token_tagging.acc_eval.defs import SentTokenLabel, SentTokenBPrediction, convert_to_binary
-from contradiction.token_tagging.acc_eval.eval_codes import calc_prec_rec_acc
+from contradiction.token_tagging.acc_eval.eval_codes import calc_prec_rec_acc, calc_prec_rec_acc_flat
 from contradiction.token_tagging.acc_eval.parser import save_sent_token_binary_predictions
 from trec.trec_parse import load_ranked_list_grouped
 
@@ -34,7 +34,9 @@ def build_save(run_name, tag_type, metric_to_opt):
 
     def apply_threshold_eval(t):
         predictions: List[SentTokenBPrediction] = convert_to_binary(rlg, t)
-        return calc_prec_rec_acc(labels, predictions)
+        # return calc_prec_rec_acc(labels, predictions)
+        return calc_prec_rec_acc_flat(labels, predictions)
+
 
     search_interval = range(102)
     if run_name in ["lime", "deletion", "senli"]:
@@ -55,6 +57,7 @@ def build_save(run_name, tag_type, metric_to_opt):
     save_sent_token_binary_predictions(predictions, save_path)
     return max_t
 
+
 def show_true_rate():
     labels: List[SentTokenLabel] = load_sbl_binary_label("mismatch", "val")
     n_true_sum = 0
@@ -70,10 +73,10 @@ def show_true_rate():
 
 def main():
     # show_true_rate()
-    run_list = ["random", "nlits87", "psearch", "coattention", "word2vec_em",
+    run_list = ["random", "nlits87", "coattention", "word2vec_em",
                 "lime", "senli",
-                "deletion", "exact_match", "word_seg", "gpt-3.5-turbo"]
-    run_list = ["slr"]
+                "deletion", "exact_match", "word_seg", "gpt-3.5-turbo", "slr"]
+    run_list = ["davinci"]
     # tag = "conflict"
     tag_list = ["mismatch", "conflict"]
     # metric_to_opt = 'f1'

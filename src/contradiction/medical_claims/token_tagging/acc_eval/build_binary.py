@@ -9,7 +9,6 @@ from contradiction.token_tagging.acc_eval.parser import save_sent_token_binary_p
 from trec.trec_parse import load_ranked_list_grouped
 
 
-
 def build_save(run_name, tag_type, threshold):
     rl_path = get_save_path2(run_name, tag_type)
     rlg = load_ranked_list_grouped(rl_path)
@@ -18,11 +17,10 @@ def build_save(run_name, tag_type, threshold):
     save_sent_token_binary_predictions(predictions, save_path)
 
 
-
 def main():
     # run_list = ["exact_match", "gpt-3.5-turbo"]
-    run_list = ["gpt-3.5-turbo"]
-    run_list = ["slr"]
+    run_list = ["exact_match", "gpt-3.5-turbo", "davinci"]
+    # run_list = ["slr"]
     tag_list = ["mismatch", "conflict"]
     for run_name in run_list:
         for tag in tag_list:

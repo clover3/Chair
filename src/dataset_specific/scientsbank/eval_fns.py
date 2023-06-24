@@ -43,16 +43,19 @@ def evaluate(questions: List[Question], preds: List[PTEPredictionPerQuestion]) -
     ll: List[List[Tuple[bool, bool]]] = lflatten(lll)
     l: List[Tuple[bool, bool]] = lflatten(ll)
 
+    d = compute_f1_from_binary_paired(l)
+    return d
+
+
+def compute_f1_from_binary_paired(l):
     l_inv = [(not b1, not b2) for b1, b2 in l]
     todo = [
         (1, l),
         (0, l_inv)
     ]
-
     f1_list = []
     cnt_list = []
     acc_list = []
-
     total = None
     for target_class, paired in todo:
         golds, preds = zip(*paired)
@@ -72,9 +75,7 @@ def evaluate(questions: List[Question], preds: List[PTEPredictionPerQuestion]) -
                 cnt += 1
 
         cnt_list.append(cnt)
-
     assert_all_equal(acc_list)
-
     g_total = sum(cnt_list)
     wsum = 0
     for f1, cnt in zip(f1_list, cnt_list):

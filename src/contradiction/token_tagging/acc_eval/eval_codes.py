@@ -38,6 +38,33 @@ def calculate_acc_inner(label_list: List[SentTokenLabel], prediction_list: List[
     return average(acc_per_sent), number_of_sents
 
 
+def calc_prec_rec_acc_flat(
+        label_list: List[SentTokenLabel],
+        prediction_list: List[SentTokenBPrediction]
+    ):
+    label_d = index_by_fn(lambda x: x.qid, label_list)
+    number_of_sents = 0
+    preds_all = []
+    labels_all = []
+    for p in prediction_list:
+        try:
+            labels = label_d[p.qid].labels
+            predictions = p.predictions
+
+            if len(labels) != len(predictions):
+                print("WARNING number of tokens differ: {} != {}".format(len(labels), len(predictions)))
+            preds_all.extend(i2b(predictions))
+            labels_all.extend(i2b(labels))
+            number_of_sents += 1
+        except KeyError:
+            pass
+
+    assert len(preds_all) == len(labels_all)
+    metrics: Dict = get_acc_prec_recall(preds_all, labels_all)
+    return metrics
+
+
+
 def calc_prec_rec_acc(label_list: List[SentTokenLabel], prediction_list: List[SentTokenBPrediction]):
     label_d = index_by_fn(lambda x: x.qid, label_list)
     scores_list = defaultdict(list)

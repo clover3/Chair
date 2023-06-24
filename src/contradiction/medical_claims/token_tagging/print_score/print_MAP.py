@@ -35,12 +35,16 @@ class BioClaimMapCalc:
 def main():
     run_list = ["random",
                 "exact_match",
-                "deletion",
+                "word2vec_em",
                 "coattention",
+                "lime",
+                "deletion",
                 "senli",
                 "slr",
-                "lime", "word_seg", "word2vec_em",
-                "nlits87", "davinci", "lime"
+                "word_seg",
+                "nlits87",
+                "davinci",
+                "gpt-3.5-turbo"
                 ]
     split = "test"
     scorer = BioClaimMapCalc(split)

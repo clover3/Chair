@@ -112,7 +112,7 @@ def paired_test_f1(metric, labels,
     return p_value
 
 
-def load_bin_prediction(run_name, tag):
+def load_bin_prediction_tuned_f1(run_name, tag):
     save_path = get_binary_save_path_w_opt(run_name, tag, "f1")
     predictions = load_sent_token_binary_predictions(save_path)
     return predictions
@@ -120,16 +120,16 @@ def load_bin_prediction(run_name, tag):
 
 def do_stat_test_f1(metric, run1_list, run2, tag):
     labels: List[SentTokenLabel] = load_sbl_binary_label(tag, "test")
-    pred2 = load_bin_prediction(run2, tag)
+    pred2 = load_bin_prediction_tuned_f1(run2, tag)
     table = []
     p_value_list = []
     for run1 in run1_list:
         try:
-            pred1 = load_bin_prediction(run1, tag)
+            pred1 = load_bin_prediction_tuned_f1(run1, tag)
             p_value = paired_test_f1(metric, labels, pred1, pred2)
             p_value_list.append(p_value)
             is_sig = p_value < 0.01
-            table.append((run1, is_sig))
+            table.append((run1, is_sig, p_value))
         except FileNotFoundError:
             pass
     print_table(table)
@@ -142,7 +142,7 @@ def main():
     tag = "mismatch"
     run1_list = ["exact_match", "word2vec_em",
                  "coattention", "lime", "deletion", "word_seg",
-                 "davinci"
+                 "davinci", 'gpt-3.5-turbo'
                  ]
 
     run2 = "nlits87"

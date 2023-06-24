@@ -963,3 +963,4 @@ def batch_iter_from_entry_iter(entry_iter: Iterable, batch_size: int):
 
     if batch:
         yield batch
+
