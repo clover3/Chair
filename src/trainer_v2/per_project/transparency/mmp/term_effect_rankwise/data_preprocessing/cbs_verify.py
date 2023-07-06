@@ -1,7 +1,7 @@
 import os.path
 import sys
 
-from dataset_specific.msmarco.passage.path_helper import get_mmp_grouped_sorted_path
+from dataset_specific.msmarco.passage.path_helper import get_mmp_train_grouped_sorted_path
 from misc_lib import path_join, ceil_divide
 from cpath import output_path
 
@@ -19,7 +19,7 @@ def main():
             if not os.path.exists(get_sub_file_path(sub_job_no)):
                 break
 
-        f = open(get_mmp_grouped_sorted_path(job_no), "r")
+        f = open(get_mmp_train_grouped_sorted_path(job_no), "r")
         cnt = 0
         for line in f:
             cnt += 1

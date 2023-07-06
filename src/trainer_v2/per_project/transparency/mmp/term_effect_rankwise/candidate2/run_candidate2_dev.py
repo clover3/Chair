@@ -1,9 +1,13 @@
+import logging
+
 from cpath import output_path
 from misc_lib import path_join, TimeProfiler
 import sys
 
 from taskman_client.wrapper3 import JobContext
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.split_iter import get_mmp_split_w_deep_scores_train
+from trainer_v2.chair_logging import c_log
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.split_iter import get_mmp_split_w_deep_scores_train, \
+    get_mmp_split_w_deep_scores
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.te_measure_w_resource import \
     run_term_effect_over_term_pairs
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import mmp_root
@@ -11,16 +15,17 @@ from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_me
 
 
 def main_inner(st, ed):
-    partition_list = get_mmp_split_w_deep_scores_train()
+    c_log.setLevel(logging.INFO)
+    split = "dev"
+    partition_list = get_mmp_split_w_deep_scores(split)
     time_profile = TimeProfiler()
     irl_proxy = IRLProxy("unknown", time_profile)
     # tfs
     # shallow scores
     # deep scores
-    fidelity_save_dir = path_join(mmp_root(), "term_effect_space2", "fidelity")
-    te_save_dir = path_join(mmp_root(), "term_effect_space2", "content")
+    fidelity_save_dir = path_join(mmp_root(), "term_effect_space2_dev", "fidelity")
+    te_save_dir = path_join(mmp_root(), "term_effect_space2_dev", "content")
 
-    split = "train"
     qtfs_dir = path_join(mmp_root(), f"{split}_qtfs")
 
     term_pair_save_path = path_join(

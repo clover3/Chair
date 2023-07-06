@@ -9,23 +9,15 @@ from trainer_v2.chair_logging import c_log
 # takes 40 secs
 def get_train_query_grouped_dict_10K(group_no) -> Dict[str, List]:
     itr = iter_train_from_partitioned_file10K(group_no)
+    return make_grouped(itr)
+
+
+def make_grouped(itr):
     per_query_dict = defaultdict(list)
     for e in itr:
         qid, pid, _, _ = e
         l = per_query_dict[qid]
         l.append(e)
-
-    return per_query_dict
-
-
-def get_train_query_grouped_dict_10K(group_no) -> Dict[str, List]:
-    itr = iter_train_from_partitioned_file10K(group_no)
-    per_query_dict = defaultdict(list)
-    for e in itr:
-        qid, pid, _, _ = e
-        l = per_query_dict[qid]
-        l.append(e)
-
     return per_query_dict
 
 

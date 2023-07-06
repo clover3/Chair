@@ -7,7 +7,7 @@ from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import get_te_save_path_base
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.runner.term_effect_serial import \
     term_effect_serial_core
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure import ScoringModel, IRLProxy
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure_mmp import ScoringModel, IRLProxy
 
 
 def get_te_candidat1_job_group_proxy():

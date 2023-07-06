@@ -5,7 +5,7 @@ import tensorflow as tf
 from transformers import AutoTokenizer
 
 from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter
-from dataset_specific.msmarco.passage.path_helper import get_mmp_grouped_sorted_path
+from dataset_specific.msmarco.passage.path_helper import get_mmp_train_grouped_sorted_path
 from misc_lib import select_third_fourth, TELI
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import eval_dev100_mrr, \
@@ -22,7 +22,7 @@ from misc_lib import path_join
 
 
 def main():
-    quad_tsv_path = get_mmp_grouped_sorted_path(0)
+    quad_tsv_path = get_mmp_train_grouped_sorted_path(0)
     # model_path = config['model_path']
     scores_path = path_join(output_path, "msmarco", "passage", "mmp_train_split_all_scores", "0.scores")
     tuple_itr: Iterable[Tuple[str, str]] = select_third_fourth(tsv_iter(quad_tsv_path))

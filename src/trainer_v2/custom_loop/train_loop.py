@@ -52,8 +52,6 @@ def tf_run_train(run_config: RunConfig2,
     eval_dataset = dataset_factory(run_config.dataset_config.eval_files_path, False)
     dist_train_dataset = distribute_dataset(strategy, train_dataset)
     eval_batches = distribute_dataset(strategy, eval_dataset)
-    #
-
     c_log.debug("Building models")
     with strategy.scope():
         trainer.build_model()

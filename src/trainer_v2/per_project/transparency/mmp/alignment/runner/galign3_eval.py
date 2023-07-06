@@ -22,7 +22,6 @@ def main():
 
     eval_targets = [('majority', majority_pred)]
     for k, pred_score in output['align_probe'].items():
-        print(pred_score)
         pred_label = np.less(0, pred_score).astype(int)
         eval_targets.append((k, pred_label))
 

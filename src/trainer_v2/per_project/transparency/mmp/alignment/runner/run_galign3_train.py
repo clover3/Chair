@@ -58,6 +58,10 @@ class GAlignModel(ModelV3IF):
         metrics = self.network.get_align_metrics()
         return metrics
 
+    def get_eval_metrics_for_summary(self):
+        metrics = self.network.get_align_metrics()
+        return metrics
+
     def get_loss_fn(self):
         return self.loss
 

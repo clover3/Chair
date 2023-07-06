@@ -26,12 +26,13 @@ def work_for(
 
 def main():
     job_no = sys.argv[1]
-    itr = tsv_iter(get_mmp_grouped_sorted_path(job_no))
+    split = "train"
+    itr = tsv_iter(get_mmp_grouped_sorted_path(split, job_no))
     g_itr: Iterable[List[FourItem]] = enum_grouped(itr)
     bm25 = get_bm25_mmp_25_01_01()
 
     qid_qtf_entries = work_for(g_itr, bm25)
-    save_path = get_qtfs_save_path(job_no)
+    save_path = get_qtfs_save_path(split, job_no)
     pickle.dump(qid_qtf_entries, open(save_path, "wb"))
 
 

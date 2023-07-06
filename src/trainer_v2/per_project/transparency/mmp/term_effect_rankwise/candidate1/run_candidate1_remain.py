@@ -10,8 +10,8 @@ from taskman_client.job_group_proxy import JobGroupProxy
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helper import TermEffectPerQuery
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import get_te_save_path_base, load_qtf_index
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure import ScoringModel, IRLProxy, \
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import get_te_save_path_base, load_qtf_index_train
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure_mmp import ScoringModel, IRLProxy, \
     TermEffectMeasure
 
 
@@ -31,7 +31,7 @@ def term_effect_serial_for_list(sm, q_term, d_term, job_list):
         c_log.debug("Job %d", job_no)
         save_path = get_te_save_path_base(q_term, d_term, job_no)
         irl_proxy = IRLProxy(q_term)
-        qtfs_index = load_qtf_index(job_no)
+        qtfs_index = load_qtf_index_train(job_no)
         tem = TermEffectMeasure(
             sm.get_updated_score_bm25,
             irl_proxy.get_irl,

@@ -6,12 +6,12 @@ from cache import save_list_to_jsonl
 from taskman_client.wrapper3 import JobContext
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure import ScoringModel, TermEffectMeasure, \
-    IRLProxy
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure import ScoringModel, TermEffectMeasure
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helper import TermEffectPerQuery
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import load_qtf_index, term_effect_dir, \
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import load_qtf_index_train, term_effect_dir, \
     get_te_save_path_base
 from misc_lib import path_join
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure_mmp import IRLProxy
 
 
 def save_term_effect(te_list: List[TermEffectPerQuery], q_term, d_term, job_no):
@@ -41,7 +41,7 @@ def main():
         sm = ScoringModel(bm25.core.k1, bm25.core.b, bm25.core.avdl, bm25.term_idf_factor)
         irl_proxy = IRLProxy(q_term)
         c_log.info("load_qtf_index ENTRY")
-        qtfs_index = load_qtf_index(job_no)
+        qtfs_index = load_qtf_index_train(job_no)
         c_log.info("load_qtf_index DONE")
         tem = TermEffectMeasure(
             sm.get_updated_score_bm25,

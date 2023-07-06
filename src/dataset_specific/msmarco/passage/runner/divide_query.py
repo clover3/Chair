@@ -5,12 +5,8 @@ from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter
 from misc_lib import path_join, TimeEstimator
 
 
-def main():
-    source_corpus_path = path_join("data", "msmarco", "top1000.train.txt")
-    grouping_root = path_join("data", "msmarco", "passage", "grouped_10K")
-    top1000_iter = tsv_iter(source_corpus_path)
-    read_f = open(source_corpus_path, "r", encoding="utf-8", errors="ignore")
-    ticker = TimeEstimator(478002393, sample_size=1000)
+def read_save_grouped(grouping_root, n_item, read_f):
+    ticker = TimeEstimator(n_item, sample_size=1000)
     per_query_dict = defaultdict(list)
     per_query_count = Counter()
     f_dict = {}
@@ -18,9 +14,9 @@ def main():
     for line in read_f:
         # e = line.split("\t")
         idx1 = line.find("\t")
-        idx2 = line.find("\t", idx1+1)
+        idx2 = line.find("\t", idx1 + 1)
         qid = line[:idx1]
-        pid = line[idx1+1: idx2]
+        pid = line[idx1 + 1: idx2]
 
         # qid, pid, _, _ = e
         n_record += 1
@@ -42,6 +38,24 @@ def main():
             print(f"1000 records are found for {qid} (Read {n_record})")
 
 
+def main():
+    # 10K means that queries are grouped by dividing qid by 10K
+    source_corpus_path = path_join("data", "msmarco", "top1000.train.txt")
+    grouping_root = path_join("data", "msmarco", "passage", "grouped_10K")
+    read_f = open(source_corpus_path, "r", encoding="utf-8", errors="ignore")
+    n_item = 478002393
+
+    read_save_grouped(grouping_root, n_item, read_f)
+
+
+def main_val():
+    source_corpus_path = path_join("data", "msmarco", "top1000.dev")
+    grouping_root = path_join("data", "msmarco", "passage", "dev_grouped_10K")
+    read_f = open(source_corpus_path, "r", encoding="utf-8", errors="ignore")
+    n_item = 6668967
+
+    read_save_grouped(grouping_root, n_item, read_f)
+
 
 if __name__ == "__main__":
-    main()
+    main_val()

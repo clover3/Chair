@@ -8,11 +8,11 @@ from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helper import compare_fidelity, \
     pearson_r_wrap, TermEffectPerQuery
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import get_te_save_path_base
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.split_iter import get_mmp_split_w_deep_scores
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.split_iter import get_mmp_split_w_deep_scores_train
 
 
 def get_score(q_term, d_term):
-    job_no_itr = get_mmp_split_w_deep_scores()
+    job_no_itr = get_mmp_split_w_deep_scores_train()
     all_items: List[List[TermEffectPerQuery]] = []
     for job_no in job_no_itr:
         try:
@@ -42,7 +42,7 @@ def get_score(q_term, d_term):
 
 def show_te(q_term, d_term):
     c_log.info("Loading job_no iter")
-    job_no_itr = get_mmp_split_w_deep_scores()
+    job_no_itr = get_mmp_split_w_deep_scores_train()
     c_log.info("Loading te jsonls")
     all_items: List[List[TermEffectPerQuery]] = []
     for job_no in job_no_itr:

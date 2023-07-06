@@ -679,6 +679,10 @@ def dict_reverse(d):
 
 
 def group_by(interable: Iterable[A], key_fn: Callable[[A], B]) -> Dict[B, List[A]]:
+    """
+
+    :rtype: object
+    """
     grouped = {}
     for elem in interable:
         key = key_fn(elem)

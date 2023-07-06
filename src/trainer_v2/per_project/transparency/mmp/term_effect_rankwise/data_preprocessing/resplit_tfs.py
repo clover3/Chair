@@ -3,24 +3,24 @@ import sys
 from collections import Counter
 
 from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, enum_grouped2
-from dataset_specific.msmarco.passage.path_helper import get_mmp_grouped_sorted_path
+from dataset_specific.msmarco.passage.path_helper import get_mmp_train_grouped_sorted_path
 from list_lib import assert_length_equal
 from misc_lib import select_first_second
 from taskman_client.wrapper3 import JobContext
 from trainer_v2.chair_logging import c_log
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.data_preprocessing.serializer import \
+    save_shallow_scores
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import load_tfs_and_computed_base_scores, \
     get_tfs_save_path, get_shallow_score_save_path
 from typing import List, Iterable, Tuple
 
 
-def save_shallow_scores(
+def save_shallow_scores_train(
         job_id,
         qid_scores: List[Tuple[str, List[Tuple[str, float]]]]):
-    save_path = get_shallow_score_save_path(job_id)
-    f = open(save_path, "w")
-    for qid, items in qid_scores:
-        for pid, score in items:
-            f.write("\t".join(map(str, [qid, pid, score])) + "\n")
+    split = "train"
+    save_path = get_shallow_score_save_path(split, job_id)
+    save_shallow_scores(save_path, qid_scores)
 
 
 def save_qid_tfs(qid, qid_tfs):
@@ -31,7 +31,7 @@ def save_qid_tfs(qid, qid_tfs):
 def resplit_tfs_inner(job_no):
     c_log.info("load_tfs_and_computed_base_scores")
     tfs_and_shallow: List[List[Tuple[str, Counter, float]]] = load_tfs_and_computed_base_scores(job_no)
-    quad_tsv_path = get_mmp_grouped_sorted_path(job_no)
+    quad_tsv_path = get_mmp_train_grouped_sorted_path(job_no)
     c_log.info("load quad tsv")
     qid_pid: List[Tuple[str, str]] = list(select_first_second(tsv_iter(quad_tsv_path)))
     c_log.info("load group enum")
@@ -56,7 +56,7 @@ def resplit_tfs_inner(job_no):
         save_qid_tfs(qid, qid_tfs)
 
     c_log.info("Done enum saving shallow scores...")
-    save_shallow_scores(job_no, qid_scores)
+    save_shallow_scores_train(job_no, qid_scores)
     c_log.info("Done")
 
 
