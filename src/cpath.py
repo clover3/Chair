@@ -14,6 +14,7 @@ json_cache_path = FilePath(os.path.join(data_path, 'json'))
 exist_or_mkdir(json_cache_path)
 output_path = FilePath(os.path.join(project_root, 'output'))
 log_path = FilePath(os.path.join(project_root, 'common.log'))
+yconfig_dir_path = FilePath(os.path.join(project_root, 'confs'))
 
 common_model_dir_root = FilePath(os.path.join(output_path, 'model'))
 prediction_dir = FilePath(os.path.join(output_path, "prediction"))

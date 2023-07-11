@@ -1,0 +1,13 @@
+
+project_root: .
+per_corpus_path: ${project_root}/output/msmarco/passage
+
+candidate_pair: ${per_corpus_path}/candidates3.txt
+frequent_q_terms: ${per_corpus_path}/freq_q_terms.txt
+
+tfs_save_path_by_qid: ${per_corpus_path}/tfs_by_qid
+shallow_scores_by_qid: ${per_corpus_path}/shallow_scores_by_qid
+deep_scores_by_qid: ${per_corpus_path}/deep_scores_by_qid
+
+qtfs_path_train: ${per_corpus_path}/qtfs
+qtfs_path_dev: ${per_corpus_path}/dev_qtfs
