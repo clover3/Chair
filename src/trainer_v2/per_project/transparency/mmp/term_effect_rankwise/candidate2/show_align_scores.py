@@ -21,6 +21,5 @@ def main():
         print("Neg: ", " ".join(neg_term))
 
 
-
 if __name__ == "__main__":
     main()

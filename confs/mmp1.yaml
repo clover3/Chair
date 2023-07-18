@@ -1,0 +1,4 @@
+
+project_root: .
+per_corpus_path: ${project_root}/output/msmarco/passage
+deep_scores_by_qid: ${per_corpus_path}/deep_scores_by_qid

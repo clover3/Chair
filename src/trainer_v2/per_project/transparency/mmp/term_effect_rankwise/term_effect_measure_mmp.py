@@ -7,19 +7,19 @@ from dataset_specific.msmarco.passage.runner.build_ranked_list import read_score
 from list_lib import assert_length_equal
 from misc_lib import select_first_second
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import load_mmp_tfs, \
-    read_shallow_score_per_qid, read_deep_score_per_qid, get_deep_model_score_path, get_tfs_save_path
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import read_shallow_score_per_qid, read_deep_score_per_qid, get_deep_model_score_path, get_tfs_save_path
 import psutil
 
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure import IndexedRankedList, \
     QID_PID_SCORE, IRLProxyIF
 
+# Specific to mmp1 model
 
 def print_cur_memory():
     process = psutil.Process()
     byte_used = process.memory_info().rss
     gb_used = byte_used / 1024 / 1024 / 1024
-    c_log.info("{0:.2f} gb used".format(gb_used))
+    c_log.debug("{0:.2f} gb used".format(gb_used))
 
 
 def load_deep_scores(split, job_no) -> List[List[QID_PID_SCORE]]:
@@ -84,3 +84,5 @@ class IRLProxy(IRLProxyIF):
         irl = IndexedRankedList(qid, e_out_list)
         self.cached[qid] = irl
         return irl
+
+

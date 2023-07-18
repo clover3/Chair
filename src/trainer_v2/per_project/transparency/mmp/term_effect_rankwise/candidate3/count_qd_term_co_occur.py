@@ -38,8 +38,6 @@ def do_for_partition(split, partition_no):
     return tf, rel_count
 
 
-
-
 def main():
     config: MMPGAlignPathHelper = get_mmp_galign_path_helper()
     partition_no = int(sys.argv[1])
@@ -55,6 +53,6 @@ def main():
         pickle.dump(output, open(pickle_save_path, "wb"))
 
 
-
 if __name__ == "__main__":
     main()
+

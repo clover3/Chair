@@ -5,6 +5,7 @@ import tensorflow as tf
 from official import nlp
 from official.nlp import bert
 
+import trainer_v2.per_project.transparency.mmp.alignment.galign_inf_helper
 from cpath import data_path
 
 
@@ -32,13 +33,13 @@ def main():
             train_data_output_path=train_data_output_path,
             eval_data_output_path=eval_data_output_path,
             max_seq_length=max_seq_length))
-    training_dataset = bert.run_classifier.build_dataset(
+    training_dataset = trainer_v2.per_project.transparency.mmp.alignment.galign_inf_helper.build_dataset(
         train_data_output_path,
         max_seq_length,
         batch_size,
         is_training=True)()
 
-    evaluation_dataset = bert.run_classifier.build_dataset(
+    evaluation_dataset = trainer_v2.per_project.transparency.mmp.alignment.galign_inf_helper.build_dataset(
         eval_data_output_path,
         max_seq_length,
         eval_batch_size,

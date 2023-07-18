@@ -3,6 +3,7 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 import tensorflow_hub as hub
 
+import trainer_v2.per_project.transparency.mmp.alignment.galign_inf_helper
 from models.keras_model.dev.bert import encode_sentence
 
 tfds.disable_progress_bar()
@@ -37,7 +38,7 @@ def tokenize_convert(sentence_list, tokenizer):
 
 def get_mrpc_dataset(seq_length, batch_size=32):
     train_data_output_path = "C:\\work\\Code\\Chair\\src\\models\\keras_model\\dev\\mrpc_train.tf_record"
-    training_dataset = bert.run_classifier.build_dataset(
+    training_dataset = trainer_v2.per_project.transparency.mmp.alignment.galign_inf_helper.build_dataset(
         train_data_output_path,
         seq_length,
         batch_size,

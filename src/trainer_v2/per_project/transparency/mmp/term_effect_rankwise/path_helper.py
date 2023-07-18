@@ -1,12 +1,14 @@
 from collections import Counter, defaultdict
-from typing import List, Tuple
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Dict, Tuple
 
 from cache import load_pickle_from
 from cpath import output_path
 from dataset_specific.msmarco.passage.passage_resource_loader import enum_grouped2, tsv_iter
 from misc_lib import path_join
 import os
+
+from trainer_v2.per_project.transparency.misc_common import load_str_float_tsv
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.parse_helper import read_qid_pid_score_tsv, escape
 
 
 def mmp_root():
@@ -122,13 +124,13 @@ def get_te_save_name(q_term, d_term, job_no):
 
 
 def get_fidelity_save_path2(q_term, d_term):
-    save_name = get_fidelity_save_name(d_term, q_term)
+    save_name = get_fidelity_save_name(q_term, d_term)
     dir_path = path_join(mmp_root(), "term_effect_space2", "fidelity")
     save_path = path_join(dir_path, save_name)
     return save_path
 
 
-def get_fidelity_save_name(d_term, q_term):
+def get_fidelity_save_name(q_term, d_term):
     q_term_es = escape(q_term)
     d_term_es = escape(d_term)
     save_name = f"{q_term_es}_{d_term_es}.txt"
@@ -202,36 +204,11 @@ def read_qid_pid_score_triplet_grouped(save_path):
 
 def read_shallow_score_per_qid(qid) -> Tuple[str, List[Tuple[str, float]]]:
     save_path = get_shallow_score_save_path_by_qid(qid)
-    entries = []
-    for pid, score in tsv_iter(save_path):
-        entries.append((pid, float(score)))
-    return qid, entries
+    return load_str_float_tsv(qid, save_path)
 
 
 def read_deep_score_per_qid(qid) -> Tuple[str, List[Tuple[str, float]]]:
     save_path = get_deep_score_save_path_by_qid(qid)
-    entries = []
-    for qid, pid, score in tsv_iter(save_path):
-        entries.append((pid, float(score)))
-    return qid, entries
+    return read_qid_pid_score_tsv(qid, save_path)
 
-
-def escape(part_of_name):
-    todo  = [
-        ("#", "[SHARP]"),
-        ("*", "[ASTERISK]"),
-        ("\\", "[BKSLASH]"),
-        ("/", "[SLASH]"),
-        ("%", "[PERCENT]"),
-        ("?", "[QUESTIONMARK]"),
-        (";", "[SEMICOLON]"),
-        ("|", "[PIPE]"),
-        ("@", "[AT]"),
-        ("$", "[DOLLAR]"),
-        ("`", "[BACKTICK]"),
-    ]
-    name = part_of_name
-    for ch, text in todo:
-        name = name.replace(ch, text)
-    return name
 

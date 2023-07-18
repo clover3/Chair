@@ -1,7 +1,6 @@
 from cpath import output_path
 from misc_lib import path_join
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.candidate2.summarize_scores import \
-    collect_scores_and_save
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_display_helper import collect_scores_and_save
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import mmp_root, \
     term_align_candidate2_score_path
 
