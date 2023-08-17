@@ -29,12 +29,20 @@ def eval_dev100_for_tune(dataset, run_name):
     qrels = load_qrels_structured(judgment_path)
     evaluator = RelevanceEvaluator(qrels, {metric})
     score_per_query = evaluator.evaluate(doc_scores)
+    c_log.info("%d queries", len(score_per_query))
     scores = [score_per_query[qid][metric] for qid in score_per_query]
     return average(scores)
 
 
-def eval_dev100_mrr(dataset, run_name):
+def eval_dev_mrr(dataset, run_name):
     metric = "recip_rank"
+    scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
+    qid_pid_path = path_join("data", "msmarco", dataset, "corpus.tsv")
+    return eval_from_score_lines_dev(dataset, metric, qid_pid_path, run_name, scores_path)
+
+
+def eval_dev_ndcg(dataset, run_name):
+    metric = "ndcg"
     scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
     qid_pid_path = path_join("data", "msmarco", dataset, "corpus.tsv")
     return eval_from_score_lines_dev(dataset, metric, qid_pid_path, run_name, scores_path)
@@ -46,7 +54,6 @@ def eval_on_train_when_0(run_name):
     scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
     qid_pid_path = path_join(output_path, "msmarco", "passage", "when_full", "0")
     return eval_from_score_lines_train(dataset, metric, qid_pid_path, run_name, scores_path)
-
 
 
 def eval_from_score_lines_dev(dataset, metric, qid_pid_path, run_name, scores_path):

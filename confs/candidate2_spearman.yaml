@@ -1,0 +1,9 @@
+
+project_root: .
+per_corpus_path: ${project_root}/output/msmarco/passage
+
+candidate_pair_path: ${per_corpus_path}/align_candidates/candidate2.tsv
+term_effect_save_dir: ${per_corpus_path}/term_effect_space
+fidelity_save_dir: ${per_corpus_path}/term_effect_space2/fidelity_spearman
+fidelity_table_path: ${per_corpus_path}/align_scores/2_spearman.tsv
+

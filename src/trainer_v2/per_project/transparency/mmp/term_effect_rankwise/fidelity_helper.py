@@ -70,11 +70,14 @@ def compute_save_fidelity_from_te(fidelity_fn, fidelity_save_dir, partition_list
             d_term_stm = stemmer.stem(d_term)
             save_name = get_te_save_name(q_term_stm, d_term_stm, partition_no)
             save_path = path_join(te_save_dir, save_name)
-            print(save_path)
-            te_list: List[TermEffectPerQuery] = load_list_from_gz_jsonl(save_path, TermEffectPerQuery.from_json)
-            f_change = compute_fidelity_change(fidelity_fn, te_list)
+            try:
+                te_list: List[TermEffectPerQuery] = load_list_from_gz_jsonl(save_path, TermEffectPerQuery.from_json)
+                f_change = compute_fidelity_change(fidelity_fn, te_list)
 
-            f_change_sum += f_change
+                f_change_sum += f_change
+            except FileNotFoundError as e:
+                print(e)
+
 
         save_name = get_fidelity_save_name(q_term, d_term)
         fidelity_save_path = path_join(fidelity_save_dir, save_name)

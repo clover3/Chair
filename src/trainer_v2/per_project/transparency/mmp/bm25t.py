@@ -68,6 +68,8 @@ class BM25T:
         return score_sum
 
 
+
+
 class BM25T_Custom:
     def __init__(self, mapping: Dict[str, Dict[str, float]],
                  bm25):
@@ -130,5 +132,6 @@ class GlobalAlign:
     score: float
     n_appear: int
     n_pos_appear: int
+
 
 

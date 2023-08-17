@@ -7,7 +7,7 @@ from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import predict_and_save_scores, \
-    eval_dev100_mrr, predict_and_batch_save_scores
+    eval_dev_mrr, predict_and_batch_save_scores
 from trainer_v2.per_project.transparency.mmp.tt_model.encoders import TermVector
 from trainer_v2.per_project.transparency.mmp.tt_model.load_tt_predictor import get_tt10_scorer
 from tf_util.lib.tf_funcs import find_layer
