@@ -40,6 +40,7 @@ def load_weights_from_hdf5(model, h5_path, map_to_stock_fn, n_expected_restore):
                        "Count of weights with mismatched shape: [{}]".format(
                 len(weight_value_tuples), model, prefix, skip_count, len(skipped_weight_value_tuples))
             c_log.warning(msg)
+            c_log.warning("Expected to restore %d but actually restored %d ", n_expected_restore, len(weight_value_tuples))
 
             param_storage_keys = set(param_storage.keys())
             c_log.warning("Unused weights from checkpoint: %s",

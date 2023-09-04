@@ -60,12 +60,11 @@ def main():
     # if query has no pos d_term,
     #   select 20 top scores items.
     size_config = {
-        'max_pos': 20,
-        'hard_neg_sample': 10,
-        'random_neg_sample': 10
+        'max_pos': 30000,
+        'hard_neg_sample': 300,
+        'random_neg_sample': 300
     }
-    candidate_set_name = 'candidate2_1'
-
+    candidate_set_name = 'candidate2_1_large'
     select_candidate_term_pars(candidate_set_name, size_config)
 
 

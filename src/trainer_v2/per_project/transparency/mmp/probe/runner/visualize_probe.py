@@ -219,6 +219,3 @@ def main(args):
 if __name__ == "__main__":
     args = flags_parser.parse_args(sys.argv[1:])
     main(args)
-
-
-

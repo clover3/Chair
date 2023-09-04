@@ -1,6 +1,6 @@
 from typing import List, Callable
 
-from evals.mean_average_precision import get_ap
+from evals.mean_average_precision import get_ap, get_rr
 from trec.types import TrecRankedListEntry
 
 MetricFn = Callable[[List[TrecRankedListEntry]], float]
@@ -82,6 +82,8 @@ def get_metric_fn(input_text) -> MetricFn:
         k = int(input_text[len("ndcg"):])
         print("using ndcg at {}".format(k))
         return get_ndcg_at_k(k)
+    elif input_text.lower() == "mrr":
+        return get_rr
 
 
     raise KeyError("Metric {} is not supported".format(input_text))

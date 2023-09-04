@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from transformers import AutoTokenizer
 
 from trainer_v2.per_project.tli.model_load_h5 import load_weights_from_hdf5
-from trainer_v2.per_project.transparency.mmp.alignment.align_net_v3 import GAlignNetwork3, AlignLossFromDict
+from trainer_v2.per_project.transparency.mmp.alignment.network.align_net_v3 import GAlignNetwork3, AlignLossFromDict
 from trainer_v2.per_project.transparency.mmp.alignment.dataset_factory import read_galign_v2
 from trainer_v2.per_project.transparency.mmp.probe.align_network import AddLosses
 from trainer_v2.per_project.transparency.mmp.trainer_d_out2 import TrainerDOut2
@@ -34,7 +34,7 @@ class GAlignModel(ModelV3IF):
         tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         self.network = GAlignNetwork3(tokenizer)
         loss_list = [
-            AlignLossFromDict(5),
+            AlignLossFromDict(),
         ]
         self.loss = AddLosses(loss_list)
 

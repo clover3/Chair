@@ -63,3 +63,12 @@ def load_list_from_gz_jsonl(save_path, from_json):
 def save_number_to_file(save_path, score):
     f = open(save_path, "w")
     f.write(str(score))
+
+
+def read_term_pair_table(score_path) -> List[Tuple[str, str, float]]:
+    itr = tsv_iter(score_path)
+    term_gain: List[Tuple[str, str, float]] = []
+    for row in itr:
+        qt, dt, score = row
+        term_gain.append((qt, dt, float(score)))
+    return term_gain

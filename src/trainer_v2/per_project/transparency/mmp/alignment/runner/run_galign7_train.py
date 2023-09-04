@@ -5,8 +5,11 @@ from dataclasses import dataclass
 from transformers import AutoTokenizer
 
 from trainer_v2.per_project.tli.model_load_h5 import load_weights_from_hdf5
-from trainer_v2.per_project.transparency.mmp.alignment.network.align_net_v2 import GAlignNetworkSingleTerm, AlignLossFromDict
-from trainer_v2.per_project.transparency.mmp.alignment.dataset_factory import read_galign, read_galign_v2
+from trainer_v2.per_project.transparency.mmp.alignment.network.align_net4 import GAlignNetwork4
+from trainer_v2.per_project.transparency.mmp.alignment.network.align_net5 import GAlignNetwork5
+from trainer_v2.per_project.transparency.mmp.alignment.network.align_net7 import GAlignNetwork7
+from trainer_v2.per_project.transparency.mmp.alignment.network.align_net_v3 import AlignLossFromDict
+from trainer_v2.per_project.transparency.mmp.alignment.dataset_factory import read_galign_v2
 from trainer_v2.per_project.transparency.mmp.probe.align_network import AddLosses
 from trainer_v2.per_project.transparency.mmp.trainer_d_out2 import TrainerDOut2
 
@@ -17,7 +20,7 @@ import sys
 from trainer_v2.chair_logging import c_log, IgnoreFilter, IgnoreFilterRE
 import tensorflow as tf
 from taskman_client.wrapper3 import report_run3
-from trainer_v2.custom_loop.prediction_trainer import ModelV2IF, ModelV3IF
+from trainer_v2.custom_loop.prediction_trainer import ModelV3IF
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
 from trainer_v2.custom_loop.train_loop import tf_run2
 from trainer_v2.custom_loop.trainer_if import TrainerIFBase
@@ -32,9 +35,9 @@ class GAlignModel(ModelV3IF):
 
     def build_model(self, run_config):
         tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-        self.network = GAlignNetworkSingleTerm(tokenizer)
+        self.network = GAlignNetwork7(tokenizer)
         loss_list = [
-            AlignLossFromDict(5),
+            AlignLossFromDict(),
         ]
         self.loss = AddLosses(loss_list)
 
@@ -46,9 +49,7 @@ class GAlignModel(ModelV3IF):
             return f"tf_bert_for_sequence_classification/{name}"
 
         c_log.info("Loading model from {}".format(init_checkpoint))
-        n_param_emb = 5
-        n_param_per_layer = 16
-        n_param = n_param_emb + n_param_per_layer
+        n_param = 199
         load_weights_from_hdf5(self.network.model, init_checkpoint, name_mapping, n_param)
 
     def get_train_metrics(self):
@@ -91,5 +92,3 @@ def main(args):
 if __name__ == "__main__":
     args = flags_parser.parse_args(sys.argv[1:])
     main(args)
-
-

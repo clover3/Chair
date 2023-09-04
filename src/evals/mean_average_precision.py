@@ -35,3 +35,17 @@ def get_map(ranked_list_dict: Dict[str, List[TrecRankedListEntry]], qrels: QRels
             return 1
 
     return average(lmap(get_ap_wrap, ranked_list_dict.keys()))
+
+
+# Assumes ranked list is sorted
+def get_rr(ranked_list: List[TrecRankedListEntry], true_gold: List[str]):
+    rank_at_correct = -1
+    for rank_0, e in enumerate(ranked_list):
+        if e.doc_id in true_gold:
+            rank_at_correct = rank_0 + 1
+            break
+
+    if rank_at_correct == -1:
+        return 0
+    else:
+        return 1 / rank_at_correct

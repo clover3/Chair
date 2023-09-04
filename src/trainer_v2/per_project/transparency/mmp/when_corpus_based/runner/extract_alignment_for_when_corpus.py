@@ -5,7 +5,7 @@ from transformers import AutoTokenizer
 from cpath import output_path
 from misc_lib import path_join
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config_for_predict
-from trainer_v2.per_project.transparency.mmp.alignment.alignment_predictor import AlignmentPredictor, \
+from trainer_v2.per_project.transparency.mmp.alignment.network.alignment_predictor import AlignmentPredictor, \
     compute_alignment_first_layer
 
 from trainer_v2.per_project.transparency.mmp.alignment.grad_extractor import ModelEncoded

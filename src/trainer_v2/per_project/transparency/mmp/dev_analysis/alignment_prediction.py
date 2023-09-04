@@ -1,6 +1,6 @@
 from transformers import AutoTokenizer
 from cache import load_from_pickle
-from trainer_v2.per_project.transparency.mmp.alignment.alignment_predictor import compute_alignment_for_taget_q_word_id
+from trainer_v2.per_project.transparency.mmp.alignment.network.alignment_predictor import compute_alignment_for_taget_q_word_id
 
 
 def main():

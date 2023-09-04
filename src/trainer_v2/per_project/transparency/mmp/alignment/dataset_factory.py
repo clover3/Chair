@@ -2,7 +2,7 @@ import tensorflow as tf
 from trainer_v2.custom_loop.dataset_factories import create_dataset_common
 from trainer_v2.custom_loop.definitions import ModelConfigType, ModelConfig2Seg
 from trainer_v2.custom_loop.run_config2 import RunConfig2
-from trainer_v2.per_project.transparency.mmp.alignment.align_net_v2 import ThresholdConfig
+from trainer_v2.per_project.transparency.mmp.alignment.network.align_net_v2 import ThresholdConfig
 
 
 def read_galign(
