@@ -2,7 +2,8 @@ import pickle
 import sys
 from collections import Counter
 
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, enum_grouped2
+from dataset_specific.msmarco.passage.passage_resource_loader import enum_grouped2
+from table_lib import tsv_iter
 from dataset_specific.msmarco.passage.path_helper import get_mmp_train_grouped_sorted_path
 from list_lib import assert_length_equal
 from misc_lib import select_first_second

@@ -1,6 +1,6 @@
 from dataset_specific.msmarco.passage.grouped_reader import iter_train_from_partitioned_file10K, \
     get_train_query_grouped_dict_10K, make_grouped
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter
+from table_lib import tsv_iter
 from list_lib import foreach
 from cpath import output_path
 from misc_lib import path_join

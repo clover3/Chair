@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from adhoc.bm25_class import BM25
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter
+from table_lib import tsv_iter
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.bm25t import BM25T
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import predict_and_save_scores, eval_dev_mrr

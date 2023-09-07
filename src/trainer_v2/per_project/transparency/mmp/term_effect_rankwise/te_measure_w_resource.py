@@ -7,14 +7,14 @@ from krovetzstemmer import Stemmer
 
 from misc_lib import TimeProfiler, path_join
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.misc_common import save_list_to_gz_jsonl, save_number_to_file
+from trainer_v2.per_project.transparency.misc_common import save_number_to_file
 from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helper import TermEffectPerQuery, \
-    compute_fidelity_change_pearson
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import load_qtf_index_from_qid_qtfs, \
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helper import compute_fidelity_change_pearson
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import load_q_term_index_from_qid_qtfs, \
     get_te_save_name, get_fidelity_save_name
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.te_measure_common import term_effect_per_partition
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure import IRLProxyIF, \
-    IndexedRankedList, ScoringModel
+    ScoringModel
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure_mmp import print_cur_memory
 
 
@@ -52,33 +52,6 @@ def term_effect_serial_core(
     return f_change_sum
 
 
-def term_effect_per_partition(
-        partition_no, qtfs_index_per_job, sm,
-        q_term, d_term,
-        irl_proxy, get_te_save_path_fn):
-    save_path = get_te_save_path_fn(q_term, d_term, partition_no)
-    qtfs_index: Dict[str, List[str]] = qtfs_index_per_job[partition_no]
-    affected_qid_list: List[str] = qtfs_index[q_term]
-    te_list: List[TermEffectPerQuery] = []
-    for qid in affected_qid_list:
-        ranked_list: IndexedRankedList = irl_proxy.get_irl(qid)
-        old_scores: List[float] = ranked_list.get_shallow_model_base_scores()
-        entry_indices = ranked_list.get_entries_w_term(d_term)
-        changes = []
-        for entry_idx in entry_indices:
-            entry = ranked_list.entries[entry_idx]
-            new_score: float = sm.get_updated_score_bm25(q_term, d_term, entry)
-            changes.append((entry_idx, new_score))
-
-        target_scores = ranked_list.get_deep_model_scores()
-        per_query = TermEffectPerQuery(target_scores, old_scores, changes)
-        te_list.append(per_query)
-    out_itr = map(TermEffectPerQuery.to_json, te_list)
-    c_log.debug("Save to %s", save_path)
-    save_list_to_gz_jsonl(out_itr, save_path)
-    return te_list
-
-
 def run_term_effect_over_term_pairs(
         irl_proxy: IRLProxyIF, partition_list,
         term_pair_save_path,
@@ -89,7 +62,7 @@ def run_term_effect_over_term_pairs(
         st, ed):
     def load_qtf_index(job_no):
         pickle_path = path_join(qtfs_dir, str(job_no))
-        return load_qtf_index_from_qid_qtfs(pickle_path)
+        return load_q_term_index_from_qid_qtfs(pickle_path)
 
     todo_list = [line.strip().split() for line in open(term_pair_save_path, "r")]
 
@@ -137,9 +110,9 @@ def run_term_effect_over_term_pairs_per_partition(
         fidelity_save_dir,
         time_profile,
         st, ed):
-    def load_qtf_index(job_no):
+    def load_q_term_index(job_no):
         pickle_path = path_join(qtfs_dir, str(job_no))
-        return load_qtf_index_from_qid_qtfs(pickle_path)
+        return load_q_term_index_from_qid_qtfs(pickle_path)
 
     todo_list = [line.strip().split() for line in open(term_pair_path, "r")]
 
@@ -153,8 +126,8 @@ def run_term_effect_over_term_pairs_per_partition(
     c_log.debug("load bm25 Done")
     sm = ScoringModel(bm25.core.k1, bm25.core.b, bm25.core.avdl, bm25.term_idf_factor)
     stemmer = Stemmer()
-    c_log.info("Loading load_qtf_index")
-    qtfs_index_per_partition = {job_no: load_qtf_index(job_no) for job_no in [partition_no]}
+    c_log.info("Loading load_q_term_index")
+    q_term_index = {job_no: load_q_term_index(job_no) for job_no in [partition_no]}
     c_log.info("Done")
     for i in range(st, ed):
         q_term, d_term = todo_list[i]
@@ -173,7 +146,7 @@ def run_term_effect_over_term_pairs_per_partition(
             c_log.debug("%s exsits. skip computing", save_path)
             continue
         term_effect_per_partition(
-            partition_no, qtfs_index_per_partition,
+            partition_no, q_term_index,
             sm, q_term_stm, d_term_stm, irl_proxy,
             get_te_save_path
         )

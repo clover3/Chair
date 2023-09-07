@@ -22,5 +22,6 @@ def main():
 
         print(job_no, suc.get_summary())
 
+
 if __name__ == "__main__":
     main()

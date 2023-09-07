@@ -1,6 +1,7 @@
 import logging
 
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, load_msmarco_sub_samples
+from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sub_samples
+from table_lib import tsv_iter
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import get_bm25t_when, get_bm25t_when2
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import predict_and_save_scores, \

@@ -1,0 +1,10 @@
+
+project_root: .
+per_corpus_path: ${project_root}/output/msmarco/passage
+
+frequent_q_terms: ${per_corpus_path}/align_candidates/cand4_freq_100K.tsv
+candidate_pair_path: ${per_corpus_path}/align_candidates/candidate4.tsv
+term_effect_save_dir: ${per_corpus_path}/te_4
+fidelity_save_dir: ${per_corpus_path}/fidelity_4
+fidelity_table_path: ${per_corpus_path}/fidelity_4.tsv
+q_term_index_path: ${per_corpus_path}/cand4_q_term_index

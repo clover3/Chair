@@ -1,5 +1,5 @@
 import dataclasses
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from typing import List, Callable, Dict, Tuple
@@ -93,7 +93,14 @@ class TermEffectMeasure:
         return output
 
 
-class ScoringModel:
+class ScoringModelIF(ABC):
+    @abstractmethod
+    def get_updated_score_bm25(
+            self, q_term: str, d_term: str, entry: IndexedRankedList.Entry) -> float:
+        pass
+
+
+class ScoringModel(ScoringModelIF):
     def __init__(self, k1, b, avdl, get_qtw):
         self.k1 = k1
         self.b = b
@@ -118,6 +125,42 @@ class ScoringModel:
 
         delta = (tf_factor(new_tf) - tf_factor(old_tf)) * qtw
         return entry.shallow_model_score_base + delta
+
+
+# Score = NGram / NGram
+
+class ScoringModelNGram(ScoringModelIF):
+    def __init__(self, k1, b, avdl, get_qtw):
+        self.k1 = k1
+        self.b = b
+        self.avdl = avdl
+        self.get_qtw = get_qtw
+
+    def get_updated_score_bm25(
+            self,
+            q_term_tokens: List[str],
+            d_term: str,
+            entry: IndexedRankedList.Entry) -> float:
+        k1 = self.k1
+        b = self.b
+        avdl = self.avdl
+
+        # compute old score for new terms
+        delta_sum = 0
+        for q_token in q_term_tokens:
+            old_tf = entry.tfs[q_token]
+            new_tf = entry.tfs[q_token] + entry.tfs[d_term]
+            dl = entry.get_dl()
+            qtw = self.get_qtw(q_token)
+
+            def tf_factor(tf):
+                denom = tf + k1 * tf
+                nom = tf + k1 * ((1 - b) + b * dl / avdl)
+                return denom / nom
+
+            delta = (tf_factor(new_tf) - tf_factor(old_tf)) * qtw
+            delta_sum += delta
+        return entry.shallow_model_score_base + delta_sum
 
 
 QID_PID_SCORE = Tuple

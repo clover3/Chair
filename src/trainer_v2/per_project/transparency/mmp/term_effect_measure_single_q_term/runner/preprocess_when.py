@@ -2,7 +2,8 @@ import pickle
 import sys
 from typing import List, Iterable
 
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, enum_grouped, FourItem
+from dataset_specific.msmarco.passage.passage_resource_loader import enum_grouped, FourItem
+from table_lib import tsv_iter
 from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
 from cpath import output_path
 from misc_lib import path_join

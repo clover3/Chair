@@ -1,5 +1,6 @@
 from cache import save_to_pickle
-from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sub_samples, tsv_iter
+from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sub_samples
+from table_lib import tsv_iter
 from cpath import output_path
 from misc_lib import path_join
 

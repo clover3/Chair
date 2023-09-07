@@ -43,6 +43,8 @@ class PerPairCandidates:
     term_effect_save_dir: str
     fidelity_save_dir: str
     fidelity_table_path: str
+    frequent_q_terms: str = ""
+    q_term_index_path: str = ""
 
 
 def path_join(*args) -> pathlib.Path:
@@ -82,6 +84,11 @@ class MMPGAlignPathHelper:
         f = open(pathlib.Path(self.per_corpus.frequent_q_terms), "r")
         return [line.strip() for line in f]
 
+    def load_qterm_candidates(self) -> List[str]:
+        f = open(pathlib.Path(self.per_pair_candidates.frequent_q_terms), "r")
+        return [line.strip() for line in f]
+
+
     def get_fidelity_save_path(self, q_term, d_term):
         save_name = get_fidelity_save_name(q_term, d_term)
         dir_path = self.per_pair_candidates.fidelity_save_dir
@@ -93,6 +100,11 @@ class MMPGAlignPathHelper:
         dir_path = path.joinpath(dir_name)
         exist_or_mkdir(dir_path)
         return dir_path.joinpath(str(partition_no))
+
+    def load_candidate_pairs(self):
+        per_candidate_conf = self.per_pair_candidates
+        term_pairs = [line.strip().split("\t") for line in open(per_candidate_conf.candidate_pair_path, "r")]
+        return term_pairs
 
 
 def get_mmp_galign_path_helper(
@@ -142,6 +154,18 @@ def get_cand2_1_spearman_path_helper():
     per_corpus_config_path = path_join(yconfig_dir_path, "mmp_train.yaml")
     per_model_config_path = path_join(yconfig_dir_path, "mmp1.yaml")
     per_candidate_config_path = path_join(yconfig_dir_path, "candidates2_1_spearman.yaml")
+    path_helper = get_mmp_galign_path_helper(
+        per_corpus_config_path,
+        per_model_config_path,
+        per_candidate_config_path,
+    )
+    return path_helper
+
+
+def get_cand4_path_helper():
+    per_corpus_config_path = path_join(yconfig_dir_path, "mmp_train.yaml")
+    per_model_config_path = path_join(yconfig_dir_path, "mmp1.yaml")
+    per_candidate_config_path = path_join(yconfig_dir_path, "candidate4.yaml")
     path_helper = get_mmp_galign_path_helper(
         per_corpus_config_path,
         per_model_config_path,

@@ -1,7 +1,7 @@
 import itertools
 import sys
 
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter
+from table_lib import tsv_iter
 from dataset_specific.msmarco.passage.path_helper import get_mmp_train_grouped_sorted_path
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from trainer_v2.per_project.transparency.mmp.data_gen.pair_train import get_encode_fn_for_pointwise

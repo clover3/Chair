@@ -4,7 +4,8 @@ from typing import Iterable, Tuple
 
 from cpath import output_path
 from data_generator.job_runner import WorkerInterface
-from dataset_specific.msmarco.passage.passage_resource_loader import MMPPosNegSampler, tsv_iter, enum_grouped
+from dataset_specific.msmarco.passage.passage_resource_loader import MMPPosNegSampler, enum_grouped
+from table_lib import tsv_iter
 from job_manager.job_runner_with_server import JobRunnerS
 from misc_lib import path_join
 from tf_util.record_writer_wrap import write_records_w_encode_fn

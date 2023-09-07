@@ -9,7 +9,8 @@ from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.index_ranked_l
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper2 import MMPGAlignPathHelper
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.split_iter import get_mmp_split_w_deep_scores_train
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.te_measure_w_resource import \
-    run_term_effect_over_term_pairs, term_effect_per_partition
+    run_term_effect_over_term_pairs
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.te_measure_common import term_effect_per_partition
 import time
 import os
 
@@ -22,7 +23,7 @@ from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helper import TermEffectPerQuery, \
     compute_fidelity_change_pearson
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import load_qtf_index_from_qid_qtfs
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import load_q_term_index_from_qid_qtfs
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure import IRLProxyIF, \
     IndexedRankedList, ScoringModel
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure_mmp import print_cur_memory
@@ -99,7 +100,7 @@ def run_term_effect_over_term_pairs(
         st, ed):
     def load_qtf_index(job_no):
         pickle_path = path_join(qtfs_dir, str(job_no))
-        return load_qtf_index_from_qid_qtfs(pickle_path)
+        return load_q_term_index_from_qid_qtfs(pickle_path)
 
     todo_list = [line.strip().split() for line in open(term_pair_save_path, "r")]
 

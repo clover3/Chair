@@ -1,7 +1,7 @@
 from collections import Counter
 
 from cpath import output_path
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter
+from table_lib import tsv_iter
 from tab_print import tab_print_dict
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper2 import get_cand2_1_path_helper
 

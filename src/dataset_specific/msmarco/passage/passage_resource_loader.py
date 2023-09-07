@@ -1,19 +1,14 @@
 import csv
 import gzip
 import random
-from typing import List, Iterable, Callable, Dict, Tuple, Set, Any, Optional
+from typing import List, Iterable, Tuple, Any
 
 from cache import load_pickle_from
 from cpath import at_data_dir, data_path, output_path
 from misc_lib import path_join, select_third_fourth
+from table_lib import tsv_iter
 from trec.qrel_parse import load_qrels_structured
 from trec.types import QRelsDict
-
-
-def tsv_iter(file_path) -> Iterable[Tuple]:
-    f = open(file_path, "r", encoding="utf-8", errors="ignore")
-    reader = csv.reader(f, delimiter='\t')
-    return reader
 
 
 def enumerate_triple():
@@ -30,15 +25,20 @@ def load_qrel(split) -> QRelsDict:
 
 
 def load_queries_as_d(split):
-    file_path = at_data_dir("msmarco", "queries.{}.tsv".format(split))
-    f = open(file_path, "r", encoding="utf-8", errors="ignore")
-    reader = csv.reader(f, delimiter='\t')
+    reader = enum_queries(split)
 
     output = {}
     for idx, row in enumerate(reader):
         qid, q_text = row
         output[qid] = q_text
     return output
+
+
+def enum_queries(split):
+    file_path = at_data_dir("msmarco", "queries.{}.tsv".format(split))
+    f = open(file_path, "r", encoding="utf-8", errors="ignore")
+    reader = csv.reader(f, delimiter='\t')
+    return reader
 
 
 def load_msmarco_sample_dev_as_pairs() -> Iterable[Tuple[str, str]]:
@@ -112,8 +112,6 @@ def enum_grouped2(iter: Iterable[Tuple]) -> Iterable[List[Tuple]]:
         group.append(e)
 
     yield group
-
-
 
 
 class MMPPosNegSampler:

@@ -10,7 +10,8 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from data_generator.create_feature import create_int_feature
 from data_generator.job_runner import WorkerInterface
-from dataset_specific.msmarco.passage.passage_resource_loader import MMPPosNegSampler, enum_grouped, tsv_iter
+from dataset_specific.msmarco.passage.passage_resource_loader import MMPPosNegSampler, enum_grouped
+from table_lib import tsv_iter
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from trainer_v2.per_project.transparency.mmp.alignment.galign_label import compute_gain_10K_when
 

@@ -3,7 +3,8 @@ from typing import List, Dict, Tuple
 
 from cache import load_pickle_from
 from cpath import output_path
-from dataset_specific.msmarco.passage.passage_resource_loader import enum_grouped2, tsv_iter
+from dataset_specific.msmarco.passage.passage_resource_loader import enum_grouped2
+from table_lib import tsv_iter
 from misc_lib import path_join
 import os
 
@@ -17,6 +18,11 @@ def mmp_root():
 
 def get_qtfs_save_path_train(job_no):
     save_path = path_join(mmp_root(), "qtfs", str(job_no))
+    return save_path
+
+
+def get_grouped_queries_path(split, job_no):
+    save_path = path_join(mmp_root(), f"{split}_queries_grouped", str(job_no))
     return save_path
 
 
@@ -176,7 +182,7 @@ def load_qtf_index_train(job_no) -> Dict[str, List[str]]:
     return inv_index
 
 
-def load_qtf_index_from_qid_qtfs(save_path) -> Dict[str, List[str]]:
+def load_q_term_index_from_qid_qtfs(save_path) -> Dict[str, List[str]]:
     inv_index = defaultdict(list)
     qid_qtfs = load_pickle_from(save_path)
     for qid, tfs in qid_qtfs:

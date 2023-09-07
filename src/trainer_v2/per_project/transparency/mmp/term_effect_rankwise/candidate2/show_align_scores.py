@@ -1,4 +1,4 @@
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter
+from table_lib import tsv_iter
 from misc_lib import group_by, get_first
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import term_align_candidate2_score_path
 

@@ -4,7 +4,7 @@ import sys
 import yaml
 
 from data_generator.job_runner import WorkerInterface
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter
+from table_lib import tsv_iter
 from job_manager.job_runner_with_server import JobRunnerS
 from misc_lib import select_third_fourth, path_join
 from taskman_client.task_proxy import get_task_manager_proxy

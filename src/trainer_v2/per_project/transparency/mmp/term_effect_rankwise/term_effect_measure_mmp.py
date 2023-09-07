@@ -1,7 +1,8 @@
 from typing import List, Tuple
 
 from cache import load_pickle_from
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, enum_grouped2
+from dataset_specific.msmarco.passage.passage_resource_loader import enum_grouped2
+from table_lib import tsv_iter
 from dataset_specific.msmarco.passage.path_helper import get_mmp_grouped_sorted_path
 from dataset_specific.msmarco.passage.runner.build_ranked_list import read_scores
 from list_lib import assert_length_equal

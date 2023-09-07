@@ -2,7 +2,7 @@ import csv
 import gzip
 import sys
 from cpath import output_path, data_path, get_canonical_model_path
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter
+from table_lib import tsv_iter
 from misc_lib import path_join, TimeEstimator
 from misc_lib import select_third_fourth
 from taskman_client.task_proxy import get_task_proxy

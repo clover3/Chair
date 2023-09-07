@@ -1,6 +1,6 @@
 from collections import Counter
 
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter
+from table_lib import tsv_iter
 import sys
 
 from misc_lib import print_dict_tab

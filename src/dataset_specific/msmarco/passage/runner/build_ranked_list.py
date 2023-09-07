@@ -4,7 +4,8 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 from cpath import output_path, at_output_dir
 from misc_lib import path_join, select_first_second, group_by, get_first
 
-from dataset_specific.msmarco.passage.passage_resource_loader import load_qrel, tsv_iter
+from dataset_specific.msmarco.passage.passage_resource_loader import load_qrel
+from table_lib import tsv_iter
 from trec.ranked_list_util import build_ranked_list
 from trec.trec_parse import write_trec_ranked_list_entry
 from trec.types import TrecRankedListEntry, QRelsDict

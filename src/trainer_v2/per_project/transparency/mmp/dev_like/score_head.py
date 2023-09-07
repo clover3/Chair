@@ -4,7 +4,7 @@ import yaml
 import tensorflow as tf
 from transformers import AutoTokenizer
 
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter
+from table_lib import tsv_iter
 from dataset_specific.msmarco.passage.path_helper import get_mmp_train_grouped_sorted_path
 from misc_lib import select_third_fourth, TELI
 from trainer_v2.chair_logging import c_log

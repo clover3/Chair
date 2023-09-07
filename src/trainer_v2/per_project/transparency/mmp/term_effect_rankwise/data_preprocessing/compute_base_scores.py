@@ -4,7 +4,8 @@ from collections import Counter
 from typing import List, Iterable, Tuple
 
 from adhoc.bm25_class import BM25
-from dataset_specific.msmarco.passage.passage_resource_loader import FourItem, tsv_iter, enum_grouped
+from dataset_specific.msmarco.passage.passage_resource_loader import FourItem, enum_grouped
+from table_lib import tsv_iter
 from dataset_specific.msmarco.passage.path_helper import get_mmp_train_grouped_sorted_path
 
 # Output (Doc_id, TFs Counter, base score)

@@ -11,7 +11,8 @@ from cpath import output_path, at_output_dir
 from dataset_specific.msmarco.passage.runner.build_ranked_list import build_ranked_list_from_qid_pid_scores
 from misc_lib import path_join, average, TELI
 
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter, load_msmarco_sub_samples
+from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sub_samples
+from table_lib import tsv_iter
 from misc_lib import select_first_second
 from runnable.trec.pytrec_eval_wrap import convert_ranked_list
 from trainer_v2.chair_logging import c_log

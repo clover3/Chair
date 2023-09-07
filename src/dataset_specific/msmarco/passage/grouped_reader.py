@@ -1,6 +1,6 @@
 from collections import defaultdict
 from typing import List, Iterable, Callable, Dict, Tuple, Set
-from dataset_specific.msmarco.passage.passage_resource_loader import tsv_iter
+from table_lib import tsv_iter
 from misc_lib import path_join
 from trainer_v2.chair_logging import c_log
 # group_no: from 0 to 108 (inc)

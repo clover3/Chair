@@ -8,7 +8,9 @@ from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.te_measure_w_r
 
 def run_term_effect_w_path_helper(
         path_helper: MMPGAlignPathHelper,
-        st, ed, disable_cache=False):
+        st, ed,
+        disable_cache=False,
+):
     partition_list = get_mmp_split_w_deep_scores_train()
     time_profile = TimeProfiler()
     # tfs
@@ -24,7 +26,6 @@ def run_term_effect_w_path_helper(
         time_profile,
         disable_cache
     )
-
     run_term_effect_over_term_pairs(
         irl_proxy, partition_list,
         per_candidate_conf.candidate_pair_path,
@@ -33,3 +34,5 @@ def run_term_effect_w_path_helper(
         per_candidate_conf.fidelity_save_dir,
         time_profile,
         st, ed)
+
+
