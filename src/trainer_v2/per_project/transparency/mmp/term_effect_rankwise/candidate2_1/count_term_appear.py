@@ -69,6 +69,7 @@ def term_effect_serial_core(
     f_change_sum = 0
     for partition_no in partition_list:
         c_log.debug("MMP Split %d", partition_no)
+
         te_list = term_effect_per_partition(
             partition_no, qtfs_index_per_job, sm, q_term, d_term, irl_proxy,
                         )

@@ -13,7 +13,8 @@ from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helpe
     compute_fidelity_change_pearson, TermEffectPerQuery
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import get_te_save_name, \
     get_fidelity_save_name
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.te_measure_common import term_effect_per_partition
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.te_measure_common import term_effect_per_partition, \
+    compute_term_effect, save_te_list_to_gz_jsonl
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure import IRLProxyIF, \
     IndexedRankedList, ScoringModelNGram
 from cpath import output_path
@@ -29,7 +30,7 @@ from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.split_iter imp
 def term_effect_iter_partitions(
         partition_list: List[int],
         per_partition_work,
-        q_term: str, d_term: str,
+        job_desc: str,
 ):
     stat = Counter()
     st = time.time()
@@ -45,17 +46,17 @@ def term_effect_iter_partitions(
         print_cur_memory()
     ed = time.time()
     elapsed = ed - st
-    print_stat(stat, elapsed, q_term, d_term)
+    print_stat(stat, elapsed, job_desc)
     return f_change_sum
 
 
-def print_stat(stat, elapsed, q_term, d_term):
+def print_stat(stat, elapsed, job_desc):
     n_query = stat["n_query"]
     n_job = stat["n_job"]
     n_qd = stat["n_qd"]
     time_per_q = elapsed / n_query if n_query else 0
     time_per_qd = elapsed / n_qd if n_qd else 0
-    c_log.info(f"({q_term}, {d_term}) t={elapsed:.2f} t/q={time_per_q:.2f} "
+    c_log.info(f"{job_desc} t={elapsed:.2f} t/q={time_per_q:.2f} "
                f"t/qd={time_per_qd:.2f} n_jobs={n_job} n_query={n_query} n_qd={n_qd}")
     print_cur_memory()
 
@@ -80,13 +81,16 @@ def run_term_effect_over_term_pairs(
         st, ed):
 
     def load_q_term_index(job_no):
-        pickle_path = open(path_join(qterm_index_dir, str(job_no)), "rb")
-        return defaultdict(pickle.load(pickle_path))
+        pickle_f = open(path_join(qterm_index_dir, str(job_no)), "rb")
+        d = pickle.load(pickle_f)
+        dd = defaultdict(list)
+        dd.update(d)
+        return dd
 
     todo_list: List[Tuple] = list(tsv_iter(term_pair_save_path))
 
-    def get_te_save_path(q_term, d_term, partition_no):
-        save_name = get_te_save_name(q_term, d_term, partition_no)
+    def get_te_save_path(term_pair_idx, partition_no):
+        save_name = f"{term_pair_idx}_{partition_no}.jsonl.gz"
         save_path = path_join(te_save_dir, save_name)
         return save_path
 
@@ -101,9 +105,8 @@ def run_term_effect_over_term_pairs(
         = {job_no: load_q_term_index(job_no) for job_no in partition_list}
     c_log.info("Done")
     for i in range(st, ed):
-        print(todo_list[i])
         q_term, d_term = todo_list[i]
-        save_name = get_fidelity_save_name(q_term, d_term)
+        save_name = str(i)
         fidelity_save_path = path_join(fidelity_save_dir, save_name)
         if os.path.exists(fidelity_save_path):
             continue
@@ -114,15 +117,16 @@ def run_term_effect_over_term_pairs(
 
         def work_per_partition(partition_no):
             q_term_index = q_term_index_index_per_partition[partition_no]
-            return term_effect_per_partition(
-                partition_no, q_term_index,
-                sm, q_term_norm, d_term_norm, irl_proxy,
-                get_te_save_path
-            )
+            save_path = get_te_save_path(i, partition_no)
+            te_list = compute_term_effect(
+                irl_proxy, sm, q_term_index, q_term_norm, d_term_norm)
+            save_te_list_to_gz_jsonl(te_list, save_path)
+            return te_list
 
         irl_proxy.set_new_q_term(q_term_norm)
+        job_desc = f"{i} ({q_term}, {d_term}) "
         f_change = term_effect_iter_partitions(
-            partition_list, work_per_partition, q_term_norm, d_term_norm,
+            partition_list, work_per_partition, job_desc,
         )
         save_number_to_file(fidelity_save_path, f_change)
 

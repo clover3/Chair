@@ -13,6 +13,18 @@ def term_effect_per_partition(
         q_term, d_term,
         irl_proxy, get_te_save_path_fn):
     save_path = get_te_save_path_fn(q_term, d_term, partition_no)
+    te_list = compute_term_effect(irl_proxy, sm, q_term_index_per_job, q_term, d_term)
+    save_te_list_to_gz_jsonl(te_list, save_path)
+    return te_list
+
+
+def save_te_list_to_gz_jsonl(te_list, save_path):
+    out_itr = map(TermEffectPerQuery.to_json, te_list)
+    c_log.debug("Save to %s", save_path)
+    save_list_to_gz_jsonl(out_itr, save_path)
+
+
+def compute_term_effect(irl_proxy, sm, q_term_index_per_job, q_term, d_term) -> List[TermEffectPerQuery]:
     affected_qid_list: List[str] = q_term_index_per_job[q_term]
     te_list: List[TermEffectPerQuery] = []
     for qid in affected_qid_list:
@@ -28,7 +40,4 @@ def term_effect_per_partition(
         target_scores = ranked_list.get_deep_model_scores()
         per_query = TermEffectPerQuery(target_scores, old_scores, changes)
         te_list.append(per_query)
-    out_itr = map(TermEffectPerQuery.to_json, te_list)
-    c_log.debug("Save to %s", save_path)
-    save_list_to_gz_jsonl(out_itr, save_path)
     return te_list

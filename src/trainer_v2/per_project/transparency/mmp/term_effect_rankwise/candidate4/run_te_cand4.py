@@ -9,7 +9,7 @@ from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.te_measure_q_n
 
 def main():
     path_helper = get_cand4_path_helper()
-    c_log.setLevel(logging.DEBUG)
+    c_log.setLevel(logging.INFO)
     st = int(sys.argv[1])
     ed = int(sys.argv[2])
     job_name = f"run_candidate_{st}_{ed}"

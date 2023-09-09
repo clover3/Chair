@@ -12,7 +12,8 @@ from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helper import compute_fidelity_change_pearson
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import load_q_term_index_from_qid_qtfs, \
     get_te_save_name, get_fidelity_save_name
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.te_measure_common import term_effect_per_partition
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.te_measure_common import term_effect_per_partition, \
+    compute_term_effect, save_te_list_to_gz_jsonl
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure import IRLProxyIF, \
     ScoringModel
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure_mmp import print_cur_memory
@@ -145,9 +146,8 @@ def run_term_effect_over_term_pairs_per_partition(
         if os.path.exists(save_path):
             c_log.debug("%s exsits. skip computing", save_path)
             continue
-        term_effect_per_partition(
-            partition_no, q_term_index,
-            sm, q_term_stm, d_term_stm, irl_proxy,
-            get_te_save_path
-        )
+
+        save_path = get_te_save_path(q_term, d_term, partition_no)
+        te_list = compute_term_effect(irl_proxy, sm, q_term_index[partition_no], q_term_stm, d_term_stm)
+        save_te_list_to_gz_jsonl(te_list, save_path)
         print_cur_memory()
