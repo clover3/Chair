@@ -1,6 +1,6 @@
-from typing import List, Callable, Iterable, Dict, Tuple, NamedTuple
-from cpath import pjoin, data_path, get_bert_config_path
-from data_generator.tokenizer_wo_tf import get_tokenizer, EncoderUnitPlain
+from typing import List, Tuple
+from cpath import get_bert_config_path
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.seg_encoder_common import BasicConcatEncoder
 from misc_lib import ceil_divide
 import numpy as np
@@ -140,7 +140,7 @@ class AttentionExtractorSummed:
         return output
 
 
-class AttentionExtractor:
+class AttentionExtractor1:
     def __init__(self, model_path, model_config, num_layer=12):
         self.encoder = BasicConcatEncoder(get_tokenizer(), model_config.max_seq_length)
         self.inner = AttentionExtractorSummed(model_path, model_config, num_layer)

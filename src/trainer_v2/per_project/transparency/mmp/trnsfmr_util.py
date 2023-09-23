@@ -4,7 +4,8 @@ import tensorflow as tf
 from transformers import AutoTokenizer
 
 
-def get_qd_encoder(max_seq_length) -> Callable[[Iterable[Tuple[str, str]]], tf.data.Dataset]:
+def get_qd_encoder(max_seq_length, is_split_into_words=False)\
+        -> Callable[[Iterable[Tuple[str, str]]], tf.data.Dataset]:
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
     SpecI = tf.TensorSpec([max_seq_length], dtype=tf.int32)
     sig = (SpecI, SpecI, ),
@@ -18,6 +19,7 @@ def get_qd_encoder(max_seq_length) -> Callable[[Iterable[Tuple[str, str]]], tf.d
                     padding="max_length",
                     max_length=max_seq_length,
                     truncation=True,
+                    is_split_into_words=is_split_into_words,
                     return_tensors="tf"
                 )
                 yield (encoded_input['input_ids'][0], encoded_input['token_type_ids'][0]),

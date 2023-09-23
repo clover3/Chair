@@ -103,6 +103,33 @@ def get_classification_dataset(file_path,
                                  file_path, is_for_training)
 
 
+def get_classification_dataset_hf_to_bert_f2(
+        file_path,
+        run_config: RunConfig2,
+        model_config: ModelConfigType,
+        is_for_training,
+    ) -> tf.data.Dataset:
+    seq_length = model_config.max_seq_length
+
+    def select_data_from_record(record):
+        for k, v in record.items():
+            record[k] = tf.cast(v, tf.int32)
+        entry = (record['input_ids'], record['segment_ids']), record['label_ids']
+        return entry
+
+    def decode_record(record):
+        name_to_features = {
+            'input_ids': tf.io.FixedLenFeature([seq_length], tf.int64),
+            'segment_ids': tf.io.FixedLenFeature([seq_length], tf.int64),
+            'label_ids': tf.io.FixedLenFeature([], tf.int64),
+        }
+        record = tf.io.parse_single_example(record, name_to_features)
+        return select_data_from_record(record)
+
+    return create_dataset_common(decode_record, run_config,
+                                 file_path, is_for_training)
+
+
 def get_sequence_labeling_dataset(file_path,
                                   run_config: RunConfig2,
                                   model_config: ModelConfigType,
@@ -217,6 +244,9 @@ def get_pointwise(
             return tf.io.FixedLenFeature([model_config.max_seq_length], tf.int64)
         name_to_features[f'input_ids'] = fixed_len_feature()
         name_to_features[f'token_type_ids'] = fixed_len_feature()
+        if is_for_training:
+            name_to_features["label_ids"] = tf.io.FixedLenFeature([1], tf.int64)
+
         record = tf.io.parse_single_example(record, name_to_features)
         return record
 
@@ -225,6 +255,27 @@ def get_pointwise(
                                  file_path,
                                  is_for_training)
 
+
+def get_pointwise_train(
+            file_path,
+            run_config: RunConfig2,
+            model_config: ModelConfigType,
+            is_for_training,
+    ) -> tf.data.Dataset:
+    def decode_record(record):
+        name_to_features = {}
+        def fixed_len_feature():
+            return tf.io.FixedLenFeature([model_config.max_seq_length], tf.int64)
+        name_to_features[f'input_ids'] = fixed_len_feature()
+        name_to_features[f'token_type_ids'] = fixed_len_feature()
+        name_to_features["label_ids"] = tf.io.FixedLenFeature([1], tf.int64)
+        record = tf.io.parse_single_example(record, name_to_features)
+        return record, record["label_ids"]
+
+    return create_dataset_common(decode_record,
+                                 run_config,
+                                 file_path,
+                                 is_for_training)
 
 def read_pairwise_as_pointwise(
         file_path,

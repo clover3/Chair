@@ -1,4 +1,5 @@
 from typing import List
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from transformers import TFBertMainLayer
 from tensorflow import keras
@@ -58,6 +59,7 @@ def get_scorer(model_path, batch_size=16):
     inference_model = build_inference_model2(paired_model)
 
     qd_encoder = get_qd_encoder(max_seq_length)
+
     def score_fn(qd_list: List):
         dataset = qd_encoder(qd_list)
         dataset = dataset.batch(batch_size)

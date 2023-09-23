@@ -71,37 +71,6 @@ class GradExtractor:
         self.batch_size = batch_size
         self.strategy = strategy
 
-
-    def encode2(self, input_text_pairs) -> Iterable[ModelEncoded]:
-        dataset = self.encode_qd(input_text_pairs)
-        dataset = dataset.batch(self.batch_size)
-        input_ids = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="input_ids")
-        segment_ids = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="token_type_ids")
-        inputs = [input_ids, segment_ids]
-        input_1 = {
-            'input_ids': input_ids,
-            'token_type_ids': segment_ids
-        }
-
-        for batch in dataset:
-            (input_ids, token_type_ids), = batch
-            output = self.strategy.run(self.encode_fn, args=(input_ids, token_type_ids,))
-            attention_grads, attentions, hidden_states, logits = output
-            batch_size = len(reduce(input_ids))
-            vars = {
-                'input_ids': input_ids,
-                'token_type_ids': token_type_ids,
-                'logits': logits,
-                'hidden_states': hidden_states,
-                'attentions': attentions,
-                'attention_grads': attention_grads,
-            }
-            vars = {k: reduce(v) for k, v in vars.items()}
-            for i in range(batch_size):
-                var_per_i = {k: v[i].numpy() for k, v in vars}
-                me = ModelEncoded(**var_per_i)
-                yield me
-
     def encode(self, input_text_pairs) -> Iterable[ModelEncoded]:
         dataset = self.encode_qd(input_text_pairs)
         dataset = dataset.batch(self.batch_size)

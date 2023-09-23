@@ -2,7 +2,7 @@ from typing import List
 
 import numpy as np
 
-from data_generator2.segmented_enc.es.common import HSegmentedPair, PHSegmentedPair
+from data_generator2.segmented_enc.es_nli.common import HSegmentedPair, PHSegmentedPair
 
 SegmentedPair2 = PHSegmentedPair
 

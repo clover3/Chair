@@ -1,7 +1,7 @@
 import random
 from typing import List, Callable, Iterable, Dict, Tuple, NamedTuple
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from data_generator2.segmented_enc.es.common import PHSegmentedPair
+from data_generator2.segmented_enc.es_nli.common import PHSegmentedPair
 from data_generator2.segmented_enc.seg_encoder_common import get_random_split_location
 from dataset_specific.mnli.mnli_reader import NLIPairData
 from misc_lib import ceil_divide

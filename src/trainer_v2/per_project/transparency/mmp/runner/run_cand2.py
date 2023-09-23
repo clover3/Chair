@@ -1,7 +1,6 @@
 from cpath import output_path
 from misc_lib import path_join
-from trainer_v2.per_project.transparency.mmp.runner.run_cand2_1_rerank import run_eval_with_bm25t, \
-    load_mapping_from_align_scores
+from trainer_v2.per_project.transparency.mmp.bm25t_helper import load_mapping_from_align_scores, run_eval_with_bm25t
 
 
 def cand_2():

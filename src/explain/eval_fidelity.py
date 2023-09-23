@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import tensorflow as tf
 
+import adhoc.build_index
 from attribution.baselines import explain_by_seq_deletion, explain_by_random, explain_by_deletion
 from attribution.eval import eval_fidelity
 from attribution.lime import explain_by_lime
@@ -150,4 +151,4 @@ def run(explain_tag, method_name, model_path):
 
 if __name__ == "__main__":
     args = nli_ex_prediction_parser.parse_args(sys.argv[1:])
-    run(args.tag, args.method_name, args.common_model_dir_root)
+    run(args.tag, adhoc.build_index.build_inverted_index, args.common_model_dir_root)

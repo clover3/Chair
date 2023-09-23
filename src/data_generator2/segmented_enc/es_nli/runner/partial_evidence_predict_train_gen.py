@@ -3,10 +3,10 @@ import pickle
 from typing import List
 
 from cpath import at_output_dir
-from data_generator2.segmented_enc.es.path_helper import get_evidence_selected0_path
+from data_generator2.segmented_enc.es_nli.path_helper import get_evidence_selected0_path
 from misc_lib import exist_or_mkdir
 from tf_util.record_writer_wrap import write_records_w_encode_fn
-from data_generator2.segmented_enc.es.common import PHSegmentedPair, get_ph_segment_pair_encode_fn
+from data_generator2.segmented_enc.es_nli.common import PHSegmentedPair, get_ph_segment_pair_encode_fn
 
 
 def gen_mnli(split):

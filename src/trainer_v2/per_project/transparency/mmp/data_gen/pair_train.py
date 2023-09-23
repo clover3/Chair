@@ -36,7 +36,7 @@ def get_encode_fn_for_pair_train():
     return encode_fn
 
 
-def get_encode_fn_for_pointwise():
+def get_encode_fn_for_pointwise(use_label):
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
 
     def encode_text_pair(query, document):
@@ -53,15 +53,19 @@ def get_encode_fn_for_pointwise():
         attention_mask = encoded_input["attention_mask"]
         return input_ids, token_type_ids
 
-    def encode_fn(qd: Tuple[str, str]):
-        q, d = qd
+    def encode_fn(qd: Tuple):
+        if use_label:
+            q, d, label = qd
+        else:
+            q, d = qd
         feature: OrderedDict = OrderedDict()
         input_ids, token_type_ids = encode_text_pair(q, d)
         feature["input_ids"] = create_int_feature(input_ids)
         feature["token_type_ids"] = create_int_feature(token_type_ids)
+        if use_label:
+            feature["label_ids"] = create_int_feature([label])
         return feature
     return encode_fn
-
 
 
 def get_encode_fn_for_galign_paired():

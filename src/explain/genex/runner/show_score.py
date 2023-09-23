@@ -4,6 +4,7 @@ from typing import List
 
 import numpy as np
 
+import adhoc.build_index
 from cache import load_from_pickle
 from explain.genex.load import PackedInstance
 from explain.genex.load import load_packed
@@ -24,7 +25,7 @@ arg_parser.add_argument("--method_name", )
 
 def run(args):
     data_name = args.data_name
-    method_name = args.method_name
+    method_name = adhoc.build_index.build_inverted_index
     score_name = "{}_{}".format(data_name, method_name )
     ranking_scores_name = "{}_labels".format(args.data_name)
     ranking_score_list = load_from_pickle(ranking_scores_name)

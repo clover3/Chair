@@ -4,6 +4,7 @@ from typing import List
 
 import numpy as np
 
+import adhoc.build_index
 from cache import save_to_pickle
 from data_generator.shared_setting import BertNLI
 from explain.genex.baseline_fns import baseline_predict
@@ -21,17 +22,18 @@ def run(args):
     hp = hyperparams.HPGenEx()
     nli_setting = BertNLI()
 
-    if args.method_name in ['deletion_seq', "random", 'idf', 'deletion', 'LIME',
+    if adhoc.build_index.build_inverted_index in ['deletion_seq', "random", 'idf', 'deletion', 'LIME',
                             'term_deletion', 'replace_token', 'term_replace']:
         predictor = baseline_predict
-    elif args.method_name in ["elrp", "deeplift", "saliency", "grad*input", "intgrad"]:
+    elif adhoc.build_index.build_inverted_index in ["elrp", "deeplift", "saliency", "grad*input", "intgrad"]:
         predictor = nli_attribution_predict
     else:
-        raise Exception("method_name={} is not in the known method list.".format(args.method_name))
+        raise Exception("method_name={} is not in the known method list.".format(
+            adhoc.build_index.build_inverted_index))
 
-    save_name = "{}_{}".format(args.data_name, args.method_name)
+    save_name = "{}_{}".format(args.data_name, adhoc.build_index.build_inverted_index)
     data = load_as_simple_format(args.data_name)
-    explains: List[np.array] = predictor(hp, nli_setting, data, args.method_name, args.common_model_dir_root)
+    explains: List[np.array] = predictor(hp, nli_setting, data, adhoc.build_index.build_inverted_index, args.common_model_dir_root)
 
     save_to_pickle(explains, save_name)
 

@@ -9,6 +9,14 @@ class ModelConfigType:
     num_classes = abc.abstractproperty()
 
 
+@dataclasses.dataclass
+class HFModelConfigType(ModelConfigType):
+    __metaclass__ = abc.ABCMeta
+    max_seq_length = abc.abstractproperty()
+    num_classes = abc.abstractproperty()
+    model_type = abc.abstractproperty()
+
+
 class ModelConfig600_2(ModelConfigType):
     max_seq_length = 600
     num_classes = 2
@@ -34,10 +42,24 @@ class ModelConfig600_3(ModelConfigType):
     num_classes = 3
 
 
-class ModelConfig256_1(ModelConfigType):
+class ModelConfig256_1(HFModelConfigType):
     max_seq_length = 256
     num_classes = 1
     model_type = "bert-base-uncased"
+
+
+
+class ModelConfig512_1(HFModelConfigType):
+    max_seq_length = 512
+    num_classes = 1
+    model_type = "bert-base-uncased"
+
+
+class ModelConfig512_2(HFModelConfigType):
+    max_seq_length = 512
+    num_classes = 2
+    model_type = "bert-base-uncased"
+
 
 class ModelConfig2Seg:
     max_seq_length1 = 200

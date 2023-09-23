@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 
 from cache import save_to_pickle
-from data_generator2.segmented_enc.es.evidence_candidate_gen import pool_delete_indices
+from data_generator2.segmented_enc.es_nli.evidence_candidate_gen import pool_delete_indices
 from misc_lib import ceil_divide, tensor_to_list
 from models.transformer.bert_common_v2 import get_shape_list2
 from trainer_v2.chair_logging import c_log

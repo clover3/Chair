@@ -8,9 +8,10 @@ from misc_lib import NamedAverager, two_digit_float, tensor_to_list
 from trainer.promise import PromiseKeeper, MyPromise, MyFuture, list_future
 from trainer_v2.chair_logging import c_log
 from trainer_v2.evidence_selector.defs import RLStateTensor
-from trainer_v2.evidence_selector.enviroment import PEInfo
+from trainer_v2.evidence_selector.enviroment import PEInfoI
 from trainer_v2.reinforce.monte_carlo_policy_function import Action, PolicyFunction
 import numpy as np
+
 
 def batch_input_to_state_list(batch_x) -> List[RLStateTensor]:
     input_ids, segment_ids = batch_x
@@ -48,8 +49,8 @@ class ExplorationFuture(NamedTuple):
 class ExplorationOutput(NamedTuple):
     base_sa: Tuple[RLStateTensor, Action]
     alt_sa_list: List[Tuple[RLStateTensor, Action]]
-    base_result: PEInfo
-    alt_result_list: List[PEInfo]
+    base_result: PEInfoI
+    alt_result_list: List[PEInfoI]
 
 
     @classmethod
@@ -63,7 +64,7 @@ class SeqPredREINFORCE:
                  seq_length: int,
                  build_state_dataset: Callable[[str, bool], tf.data.Dataset],
                  batch_size,
-                 environment: Callable[[List[Tuple[RLStateTensor, List[int]]]], List[PEInfo]]
+                 environment: Callable[[List[Tuple[RLStateTensor, List[int]]]], List[PEInfoI]]
                  ):
         self.seq_length = seq_length
         self.build_state_dataset = build_state_dataset
@@ -183,7 +184,7 @@ class SeqPredREINFORCE:
             print(s)
             for item, res in zip(eo.alt_sa_list, eo.alt_result_list):
                 state, action = item
-                stat_str = " ".join(map(two_digit_float, [res.ce_error(), res.density(), res.combined_score()]))
+                stat_str = " ".join(map(two_digit_float, [res.get_error(), res.density(), res.combined_score()]))
                 input_ids = get_masked_input(state.input_ids, state.segment_ids, action)
                 s = to_text(input_ids)
                 print("{}\t{}".format(stat_str, s))
@@ -193,18 +194,18 @@ class SeqPredREINFORCE:
         na = NamedAverager()
         for exploration_output in e_out_list:
             base = exploration_output.base_result
-            base_ce = base.ce_error()
-            na.avg_dict['base_error'].append(base_ce)
+            base_error = base.get_error()
+            na.avg_dict['base_error'].append(base_error)
             na.avg_dict['base_density'].append((base.density()))
             na.avg_dict['base_reward'].append((base.combined_score()))
 
             for alt in exploration_output.alt_result_list:
-                alt_ce = alt.ce_error()
-                na.avg_dict['alt_error'].append(alt_ce)
+                alt_error = alt.get_error()
+                na.avg_dict['alt_error'].append(alt_error)
                 na.avg_dict['alt_density'].append(alt.density())
                 na.avg_dict['alt_reward'].append((alt.combined_score()))
 
-                na.avg_dict['alt_ce_better'].append(int(alt_ce < base_ce))
+                na.avg_dict['alt_ce_better'].append(int(alt_error < base_error))
                 na.avg_dict['alt_density_better'].append(int(alt.density() < base.density()))
                 na.avg_dict['alt_reward_better'].append(int(alt.combined_score() > base.combined_score()))
 

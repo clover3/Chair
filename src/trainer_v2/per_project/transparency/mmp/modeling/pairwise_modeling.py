@@ -1,17 +1,10 @@
 import tensorflow as tf
 from transformers import TFAutoModelForSequenceClassification
-
 from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.definitions import ModelConfigType
+from trainer_v2.custom_loop.definitions import HFModelConfigType
 
 
-class ModelConfig(ModelConfigType):
-    max_seq_length = 256
-    num_classes = 1
-    model_type = "bert-base-uncased"
-
-
-def get_transformer_pairwise_model(model_config: ModelConfig, run_config, optimizer_factory=None):
+def get_transformer_pairwise_model(model_config: HFModelConfigType, run_config, optimizer_factory=None):
     is_training = run_config.is_training()
     input_ids1 = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="input_ids1")
     segment_ids1 = tf.keras.layers.Input(shape=(None,), dtype=tf.int32, name="token_type_ids1")
@@ -38,7 +31,7 @@ def get_transformer_pairwise_model(model_config: ModelConfig, run_config, optimi
     logits1 = network(input_1)
     logits2 = network(input_2)
 
-    inputs = [input_ids1, segment_ids1, input_ids2, segment_ids2 ,]
+    inputs = [input_ids1, segment_ids1, input_ids2, segment_ids2]
     pred = logits1 - logits2
     new_model = tf.keras.models.Model(inputs=inputs, outputs=pred)
     if optimizer_factory is not None:

@@ -11,7 +11,7 @@ from trainer_v2.custom_loop.definitions import ModelConfig256_1
 from trainer_v2.custom_loop.run_config2 import get_run_config_for_predict_empty
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import eval_dev_mrr, \
     predict_and_batch_save_scores, score_and_save_score_lines
-from trainer_v2.per_project.transparency.mmp.rerank import get_scorer, build_inference_model2
+from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer, build_inference_model2
 from trainer_v2.train_util.arg_flags import flags_parser
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 from typing import List, Iterable, Callable, Dict, Tuple, Set

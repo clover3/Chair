@@ -4,7 +4,6 @@ import os
 from cpath import output_path
 from misc_lib import path_join, TimeEstimator
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import get_te_save_path_base
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.runner.summarize_te import get_score
 
 
 def main():

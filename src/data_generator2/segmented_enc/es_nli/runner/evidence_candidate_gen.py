@@ -4,13 +4,13 @@ from typing import List, Iterable
 
 from cpath import at_output_dir
 from data_generator.job_runner import WorkerInterface
-from data_generator2.segmented_enc.es.evidence_candidate_gen import EvidenceCandidateGenerator
+from data_generator2.segmented_enc.es_nli.evidence_candidate_gen import EvidenceCandidateGenerator
 from dataset_specific.mnli.mnli_reader import MNLIReader
 from epath import job_man_dir
 from job_manager.job_runner_with_server import JobRunnerS
 from misc_lib import exist_or_mkdir, ceil_divide
 from tf_util.record_writer_wrap import write_records_w_encode_fn
-from data_generator2.segmented_enc.es.common import PHSegmentedPair, get_ph_segment_pair_encode_fn
+from data_generator2.segmented_enc.es_nli.common import PHSegmentedPair, get_ph_segment_pair_encode_fn
 
 
 class Worker(WorkerInterface):

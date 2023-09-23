@@ -21,6 +21,11 @@ def make_grouped(itr):
     return per_query_dict
 
 
+def get_train_neg5_sample_path(partition_no):
+    grouping_root = path_join("data", "msmarco", "passage", "neg5_sample")
+    file_path = path_join(grouping_root, str(partition_no))
+    return file_path
+
 
 def iter_train_from_partitioned_file10K(partition_no):
     grouping_root = path_join("data", "msmarco", "passage", "grouped_10K")

@@ -3,9 +3,10 @@ from typing import List, Iterable
 from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens
 from data_generator2.segmented_enc.seg_encoder_common import get_random_split_location
 from dataset_specific.mnli.mnli_reader import MNLIReader, NLIPairData
-from trainer_v2.custom_loop.attention_helper.attention_extractor import AttentionExtractor, AttentionScoresDetailed
+from trainer_v2.custom_loop.attention_helper.attention_extractor import AttentionScoresDetailed
+from trainer_v2.custom_loop.attention_helper.attention_extractor_interface import AttentionExtractor
 from trainer_v2.custom_loop.attention_helper.evidence_selector_0 import get_delete_indices
-from data_generator2.segmented_enc.es.common import HSegmentedPair
+from data_generator2.segmented_enc.es_nli.common import HSegmentedPair
 from trainer_v2.custom_loop.attention_helper.model_shortcut import load_nli14_attention_extractor
 
 

@@ -5,6 +5,7 @@ from typing import List
 
 import numpy as np
 
+import adhoc.build_index
 from cache import load_from_pickle
 from cpath import output_path
 from explain.genex.load import PackedInstance, load_packed
@@ -17,7 +18,7 @@ arg_parser.add_argument("--method_name", )
 
 def run(args):
     data_name = args.data_name
-    method_name = args.method_name
+    method_name = adhoc.build_index.build_inverted_index
     score_name = "{}_{}".format(data_name, method_name)
     config = DropStop
     try:

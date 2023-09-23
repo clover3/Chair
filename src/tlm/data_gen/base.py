@@ -154,3 +154,16 @@ def concat_triplet_windows(triplet_iterator, window_length=None):
             assert len(segment_ids) == window_length
 
     return all_input_ids, all_input_mask, all_segment_ids
+
+
+def concat_tuple_windows(tuple_iterator, window_length=None):
+    all_input_ids: List[int] = []
+    all_segment_ids: List[int] = []
+    for input_ids, segment_ids in tuple_iterator:
+        all_input_ids.extend(input_ids)
+        all_segment_ids.extend(segment_ids)
+        if window_length is not None:
+            assert len(input_ids) == window_length
+            assert len(segment_ids) == window_length
+
+    return all_input_ids, all_segment_ids

@@ -20,6 +20,22 @@ def collect_scores_and_save(term_pair_list, fidelity_save_dir, save_path):
             pass
 
 
+def collect_scores_and_save2(term_pair_list, fidelity_save_dir, save_path):
+    f_out = csv.writer(open(save_path, "w", encoding="utf-8"), dialect='excel-tab')
+    for idx, todo in enumerate(term_pair_list):
+        q_term, d_term = todo
+        try:
+            save_name = f"{idx}"
+            save_path = path_join(fidelity_save_dir, save_name)
+            score = float(open(save_path, "r").read())
+            row = [q_term, d_term, score]
+            f_out.writerow(row)
+        except ValueError as e:
+            pass
+        except FileNotFoundError as e:
+            pass
+
+
 def collect_compare_scores(
         term_pair_list, fidelity_save_dir1, fidelity_save_dir2, save_path):
     f_out = csv.writer(open(save_path, "w", encoding="utf-8"), dialect='excel-tab')

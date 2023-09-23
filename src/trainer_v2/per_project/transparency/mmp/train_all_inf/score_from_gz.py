@@ -7,7 +7,7 @@ from misc_lib import select_third_fourth
 from taskman_client.task_proxy import get_task_proxy
 from trainer_v2.chair_logging import c_log
 from list_lib import apply_batch
-from trainer_v2.per_project.transparency.mmp.rerank import get_scorer
+from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 

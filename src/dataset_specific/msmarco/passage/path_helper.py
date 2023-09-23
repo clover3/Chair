@@ -12,3 +12,18 @@ def get_mmp_grouped_sorted_path(split, job_no):
     else:
         quad_tsv_path = path_join("data", "msmarco", "passage", f"{split}_group_sorted_10K", str(job_no))
     return quad_tsv_path
+
+
+# 397,756,691
+
+def get_train_triples_path():
+    tsv_path = path_join("data", "msmarco", "triples.train.full.tsv.gz")
+    return tsv_path
+
+
+def get_train_triples_small_path():
+    tsv_path = path_join("data", "msmarco", "triples.train.small.tsv")
+    return tsv_path
+
+
+

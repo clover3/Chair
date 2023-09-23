@@ -1,7 +1,7 @@
 import random
 from typing import List, Callable, Iterable, Dict, Tuple, NamedTuple
 from cache import load_from_pickle
-from data_generator2.segmented_enc.es.evidence_candidate_gen import pool_delete_indices
+from data_generator2.segmented_enc.es_nli.evidence_candidate_gen import pool_delete_indices
 from misc_lib import ceil_divide
 
 from trainer_v2.chair_logging import c_log

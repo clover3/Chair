@@ -65,18 +65,26 @@ def get_seq_label(del_indices, p_tokens, segment_len) -> List[int]:
     return output
 
 
+def concat_ph_to_encode_fn(tokenizer, segment_len, e: PHSegmentedPair):
+    triplet_list = []
+    for i in [0, 1]:
+        tokens, segment_ids = combine_with_sep_cls(
+            segment_len, e.get_partial_prem(i), e.get_partial_hypo(i))
+        triplet = get_basic_input_feature_as_list(tokenizer, segment_len,
+                                                  tokens, segment_ids)
+        triplet_list.append(triplet)
+    triplet = concat_triplet_windows(triplet_list, segment_len)
+    return triplet
+
+
 # For Training PEP1
 def get_ph_segment_pair_encode_fn(segment_len):
     tokenizer = get_tokenizer()
+
     def encode_fn(e: PHSegmentedPair) -> OrderedDict:
-        triplet_list = []
-        for i in [0, 1]:
-            tokens, segment_ids = combine_with_sep_cls(segment_len, e.get_partial_prem(i), e.get_partial_hypo(i))
-            triplet = get_basic_input_feature_as_list(tokenizer, segment_len,
-                                                      tokens, segment_ids)
-            triplet_list.append(triplet)
-        triplet = concat_triplet_windows(triplet_list, segment_len)
+        triplet = concat_ph_to_encode_fn(tokenizer, segment_len, e)
         return encode_triplet(triplet, e.nli_pair.get_label_as_int())
+
     return encode_fn
 
 

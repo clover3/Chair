@@ -5,7 +5,7 @@ from pytrec_eval import RelevanceEvaluator
 from cpath import output_path
 from dataset_specific.msmarco.passage.runner.build_ranked_list import build_ranked_list_from_qid_pid_scores
 from list_lib import apply_batch
-from misc_lib import path_join, average, TELI
+from misc_lib import path_join, average, TELI, ceil_divide, TimeEstimator
 
 from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sub_samples
 from runnable.trec.pytrec_eval_wrap import convert_ranked_list
@@ -13,6 +13,8 @@ from trainer_v2.chair_logging import c_log
 from trec.qrel_parse import load_qrels_structured
 from trec.trec_parse import load_ranked_list_grouped
 from trec.types import TrecRankedListEntry
+
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
 def eval_dev100_for_tune(dataset, run_name):
@@ -101,11 +103,11 @@ def predict_and_save_scores_w_itr(score_fn, dataset, run_name, itr, data_size):
 
 
 def predict_and_batch_save_scores(
-        score_fn: Callable[[List[Tuple[str, str]]], List[float]],
-                            dataset: str,
-                            run_name: str,
-                            data_size=0,
-                            ):
+        score_fn: Callable[[List[Tuple[str, str]]], Iterable[float]],
+        dataset: str,
+        run_name: str,
+        data_size=0,
+):
     itr = iter(load_msmarco_sub_samples(dataset))
     max_batch_size = 1024
     scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
@@ -115,18 +117,21 @@ def predict_and_batch_save_scores(
 def score_and_save_score_lines(itr, score_fn, scores_path, max_batch_size, data_size):
     f = open(scores_path, "w")
     if data_size:
-        itr = TELI(itr, data_size)
+        n_batch = ceil_divide(data_size, max_batch_size)
+        ticker = TimeEstimator(n_batch)
     for batch in apply_batch(itr, max_batch_size):
-        scores = score_fn(batch)
+        scores: Iterable[float] = score_fn(batch)
         for x, s in zip(batch, scores):
             f.write("{}\n".format(s))
+
+        if data_size:
+            ticker.tick()
 
 
 def main():
     dataset = "dev_sample100"
     run_name = "bm25"
     print(eval_dev100_for_tune(dataset, run_name))
-    return NotImplemented
 
 
 if __name__ == "__main__":

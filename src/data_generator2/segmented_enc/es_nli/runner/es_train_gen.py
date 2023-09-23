@@ -3,7 +3,7 @@ import pickle
 from typing import List, Callable, OrderedDict, Iterator
 
 from cpath import output_path
-from data_generator2.segmented_enc.es.common import get_evidence_pred_encode_fn
+from data_generator2.segmented_enc.es_nli.common import get_evidence_pred_encode_fn
 from epath import job_man_dir
 from misc_lib import exist_or_mkdir
 from tf_util.record_writer_wrap import write_records_w_encode_fn

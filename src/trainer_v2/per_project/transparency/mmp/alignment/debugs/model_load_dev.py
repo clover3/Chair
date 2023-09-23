@@ -6,7 +6,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 from tf_util.lib.tf_funcs import find_layer
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.probe.probe_network import ProbeOnBERT
-from trainer_v2.per_project.transparency.mmp.rerank import get_scorer
+from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer
 from trainer_v2.per_project.transparency.mmp.trnsfmr_util import get_qd_encoder, get_dummy_input_for_bert_layer
 import tensorflow as tf
 
@@ -18,6 +18,7 @@ def main():
     q = "who is the president of US"
     d = "The president of US is donald trump"
     print(score_fn([(q, d)]))
+
 
 def main2():
     model_path = sys.argv[1]

@@ -1,5 +1,6 @@
 import random
-from typing import List, Tuple, Any, NamedTuple
+from abc import abstractmethod
+from typing import List, Tuple, Any, NamedTuple, Callable
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import ceil_divide, tensor_to_list
@@ -13,14 +14,28 @@ from utils.xml_rpc_helper import ServerProxyEx
 import numpy as np
 
 
+class PEInfoI(NamedTuple):
+    @abstractmethod
+    def get_error(self):
+        pass
+
+    @abstractmethod
+    def density(self):
+        pass
+
+    @abstractmethod
+    def combined_score(self):
+        pass
+
+
 # PE: Partial Evidence
-class PEInfo(NamedTuple):
+class PEInfo(NamedTuple, PEInfoI):
     base_pred: List[float]
     rep_pred: List[float]
     num_used: int
     n_p_tokens: int
 
-    def ce_error(self):
+    def get_error(self):
         err = cross_entropy(np.array(self.base_pred), np.array(self.rep_pred))  # [0, inf]
         return err
 
@@ -30,7 +45,7 @@ class PEInfo(NamedTuple):
     def combined_score(self):
         tolerance = 0.05
         err_cap = 10
-        err = self.ce_error()
+        err = self.get_error()
         err = min(err, err_cap)  # [0, 5]
         err = max(tolerance, err)
         combined_score = (err_cap - err) - tolerance * self.density()
@@ -38,8 +53,12 @@ class PEInfo(NamedTuple):
 
 
 class PEPEnvironment:
-    def __init__(self, server):
+    def __init__(self, server, pe_class):
         self.server = server
+        self.pe_class = pe_class
+
+    def pe_info_factory(self, *args) -> PEInfoI:
+        return self.pe_class(*args)
 
     def request(self, items: List[Tuple[RLStateTensor, List[int]]]) -> List[List[float]]:
         def transform(sa):
@@ -51,7 +70,7 @@ class PEPEnvironment:
         ret = client.request(list(map(transform, items)))
         return ret
 
-    def get_item_results(self, items: List[Tuple[RLStateTensor, List[int]]]) -> List[PEInfo]:
+    def get_item_results(self, items: List[Tuple[RLStateTensor, List[int]]]) -> List[PEInfoI]:
         # Build dictionary of base predictions
         base_items = {}
         for sa in items:
@@ -90,7 +109,7 @@ class PEPEnvironment:
             return int(np.sum(valid_action).tolist())
 
         d_n_p_tokens = dict()
-        pe_result_list: List[PEInfo] = []
+        pe_result_list: List[PEInfoI] = []
         for sa, output in zip(items, item_outputs):
             output: List[float] = output
             state, action = sa
@@ -101,7 +120,7 @@ class PEPEnvironment:
                 n_p_tokens = get_n_p_tokens(state)
 
             num_used = num_token_in_action(state, action)
-            pe_result = PEInfo(base_output, output, num_used, n_p_tokens)
+            pe_result: PEInfoI = self.pe_info_factory(base_output, output, num_used, n_p_tokens)
             pe_result_list.append(pe_result)
 
         assert len(pe_result_list) == len(items)

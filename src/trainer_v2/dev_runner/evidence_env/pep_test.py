@@ -4,8 +4,8 @@ from typing import List
 
 from cpath import at_output_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from data_generator2.segmented_enc.es.common import PHSegmentedPair
-from data_generator2.segmented_enc.es.path_helper import get_evidence_selected0_path
+from data_generator2.segmented_enc.es_nli.common import PHSegmentedPair
+from data_generator2.segmented_enc.es_nli.path_helper import get_evidence_selected0_path
 from port_info import LOCAL_DECISION_PORT
 from tlm.data_gen.base import combine_with_sep_cls
 from trainer_v2.evidence_selector.enviroment import PEPClient
