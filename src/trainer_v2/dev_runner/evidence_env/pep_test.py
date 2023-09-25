@@ -8,7 +8,8 @@ from data_generator2.segmented_enc.es_nli.common import PHSegmentedPair
 from data_generator2.segmented_enc.es_nli.path_helper import get_evidence_selected0_path
 from port_info import LOCAL_DECISION_PORT
 from tlm.data_gen.base import combine_with_sep_cls
-from trainer_v2.evidence_selector.enviroment import PEPClient
+from trainer_v2.evidence_selector.enviroment_nli import PEPClientNLI, ConcatMaskStrategyNLI
+from trainer_v2.evidence_selector.environment import PEPClient
 
 
 def main():
@@ -35,8 +36,11 @@ def main():
             pep_payload.append((action, state))
             info.append((tokens, e.nli_pair.get_label_as_int()))
 
+
+    concat_mask = ConcatMaskStrategyNLI()
+    payload: Tuple[List[int], List[int]] = [concat_mask.get_masked_input(s, a) for a, s in pep_payload]
     client = PEPClient("localhost", LOCAL_DECISION_PORT)
-    output = client.request(pep_payload)
+    output = client.request(payload)
 
     for out, info in zip(output, info):
         print(out)

@@ -2,14 +2,12 @@ from collections import OrderedDict
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from data_generator2.segmented_enc.es_nli.common import HSegmentedPair, PHSegmentedPair, get_ph_segment_pair_encode_fn, \
-    concat_ph_to_encode_fn
+from data_generator2.segmented_enc.es_mmp.common import concat_ph_to_encode_fn
+from data_generator2.segmented_enc.es_nli.common import PHSegmentedPair
 from dataset_specific.mnli.mnli_reader import NLIPairData
 from trainer_v2.per_project.cip.cip_common import get_random_split_location
-from trainer_v2.per_project.transparency.mmp.trnsfmr_util import get_qd_encoder, get_dummy_input_for_bert_layer
 from trainer_v2.chair_logging import c_log
 import tensorflow as tf
-import numpy as np
 
 
 def partition_query(

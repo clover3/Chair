@@ -5,7 +5,7 @@ from cpath import common_model_dir_root
 from taskman_client.task_proxy import get_local_machine_name
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.per_task.nli_ts_util import get_two_seg_concat_encoder, get_two_seg_asym_encoder, \
-    load_local_decision_model, LocalDecisionNLICore, load_local_decision_model_as_second_only, \
+    load_local_decision_model_n_label_3, LocalDecisionNLICore, \
     LocalDecisionNLICoreSecond, get_concat_mask_encoder
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
@@ -37,7 +37,7 @@ def get_local_decision_nlits_core(run_config: RunConfig2, encoder_name):
     strategy = get_strategy_from_config(run_config)
     with strategy.scope():
         c_log.debug("Loading model from {} ...".format(model_path))
-        model = load_local_decision_model(model_path)
+        model = load_local_decision_model_n_label_3(model_path)
         encode_fn = get_encode_fn(encoder_name, model)
         c_log.debug("Done")
         nlits: LocalDecisionNLICore \
@@ -45,18 +45,6 @@ def get_local_decision_nlits_core(run_config: RunConfig2, encoder_name):
                                    strategy,
                                    encode_fn,
                                    run_config.common_run_config.batch_size)
-    return nlits
-
-
-def get_local_decision_nlits_core2(run_config, encoder_name):
-    model_path = run_config.get_model_path()
-    strategy = get_strategy_from_config(run_config)
-    with strategy.scope():
-        c_log.debug("Loading model from {} ...".format(model_path))
-        model = load_local_decision_model_as_second_only(model_path)
-        encode_fn = get_encode_fn(encoder_name, model)
-        c_log.debug("Done")
-        nlits: LocalDecisionNLICore = LocalDecisionNLICoreSecond(model, strategy, encode_fn)
     return nlits
 
 

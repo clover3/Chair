@@ -9,7 +9,7 @@ from misc_lib import two_digit_float
 from trainer_v2.custom_loop.dataset_factories import get_classification_dataset
 from trainer_v2.custom_loop.definitions import ModelConfig600_3
 from trainer_v2.custom_loop.inference import InferenceHelperSimple
-from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model
+from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model_n_label_3
 from trainer_v2.custom_loop.run_config2 import get_run_config_for_predict
 from trainer_v2.evidence_selector.calc_candidate_evidences import EvidenceCompare
 from trainer_v2.evidence_selector.evidence_candidates import EvidencePair, PHSegmentedPairParser, ScoredEvidencePair
@@ -26,7 +26,7 @@ def main(args):
     # Load model
     model_path = get_canonical_model_path2("nli_ts_run98_0", "model_25000")
     run_config = get_run_config_for_predict(args)
-    model = load_local_decision_model(model_path)
+    model = load_local_decision_model_n_label_3(model_path)
 
     def build_dataset(input_files, is_for_training):
         return get_classification_dataset(input_files, run_config, ModelConfig600_3(), is_for_training)

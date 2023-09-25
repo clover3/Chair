@@ -49,6 +49,12 @@ class ModelConfig256_1(HFModelConfigType):
 
 
 
+class ModelConfig256_2(HFModelConfigType):
+    max_seq_length = 256
+    num_classes = 2
+    model_type = "bert-base-uncased"
+
+
 class ModelConfig512_1(HFModelConfigType):
     max_seq_length = 512
     num_classes = 1

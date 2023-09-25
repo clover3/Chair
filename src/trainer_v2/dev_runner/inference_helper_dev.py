@@ -1,6 +1,6 @@
 from misc_lib import ceil_divide
 from trainer_v2.custom_loop.definitions import ModelConfig600_3
-from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model
+from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model_n_label_3
 from trainer_v2.custom_loop.run_config2 import get_eval_run_config2
 import sys
 import traceback
@@ -11,7 +11,7 @@ from typing import List, Callable, Iterable, Dict, Tuple, NamedTuple
 import tensorflow as tf
 
 from trainer_v2.custom_loop.inference import InferenceHelper
-from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model
+from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model_n_label_3
 from trainer_v2.custom_loop.run_config2 import get_eval_run_config2
 from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 from trainer_v2.train_util.arg_flags import flags_parser
@@ -22,7 +22,7 @@ def run_server(args):
     strategy = get_strategy_from_config(run_config)
 
     def model_factory():
-        model: tf.keras.models.Model = load_local_decision_model(run_config.get_model_path())
+        model: tf.keras.models.Model = load_local_decision_model_n_label_3(run_config.get_model_path())
         return model
 
     model_config = ModelConfig600_3()

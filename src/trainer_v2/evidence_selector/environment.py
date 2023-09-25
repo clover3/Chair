@@ -1,20 +1,30 @@
-import random
-from abc import abstractmethod
-from typing import List, Tuple, Any, NamedTuple, Callable
+from abc import ABC, abstractmethod
+from typing import Tuple, List, Iterable, Any
 
-from data_generator.tokenizer_wo_tf import get_tokenizer
-from misc_lib import ceil_divide, tensor_to_list
-from port_info import LOCAL_DECISION_PORT
-from trainer_v2.chair_logging import c_log
-from trainer_v2.evidence_selector.evidence_candidates import get_st_ed
-from trainer_v2.evidence_selector.evidence_scoring import cross_entropy, length_loss
-from trainer_v2.evidence_selector.defs import RLStateTensor
-from trainer_v2.reinforce.monte_carlo_policy_function import SA
-from utils.xml_rpc_helper import ServerProxyEx
 import numpy as np
 
+from misc_lib import ceil_divide, tensor_to_list, TimeProfiler
+from trainer_v2.chair_logging import c_log
+from trainer_v2.evidence_selector.defs import RLStateTensor
 
-class PEInfoI(NamedTuple):
+from trainer_v2.evidence_selector.evidence_scoring import cross_entropy, length_loss
+from utils.xml_rpc_helper import ServerProxyEx
+
+
+IDS = List[int]
+
+
+class ConcatMaskStrategyI(ABC):
+    @abstractmethod
+    def apply_mask(self, input_ids, segment_ids, action) -> np.array:
+        pass
+
+    @abstractmethod
+    def get_masked_input(self, state, action) -> Tuple[IDS, IDS]:
+        pass
+
+
+class PEInfoI:
     @abstractmethod
     def get_error(self):
         pass
@@ -28,19 +38,20 @@ class PEInfoI(NamedTuple):
         pass
 
 
-# PE: Partial Evidence
-class PEInfo(NamedTuple, PEInfoI):
-    base_pred: List[float]
-    rep_pred: List[float]
-    num_used: int
-    n_p_tokens: int
+class PEInfoFromCount(PEInfoI):
+    def __init__(self, base_pred: List[float], rep_pred: List[float],
+                 num_used: int, max_n_tokens: int):
+        self.base_pred = base_pred
+        self.rep_pred = rep_pred
+        self.num_used = num_used
+        self.max_n_tokens = max_n_tokens
 
     def get_error(self):
         err = cross_entropy(np.array(self.base_pred), np.array(self.rep_pred))  # [0, inf]
         return err
 
     def density(self):
-        return length_loss(self.num_used, self.n_p_tokens)
+        return length_loss(self.num_used, self.max_n_tokens)
 
     def combined_score(self):
         tolerance = 0.05
@@ -53,24 +64,28 @@ class PEInfo(NamedTuple, PEInfoI):
 
 
 class PEPEnvironment:
-    def __init__(self, server, pe_class):
-        self.server = server
-        self.pe_class = pe_class
-
-    def pe_info_factory(self, *args) -> PEInfoI:
-        return self.pe_class(*args)
+    def __init__(
+            self,
+            pep_client,
+            get_pe_info_from_action_state,
+            apply_mask
+    ):
+        self.get_pe_info_from_action_state = get_pe_info_from_action_state
+        self.pep_client = pep_client
+        self.apply_mask: ConcatMaskStrategyI = apply_mask
 
     def request(self, items: List[Tuple[RLStateTensor, List[int]]]) -> List[List[float]]:
-        def transform(sa):
-            state, action = sa
+        payload = []
+        for state, action in items:
             state_raw = state.input_ids, state.segment_ids
-            return state_raw, action
+            item = self.apply_mask.get_masked_input(state_raw, action)
+            payload.append(item)
 
-        client = PEPClient(self.server, LOCAL_DECISION_PORT)
-        ret = client.request(list(map(transform, items)))
+        ret = self.pep_client.request(list(payload))
         return ret
 
     def get_item_results(self, items: List[Tuple[RLStateTensor, List[int]]]) -> List[PEInfoI]:
+        c_log.debug("PEPClient get_item_results Entry")
         # Build dictionary of base predictions
         base_items = {}
         for sa in items:
@@ -84,50 +99,34 @@ class PEPEnvironment:
         payload = bases_to_calculate + items
 
         base_preds = {}
+        c_log.debug("PEPClient request START")
         outputs: List[List[float]] = self.request(payload)
+        c_log.debug("PEPClient request Done")
 
         base_outputs = outputs[:len(bases_to_calculate)]
         item_outputs = outputs[len(bases_to_calculate):]
-
         assert len(item_outputs) == len(items)
+        c_log.debug("PEPClient request 1")
 
         for sa, output in zip(bases_to_calculate, base_outputs):
             state, _ = sa
             base_preds[state.input_ids_hash()] = output
+        c_log.debug("PEPClient request 2")
 
-        def get_n_p_tokens(state: RLStateTensor):
-            seg2_start, _ = get_st_ed(state.segment_ids)
-            h_st = 1
-            h_ed = seg2_start -1
-            return h_ed - h_st
-
-        def num_token_in_action(state, action) -> int:
-            action_np = np.array(action)
-            is_first_seg = np.logical_and(np.equal(state.segment_ids, 0),
-                                         np.not_equal(state.input_ids, 0))
-            valid_action = np.multiply(action_np, is_first_seg.astype(np.int))
-            return int(np.sum(valid_action).tolist())
-
-        d_n_p_tokens = dict()
         pe_result_list: List[PEInfoI] = []
         for sa, output in zip(items, item_outputs):
             output: List[float] = output
             state, action = sa
             base_output: List[float] = base_preds[state.input_ids_hash()]
-            try:
-                n_p_tokens = d_n_p_tokens[state.input_ids_hash()]
-            except KeyError:
-                n_p_tokens = get_n_p_tokens(state)
-
-            num_used = num_token_in_action(state, action)
-            pe_result: PEInfoI = self.pe_info_factory(base_output, output, num_used, n_p_tokens)
+            pe_result: PEInfoI = self.get_pe_info_from_action_state(base_output, output, action, state)
             pe_result_list.append(pe_result)
 
         assert len(pe_result_list) == len(items)
+
+        c_log.debug("PEPClient get_item_results Done")
         return pe_result_list
 
 
-IDS = List[int]
 def concat_two_items(payload):
     def concat_item(item1, item2):
         input_ids1, segment_ids1 = item1
@@ -157,53 +156,19 @@ def unconcat(output, n_original):
     return l_decision_list
 
 
-
 def pretty_input_ids(t):
     l = tensor_to_list(t)
-    return [t for t in l if t!=0]
+    return [t for t in l if t != 0]
 
 
-# PEP: Partial Evidence Predictor
 class PEPClient:
-    def __init__(self, server_addr, port):
-        tokenizer = get_tokenizer()
-        self.mask_id = tokenizer.wordpiece_tokenizer.vocab["[MASK]"]
-        self.cls_id = tokenizer.wordpiece_tokenizer.vocab["[CLS]"]
-        self.sep_id = tokenizer.wordpiece_tokenizer.vocab["[SEP]"]
+    def __init__(self, server_addr, port, ):
         self.proxy = ServerProxyEx(server_addr, port)
 
-    def get_masked_input(self, state_action) -> Tuple[IDS, IDS]:
-        state, action = state_action
-        input_ids, segment_ids = state
-        select_mask_for_p_tokens: List[int] = action
-        select_mask_np = np.array(select_mask_for_p_tokens, np.bool)
-        select_mask_np = np.logical_or(select_mask_np, np.array(segment_ids, np.bool))
-        for v in [self.cls_id, self.sep_id, 0]:
-            select_mask_np = np.logical_or(select_mask_np, np.equal(input_ids, v))
-        input_ids_np = np.array(input_ids, np.int)
-        new_input_ids = input_ids_np * select_mask_np + (1-select_mask_np) * self.mask_id
-        return tensor_to_list(new_input_ids), tensor_to_list(segment_ids)
-
-    def request(self, items: List[SA]) -> List[List[float]]:
-        payload: List[Tuple[IDS, IDS]] = list(map(self.get_masked_input, items))
+    def request(self, payload: List[Tuple[IDS, IDS]]) -> List[List[float]]:
         concat_payload = concat_two_items(payload)
         c_log.debug("PEPClient send ENTRY")
         response = self.proxy.send(concat_payload)
         c_log.debug("PEPClient send DONE")
         output = unconcat(response, len(payload))
         return output
-
-
-def main():
-    item = [0 for _ in range(300)]
-    payload = [(item, (item, item))] * 5
-    client = PEPClient("localhost", LOCAL_DECISION_PORT)
-    output = client.request(payload)
-    for e in output:
-        print(e)
-
-
-if __name__ == "__main__":
-    main()
-
-

@@ -67,7 +67,7 @@ class SequenceLabelPolicyFunction(PolicyFunction):
         return per_state_action_samples
 
     def _get_random_sample(self, state: RLStateTensor, n_random) -> List[List[int]]:
-        seg2_st, _ = get_st_ed(state.segment_ids)
+        seg2_st, _ = get_st_ed(state.segment_ids_np)
         action_list = []
         for _ in range(n_random):
             action = delete_seg1(len(state.input_ids), seg2_st)

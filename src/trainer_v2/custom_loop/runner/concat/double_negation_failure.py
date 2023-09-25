@@ -10,7 +10,7 @@ from misc_lib import ceil_divide
 from trainer_v2.custom_loop.dataset_factories import get_classification_dataset
 from trainer_v2.custom_loop.definitions import ModelConfig600_3
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
-from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model
+from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model_n_label_3
 from trainer_v2.custom_loop.run_config2 import get_eval_run_config2
 from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 
@@ -47,7 +47,7 @@ def run_print_failure(run_config, save_name, is_target_failure):
 
     strategy = get_strategy_from_config(run_config)
     with strategy.scope():
-        model = load_local_decision_model(run_config.eval_config.model_save_path)
+        model = load_local_decision_model_n_label_3(run_config.eval_config.model_save_path)
         eval_dataset = get_classification_dataset(input_files, run_config, model_config, False)
         dist_dataset = distribute_dataset(strategy, eval_dataset)
         res = model.predict(dist_dataset, steps=maybe_step, verbose=True)

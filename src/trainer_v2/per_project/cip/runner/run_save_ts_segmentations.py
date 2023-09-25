@@ -15,7 +15,7 @@ from port_info import LOCAL_DECISION_PORT
 from trainer.promise import PromiseKeeper, MyPromise
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.inference import InferenceHelper
-from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model, dataset_factory_600_3
+from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model_n_label_3, dataset_factory_600_3
 from trainer_v2.keras_server.nlits_client import NLITSClient
 from trainer_v2.per_project.cip.cip_common import get_random_split_location, split_into_two, \
     SegmentationTrialInputs, SegmentationTrials
@@ -87,7 +87,7 @@ class SegmentationTrialWorker(WorkerInterface):
         strategy = get_strategy2(use_tpu=False, tpu_name=None, force_use_gpu=True)
 
         def model_factory():
-            model: tf.keras.models.Model = load_local_decision_model(model_path)
+            model: tf.keras.models.Model = load_local_decision_model_n_label_3(model_path)
             return model
 
         self.inference_helper = InferenceHelper(model_factory, dataset_factory_600_3, strategy)

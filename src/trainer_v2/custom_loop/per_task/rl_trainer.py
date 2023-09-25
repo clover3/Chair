@@ -128,6 +128,12 @@ class PolicyGradientTrainer(TrainerIF):
             self.summary_writer.flush()
 
 
+class PolicyGradientTrainerDummy(PolicyGradientTrainer):
+    def train_step(self, item):
+        c_log.info("Using dummy train step")
+        return tf.constant(0.0)
+
+
 class PGRLEvalObject:
     def __init__(self, policy_func, eval_batches, dist_strategy,
                  eval_steps=1):

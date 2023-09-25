@@ -1,25 +1,14 @@
-from typing import Dict
-
-from cpath import output_path
-from misc_lib import path_join
-
 import tensorflow as tf
 # from tensorflow.keras.metrics import Metric
 
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
-from trainer_v2.custom_loop.prediction_trainer import TrainerCommon, ModelV2IF, ModelV3IF
+from trainer_v2.custom_loop.prediction_trainer import ModelV3IF
 from trainer_v2.custom_loop.run_config2 import RunConfig2
-from trainer_v2.custom_loop.trainer_if import TrainerIFBase, EmptyEvalObject, EvalObjectIF
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from trainer_v2.custom_loop.trainer_if import TrainerIFBase, EvalObjectIF
+from typing import Dict
 
-
-def get_tf_log_dir(run_name):
-    return path_join(output_path, "tf_log", run_name)
-
-
-def get_tf_log_dir_val(run_name):
-    return path_join(output_path, "tf_log", run_name + "_val")
+from trainer_v2.tf_misc_helper import get_tf_log_dir, get_tf_log_dir_val
 
 
 Metric = tf.keras.metrics.Metric

@@ -5,7 +5,7 @@ import tensorflow as tf
 from cpath import common_model_dir_root
 from taskman_client.task_proxy import get_local_machine_name
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
-from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model
+from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model_n_label_3
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
@@ -21,7 +21,7 @@ def main():
         strategy = get_strategy(False, "")
 
     with strategy.scope():
-        model = load_local_decision_model(model_path)
+        model = load_local_decision_model_n_label_3(model_path)
 
     batch_size = 16
     num_items = 10

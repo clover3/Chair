@@ -27,7 +27,8 @@ def get_ph_segment_pair_encode_fn(segment_len):
         for i in [0, 1]:
             partial_passage: List[str] = e.get_partial_prem(i)
             partial_query: List[str] = e.get_partial_hypo(i)
-            input_ids, segment_ids = combine_with_sep_cls_and_pad(tokenizer, partial_query, partial_passage, segment_len)
+            input_ids, segment_ids = combine_with_sep_cls_and_pad(
+                tokenizer, partial_query, partial_passage, segment_len)
             tuple_list.append((input_ids, segment_ids))
         triplet = concat_tuple_windows(tuple_list, segment_len)
         return encode_pair(triplet, int(e.nli_pair.label))

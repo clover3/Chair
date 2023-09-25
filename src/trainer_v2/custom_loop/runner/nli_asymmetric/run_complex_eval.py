@@ -8,8 +8,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from misc_lib import SuccessCounter, two_digit_float
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
-from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model, \
-    get_local_decision_layer_from_model_by_shape
+from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model_n_label_3
+from trainer_v2.custom_loop.per_task.ts_util import get_local_decision_layer_from_model_by_shape
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.custom_loop.dataset_factories import get_classification_dataset
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2_nli
@@ -29,7 +29,7 @@ def main(args):
 
     with strategy.scope():
         model_path = run_config.eval_config.model_save_path
-        predictor = load_local_decision_model(model_path, get_local_decision_layer_from_model_by_shape)
+        predictor = load_local_decision_model_n_label_3(model_path)
 
     model_config = ModelConfig()
 

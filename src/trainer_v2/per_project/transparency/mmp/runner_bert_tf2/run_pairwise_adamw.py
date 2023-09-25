@@ -1,7 +1,9 @@
 import os
 
-from trainer_v2.custom_loop.definitions import ModelConfig256_1
+from cpath import get_bert_config_path
+from trainer_v2.custom_loop.definitions import ModelConfig256_1, ModelConfig512_1
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
+from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
 from trainer_v2.per_project.transparency.mmp.modeling.pairwise_modeling import get_transformer_pairwise_model
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -39,7 +41,6 @@ def main(args):
         else:
             eval_dataset = None
         c_log.info("Building model")
-        # optimizer_factory = tf.keras.optimizers.experimental.AdamW
         optimizer_factory = AdamWeightDecay
         model = get_transformer_pairwise_model(model_config, run_config, optimizer_factory)
         c_log.info("model.fit() train_step=%d", run_config.train_config.train_step)
@@ -56,7 +57,7 @@ def main(args):
             validation_steps=100,
             callbacks=[cp_callback]
         )
-        model.save(run_config.train_config.model_save_path)
+
 
 
 if __name__ == "__main__":

@@ -8,17 +8,23 @@ from misc_lib import NamedAverager, two_digit_float, tensor_to_list
 from trainer.promise import PromiseKeeper, MyPromise, MyFuture, list_future
 from trainer_v2.chair_logging import c_log
 from trainer_v2.evidence_selector.defs import RLStateTensor
-from trainer_v2.evidence_selector.enviroment import PEInfoI
+from trainer_v2.evidence_selector.environment import ConcatMaskStrategyI, PEInfoI
+from trainer_v2.tf_misc_helper import SummaryWriterWrap
 from trainer_v2.reinforce.monte_carlo_policy_function import Action, PolicyFunction
 import numpy as np
 
 
 def batch_input_to_state_list(batch_x) -> List[RLStateTensor]:
     input_ids, segment_ids = batch_x
+    input_ids_np = input_ids.numpy()
+    segment_ids_np = segment_ids.numpy()
+
     batch_size = len(input_ids)
     t_list = []
     for i in range(batch_size):
-        t = RLStateTensor(input_ids[i], segment_ids[i])
+        t = RLStateTensor(
+            input_ids[i], segment_ids[i], input_ids_np[i], segment_ids_np[i]
+        )
         t_list.append(t)
     return t_list
 
@@ -60,12 +66,15 @@ class ExplorationOutput(NamedTuple):
 
 
 class SeqPredREINFORCE:
-    def __init__(self,
-                 seq_length: int,
-                 build_state_dataset: Callable[[str, bool], tf.data.Dataset],
-                 batch_size,
-                 environment: Callable[[List[Tuple[RLStateTensor, List[int]]]], List[PEInfoI]]
-                 ):
+    def __init__(
+            self,
+            seq_length: int,
+            build_state_dataset: Callable[[str, bool], tf.data.Dataset],
+            batch_size,
+            environment: Callable[[List[Tuple[RLStateTensor, List[int]]]], List[PEInfoI]],
+            concat_mask_strategy: ConcatMaskStrategyI,
+            summary_writer: SummaryWriterWrap
+    ):
         self.seq_length = seq_length
         self.build_state_dataset = build_state_dataset
         self.batch_size = batch_size
@@ -73,6 +82,8 @@ class SeqPredREINFORCE:
         self.policy_function: PolicyFunction = None
         self.summary_callback = None
         self.tokenizer = get_tokenizer()
+        self.concat_mask_strategy = concat_mask_strategy
+        self.summary_writer = summary_writer
 
     def init(self, policy_function: PolicyFunction, summary_callback=None):
         self.policy_function = policy_function
@@ -86,7 +97,8 @@ class SeqPredREINFORCE:
 
         def raw_data_iter():
             src_dataset: tf.data.Dataset = self.build_state_dataset(src_path, is_training)
-            for batch in src_dataset:
+            for idx, batch in enumerate(src_dataset):
+                self.summary_writer.set_step(idx)
                 x, dummy_y = batch
                 state_list: List[RLStateTensor] = batch_input_to_state_list(x)
                 c_log.debug("Before Monte Carlo")
@@ -158,20 +170,11 @@ class SeqPredREINFORCE:
 
         e_out_list: List[ExplorationOutput] = lmap(ExplorationOutput.from_future, e_list)
         self.print_stats(e_out_list)
-        self.print_items(e_out_list)
+        # self.print_items(e_out_list)
 
         return lmap(exploration_output_to_reward, e_out_list)
 
     def print_items(self, e_out_list):
-        def get_masked_input(input_ids, segment_ids, action):
-            select_mask_for_p_tokens: List[int] = action
-            select_mask_np = np.array(select_mask_for_p_tokens, np.bool)
-            select_mask_np = np.logical_or(select_mask_np, np.array(segment_ids, np.bool))
-            select_mask_np = np.logical_or(select_mask_np, np.equal(input_ids, 0))
-            input_ids_np = np.array(input_ids, np.int)
-            new_input_ids = input_ids_np * select_mask_np + (1 - select_mask_np) * 103
-            return new_input_ids
-
         for exploration_output in e_out_list:
             eo: ExplorationOutput = exploration_output
             state, _ = eo.base_sa
@@ -182,13 +185,13 @@ class SeqPredREINFORCE:
 
             s = to_text(state.input_ids)
             print(s)
+            print("[ERR] [Density] [Combined]")
             for item, res in zip(eo.alt_sa_list, eo.alt_result_list):
                 state, action = item
                 stat_str = " ".join(map(two_digit_float, [res.get_error(), res.density(), res.combined_score()]))
-                input_ids = get_masked_input(state.input_ids, state.segment_ids, action)
+                input_ids = self.concat_mask_strategy.apply_mask(state.input_ids, state.segment_ids, action)
                 s = to_text(input_ids)
                 print("{}\t{}".format(stat_str, s))
-
 
     def print_stats(self, e_out_list):
         na = NamedAverager()
@@ -209,16 +212,24 @@ class SeqPredREINFORCE:
                 na.avg_dict['alt_density_better'].append(int(alt.density() < base.density()))
                 na.avg_dict['alt_reward_better'].append(int(alt.combined_score() > base.combined_score()))
 
-        ad = na.get_average_dict()
+        avg_dict = na.get_average_dict()
         for part in ['base', 'alt']:
             msg = "{0}[Error/Density/Reward] = {1:.2f} / {2:.2f} / {3:.2f}".format(part,
-                                                                              ad[part + "_error"],
-                                                                              ad[part + "_density"],
-                                                                              ad[part + "_reward"])
+                                                                              avg_dict[part + "_error"],
+                                                                              avg_dict[part + "_density"],
+                                                                              avg_dict[part + "_reward"])
             c_log.info(msg)
+            for metric_type in ["_error", "_density", "_reward"]:
+                metric_name = part + metric_type
+                metric_value = avg_dict[metric_name]
+                self.summary_writer.log(metric_name, metric_value)
 
         msg = "alt better [Error/Density/Reward] = {0:.2f} / {1:.2f} / {2:.2f}".format(
-            ad['alt_ce_better'], ad['alt_density_better'], ad['alt_reward_better']
+            avg_dict['alt_ce_better'], avg_dict['alt_density_better'], avg_dict['alt_reward_better']
         )
+
+        for metric_type in ["alt_ce_better", 'alt_density_better', "alt_reward_better"]:
+            self.summary_writer.log(metric_type, avg_dict[metric_type])
+
         c_log.info(msg)
-        self.summary_callback(ad)
+        self.summary_callback(avg_dict)

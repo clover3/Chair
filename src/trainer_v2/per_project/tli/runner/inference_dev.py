@@ -4,7 +4,7 @@ import sys
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 from cache import save_to_pickle
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from trainer_v2.custom_loop.per_task.nli_ts_helper import get_local_decision_nlits_core, get_local_decision_nlits_core2
+from trainer_v2.custom_loop.per_task.nli_ts_helper import get_local_decision_nlits_core
 from trainer_v2.custom_loop.run_config2 import get_run_config_for_predict
 from trainer_v2.per_project.tli.token_level_inference import TokenLevelInference, nc_max_e_avg_reduce_then_softmax
 from cpath import output_path

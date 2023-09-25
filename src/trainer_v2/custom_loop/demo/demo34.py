@@ -18,7 +18,7 @@ from trainer_v2.custom_loop.demo.demo_common import iterate_and_demo, EncodedSeg
     enum_hypo_token_tuple, iter_alamri
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-from trainer_v2.custom_loop.per_task.nli_ts_util import get_two_seg_asym_encoder, load_local_decision_model, \
+from trainer_v2.custom_loop.per_task.nli_ts_util import get_two_seg_asym_encoder, load_local_decision_model_n_label_3, \
     EncodedSegmentIF
 
 
@@ -27,7 +27,7 @@ def main():
     model_path = os.path.join(get_canonical_model_path("nli_ts_run34_0"), "model_25000")
 
 
-    predictor = load_local_decision_model(model_path)
+    predictor = load_local_decision_model_n_label_3(model_path)
     tokenizer = get_tokenizer()
     window_size = 3
     model_config = ModelConfig200_200()

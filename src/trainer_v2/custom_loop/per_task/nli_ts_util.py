@@ -11,9 +11,10 @@ from data_generator2.segmented_enc.seg_encoder_common import encode_two_segments
 from data_generator2.segmented_enc.two_seg_by_mask import ConcatWMasInference
 from misc_lib import ceil_divide
 from tlm.data_gen.base import get_basic_input_feature_as_list
-from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.definitions import ModelConfig600_3
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
+from trainer_v2.custom_loop.per_task.ts_util import get_dataset_factory_two_seg, \
+    get_local_decision_layer_from_model_by_shape
 from trainer_v2.custom_loop.train_loop import load_model_by_dir_or_abs
 
 
@@ -63,38 +64,12 @@ def batch_shaping(item):
     return np.expand_dims(arr, 0)
 
 
-def load_local_decision_model(model_path):
+def load_local_decision_model_n_label_3(model_path, n_label=3):
     model = load_model_by_dir_or_abs(model_path)
-    local_decision_layer = get_local_decision_layer_from_model_by_shape(model)
+    local_decision_layer = get_local_decision_layer_from_model_by_shape(model, n_label)
     new_outputs = [local_decision_layer.output, model.outputs]
     model = tf.keras.models.Model(inputs=model.input, outputs=new_outputs)
     return model
-
-
-def load_local_decision_model_as_second_only(model_path):
-    model = load_model_by_dir_or_abs(model_path)
-    local_decision_layer = get_local_decision_layer_from_model_by_shape(model)
-    new_outputs = [local_decision_layer.output[1]]
-    model = tf.keras.models.Model(inputs=model.input, outputs=new_outputs)
-    return model
-
-
-def get_local_decision_layer_from_model_by_shape(model):
-    for idx, layer in enumerate(model.layers):
-        try:
-            shape = layer.output.shape
-            if shape[1] == 2 and shape[2] == 3:
-                c_log.debug("Maybe this is local decision layer: {}".format(layer.name))
-                return layer
-        except AttributeError:
-            print("layer is actually : ", layer)
-        except IndexError:
-            pass
-
-    c_log.error("Layer not found")
-    for idx, layer in enumerate(model.layers):
-        c_log.error(idx, layer, layer.output.shape)
-    raise KeyError
 
 
 class LocalDecisionNLICore:
@@ -298,11 +273,9 @@ def enum_hypo_token_wmask(sb_tokenize, space_tokenized_tokens, window_size, offs
 
 
 def dataset_factory_600_3(payload: List):
-    def generator():
-        for item in payload:
-            yield tuple(item)
     model_config = ModelConfig600_3()
-    int_list = tf.TensorSpec(shape=(model_config.max_seq_length,), dtype=tf.int32)
-    output_signature = (int_list, int_list)
-    dataset = tf.data.Dataset.from_generator(generator, output_signature=output_signature)
-    return dataset
+    max_seq_length = model_config.max_seq_length
+    dataset_factory = get_dataset_factory_two_seg(max_seq_length)
+    return dataset_factory(payload)
+
+

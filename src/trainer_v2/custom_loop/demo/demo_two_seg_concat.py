@@ -11,7 +11,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from dataset_specific.mnli.mnli_reader import NLIPairData
 from trainer_v2.chair_logging import c_log
-from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model, get_two_seg_concat_encoder, \
+from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model_n_label_3, get_two_seg_concat_encoder, \
     EncodedSegmentIF
 
 
@@ -22,7 +22,7 @@ def main():
         model_path = sys.argv[1]
 
     c_log.info("Loading model from %s", model_path)
-    predictor = load_local_decision_model(model_path)
+    predictor = load_local_decision_model_n_label_3(model_path)
     tokenizer = get_tokenizer()
     window_size = 3
     encode_two_seg_input = get_two_seg_concat_encoder()

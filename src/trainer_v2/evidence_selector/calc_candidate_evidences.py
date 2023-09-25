@@ -7,7 +7,7 @@ from misc_lib import TimeEstimator
 from trainer_v2.custom_loop.dataset_factories import get_classification_dataset
 from trainer_v2.custom_loop.definitions import ModelConfig600_3
 from trainer_v2.custom_loop.inference import InferenceHelperSimple
-from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model
+from trainer_v2.custom_loop.per_task.nli_ts_util import load_local_decision_model_n_label_3
 from trainer_v2.evidence_selector.evidence_candidates import PHSegmentedPairParser, ScoredEvidencePair
 
 
@@ -39,7 +39,7 @@ class EvidenceCompare:
 
 class Worker(WorkerInterface):
     def __init__(self, run_config, src_input_dir, output_dir):
-        model = load_local_decision_model(run_config.predict_config.model_save_path)
+        model = load_local_decision_model_n_label_3(run_config.predict_config.model_save_path)
         self.inference = InferenceHelperSimple(model)
         self.output_dir = output_dir
         self.src_input_dir = src_input_dir
