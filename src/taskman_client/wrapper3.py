@@ -15,7 +15,8 @@ def flag_to_run_name(flags):
 
 
 def get_hp_str_from_flag(flags):
-    log_key_flags = ["init_checkpoint", "input_files", "output_dir"]
+    log_key_flags = [
+        "init_checkpoint", "input_files", "output_dir", "action"]
     s = ""
     for key in log_key_flags:
         value = getattr(flags, key)
