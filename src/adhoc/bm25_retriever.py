@@ -16,13 +16,17 @@ class RetrieverIF(ABC):
 
 
 class BM25Retriever(RetrieverIF):
-    def __init__(self, inv_index, df, dl_d, scoring_fn):
+    def __init__(self, inv_index, df, dl_d, scoring_fn, stopwords=None):
         self.inv_index = inv_index
         self.scoring_fn = scoring_fn
         self.df = df
         self.tokenizer = KrovetzNLTKTokenizer(False)
         self.tokenize_fn = self.tokenizer.tokenize_stem
         self.dl_d = dl_d
+        if stopwords is not None:
+            self.stopwords = stopwords
+        else:
+            self.stopwords = set()
 
     def get_low_df_terms(self, q_terms: Iterable[str], n_limit=100) -> List[str]:
         candidates = []
@@ -41,6 +45,7 @@ class BM25Retriever(RetrieverIF):
 
     def retrieve(self, query) -> List[Tuple[str, float]]:
         q_tokens = self.tokenize_fn(query)
+        q_tokens = [t for t in q_tokens if not t in self.stopwords]
         q_tf = Counter(q_tokens)
         doc_score = Counter()
         indexing_q_terms: List[str] = self.get_low_df_terms(q_tf.keys())

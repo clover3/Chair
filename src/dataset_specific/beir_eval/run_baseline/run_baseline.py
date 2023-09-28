@@ -4,7 +4,7 @@ from adhoc.bm25_retriever import BM25Retriever, build_bm25_scoring_fn, Retriever
 from cache import load_pickle_from
 from dataset_specific.beir_eval.beir_common import beir_dataset_list_not_large
 from dataset_specific.beir_eval.path_helper import get_beir_inv_index_path, get_beir_df_path, get_beir_dl_path
-from dataset_specific.beir_eval.run_helper import run_retrieval_and_eval
+from dataset_specific.beir_eval.run_helper import run_retrieval_and_eval_on_beir
 from misc_lib import average
 
 from trainer_v2.chair_logging import c_log
@@ -28,7 +28,7 @@ def run_bm25(dataset):
     split = "test"
     retriever: RetrieverIF = load_bm25_retriever(dataset)
 
-    run_retrieval_and_eval(dataset, split, method, retriever, max_doc_per_list)
+    run_retrieval_and_eval_on_beir(dataset, split, method, retriever, max_doc_per_list)
 
 
 def main():

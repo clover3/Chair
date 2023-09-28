@@ -126,7 +126,6 @@ class MatrixCombineTwoWay(tf.keras.layers.Layer):
         return cpt_combine_two_way(inputs)
 
 
-
 class MatrixCombine4(tf.keras.layers.Layer):
     def call(self, inputs, *args, **kwargs):
         return cpt_combine4(inputs)

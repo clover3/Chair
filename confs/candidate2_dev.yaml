@@ -1,6 +1,6 @@
 
 project_root: .
-per_corpus_path: ${project_root}/output/msmarco/passage
+per_corpus_path: ${project_root}/output/mmp/passage
 
 candidate_pair_path: ${per_corpus_path}/align_candidates/candidate2.tsv
 term_effect_save_dir: ${per_corpus_path}/term_effect_space2_dev/content

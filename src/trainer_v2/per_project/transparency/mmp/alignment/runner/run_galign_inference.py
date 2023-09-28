@@ -22,8 +22,6 @@ from trainer_v2.train_util.arg_flags import flags_parser
 def main(args):
     c_log.info(__file__)
     run_config: RunConfig2 = get_run_config2(args)
-    # input_shape = InputShapeConfigTT100_4()
-    # model_v3 = GAlignModel()
     target_q_term = "when"
     query = target_q_term
     dummy_term = "dummy"

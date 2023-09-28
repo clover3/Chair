@@ -1,3 +1,4 @@
+import json
 import sys
 from typing import List, Dict
 
@@ -27,8 +28,11 @@ def main():
     metric = sys.argv[3]
 
     qrels = load_qrels_structured(judgment_path)
-    ranked_list: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranked_list_path)
-    doc_scores = convert_ranked_list(ranked_list)
+    if ranked_list_path.endswith(".json"):
+        doc_scores = json.load(open(ranked_list_path, "r"))
+    else:
+        ranked_list: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranked_list_path)
+        doc_scores = convert_ranked_list(ranked_list)
     evaluator = RelevanceEvaluator(qrels, {metric})
     score_per_query = evaluator.evaluate(doc_scores)
 

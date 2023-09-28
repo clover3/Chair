@@ -1,6 +1,6 @@
 import itertools
 
-from adhoc.kn_tokenizer import count_df
+from adhoc.kn_tokenizer import count_df, count_df_no_stem
 from cache import save_to_pickle
 from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_collection
 from misc_lib import get_second, TELI

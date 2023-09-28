@@ -7,7 +7,7 @@ from dataset_specific.msmarco.passage.runner.build_ranked_list import build_rank
 from list_lib import apply_batch
 from misc_lib import path_join, average, TELI, ceil_divide, TimeEstimator
 
-from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sub_samples
+from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sub_samples_as_qd_pair
 from runnable.trec.pytrec_eval_wrap import convert_ranked_list
 from trainer_v2.chair_logging import c_log
 from trec.qrel_parse import load_qrels_structured
@@ -88,7 +88,7 @@ def predict_and_save_scores(score_fn: Callable[[str, str], float],
                             run_name: str,
                             data_size=0,
                             ):
-    itr = iter(load_msmarco_sub_samples(dataset))
+    itr = iter(load_msmarco_sub_samples_as_qd_pair(dataset))
     predict_and_save_scores_w_itr(score_fn, dataset, run_name, itr, data_size)
 
 
@@ -108,7 +108,7 @@ def predict_and_batch_save_scores(
         run_name: str,
         data_size=0,
 ):
-    itr = iter(load_msmarco_sub_samples(dataset))
+    itr = iter(load_msmarco_sub_samples_as_qd_pair(dataset))
     max_batch_size = 1024
     scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
     score_and_save_score_lines(itr, score_fn, scores_path, max_batch_size, data_size)

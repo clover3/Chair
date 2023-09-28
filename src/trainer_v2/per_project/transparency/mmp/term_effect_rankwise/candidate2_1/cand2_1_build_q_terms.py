@@ -4,7 +4,7 @@ from list_lib import left
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.per_project.transparency.mmp.alignment.galign_inf_helper import build_dataset_q_term_d_term
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper2 import get_mmp_galign_path_helper, \
-    MMPGAlignPathHelper
+    MMPGAlignPathHelper, get_cand2_1_path_helper
 import os
 from data_generator.tokenizer_wo_tf import get_tokenizer
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -65,9 +65,10 @@ def main():
     job_no = int(sys.argv[2])
     model = tf.keras.models.load_model(model_save_path, compile=False)
     print("Job no:", job_no)
+    save_path = path_join(output_path, "msmarco", "passage", "candidate2_1_building", f"{job_no}.jsonl")
 
     # Select 1K query terms that are frequent
-    config: MMPGAlignPathHelper = get_mmp_galign_path_helper()
+    config: MMPGAlignPathHelper = get_cand2_1_path_helper()
     freq_q_terms = config.load_freq_q_terms()
     batch_size = 16
     top_k = 10
@@ -76,7 +77,6 @@ def main():
     n_per_job = 100
     st = n_per_job * job_no
     ed = st + n_per_job
-    save_path = path_join(output_path, "msmarco", "passage", "candidate2_1_building", f"{job_no}.jsonl")
     f = open(save_path, "w")
 
     for i in range(st, ed):

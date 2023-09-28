@@ -5,7 +5,7 @@ from adhoc.other.bm25t_retriever import BM25T_Retriever
 from cache import load_pickle_from
 from dataset_specific.beir_eval.beir_common import beir_dataset_list_not_large
 from dataset_specific.beir_eval.path_helper import get_beir_inv_index_path, get_beir_df_path, get_beir_dl_path
-from dataset_specific.beir_eval.run_helper import run_retrieval_and_eval
+from dataset_specific.beir_eval.run_helper import run_retrieval_and_eval_on_beir
 from misc_lib import average
 
 from trainer_v2.chair_logging import c_log
@@ -32,7 +32,7 @@ def run_bm25t(dataset, table_name, table_path):
     max_doc_per_list = 1000
     split = "test"
     retriever: RetrieverIF = load_bm25t_retriever(dataset, table_path)
-    run_retrieval_and_eval(dataset, split, method_name, retriever, max_doc_per_list)
+    run_retrieval_and_eval_on_beir(dataset, split, method_name, retriever, max_doc_per_list)
 
 
 def main():

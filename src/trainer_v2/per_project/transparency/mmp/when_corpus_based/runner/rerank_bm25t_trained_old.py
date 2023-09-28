@@ -1,6 +1,6 @@
 import logging
 
-from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sub_samples
+from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sub_samples_as_qd_pair
 from table_lib import tsv_iter
 from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
@@ -19,7 +19,7 @@ def main():
     run_name = "bm25t_when_trained"
     dataset = "train_when_0"
     n_item = 230958
-    itr = load_msmarco_sub_samples(dataset)
+    itr = load_msmarco_sub_samples_as_qd_pair(dataset)
     predict_and_save_scores_w_itr(bm25t.score, dataset, run_name, itr, n_item)
     score = eval_on_train_when_0(run_name)
 

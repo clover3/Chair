@@ -36,7 +36,7 @@ def main(args):
         eval_dataset = build_dataset_q_term_d_term_multi(q_term_id, d_term_list)
         batched_dataset = eval_dataset.batch(run_config.common_run_config.batch_size)
         outputs = model.predict(batched_dataset)
-        scores = outputs['align_pred']
+        scores = outputs["align_probe"]['align_pred']
         preds = tf.less(0, scores)
         c_log.info("q_term %s", q_term,)
         preds = preds.numpy()

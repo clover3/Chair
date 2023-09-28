@@ -39,3 +39,15 @@ def count_df(docs: Iterable[str]) -> Counter:
             df[term] += 1
 
     return df
+
+
+def count_df_no_stem(docs: Iterable[str]) -> Counter:
+    df = Counter()
+    for p in docs:
+        tokens = nltk.tokenize.word_tokenize(p)
+        tokens = [t.lower() for t in tokens]
+
+        for term in set(tokens):
+            df[term] += 1
+
+    return df

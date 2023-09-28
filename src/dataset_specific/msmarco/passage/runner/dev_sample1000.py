@@ -11,7 +11,10 @@ from trec.types import QRelsDict
 def sample_query_doc(
         top1000_iter: Iterable,
         n_query: int,
-        corpus_save_path, query_save_path):
+        corpus_save_path,
+        query_save_path):
+    max_doc_per_query = 1000
+
     f_out = open(corpus_save_path, "w")
 
     sample_qid_dict = {}
@@ -27,7 +30,7 @@ def sample_query_doc(
 
     # validate
     for qid, entries in qid_clustered.items():
-        if len(entries) < 1000:
+        if len(entries) < max_doc_per_query:
             print("Warning number of candidates smaller : {}".format(len(entries)))
 
         query = sample_qid_dict[qid]
@@ -38,7 +41,7 @@ def sample_query_doc(
         for e in entries:
             f_out.write("\t".join(e) + "\n")
 
-        if len(entries) != 1000:
+        if len(entries) != max_doc_per_query:
             print("It has {} docs".format(len(entries)))
 
     with open(query_save_path, "w") as f_out_q:

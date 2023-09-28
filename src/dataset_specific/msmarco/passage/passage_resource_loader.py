@@ -5,6 +5,7 @@ from typing import List, Iterable, Tuple, Any
 
 from cache import load_pickle_from
 from cpath import at_data_dir, data_path, output_path
+from dataset_specific.msmarco.passage.path_helper import get_msmarco_passage_collection_path
 from misc_lib import path_join, select_third_fourth
 from table_lib import tsv_iter
 from trec.qrel_parse import load_qrels_structured
@@ -43,10 +44,10 @@ def enum_queries(split):
 
 def load_msmarco_sample_dev_as_pairs() -> Iterable[Tuple[str, str]]:
     dataset = "dev_sample100"
-    return load_msmarco_sub_samples(dataset)
+    return load_msmarco_sub_samples_as_qd_pair(dataset)
 
 
-def load_msmarco_sub_samples(dataset):
+def load_msmarco_sub_samples_as_qd_pair(dataset):
     if dataset.startswith("dev"):
         quad_tsv_path = path_join(data_path, "msmarco", dataset, "corpus.tsv")
     elif dataset == "train_when_0":
@@ -79,8 +80,8 @@ def load_msmarco_sample_a_as_pairs() -> Iterable[Tuple[str, str]]:
     return tuple_itr
 
 
-def load_msmarco_collection()-> Iterable[Tuple[str, str]]:
-    tsv_path = path_join(data_path, "msmarco", "collection.tsv")
+def load_msmarco_collection() -> Iterable[Tuple[str, str]]:
+    tsv_path = get_msmarco_passage_collection_path()
     return tsv_iter(tsv_path)
 
 

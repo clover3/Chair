@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 
 from cpath import at_output_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
@@ -11,18 +12,29 @@ from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.split_iter import get_valid_mmp_partition
 
 
-def remove_deletion(e: PHSegmentedPair):
+def random_remove_deletion(e: PHSegmentedPair):
+    def apply_reduce(indices):
+        rand_val = random.random()
+        if rand_val < 0.1:
+            indices = []
+        elif rand_val < 0.2:
+            new_len = int(len(indices) * random.random())
+            indices = indices[:new_len]
+        return indices
+
+    p_del_indices1 = apply_reduce(e.p_del_indices1)
+    p_del_indices2 = apply_reduce(e.p_del_indices2)
     return PHSegmentedPair(
         e.p_tokens, e.h_tokens, e.h_st, e.h_ed,
-        [], [],
+        p_del_indices1, p_del_indices2,
         e.nli_pair
     )
 
 
 def generate_train_data():
-    output_dir = at_output_dir("tfrecord", "mmp_pep2")
+    output_dir = at_output_dir("tfrecord", "mmp_pep3")
     split = "train"
-    filter_fn = remove_deletion
+    filter_fn = random_remove_deletion
     c_log.setLevel(logging.DEBUG)
     exist_or_mkdir(output_dir)
     segment_len = 256
