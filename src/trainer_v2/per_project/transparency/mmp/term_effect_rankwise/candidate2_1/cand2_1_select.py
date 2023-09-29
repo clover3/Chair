@@ -13,9 +13,7 @@ def select_candidate_term_pars(candidate_set_name, size_config):
     n_max_pos = size_config['max_pos']
     n_hard_neg_sample = size_config['hard_neg_sample']
     n_random_neg_sample = size_config['random_neg_sample']
-    items = []
-    for job_no in range(100):
-        items.extend(load_term_pair_candidates(job_no))
+    items = load_term_pair_candidate_over_100_jobs()
     tokenizer = get_tokenizer()
 
     def id_to_term(term_id):
@@ -49,6 +47,12 @@ def select_candidate_term_pars(candidate_set_name, size_config):
         f"{candidate_set_name}.tsv")
     save_tsv(all_candidates, save_path)
 
+
+def load_term_pair_candidate_over_100_jobs():
+    items = []
+    for job_no in range(100):
+        items.extend(load_term_pair_candidates(job_no))
+    return items
 
 
 def main():

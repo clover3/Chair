@@ -1,50 +1,39 @@
 import json
 
 from list_lib import left
-from taskman_client.wrapper3 import report_run3
 from trainer_v2.per_project.transparency.mmp.alignment.galign_inf_helper import build_dataset_q_term_d_term
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper2 import get_mmp_galign_path_helper, \
-    MMPGAlignPathHelper, get_cand2_1_path_helper
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.candidate2_2.path_helper import \
+    get_candidate2_2_term_pair_candidate_building_path
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper2 import MMPGAlignPathHelper, get_cand2_2_path_helper
 import os
 from data_generator.tokenizer_wo_tf import get_tokenizer
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-from cpath import output_path
-from misc_lib import path_join
+from misc_lib import TimeEstimator
 
 import sys
 from trainer_v2.chair_logging import c_log
 import tensorflow as tf
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Tuple
 import numpy as np
 
 
-def get_matching_terms_fn(batch_size, model, top_k):
+def get_matching_terms_fn(model_save_path, batch_size):
+    model = tf.keras.models.load_model(model_save_path, compile=False)
     def get_matching_terms(q_term_id: int) -> List[Tuple[int, float]]:
         d_term_id_st = 1000
-        d_term_id_ed = 3000
+        d_term_id_ed = 30000
         eval_dataset = build_dataset_q_term_d_term(q_term_id, d_term_id_st, d_term_id_ed)
         batched_dataset = eval_dataset.batch(batch_size)
         outputs = model.predict(batched_dataset)
         scores = outputs['align_probe']['all_concat'][:, 0]
 
         # Get the indices of top-k scores
-        top_k_indices = np.argpartition(scores, len(scores) - top_k)[-top_k:]
-
         # Identify all indices where score is greater than 0
         positive_indices, = np.where(np.less(0, scores))
 
-        # Combine top-k and positive indices
-        if len(positive_indices) > 0:
-            combined_indices = np.concatenate([top_k_indices, positive_indices])
-            combined_indices = np.unique(combined_indices)
-        else:
-            combined_indices = top_k_indices
-
-        combined_indices = np.unique(combined_indices)
         results = []
-
         for i, record in enumerate(eval_dataset):
-            if i in combined_indices:
+            if i in positive_indices:
                 d_term = record['d_term'][0].numpy().tolist()
                 score = scores[i]
                 results.append((d_term, float(score)))
@@ -59,28 +48,25 @@ def get_matching_terms_fn(batch_size, model, top_k):
 # @report_run3
 def main():
     c_log.info(__file__)
-    tokenizer = get_tokenizer()
-
     model_save_path = sys.argv[1]
     job_no = int(sys.argv[2])
-    model = tf.keras.models.load_model(model_save_path, compile=False)
-    print("Job no:", job_no)
-    save_path = path_join(
-        output_path, "msmarco", "passage",
-        "candidate2_1_building", f"{job_no}.jsonl")
 
-    # Select 1K query terms that are frequent
-    config: MMPGAlignPathHelper = get_cand2_1_path_helper()
+    tokenizer = get_tokenizer()
+    print("Job no:", job_no)
+    config: MMPGAlignPathHelper = get_cand2_2_path_helper()
+    save_path = get_candidate2_2_term_pair_candidate_building_path(job_no)
     freq_q_terms = config.load_freq_q_terms()
+
+    # Prepare TF model
     batch_size = 16
-    top_k = 10
-    get_matching_terms = get_matching_terms_fn(batch_size, model, top_k)
+    get_matching_terms = get_matching_terms_fn(model_save_path, batch_size)
 
     n_per_job = 100
     st = n_per_job * job_no
     ed = st + n_per_job
     f = open(save_path, "w")
 
+    ticker = TimeEstimator(n_per_job)
     for i in range(st, ed):
         q_term: str = freq_q_terms[i]
         try:
@@ -95,6 +81,7 @@ def main():
             f.write(json.dumps(row) + "\n")
         except KeyError as e:
             print("Skip", q_term)
+        ticker.tick()
 
 
 if __name__ == "__main__":

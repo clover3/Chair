@@ -8,7 +8,8 @@ from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_me
 
 
 def term_effect_per_partition(
-        partition_no, q_term_index_per_job,
+        partition_no: int,
+        q_term_index_per_job: Dict[str, List[str]],
         sm: ScoringModelIF,
         q_term, d_term,
         irl_proxy, get_te_save_path_fn):
@@ -24,7 +25,11 @@ def save_te_list_to_gz_jsonl(te_list, save_path):
     save_list_to_gz_jsonl(out_itr, save_path)
 
 
-def compute_term_effect(irl_proxy, sm, q_term_index_per_job, q_term, d_term) -> List[TermEffectPerQuery]:
+def compute_term_effect(
+        irl_proxy,
+        sm,
+        q_term_index_per_job: Dict[str, List[str]],
+        q_term, d_term) -> List[TermEffectPerQuery]:
     affected_qid_list: List[str] = q_term_index_per_job[q_term]
     te_list: List[TermEffectPerQuery] = []
     for qid in affected_qid_list:

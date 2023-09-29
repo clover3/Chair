@@ -21,7 +21,7 @@ from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_me
 
 def term_effect_serial_core(
         partition_list: List[int],
-        qtfs_index_per_job: Dict[int, Dict[str, List[str]]],
+        qtfs_index: Dict[int, Dict[str, List[str]]],
         sm,
         q_term: str, d_term: str,
         irl_proxy: IRLProxyIF,
@@ -35,8 +35,10 @@ def term_effect_serial_core(
     f_change_sum = 0
     for partition_no in partition_list:
         c_log.debug("MMP Split %d", partition_no)
-        te_list = term_effect_per_partition(partition_no, qtfs_index_per_job, sm, q_term, d_term, irl_proxy,
-                                            get_te_save_path_fn)
+        qtfs_index_per_job = qtfs_index[partition_no]
+        te_list = term_effect_per_partition(
+            partition_no, qtfs_index_per_job, sm, q_term, d_term, irl_proxy,
+            get_te_save_path_fn)
         f_change = compute_fidelity_change_pearson(te_list)
         f_change_sum += f_change
         n_qd += sum([len(te.changes) for te in te_list])
