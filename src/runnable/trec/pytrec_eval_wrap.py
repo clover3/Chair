@@ -2,24 +2,12 @@ import json
 import sys
 from typing import List, Dict
 
-from evals.metrics import get_metric_fn
+from adhoc.eval_helper.pytrec_helper import convert_ranked_list_to_dict
 from misc_lib import average
 from trec.qrel_parse import load_qrels_structured
 from trec.trec_parse import load_ranked_list_grouped
 from trec.types import TrecRankedListEntry
 from pytrec_eval import RelevanceEvaluator
-
-
-def convert_ranked_list(ranked_list: Dict[str, List[TrecRankedListEntry]]):
-    out_d = {}
-    for qid, entries in ranked_list.items():
-        per_q = {}
-        for e in entries:
-            per_q[e.doc_id] = e.score
-        out_d[qid] = per_q
-    return out_d
-
-
 
 
 def main():
@@ -32,7 +20,7 @@ def main():
         doc_scores = json.load(open(ranked_list_path, "r"))
     else:
         ranked_list: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranked_list_path)
-        doc_scores = convert_ranked_list(ranked_list)
+        doc_scores = convert_ranked_list_to_dict(ranked_list)
     evaluator = RelevanceEvaluator(qrels, {metric})
     score_per_query = evaluator.evaluate(doc_scores)
 

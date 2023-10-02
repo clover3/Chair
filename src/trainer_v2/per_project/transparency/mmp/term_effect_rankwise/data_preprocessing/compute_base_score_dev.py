@@ -1,7 +1,7 @@
 import sys
 from collections import Counter
 from typing import List, Iterable, Callable, Dict, Tuple, Set
-from dataset_specific.msmarco.passage.passage_resource_loader import FourItem, enum_grouped
+from dataset_specific.msmarco.passage.passage_resource_loader import enum_grouped, FourItem
 from table_lib import tsv_iter
 from dataset_specific.msmarco.passage.path_helper import get_mmp_train_grouped_sorted_path, get_mmp_grouped_sorted_path
 

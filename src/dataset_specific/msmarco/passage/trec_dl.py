@@ -1,0 +1,50 @@
+import json
+
+from pytrec_eval import RelevanceEvaluator
+
+from adhoc.bm25_retriever import RetrieverIF
+from adhoc.json_run_eval_helper import run_retrieval, save_json_qres
+from dataset_specific.beir_eval.path_helper import get_json_qres_save_path
+from dataset_specific.msmarco.passage.path_helper import load_mmp_test_queries, load_mmp_test_qrel_json
+from misc_lib import average
+from taskman_client.task_proxy import get_task_manager_proxy
+from trainer_v2.chair_logging import c_log
+
+
+def run_mmp_test_retrieval(dataset, method, retriever: RetrieverIF):
+    run_name = f"{dataset}_{method}"
+    queries = load_mmp_test_queries(dataset)
+    c_log.info("%d queries", len(queries))
+    max_doc_per_query = 1000
+    doc_score_d = run_retrieval(retriever, queries, max_doc_per_query)
+    save_json_qres(run_name, doc_score_d)
+
+
+
+def run_pytrec_eval(judgment_path, doc_score_path, metric="ndcg_cut_10"):
+    qrels = json.load(open(judgment_path, "r"))
+    doc_scores = json.load(open(doc_score_path, "r"))
+    evaluator = RelevanceEvaluator(qrels, {metric})
+    score_per_query = evaluator.evaluate(doc_scores)
+    scores = [score_per_query[qid][metric] for qid in score_per_query]
+    return average(scores)
+
+
+def eval_mmp_test_run_and_report(dataset, run_name, metric="ndcg_cut_10"):
+    json_qres_save_path = get_json_qres_save_path(run_name)
+    doc_score_d = json.load(open(json_qres_save_path, "r"))
+    qrels = load_mmp_test_qrel_json(dataset)
+    evaluator = RelevanceEvaluator(qrels, {metric})
+    score_per_query = evaluator.evaluate(doc_score_d)
+    per_query_scores = [score_per_query[qid][metric] for qid in score_per_query]
+    score = average(per_query_scores)
+    print(f"metric:\t{score}")
+    proxy = get_task_manager_proxy()
+    proxy.report_number(run_name, score, "", metric)
+
+
+def run_mmp_test_retrieval_eval_report(dataset, method, retriever: RetrieverIF):
+    run_name = f"{dataset}_{method}"
+    run_mmp_test_retrieval(dataset, method, retriever)
+    eval_mmp_test_run_and_report(dataset, run_name)
+

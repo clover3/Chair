@@ -1,11 +1,9 @@
 import json
-from typing import Dict, List, Tuple
 
 from adhoc.bm25_retriever import RetrieverIF
 from dataset_specific.beir_eval.path_helper import get_json_qres_save_path
 from misc_lib import TimeEstimator, get_second
-from typing import List, Iterable, Callable, Dict, Tuple, Set
-
+from typing import List, Dict, Tuple
 
 
 def save_json_qres(run_name: str, output):

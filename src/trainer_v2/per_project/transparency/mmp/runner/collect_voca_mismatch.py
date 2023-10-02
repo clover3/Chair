@@ -4,7 +4,8 @@ from adhoc.bm25_class import BM25
 from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from cpath import output_path
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
-from dataset_specific.msmarco.passage.passage_resource_loader import load_qrel, enum_all_when_corpus
+from dataset_specific.msmarco.passage.passage_resource_loader import load_qrel
+from dataset_specific.msmarco.passage.processed_resource_loader import enum_all_when_corpus
 from table_lib import tsv_iter
 from misc_lib import path_join, get_second, two_digit_float, pause_hook
 from trainer_v2.chair_logging import c_log

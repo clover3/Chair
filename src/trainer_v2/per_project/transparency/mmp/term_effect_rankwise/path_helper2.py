@@ -107,23 +107,31 @@ class MMPGAlignPathHelper:
         return term_pairs
 
 
+def load_omega_config_with_dataclass(config_path, data_class):
+    conf = OmegaConf.structured(data_class)
+    conf.merge_with(OmegaConf.load(str(config_path)))
+    conf.project_root = project_root
+    return conf
+
+
+
 def get_mmp_galign_path_helper(
         per_corpus_config_path,
         per_model_config_path,
         per_candidate_config_path) -> MMPGAlignPathHelper:
 
-    def load_config(config_class, config_path):
-        conf = OmegaConf.structured(config_class)
-        conf.merge_with(OmegaConf.load(str(config_path)))
-        conf.project_root = project_root
-        return conf
-
-    per_corpus_config = load_config(PerCorpusPathConfig, per_corpus_config_path)
-    per_model_config = load_config(PerModelPathConfig, per_model_config_path)
-    per_candidates_config = load_config(PerPairCandidates, per_candidate_config_path)
+    load_config = load_omega_config_with_dataclass
+    per_corpus_config = load_config(per_corpus_config_path, PerCorpusPathConfig)
+    per_model_config = load_config(per_model_config_path, PerModelPathConfig)
+    per_candidates_config = load_config(per_candidate_config_path, PerPairCandidates)
 
     return MMPGAlignPathHelper(per_corpus_config, per_model_config,
         per_candidates_config)
+
+
+def get_mmp_train_corpus_config():
+    per_corpus_config_path = path_join(yconfig_dir_path, "mmp_train.yaml")
+    return load_omega_config_with_dataclass(per_corpus_config_path, PerCorpusPathConfig)
 
 
 def get_cand2_1_path_helper():

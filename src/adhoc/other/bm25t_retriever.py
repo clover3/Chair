@@ -1,17 +1,19 @@
-from abc import ABC, abstractmethod
 from collections import Counter
+
 from adhoc.bm25_retriever import RetrieverIF
 from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from list_lib import left
 from misc_lib import get_second
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Iterable, Dict, Tuple
 
 
 class BM25T_Retriever(RetrieverIF):
     def __init__(
             self, inv_index, df, dl_d,
             scoring_fn,
-            table: Dict[str, List[str]]):
+            table: Dict[str, List[str]],
+            mapping_val=0.1
+    ):
         self.inv_index = inv_index
         self.scoring_fn = scoring_fn
         self.df = df
@@ -19,6 +21,7 @@ class BM25T_Retriever(RetrieverIF):
         self.tokenize_fn = self.tokenizer.tokenize_stem
         self.dl_d = dl_d
         self.table: Dict[str, List[str]] = table
+        self.mapping_val = mapping_val
 
     def get_low_df_terms(self, q_terms: Iterable[str], n_limit=10) -> List[str]:
         candidates = []
@@ -56,7 +59,7 @@ class BM25T_Retriever(RetrieverIF):
                     if matching_term == term:
                         factor = cnt
                     else:
-                        factor = 0.1
+                        factor = self.mapping_val
                     match_cnt[doc_id] += factor
 
             qdf = len(postings)

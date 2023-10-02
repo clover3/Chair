@@ -1,4 +1,5 @@
-from dataset_specific.msmarco.passage.passage_resource_loader import enum_all_when_corpus, enum_grouped
+from dataset_specific.msmarco.passage.passage_resource_loader import enum_grouped
+from dataset_specific.msmarco.passage.processed_resource_loader import enum_all_when_corpus
 from cpath import output_path
 from misc_lib import path_join, TELI
 

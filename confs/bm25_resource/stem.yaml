@@ -6,6 +6,7 @@ common_dir: not_used
 inv_index_path: ${project_root}/data/cache/mmp_inv_index_krovetz2.pickle
 df_path: ${project_root}/data/cache/msmarco_passage_df.pickle
 dl_path: ${project_root}/output/mmp/no_stem/dl
+avdl: 52
 
 
 

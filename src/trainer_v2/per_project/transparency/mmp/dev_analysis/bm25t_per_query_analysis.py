@@ -1,11 +1,12 @@
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Dict
 
 from pytrec_eval import RelevanceEvaluator
 
 from cpath import output_path
-from dataset_specific.msmarco.passage.runner.build_ranked_list import build_ranked_list_from_qid_pid_scores
+from adhoc.eval_helper.line_format_to_trec_ranked_list import \
+    build_ranked_list_from_qid_pid_scores
 from misc_lib import path_join, two_digit_float
-from runnable.trec.pytrec_eval_wrap import convert_ranked_list
+from adhoc.eval_helper.pytrec_helper import convert_ranked_list_to_dict
 from trec.qrel_parse import load_qrels_structured
 from trec.trec_parse import load_ranked_list_grouped
 from trec.types import TrecRankedListEntry
@@ -19,7 +20,7 @@ def get_scores(run_name, dataset):
     ranked_list_path = path_join(output_path, "ranked_list", f"{run_name}_{dataset}.txt")
     build_ranked_list_from_qid_pid_scores(qid_pid_path, run_name, ranked_list_path, scores_path)
     ranked_list: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranked_list_path)
-    doc_scores = convert_ranked_list(ranked_list)
+    doc_scores = convert_ranked_list_to_dict(ranked_list)
     qrels = load_qrels_structured(judgment_path)
     evaluator = RelevanceEvaluator(qrels, {metric})
     score_per_query = evaluator.evaluate(doc_scores)

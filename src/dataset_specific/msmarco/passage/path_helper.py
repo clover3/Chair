@@ -1,4 +1,6 @@
-from cpath import data_path
+import json
+
+from cpath import data_path, output_path
 from misc_lib import path_join
 from table_lib import tsv_iter
 from typing import List, Iterable, Callable, Dict, Tuple, Set
@@ -36,12 +38,23 @@ def load_mmp_test_queries(dataset_name) -> List[Tuple[str, str]]:
     return list(itr)
 
 
-def get_mmp_test_qrel_json(dataset_name):
+def get_mmp_test_qrel_binary_json_path(dataset_name):
     return path_join(data_path, "msmarco", "passage", dataset_name, "qrel_binary.json")
 
 
-# 397,756,691
+def get_mmp_test_qrel_json_path(dataset_name):
+    return path_join(data_path, "msmarco", "passage", dataset_name, "qrel.json")
 
+
+def load_mmp_test_qrel_binary_json(dataset_name):
+    return json.load(open(get_mmp_test_qrel_binary_json_path(dataset_name), "r"))
+
+
+def load_mmp_test_qrel_json(dataset_name):
+    return json.load(open(get_mmp_test_qrel_json_path(dataset_name), "r"))
+
+
+# 397,756,691
 def get_train_triples_path():
     tsv_path = path_join(data_path, "msmarco", "triples.train.full.tsv.gz")
     return tsv_path
@@ -54,3 +67,8 @@ def get_train_triples_small_path():
 
 def get_msmarco_passage_collection_path():
     return path_join(data_path, "msmarco", "collection.tsv")
+
+
+def get_rerank_payload_save_path(run_name):
+    return path_join(output_path, "msmarco", "passage",
+                     "rerank_payload", f"{run_name}.txt")

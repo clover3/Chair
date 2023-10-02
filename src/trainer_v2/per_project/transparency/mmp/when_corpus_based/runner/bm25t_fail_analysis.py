@@ -1,19 +1,15 @@
 import logging
 from collections import Counter, defaultdict
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import Dict
 
 from adhoc.bm25 import BM25_verbose
-from adhoc.bm25_class import BM25
 from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
-from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sub_samples_as_qd_pair
 from table_lib import tsv_iter
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import build_table_when_avg, get_bm25t_when
-from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import predict_and_save_scores, \
-    predict_and_save_scores_w_itr, eval_on_train_when_0
+from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import build_table_when_avg
 from cpath import output_path
-from misc_lib import path_join, select_third_fourth
+from misc_lib import path_join
 from trec.qrel_parse import load_qrels_structured
 
 

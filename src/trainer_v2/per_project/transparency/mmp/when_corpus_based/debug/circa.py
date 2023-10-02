@@ -7,7 +7,8 @@ from transformers import AutoTokenizer
 from cpath import output_path
 from misc_lib import path_join, TELI
 
-from dataset_specific.msmarco.passage.passage_resource_loader import enum_all_when_corpus, enum_grouped, FourStr
+from dataset_specific.msmarco.passage.passage_resource_loader import enum_grouped, FourStr
+from dataset_specific.msmarco.passage.processed_resource_loader import enum_all_when_corpus
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import build_table_when_avg
 from trainer_v2.per_project.transparency.mmp.when_corpus_based.gradient_computer import GoldPairBasedSampler

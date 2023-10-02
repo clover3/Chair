@@ -1,0 +1,6 @@
+
+bm25conf_path: confs/bm25_resource/sp_stem.yaml
+table_path: output/msmarco/passage/align_candidates/candidate2_1.tsv
+table_type: candidates
+method: bm25t_cand2_1
+mapping_val: 0.1

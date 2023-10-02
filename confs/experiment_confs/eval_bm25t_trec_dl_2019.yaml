@@ -1,0 +1,7 @@
+
+
+
+run_name: bm25_cand2_1_corr_TREC_DL_2019
+ranked_list_path: output/ranked_list/bm25_cand2_1_corr_TREC_DL_2019.txt
+scores_path: output/lines_scores/bm25_cand2_1_corr_TREC_DL_2019.txt
+dataset_conf_path: confs/experiment_confs/trec_dl_2019.yaml

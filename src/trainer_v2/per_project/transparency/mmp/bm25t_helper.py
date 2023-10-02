@@ -3,11 +3,15 @@ from typing import Dict
 
 from adhoc.bm25_class import BM25
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
+from dataset_specific.msmarco.passage.path_helper import get_rerank_payload_save_path
+from misc_lib import select_third_fourth
 from table_lib import tsv_iter
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.bm25t import BM25T
-from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import predict_and_save_scores, eval_dev_mrr
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from trainer_v2.per_project.transparency.mmp.eval_helper.mmp_eval_line_format import predict_and_save_scores, \
+    eval_dev_mrr, \
+    predict_and_save_scores_w_itr, eval_from_score_lines_inner
+from typing import List, Iterable, Dict, Tuple
 
 
 def load_mapping_from_align_scores(
@@ -20,6 +24,33 @@ def load_mapping_from_align_scores(
         if float(score) > cut:
             mapping[q_term][d_term] = mapping_val
             n_entry += 1
+
+    c_log.info("%d entry loaded", n_entry)
+    return mapping
+
+
+def load_mapping_from_align_candidate(
+        tsv_path, mapping_val) -> Dict[str, Dict[str, float]]:
+    rows = tsv_iter(tsv_path)
+
+    n_entry = 0
+    mapping = defaultdict(dict)
+    for q_term, d_term in rows:
+        mapping[q_term][d_term] = mapping_val
+        n_entry += 1
+
+    c_log.info("%d entry loaded", n_entry)
+    return mapping
+
+
+def load_binary_mapping_from_align_candidate(tsv_path) -> Dict[str, List[str]]:
+    rows = tsv_iter(tsv_path)
+
+    n_entry = 0
+    mapping = defaultdict(list)
+    for q_term, d_term in rows:
+        mapping[q_term].append(d_term)
+        n_entry += 1
 
     c_log.info("%d entry loaded", n_entry)
     return mapping
@@ -46,7 +77,6 @@ def load_binary_mapping_from_align_scores(
     return mapping
 
 
-
 def run_eval_with_bm25t(dataset, mapping, run_name):
     cdf, df = load_msmarco_passage_term_stat()
     bm25 = BM25(df, cdf, 25, 0.1, 100, 1.4)
@@ -54,3 +84,4 @@ def run_eval_with_bm25t(dataset, mapping, run_name):
     predict_and_save_scores(bm25t.score, dataset, run_name, 1000 * 1000)
     score = eval_dev_mrr(dataset, run_name)
     print(f"mrr:\t{score}")
+

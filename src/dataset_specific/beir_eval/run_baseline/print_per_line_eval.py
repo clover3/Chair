@@ -3,13 +3,9 @@ import sys
 
 from beir.retrieval.evaluation import EvaluateRetrieval
 
-from adhoc.bm25_retriever import BM25Retriever, build_bm25_scoring_fn, RetrieverIF
-from cache import load_pickle_from
-from dataset_specific.beir_eval.beir_common import load_beir_dataset, beir_dataset_list_not_large
-from dataset_specific.beir_eval.path_helper import get_beir_inv_index_path, get_beir_df_path, get_beir_dl_path, \
+from dataset_specific.beir_eval.beir_common import load_beir_dataset
+from dataset_specific.beir_eval.path_helper import get_beir_inv_index_path, get_beir_dl_path, \
     get_json_qres_save_path
-from misc_lib import average, get_second, TimeEstimator
-from typing import List, Iterable, Callable, Dict, Tuple, Set
 from cpath import output_path
 from misc_lib import path_join
 from tab_print import tab_print

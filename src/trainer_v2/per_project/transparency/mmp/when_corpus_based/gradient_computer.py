@@ -8,8 +8,8 @@ from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 
 #
 # f'(x) = (1 + k_1 - k_1 * b * dl / avdl) / (x + k_1 * ((1-b) + b * dl / avdl)).
-from dataset_specific.msmarco.passage.passage_resource_loader import enum_grouped, enum_all_when_corpus, FourStr, \
-    MMPPosNegSampler
+from dataset_specific.msmarco.passage.passage_resource_loader import enum_grouped, MMPPosNegSampler, FourStr
+from dataset_specific.msmarco.passage.processed_resource_loader import enum_all_when_corpus
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.bm25t import BM25T
 from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import build_table_when_avg, get_mmp_bm25

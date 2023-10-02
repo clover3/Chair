@@ -1,5 +1,5 @@
 from cache import load_from_pickle, save_to_pickle
-from dataset_specific.msmarco.passage.passage_resource_loader import enum_when_corpus_tokenized
+from dataset_specific.msmarco.passage.processed_resource_loader import enum_when_corpus_tokenized
 from misc_lib import TELI
 
 

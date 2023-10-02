@@ -1,7 +1,6 @@
 import os
 import pickle
 from collections import Counter
-from typing import Iterable, Tuple
 
 from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from cpath import output_path

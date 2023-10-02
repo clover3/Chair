@@ -1,6 +1,6 @@
 import os
 
-from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sample_dev_as_pairs
+from dataset_specific.msmarco.passage.processed_resource_loader import load_msmarco_sample_dev_as_pairs
 from misc_lib import path_join
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from trainer_v2.per_project.transparency.transformers_utils import get_transformer_pair_tokenizer, get_multi_text_encode_fn

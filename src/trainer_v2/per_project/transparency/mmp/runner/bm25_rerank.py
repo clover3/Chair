@@ -1,6 +1,6 @@
 from adhoc.bm25_class import BM25
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
-from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import predict_and_save_scores, \
+from trainer_v2.per_project.transparency.mmp.eval_helper.mmp_eval_line_format import predict_and_save_scores, \
     eval_dev100_for_tune, eval_dev_mrr
 
 

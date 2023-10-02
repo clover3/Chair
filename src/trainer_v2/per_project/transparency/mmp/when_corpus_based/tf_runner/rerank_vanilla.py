@@ -1,9 +1,9 @@
 import sys
 import numpy as np
 from cpath import output_path
-from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sub_samples_as_qd_pair
+from dataset_specific.msmarco.passage.processed_resource_loader import load_msmarco_sub_samples_as_qd_pair
 from misc_lib import path_join
-from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import eval_on_train_when_0, \
+from trainer_v2.per_project.transparency.mmp.eval_helper.mmp_eval_line_format import eval_on_train_when_0, \
     predict_and_save_scores_w_itr
 from trainer_v2.per_project.transparency.mmp.one_q_term_modeling import ScoringLayer2, ScoringLayer3
 from trainer_v2.per_project.transparency.mmp.when_corpus_based.feature_encoder import BM25TFeatureEncoder

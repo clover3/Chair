@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
 from collections import Counter
-from typing import Iterable
 
-from adhoc.bm25 import BM25_3, BM25_verbose
+from adhoc.bm25 import BM25_verbose
 from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
 from list_lib import left
 from misc_lib import get_second
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Iterable, Tuple
 
 
 class RetrieverIF(ABC):

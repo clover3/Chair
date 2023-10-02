@@ -6,4 +6,5 @@ common_dir: ${project_root}/output/mmp/${index_name}
 inv_index_path: ${common_dir}/inv_index
 df_path: ${common_dir}/df
 dl_path: ${common_dir}/dl
+avdl: 52
 

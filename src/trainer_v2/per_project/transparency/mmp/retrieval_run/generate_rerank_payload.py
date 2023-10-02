@@ -1,13 +1,15 @@
 from adhoc.json_run_eval_helper import load_json_qres
 from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_collection
-from dataset_specific.msmarco.passage.path_helper import load_mmp_test_queries, TREC_DL_2019
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from dataset_specific.msmarco.passage.path_helper import load_mmp_test_queries, TREC_DL_2019, \
+    get_rerank_payload_save_path
+from typing import Dict
 
 
-def generate_rerank_payload(run_name, dataset):
+def generate_rerank_payload(method_name, dataset):
+    run_name = f"{dataset}_{method_name}"
     qres: Dict[str, Dict[str, float]] = load_json_qres(run_name)
     queries_d: Dict[str, str] = dict(load_mmp_test_queries(dataset))
-    save_path = get_rerank_payload_save_path(run_name, dataset)
+    save_path = get_rerank_payload_save_path(run_name)
 
     all_doc_ids = set()
     for qid, entries in qres.items():
@@ -28,7 +30,7 @@ def generate_rerank_payload(run_name, dataset):
 
 
 def main():
-    generate_rerank_payload("bm25", TREC_DL_2019)
+    generate_rerank_payload("BM25_sp_stem", TREC_DL_2019)
 
 
 if __name__ == "__main__":

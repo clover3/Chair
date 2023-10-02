@@ -4,9 +4,9 @@ import math
 from adhoc.bm25_class import BM25
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
 from misc_lib import get_second
-from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import eval_dev100_for_tune, \
+from trainer_v2.per_project.transparency.mmp.eval_helper.mmp_eval_line_format import eval_dev100_for_tune, \
     predict_and_save_scores
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import Dict
 import numpy as np
 from trainer_v2.per_project.transparency.mmp.eval_helper.hp_utils import generate_hyperparameters
 

@@ -1,7 +1,7 @@
 
 import os
 
-from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sample_dev_as_pairs, \
+from dataset_specific.msmarco.passage.processed_resource_loader import load_msmarco_sample_dev_as_pairs, \
     load_msmarco_sample_a_as_pairs
 from misc_lib import path_join
 from tf_util.record_writer_wrap import write_records_w_encode_fn

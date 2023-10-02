@@ -8,7 +8,7 @@ def main():
     judgment_path = sys.argv[1]
     ranked_list_path = sys.argv[2]
     metric = sys.argv[3]
-    #""
+
     qrels = json.load(open(judgment_path, "r"))
     doc_scores = json.load(open(ranked_list_path, "r"))
     evaluator = RelevanceEvaluator(qrels, {metric})

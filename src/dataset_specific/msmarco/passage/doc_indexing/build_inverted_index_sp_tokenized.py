@@ -1,6 +1,5 @@
 import pickle
 
-import nltk
 from krovetzstemmer import Stemmer
 
 from adhoc.build_index import build_inverted_index_plus
@@ -10,7 +9,7 @@ from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarc
 from misc_lib import TELI
 from taskman_client.wrapper3 import JobContext
 from trainer_v2.chair_logging import c_log
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Tuple
 
 
 def common_index_preprocessing():
@@ -33,7 +32,7 @@ def common_index_preprocessing():
             tokens = doc_text.split()
             yield doc_id, apply_stem(tokens)
 
-    corpus_tokenized: List[Tuple[str, List[str]]] = list(iter_tokenized())
+    corpus_tokenized: List[Tuple[str, List[str]]] = iter_tokenized()
     ignore_voca = set()
     c_log.info("Building inverted index")
     outputs = build_inverted_index_plus(
@@ -41,14 +40,21 @@ def common_index_preprocessing():
         ignore_voca,
         num_docs=collection_size
     )
+    c_log.info("Building inverted Done")
 
     inverted_index = outputs["inverted_index"]
     dl = outputs["dl"]
     df = outputs["df"]
 
     conf = get_bm25_sp_stem_resource_path_helper()
+
+    c_log.info("Saving df")
     pickle.dump(df, open(conf.df_path, "wb"))
+
+    c_log.info("Saving dl")
     pickle.dump(dl, open(conf.dl_path, "wb"))
+
+    c_log.info("Saving inv_index")
     pickle.dump(inverted_index, open(conf.inv_index_path, "wb"))
 
 

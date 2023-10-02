@@ -2,7 +2,7 @@ from typing import Callable, List, Tuple, Iterable
 
 from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import predict_and_batch_save_scores, \
+from trainer_v2.per_project.transparency.mmp.eval_helper.mmp_eval_line_format import predict_and_batch_save_scores, \
     eval_dev_mrr
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 

@@ -7,10 +7,6 @@ def cand4():
     cut = 0.1
     mapping_val = 0.1
 
-    ph = get_cand2_1_path_helper()
-    table_path = ph.per_pair_candidates.fidelity_table_path
-    mapping = load_mapping_from_align_scores(table_path, cut, mapping_val)
-
     ph = get_cand4_path_helper()
     table_path = ph.per_pair_candidates.fidelity_table_path
     mapping2 = load_mapping_from_align_scores(table_path, cut, mapping_val)
