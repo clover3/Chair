@@ -1,0 +1,2 @@
+json_dir: output/msmarco/passage/candidate_building_tta11
+candidate_pair_save_path: output/msmarco/passage/align_candidates/tta11.tsv

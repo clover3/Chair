@@ -3,6 +3,7 @@ import gzip
 import random
 from typing import List, Iterable, Tuple, Any
 
+from adhoc.misc_helper import PosNegSampler
 from cache import load_pickle_from
 from cpath import at_data_dir, data_path, output_path
 from dataset_specific.msmarco.passage.path_helper import get_msmarco_passage_collection_path

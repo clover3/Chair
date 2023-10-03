@@ -1,7 +1,11 @@
 import csv
 
-from misc_lib import TEL, path_join
+from misc_lib import TEL, path_join, TimeEstimator
+from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import get_fidelity_save_name
+
+import csv
+import os
 
 
 def collect_scores_and_save(term_pair_list, fidelity_save_dir, save_path):
@@ -18,6 +22,31 @@ def collect_scores_and_save(term_pair_list, fidelity_save_dir, save_path):
             pass
         except FileNotFoundError:
             pass
+
+
+
+def collect_scores_and_save3(term_pair_list, fidelity_save_dir, save_path):
+    # Enumerate all files in the directory
+    c_log.info("enumerating directory files")
+    existing_files = set(os.listdir(fidelity_save_dir))
+
+    c_log.info("Opening files")
+    ticker = TimeEstimator(len(existing_files))
+    f_out = csv.writer(open(save_path, "w", encoding="utf-8"), dialect='excel-tab')
+    for todo in term_pair_list:
+        q_term, d_term = todo
+        save_name = get_fidelity_save_name(q_term, d_term)
+
+        # Check if the file exists in the enumerated files
+        if save_name in existing_files:
+            save_path_full = os.path.join(fidelity_save_dir, save_name)
+            try:
+                score = float(open(save_path_full, "r").read())
+                row = [q_term, d_term, score]
+                f_out.writerow(row)
+                ticker.tick()
+            except ValueError:
+                pass
 
 
 def collect_scores_and_save2(term_pair_list, fidelity_save_dir, save_path):

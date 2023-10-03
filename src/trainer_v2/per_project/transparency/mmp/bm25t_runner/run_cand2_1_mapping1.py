@@ -1,4 +1,4 @@
-from trainer_v2.per_project.transparency.mmp.bm25t_helper import load_mapping_from_align_scores, run_eval_with_bm25t
+from trainer_v2.per_project.transparency.mmp.bm25t_helper import load_mapping_from_align_scores, run_dev_rerank_eval_with_bm25t
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper2 import get_cand2_1_path_helper
 
 
@@ -11,7 +11,7 @@ def cand_2_1():
     table_name = f"cand2_1_cut01_mv1"
     run_name = f"bm25_{table_name}"
     mapping = load_mapping_from_align_scores(table_path, cut, mapping_val)
-    run_eval_with_bm25t(dataset, mapping, run_name)
+    run_dev_rerank_eval_with_bm25t(dataset, mapping, run_name)
 
 
 def main():

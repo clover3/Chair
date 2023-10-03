@@ -1,4 +1,4 @@
-from trainer_v2.per_project.transparency.mmp.bm25t_helper import load_mapping_from_align_scores, run_eval_with_bm25t
+from trainer_v2.per_project.transparency.mmp.bm25t_helper import load_mapping_from_align_scores, run_dev_rerank_eval_with_bm25t
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper2 import get_cand2_1_path_helper, \
     get_cand4_path_helper
 
@@ -14,7 +14,7 @@ def cand4():
     table_name = f"cand4"
     run_name = f"bm25_{table_name}"
     dataset = "dev_sample1000"
-    run_eval_with_bm25t(dataset, mapping2, run_name)
+    run_dev_rerank_eval_with_bm25t(dataset, mapping2, run_name)
 
 
 def main():
