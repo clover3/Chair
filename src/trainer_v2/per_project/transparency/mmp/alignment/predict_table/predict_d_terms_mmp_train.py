@@ -14,15 +14,15 @@ def predict_d_terms_per_job_and_save_temp(fetch_align_probe_fn):
     model_save_path = sys.argv[1]
     job_no = int(sys.argv[2])
     model_name = sys.argv[3]
-    dir_path = path_join(output_path, "msmarco", "passage",
+    save_dir_path = path_join(output_path, "msmarco", "passage",
                          f"candidate_building_{model_name}")
 
-    predict_d_terms_per_job_and_save(fetch_align_probe_fn, job_no, dir_path, model_save_path)
+    predict_d_terms_per_job_and_save(fetch_align_probe_fn, job_no, save_dir_path, model_save_path)
 
 
-def predict_d_terms_per_job_and_save(fetch_align_probe_fn, job_no, dir_path, model_save_path):
+def predict_d_terms_per_job_and_save(fetch_align_probe_fn, job_no, save_dir_path, model_save_path):
     def get_term_pair_candidate_building_path(job_no):
-        save_path = path_join(dir_path, f"{job_no}.jsonl")
+        save_path = path_join(save_dir_path, f"{job_no}.jsonl")
         return save_path
 
     tokenizer = get_tokenizer()

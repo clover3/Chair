@@ -1,0 +1,4 @@
+json_dir: output/msmarco/passage/candidate_building_tta12
+candidate_pair_save_path: output/msmarco/passage/align_candidates/tta12.tsv
+
+code: src/trainer_v2/per_project/transparency/mmp/alignment/predict_table/combine_galign_jsons.py

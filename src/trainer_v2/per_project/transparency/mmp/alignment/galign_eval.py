@@ -63,5 +63,5 @@ def galign_eval3_common(key, ):
     print_table(table)
     sig_score = all_scores[key, "f1"]
     run_name = os.path.basename(prediction_path)
-    proxy = get_task_manager_proxy()
-    proxy.report_number(run_name, sig_score, key, "f1")
+    # proxy = get_task_manager_proxy()
+    # proxy.report_number(run_name, sig_score, key, "f1")

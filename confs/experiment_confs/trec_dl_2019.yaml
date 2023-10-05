@@ -1,6 +1,7 @@
 
 
-
+dataset_name: TREC_DL_2019
 rerank_payload_path: output/msmarco/passage/rerank_payload/TREC_DL_2019.txt
 judgment_path: data/msmarco/passage/TREC_DL_2019/qrel.json
 metric: ndcg_cut_10
+data_size: 200000

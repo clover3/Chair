@@ -20,28 +20,28 @@ def bm25t_rerank_run_and_eval_from_scores(dataset, table_name, table_path):
     cut = 0.1
     mapping_val = 0.1
     mapping = load_mapping_from_align_scores(table_path, cut, mapping_val)
-    bm25t_rerank_run_and_eval(dataset, table_name, mapping)
+    bm25t_nltk_stem_rerank_run_and_eval(dataset, table_name, mapping)
 
 
 def bm25t_rerank_run_and_eval_from_list(dataset, table_name, table_path):
     mapping_val = 0.1
     mapping = load_mapping_from_align_candidate(table_path, mapping_val)
-    bm25t_rerank_run_and_eval(dataset, table_name, mapping)
+    bm25t_nltk_stem_rerank_run_and_eval(dataset, table_name, mapping)
 
 
-def bm25t_rerank_run_and_eval(dataset, table_name, mapping):
-    method_name = f"bm25_{table_name}"
+def bm25t_nltk_stem_rerank_run_and_eval(dataset, table_name, mapping):
+    run_name = f"bm25_{table_name}"
     metric = "ndcg_cut_10"
     base_run_name = "TREC_DL_2019_BM25_sp_stem"
-    bm25_conf_path = path_join("confs", "bm25_resource", "sp_stem.yaml")
+    bm25_conf_path = path_join("confs", "bm25_resource", "stem.yaml")
     bm25_conf = load_omega_config_with_dataclass(bm25_conf_path, BM25IndexResource)
     avdl, cdf, df, dl = get_bm25_stats_from_conf(bm25_conf)
     bm25 = BM25(df, cdf, avdl, 0.1, 100, 1.4)
     bm25t = BM25T(mapping, bm25.core)
     quad_tsv_path = get_rerank_payload_save_path(base_run_name)
     qd_iter: Iterable[Tuple[str, str]] = select_third_fourth(tsv_iter(quad_tsv_path))
-    run_name = f"{method_name}_{dataset}"
-    line_scores_path = path_join(output_path, "lines_scores", f"{run_name}.txt")
+    run_dataset_name = f"{run_name}_{dataset}"
+    line_scores_path = path_join(output_path, "lines_scores", f"{run_dataset_name}.txt")
 
     # Run predictions and save into lines
     predict_qd_itr_save_score_lines(
@@ -51,10 +51,10 @@ def bm25t_rerank_run_and_eval(dataset, table_name, mapping):
         200 * 1000)
 
     # Translate score lines into ranked list
-    ranked_list_path = path_join(output_path, "ranked_list", f"{run_name}.txt")
+    ranked_list_path = path_join(output_path, "ranked_list", f"{run_dataset_name}.txt")
     build_ranked_list_from_qid_pid_scores(
         quad_tsv_path,
-        run_name,
+        run_dataset_name,
         ranked_list_path,
         line_scores_path)
 

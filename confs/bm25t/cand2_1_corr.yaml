@@ -1,8 +1,9 @@
 
 bm25conf_path: confs/bm25_resource/stem.yaml
-table_path: output/msmarco/passage/align_candidates/candidate2_1_pos.tsv
-table_type: candidates
+table_path: output/msmarco/passage/align_scores/2_1_pos.txt
+table_type: scores
 run_name: bm25t_cand2_1_pos
 mapping_val: 0.1
+cut: 0.1
 
 dataset_conf_path: confs/experiment_confs/trec_dl_2019.yaml

@@ -1,7 +1,11 @@
 from typing import List, Tuple
 
-from misc_lib import select_first_second, group_by, get_first
+from adhoc.eval_helper.pytrec_helper import eval_by_pytrec_json_qrel, eval_by_pytrec
+from cpath import output_path
+
+from misc_lib import select_first_second, group_by, get_first, path_join
 from table_lib import tsv_iter
+from taskman_client.task_proxy import get_task_manager_proxy
 from trec.ranked_list_util import build_ranked_list
 from trec.trec_parse import write_trec_ranked_list_entry
 from trec.types import TrecRankedListEntry
@@ -26,3 +30,23 @@ def read_scores(scores_path):
     for line in open(scores_path, "r"):
         scores.append(float(line))
     return scores
+
+
+def build_ranked_list_from_line_scores_and_eval(
+        run_name, dataset_name, judgment_path, quad_tsv_path, scores_path,
+        metric):
+    ranked_list_path = path_join(output_path, "ranked_list", f"{run_name}_{dataset_name}.txt")
+    build_ranked_list_from_qid_pid_scores(
+        quad_tsv_path,
+        run_name,
+        ranked_list_path,
+        scores_path)
+
+    ret = eval_by_pytrec(
+        judgment_path,
+        ranked_list_path,
+        metric)
+
+    print(f"{metric}:\t{ret}")
+    proxy = get_task_manager_proxy()
+    proxy.report_number(run_name, ret, dataset_name, metric)

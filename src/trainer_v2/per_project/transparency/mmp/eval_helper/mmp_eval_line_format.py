@@ -48,15 +48,19 @@ def eval_dev_mrr(dataset, run_name):
 
 def eval_dev_ndcg(dataset, run_name):
     metric = "ndcg"
-    scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
+    scores_path = get_line_scores_path(run_name, dataset)
     qid_pid_path = path_join("data", "msmarco", dataset, "corpus.tsv")
     return eval_from_score_lines_dev(dataset, metric, qid_pid_path, run_name, scores_path)
 
 
+def get_line_scores_path(run_name, dataset):
+    scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
+    return scores_path
+
 
 def eval_test_ndcg(dataset, run_name):
     metric = "ndcg"
-    scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
+    scores_path = get_line_scores_path(run_name, dataset)
     qid_pid_path = get_dataset_quad_payload_path(dataset)
     return eval_from_score_lines_test(dataset, metric, qid_pid_path, run_name, scores_path)
 

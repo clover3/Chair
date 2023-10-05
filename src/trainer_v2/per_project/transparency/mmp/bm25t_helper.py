@@ -5,7 +5,7 @@ from adhoc.bm25_class import BM25
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
 from dataset_specific.msmarco.passage.path_helper import get_rerank_payload_save_path
 from misc_lib import select_third_fourth
-from table_lib import tsv_iter
+from table_lib import tsv_iter, tsv_iter_no_quote
 from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.bm25t import BM25T
@@ -45,13 +45,18 @@ def load_mapping_from_align_candidate(
 
 
 def load_binary_mapping_from_align_candidate(tsv_path) -> Dict[str, List[str]]:
-    rows = tsv_iter(tsv_path)
+    c_log.debug("load_binary_mapping_from_align_candidate")
+
+    rows = tsv_iter_no_quote(tsv_path)
 
     n_entry = 0
     mapping = defaultdict(list)
-    for q_term, d_term in rows:
+    for row in rows:
+        q_term, d_term = row
         mapping[q_term].append(d_term)
         n_entry += 1
+        assert "\n" not in q_term
+        assert "\n" not in d_term
 
     c_log.info("%d entry loaded", n_entry)
     return mapping
@@ -59,7 +64,7 @@ def load_binary_mapping_from_align_candidate(tsv_path) -> Dict[str, List[str]]:
 
 def load_binary_mapping_from_align_scores(
         tsv_path, cut) -> Dict[str, List[str]]:
-    rows = tsv_iter(tsv_path)
+    rows = tsv_iter_no_quote(tsv_path)
 
     n_entry = 0
     mapping = defaultdict(list)

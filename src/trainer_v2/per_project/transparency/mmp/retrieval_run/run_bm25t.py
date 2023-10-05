@@ -1,6 +1,8 @@
 import sys
+from collections import defaultdict
 
 from omegaconf import OmegaConf
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from adhoc.bm25_retriever import build_bm25_scoring_fn
 from adhoc.other.bm25t_retriever import BM25T_Retriever
@@ -18,6 +20,18 @@ def get_bm25t_retriever_from_conf(conf):
     avdl, cdf, df, dl, inv_index = load_bm25_resources(bm25_conf)
     scoring_fn = build_bm25_scoring_fn(cdf, avdl)
     mapping_val = 0.1
+    table = load_table_from_conf(conf)
+    return BM25T_Retriever(inv_index, df, dl, scoring_fn, table, mapping_val)
+
+
+def to_value_dict(table: Dict[str, List[str]], value: float) -> Dict[str, Dict[str, float]]:
+    output_table = defaultdict(dict)
+    for key, term_list in table.items():
+        output_table[key] = {t: value for t in term_list}
+    return output_table
+
+
+def load_table_from_conf(conf) -> Dict[str, List[str]]:
     if conf.table_type == "candidates":
         table = load_binary_mapping_from_align_candidate(conf.table_path)
     else:
@@ -26,7 +40,7 @@ def get_bm25t_retriever_from_conf(conf):
             cut = 0
         table = load_binary_mapping_from_align_scores(
             conf.table_path, cut)
-    return BM25T_Retriever(inv_index, df, dl, scoring_fn, table, mapping_val)
+    return table
 
 
 def main():

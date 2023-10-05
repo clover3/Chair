@@ -22,3 +22,10 @@ def tsv_iter(file_path) -> Iterable[Tuple]:
     f = open(file_path, "r", encoding="utf-8", errors="ignore")
     reader = csv.reader(f, delimiter='\t')
     return reader
+
+
+def tsv_iter_no_quote(file_path) -> Iterable[Tuple]:
+    f = open(file_path, "r", encoding="utf-8", errors="ignore")
+    for line in f:
+        row = line.strip().split("\t")
+        yield row

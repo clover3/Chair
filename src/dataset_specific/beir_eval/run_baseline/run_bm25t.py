@@ -22,6 +22,7 @@ def load_bm25t_retriever(dataset, table_path) -> BM25T_Retriever:
     scoring_fn = build_bm25_scoring_fn(cdf, avdl)
 
     table: Dict[str, List[str]] = load_binary_mapping_from_align_scores(table_path, 0.1)
+
     retriever = BM25T_Retriever(inv_index, df, dl, scoring_fn, table)
     return retriever
 
