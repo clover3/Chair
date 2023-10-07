@@ -2,9 +2,13 @@ from typing import Iterable
 
 from list_lib import apply_batch
 from misc_lib import TELI, ceil_divide, TimeEstimator
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
-def predict_qd_itr_save_score_lines(score_fn, itr, scores_path, data_size):
+def predict_qd_itr_save_score_lines(
+        score_fn: Callable[[str, str], float],
+        itr: Iterable[Tuple[str, str]],
+        scores_path, data_size):
     f = open(scores_path, "w")
     if data_size:
         itr = TELI(itr, data_size)
@@ -13,7 +17,10 @@ def predict_qd_itr_save_score_lines(score_fn, itr, scores_path, data_size):
         f.write("{}\n".format(score))
 
 
-def score_and_save_score_lines(itr, score_fn, scores_path, max_batch_size, data_size):
+def batch_score_and_save_score_lines(
+        score_fn: Callable[[List[Tuple[str, str]]], Iterable[float]],
+        itr: Iterable[Tuple[str, str]],
+        scores_path, data_size, max_batch_size):
     f = open(scores_path, "w")
     if data_size:
         n_batch = ceil_divide(data_size, max_batch_size)

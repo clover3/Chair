@@ -1,12 +1,12 @@
 import gzip
 
+from data_generator2.segmented_enc.es_common.es_two_seg_common import PairData
 from dataset_specific.mnli.mnli_reader import NLIPairData
 from dataset_specific.msmarco.passage.grouped_reader import get_train_neg5_sample_path
 from dataset_specific.msmarco.passage.path_helper import get_train_triples_path
-from misc_lib import TimeEstimator
 from table_lib import tsv_iter
 from trainer_v2.per_project.transparency.mmp.data_enum import enum_pos_neg_pointwise
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import Iterable
 
 
 def iter_train_data_as_nli_pair(parition_no) -> Iterable[NLIPairData]:
@@ -28,6 +28,16 @@ def iter_qd_sample_as_nli_pair(partition_no):
         data_id = str(partition_no) + "{0:8d}".format(cnt)
         yield NLIPairData(doc, query, str(label), data_id)
         cnt += 1
+
+
+def iter_qd_sample_as_pair_data(partition_no) -> Iterable[PairData]:
+    itr = tsv_iter(get_train_neg5_sample_path(partition_no))
+    cnt = 0
+    for query, doc, label in itr:
+        data_id = str(partition_no) + "{0:8d}".format(cnt)
+        yield PairData(query, doc, str(label), data_id)
+        cnt += 1
+
 
 
 def iter_train_triples_as_nli_pair(job_no=None) -> Iterable[NLIPairData]:

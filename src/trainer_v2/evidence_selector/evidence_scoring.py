@@ -9,6 +9,10 @@ def cross_entropy(pred_prob, gold_prob) -> float:
     return float(np.sum(v))
 
 
+def mean_absolute_error(pred, gold) -> float:
+    return float(np.sum(np.abs(pred - gold)))
+
+
 def length_loss(num_used, max_num_tokens):
     return num_used / max_num_tokens
 

@@ -2,8 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict
 
 import tensorflow as tf
-
-import trainer_v2.per_project.transparency.mmp.probe.probe_common
+Metric = tf.keras.metrics.Metric
 
 
 class TrainerIFBase(ABC):
@@ -24,11 +23,11 @@ class TrainerIFBase(ABC):
         pass
 
     @abstractmethod
-    def get_train_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
+    def get_train_metrics(self) -> Dict[str, Metric]:
         pass
 
     @abstractmethod
-    def get_eval_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
+    def get_eval_metrics(self) -> Dict[str, Metric]:
         pass
 
     @abstractmethod

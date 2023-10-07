@@ -6,6 +6,7 @@ from misc_lib import tensor_to_list
 from trainer_v2.evidence_selector.defs import RLStateTensor
 from trainer_v2.evidence_selector.environment import ConcatMaskStrategyI, PEInfoFromCount, IDS
 from trainer_v2.evidence_selector.evidence_candidates import get_st_ed
+from trainer_v2.evidence_selector.evidence_scoring import cross_entropy, mean_absolute_error
 
 
 class ConcatMaskStrategyQD(ConcatMaskStrategyI):
@@ -32,7 +33,17 @@ class ConcatMaskStrategyQD(ConcatMaskStrategyI):
         return tensor_to_list(new_input_ids), tensor_to_list(segment_ids)
 
 
-def get_pe_for_qd(base_pred, rep_pred, action, state):
+def get_pe_for_qd_ce(base_pred, rep_pred, action, state):
+    return get_pe_for_qd_inner(base_pred, rep_pred, action, state, cross_entropy)
+
+
+
+def get_pe_for_qd_mae(base_pred, rep_pred, action, state):
+    return get_pe_for_qd_inner(base_pred, rep_pred, action, state, mean_absolute_error)
+
+
+
+def get_pe_for_qd_inner(base_pred, rep_pred, action, state, get_error_fn):
     def get_doc_len(state: RLStateTensor):
         seg2_start, seg2_end = get_st_ed(state.segment_ids_np)
         return seg2_end - seg2_start
@@ -49,4 +60,4 @@ def get_pe_for_qd(base_pred, rep_pred, action, state):
     num_used = int(np.sum(valid_action).tolist())
     # num_used = 5
     # n_p_tokens = 10
-    return PEInfoFromCount(base_pred, rep_pred, num_used, n_p_tokens)
+    return PEInfoFromCount(base_pred, rep_pred, num_used, n_p_tokens, get_error_fn)

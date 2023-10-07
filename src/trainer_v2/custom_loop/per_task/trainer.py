@@ -4,6 +4,7 @@ import tensorflow as tf
 from tensorflow.python.distribute.distribute_lib import Strategy
 
 import trainer_v2.per_project.transparency.mmp.probe.probe_common
+from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
 from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
@@ -99,7 +100,21 @@ class Trainer(TrainerIF):
             self.inner_model.build_model(self.bert_params, self.model_config)
             self.keras_model = self.inner_model.get_keras_model()
             self.keras_model.summary(140)
-            optimizer = AdamWeightDecay(learning_rate=run_config.train_config.learning_rate,
+
+            if self.run_config.train_config.learning_rate_scheduling:
+                c_log.info("Use learning rate scheduling")
+                decay_steps = run_config.train_config.train_step
+                lr_schedule = tf.keras.optimizers.schedules.PolynomialDecay(
+                    run_config.train_config.learning_rate,
+                    decay_steps,
+                    end_learning_rate=0,
+                    power=1.0,
+                    cycle=False,
+                    name=None
+                )
+            else:
+                lr_schedule = run_config.train_config.learning_rate
+            optimizer = AdamWeightDecay(learning_rate=lr_schedule,
                                         exclude_from_weight_decay=[],
                                         )
             self.keras_model.optimizer = optimizer

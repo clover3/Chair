@@ -35,6 +35,16 @@ def read_scores(scores_path):
 def build_ranked_list_from_line_scores_and_eval(
         run_name, dataset_name, judgment_path, quad_tsv_path, scores_path,
         metric):
+    """
+    Use line scores to generate TREC style ranked list
+    :param run_name:
+    :param dataset_name:
+    :param judgment_path:
+    :param quad_tsv_path:
+    :param scores_path:
+    :param metric:
+    :return:
+    """
     ranked_list_path = path_join(output_path, "ranked_list", f"{run_name}_{dataset_name}.txt")
     build_ranked_list_from_qid_pid_scores(
         quad_tsv_path,

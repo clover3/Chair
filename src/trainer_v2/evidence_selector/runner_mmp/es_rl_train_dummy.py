@@ -12,7 +12,7 @@ from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2_nli, 
 from trainer_v2.custom_loop.train_loop import tf_run
 
 from trainer_v2.evidence_selector.environment import PEInfoFromCount, PEPEnvironment, PEPClient
-from trainer_v2.evidence_selector.environment_qd import ConcatMaskStrategyQD, get_pe_for_qd
+from trainer_v2.evidence_selector.environment_qd import ConcatMaskStrategyQD, get_pe_for_qd_ce
 from trainer_v2.evidence_selector.runner_mmp.dataset_fn import build_state_dataset_fn
 from trainer_v2.evidence_selector.seq_pred_policy_gradient import SeqPredREINFORCE
 from trainer_v2.evidence_selector.policy_function_for_evidence_selector import SequenceLabelPolicyFunction
@@ -25,7 +25,7 @@ def main(args):
     src_model_config = ModelConfig512_2()
     model_config = ModelConfig256_2()
     concat_mask = ConcatMaskStrategyQD()
-    get_partial_evidence_info_fn = get_pe_for_qd
+    get_partial_evidence_info_fn = get_pe_for_qd_ce
 
     c_log.setLevel(logging.DEBUG)
 

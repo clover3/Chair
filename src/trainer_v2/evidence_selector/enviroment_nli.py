@@ -9,6 +9,7 @@ from trainer_v2.evidence_selector.defs import RLStateTensor
 from trainer_v2.evidence_selector.environment import PEInfoFromCount, IDS, concat_two_items, unconcat, \
     ConcatMaskStrategyI
 from trainer_v2.evidence_selector.evidence_candidates import get_st_ed
+from trainer_v2.evidence_selector.evidence_scoring import cross_entropy
 from trainer_v2.reinforce.monte_carlo_policy_function import SA
 from utils.xml_rpc_helper import ServerProxyEx
 
@@ -91,4 +92,4 @@ def get_pe_info_nli(base_pred, rep_pred, action, state):
     n_p_tokens = get_n_p_tokens(state)
     valid_action = get_valid_action(state, action)
     num_used = int(np.sum(valid_action).tolist())
-    return PEInfoFromCount(base_pred, rep_pred, num_used, n_p_tokens)
+    return PEInfoFromCount(base_pred, rep_pred, num_used, n_p_tokens, cross_entropy)

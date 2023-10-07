@@ -40,20 +40,23 @@ class PEInfoI:
 
 class PEInfoFromCount(PEInfoI):
     def __init__(self, base_pred: List[float], rep_pred: List[float],
-                 num_used: int, max_n_tokens: int):
+                 num_used: int, max_n_tokens: int, error_fn):
         self.base_pred = base_pred
         self.rep_pred = rep_pred
         self.num_used = num_used
         self.max_n_tokens = max_n_tokens
+        self.error_fn = error_fn
 
     def get_error(self):
-        err = cross_entropy(np.array(self.base_pred), np.array(self.rep_pred))  # [0, inf]
+        err = self.error_fn(np.array(self.base_pred), np.array(self.rep_pred))  # [0, inf]
         return err
 
     def density(self):
         return length_loss(self.num_used, self.max_n_tokens)
 
     def combined_score(self):
+        # error reward is 10 - error
+        # density reward is - 0.05 * density
         tolerance = 0.05
         err_cap = 10
         err = self.get_error()

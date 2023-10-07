@@ -88,11 +88,11 @@ class PolicyGradientTrainer(TrainerIF):
         base_reward = item['base_reward']
         sample_reward_list = item['sample_reward_list']
         with tf.GradientTape() as tape:
-            neg_log_p_action = -self.policy_func.get_log_action_prob(state, sample_actions) # [B, K]
-            # higher / closer to zero indicates preferable actions
-            added_reward = sample_reward_list # - tf.expand_dims(base_reward, axis=1)  #[ B, K]
+            # closer to zero indicates preferable actions
+            log_p_action = self.policy_func.get_log_action_prob(state, sample_actions) # [B, K]
             # reward are higher the better
-            loss = tf.multiply(added_reward, neg_log_p_action)  # [B, K]
+            log_expected_reward = tf.multiply(sample_reward_list, log_p_action)
+            loss = -log_expected_reward  # [B, K]
             loss = tf.reduce_mean(loss)
 
         gradients = tape.gradient(loss, model.trainable_variables)

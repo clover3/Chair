@@ -5,6 +5,19 @@ from trainer_v2.custom_loop.definitions import ModelConfig512_1, ModelConfig512_
 from utils.xml_rpc_helper import ServerProxyEx
 
 
+def replace_mask(tokens):
+    i = 0
+    out_tokens = []
+    while i < len(tokens):
+        if i+2 < len(tokens) and tokens[i] == "[" and tokens[i+1] == "mask" and tokens[i+2] == "]":
+            out_tokens.append("[MASK]")
+            i += 3
+        else:
+            out_tokens.append(tokens[i])
+            i += 1
+    return out_tokens
+
+
 def main():
     model_config = ModelConfig512_2()
     tokenizer = get_tokenizer()
@@ -12,15 +25,17 @@ def main():
 
     server_addr = "localhost"
     proxy = ServerProxyEx(server_addr, LOCAL_DECISION_PORT)
+    def tokenize(text):
+        return replace_mask(tokenizer.tokenize(text))
 
     tokenizer = get_tokenizer()
     while True:
         sent1 = input("(Partial) Document: ")
         sent2_1 = input("(Partial) Query1: ")
         sent2_2 = input("(Partial) Query2: ")
-        d_tokens = tokenizer.tokenize(sent1)
-        q_first = tokenizer.tokenize(sent2_1)
-        q_second = tokenizer.tokenize(sent2_2)
+        d_tokens = tokenize(sent1)
+        q_first = tokenize(sent2_1)
+        q_second = tokenize(sent2_2)
         print(d_tokens)
         print(q_first)
         print(q_second)

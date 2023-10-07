@@ -4,7 +4,6 @@ import numpy as np
 
 from data_generator2.segmented_enc.es_nli.common import HSegmentedPair, PHSegmentedPair
 
-SegmentedPair2 = PHSegmentedPair
 
 def get_delete_indices(attn_merged, e: HSegmentedPair) -> List[List[int]]:
     """
@@ -54,3 +53,6 @@ def get_delete_indices(attn_merged, e: HSegmentedPair) -> List[List[int]]:
         delete_indices = list(np.argsort(h_part_i_mean)[:n_delete])
         delete_indices_list.append(delete_indices)
     return delete_indices_list
+
+
+

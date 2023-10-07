@@ -1,0 +1,7 @@
+
+
+
+run_name: mmp1
+model_path: output/model/runs/mmp1
+dataset_conf_path: confs/experiment_confs/mmp_dev_sample1000.yaml
+outer_batch_size: 1024

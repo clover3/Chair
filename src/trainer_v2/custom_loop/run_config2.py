@@ -41,6 +41,7 @@ class TrainConfig(SubConfig):
                  init_checkpoint="",
                  checkpoint_type="bert",
                  do_shuffle=True,
+                 learning_rate_scheduling=""
                  ):
         self.learning_rate = learning_rate
         self.eval_every_n_step = eval_every_n_step
@@ -49,6 +50,7 @@ class TrainConfig(SubConfig):
         self.init_checkpoint = init_checkpoint
         self.checkpoint_type = checkpoint_type
         self.do_shuffle = do_shuffle
+        self.learning_rate_scheduling = learning_rate_scheduling
 
         if steps_per_epoch == -1:
             self.steps_per_epoch = train_step

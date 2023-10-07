@@ -12,7 +12,7 @@ from dataset_specific.msmarco.passage.processed_resource_loader import load_msma
     get_dataset_quad_payload_path
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import predict_qd_itr_save_score_lines, \
-    score_and_save_score_lines
+    batch_score_and_save_score_lines
 from trec.qrel_parse import load_qrels_structured
 from trec.trec_parse import load_ranked_list_grouped
 from trec.types import TrecRankedListEntry
@@ -135,7 +135,7 @@ def predict_and_batch_save_scores(
     itr = iter(load_msmarco_sub_samples_as_qd_pair(dataset))
     max_batch_size = 1024
     scores_path = path_join(output_path, "lines_scores", f"{run_name}_{dataset}.txt")
-    score_and_save_score_lines(itr, score_fn, scores_path, max_batch_size, data_size)
+    batch_score_and_save_score_lines(score_fn, itr, scores_path, data_size, max_batch_size)
 
 
 def main():

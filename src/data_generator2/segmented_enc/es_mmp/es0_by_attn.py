@@ -1,14 +1,13 @@
 import pickle
 import sys
-from typing import List, Iterable
+from typing import Iterable
 
 from transformers import AutoTokenizer
 
+from data_generator2.segmented_enc.es_mmp.iterate_mmp import iter_qd_sample_as_nli_pair
 from data_generator2.segmented_enc.es_nli.common import HSegmentedPair, PHSegmentedPair
 from data_generator2.segmented_enc.es_nli.compute_delete_indices_by_attn import compute_attn_sel_delete_indices
-from data_generator2.segmented_enc.es_nli.path_helper import get_evidence_selected0_path, get_mmp_es0_path
-from data_generator2.segmented_enc.es_mmp.iterate_mmp import iter_train_data_as_nli_pair, \
-    iter_train_triples_as_nli_pair, iter_qd_sample_as_nli_pair
+from data_generator2.segmented_enc.es_nli.path_helper import get_mmp_es0_path
 from data_generator2.segmented_enc.seg_encoder_common import get_random_split_location
 from dataset_specific.mnli.mnli_reader import NLIPairData
 from trainer_v2.custom_loop.attention_helper.attention_extractor_hf import load_mmp1_attention_extractor

@@ -29,10 +29,11 @@ def delete_seg1(total_len, seg2_st):
 
 class SequenceLabelPolicyFunction(PolicyFunction):
     # State : input_ids, segment_ids
-    def __init__(self, model, k=10):
+    def __init__(self, model, num_sample=10, valid_seg="first"):
         self.model = model
-        self.k = k
+        self.num_sample = num_sample
         self.epsilon = 0.5
+        self.valid_seg = valid_seg
 
     def __dummy_model(self, item):
         input_ids, segment_ids = item
@@ -49,8 +50,8 @@ class SequenceLabelPolicyFunction(PolicyFunction):
         c_log.debug("SequenceLabelPolicyFunction sample_actions Before model")
         proba_dist = self.model(state_tensor)  # [B, L, 2]
         c_log.debug("SequenceLabelPolicyFunction sample_actions After model")  # 10 Sect
-        n_dist = int(self.epsilon * self.k)
-        n_random = self.k - n_dist
+        n_dist = int(self.epsilon * self.num_sample)
+        n_random = self.num_sample - n_dist
 
         c_log.debug("SequenceLabelPolicyFunction sample_actions Samples {} dist".format(n_dist))
         dist_sample = self._get_dist_sample(proba_dist, n_dist)
@@ -110,7 +111,12 @@ class SequenceLabelPolicyFunction(PolicyFunction):
                             ) -> tf.Tensor:
         # [Batch, Number of Samples]
         input_ids, segment_ids = state
-        is_first_seg = tf.logical_and(tf.equal(segment_ids, 0), tf.not_equal(input_ids, 0))
+        if self.valid_seg == "first":
+            is_valid_action = tf.logical_and(tf.equal(segment_ids, 0), tf.not_equal(input_ids, 0))
+        elif self.valid_seg == "second":
+            is_valid_action = tf.logical_and(tf.equal(segment_ids, 1), tf.not_equal(input_ids, 0))
+        else:
+            raise ValueError()
         eps = 1e-9
 
         proba_dist = self.model(state)  # [B, L]
@@ -119,7 +125,7 @@ class SequenceLabelPolicyFunction(PolicyFunction):
         action_list_f = tf.cast(action_list, tf.float32)
         masked_prob = tf.multiply(proba_dist_ex, action_list_f)
         prob_for_each_dim = tf.reduce_sum(masked_prob, axis=3)  # [B, K, L]
-        is_valid_action_mask = tf.cast(tf.expand_dims(is_first_seg, axis=1), tf.float32)  # [B, 1, L]
+        is_valid_action_mask = tf.cast(tf.expand_dims(is_valid_action, axis=1), tf.float32)  # [B, 1, L]
         log_prob = tf.math.log(prob_for_each_dim)
         log_prob = tf.multiply(log_prob, is_valid_action_mask)
         n_valid = tf.reduce_sum(is_valid_action_mask, axis=2) + eps #[B, 1]

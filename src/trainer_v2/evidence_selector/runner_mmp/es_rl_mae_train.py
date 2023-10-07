@@ -11,7 +11,7 @@ from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
 from trainer_v2.custom_loop.train_loop import tf_run
 
 from trainer_v2.evidence_selector.environment import PEPEnvironment, PEPClient
-from trainer_v2.evidence_selector.environment_qd import ConcatMaskStrategyQD, get_pe_for_qd_ce
+from trainer_v2.evidence_selector.environment_qd import ConcatMaskStrategyQD, get_pe_for_qd_mae
 from trainer_v2.evidence_selector.runner_mmp.dataset_fn import build_state_dataset_fn
 from trainer_v2.evidence_selector.seq_pred_policy_gradient import SeqPredREINFORCE
 from trainer_v2.evidence_selector.policy_function_for_evidence_selector import SequenceLabelPolicyFunction
@@ -20,11 +20,11 @@ from trainer_v2.train_util.arg_flags import flags_parser
 
 
 def main(args):
-    c_log.info("Start Train es_rl_train.py")
+    c_log.info(__file__)
     src_model_config = ModelConfig512_2()
     model_config = ModelConfig256_2()
     concat_mask = ConcatMaskStrategyQD()
-    get_partial_evidence_info_fn = get_pe_for_qd_ce
+    get_partial_evidence_info_fn = get_pe_for_qd_mae
 
     server = "localhost"
     if "PEP_SERVER" in os.environ:
@@ -52,13 +52,16 @@ def main(args):
         summary_writer
     )
 
+    def policy_func_factory(model):
+        return SequenceLabelPolicyFunction(model, 10, "second")
+
     # Trainer for TF policy model update
     trainer: PolicyGradientTrainer = PolicyGradientTrainer(
         bert_params,
         model_config,
         run_config,
         task_model,
-        SequenceLabelPolicyFunction,
+        policy_func_factory,
         reinforce
     )
     tf_run(run_config, trainer, trainer.build_dataset)
