@@ -1,7 +1,7 @@
 import xmlrpc.client
 
 from cpath import at_output_dir
-from dataset_specific.msmarco.passage.passage_resource_loader import load_msmarco_sample_dev_as_pairs
+from dataset_specific.msmarco.passage.processed_resource_loader import load_msmarco_sample_dev_as_pairs
 from misc_lib import write_to_lines
 
 

@@ -24,7 +24,8 @@ def main(args):
     eval_files_path = os.path.join(output_path, "align", "evidence_prediction", "train")
     tokenizer = get_tokenizer()
     MASK_ID = tokenizer.wordpiece_tokenizer.vocab["[MASK]"]
-    dataset = get_sequence_labeling_dataset(eval_files_path, run_config, ModelConfig600_3(), False)
+    model_config = ModelConfig600_3()
+    dataset = get_sequence_labeling_dataset(eval_files_path, run_config, model_config, False)
     for batch in dataset:
         x, y = batch
         output = model.predict_on_batch(x)
