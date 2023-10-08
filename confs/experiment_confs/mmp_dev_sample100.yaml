@@ -1,0 +1,7 @@
+
+
+dataset_name: dev_sample100
+rerank_payload_path: data/msmarco/dev_sample100/corpus.tsv
+judgment_path: data/msmarco/qrels.dev.tsv
+metric: recip_rank
+data_size: 10000

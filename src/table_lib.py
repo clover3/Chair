@@ -29,3 +29,10 @@ def tsv_iter_no_quote(file_path) -> Iterable[Tuple]:
     for line in f:
         row = line.strip().split("\t")
         yield row
+
+
+def print_positive_entry(file_read):
+    for e in tsv_iter(file_read):
+        score = float(e[2])
+        if score > 0:
+            print("\t".join(e))

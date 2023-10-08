@@ -1,0 +1,9 @@
+
+bm25conf_path: confs/bm25_resource/stem.yaml
+table_path: output/msmarco/passage/fidelity_2_2_pos.tsv
+table_type: scores
+run_name: bm25t_cand2_2
+mapping_val: 0.1
+cut: 0.1
+
+dataset_conf_path: confs/experiment_confs/mmp_dev_sample1000.yaml

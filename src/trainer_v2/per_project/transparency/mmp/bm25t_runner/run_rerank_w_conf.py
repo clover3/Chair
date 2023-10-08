@@ -1,3 +1,7 @@
+import sys
+
+from omegaconf import OmegaConf
+
 from adhoc.bm25_class import BM25
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
 from trainer_v2.per_project.transparency.mmp.bm25t import BM25T
@@ -18,7 +22,9 @@ def get_bm25t_scorer_fn(conf):
 
 def main():
     get_scorer_fn = get_bm25t_scorer_fn
-    run_rerank_with_conf_common(get_scorer_fn)
+    conf_path = sys.argv[1]
+    conf = OmegaConf.load(conf_path)
+    run_rerank_with_conf_common(conf, get_scorer_fn)
 
 
 

@@ -21,7 +21,7 @@ from typing import List, Iterable, Callable, Dict, Tuple
 
 
 def eval_dev100_for_tune(dataset, run_name):
-    metric = "ndcg"
+    metric = "recip_rank"
     scores_path = path_join(output_path, "lines_scores", "tune", f"{run_name}_{dataset}.txt")
     qid_pid_path = path_join("data", "msmarco", dataset, "corpus.tsv")
     judgment_path = path_join("data", "msmarco", "qrels.dev.tsv")

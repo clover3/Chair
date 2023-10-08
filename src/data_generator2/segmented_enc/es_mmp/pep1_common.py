@@ -9,10 +9,15 @@ from data_generator2.segmented_enc.es_common.es_two_seg_common import BothSegPar
 from data_generator2.segmented_enc.hf_encode_helper import combine_with_sep_cls_and_pad, encode_pair
 from tlm.data_gen.base import concat_tuple_windows
 from trainer_v2.chair_logging import c_log
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
-def get_ph_segment_pair_encode_fn(tokenizer, segment_len: int):
+def get_ph_segment_pair_encode_fn(tokenizer, segment_len: int) -> Callable[[PHSegmentedPair], OrderedDict]:
     def encode_fn(e: PHSegmentedPair) -> OrderedDict:
+        triplet = tokenize_encode_ph_segmented_pair(e)
+        return encode_pair(triplet, int(e.nli_pair.label))
+
+    def tokenize_encode_ph_segmented_pair(e):
         tuple_list = []
         for i in [0, 1]:
             partial_passage: List[str] = e.get_partial_prem(i)
@@ -21,8 +26,23 @@ def get_ph_segment_pair_encode_fn(tokenizer, segment_len: int):
                 tokenizer, partial_query, partial_passage, segment_len)
             tuple_list.append((input_ids, segment_ids))
         triplet = concat_tuple_windows(tuple_list, segment_len)
-        return encode_pair(triplet, int(e.nli_pair.label))
+        return triplet
+
     return encode_fn
+
+
+def ph_segment_to_input_ids(tokenizer, segment_len: int) -> Callable[[PHSegmentedPair], Tuple]:
+    def func(e) -> Tuple:
+        tuple_list = []
+        for i in [0, 1]:
+            partial_passage: List[str] = e.get_partial_prem(i)
+            partial_query: List[str] = e.get_partial_hypo(i)
+            input_ids, segment_ids = combine_with_sep_cls_and_pad(
+                tokenizer, partial_query, partial_passage, segment_len)
+            tuple_list.append((input_ids, segment_ids))
+        input_ids, segment_ids = concat_tuple_windows(tuple_list, segment_len)
+        return input_ids, segment_ids
+    return func
 
 
 def load_ph_segmented_pair(partition_no) -> List[PHSegmentedPair]:

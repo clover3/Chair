@@ -38,18 +38,21 @@ def bm25t_nltk_stem_rerank_run_and_eval(dataset, table_name, mapping):
     avdl, cdf, df, dl = get_bm25_stats_from_conf(bm25_conf)
     bm25 = BM25(df, cdf, avdl, 0.1, 100, 1.4)
     bm25t = BM25T(mapping, bm25.core)
+    score_fn = bm25t.score
+    rerank_mmp(base_run_name, dataset, metric, run_name, score_fn)
+
+
+def rerank_mmp(base_run_name, dataset, metric, run_name, score_fn):
     quad_tsv_path = get_rerank_payload_save_path(base_run_name)
     qd_iter: Iterable[Tuple[str, str]] = select_third_fourth(tsv_iter(quad_tsv_path))
     run_dataset_name = f"{run_name}_{dataset}"
     line_scores_path = path_join(output_path, "lines_scores", f"{run_dataset_name}.txt")
-
     # Run predictions and save into lines
     predict_qd_itr_save_score_lines(
-        bm25t.score,
+        score_fn,
         qd_iter,
         line_scores_path,
         200 * 1000)
-
     # Translate score lines into ranked list
     ranked_list_path = path_join(output_path, "ranked_list", f"{run_dataset_name}.txt")
     build_ranked_list_from_qid_pid_scores(
@@ -57,7 +60,6 @@ def bm25t_nltk_stem_rerank_run_and_eval(dataset, table_name, mapping):
         run_dataset_name,
         ranked_list_path,
         line_scores_path)
-
     # evaluate
     judgment_path = get_mmp_test_qrel_json_path(dataset)
     ret = eval_by_pytrec_json_qrel(

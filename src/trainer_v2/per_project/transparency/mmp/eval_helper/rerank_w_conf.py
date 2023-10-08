@@ -1,8 +1,8 @@
 import logging
 import sys
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, Union
 
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, DictConfig
 
 from adhoc.eval_helper.line_format_to_trec_ranked_list import build_ranked_list_from_line_scores_and_eval
 from misc_lib import select_third_fourth
@@ -11,13 +11,17 @@ from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import predict_qd_itr_save_score_lines, \
     batch_score_and_save_score_lines
 from trainer_v2.per_project.transparency.mmp.eval_helper.mmp_eval_line_format import get_line_scores_path
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
-def run_rerank_with_conf_common(get_scorer_fn):
-    conf_path = sys.argv[1]
+BatchScorer = Callable[[List[Tuple[str, str]]], Iterable[float]]
+PointScorer = Callable[[Tuple[str, str]], float]
+ScorerSig = Union[BatchScorer, PointScorer]
+
+
+def run_rerank_with_conf_common(conf, get_scorer_fn: Callable[[DictConfig], ScorerSig]):
     c_log.setLevel(logging.DEBUG)
     # run config
-    conf = OmegaConf.load(conf_path)
     run_name = conf.run_name
     # Dataset config
     dataset_conf_path = conf.dataset_conf_path
