@@ -1,0 +1,8 @@
+
+bm25conf_path: confs/bm25_resource/stem.yaml
+table_path: output/msmarco/passage/align_candidates/empty.txt
+table_type: candidates
+run_name: bm25t_empty
+mapping_val: 0.1
+
+dataset_conf_path: confs/experiment_confs/mmp_dev_sample100.yaml
