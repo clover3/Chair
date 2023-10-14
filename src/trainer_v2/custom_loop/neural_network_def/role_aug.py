@@ -8,7 +8,8 @@ from trainer_v2.bert_for_tf2.w_mask.transformer import TransformerEncoderLayerWM
 from trainer_v2.custom_loop.modeling_common.bert_common import load_stock_weights, define_bert_input, \
     load_stock_weights_encoder_only, load_stock_weights_embedding
 from trainer_v2.custom_loop.modeling_common.network_utils import VectorThreeFeature, \
-    MeanProjectionEnc, TwoLayerDense, ChunkAttentionMaskLayer
+    TwoLayerDense, ChunkAttentionMaskLayer
+from trainer_v2.custom_loop.modeling_common.bert_tf2_network_utils import MeanProjectionEnc
 from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig2SegProject
 

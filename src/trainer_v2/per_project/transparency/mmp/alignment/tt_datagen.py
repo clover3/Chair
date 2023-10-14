@@ -36,6 +36,31 @@ def get_encode_fn():
     return encode_fn
 
 
+def get_pairwise_encode_fn():
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+    seen = set()
+    max_length = 1
+    def encode_term(term):
+        tokens = tokenizer.tokenize(term)
+        input_ids = tokenizer.convert_tokens_to_ids(tokens)
+        if len(tokens) > 1:
+            if term not in seen:
+                print(f"Term {term} has {len(tokens)} tokens")
+                seen.add(term)
+        input_ids = input_ids[:max_length]
+        pad_len = max_length - len(input_ids)
+        return input_ids + [0] * pad_len
+
+    def encode_fn(term_gain: Tuple[str, str, str]):
+        q_term, d_term_pos, d_term_neg = term_gain
+        feature: OrderedDict = OrderedDict()
+        feature[f"q_term"] = create_int_feature(encode_term(q_term))
+        feature[f"d_term_pos"] = create_int_feature(encode_term(d_term_pos))
+        feature[f"d_term_neg"] = create_int_feature(encode_term(d_term_neg))
+        return feature
+    return encode_fn
+
+
 def read_score_generate_term_pair_score_tfrecord(save_name, score_path):
     term_gain = read_term_pair_table(score_path)
     generate_train_data_inner(save_name, term_gain)

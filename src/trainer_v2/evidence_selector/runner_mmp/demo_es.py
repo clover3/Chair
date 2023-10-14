@@ -34,6 +34,7 @@ def main(args):
     for batch in dataset:
         x, y = batch
         output = model.predict_on_batch(x)
+        print("output.shape", output.shape)
 
         input_ids, segment_ids = x
         n_inst = int(len(input_ids) / 2)

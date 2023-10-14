@@ -7,8 +7,9 @@ from trainer_v2.bert_for_tf2.w_mask.transformer import TransformerEncoderLayerWM
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.bert_common import define_bert_input, load_stock_weights, \
     load_stock_weights_encoder_only
-from trainer_v2.custom_loop.modeling_common.network_utils import MeanProjectionEnc, TileAfterExpandDims, \
+from trainer_v2.custom_loop.modeling_common.network_utils import TileAfterExpandDims, \
     VectorThreeFeature, TwoLayerDense, ChunkAttentionMaskLayerFreeP
+from trainer_v2.custom_loop.modeling_common.bert_tf2_network_utils import MeanProjectionEnc
 from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 
 KerasDense = tf.keras.layers.Dense

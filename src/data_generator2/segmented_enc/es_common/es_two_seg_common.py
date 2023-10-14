@@ -4,6 +4,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.seg_encoder_common import get_random_split_location
+from trainer_v2.chair_logging import c_log
 from trainer_v2.evidence_selector.evidence_candidates import EvidencePair, get_st_ed
 
 
@@ -182,7 +183,14 @@ class BothSegPartitionedPairParser:
 
         range_part_segs = [seg1_part1, seg1_part2]
         indice_part_segs = [seg2_part1, seg2_part2]
-        assert len(indice_part_segs[0]) == len(indice_part_segs[1])
+        if not len(indice_part_segs[0]) == len(indice_part_segs[1]):
+            len1 = 3 + len(indice_part_segs[0]) + len(range_part_segs[0])
+            len2 = 3 + len(indice_part_segs[1]) + len(range_part_segs[1])
+            if len1 == self.segment_len or len2 == self.segment_len:
+                pass
+            else:
+                c_log.warning("%d differs %d. ", len(indice_part_segs[0]), len(indice_part_segs[1]))
+                c_log.warning("Length for other part : %d, %d", len(range_part_segs[0]), len(range_part_segs[1]))
 
         indices_part_merged: List[str] = self.merge_indices_part(indice_part_segs)
         mask_segment = MaskPartitionedSegment(*range_part_segs)

@@ -4,7 +4,8 @@ from tensorflow import keras
 from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.custom_loop.definitions import ModelConfig2Seg
 from trainer_v2.custom_loop.modeling_common.bert_common import BERT_CLS
-from trainer_v2.custom_loop.modeling_common.network_utils import vector_three_feature, get_two_projected_mean_encoder
+from trainer_v2.custom_loop.modeling_common.network_utils import vector_three_feature
+from trainer_v2.custom_loop.modeling_common.bert_tf2_network_utils import get_two_projected_mean_encoder
 from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig2SegProject
 
 

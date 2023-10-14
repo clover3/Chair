@@ -181,6 +181,19 @@ def get_cand2_2_path_helper():
     )
     return path_helper
 
+
+def get_cand2_2_list_path_helper():
+    per_corpus_config_path = path_join(yconfig_dir_path, "mmp_train.yaml")
+    per_model_config_path = path_join(yconfig_dir_path, "mmp1.yaml")
+    per_candidate_config_path = path_join(yconfig_dir_path, "candidates2_2_list.yaml")
+    path_helper = get_mmp_galign_path_helper(
+        per_corpus_config_path,
+        per_model_config_path,
+        per_candidate_config_path,
+    )
+    return path_helper
+
+
 def get_cand4_path_helper():
     per_corpus_config_path = path_join(yconfig_dir_path, "mmp_train.yaml")
     per_model_config_path = path_join(yconfig_dir_path, "mmp1.yaml")

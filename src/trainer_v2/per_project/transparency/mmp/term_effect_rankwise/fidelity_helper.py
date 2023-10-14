@@ -1,3 +1,4 @@
+import json
 import math
 from dataclasses import dataclass
 from typing import Tuple, List
@@ -6,6 +7,7 @@ from krovetzstemmer import Stemmer
 from scipy.stats import pearsonr, spearmanr
 
 from misc_lib import path_join
+from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import get_te_save_name, \
     get_fidelity_save_name
 from trainer_v2.per_project.transparency.misc_common import load_list_from_gz_jsonl, save_number_to_file
@@ -82,6 +84,30 @@ def compute_save_fidelity_from_te(fidelity_fn, fidelity_save_dir, partition_list
         save_name = get_fidelity_save_name(q_term, d_term)
         fidelity_save_path = path_join(fidelity_save_dir, save_name)
         save_number_to_file(fidelity_save_path, f_change_sum)
+
+
+def compute_save_fidelity_list_from_te(fidelity_fn, fidelity_save_dir, partition_list, qd_itr, te_save_dir):
+    stemmer = Stemmer()
+    for q_term, d_term in qd_itr:
+        c_log.info("Working on %s, %s", q_term, d_term)
+        f_change_list = []
+        for partition_no in partition_list:
+            q_term_stm = stemmer.stem(q_term)
+            d_term_stm = stemmer.stem(d_term)
+            save_name = get_te_save_name(q_term_stm, d_term_stm, partition_no)
+            save_path = path_join(te_save_dir, save_name)
+            try:
+                te_list: List[TermEffectPerQuery] = load_list_from_gz_jsonl(save_path, TermEffectPerQuery.from_json)
+                f_change = compute_fidelity_change(fidelity_fn, te_list)
+                f_change_list.append(f_change)
+            except FileNotFoundError as e:
+                print(e)
+
+        save_name = get_fidelity_save_name(q_term, d_term)
+        fidelity_save_path = path_join(fidelity_save_dir, save_name)
+        f = open(fidelity_save_path, "w")
+        json.dump(f_change_list, f)
+
 
 
 

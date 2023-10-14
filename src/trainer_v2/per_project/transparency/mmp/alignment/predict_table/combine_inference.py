@@ -1,11 +1,7 @@
-from typing import List, Tuple
-from cpath import output_path
 from misc_lib import path_join
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from iter_util import load_jsonl
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.candidate2_2.path_helper import \
-    get_candidate2_2_term_pair_candidate_building_path
 
 
 def filter_sharp_sharp_subword(all_candidates):

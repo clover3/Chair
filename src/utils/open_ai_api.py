@@ -40,6 +40,9 @@ class OpenAIProxy:
             self.usage['n_request'] += 1
         return obj
 
+    def request_get_text(self, prompt):
+        return parse_chat_gpt_response(self.request(prompt))
+
     def __del__(self):
         print("Usage", self.usage)
 

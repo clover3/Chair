@@ -1,4 +1,5 @@
 import csv
+import json
 
 from misc_lib import TEL, path_join, TimeEstimator
 from trainer_v2.chair_logging import c_log
@@ -44,6 +45,33 @@ def collect_scores_and_save3(term_pair_list, fidelity_save_dir, save_path):
                 score = float(open(save_path_full, "r").read())
                 row = [q_term, d_term, score]
                 f_out.writerow(row)
+                ticker.tick()
+            except ValueError:
+                pass
+
+
+def collect_scores_and_save4(term_pair_list, fidelity_save_dir, save_path):
+    # Enumerate all files in the directory
+    c_log.info("enumerating directory files")
+    existing_files = set(os.listdir(fidelity_save_dir))
+
+    c_log.info("Opening files")
+    ticker = TimeEstimator(len(existing_files))
+    f_out = open(save_path, "w", encoding="utf-8")
+    for todo in term_pair_list:
+        q_term, d_term = todo
+        save_name = get_fidelity_save_name(q_term, d_term)
+
+        # Check if the file exists in the enumerated files
+        if save_name in existing_files:
+            save_path_full = os.path.join(fidelity_save_dir, save_name)
+            try:
+                score_list = json.load(open(save_path_full, "r"))
+                row = {"q_term": q_term,
+                       "d_term": d_term,
+                       "fidelity": score_list
+                       }
+                f_out.write(json.dumps(row) + "\n")
                 ticker.tick()
             except ValueError:
                 pass

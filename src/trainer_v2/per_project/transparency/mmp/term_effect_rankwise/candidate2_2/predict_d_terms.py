@@ -1,6 +1,6 @@
 import os
 
-from trainer_v2.per_project.transparency.mmp.alignment.predict_table.predict_d_terms_unigram import predict_d_terms, \
+from trainer_v2.per_project.transparency.mmp.alignment.predict_table.old.predict_d_terms_unigram import predict_d_terms_for_job, \
     build_model_with_output_mapping
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -31,7 +31,11 @@ def main():
     save_path = get_candidate2_2_term_pair_candidate_building_path(job_no)
     freq_q_terms = config.load_freq_q_terms()
     model = build_model_with_output_mapping(model_save_path, fetch_align_probe_all_concat)
-    predict_d_terms(freq_q_terms, model, tokenizer, save_path, job_no)
+    n_per_job = 100
+    st = n_per_job * job_no
+    ed = st + n_per_job
+    q_term_list = [freq_q_terms[i] for i in range(st, ed)]
+    predict_d_terms_for_job(q_term_list, model, tokenizer, save_path)
 
 
 if __name__ == "__main__":

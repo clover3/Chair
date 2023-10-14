@@ -1,14 +1,13 @@
+import json
 import sys
+import threading
+
+import requests
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QSystemTrayIcon, QMenu,
                              QAction, QVBoxLayout, QPushButton, QLabel, QWidget, QStyle)
-from PyQt5.QtGui import QIcon
-import json
-import requests
-import threading
 
 
 class NotificationHandler:
-
     def __init__(self, base_url, interval):
         self.base_url = base_url
         self.interval = interval
@@ -51,9 +50,9 @@ class NotificationHandler:
 
 
 class TrayApp(QMainWindow):
-    def __init__(self):
+    def __init__(self, domain="https://clovertask2.xyz"):
         super().__init__()
-        # handler = NotificationHandler("http://your_domain_or_ip", 10)  # Pooling every 10 seconds
+        self.handler = NotificationHandler(domain, 10)  # Pooling every 10 seconds
 
         # Set window title and initial size
         self.setWindowTitle("Tray Application")
@@ -110,14 +109,12 @@ class TrayApp(QMainWindow):
     def start_app(self):
         # Implement your start logic here
         self.status_label.setText("Pooler status: Started")
-
         self.handler.start()
 
     def stop_app(self):
         # Implement your stop logic here
         self.status_label.setText("Pooler Status: Stopped")
         self.handler.stop()
-
 
     def close_app(self):
         self.tray_icon.hide()

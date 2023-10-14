@@ -2,7 +2,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set, Any
 import tensorflow as tf
 from keras.utils import losses_utils
 from transformers import BertConfig, TFBertForSequenceClassification
-from trainer_v2.per_project.transparency.mmp.alignment.network.align_net_v3 import build_align_acc_dict
+from trainer_v2.per_project.transparency.mmp.alignment.network.common import build_align_acc_dict
 from trainer_v2.per_project.transparency.mmp.trnsfmr_util import get_dummy_input_for_bert_layer
 
 

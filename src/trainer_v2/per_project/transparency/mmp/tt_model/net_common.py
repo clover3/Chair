@@ -5,8 +5,8 @@ import tensorflow as tf
 from trainer_v2.per_project.transparency.mmp.data_gen.tt_train_gen import get_convert_to_bow_qtw
 
 
-def pairwise_hinge(s1, s2):
-    loss_cont = tf.maximum(1 - (s1 - s2), 0)
+def pairwise_hinge(score_pos, score_neg):
+    loss_cont = tf.maximum(1 - (score_pos - score_neg), 0)
     return loss_cont
 
 

@@ -1,11 +1,10 @@
 from trainer_v2.per_project.transparency.mmp.alignment.network.align_net_v2 import TFBertLayerFlat
-from trainer_v2.per_project.transparency.mmp.alignment.network.align_net_v3 import build_align_acc_dict, \
-    get_emb_concat_feature, mean_pool_over_masked, build_probe_from_layer_features
-from dataclasses import dataclass
-from typing import List, Iterable, Callable, Dict, Tuple, Set, Any
+from trainer_v2.per_project.transparency.mmp.alignment.network.align_net_v3 import build_probe_from_layer_features
+from trainer_v2.per_project.transparency.mmp.alignment.network.common import mean_pool_over_masked, \
+    get_emb_concat_feature, build_align_acc_dict, build_input_ids_segment_ids
+from typing import Dict, Any
 import tensorflow as tf
-from tensorflow.python.keras.utils import losses_utils
-from transformers import TFBertMainLayer, shape_list, BertConfig, TFBertForSequenceClassification
+from transformers import shape_list, BertConfig, TFBertForSequenceClassification
 
 from trainer_v2.per_project.transparency.mmp.probe.probe_common import get_attn_mask_bias, identify_layers
 from trainer_v2.per_project.transparency.mmp.trnsfmr_util import get_dummy_input_for_bert_layer
@@ -29,8 +28,6 @@ class GAlignNetwork6:
     def __init__(self, tokenizer):
         n_out_dim = 1
         target_layer_no = 0
-        cls_id = tokenizer.vocab["[CLS]"]
-        sep_id = tokenizer.vocab["[SEP]"]
 
         bert_config = BertConfig()
         bert_cls = TFBertForSequenceClassification(bert_config)
@@ -49,21 +46,8 @@ class GAlignNetwork6:
         is_valid = tf.keras.layers.Input(shape=(1,), dtype='int32', name="is_valid")
         inputs = [q_term, d_term, raw_label, label, is_valid]
 
-        B, _ = shape_list(q_term)
-        CLS = tf.ones([B, 1], tf.int32) * cls_id
-        SEP = tf.ones([B, 1], tf.int32) * sep_id
-        ZERO = tf.zeros([B, 1], tf.int32)
-        input_ids = tf.concat([CLS, q_term, SEP, d_term, SEP], axis=1)
-        q_term_mask = tf.concat([ZERO, tf.ones_like(q_term, tf.int32), ZERO,
-                                 tf.zeros_like(d_term, tf.int32), ZERO], axis=1)
-        d_term_mask = tf.concat([ZERO, tf.zeros_like(q_term, tf.int32), ZERO,
-                                 tf.ones_like(d_term, tf.int32), ZERO], axis=1)
-
-        seg1_len = max_term_len + 2
-        seg2_len = max_term_len + 1
-
-        token_type_ids_row = [0] * seg1_len + [1] * seg2_len
-        token_type_ids = tf.tile(tf.expand_dims(token_type_ids_row, 0), [B, 1])
+        d_term_mask, input_ids, q_term_mask, token_type_ids = build_input_ids_segment_ids(q_term, d_term,
+                                                                                          max_term_len, tokenizer)
 
         embedding_output = bert_main_layer.embeddings(
             input_ids=input_ids,

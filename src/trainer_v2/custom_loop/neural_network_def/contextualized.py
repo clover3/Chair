@@ -6,8 +6,9 @@ from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.bert_for_tf2.transformer import TransformerEncoderLayer
 from trainer_v2.custom_loop.modeling_common.bert_common import define_bert_input, load_stock_weights, \
     load_stock_weights_encoder_only
-from trainer_v2.custom_loop.modeling_common.network_utils import MeanProjectionEnc, MeanProjection, SplitSegmentIDLayer, \
+from trainer_v2.custom_loop.modeling_common.network_utils import MeanProjection, SplitSegmentIDLayer, \
     TileAfterExpandDims, VectorThreeFeature, TwoLayerDense, SplitSegmentIDLayerWVar, SplitSegmentIDWMeanLayer
+from trainer_v2.custom_loop.modeling_common.bert_tf2_network_utils import MeanProjectionEnc
 from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 
 

@@ -3,6 +3,7 @@ from trainer_v2.custom_loop.dataset_factories import create_dataset_common
 from trainer_v2.custom_loop.definitions import ModelConfigType, ModelConfig2Seg
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.per_project.transparency.mmp.alignment.network.align_net_v2 import ThresholdConfig
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
 def read_galign(
@@ -67,6 +68,55 @@ def read_galign_v2(
         label = tf.cast(is_true, tf.int32)
         record['label'] = label
         record['is_valid'] = tf.cast(is_valid, tf.int32)
+        return record
+
+    dataset = create_dataset_common(
+        decode_record,
+        run_config,
+        file_path,
+        is_for_training)
+
+    return dataset
+
+
+def build_galign_from_pair_list(payload: List[Tuple[str, str, int]], tokenizer, max_term_len):
+    def generator():
+        for q_term, d_term, label in payload:
+            def encode(term):
+                tokens = tokenizer.tokenize(term)[:max_term_len]
+                return tokenizer.convert_tokens_to_ids(tokens)
+
+            yield encode(q_term), encode(d_term), [label]
+
+    def pair_to_dict(q_term, d_term, label):
+        # q_term, d_term = pair
+        return {
+            "q_term": q_term,
+            "d_term": d_term,
+            "label": label,
+        }
+
+    int_list = tf.TensorSpec(shape=(max_term_len,), dtype=tf.int32)
+    label_spec = tf.TensorSpec(shape=(1,), dtype=tf.int32)
+    output_signature = (int_list, int_list, label_spec)
+    dataset = tf.data.Dataset.from_generator(generator, output_signature=output_signature)
+    dataset = dataset.map(pair_to_dict)
+    return dataset
+
+
+def read_galign_pairwise(
+        file_path,
+        run_config: RunConfig2,
+        is_for_training,
+    ) -> tf.data.Dataset:
+
+    def decode_record(record):
+        name_to_features = {}
+        term_len = 1
+        name_to_features[f'q_term'] = tf.io.FixedLenFeature([term_len], tf.int64)
+        name_to_features[f'd_term_pos'] = tf.io.FixedLenFeature([term_len], tf.int64)
+        name_to_features[f'd_term_neg'] = tf.io.FixedLenFeature([term_len], tf.int64)
+        record = tf.io.parse_single_example(record, name_to_features)
         return record
 
     dataset = create_dataset_common(

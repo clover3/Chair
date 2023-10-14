@@ -7,7 +7,8 @@ from models.transformer.bert_common_v2 import get_shape_list2
 from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.custom_loop.modeling_common.bert_common import load_stock_weights, define_bert_input
 from trainer_v2.custom_loop.modeling_common.network_utils import VectorThreeFeature, \
-    MeanProjectionEnc, SplitSegmentID
+    SplitSegmentID
+from trainer_v2.custom_loop.modeling_common.bert_tf2_network_utils import MeanProjectionEnc
 from trainer_v2.custom_loop.neural_network_def.asymmetric import BERTAsymmetricProjectMean
 from trainer_v2.custom_loop.neural_network_def.inner_network import BertBasedModelIF
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import StackedInputMapper
