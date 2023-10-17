@@ -5,7 +5,7 @@ from omegaconf import OmegaConf
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from trainer_v2.per_project.transparency.misc_common import save_tsv
 from trainer_v2.per_project.transparency.mmp.alignment.predict_table.combine_inference import \
-    filter_sharp_sharp_subword, convert_term_pair_candidate_ids_to_terms
+    filter_sharp_sharp_subword_and_drop_score, convert_term_pair_candidate_ids_to_terms, filter_sharp_sharp_subword
 from trainer_v2.per_project.transparency.mmp.alignment.predict_table.combine_inference import \
     load_term_pair_candidate_over_100_jobs
 from typing import List, Iterable, Callable, Dict, Tuple, Set

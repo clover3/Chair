@@ -54,21 +54,3 @@ def predict_d_terms_per_job_and_save(get_model, job_no, save_dir_path):
     q_term_list = [freq_q_terms[i] for i in range(st, ed)]
     predict_d_terms_for_job(q_term_list, model, tokenizer, save_path)
 
-
-def predict_d_terms_per_job_10(get_model, job_no, save_dir_path):
-    def get_term_pair_candidate_building_path(job_no):
-        save_path = path_join(save_dir_path, f"{job_no}.jsonl")
-        return save_path
-
-    tokenizer = get_tokenizer()
-    c_log.info("Job no: %d", job_no)
-    config = get_mmp_train_corpus_config()
-    f = open(config.frequent_q_terms, "r")
-    freq_q_terms = [line.strip() for line in f]
-    model = get_model()
-    save_path = get_term_pair_candidate_building_path(job_no)
-    n_per_job = 10
-    st = n_per_job * job_no
-    ed = st + n_per_job
-    q_term_list = [freq_q_terms[i] for i in range(st, ed)]
-    predict_d_terms_for_job(q_term_list, model, tokenizer, save_path)

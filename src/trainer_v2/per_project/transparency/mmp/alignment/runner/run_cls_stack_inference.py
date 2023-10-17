@@ -56,7 +56,8 @@ def main(args):
         network = build_model()
         network.load_checkpoint(run_config.predict_config.model_save_path)
         outputs = network.get_inference_model().predict(eval_dataset)
-        save_line_scores(outputs, run_config.predict_config.predict_save_path)
+        scores = outputs["align_probe"]["align_pred"]
+        save_line_scores(scores, run_config.predict_config.predict_save_path)
 
 
 if __name__ == "__main__":

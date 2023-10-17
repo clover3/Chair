@@ -4,13 +4,23 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 from iter_util import load_jsonl
 
 
-def filter_sharp_sharp_subword(all_candidates):
+def filter_sharp_sharp_subword_and_drop_score(all_candidates):
     selected = []
     for q, d, s in all_candidates:
         if d[:2] == "##":
             pass
         else:
             selected.append((q, d))
+    return selected
+
+
+def filter_sharp_sharp_subword(all_candidates):
+    selected = []
+    for q, d, s in all_candidates:
+        if d[:2] == "##":
+            pass
+        else:
+            selected.append((q, d, s))
     return selected
 
 
