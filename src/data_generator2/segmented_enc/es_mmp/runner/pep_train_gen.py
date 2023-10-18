@@ -3,7 +3,7 @@ import os
 
 from cpath import at_output_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from data_generator2.segmented_enc.es_mmp.pep1_common import get_ph_segment_pair_encode_fn, load_ph_segmented_pair
+from data_generator2.segmented_enc.es_mmp.pep_ph_based_common import get_ph_segment_pair_encode_fn, load_ph_segmented_pair
 from misc_lib import exist_or_mkdir, TELI
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from trainer_v2.chair_logging import c_log

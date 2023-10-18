@@ -27,6 +27,15 @@ class ConcatMaskStrategyQD(ConcatMaskStrategyI):
         new_input_ids = input_ids_np * select_mask_np + (1 - select_mask_np) * self.mask_id
         return new_input_ids
 
+    def get_deletable_evidence_mask(self, input_ids, segment_ids):
+        # return mask that indicates evidence part. it excludes CLS or SEP
+        is_second = np.equal(segment_ids, 1)
+        deletable_evidence = is_second
+        for v in [self.cls_id, self.sep_id]:
+            is_not_special_mask = np.not_equal(input_ids, v)
+            deletable_evidence = np.logical_and(deletable_evidence, is_not_special_mask)
+        return deletable_evidence
+
     def get_masked_input(self, state, action) -> Tuple[IDS, IDS]:
         input_ids, segment_ids = state
         new_input_ids = self.apply_mask(input_ids, segment_ids, action)
@@ -37,10 +46,8 @@ def get_pe_for_qd_ce(base_pred, rep_pred, action, state):
     return get_pe_for_qd_inner(base_pred, rep_pred, action, state, cross_entropy)
 
 
-
 def get_pe_for_qd_mae(base_pred, rep_pred, action, state):
     return get_pe_for_qd_inner(base_pred, rep_pred, action, state, mean_absolute_error)
-
 
 
 def get_pe_for_qd_inner(base_pred, rep_pred, action, state, get_error_fn):

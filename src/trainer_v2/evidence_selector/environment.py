@@ -23,6 +23,10 @@ class ConcatMaskStrategyI(ABC):
     def get_masked_input(self, state, action) -> Tuple[IDS, IDS]:
         pass
 
+    @abstractmethod
+    def get_deletable_evidence_mask(self, input_ids, segment_ids):
+        pass
+
 
 class PEInfoI:
     @abstractmethod

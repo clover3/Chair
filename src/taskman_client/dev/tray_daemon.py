@@ -4,6 +4,7 @@ import os
 import sys
 import threading
 import winsound
+from plyer import notification
 
 import requests
 from PyQt5.QtGui import QIcon
@@ -16,9 +17,10 @@ from trainer_v2.chair_logging import c_log
 
 
 class NotificationHandler:
-    def __init__(self, base_url, interval):
+    def __init__(self, base_url, interval, send_os_notification):
         self.base_url = base_url
         self.interval = interval
+        self.send_os_notification = send_os_notification
         self._stop_event = threading.Event()
         self._thread = threading.Thread(target=self._run_pool_action_periodically)
         self.sound_dir = path_join(data_path, "sound_data")
@@ -35,7 +37,7 @@ class NotificationHandler:
     def _run_pool_action_periodically(self):
         """Helper method to run pool_action periodically."""
         while not self._stop_event.is_set():
-            c_log.info("Handler loop")
+            c_log.debug("Handler loop")
             self.pool_action()
             self._stop_event.wait(self.interval)
 
@@ -59,10 +61,15 @@ class NotificationHandler:
 
     def handle_notification(self, notification):
         msg = notification["msg"]
+        run_name = notification["task"]
+
         if "ABNORMAL_TERMINATE" in msg:
             self.play_sound("ABNORMAL_TERMINATE")
+            self.send_os_notification(run_name, msg)
+
         if "SUCCESSFUL_TERMINATE" in msg:
             self.play_sound("SUCCESSFUL_TERMINATE")
+            self.send_os_notification(run_name, msg)
 
         self.clear_notification(notification)
 
@@ -77,24 +84,26 @@ class NotificationHandler:
                 c_log.info("handle notification %s", str(notification))
                 self.handle_notification(notification)
         else:
-            print(response.content)
+            c_log.info(response.content)
 
 
 class TrayApp(QMainWindow):
     def __init__(self, domain="https://clovertask2.xyz:8000"):
         super().__init__()
-        self.handler = NotificationHandler(domain, 10)  # Pooling every 10 seconds
 
         # Set window title and initial size
-        self.setWindowTitle("Tray Application")
+        self.app_name = "Taskman Daemon"
+        self.handler = NotificationHandler(domain, 10, self.send_os_notification)  # Pooling every 10 seconds
+        self.setWindowTitle(self.app_name)
         self.setGeometry(100, 100, 400, 300)
 
         # Create a system tray icon
         self.tray_icon = QSystemTrayIcon(self)
         # icon = self.style().standardIcon(QStyle.SP_FileDialogContentsView)
-        icon = QIcon(path_join(data_path, "html", "task.png"))
+        self.icon_path = path_join(data_path, "html", "task.png")
+        icon = QIcon(self.icon_path)
         self.tray_icon.setIcon(icon)
-
+        self.setWindowIcon(icon)
 
         # UI elements for the main window
         self.layout = QVBoxLayout()
@@ -110,6 +119,7 @@ class TrayApp(QMainWindow):
         self.stop_button = QPushButton("Stop", self)
         self.stop_button.clicked.connect(self.stop_app)
         self.layout.addWidget(self.stop_button)
+        self.stop_button.setEnabled(False)
 
         self.status_label = QLabel("Status: Stopped", self)
         self.layout.addWidget(self.status_label)
@@ -131,9 +141,20 @@ class TrayApp(QMainWindow):
         quit_action.triggered.connect(self.close_app)
         tray_menu.addAction(quit_action)
 
+        self.tray_icon.activated.connect(self.on_tray_icon_activated)
+
         # Set the context menu to the tray icon
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.show()
+
+    def send_os_notification(self, title, message):
+        notification.notify(
+            title=title,
+            message=message,
+            app_name=self.app_name,
+            app_icon=self.icon_path,
+            timeout=10  # the notification will stay for 10 seconds
+        )
 
     def put_to_tray(self):
         self.hide()
@@ -146,19 +167,33 @@ class TrayApp(QMainWindow):
     def start_app(self):
         # Implement your start logic here
         self.status_label.setText("Pooler status: Started")
+        self.start_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
         self.handler.start()
 
     def stop_app(self):
         # Implement your stop logic here
         self.status_label.setText("Pooler Status: Stopped")
+        self.start_button.setEnabled(True)
+        self.stop_button.setEnabled(False)
         self.handler.stop()
 
     def close_app(self):
         self.tray_icon.hide()
         QApplication.quit()
 
+    # Our custom slot that handles the tray icon activation
+    def on_tray_icon_activated(self, reason):
+        if reason == QSystemTrayIcon.Trigger:  # Tray icon was clicked
+            if self.isVisible():
+                self.hide()
+            else:
+                self.show()
+                self.activateWindow()  # Bring window to front
+
 
 if __name__ == '__main__':
+    c_log.setLevel(logging.INFO)
     app = QApplication(sys.argv)
     window = TrayApp()
     window.show()

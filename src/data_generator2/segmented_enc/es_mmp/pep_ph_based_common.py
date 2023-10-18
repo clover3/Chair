@@ -1,18 +1,22 @@
 import pickle
 from collections import OrderedDict
-from typing import List
 
 from data_generator2.segmented_enc.es_nli.common import PHSegmentedPair
 from data_generator2.segmented_enc.es_nli.path_helper import get_mmp_es0_path
-from data_generator2.segmented_enc.es_common.es_two_seg_common import BothSegPartitionedPair, RangePartitionedSegment, \
-    PartitionedSegment, IndicesPartitionedSegment
 from data_generator2.segmented_enc.hf_encode_helper import combine_with_sep_cls_and_pad, encode_pair
+from dataset_specific.mnli.mnli_reader import NLIPairData
 from tlm.data_gen.base import concat_tuple_windows
 from trainer_v2.chair_logging import c_log
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Callable, Tuple
+from warnings import warn
+
+from trainer_v2.per_project.cip.cip_common import get_random_split_location
 
 
 def get_ph_segment_pair_encode_fn(tokenizer, segment_len: int) -> Callable[[PHSegmentedPair], OrderedDict]:
+    new_target = "data_generator2.segmented_enc.es_common.partitioned_encoder.get_both_seg_partitioned_pair_encode_fn"
+    warn('This is deprecated. use ' + new_target , DeprecationWarning, stacklevel=2)
+
     def encode_fn(e: PHSegmentedPair) -> OrderedDict:
         triplet = tokenize_encode_ph_segmented_pair(e)
         return encode_pair(triplet, int(e.nli_pair.label))
@@ -53,32 +57,12 @@ def load_ph_segmented_pair(partition_no) -> List[PHSegmentedPair]:
     return payload
 
 
-def segment_formatter(e: PartitionedSegment, target_part_no):
-    if isinstance(e, RangePartitionedSegment):
-        head, tail = e.get_first()
-        if target_part_no == 0:
-            return head + ["[MASK]"] + tail
-        elif target_part_no == 1:
-            head_mask = ["[MASK]"] if head else []
-            tail_mask = ["[MASK]"] if tail else []
-            return head_mask + e.get_second() + tail_mask
-        else:
-            assert False
-    elif isinstance(e, IndicesPartitionedSegment):
-        return e.get_partition_seg(target_part_no)
-    else:
-        assert False
-
-
-def get_both_seg_partitioned_pair_encode_fn(tokenizer, segment_len: int):
-    def encode_fn(e: BothSegPartitionedPair) -> OrderedDict:
-        tuple_list = []
-        for part_no in [0, 1]:
-            partial_seg1: List[str] = segment_formatter(e.segment1, part_no)
-            partial_seg2: List[str] = segment_formatter(e.segment2, part_no)
-            input_ids, segment_ids = combine_with_sep_cls_and_pad(
-                tokenizer, partial_seg1, partial_seg2, segment_len)
-            tuple_list.append((input_ids, segment_ids))
-        triplet = concat_tuple_windows(tuple_list, segment_len)
-        return encode_pair(triplet, int(e.pair_data.label))
-    return encode_fn
+def partition_query_ph_based(
+        tokenizer, qd_pair: Tuple[str, str]) -> PHSegmentedPair:
+    query, document = qd_pair
+    q_tokens = tokenizer.tokenize(query)
+    d_tokens = tokenizer.tokenize(document)
+    h_st, h_ed = get_random_split_location(q_tokens)
+    nli_pair = NLIPairData(document, query, "0", "0")
+    ph_seg_pair = PHSegmentedPair(d_tokens, q_tokens, h_st, h_ed, [], [], nli_pair)
+    return ph_seg_pair

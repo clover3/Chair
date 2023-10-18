@@ -4,7 +4,7 @@ import sys
 import numpy as np
 
 from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens
-from data_generator2.segmented_enc.es_common.es_two_seg_common import BothSegPartitionedPairParser
+from data_generator2.segmented_enc.es_common.partitioned_encoder import BothSegPartitionedPairParser
 from trainer_v2.custom_loop.definitions import ModelConfig512_2
 from trainer_v2.custom_loop.run_config2 import get_run_config_for_predict
 from trainer_v2.custom_loop.train_loop import load_model_by_dir_or_abs

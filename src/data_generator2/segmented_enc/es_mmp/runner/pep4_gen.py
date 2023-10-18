@@ -10,9 +10,10 @@ from cache import load_pickle_from
 from cpath import at_output_dir
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.es_common.evidence_selector_by_attn import compute_attn_sel_delete_indices
-from data_generator2.segmented_enc.es_mmp.pep1_common import get_both_seg_partitioned_pair_encode_fn
+from data_generator2.segmented_enc.es_common.partitioned_encoder import get_both_seg_partitioned_pair_encode_fn, \
+    apply_segmentation_to_seg1
 from data_generator2.segmented_enc.es_common.es_two_seg_common import PairData, Segment1PartitionedPair, \
-    BothSegPartitionedPair, apply_segmentation_to_seg1
+    BothSegPartitionedPair
 from misc_lib import exist_or_mkdir
 from misc_lib import path_join
 from taskman_client.wrapper3 import JobContext
