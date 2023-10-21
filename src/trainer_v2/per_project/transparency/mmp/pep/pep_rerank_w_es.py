@@ -4,8 +4,12 @@ import numpy as np
 import tensorflow as tf
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from data_generator2.segmented_enc.es_common.es_two_seg_common import BothSegPartitionedPair
-from data_generator2.segmented_enc.es_common.partitioned_encoder import get_both_seg_partitioned_to_input_ids
+from data_generator2.segmented_enc.es_common.es_two_seg_common import BothSegPartitionedPair, Segment1PartitionedPair, \
+    PairData, RangePartitionedSegment
+from data_generator2.segmented_enc.es_common.partitioned_encoder import get_both_seg_partitioned_to_input_ids, \
+    apply_segmentation_to_seg1
+from data_generator2.segmented_enc.seg_encoder_common import get_random_split_location
+from misc_lib import Averager
 from trainer_v2.chair_logging import c_log
 from trainer_v2.evidence_selector.environment_qd import ConcatMaskStrategyQD
 from trainer_v2.evidence_selector.runner_mmp.dataset_fn import SplitStack
@@ -38,6 +42,50 @@ def get_hide_input_ids(mask_strategy, delete_portion, mask_id):
     return hide_input_ids
 
 
+
+class HideStrategyMinClip:
+    def __init__(self, mask_strategy, init_delete_portion, mask_id=0):
+        self.mask_id = mask_id
+        self.init_delete_portion = init_delete_portion
+        self.mask_strategy = mask_strategy
+        self.delete_rate = Averager()
+    #
+    def hide_input_ids(
+            self,
+            input_ids: np.array,
+            segment_ids: np.array,
+            scores: np.array):
+        is_evidence_mask: np.array = self.mask_strategy.get_deletable_evidence_mask(input_ids, segment_ids)
+        n_delete = self.get_n_delete(input_ids, segment_ids, is_evidence_mask)
+
+        neg_large = -99999. + np.min(scores)
+
+        is_not_evidence = np.logical_not(is_evidence_mask)
+        scores_masked = scores + neg_large * is_not_evidence.astype(np.float32)
+        scores_rank_descending = np.argsort(scores_masked)[::-1]
+
+        delete_mask = np.zeros_like(input_ids, np.int32)
+        for i in scores_rank_descending[:n_delete]:
+            delete_mask[i] = 1
+
+        select_mask_np = np.logical_not(delete_mask)
+        new_input_ids = input_ids * select_mask_np + (1 - select_mask_np) * self.mask_id
+
+        return new_input_ids
+
+    def get_n_delete(self, input_ids, segment_ids, is_evidence_mask):
+        n_evidence = np.count_nonzero(is_evidence_mask)
+        query_like_segment_mask = self.mask_strategy.get_query_like_segment_mask(input_ids, segment_ids)
+        n_delete = int(self.init_delete_portion * n_evidence)
+        n_query_tokens = sum(query_like_segment_mask)
+        n_keep = n_query_tokens
+        max_delete = n_evidence - n_keep
+        n_delete = min(max_delete, n_delete)
+        delete_rate = n_delete / n_evidence
+        self.delete_rate.append(delete_rate)
+        return n_delete
+
+
 InputIdsSegmentIds = Tuple[List, List]
 
 
@@ -52,6 +100,7 @@ def build_dataset_from_ids_pair(ids_pair_list, max_seq_length):
         generator,
         output_signature=sig)
     return dataset
+
 
 def build_evidence_selection_dataset(ids_pair_list, max_seq_length, batch_size):
     dataset = build_dataset_from_ids_pair(ids_pair_list, max_seq_length)
@@ -152,6 +201,88 @@ def get_pep_scorer_es(
 
     c_log.info("Defining network")
     return score_fn
+
+
+class PEP_ES_Scorer:
+    def __init__(self,
+        conf,
+        hide_input_id: Callable,
+        batch_size=16):
+        model_path = conf.pep_model_path
+        partition_len = 256
+        self.max_seq_length = partition_len * 2
+        c_log.info("Loading model from %s", model_path)
+        self.inference_model = tf.keras.models.load_model(model_path, compile=False)
+        c_log.info("Loading es model from %s", conf.es_model_path)
+        self.es_model = tf.keras.models.load_model(conf.es_model_path, compile=False)
+
+        self.tokenizer = get_tokenizer()
+        self.encode_fn: Callable[[BothSegPartitionedPair], InputIdsSegmentIds]\
+            = get_both_seg_partitioned_to_input_ids(self.tokenizer, partition_len)
+        self.hide_input_id = hide_input_id
+        self.batch_size = batch_size
+        self.partition_len = partition_len
+        self.split_dict = {}
+
+    def apply_segmentation_to_seg1(self, tokenizer, item: PairData) -> Segment1PartitionedPair:
+        segment1_tokens = tokenizer.tokenize(item.segment1)
+        segment2_tokens: List[str] = tokenizer.tokenize(item.segment2)
+        st, ed = get_random_split_location(segment1_tokens)
+        segment1 = RangePartitionedSegment(segment1_tokens, st, ed)
+        return Segment1PartitionedPair(segment1, segment2_tokens, item)
+
+    def partition_query(self, qd_pair: Tuple[str, str]) -> BothSegPartitionedPair:
+        query, document = qd_pair
+        pair_data = PairData(query, document, "0", "0")
+        segment1_tokens = self.tokenizer.tokenize(pair_data.segment1)
+
+        if query in self.split_dict:
+            st, ed = self.split_dict[query]
+        else:
+            st, ed = get_random_split_location(segment1_tokens)
+            self.split_dict[query] = st, ed
+
+        segment2_tokens: List[str] = self.tokenizer.tokenize(pair_data.segment2)
+        segment1 = RangePartitionedSegment(segment1_tokens, st, ed)
+        pair = Segment1PartitionedPair(segment1, segment2_tokens, pair_data)
+        return BothSegPartitionedPair.from_seg1_partitioned_pair(pair)
+
+    def score_fn(self, qd_list: List[Tuple[str, str]]):
+        n_qd = len(qd_list)
+
+        pair_list: List[BothSegPartitionedPair] = [self.partition_query(qd) for qd in qd_list]
+        ids_pair_list: List[InputIdsSegmentIds] = [self.encode_fn(e) for e in pair_list]
+
+        # Build dataset for evidence selection purpose
+        es_dataset = build_evidence_selection_dataset(ids_pair_list, self.max_seq_length, self.batch_size)
+        ret = self.es_model.predict(es_dataset)
+        es_pred = stack_output(ret[:, :, 1])  # [N, 2, segment_len]
+
+        assert n_qd == len(es_pred)
+
+        # Build new dataset
+        masked_payload = []
+        for i in range(n_qd):
+            scores: np.array = es_pred[i]
+            input_ids, segment_ids = ids_pair_list[i]
+            partition_len = self.partition_len
+            new_input_ids1 = self.hide_input_id(
+                input_ids[:partition_len], segment_ids[:partition_len], scores[0])
+            new_input_ids2 = self.hide_input_id(
+                input_ids[partition_len:], segment_ids[partition_len:], scores[1])
+            new_input_ids = np.concatenate([new_input_ids1, new_input_ids2], axis=0)
+            masked_payload.append((new_input_ids, segment_ids))
+
+        masked_dataset = build_dataset_from_ids_pair(masked_payload, self.max_seq_length)
+
+        def pair_map(input_ids, segment_ids):
+            return (input_ids, segment_ids),
+
+        masked_dataset = masked_dataset.batch(self.batch_size)
+        masked_dataset = masked_dataset.map(pair_map)
+        output = self.inference_model.predict(masked_dataset)
+        return output[:, 1]
+
 
 
 def stack_output(output):

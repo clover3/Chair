@@ -54,7 +54,7 @@ class SequenceLabelPolicyFunction(PolicyFunction):
         n_random = self.num_sample - n_dist
 
         c_log.debug("SequenceLabelPolicyFunction sample_actions Samples {} dist".format(n_dist))
-        dist_sample = self._get_dist_sample(proba_dist, n_dist)
+        dist_sample = self._get_dist_sample(proba_dist, n_dist)  # [B, k, L]
         c_log.debug("SequenceLabelPolicyFunction sample_actions 2")
 
         per_state_action_samples: List[List[Action]] = []

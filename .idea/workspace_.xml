@@ -1,0 +1,1062 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="543526a0-1d3e-455f-a301-8dc9a7ecc453" name="Default" comment="nli predicting">
+      <change afterPath="$PROJECT_DIR$/src/contradiction/medical_claims/token_tagging/nlits_runner/nlits_console.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ChangesViewManager">
+    <option name="groupingKeys">
+      <option value="directory" />
+    </option>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Stub" />
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>spacy</find>
+      <find>nouns</find>
+      <find>company</find>
+      <find>kro</find>
+      <find>bm25</find>
+      <find>compute_K</find>
+      <find>Stemmer</find>
+      <find>consultations</find>
+      <find>shortUrl</find>
+      <find>create_int</find>
+      <find />
+      <find>tf_record_iterator</find>
+      <find>voca.txt</find>
+      <find>ParseFromString</find>
+      <find>enwiki_train_tokens</find>
+      <find>super</find>
+      <find>rn</find>
+      <find>truncate</find>
+      <find>flatten</find>
+      <find>truncate_seq_pair</find>
+      <find>btd</find>
+      <find>create_masked_lm_predictions</find>
+      <find>vocab_words</find>
+      <find>masked_lm_positions</find>
+      <find>train_ex</find>
+    </findStrings>
+    <replaceStrings>
+      <replace />
+    </replaceStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
+  <component name="GithubDefaultAccount">
+    <option name="defaultAccountId" value="10c6ca5f-5718-4de1-91b9-4a571faa853f" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/src/tlm/data_gen/msmarco_doc_gen/gen_runner/pair_train_gen.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/trainer_v2/epr/path_helper.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/data_generator/data_parser/nli_reformat.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/contradiction/medical_claims/runner/view_claim_and_doc.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/dataset_specific/msmarco/tokenize_jobs/run_tokenize.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/trainer_v2/epr/runner_s/run_segmentation.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/trainer_v2/epr/runner_s/encode_size_measure.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/contradiction/misc_legacy/train_nli.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/contradiction/misc_legacy/read_tweets.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/tlm/data_gen/msmarco_doc_gen/gen_worker.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/trainer_v2/dev_runner/dataset_helper_dev.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/dataset_specific/msmarco/common.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/trainer_v2/dev_runner/load_mpnet.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/dataset_specific/msmarco/bm25_experiment/bm25_run.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/arg/perspectives/bm25_predict.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/trec/trec_parse.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/tf_util/record_writer_wrap.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/dataset_specific/mnli/mnli_reader.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/tlm/data_gen/msmarco_doc_gen/gen_runner/pair_from_triplet.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/dataset_specific/msmarco/select_docs.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/alignment/related/runner_nli/build_dataset.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/alignment/data_structure/related_eval_instance.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/tlm/data_gen/msmarco_doc_gen/triplet/reader.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/trainer/nli_main.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/arg/perspectives/runner/run_dev_eval.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/bert_api/segmented_instance/seg_instance.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/data_generator/NLI/nli_info.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/data_generator/NLI/nli.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/dataset_specific/msmarco/extract_docs/extract_doc_dev.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/dataset_specific/msmarco/extract_docs/extract_docs.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/tlm/data_gen/msmarco_doc_gen/gen_runner/dev_first.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/tlm/qtype/BertQType.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/arg/qck/ranked_list_inspection.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/trainer_v2/epr/segmentation.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/trainer_v2/epr/s_bert_enc.py" root0="FORCE_HIGHLIGHTING" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/src/data_generator/stance/stance_detection.py" />
+        <option value="$PROJECT_DIR$/src/data_generator/stance/test.py" />
+        <option value="$PROJECT_DIR$/src/data_generator/text_encoder.py" />
+        <option value="$PROJECT_DIR$/src/data_generator/generator_utils.py" />
+        <option value="$PROJECT_DIR$/src/data_generator/mask_lm/wiki_lm.py" />
+        <option value="$PROJECT_DIR$/src/data_generator/executer/init_voca.py" />
+        <option value="$PROJECT_DIR$/src/data_generator/adhoc/mysql_sentence.py" />
+        <option value="$PROJECT_DIR$/src/cie/candidate.py" />
+        <option value="$PROJECT_DIR$/src/tlm/retreive_hints.py" />
+        <option value="$PROJECT_DIR$/src/tlm/select_sentence.py" />
+        <option value="$PROJECT_DIR$/src/tlm/mysql_sentence.py" />
+        <option value="$PROJECT_DIR$/src/tlm/build_index.py" />
+        <option value="$PROJECT_DIR$/src/tlm/index.py" />
+        <option value="$PROJECT_DIR$/src/tlm/retrieve_doc.py" />
+        <option value="$PROJECT_DIR$/src/crawl/guardian_uk.py" />
+        <option value="$PROJECT_DIR$/src/crawl/parse_paragraph.py" />
+        <option value="$PROJECT_DIR$/src/crawl/parse_comment.py" />
+        <option value="$PROJECT_DIR$/src/crawl/load_guardian.py" />
+        <option value="$PROJECT_DIR$/src/elasticsearch/prac.py" />
+        <option value="$PROJECT_DIR$/src/elasticsearch/insert_comment.py" />
+        <option value="$PROJECT_DIR$/src/models/transformer/idbert.py" />
+        <option value="$PROJECT_DIR$/src/models/transformer/ibert.py" />
+        <option value="$PROJECT_DIR$/src/tlm/ibert_data_transformer.py" />
+        <option value="$PROJECT_DIR$/src/tlm/wiki/generate_dbert_tf.py" />
+        <option value="$PROJECT_DIR$/src/tlm/generate_ibert.py" />
+        <option value="$PROJECT_DIR$/src/tlm/wiki/generate_bert_tf.py" />
+        <option value="$PROJECT_DIR$/src/tlm/diagnosis/delete_diag_generator.py" />
+        <option value="$PROJECT_DIR$/src/misc/looping_prac.py" />
+        <option value="$PROJECT_DIR$/src/tlm/data_gen/msmarco_doc_gen/triplet/reader.py" />
+      </list>
+    </option>
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="-8" />
+    <option name="y" value="-8" />
+    <option name="width" value="1936" />
+    <option name="height" value="1056" />
+  </component>
+  <component name="ProjectId" id="1rbjlM3gcCU9f6G5mltCDq3rvyd" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="chair" type="b2602c69:ProjectViewProjectNode" />
+              <item name="chair" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="chair" type="b2602c69:ProjectViewProjectNode" />
+              <item name="chair" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="chair" type="b2602c69:ProjectViewProjectNode" />
+              <item name="chair" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="tlm" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="chair" type="b2602c69:ProjectViewProjectNode" />
+              <item name="chair" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="tlm" type="462c0819:PsiDirectoryNode" />
+              <item name="data_gen" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="chair" type="b2602c69:ProjectViewProjectNode" />
+              <item name="chair" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="tlm" type="462c0819:PsiDirectoryNode" />
+              <item name="data_gen" type="462c0819:PsiDirectoryNode" />
+              <item name="msmarco_doc_gen" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="chair" type="b2602c69:ProjectViewProjectNode" />
+              <item name="chair" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="tlm" type="462c0819:PsiDirectoryNode" />
+              <item name="training" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="Scope" />
+    </panes>
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="SearchEverywhereHistoryKey" value="&#9;FILE&#9;file://C:/work/code/chair/src/tlm/mysql_sentence.py" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\work\code\chair\src\alignment\perturbation_feature\runner_gen" />
+      <recent name="C:\work\code\chair\src\alignment\lexical_alignment\runner" />
+      <recent name="C:\work\code\chair\src\alignment\perturbation_feature\runner_debug" />
+      <recent name="C:\work\code\chair\src\alignment\perturbation_feature" />
+      <recent name="C:\work\code\chair\src\alignment\matrix_scorers\" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.run_pert_align_payloads">
+    <configuration name="pert_align_payload_gen" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="chair" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+        <env name="JOB_MAN" value="C:\work\code\chair\output\job_man" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/contradiction/medical_claims/token_tagging/runner_s" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/contradiction/medical_claims/token_tagging/runner_s/pert_align_payload_gen.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="predict_classifier" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="chair" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/trainer_v2/dev_runner" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/trainer_v2/dev_runner/predict_classifier.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run_pert_align_payloads" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="chair" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+        <env name="JOB_MAN" value="C:\work\code\chair\output\job_man" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/contradiction/medical_claims/token_tagging/runner_s" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/contradiction/medical_claims/token_tagging/runner_s/run_pert_align_payloads.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="show_alignment_pred" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="chair" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/alignment/lexical_alignment/runner" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/alignment/lexical_alignment/runner/show_alignment_pred.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="train_classification_model2" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="chair" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/trainer_v2/dev_runner" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/trainer_v2/dev_runner/train_classification_model2.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.show_alignment_pred" />
+      <item itemvalue="Python.predict_classifier" />
+      <item itemvalue="Python.train_classification_model2" />
+      <item itemvalue="Python.pert_align_payload_gen" />
+      <item itemvalue="Python.run_pert_align_payloads" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.run_pert_align_payloads" />
+        <item itemvalue="Python.pert_align_payload_gen" />
+        <item itemvalue="Python.predict_classifier" />
+        <item itemvalue="Python.train_classification_model2" />
+        <item itemvalue="Python.show_alignment_pred" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="project-level" UseSingleDictionary="true" transferred="true" />
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="543526a0-1d3e-455f-a301-8dc9a7ecc453" name="Default" comment="" />
+      <created>1542304483284</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1542304483284</updated>
+      <workItem from="1649064355763" duration="3000" />
+      <workItem from="1649064412296" duration="17848000" />
+      <workItem from="1649412472572" duration="42074000" />
+      <workItem from="1649826935950" duration="2686000" />
+      <workItem from="1649845206482" duration="5905000" />
+      <workItem from="1649906504700" duration="92145000" />
+      <workItem from="1663286918053" duration="50000" />
+      <workItem from="1663968185924" duration="229000" />
+      <workItem from="1664300888947" duration="472000" />
+    </task>
+    <task id="LOCAL-00001" summary=".">
+      <created>1542309559449</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1542309559449</updated>
+    </task>
+    <task id="LOCAL-00002" summary="refs #33">
+      <created>1562145221539</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1562145221539</updated>
+    </task>
+    <task id="LOCAL-00003" summary="crawling codes">
+      <created>1565061645470</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1565061645471</updated>
+    </task>
+    <task id="LOCAL-00004" summary="comment parsing and elastic search indexing">
+      <created>1565470228032</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1565470228032</updated>
+    </task>
+    <task id="LOCAL-00005" summary="insert comment piece">
+      <created>1570130876398</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1570130876398</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Merge branch 'master' of https://github.com/clover3/chair&#10;&#10;# Conflicts:&#10;#&#9;src/elastic/insert_comment.py">
+      <created>1570131001863</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1570131001863</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Merge branch 'master' of https://github.com/clover3/chair&#10;&#10;# Conflicts:&#10;#&#9;src/elastic/insert_comment.py">
+      <created>1570159408616</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1570159408616</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Merge branch 'master' of https://github.com/clover3/chair&#10;&#10;# Conflicts:&#10;#&#9;src/elastic/insert_comment.py">
+      <created>1570159436747</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1570159436747</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Merge branch 'master' of https://github.com/clover3/chair&#10;&#10;# Conflicts:&#10;#&#9;src/elastic/insert_comment.py">
+      <created>1570164336272</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1570164336272</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Merge branch 'master' of https://github.com/clover3/chair&#10;&#10;# Conflicts:&#10;#&#9;src/elastic/insert_comment.py">
+      <created>1570165611215</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1570165611215</updated>
+    </task>
+    <task id="LOCAL-00011" summary="ibert">
+      <created>1570167090118</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1570167090118</updated>
+    </task>
+    <task id="LOCAL-00012" summary="practice">
+      <created>1575005155121</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1575005155121</updated>
+    </task>
+    <task id="LOCAL-00013" summary="MSMARCO segment selection">
+      <created>1619763117756</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1619763117756</updated>
+    </task>
+    <task id="LOCAL-00014" summary="segment selection experiments">
+      <created>1620020339959</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1620020339959</updated>
+    </task>
+    <task id="LOCAL-00015" summary="mamarco document-passage relation">
+      <created>1620824723560</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1620824723560</updated>
+    </task>
+    <task id="LOCAL-00016" summary="mmd sero">
+      <created>1621151632453</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1621151632454</updated>
+    </task>
+    <task id="LOCAL-00017" summary="mmd">
+      <created>1621847304613</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1621847304614</updated>
+    </task>
+    <task id="LOCAL-00018" summary="mmd fast_gen">
+      <created>1621917871971</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1621917871971</updated>
+    </task>
+    <task id="LOCAL-00019" summary="mmd fast_gen">
+      <created>1622207809958</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1622207809958</updated>
+    </task>
+    <task id="LOCAL-00020" summary="ecc">
+      <created>1622285770862</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1622285770862</updated>
+    </task>
+    <task id="LOCAL-00021" summary="run4 passage splits">
+      <created>1639318104370</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1639318104370</updated>
+    </task>
+    <task id="LOCAL-00022" summary="judgments managements">
+      <created>1639491447476</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1639491447476</updated>
+    </task>
+    <task id="LOCAL-00023" summary="dimension normalize">
+      <created>1639507866191</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1639507866191</updated>
+    </task>
+    <task id="LOCAL-00024" summary="changes">
+      <created>1639508144737</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1639508144737</updated>
+    </task>
+    <task id="LOCAL-00025" summary="Move eval data structure to top level">
+      <created>1649326696246</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1649326696246</updated>
+    </task>
+    <task id="LOCAL-00026" summary="Refactoring">
+      <created>1649397355402</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1649397355402</updated>
+    </task>
+    <task id="LOCAL-00027" summary="Align evals for NLI">
+      <created>1649641376561</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1649641376561</updated>
+    </task>
+    <task id="LOCAL-00028" summary="extact features">
+      <created>1649646183600</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1649646183600</updated>
+    </task>
+    <task id="LOCAL-00029" summary="alignment refactoring">
+      <created>1649753220729</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1649753220729</updated>
+    </task>
+    <task id="LOCAL-00030" summary="word2vec alignment">
+      <created>1649754346915</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1649754346915</updated>
+    </task>
+    <task id="LOCAL-00031" summary="build lexical alignment">
+      <created>1649757144441</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1649757144441</updated>
+    </task>
+    <task id="LOCAL-00032" summary="build lexical alignment">
+      <created>1649769228052</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1649769228052</updated>
+    </task>
+    <task id="LOCAL-00033" summary="train perturbation">
+      <created>1649914458653</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1649914458653</updated>
+    </task>
+    <task id="LOCAL-00034" summary="perturbations">
+      <created>1650260481508</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1650260481508</updated>
+    </task>
+    <task id="LOCAL-00035" summary="Change problem id">
+      <created>1650261844589</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1650261844589</updated>
+    </task>
+    <task id="LOCAL-00036" summary="report_run">
+      <created>1650263135507</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1650263135507</updated>
+    </task>
+    <task id="LOCAL-00037" summary="perturbation-based training pipeline">
+      <created>1650369867229</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1650369867229</updated>
+    </task>
+    <task id="LOCAL-00038" summary="train_gen 3">
+      <created>1650600602903</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1650600602903</updated>
+    </task>
+    <task id="LOCAL-00039" summary="perturbation-based prediction supervised by lexical_v1_1">
+      <created>1650707090979</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1650707090979</updated>
+    </task>
+    <task id="LOCAL-00040" summary="nli predicting">
+      <created>1650865337687</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1650865337687</updated>
+    </task>
+    <task id="LOCAL-00041" summary="nli predicting">
+      <created>1650867040326</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1650867040326</updated>
+    </task>
+    <task id="LOCAL-00042" summary="nli predicting">
+      <created>1651515452067</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1651515452067</updated>
+    </task>
+    <option name="localTasksCounter" value="43" />
+    <servers />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <layout>
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.18229167" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
+      <window_info anchor="bottom" id="Version Control" order="7" weight="0.28118393" />
+      <window_info anchor="bottom" id="Python Console" order="7" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.32220945" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info anchor="bottom" id="Terminal" order="7" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32911393" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="mamarco document-passage relation" />
+    <MESSAGE value="mmd sero" />
+    <MESSAGE value="mmd" />
+    <MESSAGE value="mmd fast_gen" />
+    <MESSAGE value="ecc" />
+    <MESSAGE value="run4 passage splits" />
+    <MESSAGE value="judgments managements" />
+    <MESSAGE value="dimension normalize" />
+    <MESSAGE value="changes" />
+    <MESSAGE value="Move eval data structure to top level" />
+    <MESSAGE value="Refactoring" />
+    <MESSAGE value="replace eval" />
+    <MESSAGE value="Align evals for NLI" />
+    <MESSAGE value="extact features" />
+    <MESSAGE value="alignment refactoring" />
+    <MESSAGE value="word2vec alignment" />
+    <MESSAGE value="build lexical alignment" />
+    <MESSAGE value="train perturbation" />
+    <MESSAGE value="perturbations" />
+    <MESSAGE value="Change problem id" />
+    <MESSAGE value="report_run" />
+    <MESSAGE value="perturbation-based training pipeline" />
+    <MESSAGE value="train_gen 3" />
+    <MESSAGE value="perturbation-based prediction supervised by lexical_v1_1" />
+    <MESSAGE value="nli predicting" />
+    <option name="LAST_COMMIT_MESSAGE" value="nli predicting" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/chair$run_train_3_all.coverage" NAME="run_train_3_all Coverage Results" MODIFIED="1650700689769" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature/runner_s" />
+    <SUITE FILE_PATH="coverage/chair$build_lexical_alignment.coverage" NAME="build_lexical_alignment Coverage Results" MODIFIED="1649768837950" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/lexical_alignment" />
+    <SUITE FILE_PATH="coverage/chair$lexical_v1_1.coverage" NAME="lexical_v1_1 Coverage Results" MODIFIED="1650598637526" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/related/runner_nli" />
+    <SUITE FILE_PATH="coverage/chair$run_train_3_3.coverage" NAME="run_train_3_3 Coverage Results" MODIFIED="1650699882130" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature/runner_s" />
+    <SUITE FILE_PATH="coverage/chair$predict_alignments.coverage" NAME="predict_alignments Coverage Results" MODIFIED="1650700824812" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature/runner_s" />
+    <SUITE FILE_PATH="coverage/chair$print_eval_preference.coverage" NAME="print_eval_preference Coverage Results" MODIFIED="1649597139434" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/contradiction/alignment/related/runner_nli" />
+    <SUITE FILE_PATH="coverage/chair$train_gen3.coverage" NAME="train_gen3 Coverage Results" MODIFIED="1650599744091" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature/runner_gen" />
+    <SUITE FILE_PATH="coverage/chair$run_pert_align_payloads.coverage" NAME="run_pert_align_payloads Coverage Results" MODIFIED="1650865233841" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/contradiction/medical_claims/token_tagging/runner_s" />
+    <SUITE FILE_PATH="coverage/chair$show_alignment_pred.coverage" NAME="show_alignment_pred Coverage Results" MODIFIED="1650700853144" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/lexical_alignment/runner" />
+    <SUITE FILE_PATH="coverage/chair$print_weight_dev.coverage" NAME="print_weight_dev Coverage Results" MODIFIED="1649937642156" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature/runner_s" />
+    <SUITE FILE_PATH="coverage/chair$show_preference_v3.coverage" NAME="show_preference_v3 Coverage Results" MODIFIED="1649596988055" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/tlm/qtype/partial_relevance/result_print/runner" />
+    <SUITE FILE_PATH="coverage/chair$extract_feature_dev.coverage" NAME="extract_feature_dev Coverage Results" MODIFIED="1649751279058" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/contradiction/alignment/perturbation_feature" />
+    <SUITE FILE_PATH="coverage/chair$run_train4.coverage" NAME="run_train4 Coverage Results" MODIFIED="1650699058698" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature/runner_s" />
+    <SUITE FILE_PATH="coverage/chair$read_tfrecords.coverage" NAME="read_tfrecords Coverage Results" MODIFIED="1649907406514" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature/runner_s" />
+    <SUITE FILE_PATH="coverage/chair$run_train.coverage" NAME="run_train Coverage Results" MODIFIED="1649937929181" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature/runner_s" />
+    <SUITE FILE_PATH="coverage/chair$train_perturbation_based_alignment.coverage" NAME="train_perturbation_based_alignment Coverage Results" MODIFIED="1649857584220" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature/runner_s" />
+    <SUITE FILE_PATH="coverage/chair$show_alignments.coverage" NAME="show_alignments Coverage Results" MODIFIED="1650609419126" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/lexical_alignment/runner" />
+    <SUITE FILE_PATH="coverage/chair$pert_align_predictor.coverage" NAME="pert_align_predictor Coverage Results" MODIFIED="1650863166760" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/contradiction/medical_claims/token_tagging/runner_s" />
+    <SUITE FILE_PATH="coverage/chair$train_classification_model2.coverage" NAME="train_classification_model2 Coverage Results" MODIFIED="1650719448811" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/trainer_v2/dev_runner" />
+    <SUITE FILE_PATH="coverage/chair$run_train_1d.coverage" NAME="run_train_1d Coverage Results" MODIFIED="1650334288396" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature/runner_s" />
+    <SUITE FILE_PATH="coverage/chair$report_run_tester.coverage" NAME="report_run_tester Coverage Results" MODIFIED="1650263053393" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/taskman_client/dev" />
+    <SUITE FILE_PATH="coverage/chair$run_train3.coverage" NAME="run_train3 Coverage Results" MODIFIED="1650699176119" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature/runner_s" />
+    <SUITE FILE_PATH="coverage/chair$run_train_3_0145.coverage" NAME="run_train_3_0145 Coverage Results" MODIFIED="1650700125435" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature/runner_s" />
+    <SUITE FILE_PATH="coverage/chair$nli_mask.coverage" NAME="nli_mask Coverage Results" MODIFIED="1649573224825" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/bert_api/task_clients/nli_interface.py" />
+    <SUITE FILE_PATH="coverage/chair$predict_classifier.coverage" NAME="predict_classifier Coverage Results" MODIFIED="1650719679166" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/trainer_v2/dev_runner" />
+    <SUITE FILE_PATH="coverage/chair$nli_console.coverage" NAME="nli_console Coverage Results" MODIFIED="1649318143462" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/contradiction/ie_align/srl/tool" />
+    <SUITE FILE_PATH="coverage/chair$build_dataset.coverage" NAME="build_dataset Coverage Results" MODIFIED="1650262422252" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/related/runner_nli" />
+    <SUITE FILE_PATH="coverage/chair$run_align_evals.coverage" NAME="run_align_evals Coverage Results" MODIFIED="1649593441274" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/contradiction/alignment/related/runner_nli" />
+    <SUITE FILE_PATH="coverage/chair$train_fns.coverage" NAME="train_fns Coverage Results" MODIFIED="1649916277793" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature" />
+    <SUITE FILE_PATH="coverage/chair$debug_mask.coverage" NAME="debug_mask Coverage Results" MODIFIED="1649936550181" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature/runner_s" />
+    <SUITE FILE_PATH="coverage/chair$record_verify.coverage" NAME="record_verify Coverage Results" MODIFIED="1650603704106" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/alignment/perturbation_feature/runner_s" />
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/src/tlm/select_sentence.py" />
+    <entry file="file://$PROJECT_DIR$/src/tlm/retreive_hints.py" />
+    <entry file="file://$PROJECT_DIR$/src/tlm/index.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/retrieve_doc.py" />
+    <entry file="file://$PROJECT_DIR$/src/tlm/mysql_sentence.py" />
+    <entry file="file://$PROJECT_DIR$/src/task/MLM.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="323">
+          <caret line="20" column="23" selection-start-line="20" selection-start-column="23" selection-end-line="20" selection-end-column="23" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/build_index.py" />
+    <entry file="file://$PROJECT_DIR$/../CIKM/venv/Lib/site-packages/bs4/element.py" />
+    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/json/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="491">
+          <caret line="273" column="4" selection-start-line="273" selection-start-column="4" selection-end-line="273" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/elasticsearch/insert_article.py" />
+    <entry file="file://$PROJECT_DIR$/src/elasticsearch/insert_comment.py" />
+    <entry file="file://$PROJECT_DIR$/src/misc_lib.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="170">
+          <caret line="234" column="14" lean-forward="true" selection-start-line="234" selection-start-column="14" selection-end-line="234" selection-end-column="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/crawl/crawl_uk.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="425">
+          <caret line="32" lean-forward="true" selection-start-line="32" selection-end-line="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/crawl/parse_comment.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="459">
+          <caret line="27" column="24" selection-start-line="27" selection-start-column="24" selection-end-line="27" selection-end-column="24" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/crawl/load_guardian.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="731">
+          <caret line="61" column="18" selection-start-line="61" selection-start-column="18" selection-end-line="61" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/crawl/guardian_api.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="5" column="15" selection-start-line="5" selection-start-column="4" selection-end-line="5" selection-end-column="15" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/crawl/guardian.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="530">
+          <caret line="260" lean-forward="true" selection-start-line="260" selection-end-line="260" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/adhoc/bm25.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="340">
+          <caret line="20" lean-forward="true" selection-start-line="20" selection-end-line="20" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/models/transformer/bert.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="11492">
+          <caret line="686" column="15" selection-end-line="1152" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/models/transformer/ibert.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4454">
+          <caret line="272" selection-start-line="272" selection-end-line="272" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/crawl/parse_paragraph.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="6" column="21" lean-forward="true" selection-start-line="6" selection-start-column="21" selection-end-line="6" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../CIKM/venv/Lib/site-packages/tensorflow/python/pywrap_tensorflow.py" />
+    <entry file="file://$PROJECT_DIR$/../CIKM/venv/Lib/site-packages/tensorflow/core/example/feature_pb2.py" />
+    <entry file="file://$PROJECT_DIR$/src/tlm/dumping_actions.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="185">
+          <caret line="16" column="33" lean-forward="true" selection-start-line="16" selection-end-line="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/data_generator/tokenizer_b.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="279">
+          <caret line="127" column="9" selection-start-line="127" selection-start-column="9" selection-end-line="127" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/wiki/count.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="5" column="14" selection-start-line="5" selection-start-column="14" selection-end-line="5" selection-end-column="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tf_util/count.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="238">
+          <caret line="15" column="25" selection-start-line="15" selection-start-column="25" selection-end-line="15" selection-end-column="25" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/generate_ibert.py" />
+    <entry file="file://$PROJECT_DIR$/src/tlm/ibert_data_transformer.py" />
+    <entry file="file://$PROJECT_DIR$/src/sydney_manager.py" />
+    <entry file="file://$PROJECT_DIR$/src/trainer/experiment.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="168">
+          <caret line="1895" column="65" lean-forward="true" selection-start-line="1895" selection-start-column="65" selection-end-line="1895" selection-end-column="65" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/training/model_fn.py" />
+    <entry file="file://$PROJECT_DIR$/src/models/transformer/transformer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="510">
+          <caret line="88" column="17" lean-forward="true" selection-start-line="88" selection-start-column="17" selection-end-line="88" selection-end-column="17" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/crawl/guardian_uk.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="471">
+          <caret line="47" column="20" selection-start-line="47" selection-start-column="20" selection-end-line="47" selection-end-column="20" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/models/transformer/modules.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="17">
+          <caret line="208" column="54" selection-start-line="208" selection-start-column="54" selection-end-line="208" selection-end-column="54" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/misc/looping_prac.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="14" selection-start-column="14" selection-end-column="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/training/dict_model_fn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="862">
+          <caret line="181" column="30" selection-start-line="181" selection-start-column="30" selection-end-line="181" selection-end-column="30" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/models/transformer/tranformer_nli.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="17">
+          <caret line="122" column="20" selection-start-line="122" selection-start-column="20" selection-end-line="122" selection-end-column="20" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/diagnosis/delete_diag_generator.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="340">
+          <caret line="22" lean-forward="true" selection-start-line="22" selection-end-line="22" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/wiki/generate_bert_tf.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="862">
+          <caret line="81" column="32" selection-start-line="81" selection-start-column="32" selection-end-line="81" selection-end-column="32" />
+          <folding>
+            <element signature="e#0#13#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/wiki/generate_dbert_tf.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="862">
+          <caret line="100" column="39" selection-start-line="100" selection-start-column="32" selection-end-line="100" selection-end-column="39" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/data_generator/bert/targeted_pretraining.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="862">
+          <caret line="110" selection-start-line="40" selection-end-line="110" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/wiki/bert_training_data.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="862">
+          <caret line="365" selection-start-line="365" selection-end-line="365" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/multiblock/multiblock_training.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="862">
+          <caret line="361" selection-start-line="361" selection-end-line="361" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tf_util/show_record.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="68">
+          <caret line="6" column="11" selection-start-line="6" selection-start-column="11" selection-end-line="6" selection-end-column="11" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/wiki/wiki_segment.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="544">
+          <caret line="36" column="37" selection-start-line="36" selection-start-column="37" selection-end-line="36" selection-end-column="37" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/wiki/wiki_tokener.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="357">
+          <caret line="29" column="47" selection-start-line="29" selection-start-column="47" selection-end-line="29" selection-end-column="47" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/data_gen/msmarco_doc_gen/gen_runner/pair_sero_gen.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="399">
+          <caret line="21" column="20" selection-start-line="21" selection-start-column="20" selection-end-line="21" selection-end-column="20" />
+          <folding>
+            <element signature="e#0#29#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/data_gen/msmarco_doc_gen/gen_runner/pair_train_gen.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="247">
+          <caret line="13" column="26" selection-start-line="13" selection-start-column="26" selection-end-line="13" selection-end-column="26" />
+          <folding>
+            <element signature="e#0#29#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/data_gen/msmarco_doc_gen/gen_worker.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1352">
+          <caret line="291" column="27" selection-start-line="291" selection-start-column="27" selection-end-line="291" selection-end-column="27" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/tlm/data_gen/msmarco_doc_gen/triplet/reader.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="38">
+          <caret line="2" lean-forward="true" selection-start-line="2" selection-end-line="2" />
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>

@@ -64,7 +64,7 @@ class Feature2Text:
         for i in range(len(tokens)):
             if resolve_mask and tokens[i] == "[MASK]":
                 tokens[i] = "[MASK_{}: {}]".format(i, mask_ans[i])
-            if highlight_lookup_word and i in d_location_ids and i is not 0:
+            if highlight_lookup_word and i in d_location_ids and i != 0:
                 print(i, emph_word)
                 if tokens[i - 1] != emph_word:
                     tokens[i] = emph_word

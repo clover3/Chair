@@ -6,7 +6,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import tensor_to_list
 from trainer_v2.chair_logging import c_log
 from trainer_v2.evidence_selector.defs import RLStateTensor
-from trainer_v2.evidence_selector.environment import PEInfoFromCount, IDS, concat_two_items, unconcat, \
+from trainer_v2.evidence_selector.environment import PEInfo, IDS, concat_two_items, unconcat, \
     ConcatMaskStrategyI
 from trainer_v2.evidence_selector.evidence_candidates import get_st_ed
 from trainer_v2.evidence_selector.evidence_scoring import cross_entropy
@@ -92,4 +92,4 @@ def get_pe_info_nli(base_pred, rep_pred, action, state):
     n_p_tokens = get_n_p_tokens(state)
     valid_action = get_valid_action(state, action)
     num_used = int(np.sum(valid_action).tolist())
-    return PEInfoFromCount(base_pred, rep_pred, num_used, n_p_tokens, cross_entropy)
+    return PEInfo(base_pred, rep_pred, num_used, n_p_tokens, cross_entropy)

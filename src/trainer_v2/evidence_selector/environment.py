@@ -27,6 +27,10 @@ class ConcatMaskStrategyI(ABC):
     def get_deletable_evidence_mask(self, input_ids, segment_ids):
         pass
 
+    @abstractmethod
+    def get_query_like_segment_mask(self, input_ids, segment_ids):
+        pass
+
 
 class PEInfoI:
     @abstractmethod
@@ -38,18 +42,50 @@ class PEInfoI:
         pass
 
     @abstractmethod
-    def combined_score(self):
+    def get_reward(self):
         pass
 
 
-class PEInfoFromCount(PEInfoI):
-    def __init__(self, base_pred: List[float], rep_pred: List[float],
-                 num_used: int, max_n_tokens: int, error_fn):
-        self.base_pred = base_pred
-        self.rep_pred = rep_pred
-        self.num_used = num_used
-        self.max_n_tokens = max_n_tokens
+class PEInfo(PEInfoI):
+    def __init__(
+            self,
+            base_pred: List[float],
+            rep_pred: List[float],
+            num_used: int,
+            max_n_tokens: int,
+            error_fn,
+            tolerance=0.05, density_weight=0.05):
+        self.base_pred: List[float] = base_pred
+        self.rep_pred: List[float] = rep_pred
+        self.num_used: int = num_used
+        self.max_n_tokens: int = max_n_tokens
         self.error_fn = error_fn
+        self.tolerance = tolerance
+        self.density_weight = density_weight
+
+    def get_desc_head(self):
+        row = ["base_pred", "rep_pred", "get_error",
+               "num_used", "max_n_tokens", "density",
+               "get_reward"
+               ]
+        return "\t".join(row)
+
+    def get_desc(self):
+        row = [self.base_pred, self.rep_pred, self.get_error(),
+               self.num_used, self.max_n_tokens, self.density(),
+               self.get_reward()
+               ]
+
+        def to_str(v) -> str:
+            if type(v) == float:
+                return "{0:.1f}".format(v)
+            elif type(v) == list:
+                s = ", ".join(list(map(to_str, v)))
+                return f"({s})"
+            else:
+                return str(v)
+        s_row: List[str] = list(map(to_str, row))
+        return "\t".join(s_row)
 
     def get_error(self):
         err = self.error_fn(np.array(self.base_pred), np.array(self.rep_pred))  # [0, inf]
@@ -58,15 +94,14 @@ class PEInfoFromCount(PEInfoI):
     def density(self):
         return length_loss(self.num_used, self.max_n_tokens)
 
-    def combined_score(self):
+    def get_reward(self):
         # error reward is 10 - error
         # density reward is - 0.05 * density
-        tolerance = 0.05
         err_cap = 10
         err = self.get_error()
         err = min(err, err_cap)  # [0, 5]
-        err = max(tolerance, err)
-        combined_score = (err_cap - err) - tolerance * self.density()
+        err = max(self.tolerance, err)
+        combined_score = (err_cap - err) - self.density_weight * self.density()
         return combined_score
 
 
@@ -74,10 +109,10 @@ class PEPEnvironment:
     def __init__(
             self,
             pep_client,
-            get_pe_info_from_action_state,
+            pe_info_factory,
             apply_mask
     ):
-        self.get_pe_info_from_action_state = get_pe_info_from_action_state
+        self.pe_info_factory = pe_info_factory
         self.pep_client = pep_client
         self.apply_mask: ConcatMaskStrategyI = apply_mask
 
@@ -91,7 +126,7 @@ class PEPEnvironment:
         ret = self.pep_client.request(list(payload))
         return ret
 
-    def get_item_results(self, items: List[Tuple[RLStateTensor, List[int]]]) -> List[PEInfoI]:
+    def get_item_results(self, items: List[Tuple[RLStateTensor, List[int]]]) -> List[PEInfo]:
         c_log.debug("PEPClient get_item_results Entry")
         # Build dictionary of base predictions
         base_items = {}
@@ -120,12 +155,12 @@ class PEPEnvironment:
             base_preds[state.input_ids_hash()] = output
         c_log.debug("PEPClient request 2")
 
-        pe_result_list: List[PEInfoI] = []
+        pe_result_list: List[PEInfo] = []
         for sa, output in zip(items, item_outputs):
             output: List[float] = output
             state, action = sa
             base_output: List[float] = base_preds[state.input_ids_hash()]
-            pe_result: PEInfoI = self.get_pe_info_from_action_state(base_output, output, action, state)
+            pe_result: PEInfo = self.pe_info_factory(base_output, output, action, state)
             pe_result_list.append(pe_result)
 
         assert len(pe_result_list) == len(items)

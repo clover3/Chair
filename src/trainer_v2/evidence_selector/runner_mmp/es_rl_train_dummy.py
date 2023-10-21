@@ -11,7 +11,7 @@ from trainer_v2.custom_loop.per_task.rl_trainer import PolicyGradientTrainer, Po
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2_nli, get_run_config2
 from trainer_v2.custom_loop.train_loop import tf_run
 
-from trainer_v2.evidence_selector.environment import PEInfoFromCount, PEPEnvironment, PEPClient
+from trainer_v2.evidence_selector.environment import PEInfo, PEPEnvironment, PEPClient
 from trainer_v2.evidence_selector.environment_qd import ConcatMaskStrategyQD, get_pe_for_qd_ce
 from trainer_v2.evidence_selector.runner_mmp.dataset_fn import build_state_dataset_fn
 from trainer_v2.evidence_selector.seq_pred_policy_gradient import SeqPredREINFORCE

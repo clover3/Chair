@@ -8,7 +8,7 @@ from misc_lib import NamedAverager, two_digit_float, tensor_to_list
 from trainer.promise import PromiseKeeper, MyPromise, MyFuture, list_future
 from trainer_v2.chair_logging import c_log
 from trainer_v2.evidence_selector.defs import RLStateTensor
-from trainer_v2.evidence_selector.environment import ConcatMaskStrategyI, PEInfoI
+from trainer_v2.evidence_selector.environment import ConcatMaskStrategyI, PEInfoI, PEInfo
 from trainer_v2.tf_misc_helper import SummaryWriterWrap
 from trainer_v2.reinforce.monte_carlo_policy_function import Action, PolicyFunction
 import numpy as np
@@ -55,8 +55,8 @@ class ExplorationFuture(NamedTuple):
 class ExplorationOutput(NamedTuple):
     base_sa: Tuple[RLStateTensor, Action]
     alt_sa_list: List[Tuple[RLStateTensor, Action]]
-    base_result: PEInfoI
-    alt_result_list: List[PEInfoI]
+    base_result: PEInfo
+    alt_result_list: List[PEInfo]
 
 
     @classmethod
@@ -71,7 +71,7 @@ class SeqPredREINFORCE:
             seq_length: int,
             build_state_dataset: Callable[[str, bool], tf.data.Dataset],
             batch_size,
-            environment: Callable[[List[Tuple[RLStateTensor, List[int]]]], List[PEInfoI]],
+            environment: Callable[[List[Tuple[RLStateTensor, List[int]]]], List[PEInfo]],
             concat_mask_strategy: ConcatMaskStrategyI,
             summary_writer: SummaryWriterWrap
     ):
@@ -161,8 +161,8 @@ class SeqPredREINFORCE:
             e_list.append(e)
 
         def exploration_output_to_reward(e: ExplorationOutput):
-            scores = [a.combined_score() for a in e.alt_result_list]
-            return ExplorationReward(e.base_sa, e.alt_sa_list, e.base_result.combined_score(), scores)
+            scores = [a.get_reward() for a in e.alt_result_list]
+            return ExplorationReward(e.base_sa, e.alt_sa_list, e.base_result.get_reward(), scores)
 
         c_log.debug(" - Running action candidates")
         pk.do_duty()
@@ -188,7 +188,7 @@ class SeqPredREINFORCE:
             print("[ERR] [Density] [Combined]")
             for item, res in zip(eo.alt_sa_list, eo.alt_result_list):
                 state, action = item
-                stat_str = " ".join(map(two_digit_float, [res.get_error(), res.density(), res.combined_score()]))
+                stat_str = " ".join(map(two_digit_float, [res.get_error(), res.density(), res.get_reward()]))
                 input_ids = self.concat_mask_strategy.apply_mask(state.input_ids, state.segment_ids, action)
                 s = to_text(input_ids)
                 print("{}\t{}".format(stat_str, s))
@@ -200,17 +200,20 @@ class SeqPredREINFORCE:
             base_error = base.get_error()
             na.avg_dict['base_error'].append(base_error)
             na.avg_dict['base_density'].append((base.density()))
-            na.avg_dict['base_reward'].append((base.combined_score()))
+            na.avg_dict['base_reward'].append((base.get_reward()))
+            c_log.debug("    : %s", base.get_desc_head())
+            c_log.debug("Base: %s", base.get_desc())
 
             for alt in exploration_output.alt_result_list:
+                c_log.debug("Alt : %s", alt.get_desc())
                 alt_error = alt.get_error()
                 na.avg_dict['alt_error'].append(alt_error)
                 na.avg_dict['alt_density'].append(alt.density())
-                na.avg_dict['alt_reward'].append((alt.combined_score()))
+                na.avg_dict['alt_reward'].append((alt.get_reward()))
 
                 na.avg_dict['alt_ce_better'].append(int(alt_error < base_error))
                 na.avg_dict['alt_density_better'].append(int(alt.density() < base.density()))
-                na.avg_dict['alt_reward_better'].append(int(alt.combined_score() > base.combined_score()))
+                na.avg_dict['alt_reward_better'].append(int(alt.get_reward() > base.get_reward()))
 
         avg_dict = na.get_average_dict()
         for part in ['base', 'alt']:

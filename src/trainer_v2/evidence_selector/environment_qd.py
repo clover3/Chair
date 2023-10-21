@@ -4,7 +4,7 @@ from typing import List, Tuple
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import tensor_to_list
 from trainer_v2.evidence_selector.defs import RLStateTensor
-from trainer_v2.evidence_selector.environment import ConcatMaskStrategyI, PEInfoFromCount, IDS
+from trainer_v2.evidence_selector.environment import ConcatMaskStrategyI, PEInfo, IDS
 from trainer_v2.evidence_selector.evidence_candidates import get_st_ed
 from trainer_v2.evidence_selector.evidence_scoring import cross_entropy, mean_absolute_error
 
@@ -41,16 +41,23 @@ class ConcatMaskStrategyQD(ConcatMaskStrategyI):
         new_input_ids = self.apply_mask(input_ids, segment_ids, action)
         return tensor_to_list(new_input_ids), tensor_to_list(segment_ids)
 
+    def get_query_like_segment_mask(self, input_ids, segment_ids):
+        is_first = np.logical_and(np.equal(segment_ids, 0), np.not_equal(input_ids, 0))
+        return is_first
+
 
 def get_pe_for_qd_ce(base_pred, rep_pred, action, state):
-    return get_pe_for_qd_inner(base_pred, rep_pred, action, state, cross_entropy)
+    return get_pe_for_qd_inner(base_pred, rep_pred, action, state, cross_entropy, 0.05, 0.05)
 
 
 def get_pe_for_qd_mae(base_pred, rep_pred, action, state):
-    return get_pe_for_qd_inner(base_pred, rep_pred, action, state, mean_absolute_error)
+    return get_pe_for_qd_inner(base_pred, rep_pred, action, state, mean_absolute_error, 0.05, 0.05)
 
 
-def get_pe_for_qd_inner(base_pred, rep_pred, action, state, get_error_fn):
+def get_pe_for_qd_inner(
+        base_pred, rep_pred, action, state, get_error_fn, tolerance,
+        density_weight,
+):
     def get_doc_len(state: RLStateTensor):
         seg2_start, seg2_end = get_st_ed(state.segment_ids_np)
         return seg2_end - seg2_start
@@ -67,4 +74,5 @@ def get_pe_for_qd_inner(base_pred, rep_pred, action, state, get_error_fn):
     num_used = int(np.sum(valid_action).tolist())
     # num_used = 5
     # n_p_tokens = 10
-    return PEInfoFromCount(base_pred, rep_pred, num_used, n_p_tokens, get_error_fn)
+    return PEInfo(
+        base_pred, rep_pred, num_used, n_p_tokens, get_error_fn, tolerance, density_weight)
