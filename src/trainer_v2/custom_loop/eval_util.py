@@ -1,6 +1,6 @@
 from tensorflow.python.distribute.distribute_lib import Strategy
 
-import trainer_v2.per_project.transparency.mmp.probe.probe_common
+
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result
 import tensorflow as tf
@@ -15,7 +15,7 @@ class EvalObject(EvalObjectIF):
                  eval_metrics: Dict,
                  eval_steps=10):
         self.loss = tf.keras.metrics.Mean(name='dev_loss')
-        self.metrics: Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric] = eval_metrics
+        self.metrics: Dict[str, tf.keras.metrics.Metric] = eval_metrics
         self.eval_batches = eval_batches
         self.model = model
         self.dist_strategy: Strategy = dist_strategy

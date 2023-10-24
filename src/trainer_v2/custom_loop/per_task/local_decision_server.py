@@ -12,7 +12,7 @@ from trainer_v2.custom_loop.inference import InferenceHelper, SanityChecker
 from trainer_v2.custom_loop.per_task.ts_util import get_dataset_factory_two_seg, load_local_decision_model
 
 
-def run_local_decision_server(run_config, model_config:ModelConfigType, strategy):
+def run_local_decision_server(run_config, model_config: ModelConfigType, strategy):
     def model_factory():
         model: tf.keras.models.Model = load_local_decision_model(
             model_config, run_config.get_model_path())
@@ -20,7 +20,7 @@ def run_local_decision_server(run_config, model_config:ModelConfigType, strategy
 
     dataset_factory = get_dataset_factory_two_seg(model_config)
     predictor = InferenceHelper(model_factory, dataset_factory, strategy)
-    sanity_checker = SanityChecker()
+    sanity_checker = SanityChecker(model_config)
 
     def predict(payload: List[Tuple[List[int], List[int]]]) -> List[Tuple[List[List[float]], List[float]]]:
         try:

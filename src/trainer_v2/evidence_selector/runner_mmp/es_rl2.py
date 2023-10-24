@@ -3,6 +3,7 @@ import os
 import sys
 from cpath import get_bert_config_path
 from port_info import LOCAL_DECISION_PORT
+from taskman_client.wrapper3 import report_run3
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.definitions import ModelConfig512_2, ModelConfig256_2
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
@@ -21,7 +22,7 @@ from trainer_v2.tf_misc_helper import SummaryWriterWrap
 from trainer_v2.train_util.arg_flags import flags_parser
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
-
+@report_run3
 def main(args):
     c_log.info(__file__)
     src_model_config = ModelConfig512_2()
@@ -29,7 +30,7 @@ def main(args):
     concat_mask = ConcatMaskStrategyQD()
     tolerance = 0.05
     density_weight = 1
-    c_log.setLevel(logging.INFO)
+    c_log.setLevel(logging.DEBUG)
 
     def get_pe_factory(base_pred, rep_pred, action, state) -> [[], Callable]:
         return get_pe_for_qd_inner(

@@ -5,11 +5,12 @@ from typing import Tuple, Dict, Callable, List
 
 import tensorflow as tf
 
-import trainer_v2.per_project.transparency.mmp.probe.probe_common
+
 from misc_lib import RecentCounter
 from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
+from trainer_v2.custom_loop.per_task.pairwise_trainer import EvaluatorIF
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result, get_strategy_from_config, eval_tensor, \
     summarize_metric
@@ -283,7 +284,6 @@ def tf_run_eval(run_config: RunConfig2,
     c_log.info("tf_eval_run ENTRY")
     strategy = get_strategy_from_config(run_config)
     eval_step = run_config.eval_config.eval_step
-    steps_per_execution = run_config.common_run_config.steps_per_execution
     with strategy.scope():
         c_log.debug("Loading model")
         model_path = run_config.eval_config.model_save_path
@@ -292,7 +292,7 @@ def tf_run_eval(run_config: RunConfig2,
         trainer.set_keras_model(model)
         loss_metric = tf.keras.metrics.Mean(name='loss')
 
-        metrics: Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric] = trainer.get_eval_metrics()
+        metrics: Dict[str, tf.keras.metrics.Metric] = trainer.get_eval_metrics()
 
     c_log.debug("tf_run_inner initializing dataset")
     eval_dataset = build_dataset(run_config.dataset_config.eval_files_path, False)
@@ -330,6 +330,7 @@ def tf_run_eval(run_config: RunConfig2,
     c_log.info("{}".format(metric_res))
     c_log.info("Evaluation completed ({} steps)".format(step))
     return metric_res
+
 
 
 def report_check(run_config: RunConfig2, ret: Dict):

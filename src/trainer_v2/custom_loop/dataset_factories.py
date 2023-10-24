@@ -201,7 +201,8 @@ def get_pairwise_dataset(
         run_config: RunConfig2,
         model_config: ModelConfigType,
         is_for_training,
-        add_dummy_y=True
+        add_dummy_y=True,
+        segment_ids_for_token_type_ids=False,
     ) -> tf.data.Dataset:
 
     def decode_record(record):
@@ -211,7 +212,10 @@ def get_pairwise_dataset(
             def fixed_len_feature():
                 return tf.io.FixedLenFeature([model_config.max_seq_length], tf.int64)
             name_to_features[f'input_ids{i+1}'] = fixed_len_feature()
-            name_to_features[f'token_type_ids{i+1}'] = fixed_len_feature()
+            if segment_ids_for_token_type_ids:
+                name_to_features[f'segment_ids{i + 1}'] = fixed_len_feature()
+            else:
+                name_to_features[f'token_type_ids{i+1}'] = fixed_len_feature()
 
         record = tf.io.parse_single_example(record, name_to_features)
         if add_dummy_y:
@@ -222,7 +226,11 @@ def get_pairwise_dataset(
         for k, v in record.items():
             if v.dtype == tf.int64:
                 record[k] = tf.cast(v, tf.int32)
-        x = record['input_ids1'], record['token_type_ids1'], record['input_ids2'], record['token_type_ids2']
+        if segment_ids_for_token_type_ids:
+            x = record['input_ids1'], record['segment_ids1'], record['input_ids2'], record['segment_ids2']
+        else:
+            x = record['input_ids1'], record['token_type_ids1'], record['input_ids2'], record['token_type_ids2']
+
         return x, tf.constant(1)
 
     return create_dataset_common(decode_record,

@@ -19,6 +19,15 @@ class CombineByLogitAdd(tf.keras.layers.Layer):
         return output
 
 
+class CombineByScoreAdd(tf.keras.layers.Layer):
+    def call(self, inputs, *args, **kwargs):
+        local_decisions = inputs
+        local_decision_a = local_decisions[:, 0]
+        local_decision_b = local_decisions[:, 1]  # [B, 1]
+        output = local_decision_a + local_decision_b
+        return output
+
+
 class TwoSegConcatLogitCombine(BertBasedModelIF):
     def __init__(self, combine_local_decisions_layer):
         super(TwoSegConcatLogitCombine, self).__init__()
@@ -60,5 +69,6 @@ class TwoSegConcatLogitCombine(BertBasedModelIF):
 
     def init_checkpoint(self, init_checkpoint):
         load_bert_checkpoint(self.bert_cls, init_checkpoint)
+
 
 

@@ -8,6 +8,7 @@ import tensorflow as tf
 
 from misc_lib import ceil_divide
 from trainer_v2.chair_logging import c_log, IgnoreFilter
+from trainer_v2.custom_loop.definitions import ModelConfigType
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop import load_model_by_dir_or_abs
@@ -103,14 +104,16 @@ class BERTInferenceHelper:
 
 
 class SanityChecker:
-    def __init__(self):
+    def __init__(self, model_config: ModelConfigType):
         c_log.debug("Using basic SanityChecker")
         self.window = []
+        self.model_config = model_config
 
     def update(self, labels):
-        self.window.extend(labels)
-        n_label_diverse = len(Counter(self.window))
-        if n_label_diverse == 1 and len(self.window) > 100:
-            c_log.warn("[WARNING] There were {} predictions which were all {}".format(len(self.window), n_label_diverse))
+        if self.model_config.num_classes > 1:
+            self.window.extend(labels)
+            n_label_diverse = len(Counter(self.window))
+            if n_label_diverse == 1 and len(self.window) > 100:
+                c_log.warn("[WARNING] There were {} predictions which were all {}".format(len(self.window), n_label_diverse))
 
-        self.window = self.window[:100]
+            self.window = self.window[:100]

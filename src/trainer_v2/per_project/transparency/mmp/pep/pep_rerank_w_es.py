@@ -6,8 +6,7 @@ import tensorflow as tf
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.es_common.es_two_seg_common import BothSegPartitionedPair, Segment1PartitionedPair, \
     PairData, RangePartitionedSegment
-from data_generator2.segmented_enc.es_common.partitioned_encoder import get_both_seg_partitioned_to_input_ids, \
-    apply_segmentation_to_seg1
+from data_generator2.segmented_enc.es_common.partitioned_encoder import PartitionedEncoder
 from data_generator2.segmented_enc.seg_encoder_common import get_random_split_location
 from misc_lib import Averager
 from trainer_v2.chair_logging import c_log
@@ -17,7 +16,6 @@ from trainer_v2.per_project.transparency.mmp.pep.pep_rerank import partition_que
 
 
 def get_hide_input_ids(mask_strategy, delete_portion, mask_id):
-    #
     def hide_input_ids(
             input_ids: np.array,
             segment_ids: np.array,
@@ -160,8 +158,8 @@ def get_pep_scorer_es(
     es_model = tf.keras.models.load_model(conf.es_model_path, compile=False)
 
     tokenizer = get_tokenizer()
-    encode_fn: Callable[[BothSegPartitionedPair], InputIdsSegmentIds]\
-        = get_both_seg_partitioned_to_input_ids(tokenizer, partition_len)
+    encoder = PartitionedEncoder(tokenizer, partition_len)
+    encode_fn: Callable[[BothSegPartitionedPair], Tuple] = encoder.encode_to_ids
 
     def score_fn(qd_list: List[Tuple[str, str]]):
         n_qd = len(qd_list)
@@ -217,8 +215,9 @@ class PEP_ES_Scorer:
         self.es_model = tf.keras.models.load_model(conf.es_model_path, compile=False)
 
         self.tokenizer = get_tokenizer()
-        self.encode_fn: Callable[[BothSegPartitionedPair], InputIdsSegmentIds]\
-            = get_both_seg_partitioned_to_input_ids(self.tokenizer, partition_len)
+        encoder = PartitionedEncoder(self.tokenizer, partition_len)
+        self.encode_fn: Callable[[BothSegPartitionedPair], Tuple] = encoder.encode_to_ids
+
         self.hide_input_id = hide_input_id
         self.batch_size = batch_size
         self.partition_len = partition_len

@@ -2,7 +2,7 @@ import os
 from typing import Callable, Dict
 import tensorflow as tf
 
-import trainer_v2.per_project.transparency.mmp.probe.probe_common
+
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
@@ -99,10 +99,10 @@ class PolicyGradientTrainer(TrainerIF):
         apply_gradient_warning_less(self.optimizer, gradients, model.trainable_variables)
         return loss
 
-    def get_train_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
+    def get_train_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         return self.train_metrics
 
-    def get_eval_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
+    def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         return self.eval_metrics
 
     def train_callback(self):
@@ -138,7 +138,7 @@ class PGRLEvalObject:
     def __init__(self, policy_func, eval_batches, dist_strategy,
                  eval_steps=1):
         metric_names = ['evidence_len', 'base_reward', 'sample_better_rate']
-        self.metrics: Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]\
+        self.metrics: Dict[str, tf.keras.metrics.Metric]\
             = {name: tf.keras.metrics.Mean(name=name) for name in metric_names}
         self.eval_batches = eval_batches
         self.policy_func = policy_func

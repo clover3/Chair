@@ -139,11 +139,12 @@ class PEPEnvironment:
 
         bases_to_calculate = list(base_items.values())
         payload = bases_to_calculate + items
+        c_log.debug("Base %d, items %d", len(bases_to_calculate), len(items))
 
         base_preds = {}
-        c_log.debug("PEPClient request START")
+        c_log.debug("PEPClient request %d items", len(payload))
         outputs: List[List[float]] = self.request(payload)
-        c_log.debug("PEPClient request Done")
+        c_log.debug("PEPClient received %d items ", len(outputs))
 
         base_outputs = outputs[:len(bases_to_calculate)]
         item_outputs = outputs[len(bases_to_calculate):]

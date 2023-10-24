@@ -3,24 +3,22 @@ from typing import Dict
 
 import tensorflow as tf
 
-import trainer_v2.per_project.transparency.mmp.probe.probe_common
+
 
 
 class EvalerIF(ABC):
-    @abstractmethod
-    def build(self, model):
-        pass
+    def set_model(self, model):
+        self.model = model
 
-    @abstractmethod
     def get_keras_model(self) -> tf.keras.Model:
-        pass
+        return self.model
 
     @abstractmethod
     def eval_fn(self, item):
         pass
 
     @abstractmethod
-    def get_eval_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
+    def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         pass
 
 

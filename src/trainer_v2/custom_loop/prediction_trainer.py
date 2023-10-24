@@ -3,7 +3,8 @@ from typing import Dict
 
 import tensorflow as tf
 
-import trainer_v2.per_project.transparency.mmp.probe.probe_common
+
+from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.trainer_if import TrainerIF, TrainerIFBase, EmptyEvalObject
@@ -76,6 +77,22 @@ class TrainerCommon(TrainerIFBase):
     @abstractmethod
     def get_optimizer(self):
         pass
+
+    def get_learning_rate(self):
+        if self.run_config.train_config.learning_rate_scheduling:
+            c_log.info("Use learning rate scheduling")
+            decay_steps = self.run_config.train_config.train_step
+            lr_schedule = tf.keras.optimizers.schedules.PolynomialDecay(
+                self.run_config.train_config.learning_rate,
+                decay_steps,
+                end_learning_rate=0,
+                power=1.0,
+                cycle=False,
+                name=None
+            )
+        else:
+            lr_schedule = self.run_config.train_config.learning_rate
+        return lr_schedule
 
     def build_model(self):
         if self.run_config.is_training():

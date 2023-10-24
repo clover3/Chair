@@ -1,7 +1,7 @@
 import logging
 import os
 
-import trainer_v2.per_project.transparency.mmp.probe.probe_common
+
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -110,11 +110,11 @@ class Trainer(TrainerIFBase):
         apply_gradient_warning_less(self.optimizer, gradients, model.trainable_variables)
         return loss
 
-    def get_train_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
+    def get_train_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         ret = self.inner_model.get_train_metrics()
         return ret
 
-    def get_eval_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
+    def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         return self.eval_metrics
 
     def train_callback(self):

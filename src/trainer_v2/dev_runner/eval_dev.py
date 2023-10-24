@@ -1,11 +1,10 @@
 from typing import Dict
 
 import tensorflow as tf
-from tensorflow.keras import layers
 
 
 # Build a simple neural network model
-import trainer_v2.per_project.transparency.mmp.probe.probe_common
+
 from cpath import get_canonical_model_path
 from trainer_v2.custom_loop.eval_loop import tf_run_eval
 from trainer_v2.custom_loop.evaler_if import EvalerIF
@@ -13,6 +12,7 @@ from trainer_v2.custom_loop.run_config2 import RunConfig2, CommonRunConfig, Eval
 
 
 def build_model(input_shape, num_classes):
+    layers = tf.keras.layers
     inputs = tf.keras.Input(shape=input_shape)
     x = layers.Dense(64, activation='relu')(inputs)
     x = layers.Dense(64, activation='relu')(x)
@@ -71,10 +71,6 @@ def train_with_fit():
 
 
 class EvalerDOut(EvalerIF):
-    def build(self, model):
-        self.model = model
-        pass
-
     def get_keras_model(self) -> tf.keras.Model:
         return self.model
 
@@ -82,7 +78,7 @@ class EvalerDOut(EvalerIF):
         model = self.get_keras_model()
         output_d = model(item, training=False)
 
-    def get_eval_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
+    def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         return self.eval_metrics
 
 

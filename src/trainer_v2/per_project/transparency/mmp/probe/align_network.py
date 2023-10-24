@@ -4,14 +4,14 @@ import tensorflow as tf
 from keras.utils import losses_utils
 from transformers import shape_list
 
-import trainer_v2.per_project.transparency.mmp.probe.probe_common
+
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.probe.probe_common import combine_qd_mask, build_paired_inputs_concat, \
     compute_probe_loss, ProbeMAE, ProbePairwiseAcc, build_probs_from_tensor_d, build_probe_from_layer_features, \
     identify_layers, TFBertLayerFlat, get_attn_mask_bias
 from tf_util.lib.tf_funcs import reduce_max, find_layer
 
-Metric = trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric
+Metric = tf.keras.metrics.Metric
 
 
 def build_align_features(out_d, qd_target_mask, q_mask, d_mask) -> Dict[str, tf.Tensor]:
@@ -71,7 +71,7 @@ def build_align_features(out_d, qd_target_mask, q_mask, d_mask) -> Dict[str, tf.
     return out_feature_set
 
 
-class AlignAcc(trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric):
+class AlignAcc(tf.keras.metrics.Metric):
     def __init__(self, pred_parent, pred_key, name, **kwargs):
         super(AlignAcc, self).__init__(name=name, **kwargs)
         self.correct = self.add_weight(name='correct', initializer='zeros')

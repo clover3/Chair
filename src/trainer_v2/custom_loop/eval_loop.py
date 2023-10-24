@@ -5,7 +5,7 @@ from typing import Tuple, Dict, Callable, List
 
 import tensorflow as tf
 
-import trainer_v2.per_project.transparency.mmp.probe.probe_common
+
 from misc_lib import RecentCounter
 from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
@@ -31,8 +31,8 @@ def tf_run_eval(run_config: RunConfig2,
         c_log.debug("Loading model")
         model_path = run_config.eval_config.model_save_path
         model = tf.keras.models.load_model(model_path)
-        evaler.build(model)
-        metrics: Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric] = evaler.get_eval_metrics()
+        evaler.set_model(model)
+        metrics: Dict[str, tf.keras.metrics.Metric] = evaler.get_eval_metrics()
 
     c_log.debug("tf_run_inner initializing dataset")
     eval_dataset = build_dataset(run_config.dataset_config.eval_files_path, False)

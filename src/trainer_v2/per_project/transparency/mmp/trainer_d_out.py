@@ -2,7 +2,7 @@ from typing import Dict
 
 import tensorflow as tf
 
-import trainer_v2.per_project.transparency.mmp.probe.probe_common
+
 from misc_lib import path_join
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
@@ -21,7 +21,7 @@ class EvalObject(EvalObjectIF):
         self.strategy = strategy
         self.eval_steps = eval_steps
         self.log_metrics = log_metrics
-        self.metrics: Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric] = {}
+        self.metrics: Dict[str, tf.keras.metrics.Metric] = {}
         for key in log_metrics:
             self.metrics[key] = tf.keras.metrics.Mean(name=key)
 
@@ -63,7 +63,7 @@ class TrainerDOut(TrainerCommon):
                  inner_model: ModelV2IF):
         super(TrainerDOut, self).__init__(run_config, inner_model)
         self.train_summary_writer = None
-        self.train_metrics: Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric] = {}
+        self.train_metrics: Dict[str, tf.keras.metrics.Metric] = {}
         self.do_log = not run_config.device_config.use_tpu
         self.use_tpu = run_config.device_config.use_tpu
 
@@ -102,10 +102,10 @@ class TrainerDOut(TrainerCommon):
         apply_gradient_warning_less(self.optimizer, gradients, model.trainable_variables)
         return loss
 
-    def get_train_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
+    def get_train_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         return self.train_metrics
 
-    def get_eval_metrics(self) -> Dict[str, trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric]:
+    def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
         return self.eval_metrics
 
     def train_callback(self):
