@@ -68,8 +68,8 @@ def main(job_no, save_dir):
         try:
             print(f"Partition {partition_no}")
             do_for_partition(attn_extractor, partition_no, save_dir)
-        except FileNotFoundError:
-            pass
+        except FileNotFoundError as e:
+            print(e)
 
 
 if __name__ == "__main__":

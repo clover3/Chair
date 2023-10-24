@@ -1,26 +1,24 @@
 import logging
 import os
 import sys
-from typing import OrderedDict
-from cpath import output_path
+from typing import List, Iterable, Tuple
 
 import numpy as np
 
 from cache import load_pickle_from
 from cpath import at_output_dir
+from cpath import output_path
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from data_generator2.segmented_enc.es_common.evidence_selector_by_attn import compute_attn_sel_delete_indices
-from data_generator2.segmented_enc.es_common.partitioned_encoder import get_both_seg_partitioned_pair_encode_fn, \
-    apply_segmentation_to_seg1
 from data_generator2.segmented_enc.es_common.es_two_seg_common import PairData, Segment1PartitionedPair, \
     BothSegPartitionedPair
+from data_generator2.segmented_enc.es_common.evidence_selector_by_attn import compute_attn_sel_delete_indices
+from data_generator2.segmented_enc.es_common.partitioned_encoder import apply_segmentation_to_seg1, PartitionedEncoder
 from misc_lib import exist_or_mkdir
 from misc_lib import path_join
 from taskman_client.wrapper3 import JobContext
 from tf_util.record_writer_wrap import write_records_w_encode_fn
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.split_iter import get_valid_mmp_partition
-from typing import List, Iterable, Callable, Tuple
 
 
 # cur len = 3,
@@ -47,9 +45,10 @@ def generate_train_data(job_no: int, del_rate: float, dataset_name: str):
     split = "train"
     c_log.setLevel(logging.DEBUG)
     exist_or_mkdir(output_dir)
-    segment_len = 256
+    partition_len = 256
     tokenizer = get_tokenizer()
-    encode_fn: Callable[[BothSegPartitionedPair], OrderedDict] = get_both_seg_partitioned_pair_encode_fn(tokenizer, segment_len)
+    encoder = PartitionedEncoder(tokenizer, partition_len)
+    encode_fn = encoder.encode
 
     attn_save_dir = path_join(output_path, "msmarco", "passage", "mmp1_attn")
 

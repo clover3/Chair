@@ -5,7 +5,8 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.es_common.es_two_seg_common import PartitionedSegment, RangePartitionedSegment, \
     IndicesPartitionedSegment, BothSegPartitionedPair, PairData, Segment1PartitionedPair, EvidencePair2, \
     MaskPartitionedSegment
-from data_generator2.segmented_enc.hf_encode_helper import combine_with_sep_cls_and_pad, encode_pair
+from data_generator2.segmented_enc.hf_encode_helper import combine_with_sep_cls_and_pad, encode_pair, \
+    encode_seg_pair_paired
 from data_generator2.segmented_enc.seg_encoder_common import get_random_split_location
 from tlm.data_gen.base import concat_tuple_windows
 from trainer_v2.chair_logging import c_log
@@ -29,13 +30,29 @@ def segment_formatter(e: PartitionedSegment, target_part_no):
         assert False
 
 
-def get_both_seg_partitioned_pair_encode_fn(tokenizer, segment_len: int):
-    encode_fn_inner = get_both_seg_partitioned_to_input_ids(tokenizer, segment_len)
-    def encode_fn(e: BothSegPartitionedPair) -> OrderedDict:
-        input_ids_segment_ids = encode_fn_inner(e)
-        return encode_pair(input_ids_segment_ids, int(e.pair_data.label))
-    return encode_fn
+class PartitionedEncoder:
+    def __init__(self, tokenizer, segment_len: int):
+        self.tokenizer = tokenizer
+        self.partition_len = segment_len
 
+    def encode_to_ids(self, e: BothSegPartitionedPair):
+        partition_len = self.partition_len
+        tuple_list = []
+        for part_no in [0, 1]:
+            partial_seg1: List[str] = segment_formatter(e.segment1, part_no)
+            partial_seg2: List[str] = segment_formatter(e.segment2, part_no)
+            input_ids, segment_ids = combine_with_sep_cls_and_pad(
+                self.tokenizer, partial_seg1, partial_seg2, partition_len)
+            tuple_list.append((input_ids, segment_ids))
+        return concat_tuple_windows(tuple_list, partition_len)
+
+    def encode(self, e: BothSegPartitionedPair) -> OrderedDict:
+        input_ids_segment_ids = self.encode_to_ids(e)
+        return encode_pair(input_ids_segment_ids, int(e.pair_data.label))
+
+    def encode_paired(
+            self, pos: BothSegPartitionedPair, neg: BothSegPartitionedPair) -> OrderedDict:
+        return encode_seg_pair_paired(self.encode_to_ids(pos), self.encode_to_ids(neg))
 
 def get_both_seg_partitioned_to_input_ids(tokenizer, parition_len: int):
     def encode(e: BothSegPartitionedPair):

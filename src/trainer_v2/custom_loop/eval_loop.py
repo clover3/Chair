@@ -1,21 +1,14 @@
-import logging
-import math
-import os
-from typing import Tuple, Dict, Callable, List
+import os.path
+from typing import Dict, Callable
 
 import tensorflow as tf
 
-
-from misc_lib import RecentCounter
 from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.evaler_if import EvalerIF
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
 from trainer_v2.custom_loop.run_config2 import RunConfig2
-from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result, get_strategy_from_config, eval_tensor, \
-    summarize_metric
-from trainer_v2.custom_loop.trainer_if import TrainerIF, TrainerIFBase
-
+from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result, get_strategy_from_config
 
 
 def tf_run_eval(run_config: RunConfig2,
@@ -30,7 +23,7 @@ def tf_run_eval(run_config: RunConfig2,
     with strategy.scope():
         c_log.debug("Loading model")
         model_path = run_config.eval_config.model_save_path
-        model = tf.keras.models.load_model(model_path)
+        model = tf.keras.models.load_model(model_path, compile=False)
         evaler.set_model(model)
         metrics: Dict[str, tf.keras.metrics.Metric] = evaler.get_eval_metrics()
 
@@ -58,5 +51,14 @@ def tf_run_eval(run_config: RunConfig2,
     metric_res = fetch_metric_result(metrics)
     c_log.info("{}".format(metric_res))
     c_log.info("Evaluation completed ({} steps)".format(step))
+
+    if run_config.common_run_config.report_field:
+        proxy = get_task_manager_proxy()
+        metric = run_config.common_run_config.report_field
+        score = float(metric_res[metric])
+        condition = os.path.basename(run_config.dataset_config.eval_files_path)
+        proxy.report_number(
+            run_config.common_run_config.run_name, score, condition, metric)
+
     return metric_res
 

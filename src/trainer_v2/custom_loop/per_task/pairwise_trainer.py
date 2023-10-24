@@ -49,33 +49,45 @@ class PairwiseTrainer(TrainerCommon):
         return eval_object
 
 
-class EvaluatorIF:
-    @abstractmethod
-    def load_model(self, model_path):
-        pass
+class PairwiseAcc(tf.keras.metrics.Metric):
+    def __init__(self, **kwargs):
+        super(PairwiseAcc, self).__init__(**kwargs)
+        self.correct = self.add_weight(name='correct', initializer='zeros')
+        self.count = self.add_weight(name='count', initializer='zeros')
 
-    @abstractmethod
-    def get_eval_metrics(self):
-        pass
+    def update_state(self, predictions):
+        pos_pred = predictions[:, 0, :]
+        neg_pred = predictions[:, 1, :]
+        is_correct = tf.less(neg_pred, pos_pred)
+        is_correct_f = tf.cast(is_correct, tf.float32) # [B, 1]
+        n_valid_correct = tf.reduce_sum(is_correct_f)
+        self.correct.assign_add(n_valid_correct)
+        self.count.assign_add(tf.reduce_sum(tf.ones_like(is_correct_f)))
 
-    @abstractmethod
-    def eval_fn(self, args):
-        pass
+    def result(self):
+        return self.correct / self.count
+
+    def reset_state(self):
+        self.correct.assign(0.0)
+        self.count.assign(0.0)
 
 
 class PairwiseEvaler(EvalerIF):
     def __init__(self, run_config: RunConfig2):
-        self.eval_metrics = NotImplemented
+        self.loss_mean = tf.keras.metrics.Mean(name="loss")
+        self.pairwise_acc = PairwiseAcc()
 
     def eval_fn(self, item):
         model = self.get_keras_model()
         predictions, loss = model(item)
-        for m in self.eval_metrics.values():
-            m.update_state(predictions, loss)
-
+        self.loss_mean.update_state(loss)
+        self.pairwise_acc.update_state(predictions)
         return loss
 
     def get_eval_metrics(self) -> Dict[str, tf.keras.metrics.Metric]:
-        return self.eval_metrics
+        metrics = {}
+        metrics["loss"] = self.loss_mean
+        metrics["pairwise_acc"] = self.pairwise_acc
+        return metrics
 
     

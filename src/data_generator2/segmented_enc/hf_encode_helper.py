@@ -53,3 +53,15 @@ def encode_pair(pair, label: int):
     features["segment_ids"] = create_int_feature(segment_ids)
     features['label_ids'] = create_int_feature([label])
     return features
+
+
+def encode_seg_pair_paired(pair1, pair2):
+    features = OrderedDict()
+    input_ids1, segment_ids1 = pair1
+    features["input_ids1"] = create_int_feature(input_ids1)
+    features["segment_ids1"] = create_int_feature(segment_ids1)
+
+    input_ids2, segment_ids2 = pair2
+    features["input_ids2"] = create_int_feature(input_ids2)
+    features["segment_ids2"] = create_int_feature(segment_ids2)
+    return features

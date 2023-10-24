@@ -34,7 +34,9 @@ def main(args):
         return tf_run_train(run_config, trainer, build_dataset)
     else:
         evaler = PairwiseEvaler(run_config)
-        return tf_run_eval(run_config, evaler, build_dataset)
+        metrics = tf_run_eval(run_config, evaler, build_dataset)
+        return metrics
+
 
 
 if __name__ == "__main__":

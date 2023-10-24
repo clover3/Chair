@@ -1,4 +1,7 @@
 import random
+from typing import TypeVar, List
+from typing import List, Iterable, Callable, Dict, Tuple, Set
+
 
 
 class PosNegSampler:
@@ -30,3 +33,25 @@ class PosNegSampler:
             raise IndexError
         neg_idx = random.randrange(len(neg_docs))
         return pos_docs[0], neg_docs[neg_idx]
+
+
+A = TypeVar('A')
+
+
+def enumerate_pos_neg_pairs(pos_neg: Tuple[List[A], List[A]]) -> Iterable[Tuple[A, A]]:
+    pos_list, neg_list = pos_neg
+    for pos_item in pos_list:
+        for neg_item in neg_list:
+            yield (pos_item, neg_item)
+
+
+def group_pos_neg(itr: List[A], is_pos) -> Tuple[
+    List[A], List[A]]:
+    pos: List[A] = []
+    neg: List[A] = []
+    for e in itr:
+        if is_pos(e):
+            pos.append(e)
+        else:
+            neg.append(e)
+    return pos, neg

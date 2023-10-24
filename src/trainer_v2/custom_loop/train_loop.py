@@ -10,7 +10,6 @@ from misc_lib import RecentCounter
 from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
-from trainer_v2.custom_loop.per_task.pairwise_trainer import EvaluatorIF
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result, get_strategy_from_config, eval_tensor, \
     summarize_metric

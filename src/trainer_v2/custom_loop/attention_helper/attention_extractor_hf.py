@@ -16,6 +16,7 @@ class AttentionExtractorHF:
         self.encoder = get_qd_encoder(
             model_config.max_seq_length, is_split_into_words=True)
 
+        c_log.info("Loading model from %s", model_path)
         pair_model = tf.keras.models.load_model(model_path, compile=False)
         self.model = build_attn_extractor(pair_model)
 

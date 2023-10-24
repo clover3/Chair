@@ -1,10 +1,10 @@
 import tensorflow as tf
 
-import trainer_v2.per_project.transparency.mmp.probe.probe_common
+
 from cpath import output_path
 from misc_lib import path_join
 
-Metric = trainer_v2.per_project.transparency.mmp.probe.probe_common.Metric
+Metric = tf.keras.metrics.Metric
 class MAELike(Metric):
     def __init__(self, name, **kwargs):
         super(MAELike, self).__init__(name=name, **kwargs)

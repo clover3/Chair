@@ -3,7 +3,7 @@ from typing import List, Callable
 import numpy as np
 
 from data_generator2.segmented_enc.es_common.es_two_seg_common import Segment2PartitionedPair, RangePartitionedSegment, \
-    Segment1PartitionedPair, BothSegPartitionedPair, IndicesPartitionedSegment
+    Segment1PartitionedPair, BothSegPartitionedPair, IndicesPartitionedSegment, PartitionedSegment
 
 
 def get_delete_indices_for_segment1(attn_merged, e: Segment2PartitionedPair, get_num_delete) -> List[List[int]]:
@@ -42,21 +42,29 @@ def get_delete_indices_for_segment2(attn_merged, e: Segment1PartitionedPair, get
     :param e: Segmented Piar
     :return: List of indices to delete
     """
-    seg1_st = 1
-    seg1_ed = seg1_st + len(e.segment1.tokens)
-    seg2_st = seg1_ed + 1
-    seg2_ed = seg2_st + len(e.segment2)
+    segment1 = e.segment1
+    segment2 = e.segment2
+    return get_delete_indices_for_segment2_inner(attn_merged, segment1, segment2, get_num_delete)
 
+
+def get_delete_indices_for_segment2_inner(
+        attn_merged,
+        segment1: PartitionedSegment,
+        segment2: List[str],
+        get_num_delete):
+    seg1_st = 1
+    seg1_ed = seg1_st + len(segment1.tokens)
+    seg2_st = seg1_ed + 1
+    seg2_ed = seg2_st + len(segment2)
     # part_segment: The segment that is PARTitioned
     # cont_seg: The segment that is NOT partitioned, and thus CONTinuous
-    assert isinstance(e.segment1, RangePartitionedSegment)
-    part_segment: RangePartitionedSegment = e.segment1
-    cont_seg_tokens = e.segment2
+    assert isinstance(segment1, RangePartitionedSegment)
+    part_segment: RangePartitionedSegment = segment1
+    cont_seg_tokens = segment2
     part_seg_st = seg1_st
     part_seg_ed = seg1_ed
     cont_seg_st = seg2_st
     cont_seg_ed = seg2_ed
-
     return get_delete_indices_inner(
         attn_merged,
         cont_seg_tokens, cont_seg_st, cont_seg_ed,
