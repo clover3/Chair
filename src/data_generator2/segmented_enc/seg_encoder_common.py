@@ -346,7 +346,7 @@ def get_random_split_location(tokens) -> Tuple[int, int]:
     n_retry = 0
     while retry:
         st = random.randint(0, len(tokens) - 1)
-        while st-1 >= 0 and tokens[st - 1].endswith("##"):
+        while st >= 0 and tokens[st].startswith("##"):
             st += 1
             assert st <= len(tokens)
 
@@ -358,6 +358,38 @@ def get_random_split_location(tokens) -> Tuple[int, int]:
 
         ed = random.randint(st+1, len(tokens))
         retry = False
+        return st, ed
+
+
+def select_random_loc_not_sharp(tokens, st, ed) -> int:
+    candidate = []
+    for i in range(st, ed):
+        if tokens[i].startswith("##"):
+            pass
+        else:
+            candidate.append(i)
+
+    if not candidate:
+        return -1
+    else:
+        j = random.randint(0, len(candidate)-1)
+        return candidate[j]
+
+
+def get_random_split_location2(tokens) -> Tuple[int, int]:
+    retry = True
+    n_retry = 0
+    while retry:
+        st = select_random_loc_not_sharp(tokens, 0, len(tokens))
+        # st is located at end of the text
+        if st + 1 > len(tokens) and n_retry < 4:
+            n_retry += 1
+            retry = True
+            continue
+
+        ed = select_random_loc_not_sharp(tokens, st+1, len(tokens))
+        if ed == -1:
+            ed = len(tokens)
         return st, ed
 
 

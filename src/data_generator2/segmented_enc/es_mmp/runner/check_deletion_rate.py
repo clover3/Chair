@@ -25,10 +25,6 @@ def check(fn):
     print(avg.get_average())
 
 
-
-
-
-
 def main():
     check(sys.argv[1])
 

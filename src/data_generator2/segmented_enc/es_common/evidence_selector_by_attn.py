@@ -89,6 +89,23 @@ def get_delete_indices_inner(
     :param get_num_delete: Function that returns how many tokens to delete, cur_part_len, other_part_len, len(cont_seg_tokens)
     :return: List of indice to delete (two)
     """
+    part_seg_part_i_from_mean, part_seg_part_i_to_mean = merge_attn_scores_for_partitions(attn_merged, cont_seg_st, cont_seg_ed,
+                                                                                          part_segment, part_seg_st, part_seg_ed)
+    second_len = part_segment.ed - part_segment.st
+    part_seg_part_len = [len(part_segment.tokens) - second_len, second_len]
+    delete_indices_list: List[List[int]] = []
+    for i in [0, 1]:
+        part_seg_part_i_mean = (part_seg_part_i_from_mean[i] + part_seg_part_i_to_mean[i]) / 2
+
+        cur_part_len = part_seg_part_len[i]
+        other_part_len = part_seg_part_len[1 - i]
+        n_delete = get_num_delete(cur_part_len, other_part_len, len(cont_seg_tokens))
+        delete_indices = list(np.argsort(part_seg_part_i_mean)[:n_delete])
+        delete_indices_list.append(delete_indices)
+    return delete_indices_list
+
+
+def merge_attn_scores_for_partitions(attn_merged, cont_seg_st, cont_seg_ed, part_segment, part_seg_st, part_seg_ed):
     part_seg_split_st = part_seg_st + part_segment.st
     part_seg_split_ed = part_seg_st + part_segment.ed
     part_seg_part1_from = np.concatenate(
@@ -107,18 +124,7 @@ def get_delete_indices_inner(
     part_seg_part2_to_mean = np.mean(part_seg_part2_to, axis=0)
     part_seg_part_i_from_mean = [part_seg_part1_from_mean, part_seg_part2_from_mean]
     part_seg_part_i_to_mean = [part_seg_part1_to_mean, part_seg_part2_to_mean]
-    second_len = part_segment.ed - part_segment.st
-    part_seg_part_len = [len(part_segment.tokens) - second_len, second_len]
-    delete_indices_list: List[List[int]] = []
-    for i in [0, 1]:
-        part_seg_part_i_mean = (part_seg_part_i_from_mean[i] + part_seg_part_i_to_mean[i]) / 2
-
-        cur_part_len = part_seg_part_len[i]
-        other_part_len = part_seg_part_len[1 - i]
-        n_delete = get_num_delete(cur_part_len, other_part_len, len(cont_seg_tokens))
-        delete_indices = list(np.argsort(part_seg_part_i_mean)[:n_delete])
-        delete_indices_list.append(delete_indices)
-    return delete_indices_list
+    return part_seg_part_i_from_mean, part_seg_part_i_to_mean
 
 
 def compute_attn_sel_delete_indices(

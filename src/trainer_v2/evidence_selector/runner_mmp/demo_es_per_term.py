@@ -5,6 +5,8 @@ import numpy as np
 
 from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens, ids_to_text
 from data_generator2.segmented_enc.es_common.partitioned_encoder import BothSegPartitionedPairParser
+from misc_lib import two_digit_float
+from tlm.token_utils import cells_from_tokens
 from trainer_v2.custom_loop.definitions import ModelConfig512_2
 from trainer_v2.custom_loop.run_config2 import get_run_config_for_predict
 from trainer_v2.custom_loop.train_loop import load_model_by_dir_or_abs
@@ -16,7 +18,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
 # Q: How many tokens got >0.5 ?
-
+from visualize.html_visual import Cell, HtmlVisualizer
 
 
 def select_top_k(p_scores, p_tokens, k) -> List[str]:
@@ -36,13 +38,12 @@ def main(args):
     model_config = ModelConfig512_2()
     segment_len = int(model_config.max_seq_length / 2)
     model = load_model_by_dir_or_abs(model_path)
-    parser = BothSegPartitionedPairParser(segment_len)
     tokenizer = get_tokenizer()
     MASK_ID = tokenizer.wordpiece_tokenizer.vocab["[MASK]"]
     model_config = ModelConfig512_2()
     dataset_builder = build_state_dataset_fn(run_config, model_config)
     dataset = dataset_builder(eval_files_path, False)
-
+    html = HtmlVisualizer("es6_demo.html")
     masker = ConcatMaskStrategyQD()
     cnt = 0
     for batch in dataset:
@@ -68,12 +69,35 @@ def main(args):
                 if s_id == 1 and i_id != 0:
                     d_tokens_ids.append(i_id)
 
+            html.write_headline("Instance {}".format(pair_i))
+            html.write_paragraph("Query: {}".format(ids_to_text(tokenizer, q_tokens_ids)))
+            html.write_paragraph("Document: {}".format(ids_to_text(tokenizer, d_tokens_ids)))
+
             print("query_like tokens: {}".format(ids_to_text(tokenizer, q_tokens_ids)))
             print("evidence tokens: {}".format(ids_to_text(tokenizer, d_tokens_ids)))
 
             bias = masker.get_deletable_evidence_mask(input_ids_cur, segment_ids_cur)
             output_cur_masked = output_cur - bias * (-99999.)
             top_k_indices = np.argsort(output_cur_masked)[::-1][:k]
+
+            doc_scores = []
+            for i in range(len(input_ids_cur)):
+                if segment_ids_cur[i] == 1 and input_ids_cur[i] != 0:
+                    doc_scores.append(output_cur[i])
+
+            max_score = max(doc_scores)
+            min_score = min(doc_scores)
+            def normalize(s):
+                try:
+                    s = (s - min_score) / (max_score - min_score) * 100
+                    return int(s)
+                except ValueError as e:
+                    return 0
+            norm_scores = [normalize(score) for score in doc_scores]
+            doc_tokens = tokenizer.convert_ids_to_tokens(d_tokens_ids)
+            row1 = cells_from_tokens(doc_tokens, norm_scores)
+            row2 = [Cell(two_digit_float(s)) for s in doc_scores]
+            html.write_table([row1, row2])
 
             sel_tokens = []
             for i, token in enumerate(input_ids_cur):
@@ -84,6 +108,7 @@ def main(args):
         cnt += 1
         if cnt > 10:
             break
+
 
 if __name__ == "__main__":
     args = flags_parser.parse_args(sys.argv[1:])

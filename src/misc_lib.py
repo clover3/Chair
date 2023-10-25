@@ -5,7 +5,7 @@ import time
 from _testcapi import INT_MAX
 from collections import Counter, OrderedDict, defaultdict
 from time import gmtime, strftime
-from typing import Iterable, TypeVar, Callable, Dict, List, Any, Tuple, Iterator
+from typing import Iterable, TypeVar, Callable, Dict, List, Any, Tuple, Iterator, Union
 
 from base_type import FilePath
 
@@ -967,4 +967,20 @@ def batch_iter_from_entry_iter(entry_iter: Iterable, batch_size: int):
 
     if batch:
         yield batch
+
+
+def group_iter(itr: Iterable[A], get_key: Callable[[A], Any]) -> Iterator[List[A]]:
+    cur_group: List[A] = []
+    cur_key: Union[Any, None] = None
+    for item in itr:
+        key: Union[Any, None] = get_key(item)
+        if key == cur_key:
+            cur_group.append(item)
+        else:
+            if cur_group:
+                yield cur_group
+            cur_group = [item]
+            cur_key = key
+    if cur_group:
+        yield cur_group
 

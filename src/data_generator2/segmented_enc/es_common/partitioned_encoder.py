@@ -1,5 +1,8 @@
+from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import List
+
+import numpy as np
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.es_common.es_two_seg_common import PartitionedSegment, RangePartitionedSegment, \
@@ -30,7 +33,18 @@ def segment_formatter(e: PartitionedSegment, target_part_no):
         assert False
 
 
-class PartitionedEncoder:
+class PartitionedEncoderIF(ABC):
+    @abstractmethod
+    def encode(self, e: BothSegPartitionedPair) -> OrderedDict:
+        pass
+
+    @abstractmethod
+    def encode_paired(
+            self, pos: BothSegPartitionedPair, neg: BothSegPartitionedPair) -> OrderedDict:
+        pass
+
+
+class PartitionedEncoder(PartitionedEncoderIF):
     def __init__(self, tokenizer, segment_len: int):
         self.tokenizer = tokenizer
         self.partition_len = segment_len
@@ -53,6 +67,32 @@ class PartitionedEncoder:
     def encode_paired(
             self, pos: BothSegPartitionedPair, neg: BothSegPartitionedPair) -> OrderedDict:
         return encode_seg_pair_paired(self.encode_to_ids(pos), self.encode_to_ids(neg))
+
+
+class PartitionedEncoderCompressMask(PartitionedEncoderIF):
+    def __init__(self, tokenizer, segment_len: int):
+        self.tokenizer = tokenizer
+        self.partition_len = segment_len
+
+    def encode_to_ids(self, e: BothSegPartitionedPair):
+        partition_len = self.partition_len
+        tuple_list = []
+        for part_no in [0, 1]:
+            partial_seg1: List[str] = NotImplemented
+            partial_seg2: List[str] = NotImplemented
+            input_ids, segment_ids = combine_with_sep_cls_and_pad(
+                self.tokenizer, partial_seg1, partial_seg2, partition_len)
+            tuple_list.append((input_ids, segment_ids))
+        return concat_tuple_windows(tuple_list, partition_len)
+
+    def encode(self, e: BothSegPartitionedPair) -> OrderedDict:
+        input_ids_segment_ids = self.encode_to_ids(e)
+        return encode_pair(input_ids_segment_ids, int(e.pair_data.label))
+
+    def encode_paired(
+            self, pos: BothSegPartitionedPair, neg: BothSegPartitionedPair) -> OrderedDict:
+        return encode_seg_pair_paired(self.encode_to_ids(pos), self.encode_to_ids(neg))
+
 
 def get_both_seg_partitioned_to_input_ids(tokenizer, parition_len: int):
     def encode(e: BothSegPartitionedPair):
@@ -138,3 +178,23 @@ class BothSegPartitionedPairParser:
             else:
                 indices_part_merged.append(indice_part_segs[0][i])
         return indices_part_merged
+
+
+
+# cur len = 3,
+# cont_seg_len = 49
+def build_get_num_delete_fn(del_rate: float):
+    def get_num_delete(cur_part_len, other_part_len, cont_seg_len):
+        # Assume each token of currrent part require one token in continuous one
+        reasonable_max_del = cont_seg_len - cur_part_len
+        reasonable_max_del = max(reasonable_max_del, 1)
+
+        normal_mean = reasonable_max_del * del_rate
+        std_dev = normal_mean
+        num_del = int(np.random.normal(normal_mean, std_dev))
+
+        # Cannot delete more than cont_seg_len
+        num_del = min(cont_seg_len, num_del)
+        num_del = max(0, num_del)
+        return num_del
+    return get_num_delete
