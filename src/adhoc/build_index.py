@@ -1,8 +1,12 @@
+import os
+import pathlib
+import pickle
 from collections import Counter
 from typing import Dict, List, Tuple
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from misc_lib import TELI
+from trainer_v2.chair_logging import c_log
 
 
 def count_df_from_tokenized(
@@ -122,3 +126,19 @@ def count_dl_df(
         "dl": dl,
         "cdf": cdf,
     }
+
+
+def save_inv_index_to_pickle(conf, outputs):
+    inverted_index = outputs["inverted_index"]
+    dl = outputs["dl"]
+    df = outputs["df"]
+    c_log.info("Saving df")
+    dir_maybe = os.path.dirname(conf.df_path)
+    pathlib.Path(dir_maybe).mkdir(parents=True, exist_ok=True)
+    pickle.dump(df, open(conf.df_path, "wb"))
+    c_log.info("Saving dl")
+    pickle.dump(dl, open(conf.dl_path, "wb"))
+    c_log.info("Saving inv_index")
+    pickle.dump(inverted_index, open(conf.inv_index_path, "wb"))
+    avdl = sum(dl.values()) / len(dl)
+    c_log.info("Avdl: %d", avdl)

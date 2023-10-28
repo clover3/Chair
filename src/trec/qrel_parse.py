@@ -1,3 +1,4 @@
+import json
 from typing import List, Tuple
 
 from trec.types import QRelsFlat, QRelsDict, QRelsSubtopic, DocID, QueryID
@@ -16,7 +17,21 @@ def load_qrels_flat_per_query(path) -> QRelsFlat:
     return q_group
 
 
+def load_json_qrel(path) -> QRelsFlat:
+    j_d = json.load(open(path, "r"))
+    out_j_d = {}
+    for qid, items in j_d.items():
+        entries = []
+        for doc_id, score in items.items():
+            score = 1 if score else 0
+            entries.append((doc_id, score))
+        out_j_d[qid] = entries
+    return out_j_d
+
+
 def load_qrels_flat_per_query_0_1_only(path) -> QRelsFlat:
+    if path.endswith(".json"):
+        return load_json_qrel(path)
     # 101001 0 clueweb12-0001wb-40-32733 0
     q_group = dict()
     for line in open(path, "r"):

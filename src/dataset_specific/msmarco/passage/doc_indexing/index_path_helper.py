@@ -30,6 +30,7 @@ class BM25IndexResource:
     inv_index_path: str
     df_path: str
     dl_path: str = ""
+    avdl: int = 0
 
 
 def load_omega_config_with_dataclass(config_path, data_class):
@@ -56,6 +57,20 @@ def get_bm25_sp_stem_resource_path_helper():
 def get_bm25_bert_tokenized_resource_path_helper():
     config_path = path_join(
         yconfig_dir_path, "bm25_resource", "bert_tokenize.yaml")
+    data_class = BM25IndexResource
+    return load_omega_config_with_dataclass(config_path, data_class)
+
+
+def get_bm25_bt2_resource_path_helper():
+    config_path = path_join(
+        yconfig_dir_path, "bm25_resource", "bt2.yaml")
+    data_class = BM25IndexResource
+    return load_omega_config_with_dataclass(config_path, data_class)
+
+
+def get_bm25_bt3_resource_path_helper():
+    config_path = path_join(
+        yconfig_dir_path, "bm25_resource", "bt3.yaml")
     data_class = BM25IndexResource
     return load_omega_config_with_dataclass(config_path, data_class)
 
