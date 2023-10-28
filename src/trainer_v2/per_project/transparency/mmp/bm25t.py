@@ -28,13 +28,30 @@ class BM25T:
         self.k2 = bm25.k2
         self.b = bm25.b
         self.n_mapping_used = 0
+        self.mapping_used_flag = 0
+        self.log_mapping = Counter()
+
+    def __del__(self):
+
+        matched_query = 0
+        for k, v in self.log_mapping.items():
+            if v:
+                matched_query += 1
+
+        c_log.info("%d queries used table", matched_query)
+        c_log.info("%d query-document pairs used table", self.n_mapping_used)
 
     def score(self, query, text):
         q_terms = self.tokenizer.tokenize_stem(query)
         t_terms = self.tokenizer.tokenize_stem(text)
         q_tf = Counter(q_terms)
         t_tf = Counter(t_terms)
-        return self.score_from_tfs(q_tf, t_tf)
+        self.mapping_used_flag = 0
+        score = self.score_from_tfs(q_tf, t_tf)
+        if self.mapping_used_flag:
+            self.log_mapping[query] = 1
+
+        return score
 
     def score_from_tfs(self, q_tf, t_tf):
         dl = sum(t_tf.values())
@@ -47,6 +64,9 @@ class BM25T:
                     self.n_mapping_used += 1
                     expansion_tf += cnt * translation_term_set[t]
                     # c_log.debug(f"matched {t} has {translation_term_set[t]}")
+
+            if expansion_tf:
+                self.mapping_used_flag = 1
 
             raw_cnt = t_tf[q_term]
             tf_sum = expansion_tf + raw_cnt

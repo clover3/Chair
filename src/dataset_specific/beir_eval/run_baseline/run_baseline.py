@@ -1,6 +1,6 @@
 import sys
 
-from adhoc.bm25_retriever import BM25Retriever, build_bm25_scoring_fn, RetrieverIF
+from adhoc.bm25_retriever import BM25RetrieverKNTokenize, build_bm25_scoring_fn, RetrieverIF
 from cache import load_pickle_from
 from dataset_specific.beir_eval.beir_common import beir_dataset_list_not_large
 from dataset_specific.beir_eval.path_helper import get_beir_inv_index_path, get_beir_df_path, get_beir_dl_path
@@ -10,14 +10,14 @@ from misc_lib import average
 from trainer_v2.chair_logging import c_log
 
 
-def load_bm25_retriever(dataset) -> BM25Retriever:
+def load_bm25_retriever(dataset) -> BM25RetrieverKNTokenize:
     inv_index = load_pickle_from(get_beir_inv_index_path(dataset))
     df = load_pickle_from(get_beir_df_path(dataset))
     dl = load_pickle_from(get_beir_dl_path(dataset))
     cdf = len(dl)
     avdl = average(dl.values())
     scoring_fn = build_bm25_scoring_fn(cdf, avdl)
-    bm25_retriever = BM25Retriever(inv_index, df, dl, scoring_fn)
+    bm25_retriever = BM25RetrieverKNTokenize(inv_index, df, dl, scoring_fn)
     return bm25_retriever
 
 

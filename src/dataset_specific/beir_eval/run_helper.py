@@ -1,6 +1,7 @@
 from beir.retrieval.evaluation import EvaluateRetrieval
 
-from adhoc.json_run_eval_helper import save_json_qres, run_retrieval
+from adhoc.json_run_eval_helper import save_json_qres
+from adhoc.adhoc_retrieval import run_retrieval
 from dataset_specific.beir_eval.beir_common import load_beir_dataset
 from trainer_v2.chair_logging import c_log
 

@@ -1,0 +1,6 @@
+
+
+dataset_name: dev_sample1000
+queries_path: data/msmarco/dev_sample1000/queries.tsv
+judgment_path: data/msmarco/qrels.dev.tsv
+metric: ndcg_cut_10

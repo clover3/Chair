@@ -53,6 +53,13 @@ def get_bm25_sp_stem_resource_path_helper():
     return load_omega_config_with_dataclass(config_path, data_class)
 
 
+def get_bm25_bert_tokenized_resource_path_helper():
+    config_path = path_join(
+        yconfig_dir_path, "bm25_resource", "bert_tokenize.yaml")
+    data_class = BM25IndexResource
+    return load_omega_config_with_dataclass(config_path, data_class)
+
+
 def get_bm25_stem_resource_path_helper():
     config_path = path_join(
         yconfig_dir_path, "bm25_resource", "stem.yaml")

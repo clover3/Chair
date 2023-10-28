@@ -3,7 +3,8 @@ import json
 from pytrec_eval import RelevanceEvaluator
 
 from adhoc.bm25_retriever import RetrieverIF
-from adhoc.json_run_eval_helper import run_retrieval, save_json_qres
+from adhoc.json_run_eval_helper import save_json_qres
+from adhoc.adhoc_retrieval import run_retrieval
 from dataset_specific.beir_eval.path_helper import get_json_qres_save_path
 from dataset_specific.msmarco.passage.path_helper import load_mmp_test_queries, load_mmp_test_qrel_json
 from misc_lib import average
@@ -18,7 +19,6 @@ def run_mmp_test_retrieval(dataset, method, retriever: RetrieverIF):
     max_doc_per_query = 1000
     doc_score_d = run_retrieval(retriever, queries, max_doc_per_query)
     save_json_qres(run_name, doc_score_d)
-
 
 
 def run_pytrec_eval(judgment_path, doc_score_path, metric="ndcg_cut_10"):

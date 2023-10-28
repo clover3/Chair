@@ -15,12 +15,11 @@ class RetrieverIF(ABC):
 
 
 class BM25Retriever(RetrieverIF):
-    def __init__(self, inv_index, df, dl_d, scoring_fn, stopwords=None):
+    def __init__(self, tokenize_fn, inv_index, df, dl_d, scoring_fn, stopwords=None):
         self.inv_index = inv_index
         self.scoring_fn = scoring_fn
         self.df = df
-        self.tokenizer = KrovetzNLTKTokenizer(False)
-        self.tokenize_fn = self.tokenizer.tokenize_stem
+        self.tokenize_fn = tokenize_fn
         self.dl_d = dl_d
         if stopwords is not None:
             self.stopwords = stopwords
@@ -71,6 +70,14 @@ class BM25Retriever(RetrieverIF):
                     doc_score[doc_id] += per_q_term_score
 
         return list(doc_score.items())
+
+
+class BM25RetrieverKNTokenize(BM25Retriever):
+    def __init__(self, inv_index, df, dl_d, scoring_fn, stopwords=None):
+        self.tokenizer = KrovetzNLTKTokenizer(False)
+        self.tokenize_fn = self.tokenizer.tokenize_stem
+        super(BM25RetrieverKNTokenize, self).__init__(
+            self.tokenizer.tokenize_stem, inv_index, df, dl_d, scoring_fn, stopwords)
 
 
 def build_bm25_scoring_fn(cdf, avdl):

@@ -1,6 +1,6 @@
 import sys
 
-from adhoc.bm25_retriever import BM25Retriever, build_bm25_scoring_fn, RetrieverIF
+from adhoc.bm25_retriever import BM25RetrieverKNTokenize, build_bm25_scoring_fn, RetrieverIF
 from adhoc.other.bm25t_retriever import BM25T_Retriever
 from cache import load_pickle_from
 from dataset_specific.beir_eval.beir_common import beir_dataset_list_not_large

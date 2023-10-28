@@ -346,9 +346,8 @@ def get_random_split_location(tokens) -> Tuple[int, int]:
     n_retry = 0
     while retry:
         st = random.randint(0, len(tokens) - 1)
-        while st >= 0 and tokens[st].startswith("##"):
+        while 0 <= st < len(tokens) - 1 and tokens[st].startswith("##"):
             st += 1
-            assert st <= len(tokens)
 
         # st is located at end of the text
         if st + 1 > len(tokens) and n_retry < 4:
