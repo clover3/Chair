@@ -17,7 +17,7 @@ from trainer_v2.per_project.transparency.splade_regression.modeling.bert_sparse_
     PairwiseTrainBertSparseEncoder
 from trainer_v2.custom_loop.prediction_trainer import ModelV2IF
 from trainer_v2.train_util.arg_flags import flags_parser
-from trainer_v2.custom_loop.per_task.pairwise_trainer import PairwiseTrainer
+from trainer_v2.custom_loop.per_task.pairwise_trainer import TrainerForLossReturningModel
 
 
 class RegWeightScheduler:
@@ -78,7 +78,7 @@ def main(args):
     reg_lambda = 0.5
     reg_warmup_steps = 50000
     model = ModelWrap(dataset_info, reg_lambda, reg_warmup_steps)
-    trainer: TrainerIFBase = PairwiseTrainer(run_config, model)
+    trainer: TrainerIFBase = TrainerForLossReturningModel(run_config, model)
 
     def build_dataset(input_files, is_for_training):
         return get_three_text_dataset(

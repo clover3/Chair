@@ -15,43 +15,55 @@ from trainer_v2.custom_loop.per_task.ts_util import load_local_decision_model
 def get_pep_local_decision(
         model_path,
         batch_size=16,
-) -> Callable[[Tuple[List[str], List[str]]], Iterable[float]]:
-    model_config = ModelConfig512_1()
-    max_seq_length = model_config.max_seq_length
-    segment_len = int(max_seq_length / 2)
-    partition_len = segment_len
-    # inference_model = load_two_seg_concat_model(conf, model_config)
-    model: tf.keras.models.Model = load_local_decision_model(
-        model_config, model_path)
-
-    tokenizer = get_tokenizer()
-    SpecI = tf.TensorSpec([max_seq_length], dtype=tf.int32)
-    sig = (SpecI, SpecI,),
-
-    def encode_to_ids(seg_pair_pair):
-        tuple_list = []
-        for partial_seg1, partial_seg2 in seg_pair_pair:
-            input_ids, segment_ids = combine_with_sep_cls_and_pad(
-                tokenizer, partial_seg1, partial_seg2, partition_len)
-            tuple_list.append((input_ids, segment_ids))
-        return concat_tuple_windows(tuple_list, partition_len)
-
-    def score_fn(qd: Tuple[List[str], List[str]]):
-        def generator():
-            dummy_pair = ([], [])
-            seg_pair_pair = (qd, dummy_pair)
-            input_ids, segment_ids = encode_to_ids(seg_pair_pair)
-            yield (input_ids, segment_ids),
-
-        dataset = tf.data.Dataset.from_generator(
-            generator,
-            output_signature=sig)
-        dataset = dataset.batch(batch_size)
-        output = model.predict(dataset)
-        return output
+) -> Callable[[Tuple[List[str], List[str]]], float]:
+    pep = PEPLocalDecision(model_path, batch_size)
+    def score_fn(qd: Tuple[List[str], List[str]]) -> float:
+        scores = pep.score_fn([qd])
+        return scores[0]
 
     c_log.info("Defining network")
     return score_fn
+
+
+class PEPLocalDecision:
+    def __init__(self, model_path, batch_size=16):
+        model_config = ModelConfig512_1()
+        self.max_seq_length = model_config.max_seq_length
+        self.partition_len = int(model_config.max_seq_length / 2)
+        self.model: tf.keras.models.Model = load_local_decision_model(
+            model_config, model_path)
+        c_log.info("Defining network")
+
+        self.tokenizer = get_tokenizer()
+        self.batch_size = batch_size
+
+    def encode_to_ids(self, seg_pair_pair):
+        tuple_list = []
+        for partial_seg1, partial_seg2 in seg_pair_pair:
+            input_ids, segment_ids = combine_with_sep_cls_and_pad(
+                self.tokenizer, partial_seg1, partial_seg2, self.partition_len)
+            tuple_list.append((input_ids, segment_ids))
+        return concat_tuple_windows(tuple_list, self.partition_len)
+
+    def score_fn(self, qd_list: List[Tuple[List[str], List[str]]]) -> List[float]:
+        def generator():
+            dummy_pair = ([], [])
+            for qd in qd_list:
+                seg_pair_pair = (qd, dummy_pair)
+                input_ids, segment_ids = self.encode_to_ids(seg_pair_pair)
+                yield (input_ids, segment_ids),
+
+        SpecI = tf.TensorSpec([self.max_seq_length], dtype=tf.int32)
+        sig = (SpecI, SpecI,),
+        dataset = tf.data.Dataset.from_generator(
+            generator,
+            output_signature=sig)
+        dataset = dataset.batch(self.batch_size)
+        output = self.model.predict(dataset)
+        local_d, global_d = output
+        left_idx = 0
+        scores = local_d[:, left_idx, 0]
+        return scores
 
 
 def load_two_seg_concat_model(conf, model_config):

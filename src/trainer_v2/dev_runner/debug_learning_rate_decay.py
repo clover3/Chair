@@ -91,7 +91,7 @@ class Trainer2(Trainer):
         self.loss_fn_inner = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
 
 
-def tf_run_train(run_config: RunConfig2,
+def tf_run_train_debug(run_config: RunConfig2,
                  trainer: TrainerIFBase,
                  dataset_factory: Callable[[str, bool], tf.data.Dataset]
                  ):
@@ -179,7 +179,7 @@ def main(args):
     def build_dataset(input_files, is_for_training):
         return get_constant_dataset(input_files, run_config, is_for_training)
 
-    tf_run_train(run_config, trainer, build_dataset)
+    tf_run_train_debug(run_config, trainer, build_dataset)
 
 
 if __name__ == "__main__":

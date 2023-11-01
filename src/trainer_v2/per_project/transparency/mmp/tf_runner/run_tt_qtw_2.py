@@ -11,7 +11,7 @@ from cpath import get_bert_config_path
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config, load_stock_weights_encoder_only, \
     load_stock_weights_bert_like, load_bert_checkpoint
-from trainer_v2.custom_loop.per_task.pairwise_trainer import PairwiseTrainer
+from trainer_v2.custom_loop.per_task.pairwise_trainer import TrainerForLossReturningModel
 from trainer_v2.custom_loop.prediction_trainer import ModelV2IF
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
 from trainer_v2.custom_loop.train_loop import tf_run, tf_run_train
@@ -52,7 +52,7 @@ def main(args):
     run_config.print_info()
     input_shape = InputShapeConfigTT100_4()
     BertUsingModel = TranslationTable2WBert(input_shape)
-    trainer: TrainerIFBase = PairwiseTrainer(run_config, BertUsingModel)
+    trainer: TrainerIFBase = TrainerForLossReturningModel(run_config, BertUsingModel)
     def build_dataset(input_files, is_for_training):
         return get_bow_pairwise_dataset_qtw(
             input_files, input_shape, run_config, is_for_training)

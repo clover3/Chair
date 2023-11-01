@@ -89,8 +89,11 @@ def get_delete_indices_inner(
     :param get_num_delete: Function that returns how many tokens to delete, cur_part_len, other_part_len, len(cont_seg_tokens)
     :return: List of indice to delete (two)
     """
-    part_seg_part_i_from_mean, part_seg_part_i_to_mean = merge_attn_scores_for_partitions(attn_merged, cont_seg_st, cont_seg_ed,
-                                                                                          part_segment, part_seg_st, part_seg_ed)
+    part_seg_part_i_from_mean, part_seg_part_i_to_mean = merge_attn_scores_for_partitions(
+        attn_merged,
+        cont_seg_st, cont_seg_ed,
+        part_segment.st, part_segment.ed,
+        part_seg_st, part_seg_ed)
     second_len = part_segment.ed - part_segment.st
     part_seg_part_len = [len(part_segment.tokens) - second_len, second_len]
     delete_indices_list: List[List[int]] = []
@@ -104,10 +107,18 @@ def get_delete_indices_inner(
         delete_indices_list.append(delete_indices)
     return delete_indices_list
 
+#      part_seg_st
+# Assume "Where is bookstore in Amherst" is split into "Where is [MASK] in Amherst"
+# [CLS] where is  [bookstore]  [SEP]
+# pa
 
-def merge_attn_scores_for_partitions(attn_merged, cont_seg_st, cont_seg_ed, part_segment, part_seg_st, part_seg_ed):
-    part_seg_split_st = part_seg_st + part_segment.st
-    part_seg_split_ed = part_seg_st + part_segment.ed
+def merge_attn_scores_for_partitions(
+        attn_merged,
+        cont_seg_st, cont_seg_ed,
+        part_in_segment_st, part_in_segment_ed,
+        part_seg_st, part_seg_ed):
+    part_seg_split_st = part_seg_st + part_in_segment_st
+    part_seg_split_ed = part_seg_st + part_in_segment_ed
     part_seg_part1_from = np.concatenate(
         [attn_merged[cont_seg_st:cont_seg_ed, part_seg_st: part_seg_split_st],
          attn_merged[cont_seg_st:cont_seg_ed, part_seg_split_ed: part_seg_ed]],
@@ -118,13 +129,53 @@ def merge_attn_scores_for_partitions(attn_merged, cont_seg_st, cont_seg_ed, part
         axis=0)
     part_seg_part2_from = attn_merged[cont_seg_st:cont_seg_ed, part_seg_split_st: part_seg_split_ed]
     part_seg_part2_to = attn_merged[part_seg_split_st: part_seg_split_ed, cont_seg_st:cont_seg_ed]
+
+    # if len(part_seg_part1_from) == 0:
+    #     print("cont_seg_st:cont_seg_ed", cont_seg_st, cont_seg_ed)
+    #     print("part_seg_st: part_seg_split_st", part_seg_st, part_seg_split_st)
+    #     print("part_seg_split_ed: part_seg_ed", part_seg_split_ed, part_seg_ed)
+    # if len(part_seg_part1_to) == 0:
+    #     print("part_seg_st: part_seg_split_st", part_seg_st, part_seg_split_st)
+    #     print("part_seg_split_ed: part_seg_ed", part_seg_split_ed, part_seg_ed)
+    #     print("cont_seg_st:cont_seg_ed", cont_seg_st, cont_seg_ed)
+    #
+    # if len(part_seg_part2_from) == 0:
+    #     print("cont_seg_st:cont_seg_ed", cont_seg_st, cont_seg_ed)
+    #     print("part_seg_split_st: part_seg_split_ed", part_seg_split_st, part_seg_split_ed)
+    #
+    # if len(part_seg_part2_to) == 0:
+    #     print("part_seg_split_st: part_seg_split_ed", part_seg_split_st, part_seg_split_ed)
+    #     print("cont_seg_st:cont_seg_ed", cont_seg_st, cont_seg_ed)
+
     part_seg_part1_from_mean = np.mean(part_seg_part1_from, axis=1)
     part_seg_part2_from_mean = np.mean(part_seg_part2_from, axis=1)
     part_seg_part1_to_mean = np.mean(part_seg_part1_to, axis=0)
     part_seg_part2_to_mean = np.mean(part_seg_part2_to, axis=0)
-    part_seg_part_i_from_mean = [part_seg_part1_from_mean, part_seg_part2_from_mean]
-    part_seg_part_i_to_mean = [part_seg_part1_to_mean, part_seg_part2_to_mean]
+    part_seg_part_i_from_mean = np.array([part_seg_part1_from_mean, part_seg_part2_from_mean])
+    part_seg_part_i_to_mean = np.array([part_seg_part1_to_mean, part_seg_part2_to_mean])
     return part_seg_part_i_from_mean, part_seg_part_i_to_mean
+
+
+def get_merged_attn_scores(
+        attn, seg1_len, seg2_len,
+        part_in_seg_st, part_in_seg_ed):
+    # Return shape of [2, seg2_len]
+    seg1_st = 1
+    seg1_ed = seg1_st + seg1_len
+    seg2_st = seg1_ed + 1
+    seg2_ed = seg2_st + seg2_len
+    part_seg_st = seg1_st
+    part_seg_ed = seg1_ed
+    cont_seg_st = seg2_st
+    cont_seg_ed = seg2_ed
+    part_seg_part_i_from_mean, part_seg_part_i_to_mean = \
+        merge_attn_scores_for_partitions(
+            attn,
+            cont_seg_st, cont_seg_ed,
+            part_in_seg_st, part_in_seg_ed,
+            part_seg_st, part_seg_ed)
+    part_seg_part_i_mean = (part_seg_part_i_from_mean + part_seg_part_i_to_mean) / 2
+    return part_seg_part_i_mean
 
 
 def compute_attn_sel_delete_indices(

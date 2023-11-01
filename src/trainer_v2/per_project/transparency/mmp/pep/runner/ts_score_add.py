@@ -7,7 +7,7 @@ from trainer_v2.custom_loop.definitions import ModelConfig512_1
 from trainer_v2.custom_loop.eval_loop import tf_run_eval
 from trainer_v2.custom_loop.neural_network_def.two_seg_alt import CombineByScoreAdd
 from trainer_v2.custom_loop.neural_network_def.two_seg_two_model import TwoSegConcatLogitCombineTwoModel
-from trainer_v2.custom_loop.per_task.pairwise_trainer import PairwiseTrainer, PairwiseEvaler
+from trainer_v2.custom_loop.per_task.pairwise_trainer import TrainerForLossReturningModel, PairwiseEvaler
 from trainer_v2.custom_loop.run_config2 import get_run_config2_train, RunConfig2, get_run_config2
 from trainer_v2.custom_loop.train_loop import tf_run_train
 from trainer_v2.custom_loop.trainer_if import TrainerIFBase
@@ -30,7 +30,7 @@ def main(args):
             segment_ids_for_token_type_ids=True)
 
     if run_config.is_training():
-        trainer: TrainerIFBase = PairwiseTrainer(run_config, task_model)
+        trainer: TrainerIFBase = TrainerForLossReturningModel(run_config, task_model)
         return tf_run_train(run_config, trainer, build_dataset)
     else:
         evaler = PairwiseEvaler(run_config)

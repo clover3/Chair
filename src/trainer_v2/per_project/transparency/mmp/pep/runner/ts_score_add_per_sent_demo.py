@@ -38,11 +38,8 @@ def main():
                     tail = " ".join(["[MASK]"] * 12)
                     doc_rep = head + " " + d_token + " " + tail
                     t = tokenize(query_rep), tokenize(doc_rep)
-                    ret = score_fn(t)
-                    local_d, global_d = ret
-
-                    target_l = local_d[0][0]
-                    output.append((d_token, float(target_l[0])))
+                    score: float = score_fn(t)
+                    output.append((d_token, score))
 
                 output.sort(key=get_second, reverse=True)
                 print(q_token)

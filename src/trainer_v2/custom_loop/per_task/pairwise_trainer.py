@@ -12,10 +12,10 @@ from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.trainer_if import EmptyEvalObject
 
 
-class PairwiseTrainer(TrainerCommon):
+class TrainerForLossReturningModel(TrainerCommon):
     def __init__(self, run_config: RunConfig2,
                  inner_model: ModelV2IF):
-        super(PairwiseTrainer, self).__init__(run_config, inner_model)
+        super(TrainerForLossReturningModel, self).__init__(run_config, inner_model)
 
     def get_optimizer(self):
         return AdamWeightDecay(

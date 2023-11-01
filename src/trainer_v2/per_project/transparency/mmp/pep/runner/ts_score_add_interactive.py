@@ -27,11 +27,7 @@ def main():
             doc = input("Enter document part: ")
             t = tokenize(query), tokenize(doc)
             ret = score_fn(t)
-            local_d, global_d = ret
-
-            target_l = local_d[0][0]
-            print(ret)
-            print(float(target_l))
+            print(float(ret))
 
 
 if __name__ == "__main__":

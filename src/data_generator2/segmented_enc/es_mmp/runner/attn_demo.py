@@ -42,10 +42,10 @@ def get_evidence_score(
     cont_seg_st = seg2_st
     cont_seg_ed = seg2_ed
     part_seg_part_i_from_mean, part_seg_part_i_to_mean = \
-        merge_attn_scores_for_partitions(attn_merged, cont_seg_st,
-                                         cont_seg_ed,
-                                         part_segment, part_seg_st,
-                                         part_seg_ed)
+        merge_attn_scores_for_partitions(attn_merged,
+                                         cont_seg_st, cont_seg_ed,
+                                         part_segment.st, part_segment.ed,
+                                         part_seg_st, part_seg_ed)
     part_seg_part_0_mean = (part_seg_part_i_from_mean[0] + part_seg_part_i_to_mean[0]) / 2
     part_seg_part_1_mean = (part_seg_part_i_from_mean[1] + part_seg_part_i_to_mean[1]) / 2
     return part_seg_part_0_mean, part_seg_part_1_mean

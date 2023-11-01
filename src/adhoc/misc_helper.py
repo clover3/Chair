@@ -45,6 +45,12 @@ def enumerate_pos_neg_pairs(pos_neg: Tuple[List[A], List[A]]) -> Iterable[Tuple[
             yield (pos_item, neg_item)
 
 
+def enumerate_pos_neg_pairs_once(pos_neg: Tuple[List[A], List[A]]) -> Iterable[Tuple[A, A]]:
+    pos_list, neg_list = pos_neg
+    for pos_item, neg_item in zip(pos_list, neg_list):
+        yield (pos_item, neg_item)
+
+
 def group_pos_neg(itr: List[A], is_pos) -> Tuple[
     List[A], List[A]]:
     pos: List[A] = []

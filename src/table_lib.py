@@ -19,7 +19,21 @@ def read_csv_as_dict(csv_path) -> List[Dict]:
 
 
 def tsv_iter(file_path) -> Iterable[Tuple]:
+    return tsv_iter_gz(file_path)
+
+
+def tsv_iter_raw(file_path) -> Iterable[Tuple]:
     f = open(file_path, "r", encoding="utf-8", errors="ignore")
+    reader = csv.reader(f, delimiter='\t')
+    return reader
+
+
+def tsv_iter_gz(file_path) -> Iterable[Tuple]:
+    if file_path.endswith(".gz"):
+        import gzip
+        f = gzip.open(file_path, 'rt', encoding='utf8')
+    else:
+        f = open(file_path, "r", encoding="utf-8", errors="ignore")
     reader = csv.reader(f, delimiter='\t')
     return reader
 

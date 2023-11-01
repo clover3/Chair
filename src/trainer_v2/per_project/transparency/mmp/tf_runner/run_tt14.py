@@ -18,7 +18,7 @@ from cpath import get_bert_config_path
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config, load_stock_weights_encoder_only, \
     load_stock_weights_bert_like, load_bert_checkpoint
-from trainer_v2.custom_loop.per_task.pairwise_trainer import PairwiseTrainer
+from trainer_v2.custom_loop.per_task.pairwise_trainer import TrainerForLossReturningModel
 from trainer_v2.custom_loop.prediction_trainer import ModelV2IF
 from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
 from trainer_v2.custom_loop.train_loop import tf_run, tf_run_train

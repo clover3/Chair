@@ -4,7 +4,6 @@ from tensorflow import keras
 from cpath import get_bert_config_path
 from models.transformer.bert_common_v2 import get_shape_list2
 from trainer_v2.bert_for_tf2 import BertModelLayer
-from trainer_v2.custom_loop.definitions import ModelConfigType
 from trainer_v2.custom_loop.modeling_common.bert_common import BERT_CLS, define_bert_input, load_bert_checkpoint, \
     load_bert_config
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import split_stack_flatten_encode_stack
@@ -86,3 +85,5 @@ class TwoSegConcatLogitCombineTwoModel(ModelV2IF):
     def load_checkpoint(self, model_save_path):
         checkpoint = tf.train.Checkpoint(self.pair_model)
         checkpoint.restore(model_save_path).expect_partial()
+
+
