@@ -16,7 +16,8 @@ def get_pep_local_decision(
         model_path,
         batch_size=16,
 ) -> Callable[[Tuple[List[str], List[str]]], float]:
-    pep = PEPLocalDecision(model_path, batch_size)
+    model_config = ModelConfig512_1()
+    pep = PEPLocalDecision(model_config, model_path, batch_size)
     def score_fn(qd: Tuple[List[str], List[str]]) -> float:
         scores = pep.score_fn([qd])
         return scores[0]
@@ -26,12 +27,13 @@ def get_pep_local_decision(
 
 
 class PEPLocalDecision:
-    def __init__(self, model_path, batch_size=16):
-        model_config = ModelConfig512_1()
+    def __init__(self, model_config, model_path, batch_size=16, model=None):
         self.max_seq_length = model_config.max_seq_length
         self.partition_len = int(model_config.max_seq_length / 2)
-        self.model: tf.keras.models.Model = load_local_decision_model(
-            model_config, model_path)
+        if model is None:
+            self.model: tf.keras.models.Model = load_local_decision_model(model_config, model_path)
+        else:
+            self.model = model
         c_log.info("Defining network")
 
         self.tokenizer = get_tokenizer()

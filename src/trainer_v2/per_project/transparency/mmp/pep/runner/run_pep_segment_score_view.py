@@ -9,6 +9,7 @@ from misc_lib import get_second, two_digit_float, TimeEstimator
 from table_lib import tsv_iter
 from trainer.promise import PromiseKeeper, MyFuture, list_future
 from trainer_v2.chair_logging import c_log
+from trainer_v2.custom_loop.definitions import ModelConfig512_1
 from trainer_v2.per_project.transparency.mmp.pep.demo_util import get_pep_local_decision, PEPLocalDecision
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 from visualize.html_visual import HtmlVisualizer, Cell
@@ -33,8 +34,10 @@ def check_full_pairwise_tokens(
     sp_tokenize = tokenizer.basic_tokenizer.tokenize
     sb_tokenize = tokenizer.wordpiece_tokenizer.tokenize
     strategy = get_strategy()
+    model_config = ModelConfig512_1()
+
     with strategy.scope():
-        pep = PEPLocalDecision(model_path)
+        pep = PEPLocalDecision(model_config, model_path)
 
     def analyze_qd(qd: QD):
         q, d = qd

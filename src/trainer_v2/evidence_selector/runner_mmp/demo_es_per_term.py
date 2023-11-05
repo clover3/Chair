@@ -43,7 +43,7 @@ def main(args):
     model_config = ModelConfig512_2()
     dataset_builder = build_state_dataset_fn(run_config, model_config)
     dataset = dataset_builder(eval_files_path, False)
-    html = HtmlVisualizer("es6_demo.html")
+    html = HtmlVisualizer(run_config.predict_config.predict_save_path)
     masker = ConcatMaskStrategyQD()
     cnt = 0
     for batch in dataset:
@@ -56,7 +56,7 @@ def main(args):
         for pair_i in range(n_inst):
             input_ids_cur = input_ids[pair_i].numpy()
             segment_ids_cur = segment_ids[pair_i].numpy()
-            output_cur = output[pair_i][:, 1]
+            output_cur = output[pair_i][:, 0]
 
             # get query tokens
             q_tokens_ids = []

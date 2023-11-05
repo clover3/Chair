@@ -3,7 +3,10 @@ import statistics
 import sys
 from collections import defaultdict
 
+from krovetzstemmer import Stemmer
+
 from data_generator.tokenizer_wo_tf import get_tokenizer
+from list_lib import lmap
 from misc_lib import average, get_second
 from tab_print import print_table
 from trainer_v2.per_project.transparency.mmp.pep.seg_enum_helper import TokenizedText, get_term_rep
@@ -15,24 +18,25 @@ def load_jsonl(input_path) -> list:
             yield json.loads(line.rstrip('\n|\r'))
 
 
-def is_em_based(q_terms, d_terms):
-    d_tokens = d_terms.split()
-    for token in q_terms.split():
-        if token in d_tokens:
-            return True
-    return False
-
-
 
 
 def print_non_em(score_d):
+    stemmer = Stemmer()
+    def is_em_based(q_terms, d_terms):
+        d_tokens_st = lmap(stemmer.stem, d_terms.split())
+        q_tokens_st = lmap(stemmer.stem, q_terms.split())
+        for token in q_tokens_st:
+            if token in d_tokens_st:
+                return True
+        return False
+
     entries = []
     for term_pair, scores in score_d.items():
         if is_em_based(*term_pair):
             pass
         else:
             avg_score = average(scores)
-            std = statistics.stdev(scores)
+            std = statistics.stdev(scores) if len(scores) > 1 else "nan"
             entries.append((term_pair, avg_score, len(scores) / 5, std))
     entries.sort(key=lambda x: x[1], reverse=True)
     print_table(entries)
@@ -53,7 +57,8 @@ def print_gain_terms(score_d):
                 q_part_score = average(score_d[q_term_part, d_term])
                 q_double_score = average(score_d[q_term, d_term])
                 gain = q_double_score - q_part_score
-                entries.append((q_term, q_term_part, d_term, q_double_score, gain))
+                entries.append((q_term, q_term_part, "/", d_term, q_double_score, gain))
+
         if len(d_tokens) > 1:
             if any([d_token in q_tokens for d_token in d_tokens]):
                 d_term_part = " ".join([d_token for d_token in d_tokens if d_token in q_tokens])
@@ -62,16 +67,10 @@ def print_gain_terms(score_d):
                 part_score = average(score_d[q_term, d_term_part])
                 double_score = average(score_d[q_term, d_term])
                 gain = double_score - part_score
-                entries.append((q_term, d_term, d_term_part, double_score, gain))
+                entries.append((q_term, "/", d_term, d_term_part, double_score, gain))
 
     entries.sort(key=lambda x: x[4], reverse=True)
     print_table(entries)
-
-
-def main():
-    jsonl = load_jsonl(sys.argv[1])
-    score_d = load_segment_log(jsonl)
-    print_gain_terms(score_d)
 
 
 def load_segment_log(jsonl):
@@ -91,6 +90,12 @@ def load_segment_log(jsonl):
             d_term = get_term_rep(d_rep, d_indices)
             score_d[q_term, d_term].append(score)
     return score_d
+
+
+def main():
+    jsonl = load_jsonl(sys.argv[1])
+    score_d = load_segment_log(jsonl)
+    print_non_em(score_d)
 
 
 if __name__ == "__main__":

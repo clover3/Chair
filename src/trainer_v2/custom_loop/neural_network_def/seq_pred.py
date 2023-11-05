@@ -19,7 +19,10 @@ class SeqPrediction(BertBasedModelIF):
         l_input_ids, l_token_type_ids = define_bert_input(max_seq_length, "")
         inputs = [l_input_ids, l_token_type_ids]
         feature_rep = l_bert(inputs)
-        seq_prediction = tf.keras.layers.Dense(config.num_classes, activation=tf.nn.softmax)(feature_rep)
+        if config.num_classes == 1:
+            seq_prediction = tf.keras.layers.Dense(config.num_classes)(feature_rep)
+        else:
+            seq_prediction = tf.keras.layers.Dense(config.num_classes, activation=tf.nn.softmax)(feature_rep)
         inputs = (l_input_ids, l_token_type_ids)
         model = keras.Model(inputs=inputs, outputs=seq_prediction, name="bert_model")
         self.model: keras.Model = model

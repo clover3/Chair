@@ -55,9 +55,22 @@ def load_mmp_test_qrel_json(dataset_name):
 
 
 # 397,756,691
+
+MSMARCO_PASSAGE_TRIPLET_SIZE = 397756691
+
 def get_train_triples_path():
     tsv_path = path_join(data_path, "msmarco", "triples.train.full.tsv.gz")
     return tsv_path
+
+
+def get_train_triples_partition_path(part_no):
+    return path_join(data_path, "msmarco", "triples.train.full", str(part_no))
+
+
+def iter_train_triples_partition(part_no):
+    tsv_path = get_train_triples_partition_path(part_no)
+    for line in open(tsv_path, 'rt', encoding='utf8'):
+        yield line.split("\t")
 
 
 def get_train_triples_small_path():

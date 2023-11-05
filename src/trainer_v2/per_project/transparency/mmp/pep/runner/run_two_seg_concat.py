@@ -1,5 +1,4 @@
 import sys
-
 from cpath import get_bert_config_path
 from taskman_client.wrapper3 import report_run3
 from trainer_v2.chair_logging import c_log

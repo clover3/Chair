@@ -144,8 +144,7 @@ class SeqPredREINFORCE:
         y_hat: List[Action] = policy_function.get_mean_action(state_list)
         c_log.debug(" - Sampling actions")
         y_s_list: List[List[Action]] = policy_function.sample_actions(state_list)
-
-        y_hat: List[Action] = policy_function.get_top_k_action(state_list)
+        # y_hat: List[Action] = policy_function.get_top_k_action(state_list)
         c_log.debug(" - building action candidates")
 
         e_list: List[ExplorationFuture] = []

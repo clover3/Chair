@@ -4,7 +4,7 @@ from typing import List, Tuple
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from misc_lib import tensor_to_list
 from trainer_v2.evidence_selector.defs import RLStateTensor
-from trainer_v2.evidence_selector.environment import ConcatMaskStrategyI, PEInfo, IDS
+from trainer_v2.evidence_selector.environment import ConcatMaskStrategyI, PEInfo, IDS, PEInfoI
 from trainer_v2.evidence_selector.evidence_candidates import get_st_ed
 from trainer_v2.evidence_selector.evidence_scoring import cross_entropy, mean_absolute_error
 
@@ -76,3 +76,64 @@ def get_pe_for_qd_inner(
     # n_p_tokens = 10
     return PEInfo(
         base_pred, rep_pred, num_used, n_p_tokens, get_error_fn, tolerance, density_weight)
+
+
+class PEMaxScore(PEInfoI):
+    def __init__(
+            self,
+            base_pred: List[float],
+            rep_pred: List[float],
+            num_used: int,
+            max_n_tokens: int,
+    ):
+        self.base_pred = base_pred
+        self.rep_pred: List[float] = rep_pred
+        self.num_used: int = num_used
+        self.max_n_tokens: int = max_n_tokens
+
+    def get_desc_head(self):
+        row = ["base_pred", "rep_pred"]
+        return "\t".join(row)
+
+    def get_desc(self):
+        row = [self.base_pred, self.rep_pred, self.num_used, self.max_n_tokens]
+
+        def to_str(v) -> str:
+            if type(v) == float:
+                return "{0:.1f}".format(v)
+            elif type(v) == list:
+                s = ", ".join(list(map(to_str, v)))
+                return f"({s})"
+            else:
+                return str(v)
+        s_row: List[str] = list(map(to_str, row))
+        return "\t".join(s_row)
+
+    def get_error(self):
+        return -np.sum(self.rep_pred)
+
+    def density(self):
+        return 0
+
+    def get_reward(self):
+        return np.sum(self.rep_pred)
+
+
+def get_pe_max_reward(base_pred, rep_pred, action, state):
+    def get_doc_len(state: RLStateTensor):
+        seg2_start, seg2_end = get_st_ed(state.segment_ids_np)
+        return seg2_end - seg2_start
+
+    def get_valid_action(state, action):
+        action_np = np.array(action)
+        is_second_seg = np.logical_and(np.equal(state.segment_ids_np, 1),
+                                       np.not_equal(state.input_ids_np, 0))
+        valid_action = np.multiply(action_np, is_second_seg.astype(np.int))
+        return valid_action
+
+    n_p_tokens = get_doc_len(state)
+    valid_action = get_valid_action(state, action)
+    num_used = int(np.sum(valid_action).tolist())
+    # num_used = 5
+    # n_p_tokens = 10
+    return PEMaxScore(base_pred, rep_pred, num_used, n_p_tokens)

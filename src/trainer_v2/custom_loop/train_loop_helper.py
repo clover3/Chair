@@ -12,7 +12,10 @@ from trainer_v2.train_util.get_tpu_strategy import get_strategy2
 def fetch_metric_result(metrics: Dict[str, tf.keras.metrics.Metric]):
     metric_res = {}
     for name, m in metrics.items():
-        metric_res[name] = m.result().numpy()
+        if isinstance(m, tf.keras.metrics.Metric):
+            metric_res[name] = m.result().numpy()
+        else:
+            metric_res[name] = m
 
     if "precision" in metrics and "recall" in metrics and "f1" not in metrics:
         try:

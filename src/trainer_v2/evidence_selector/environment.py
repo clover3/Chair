@@ -215,3 +215,16 @@ class PEPClient:
         c_log.debug("PEPClient send DONE")
         output = unconcat(response, len(payload))
         return output
+
+
+class PEPClientDummy:
+    def __init__(self, server_addr, port, ):
+        pass
+        # self.proxy = ServerProxyEx(server_addr, port)
+
+    def request(self, payload: List[Tuple[IDS, IDS]]) -> List[List[float]]:
+        output = []
+        for item in payload:
+            input_ids, _ = item
+            output.append([0.0])
+        return output

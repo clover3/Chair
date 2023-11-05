@@ -112,7 +112,8 @@ class PolicyGradientTrainer(TrainerIF):
             pass
 
     def build_dataset(self, src_path, is_training) -> tf.data.Dataset:
-        return self.reinforce.get_dataset(src_path, is_training)
+        ds = self.reinforce.get_dataset(src_path, is_training)
+        return ds
 
     def get_eval_object(self, batches, strategy):
         # eval_obj = PGRLEvalObject(self.policy_func, batches, strategy)

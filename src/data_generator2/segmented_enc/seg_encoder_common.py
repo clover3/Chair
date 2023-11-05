@@ -341,6 +341,7 @@ def encode_two_no_sep(tokenizer, segment_len, tokens1, tokens2):
     return input_ids, input_mask, segment_ids
 
 
+
 def get_random_split_location(tokens) -> Tuple[int, int]:
     retry = True
     n_retry = 0

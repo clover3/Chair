@@ -16,7 +16,7 @@ class TwoSegConcatLogitCombineTwoModel(ModelV2IF):
         self.model_config = model_config
         self.combine_local_decisions_layer = combine_local_decisions_layer
 
-    def build_model(self, run_config):
+    def build_model(self, _run_config):
         bert_params = load_bert_config(get_bert_config_path())
         self.num_window = 2
         prefix = "encoder"

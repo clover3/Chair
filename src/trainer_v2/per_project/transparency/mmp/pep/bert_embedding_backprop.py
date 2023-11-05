@@ -1,26 +1,34 @@
-from trainer_v2.bert_for_tf2 import BertModelLayer
-
 from __future__ import absolute_import, division, print_function
 
 import params_flow as pf
+import tensorflow as tf
 from bert.embeddings import BertEmbeddingsLayer, EmbeddingsProjector, PositionEmbeddingLayer
-from bert.layer import Layer
 from tensorflow import keras
 
+from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.bert_for_tf2.transformer import TransformerEncoderLayer
 
 
-from __future__ import absolute_import, division, print_function
+class MyExtraEmbedding(keras.layers.Embedding):
+    def __init__(self, **kwargs):
+        super(MyExtraEmbedding, self).__init__(**kwargs)
 
-import tensorflow as tf
-import params_flow as pf
+    def set_target_emb(self, target_emb):
+        self.target_emb: tf.keras.layers.Layer = target_emb
 
-from tensorflow import keras
-from tensorflow.keras import backend as K
+    def call(self, input_ids):
+        key_emb = super(MyExtraEmbedding, self).call(input_ids)  # [B, M, H]
+        mask = tf.expand_dims(tf.cast(tf.not_equal(0, input_ids), tf.float32) , axis=2)
+        key_emb = key_emb * mask
 
-import bert
-
-
+        emb_vector = self.target_emb.weights[0]  # [V, H]
+        zero_vector = emb_vector[0, :]
+        weights = tf.matmul(key_emb, emb_vector, transpose_b=True)  # [B, M, V]
+        probs = tf.math.softmax(weights, axis=-1)
+        weighted_emb = tf.matmul(probs, emb_vector)  # [B, M, H]
+        weighted_emb = weighted_emb - tf.reshape(zero_vector, [1, 1, -1])
+        weighted_emb = weighted_emb * mask
+        return weighted_emb
 
 
 class CustomBertEmbeddingsLayer(BertEmbeddingsLayer):
@@ -37,20 +45,21 @@ class CustomBertEmbeddingsLayer(BertEmbeddingsLayer):
         # use either hidden_size for BERT or embedding_size for ALBERT
         embedding_size = self.params.hidden_size if self.params.embedding_size is None else self.params.embedding_size
 
-        self.word_embeddings_layer = MyEmbeddingLayer(
+        self.word_embeddings_layer = keras.layers.Embedding(
             input_dim=self.params.vocab_size,
             output_dim=embedding_size,
             mask_zero=self.params.mask_zero,
             name="word_embeddings"
         )
         if self.params.extra_tokens_vocab_size is not None:
-            self.extra_word_embeddings_layer = keras.layers.Embedding(
+            self.extra_word_embeddings_layer = MyExtraEmbedding(
                 input_dim=self.params.extra_tokens_vocab_size + 1,  # +1 is for a <pad>/0 vector
                 output_dim=embedding_size,
                 mask_zero=self.params.mask_zero,
                 embeddings_initializer=self.create_initializer(),
-                name="extra_word_embeddings"
+                name="extra_word_embeddings",
             )
+            self.extra_word_embeddings_layer.set_target_emb(self.word_embeddings_layer)
 
         # ALBERT word embeddings projection
         if self.params.embedding_size is not None:

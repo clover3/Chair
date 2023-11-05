@@ -24,8 +24,9 @@ def generate_train_data(job_no: int, dataset_name: str, tfrecord_encoder: PairWi
     c_log.setLevel(logging.DEBUG)
 
     partition_todo = get_valid_mmp_partition(split)
-    st = job_no
-    ed = st + 10
+    n_per_job = 10
+    st = job_no * n_per_job
+    ed = st + n_per_job
     for partition_no in range(st, ed):
         if partition_no not in partition_todo:
             continue

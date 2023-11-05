@@ -10,7 +10,9 @@ from data_generator2.segmented_enc.es_common.evidence_selector_by_attn import ge
 from data_generator2.segmented_enc.es_common.pep_attn_common import PairWithAttn
 from data_generator2.segmented_enc.es_mmp.pep_attn_common import iter_attention_mmp_pos_neg_paried
 from misc_lib import TELI
+from taskman_client.wrapper3 import JobContext
 from trainer.promise import PromiseKeeper
+from trainer_v2.custom_loop.definitions import ModelConfig512_1
 from trainer_v2.per_project.transparency.mmp.pep.demo_util import PEPLocalDecision
 from trainer_v2.per_project.transparency.mmp.pep.runner.run_pep_segment_score_view import mask_remain
 from trainer_v2.per_project.transparency.mmp.pep.seg_enum_helper import TokenizedText, merge_subword_scores, \
@@ -18,20 +20,13 @@ from trainer_v2.per_project.transparency.mmp.pep.seg_enum_helper import Tokenize
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
-def analyze(model_path,
-            log_path,
-            itr: Iterable[Tuple[PairWithAttn, PairWithAttn]],
-            top_k=5):
+def analyze_inner(itr, log_path, pep, top_k):
     max_per_pair = 10
     max_seq_length = 256
     full_logger = TrialLogger(log_path)
     score_d = defaultdict(list)
     tokenizer = get_tokenizer()
-    strategy = get_strategy()
-    with strategy.scope():
-        pep = PEPLocalDecision(model_path)
-
-    for e in TELI(itr, 30000):
+    for e in TELI(itr, 3000):
         (pos_pair, pos_attn), (neg_pair, neg_attn) = e
         q: str = pos_pair.segment1
         q_rep: TokenizedText = TokenizedText.from_text(tokenizer, q)
@@ -43,6 +38,7 @@ def analyze(model_path,
         pk = PromiseKeeper(pep.score_fn)
 
         payload = []
+
         def add_entry(q_indices, d_indices):
             q_masked = mask_remain(q_indices, q_rep.sb_tokens)
             d_masked = mask_remain(d_indices, d_rep.sb_tokens)
@@ -99,7 +95,7 @@ def analyze(model_path,
                 for d_indices in enum_neighbor(d_idx):
                     add_entry_if_valid([q_idx], d_indices)
 
-        pk.do_duty()
+        pk.do_duty(True)
 
         full_logger.log_rep(q_rep, d_rep)
         for q_rep, d_rep, q_indices, d_indices, score_future in payload:
@@ -109,7 +105,18 @@ def analyze(model_path,
             full_logger.log_score(q_indices, d_indices, score)
             score_d[q_term, d_term].append(score)
 
-    save_to_pickle(score_d, "pep11_term_pair_score")
+
+def analyze(model_path,
+            log_path,
+            itr: Iterable[Tuple[PairWithAttn, PairWithAttn]],
+            top_k=5):
+
+    strategy = get_strategy()
+    with strategy.scope():
+        model_config = ModelConfig512_1()
+        pep = PEPLocalDecision(model_config, model_path)
+
+    analyze_inner(itr, log_path, pep, top_k)
 
 
 def main():
@@ -124,8 +131,10 @@ def main():
     model_path = sys.argv[1]
     log_path = sys.argv[2]
     partition_no = int(sys.argv[3])
-    pos_neg_pair_itr = iter_attention_mmp_pos_neg_paried(partition_no)
-    analyze(model_path, log_path, pos_neg_pair_itr)
+
+    with JobContext(f"TermPair_{partition_no}"):
+        pos_neg_pair_itr = iter_attention_mmp_pos_neg_paried(partition_no)
+        analyze(model_path, log_path, pos_neg_pair_itr)
 
 
 if __name__ == "__main__":
