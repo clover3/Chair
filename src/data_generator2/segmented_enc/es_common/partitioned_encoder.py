@@ -29,6 +29,9 @@ def segment_formatter(e: PartitionedSegment, target_part_no):
             assert False
     elif isinstance(e, IndicesPartitionedSegment):
         return e.get_partition_seg(target_part_no)
+    elif isinstance(e, MaskPartitionedSegment):
+        # Supposed to have mask at boundary of d tokens
+        return e.get_partition_seg(target_part_no)
     else:
         assert False
 
@@ -104,6 +107,17 @@ def get_both_seg_partitioned_to_input_ids(tokenizer, parition_len: int):
                 tokenizer, partial_seg1, partial_seg2, parition_len)
             tuple_list.append((input_ids, segment_ids))
         return concat_tuple_windows(tuple_list, parition_len)
+    return encode
+
+
+def get_both_seg_partitioned_to_input_ids2(tokenizer, parition_len: int):
+    def encode(e: BothSegPartitionedPair):
+        for part_no in [0, 1]:
+            partial_seg1: List[str] = segment_formatter(e.segment1, part_no)
+            partial_seg2: List[str] = segment_formatter(e.segment2, part_no)
+            input_ids, segment_ids = combine_with_sep_cls_and_pad(
+                tokenizer, partial_seg1, partial_seg2, parition_len)
+            yield input_ids, segment_ids
     return encode
 
 

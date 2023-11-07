@@ -53,6 +53,31 @@ class TokenizedText(NamedTuple):
         )
 
 
+def translate_sp_idx_to_sb_idx(sb_tokens: List[List[str]], st: int, ed: int):
+    sbword_mapping = []
+    sp_sb_mapping = []
+    for sp_idx, sb_tokens_per_sp_token in enumerate(sb_tokens):
+        mapping_per_sp = []
+        if not sb_tokens_per_sp_token:
+            print(sb_tokens)
+            raise ValueError()
+        for _ in sb_tokens_per_sp_token:
+            n_sb_before = len(sbword_mapping)
+            mapping_per_sp.append(n_sb_before)
+            sbword_mapping.append(sp_idx)
+        sp_sb_mapping.append(mapping_per_sp)
+
+    sb_st = sp_sb_mapping[st][0]
+    try:
+        sb_ed = sp_sb_mapping[ed][0] if ed < len(sb_tokens) else len(sbword_mapping)
+    except IndexError:
+        print("st, ed", st, ed)
+        print("len(sb_tokens)", sb_tokens)
+        print("sp_sb_mapping", sp_sb_mapping)
+        raise
+    return sb_st, sb_ed
+
+
 def merge_subword_scores(scores, text: TokenizedText, merge_method):
     output = []
     for indices in text.sp_sb_mapping:

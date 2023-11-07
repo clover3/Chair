@@ -153,6 +153,14 @@ def list_equal(a: List, b: List):
     return True
 
 
+def assert_list_equal(a: List, b: List):
+    if not list_equal(a, b):
+        print("List does not equal".format(a, b))
+        print("a: ", a)
+        print("b: ", b)
+        raise ValueError()
+
+
 def transpose(m):
     return [[row[i] for row in m] for i in range(len(m[0]))]
 
@@ -196,7 +204,8 @@ def apply_batch(l: Iterable, batch_size: int) -> Iterable[List]:
         if len(cur_batch) >= batch_size:
             yield cur_batch
             cur_batch = []
-    yield cur_batch
+    if cur_batch:
+        yield cur_batch
 
 
 def assert_length_equal(l1, l2):

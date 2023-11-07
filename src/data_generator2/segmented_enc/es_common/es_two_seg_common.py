@@ -28,6 +28,10 @@ class PartitionedSegment(ABC):
         fn = [self.get_first, self.get_second][part_no]
         return fn()
 
+    @abstractmethod
+    def __str__(self):
+        pass
+
 
 class RangePartitionedSegment(PartitionedSegment):
     tokens: List[str]
@@ -44,6 +48,9 @@ class RangePartitionedSegment(PartitionedSegment):
 
     def get_second(self):
         return self.tokens[self.st: self.ed]
+
+    def __str__(self):
+        return f"RangePartitionedSegment(tokens={self.tokens}, range=({self.st}, {self.ed}))"
 
 
 class IndicesPartitionedSegment(PartitionedSegment):
@@ -71,6 +78,10 @@ class IndicesPartitionedSegment(PartitionedSegment):
     def get_second(self):
         return self.get_partition_seg(1)
 
+    def __str__(self):
+        return f"IndicesPartitionedSegment(tokens={self.tokens}, del_indices1={self.del_indices1}, del_indices2={self.del_indices2})"
+
+
 
 class MaskPartitionedSegment(PartitionedSegment):
     part1: List[str]
@@ -90,6 +101,9 @@ class MaskPartitionedSegment(PartitionedSegment):
     def get_second(self):
         return self.get_partition_seg(1)
 
+    def __str__(self):
+        return f"MaskPartitionedSegment(part1={self.part1}, part2={self.part2})"
+
 
 class Segment1PartitionedPair(NamedTuple):
     segment1: PartitionedSegment
@@ -101,6 +115,13 @@ class Segment1PartitionedPair(NamedTuple):
 
     def get_segment1_second(self):
         return self.segment1.get_second()
+
+    def __str__(self):
+        return (f"Segment1PartitionedPair:\n"
+                f"Segment 1 (First Half):\n{self.get_segment1_first()}\n\n"
+                f"Segment 1 (Second Half):\n{self.get_segment1_second()}\n\n"
+                f"Segment 2:\n{self.segment2}\n\n"
+                f"Pair Data:\n{self.pair_data}")
 
 
 class Segment2PartitionedPair(NamedTuple):
@@ -145,6 +166,11 @@ class BothSegPartitionedPair(NamedTuple):
     def get_segment2_second(self):
         return self.segment2.get_second()
 
+    def __str__(self):
+        return (f"BothSegPartitionedPair:\n"
+                f"Segment 1:\n{self.segment1}\n\n"
+                f"Segment 2:\n{self.segment2}\n\n"
+                f"Pair Data:\n{self.pair_data}")
 
 class EvidencePair2(NamedTuple):
     query_like_segment: PartitionedSegment

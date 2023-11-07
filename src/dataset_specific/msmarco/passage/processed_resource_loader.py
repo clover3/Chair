@@ -1,4 +1,4 @@
-from typing import Iterable, Tuple
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from cache import load_pickle_from
 from cpath import data_path, output_path
@@ -58,9 +58,12 @@ def get_partitioned_query_path(part_no):
     return path_join(output_path, "msmarco", "passage", "partitioned_query", str(part_no) + ".tsv")
 
 
-def load_partitioned_query(part_no) -> Tuple[str, int, int]:
+def load_partitioned_query(part_no) -> Iterable[Tuple[List[str], int, int]]:
     f = open(get_partitioned_query_path(part_no), "r", encoding="utf-8")
     for line in f:
         q_tokens, st, ed = line.split("\t")
-        yield q_tokens, int(st), int(ed)
+        yield q_tokens.split(), int(st), int(ed)
 
+
+def get_evidence_score_path(part_no):
+    return path_join(output_path, "mmp", "evidence_scores", str(part_no))
