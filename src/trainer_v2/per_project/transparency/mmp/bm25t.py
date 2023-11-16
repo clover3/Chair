@@ -18,7 +18,7 @@ class BM25T:
     def __init__(self, mapping: Dict[str, Dict[str, float]],
                  bm25):
         self.mapping = mapping
-        self.tokenizer = KrovetzNLTKTokenizer()
+        self.tokenizer = None
 
         self.df = bm25.df
         self.N = bm25.N
@@ -42,6 +42,8 @@ class BM25T:
         c_log.info("%d query-document pairs used table", self.n_mapping_used)
 
     def score(self, query, text):
+        if self.tokenizer is None:
+            self.tokenizer = KrovetzNLTKTokenizer()
         q_terms = self.tokenizer.tokenize_stem(query)
         t_terms = self.tokenizer.tokenize_stem(text)
         q_tf = Counter(q_terms)

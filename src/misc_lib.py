@@ -74,6 +74,18 @@ class TimeEstimator:
             self.progress_tenth += 1
 
 
+class TimeEstimatorOpt(TimeEstimator):
+    def __init__(self, total_repeat, name="", sample_size=10):
+        self.total_repeat = total_repeat
+        if total_repeat is not None:
+            super(TimeEstimatorOpt, self).__init__(total_repeat, name, sample_size)
+
+    def tick(self):
+        if self.total_repeat is not None:
+            super().tick()
+
+
+
 def TEL(l: List[A]) -> List[A]:
     ticker = TimeEstimator(len(l))
     for e in l:

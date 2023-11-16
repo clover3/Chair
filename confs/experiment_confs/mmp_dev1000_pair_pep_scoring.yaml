@@ -1,0 +1,7 @@
+
+model_path: output/model/runs/mmp_pep10_point/model_20000
+q_term_path: data/msmarco/dev_sample1000/query_terms.txt
+d_term_path: output/mmp/d_terms_top100K.txt
+job_size: 10
+run_name: dev1000_pair_pep
+save_dir: output/mmp/dev1000_d_terms_pep

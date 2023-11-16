@@ -1,7 +1,7 @@
 import csv
 import gzip
 import json
-from typing import List, Iterable, Callable, Dict, Tuple, Set, Union
+from typing import List, Iterable, Tuple, Union
 
 
 def save_tsv(entries, save_path):
@@ -85,7 +85,6 @@ def read_term_pair_table(score_path) -> List[Tuple[str, str]]:
                              .format(len(row)))
         term_pair.append((qt, dt))
     return term_pair
-
 
 
 def save_term_pair_scores(

@@ -1,0 +1,11 @@
+
+bm25conf_path: confs/bm25_resource/sp_stem.yaml
+table_path: output/msmarco/passage/fidelity_2_2_pos.tsv
+table_type: scores
+method: bm25t_cand2_2_pos
+mapping_val: 0.1
+cut: 0.1
+
+run_name: bm25t_cand2_2_pos
+dataset_conf_path: confs/experiment_confs/mmp_dev_sample1000.yaml
+outer_batch_size: 10000000

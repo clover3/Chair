@@ -2,4 +2,5 @@
 
 import cython
 
-print("Hello Cython")
+def hello_world():
+    print("Hello Cython")

@@ -1,0 +1,11 @@
+
+bm25conf_path: confs/bm25_resource/sp_stem.yaml
+table_path: output/mmp/candidate2_2_pep_fidelity_filter.txt
+table_type: scores
+method: bm25t_cand2_2_pep_fidelity_filter
+mapping_val: 0.1
+cut: 0.1
+
+run_name: bm25t_cand2_2_pep_fidelity_filter
+dataset_conf_path: confs/experiment_confs/mmp_dev_sample1000.yaml
+outer_batch_size: 10000000
