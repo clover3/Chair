@@ -8,7 +8,7 @@ from krovetzstemmer import Stemmer
 from misc_lib import TimeProfiler, path_join
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.misc_common import save_number_to_file
-from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
+from trainer_v2.per_project.transparency.mmp.bm25_runner.bm25_paramed import get_bm25_mmp_25_01_01
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helper import compute_fidelity_change_pearson
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import load_q_term_index_from_qid_qtfs, \
     get_te_save_name, get_fidelity_save_name

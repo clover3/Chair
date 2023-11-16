@@ -1,13 +1,14 @@
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import List
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 import numpy as np
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.es_common.es_two_seg_common import PartitionedSegment, RangePartitionedSegment, \
     IndicesPartitionedSegment, BothSegPartitionedPair, PairData, Segment1PartitionedPair, EvidencePair2, \
-    MaskPartitionedSegment
+    MaskPartitionedSegment, compress_mask
 from data_generator2.segmented_enc.hf_encode_helper import combine_with_sep_cls_and_pad, encode_pair, \
     encode_seg_pair_paired
 from data_generator2.segmented_enc.seg_encoder_common import get_random_split_location
@@ -25,6 +26,24 @@ def segment_formatter(e: PartitionedSegment, target_part_no):
             head_mask = ["[MASK]"] if head else []
             tail_mask = ["[MASK]"] if tail else []
             return head_mask + e.get_second() + tail_mask
+        else:
+            assert False
+    elif isinstance(e, IndicesPartitionedSegment):
+        return e.get_partition_seg(target_part_no)
+    elif isinstance(e, MaskPartitionedSegment):
+        # Supposed to have mask at boundary of d tokens
+        return e.get_partition_seg(target_part_no)
+    else:
+        assert False
+
+
+def segment_formatter2(e: PartitionedSegment, target_part_no):
+    if isinstance(e, RangePartitionedSegment):
+        head, tail = e.get_first()
+        if target_part_no == 0:
+            return head + ["[MASK]"] + tail
+        elif target_part_no == 1:
+            return e.get_second()
         else:
             assert False
     elif isinstance(e, IndicesPartitionedSegment):
@@ -72,6 +91,11 @@ class PartitionedEncoder(PartitionedEncoderIF):
         return encode_seg_pair_paired(self.encode_to_ids(pos), self.encode_to_ids(neg))
 
 
+def segment_formatter_w_compress(segment, part_no):
+    seg: List[str] = segment_formatter(segment, part_no)
+    return compress_mask(seg)
+
+
 class PartitionedEncoderCompressMask(PartitionedEncoderIF):
     def __init__(self, tokenizer, segment_len: int):
         self.tokenizer = tokenizer
@@ -81,8 +105,8 @@ class PartitionedEncoderCompressMask(PartitionedEncoderIF):
         partition_len = self.partition_len
         tuple_list = []
         for part_no in [0, 1]:
-            partial_seg1: List[str] = NotImplemented
-            partial_seg2: List[str] = NotImplemented
+            partial_seg1: List[str] = segment_formatter_w_compress(e.segment1, part_no)
+            partial_seg2: List[str] = segment_formatter_w_compress(e.segment2, part_no)
             input_ids, segment_ids = combine_with_sep_cls_and_pad(
                 self.tokenizer, partial_seg1, partial_seg2, partition_len)
             tuple_list.append((input_ids, segment_ids))
@@ -110,13 +134,14 @@ def get_both_seg_partitioned_to_input_ids(tokenizer, parition_len: int):
     return encode
 
 
-def get_both_seg_partitioned_to_input_ids2(tokenizer, parition_len: int):
+def get_both_seg_partitioned_to_input_ids2(tokenizer, partition_len: int) \
+    -> Callable[[BothSegPartitionedPair], Iterable[tuple[list, list]]]:
     def encode(e: BothSegPartitionedPair):
         for part_no in [0, 1]:
             partial_seg1: List[str] = segment_formatter(e.segment1, part_no)
             partial_seg2: List[str] = segment_formatter(e.segment2, part_no)
             input_ids, segment_ids = combine_with_sep_cls_and_pad(
-                tokenizer, partial_seg1, partial_seg2, parition_len)
+                tokenizer, partial_seg1, partial_seg2, partition_len)
             yield input_ids, segment_ids
     return encode
 
@@ -194,13 +219,21 @@ class BothSegPartitionedPairParser:
         return indices_part_merged
 
 
-
 # cur len = 3,
 # cont_seg_len = 49
 def build_get_num_delete_fn(del_rate: float):
     def get_num_delete(cur_part_len, other_part_len, cont_seg_len):
-        # Assume each token of currrent part require one token in continuous one
-        reasonable_max_del = cont_seg_len - cur_part_len
+        # Assume each token of current part require one token in continuous one
+        # For example,
+        # cont_seg_len = 40 (document
+        # cur_part_len = 5 (query part 1)
+        # Then we need at least 5 and we can delete at most 35
+        # if del_rate is 0.5, normal_mean = std_dev = 17.5
+
+        hard_min_requirement = max(cur_part_len// 2, 1)
+        hard_max_del = cont_seg_len - hard_min_requirement
+        soft_min_requirement = cur_part_len
+        reasonable_max_del = cont_seg_len - soft_min_requirement
         reasonable_max_del = max(reasonable_max_del, 1)
 
         normal_mean = reasonable_max_del * del_rate
@@ -208,7 +241,7 @@ def build_get_num_delete_fn(del_rate: float):
         num_del = int(np.random.normal(normal_mean, std_dev))
 
         # Cannot delete more than cont_seg_len
-        num_del = min(cont_seg_len, num_del)
+        num_del = min(hard_max_del, num_del)
         num_del = max(0, num_del)
         return num_del
     return get_num_delete

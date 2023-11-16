@@ -1,3 +1,4 @@
+
 from cpath import get_bert_config_path
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config

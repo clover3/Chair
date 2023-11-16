@@ -195,6 +195,19 @@ def list_list_pattern(list_list: List[List[Child]],
     return output
 
 
+def unpack_future(item):
+    if isinstance(item, MyFuture):
+        return item.get()
+    elif isinstance(item, tuple):
+        return tuple([unpack_future(sub_item) for sub_item in item])
+    elif isinstance(item, list):
+        return [unpack_future(sub_item) for sub_item in item]
+    elif isinstance(item, dict):
+        return {k: unpack_future(v) for k, v in item.items()}
+    else:
+        return item
+
+
 if __name__ == '__main__':
     def list_fn(l):
         r = []

@@ -1,0 +1,5 @@
+
+term_pair_scores_path: output/mmp/fidelity2_2_pep_scores.txt
+self_term_score_path: output/mmp/freq_q_term_pep_scores.txt
+save_path: output/mmp/fidelity2_2_pos_self_filtered.txt
+

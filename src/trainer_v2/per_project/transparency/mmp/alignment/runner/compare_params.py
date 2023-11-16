@@ -3,6 +3,7 @@ import sys
 import tensorflow as tf
 import numpy as np
 
+
 from list_lib import list_equal
 from trainer_v2.chair_logging import c_log
 

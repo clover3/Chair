@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+
 from cpath import get_bert_config_path
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
 from trainer_v2.custom_loop.neural_network_def.combine2d import ReduceMaxLayer

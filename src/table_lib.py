@@ -50,3 +50,4 @@ def print_positive_entry(file_read):
         score = float(e[2])
         if score > 0:
             print("\t".join(e))
+

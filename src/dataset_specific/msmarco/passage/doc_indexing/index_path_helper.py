@@ -64,6 +64,10 @@ def get_bm25_bert_tokenized_resource_path_helper():
 def get_bm25_bt2_resource_path_helper():
     config_path = path_join(
         yconfig_dir_path, "bm25_resource", "bt2.yaml")
+    return load_bm25_index_resource_conf(config_path)
+
+
+def load_bm25_index_resource_conf(config_path):
     data_class = BM25IndexResource
     return load_omega_config_with_dataclass(config_path, data_class)
 

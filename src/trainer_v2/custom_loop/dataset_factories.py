@@ -335,3 +335,26 @@ def build_dataset_repeat_segs(input_files, run_config, model_config, is_for_trai
     return dataset.map(repeat_record)
 
 
+def get_qd_multi_seg_dataset(
+        file_path,
+        run_config: RunConfig2,
+        q_seq_len,
+        d_seq_len,
+        n_score_size,
+        is_for_training,
+    ) -> tf.data.Dataset:
+
+    def decode_record(record):
+        name_to_features = {}
+        name_to_features[f'q_input_ids'] = tf.io.FixedLenFeature([q_seq_len], tf.int64)
+        name_to_features[f'q_segment_ids'] = tf.io.FixedLenFeature([q_seq_len], tf.int64)
+        name_to_features[f'd_input_ids'] = tf.io.FixedLenFeature([d_seq_len], tf.int64)
+        name_to_features[f'd_segment_ids'] = tf.io.FixedLenFeature([d_seq_len], tf.int64)
+        name_to_features[f'scores'] = tf.io.FixedLenFeature([n_score_size], tf.float32)
+        record = tf.io.parse_single_example(record, name_to_features)
+        return record
+
+    return create_dataset_common(decode_record,
+                                 run_config,
+                                 file_path,
+                                 is_for_training)

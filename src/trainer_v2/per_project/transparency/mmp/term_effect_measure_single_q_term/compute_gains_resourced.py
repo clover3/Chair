@@ -4,7 +4,7 @@ from typing import List
 import numpy as np
 
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
+from trainer_v2.per_project.transparency.mmp.bm25_runner.bm25_paramed import get_bm25_mmp_25_01_01
 from trainer_v2.per_project.transparency.mmp.term_effect_measure_single_q_term.compute_gains import ScoringModel, \
     compute_alignment_gains
 from trainer_v2.per_project.transparency.mmp.term_effect_measure_single_q_term.path_helper import get_precompute_ranked_list_save_path

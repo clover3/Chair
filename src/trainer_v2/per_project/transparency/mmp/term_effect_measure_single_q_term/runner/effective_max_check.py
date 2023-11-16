@@ -1,4 +1,4 @@
-from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
+from trainer_v2.per_project.transparency.mmp.bm25_runner.bm25_paramed import get_bm25_mmp_25_01_01
 
 
 def main():

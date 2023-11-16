@@ -217,6 +217,20 @@ class PEPClient:
         return output
 
 
+class PEPClientFromPredictor:
+    # It expects predict_fn to takes concatenation of two sequences
+    def __init__(self, predict_fn):
+        self.predict_fn = predict_fn
+
+    def request(self, payload: List[Tuple[IDS, IDS]]) -> List[List[float]]:
+        concat_payload = concat_two_items(payload)
+        c_log.debug("PEPClient send ENTRY")
+        response = self.predict_fn(concat_payload)
+        c_log.debug("PEPClient send DONE")
+        output = unconcat(response, len(payload))
+        return output
+
+
 class PEPClientDummy:
     def __init__(self, server_addr, port, ):
         pass

@@ -59,3 +59,23 @@ class BM25:
 
     def score_inner(self, q_tf, t_tf) -> float:
         return self.core.score_inner(q_tf, t_tf)
+
+
+class BM25FromTokenizeFn:
+    def __init__(self, tokenize_fn, df, num_doc, avdl, k1=0.01, k2=100, b=0.6,
+                 ):
+        self.core = BM25Bare(df, num_doc, avdl, k1, k2, b)
+        self.tokenize_fn = tokenize_fn
+
+    def score(self, query, text) -> float:
+        q_terms = self.tokenize_fn(query)
+        t_terms = self.tokenize_fn(text)
+        q_tf = Counter(q_terms)
+        t_tf = Counter(t_terms)
+        return self.core.score_inner(q_tf, t_tf)
+
+    def term_idf_factor(self, term):
+        return self.core.term_idf_factor(term)
+
+    def score_inner(self, q_tf, t_tf) -> float:
+        return self.core.score_inner(q_tf, t_tf)

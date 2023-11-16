@@ -3,6 +3,7 @@ import sys
 from transformers import AutoTokenizer, TFBertMainLayer
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
+
 from tf_util.lib.tf_funcs import find_layer
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.probe.probe_network import ProbeOnBERT

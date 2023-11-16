@@ -8,6 +8,10 @@ from misc_lib import ceil_divide
 
 
 def pool_delete_indices(num_del, seq_len, g) -> List[int]:
+    return pool_sub_seq_indices(num_del, seq_len, g)
+
+
+def pool_sub_seq_indices(num_del, seq_len, g):
     num_del = min(num_del, seq_len)
 
     def sample_len():
@@ -21,8 +25,8 @@ def pool_delete_indices(num_del, seq_len, g) -> List[int]:
     indice = []
     for i in range(num_del):
         del_len = sample_len()
-        start_idx = random.randint(0, seq_len-1)
-        end_idx = min(start_idx+del_len, seq_len)
+        start_idx = random.randint(0, seq_len - 1)
+        end_idx = min(start_idx + del_len, seq_len)
         for idx in range(start_idx, end_idx):
             indice.append(idx)
     return indice

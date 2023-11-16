@@ -3,6 +3,8 @@ import sys
 import tensorflow as tf
 
 
+
+
 def main():
     def normalize(name):
         t =  name.replace("tf_bert_for_sequence_classification/", "")

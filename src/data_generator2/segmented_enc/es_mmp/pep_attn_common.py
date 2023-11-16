@@ -32,7 +32,7 @@ def iter_attention_data_pair(partition_no) -> Iterable[Tuple[PairData, np.array]
         batch_no += 1
 
 
-def generate_train_data(job_no: int, dataset_name: str, tfrecord_encoder: PairWithAttnEncoderIF):
+def generate_train_data_repeat_pos(job_no: int, dataset_name: str, tfrecord_encoder: PairWithAttnEncoderIF):
     output_dir = at_output_dir("tfrecord", dataset_name)
     exist_or_mkdir(output_dir)
     split = "train"
@@ -85,3 +85,25 @@ def iter_attention_mmp_pos_neg_paried(partition_no):
     pos_neg_pair_itr: Iterable[Tuple[PairWithAttn, PairWithAttn]] = flatten(map(
         enumerate_pos_neg_pairs_once, pos_neg_itr))
     return pos_neg_pair_itr
+
+
+def generate_train_data(job_no: int, dataset_name: str, tfrecord_encoder: PairWithAttnEncoderIF):
+    output_dir = at_output_dir("tfrecord", dataset_name)
+    exist_or_mkdir(output_dir)
+    split = "train"
+    c_log.setLevel(logging.DEBUG)
+
+    partition_todo = get_valid_mmp_partition(split)
+    n_per_job = 10
+    st = job_no * n_per_job
+    ed = st + n_per_job
+    for partition_no in range(st, ed):
+        if partition_no not in partition_todo:
+            continue
+        save_path = os.path.join(output_dir, str(partition_no))
+
+        c_log.info("Partition %d", partition_no)
+        data_size = 3000
+        pos_neg_pair_itr: Iterable[Tuple[PairWithAttn, PairWithAttn]] = iter_attention_mmp_pos_neg_paried(partition_no)
+        encode_fn: Callable[[Tuple[PairWithAttn, PairWithAttn]], OrderedDict] = tfrecord_encoder.encode_fn
+        write_records_w_encode_fn(save_path, encode_fn, pos_neg_pair_itr, data_size)

@@ -3,6 +3,7 @@ from typing import Dict, Callable
 
 import tensorflow as tf
 
+
 from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.evaler_if import EvalerIF

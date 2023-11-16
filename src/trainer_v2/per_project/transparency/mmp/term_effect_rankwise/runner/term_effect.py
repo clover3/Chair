@@ -5,12 +5,11 @@ from typing import List
 from cache import save_list_to_jsonl
 from taskman_client.wrapper3 import JobContext
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
+from trainer_v2.per_project.transparency.mmp.bm25_runner.bm25_paramed import get_bm25_mmp_25_01_01
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure import ScoringModel, TermEffectMeasure
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helper import TermEffectPerQuery
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import load_qtf_index_train, term_effect_dir, \
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import load_qtf_index_train, \
     get_te_save_path_base
-from misc_lib import path_join
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure_mmp import IRLProxy
 
 

@@ -3,7 +3,7 @@ from cpath import output_path
 from misc_lib import path_join
 from taskman_client.job_group_proxy import JobGroupProxy
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
+from trainer_v2.per_project.transparency.mmp.bm25_runner.bm25_paramed import get_bm25_mmp_25_01_01
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import get_te_save_path_base
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.runner.term_effect_serial import \
     term_effect_serial_core

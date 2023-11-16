@@ -53,6 +53,13 @@ class BM25T:
 
         return score
 
+    def score_batch(self, qd_list):
+        output = []
+        for q, d in qd_list:
+            s = self.score(q, d)
+            output.append(s)
+        return output
+
     def score_from_tfs(self, q_tf, t_tf):
         dl = sum(t_tf.values())
         score_sum = 0

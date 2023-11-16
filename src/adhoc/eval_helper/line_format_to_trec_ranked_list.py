@@ -34,7 +34,7 @@ def read_scores(scores_path):
 
 def build_ranked_list_from_line_scores_and_eval(
         run_name, dataset_name, judgment_path, quad_tsv_path, scores_path,
-        metric):
+        metric, do_not_report=False):
     """
     Use line scores to generate TREC style ranked list
     :param run_name:
@@ -58,5 +58,6 @@ def build_ranked_list_from_line_scores_and_eval(
         metric)
 
     print(f"{metric}:\t{ret}")
-    proxy = get_task_manager_proxy()
-    proxy.report_number(run_name, ret, dataset_name, metric)
+    if not do_not_report:
+        proxy = get_task_manager_proxy()
+        proxy.report_number(run_name, ret, dataset_name, metric)

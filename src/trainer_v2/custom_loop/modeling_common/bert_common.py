@@ -320,3 +320,9 @@ def define_bert_input(max_seq_len, post_fix=""):
     l_input_ids = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="input_ids{}".format(post_fix))
     l_token_type_ids = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name="segment_ids{}".format(post_fix))
     return l_input_ids, l_token_type_ids
+
+
+def define_bert_input_w_prefix(max_seq_len, prefix=""):
+    l_input_ids = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name=f"{prefix}_input_ids")
+    l_token_type_ids = keras.layers.Input(shape=(max_seq_len,), dtype='int32', name=f"{prefix}_segment_ids")
+    return l_input_ids, l_token_type_ids

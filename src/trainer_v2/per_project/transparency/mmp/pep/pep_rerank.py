@@ -1,5 +1,6 @@
 from typing import List, Iterable, Callable, Tuple, Dict
 
+
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.es_common.es_two_seg_common import BothSegPartitionedPair, Segment1PartitionedPair, \
     PairData, RangePartitionedSegment
@@ -49,8 +50,7 @@ def get_pep_scorer_from_pointwise(
     segment_len = 256
     max_seq_length = segment_len * 2
     c_log.info("Loading model from %s", model_path)
-    pointwise_model = tf.keras.models.load_model(model_path, compile=False)
-    inference_model = pointwise_model
+    inference_model = tf.keras.models.load_model(model_path, compile=False)
     tokenizer = get_tokenizer()
     encoder = PartitionedEncoder(tokenizer, segment_len)
     encode_fn: Callable[[BothSegPartitionedPair], Tuple] = encoder.encode_to_ids

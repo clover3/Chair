@@ -9,7 +9,7 @@ from models.transformer.bert_common_v2 import get_shape_list2
 from trainer_v2.bert_for_tf2 import BertModelLayer
 from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config, BERT_CLS, define_bert_input
 from trainer_v2.custom_loop.neural_network_def.two_seg_two_model import TwoSegConcatLogitCombineTwoModel
-from trainer_v2.per_project.transparency.mmp.pep.bert_embedding_backprop import CustomBertModelLayer
+from trainer_v2.per_project.transparency.mmp.pep.emb_train.bert_embedding_backprop import CustomBertModelLayer
 
 class EmbTrainIF(TwoSegConcatLogitCombineTwoModel):
     @abstractmethod

@@ -8,8 +8,8 @@ from taskman_client.task_proxy import get_local_machine_name
 
 
 class SubJobContext:
-    def __init__(self, sub_job_proxy, job_id):
-        self.sub_job_proxy: JobGroupProxy = sub_job_proxy
+    def __init__(self, job_name, job_id, max_job):
+        self.sub_job_proxy: JobGroupProxy = JobGroupProxy(job_name, max_job)
         self.job_id = job_id
         self.server_active = False
 

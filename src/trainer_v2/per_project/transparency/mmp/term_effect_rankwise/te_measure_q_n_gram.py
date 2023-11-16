@@ -7,20 +7,16 @@ from krovetzstemmer import Stemmer
 
 from table_lib import tsv_iter
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.misc_common import save_number_to_file, save_list_to_gz_jsonl
-from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
+from trainer_v2.per_project.transparency.misc_common import save_number_to_file
+from trainer_v2.per_project.transparency.mmp.bm25_runner.bm25_paramed import get_bm25_mmp_25_01_01
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helper import \
-    compute_fidelity_change_pearson, TermEffectPerQuery
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import get_te_save_name, \
-    get_fidelity_save_name
-from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.te_measure_common import term_effect_per_partition, \
-    compute_term_effect, save_te_list_to_gz_jsonl
+    compute_fidelity_change_pearson
+from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.te_measure_common import compute_term_effect, save_te_list_to_gz_jsonl
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure import IRLProxyIF, \
-    IndexedRankedList, ScoringModelNGram
-from cpath import output_path
+    ScoringModelNGram
 from misc_lib import path_join
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.term_effect_measure_mmp import print_cur_memory
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Dict, Tuple
 from misc_lib import TimeProfiler
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.index_ranked_list2 import IRLProxy2
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper2 import MMPGAlignPathHelper

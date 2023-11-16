@@ -3,6 +3,7 @@ import json
 import sys
 import tensorflow as tf
 
+
 from table_lib import tsv_iter
 from list_lib import left
 from cpath import output_path

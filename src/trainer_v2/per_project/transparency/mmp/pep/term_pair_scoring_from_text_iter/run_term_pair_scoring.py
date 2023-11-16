@@ -127,7 +127,7 @@ def main():
     #       - Exact match having high score is trivial. So it may not be worth checking it.
     #       - However, they don't always result in the same score.
     #            Some (rare words) has higher score than other (frequent ones)
-    #
+
     model_path = sys.argv[1]
     log_path = sys.argv[2]
     partition_no = int(sys.argv[3])

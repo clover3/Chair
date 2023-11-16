@@ -1,6 +1,7 @@
 import sys
 import tensorflow as tf
 
+
 from misc_lib import write_to_lines
 from taskman_client import wrapper3
 from taskman_client.wrapper3 import report_run3

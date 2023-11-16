@@ -1,13 +1,13 @@
 import sys
 from collections import Counter
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Iterable, Tuple
 from dataset_specific.msmarco.passage.passage_resource_loader import enum_grouped, FourItem
 from table_lib import tsv_iter
-from dataset_specific.msmarco.passage.path_helper import get_mmp_train_grouped_sorted_path, get_mmp_grouped_sorted_path
+from dataset_specific.msmarco.passage.path_helper import get_mmp_grouped_sorted_path
 
 # Output (Doc_id, TFs Counter, base score)
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
+from trainer_v2.per_project.transparency.mmp.bm25_runner.bm25_paramed import get_bm25_mmp_25_01_01
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.data_preprocessing.resplit_tfs import save_qid_tfs
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.data_preprocessing.serializer import \
     save_shallow_scores

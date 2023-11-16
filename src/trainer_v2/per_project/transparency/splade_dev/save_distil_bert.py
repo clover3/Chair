@@ -1,6 +1,7 @@
 import tensorflow as tf
 from transformers import TFAutoModelForMaskedLM
 
+
 from cpath import get_canonical_model_path
 
 def main():

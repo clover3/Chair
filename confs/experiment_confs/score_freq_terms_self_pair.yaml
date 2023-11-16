@@ -1,0 +1,3 @@
+term_path: output/msmarco/passage/freq_q_terms.txt
+model_path: output/model/runs/mmp_pep10_point/model_20000
+save_path: output/mmp/freq_q_term_pep_scores.txt

@@ -1,0 +1,7 @@
+
+bm25conf_path: confs/bm25_resource/sp_stem.yaml
+table_path: output/mmp/fidelity2_2_pos_self_filtered.txt
+table_type: scores
+method: bm25t_cand2_2_psf
+mapping_val: 0.1
+cut: 0.1

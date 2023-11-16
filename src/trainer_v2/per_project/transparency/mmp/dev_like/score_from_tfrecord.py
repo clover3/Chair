@@ -2,6 +2,7 @@ import sys
 
 import yaml
 
+
 from table_lib import tsv_iter
 from misc_lib import select_third_fourth
 from taskman_client.task_proxy import get_task_manager_proxy

@@ -2,9 +2,7 @@ import logging
 import sys
 
 from taskman_client.wrapper3 import JobContext
-from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper2 import get_cand2_1_path_helper
-from misc_lib import TimeProfiler
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.index_ranked_list2 import IRLProxy2
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper2 import MMPGAlignPathHelper
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.split_iter import get_mmp_split_w_deep_scores_train
@@ -12,15 +10,14 @@ from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.te_measure_w_r
     run_term_effect_over_term_pairs
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.te_measure_common import term_effect_per_partition
 import time
-import os
 
-from typing import List, Dict, Callable
+from typing import List, Dict
 
 from krovetzstemmer import Stemmer
 
 from misc_lib import TimeProfiler, path_join
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
+from trainer_v2.per_project.transparency.mmp.bm25_runner.bm25_paramed import get_bm25_mmp_25_01_01
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.fidelity_helper import TermEffectPerQuery, \
     compute_fidelity_change_pearson
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import load_q_term_index_from_qid_qtfs

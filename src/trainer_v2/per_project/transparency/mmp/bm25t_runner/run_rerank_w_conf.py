@@ -16,7 +16,7 @@ def get_bm25t_scorer_fn(conf):
     cdf, df = load_msmarco_passage_term_stat()
     bm25 = BM25(df, cdf, 25, 0.1, 100, 1.4)
     bm25t = BM25T(value_mapping, bm25.core)
-    score_fn = bm25t.score
+    score_fn = bm25t.score_batch
     return score_fn
 
 

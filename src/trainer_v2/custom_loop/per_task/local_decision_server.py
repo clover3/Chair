@@ -13,9 +13,18 @@ from trainer_v2.custom_loop.per_task.ts_util import get_dataset_factory_two_seg,
 
 
 def run_local_decision_server(run_config, model_config: ModelConfigType, strategy):
+    model_path = run_config.get_model_path()
+    predict = get_local_decision_predictor(model_path, model_config, strategy)
+
+    server = RPCServerWrap(predict)
+    print("server started")
+    server.start(LOCAL_DECISION_PORT)
+
+
+def get_local_decision_predictor(model_path, model_config, strategy):
     def model_factory():
         model: tf.keras.models.Model = load_local_decision_model(
-            model_config, run_config.get_model_path())
+            model_config, model_path)
         return model
 
     dataset_factory = get_dataset_factory_two_seg(model_config)
@@ -39,6 +48,4 @@ def run_local_decision_server(run_config, model_config: ModelConfigType, strateg
             print(e)
         return []
 
-    server = RPCServerWrap(predict)
-    print("server started")
-    server.start(LOCAL_DECISION_PORT)
+    return predict

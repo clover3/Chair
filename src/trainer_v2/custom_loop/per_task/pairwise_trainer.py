@@ -14,8 +14,11 @@ from trainer_v2.custom_loop.trainer_if import EmptyEvalObject
 
 class TrainerForLossReturningModel(TrainerCommon):
     def __init__(self, run_config: RunConfig2,
-                 inner_model: ModelV2IF):
+                 inner_model: ModelV2IF,
+                 eval_object_factory=None
+                 ):
         super(TrainerForLossReturningModel, self).__init__(run_config, inner_model)
+        self.eval_object_factory = eval_object_factory
 
     def get_optimizer(self):
         return AdamWeightDecay(
@@ -45,8 +48,14 @@ class TrainerForLossReturningModel(TrainerCommon):
             pass
 
     def get_eval_object(self, eval_batches, strategy):
-        eval_object = EmptyEvalObject()
+        if self.eval_object_factory is None:
+            eval_object = EmptyEvalObject()
+        else:
+            eval_object = self.eval_object_factory(
+                self.inner_model.get_keras_model(), eval_batches, strategy, 10
+            )
         return eval_object
+
 
 
 class PairwiseAcc(tf.keras.metrics.Metric):

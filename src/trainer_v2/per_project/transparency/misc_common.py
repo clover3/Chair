@@ -1,9 +1,7 @@
 import csv
 import gzip
 import json
-from typing import List, Iterable, Callable, Dict, Tuple, Set
-
-from table_lib import tsv_iter
+from typing import List, Iterable, Callable, Dict, Tuple, Set, Union
 
 
 def save_tsv(entries, save_path):
@@ -16,7 +14,7 @@ def save_tsv(entries, save_path):
 def load_tsv(file_path) -> List:
     f = open(file_path, "r", encoding="utf-8", errors="ignore")
     table = []
-    reader = csv.reader(f, delimiter='\t')
+    reader = csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE)
     for row in reader:
         table.append(row)
     return table
@@ -24,7 +22,7 @@ def load_tsv(file_path) -> List:
 
 def load_str_float_tsv(qid, save_path):
     entries = []
-    for pid, score in tsv_iter(save_path):
+    for pid, score in load_tsv(save_path):
         entries.append((pid, float(score)))
     return qid, entries
 
@@ -65,10 +63,46 @@ def save_number_to_file(save_path, score):
     f.write(str(score))
 
 
-def read_term_pair_table(score_path) -> List[Tuple[str, str, float]]:
-    itr = tsv_iter(score_path)
-    term_gain: List[Tuple[str, str, float]] = []
+def read_term_pair_table_w_score(score_path) -> List[Tuple[str, str, float]]:
+    itr = load_tsv(score_path)
+    output: List[Tuple[str, str, float]] = []
     for row in itr:
         qt, dt, score = row
-        term_gain.append((qt, dt, float(score)))
-    return term_gain
+        output.append((qt, dt, float(score)))
+    return output
+
+
+def read_term_pair_table(score_path) -> List[Tuple[str, str]]:
+    itr = load_tsv(score_path)
+    term_pair: List[Tuple[str, str]] = []
+    for row in itr:
+        if len(row) == 3:
+            qt, dt, _score = row
+        elif len(row) == 2:
+            qt, dt = row
+        else:
+            raise ValueError("Expect each row to have 2 or 3 columns but it has {} columns"
+                             .format(len(row)))
+        term_pair.append((qt, dt))
+    return term_pair
+
+
+
+def save_term_pair_scores(
+        score_itr: Union[
+            Iterable[Tuple[str, str, float]],
+            Iterable[Tuple[Tuple[str, str], float]]
+        ],
+        save_path):
+    out_f = open(save_path, "w")
+
+    for row in score_itr:
+        if len(row) == 2:
+            (q_term, d_term), score = row
+        elif len(row) == 3:
+            q_term, d_term, score = row
+        else:
+            raise ValueError("Expect each row to have 2 or 3 columns but it has {} columns"
+                             .format(len(row)))
+
+        out_f.write(f"{q_term}\t{d_term}\t{score}\n")

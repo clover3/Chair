@@ -1,90 +1,31 @@
-import json
 import logging
-import os
 import sys
-import threading
-import winsound
+
+from PyQt5.QtCore import QObject, pyqtSignal
 from plyer import notification
 
-import requests
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QSystemTrayIcon, QMenu,
-                             QAction, QVBoxLayout, QPushButton, QLabel, QWidget, QStyle)
+                             QAction, QVBoxLayout, QPushButton, QLabel, QWidget, QTextEdit)
 
 from cpath import data_path
 from misc_lib import path_join
-from trainer_v2.chair_logging import c_log
+from taskman_client.cloverweb_man.notification_handler import NotificationHandler
 
 
-class NotificationHandler:
-    def __init__(self, base_url, interval, send_os_notification):
-        self.base_url = base_url
-        self.interval = interval
-        self.send_os_notification = send_os_notification
-        self._stop_event = threading.Event()
-        self._thread = threading.Thread(target=self._run_pool_action_periodically)
-        self.sound_dir = path_join(data_path, "sound_data")
+class QTextEditLoggingHandler(logging.Handler, QObject):
+    append_signal = pyqtSignal(str)
 
-    def start(self):
-        """Starts the periodic pooling."""
-        self._thread.start()
+    def __init__(self, widget):
+        logging.Handler.__init__(self)
+        QObject.__init__(self)
+        self.widget = widget
+        self.widget.setReadOnly(True)
+        self.append_signal.connect(self.widget.append)
 
-    def stop(self):
-        """Stops the periodic pooling."""
-        self._stop_event.set()
-        self._thread.join()
-
-    def _run_pool_action_periodically(self):
-        """Helper method to run pool_action periodically."""
-        while not self._stop_event.is_set():
-            c_log.debug("Handler loop")
-            self.pool_action()
-            self._stop_event.wait(self.interval)
-
-    def clear_notification(self, notification):
-        body = json.dumps({'id': notification['id']})
-        response = requests.post(f'{self.base_url}/task/clear_notification', data=body)
-        # Note: Handle the response if needed
-
-    def play_sound(self, msg_type):
-        if msg_type == "SUCCESSFUL_TERMINATE":
-            file_name = "insanely_well_done.wav"
-        elif msg_type == "ABNORMAL_TERMINATE":
-            file_name = "14.wav"
-        else:
-            c_log.error("msg %s is not expected", msg_type)
-            file_name = ""
-
-        if file_name:
-            sound_path = os.path.join(self.sound_dir, file_name)
-            winsound.PlaySound(sound_path, winsound.SND_FILENAME)
-
-    def handle_notification(self, notification):
-        msg = notification["msg"]
-        run_name = notification["task"]
-
-        if "ABNORMAL_TERMINATE" in msg:
-            self.play_sound("ABNORMAL_TERMINATE")
-            self.send_os_notification(run_name, msg)
-
-        if "SUCCESSFUL_TERMINATE" in msg:
-            self.play_sound("SUCCESSFUL_TERMINATE")
-            self.send_os_notification(run_name, msg)
-
-        self.clear_notification(notification)
-
-    def pool_action(self):
-        url = f'{self.base_url}/task/pool'
-        response = requests.post(url, data=[])
-
-        if response.status_code == 200:  # HTTP OK
-            data = response.json()
-            c_log.debug("data %s", str(data))
-            for notification in data.get('notifications', []):
-                c_log.info("handle notification %s", str(notification))
-                self.handle_notification(notification)
-        else:
-            c_log.info(response.content)
+    def emit(self, record):
+        msg = self.format(record)
+        self.append_signal.emit(msg)
 
 
 class TrayApp(QMainWindow):
@@ -141,11 +82,37 @@ class TrayApp(QMainWindow):
         quit_action.triggered.connect(self.close_app)
         tray_menu.addAction(quit_action)
 
+        self.log_display = QTextEdit(self)
+        self.layout.addWidget(self.log_display)
+        logging.info("Logging before set up")
+        self.tray_logger = None
+        self.setup_logging()
+        self.tray_logger.info("Logging after set up")
+
         self.tray_icon.activated.connect(self.on_tray_icon_activated)
 
         # Set the context menu to the tray icon
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.show()
+
+    def setup_logging(self):
+        self.tray_logger = logging.getLogger("Tray")
+        self.tray_logger.setLevel(logging.INFO)
+
+        format_str = '%(levelname)s %(name)s %(asctime)s %(message)s'
+        formatter = logging.Formatter(format_str,
+                                      datefmt='%m-%d %H:%M:%S',
+                                      )
+
+        logTextBox = QTextEditLoggingHandler(self.log_display)
+        logTextBox.setLevel(logging.INFO)
+        logTextBox.setFormatter(formatter)
+
+        self.tray_logger.addHandler(logTextBox)
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setFormatter(formatter)
+        self.tray_logger.addHandler(ch)
+        self.tray_logger.info("Application started")
 
     def send_os_notification(self, title, message):
         notification.notify(
@@ -167,6 +134,7 @@ class TrayApp(QMainWindow):
     def start_app(self):
         # Implement your start logic here
         self.status_label.setText("Pooler status: Started")
+        logging.info("start_app")
         self.start_button.setEnabled(False)
         self.stop_button.setEnabled(True)
         self.handler.start()
@@ -182,6 +150,11 @@ class TrayApp(QMainWindow):
         self.tray_icon.hide()
         QApplication.quit()
 
+    def closeEvent(self, event):
+        """Reimplemented to stop the notification handler before closing."""
+        self.handler.stop()  # Ensure the handler's thread is stopped
+        super().closeEvent(event)
+
     # Our custom slot that handles the tray icon activation
     def on_tray_icon_activated(self, reason):
         if reason == QSystemTrayIcon.Trigger:  # Tray icon was clicked
@@ -193,7 +166,7 @@ class TrayApp(QMainWindow):
 
 
 if __name__ == '__main__':
-    c_log.setLevel(logging.INFO)
+    # c_log.setLevel(logging.INFO)
     app = QApplication(sys.argv)
     window = TrayApp()
     window.show()

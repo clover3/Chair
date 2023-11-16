@@ -3,7 +3,7 @@ from cpath import output_path
 
 from typing import List, Tuple
 from tf_util.record_writer_wrap import write_records_w_encode_fn
-from trainer_v2.per_project.transparency.misc_common import read_term_pair_table
+from trainer_v2.per_project.transparency.misc_common import read_term_pair_table_w_score
 from trainer_v2.per_project.transparency.mmp.alignment.tt_datagen import get_encode_fn, \
     read_score_generate_term_pair_score_tfrecord
 from misc_lib import path_join, group_by, get_first, ceil_divide
@@ -50,7 +50,7 @@ def main2():
     ph = get_cand2_1_path_helper()
     score_path = ph.per_pair_candidates.fidelity_table_path
     save_name = "cand2_1"
-    term_gain = read_term_pair_table(score_path)
+    term_gain = read_term_pair_table_w_score(score_path)
     term_gain_filtered = filter_tailing_sbword(term_gain)
     generate_train_data_inner(save_name, term_gain_filtered)
 

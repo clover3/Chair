@@ -8,7 +8,7 @@ from cpath import output_path
 from data_generator.create_feature import create_int_feature, create_float_feature
 from misc_lib import group_by, get_first, path_join
 from tf_util.record_writer_wrap import write_records_w_encode_fn
-from trainer_v2.per_project.transparency.misc_common import read_term_pair_table
+from trainer_v2.per_project.transparency.misc_common import read_term_pair_table_w_score
 
 
 def get_encode_fn():
@@ -62,7 +62,7 @@ def get_pairwise_encode_fn():
 
 
 def read_score_generate_term_pair_score_tfrecord(save_name, score_path):
-    term_gain = read_term_pair_table(score_path)
+    term_gain = read_term_pair_table_w_score(score_path)
     generate_train_data_inner(save_name, term_gain)
 
 

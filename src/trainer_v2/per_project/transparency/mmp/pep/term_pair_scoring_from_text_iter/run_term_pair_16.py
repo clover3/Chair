@@ -9,8 +9,9 @@ from trainer_v2.custom_loop.definitions import HFModelConfigType
 from trainer_v2.custom_loop.neural_network_def.two_seg_alt import CombineByScoreAdd
 from trainer_v2.custom_loop.neural_network_def.two_seg_two_model import TwoSegConcatLogitCombineTwoModel
 from trainer_v2.custom_loop.per_task.ts_util import get_local_decision_layer_from_model_by_shape
+from trainer_v2.per_project.transparency.misc_common import save_term_pair_scores
 from trainer_v2.per_project.transparency.mmp.pep.demo_util import PEPLocalDecision
-from trainer_v2.per_project.transparency.mmp.pep.term_pair_scoring_runner.read_segment_log import load_segment_log
+from trainer_v2.per_project.transparency.mmp.pep.term_pair_scoring_from_text_iter.read_segment_log import load_segment_log
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
@@ -67,10 +68,7 @@ def predict_with_small_window_model(
         ticker.tick()
 
     scores = pep.score_fn(payload)
-
-    out_f = open(log_path, "w")
-    for (q_term, d_term), score in zip(info, scores):
-        out_f.write(f"{q_term}\t{d_term}\t{score}\n")
+    save_term_pair_scores(zip(info, scores), log_path)
 
 
 def main():

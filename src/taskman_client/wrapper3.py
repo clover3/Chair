@@ -4,7 +4,7 @@ import traceback
 import requests
 
 from taskman_client.host_defs import webtool_host, webtool_port
-from taskman_client.task_proxy import get_local_machine_name, TaskProxy
+from taskman_client.task_proxy import get_local_machine_name, TaskProxy, TaskManagerProxy
 
 
 def flag_to_run_name(flags):
@@ -137,3 +137,4 @@ class JobContext:
             tb_str = ''.join(traceback.format_exception(exc_type, exc_val, exc_tb))
             msg += tb_str + "\n"
             self.task_proxy.task_interrupted(self.run_name, msg)
+

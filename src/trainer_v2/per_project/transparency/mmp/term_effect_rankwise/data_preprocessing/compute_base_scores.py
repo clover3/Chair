@@ -11,7 +11,7 @@ from dataset_specific.msmarco.passage.path_helper import get_mmp_train_grouped_s
 # Output (Doc_id, TFs Counter, base score)
 from misc_lib import TELI
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.bm25_paramed import get_bm25_mmp_25_01_01
+from trainer_v2.per_project.transparency.mmp.bm25_runner.bm25_paramed import get_bm25_mmp_25_01_01
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper import tfs_and_scores_path_train
 
 

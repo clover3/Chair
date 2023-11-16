@@ -1,4 +1,6 @@
 import  tensorflow as tf
+
+
 from cpath import output_path
 from misc_lib import path_join
 from trainer_v2.chair_logging import c_log

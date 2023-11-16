@@ -3,6 +3,7 @@ import sys
 
 import numpy as np
 
+
 from data_generator.tokenizer_wo_tf import get_tokenizer, pretty_tokens
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
 from trainer_v2.custom_loop.neural_network_def.siamese import ModelConfig200_200

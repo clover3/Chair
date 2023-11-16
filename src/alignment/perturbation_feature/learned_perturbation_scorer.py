@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
+
 from alignment import MatrixScorerIF
 from alignment.data_structure.matrix_scorer_if import ContributionSummary
 from alignment.perturbation_feature.pert_model_1d import binary_hinge_loss, precision_at_1
@@ -14,7 +15,7 @@ from bert_api.task_clients.nli_interface.nli_predictors import get_nli_cache_cli
 def load_pert_pred_model(model_name, eval_data=None):
     custom_objects = {'binary_hinge_loss': binary_hinge_loss, 'precision_at_1': precision_at_1}
     new_model = tf.keras.models.load_model(get_model_save_path(model_name),
-                                           custom_objects=custom_objects)
+                                                                                             custom_objects=custom_objects)
     if eval_data is not None:
         new_model.evaluate(eval_data, batch_size=8)
     return new_model

@@ -70,6 +70,3 @@ def load_stock_weights(model, ckpt_path, name_mapping, ignore_unused_prefixes=[]
 
     return skipped_weight_value_tuples  # (bert_weight, value_from_ckpt)
 
-
-if __name__ == "__main__":
-    main()

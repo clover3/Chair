@@ -4,6 +4,7 @@ from transformers import AutoTokenizer, TFBertMainLayer
 import tensorflow as tf
 import numpy as np
 
+
 from cpath import get_canonical_model_path
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.definitions import ModelConfig256_1

@@ -1,0 +1,5 @@
+table_path: output/msmarco/passage/align_candidates/candidate2_2.tsv
+model_path: output/model/runs/mmp_pep10_point/model_20000
+save_dir: output/mmp/candidate2_2_pep_scores
+job_size: 5000
+run_name: candidate2_2_pep_scores

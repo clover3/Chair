@@ -4,6 +4,7 @@ import tensorflow as tf
 
 from typing import List, Callable, Tuple
 
+
 from trainer_v2.per_project.transparency.mmp.alignment.predict_table.common import predict_d_terms, \
     get_matching_terms_fn
 

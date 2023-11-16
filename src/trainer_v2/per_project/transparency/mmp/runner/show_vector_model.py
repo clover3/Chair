@@ -2,6 +2,7 @@ import sys
 
 from transformers import AutoTokenizer
 
+
 from cpath import get_bert_config_path
 from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log

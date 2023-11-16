@@ -3,6 +3,7 @@ from typing import Tuple, List, Iterable, Callable
 import numpy as np
 import tensorflow as tf
 
+
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.es_common.es_two_seg_common import BothSegPartitionedPair, Segment1PartitionedPair, \
     PairData, RangePartitionedSegment

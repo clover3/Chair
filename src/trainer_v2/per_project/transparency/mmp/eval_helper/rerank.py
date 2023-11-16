@@ -4,6 +4,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 from transformers import TFBertMainLayer
 from tensorflow import keras
 
+
 from trainer_v2.chair_logging import c_log
 import tensorflow as tf
 

@@ -6,6 +6,7 @@ import numpy as np
 from transformers import TFAutoModelForMaskedLM, AutoTokenizer
 from transformers.utils import PaddingStrategy
 
+
 from cache import load_from_pickle
 from cpath import data_path
 from data_generator.tokenizer_wo_tf import get_tokenizer

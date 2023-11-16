@@ -24,7 +24,7 @@ class PartitionedSegment(ABC):
     def get_second(self):
         pass
 
-    def get(self, part_no):
+    def get(self, part_no) -> List[str]:
         fn = [self.get_first, self.get_second][part_no]
         return fn()
 
@@ -80,7 +80,6 @@ class IndicesPartitionedSegment(PartitionedSegment):
 
     def __str__(self):
         return f"IndicesPartitionedSegment(tokens={self.tokens}, del_indices1={self.del_indices1}, del_indices2={self.del_indices2})"
-
 
 
 class MaskPartitionedSegment(PartitionedSegment):
@@ -182,3 +181,17 @@ class EvidencePair3(NamedTuple):
     evidence_like_segment: IndicesPartitionedSegment
 
 
+def compress_mask(seq: list[str]) -> list[str]:
+    output = []
+    prev_was_mask = False
+    for token in seq:
+        if token == "[MASK]":
+            if prev_was_mask:
+                pass
+            else:
+                prev_was_mask = True
+                output.append(token)
+        else:
+            prev_was_mask = False
+            output.append(token)
+    return output
