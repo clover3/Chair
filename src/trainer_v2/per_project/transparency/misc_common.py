@@ -105,3 +105,8 @@ def save_term_pair_scores(
                              .format(len(row)))
 
         out_f.write(f"{q_term}\t{d_term}\t{score}\n")
+
+
+def read_lines(path):
+    lines = open(path, "r").readlines()
+    return [l.strip() for l in lines]

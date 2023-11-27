@@ -16,12 +16,29 @@ PointScorer = Callable[[Tuple[str, str]], float]
 ScorerSig = Union[BatchScorer, PointScorer]
 
 
+def point_to_batch_scorer(point_scorer) -> BatchScorer:
+    def batch_score(qd_list):
+        output = []
+        for q, d in qd_list:
+            score = point_scorer(q, d)
+            output.append(score)
+        return output
+
+    return batch_score
+
+
 def run_rerank_with_conf_common(
         conf,
         get_scorer_fn: Callable[[DictConfig], ScorerSig],
         do_not_report=False):
     c_log.setLevel(logging.DEBUG)
     # run config
+    score_fn = get_scorer_fn(conf)
+
+    run_rerank_with_conf2(score_fn, conf, do_not_report)
+
+
+def run_rerank_with_conf2(score_fn, conf, do_not_report):
     run_name = conf.run_name
     # Dataset config
     dataset_conf_path = conf.dataset_conf_path
@@ -33,14 +50,11 @@ def run_rerank_with_conf_common(
     judgment_path = dataset_conf.judgment_path
     scores_path = get_line_scores_path(run_name, dataset_name)
     # Prediction
-    score_fn = get_scorer_fn(conf)
     qd_iter: Iterable[Tuple[str, str]] = select_third_fourth(tsv_iter(quad_tsv_path))
-
     try:
         outer_batch_size = conf.outer_batch_size
     except AttributeError:
         outer_batch_size = 1
-
     batch_score_and_save_score_lines(
         score_fn,
         qd_iter,

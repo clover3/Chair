@@ -30,6 +30,19 @@ def load_mapping_from_align_scores(
     return mapping
 
 
+def load_align_scores(tsv_path) -> Dict[str, Dict[str, float]]:
+    rows = tsv_iter(tsv_path)
+
+    n_entry = 0
+    mapping: Dict[str, Dict[str, float]] = defaultdict(dict)
+    for q_term, d_term, score in rows:
+        mapping[q_term][d_term] = float(score)
+        n_entry += 1
+
+    c_log.info("%d entry loaded", n_entry)
+    return mapping
+
+
 def load_mapping_from_align_candidate(
         tsv_path, mapping_val) -> Dict[str, Dict[str, float]]:
     rows = tsv_iter(tsv_path)

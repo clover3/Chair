@@ -34,12 +34,14 @@ def to_value_dict(table: Dict[str, List[str]], value: float) -> Dict[str, Dict[s
 def load_table_from_conf(conf) -> Dict[str, List[str]]:
     if conf.table_type == "candidates":
         table = load_binary_mapping_from_align_candidate(conf.table_path)
-    else:
+    elif conf.table_type == "score":
         cut = conf.cut
         if cut is None:
             cut = 0
         table = load_binary_mapping_from_align_scores(
             conf.table_path, cut)
+    else:
+        raise ValueError()
     return table
 
 

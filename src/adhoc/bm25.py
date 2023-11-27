@@ -1,3 +1,4 @@
+import tensorflow as tf
 from math import log
 
 k1 = 1.2
@@ -28,10 +29,18 @@ def BM25_3(f, qf, df, N, dl, avdl):
 
 
 def BM25_verbose(f, qf, df, N, dl, avdl, b, my_k1, my_k2):
-    K = my_k1 * ((1-b) + b * (float(dl)/float(avdl)))
-    first = log((N-df+0.5)/(df + 0.5) + 1)
-    second = ((my_k1 + 1) * f) / (K + f)
-    third = ((my_k2+1) * qf) / (my_k2 + qf)
+    K: float = my_k1 * ((1-b) + b * (float(dl)/float(avdl)))
+    first: float = log((N-df+0.5)/(df + 0.5) + 1)
+    second: float = ((my_k1 + 1) * f) / (K + f)
+    third: float = ((my_k2+1) * qf) / (my_k2 + qf)
+    return first * second * third
+
+
+def BM25_verbose_f(f, qf, df, N, dl, avdl, b, my_k1, my_k2):
+    K = my_k1 * ((1. - b) + b * dl / avdl)
+    first = log((N - df + 0.5) / (df + 0.5) + 1.)
+    second = ((my_k1 + 1.) * f) / (K + f)
+    third = ((my_k2 + 1.) * qf) / (my_k2 + qf)
     return first * second * third
 
 

@@ -25,7 +25,14 @@ class BM25Bare:
         score_sum = 0
         info = []
         for q_term, qtf in q_tf.items():
-            t = BM25_verbose(f=t_tf[q_term],
+            t = self.per_term_score(q_term, qtf, t_tf[q_term], dl)
+            score_sum += t
+            info.append((q_term, t))
+
+        return score_sum
+
+    def per_term_score(self, q_term, qtf, t_tf, dl):
+        t = BM25_verbose(f=t_tf,
                          qf=qtf,
                          df=self.df[q_term],
                          N=self.N,
@@ -35,10 +42,7 @@ class BM25Bare:
                          my_k1=self.k1,
                          my_k2=self.k2
                          )
-            score_sum += t
-            info.append((q_term, t))
-
-        return score_sum
+        return t
 
 
 class BM25:
@@ -73,6 +77,13 @@ class BM25FromTokenizeFn:
         q_tf = Counter(q_terms)
         t_tf = Counter(t_terms)
         return self.core.score_inner(q_tf, t_tf)
+
+    def batch_score(self, qd_list):
+        output = []
+        for q, d in qd_list:
+            score = self.score(q, d)
+            output.append(score)
+        return output
 
     def term_idf_factor(self, term):
         return self.core.term_idf_factor(term)

@@ -274,6 +274,62 @@ class MovingWindow:
             return average(self.history)
 
 
+class ExponentialMovingAverage:
+    """
+    For window size 5:
+
+    SMA: No decay, as it's just the average of the last 5 values.
+    EMA decay ≈ 0.2857 (approximately 2/7).
+    For window size 10:
+
+    EMA decay ≈ 0.1818 (approximately 2/11).
+    For window size 50:
+
+    EMA decay ≈ 0.0385 (approximately 2/52).
+    For window size 100:
+
+    EMA decay ≈ 0.0198 (approximately 2/101).
+
+    """
+    def __init__(self, decay):
+        self.decay = decay
+        self.ema_value = None
+
+    def update(self, value):
+        if self.ema_value is None:
+            self.ema_value = value
+        else:
+            self.ema_value = self.decay * self.ema_value + (1 - self.decay) * value
+
+    def get_average(self):
+        return self.ema_value
+
+    def append(self, average, n_item):
+        # Append the provided average value n_item times
+        for _ in range(n_item):
+            self.update(average)
+
+
+class SimpleMovingAverage:
+    def __init__(self, window_size):
+        self.window_size = window_size
+        self.values = []
+
+    def update(self, value):
+        self.values.append(value)
+        if len(self.values) > self.window_size:
+            self.values.pop(0)
+
+    def get_average(self):
+        if len(self.values) == 0:
+            return None
+        return sum(self.values) / len(self.values)
+
+    def append(self, average, n_item):
+        # Append the provided average value n_item times
+        for _ in range(n_item):
+            self.update(average)
+
 class Averager:
     def __init__(self):
         self.history = []

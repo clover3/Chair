@@ -57,7 +57,15 @@ def tf_run_eval(run_config: RunConfig2,
         proxy = get_task_manager_proxy()
         metric = run_config.common_run_config.report_field
         score = float(metric_res[metric])
-        condition = os.path.basename(run_config.dataset_config.eval_files_path)
+        if run_config.common_run_config.report_condition:
+            condition = run_config.common_run_config.report_condition
+        else:
+            file_tokens = os.path.split(run_config.dataset_config.eval_files_path)
+            if len(file_tokens[-1]) > 2:
+                condition = file_tokens[-1]
+            else:
+                condition = os.path.join(file_tokens[-2], file_tokens[-1])
+
         proxy.report_number(
             run_config.common_run_config.run_name, score, condition, metric)
 

@@ -1,0 +1,7 @@
+bm25conf_path: confs/bm25_resource/bt2.yaml
+run_name: bt2_bm25
+q_term_path: data/msmarco/dev_sample1000/query_terms.txt
+d_term_path: output/mmp/d_terms_top100K.txt
+job_size: 10
+score_save_dir: output/mmp/dev1000_d_terms_pep
+model_path: output/model/runs/mmp_pep10_point/model_20000

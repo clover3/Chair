@@ -14,7 +14,8 @@ class SubConfig(ABC):
 
 
 class DatasetConfig(SubConfig):
-    def __init__(self, train_files_path: str, eval_files_path: str,
+    def __init__(self, train_files_path: str,
+                 eval_files_path: str,
                  shuffle_buffer_size=100):
         self.train_files_path = train_files_path
         self.eval_files_path = eval_files_path
@@ -74,9 +75,23 @@ class TrainConfig(SubConfig):
         return TrainConfig(0, 0, 2e-5, -1)
 
     def print_info(self):
+        c_log.info(self.__str__())
         pass
 
-
+    def __str__(self):
+        return (
+            f"TrainConfig(train_step={self.train_step}, "
+            f"train_epochs={(self.train_step // self.steps_per_epoch) if self.steps_per_epoch else 0}, "
+            f"learning_rate={self.learning_rate}, "
+            f"steps_per_epoch={self.steps_per_epoch}, "
+            f"eval_every_n_step={self.eval_every_n_step}, "
+            f"save_every_n_step={self.save_every_n_step}, "
+            f"model_save_path='{self.model_save_path}', "
+            f"init_checkpoint='{self.init_checkpoint}', "
+            f"checkpoint_type='{self.checkpoint_type}', "
+            f"do_shuffle={self.do_shuffle}, "
+            f"learning_rate_scheduling='{self.learning_rate_scheduling}')"
+        )
 
 class EvalConfig(SubConfig):
     def __init__(self,
@@ -136,7 +151,17 @@ class CommonRunConfig(SubConfig):
         self.eval_batch_size = eval_batch_size
         self.job_id = job_id
 
+    def __str__(self):
+        return f"CommonRunConfig(batch_size={self.batch_size}, " \
+               f"steps_per_execution={self.steps_per_execution}, " \
+               f"is_debug_run={self.is_debug_run}, run_name='{self.run_name}', " \
+               f"report_field='{self.report_field}', " \
+               f"report_condition='{self.report_condition}', " \
+               f"eval_batch_size={self.eval_batch_size}, " \
+               f"job_id='{self.job_id}')"
+
     def print_info(self):
+        c_log.info(self.__str__())
         if self.is_debug_run:
             c_log.warning("DEBUGGING in use")
 
@@ -299,10 +324,10 @@ def get_run_config2_train(args):
     return run_config
 
 
-def update_run_config(config_j, run_config):
+def update_run_config(config_j, run_config, warning=True):
     for key, value in config_j.items():
         sub_config = run_config.get_matching_sub_config(key)
-        if sub_config is None:
+        if sub_config is None and warning:
             c_log.warn("Key '{}' is not in the run config".format(key))
         else:
             sub_config.__setattr__(key, value)
@@ -376,6 +401,20 @@ def get_run_config_for_predict_empty():
     return run_config
 
 
+def get_run_config_for_train_empty():
+    common_run_config = CommonRunConfig()
+    train_config = TrainConfig()
+    device_config = DeviceConfig()
+
+    run_config = RunConfig2(common_run_config=common_run_config,
+                            dataset_config=None,
+                            train_config=train_config,
+                            device_config=device_config
+                            )
+
+    return run_config
+
+
 def load_json_wrap(args):
     try:
         config_j = json.load(open(args.config_path, "r"))
@@ -396,3 +435,4 @@ def get_run_config_for_eval_empty():
         DatasetConfig("", ""),
         eval_config=EvalConfig()
     )
+

@@ -1,5 +1,4 @@
 import sys
-from multiprocessing import Pool
 
 from omegaconf import OmegaConf
 
@@ -7,28 +6,8 @@ from adhoc.bm25_class import BM25
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
 from trainer_v2.per_project.transparency.mmp.bm25t import BM25T
 from trainer_v2.per_project.transparency.mmp.eval_helper.rerank_w_conf import run_rerank_with_conf_common
+from trainer_v2.per_project.transparency.mmp.parallel_helper import parallel_run
 from trainer_v2.per_project.transparency.mmp.retrieval_run.run_bm25t import load_table_from_conf, to_value_dict
-
-
-def parallel_run(input_list, list_fn, split_n):
-    def chunks(l, n):
-        """Yield successive n-sized chunks from l."""
-        for i in range(0, len(l), n):
-            print(i, i + n)
-            yield l[i:i + n]
-
-    p = Pool(split_n)
-
-    item_per_job = (len(input_list) + split_n - 1) // split_n
-    print("item_per_job", item_per_job)
-    l_args = chunks(input_list, item_per_job)
-
-    result_list_list = p.map(list_fn, l_args)
-
-    result = []
-    for result_list in result_list_list:
-        result.extend(result_list)
-    return result
 
 
 def get_bm25t_scorer_fn(conf):

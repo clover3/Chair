@@ -6,7 +6,7 @@ from typing import Tuple, Dict, Callable, List
 import tensorflow as tf
 
 
-from misc_lib import RecentCounter
+from misc_lib import RecentCounter, ExponentialMovingAverage, SimpleMovingAverage
 from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.tf_helper import distribute_dataset
@@ -14,6 +14,9 @@ from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop_helper import fetch_metric_result, get_strategy_from_config, eval_tensor, \
     summarize_metric
 from trainer_v2.custom_loop.trainer_if import TrainerIF, TrainerIFBase
+
+from cpath import output_path
+from misc_lib import path_join
 
 
 @tf.function
@@ -52,7 +55,10 @@ def tf_run_train(run_config: RunConfig2,
     eval_dataset = dataset_factory(run_config.dataset_config.eval_files_path, False)
     dist_train_dataset = distribute_dataset(strategy, train_dataset)
     eval_batches = distribute_dataset(strategy, eval_dataset)
+
+    smooth_loss = SimpleMovingAverage(100)
     c_log.debug("Building models")
+    # run a training step
     with strategy.scope():
         trainer.build_model()
         c_log.info("Loading checkpoints: {}".format(run_config.train_config.init_checkpoint))
@@ -117,13 +123,20 @@ def tf_run_train(run_config: RunConfig2,
                 steps_to_execute = conf_steps_per_execution
             c_log.debug("Execute {} steps".format(steps_to_execute))
             train_loss = distributed_train_step(train_itr, steps_to_execute)
+
+            smooth_loss.update(train_loss)
+
             step_idx += steps_to_execute
             c_log.debug("step_idx={}".format(step_idx))
             per_step_msg = "step {0}".format(step_idx)
 
+
             trainer.train_callback()
             msg = summarize_metric(fetch_metric_result(metrics))
+
             per_step_msg += " loss={0:.6f} ".format(train_loss)
+            per_step_msg += " loss(smooth)={0:.6f} ".format(smooth_loss.get_average())
+
             per_step_msg += msg
 
             if f_do_eval:

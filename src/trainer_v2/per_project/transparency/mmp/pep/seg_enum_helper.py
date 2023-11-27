@@ -1,5 +1,6 @@
 import json
-from typing import NamedTuple, List, Tuple
+from collections import Counter
+from typing import NamedTuple, List, Tuple, Dict
 
 from list_lib import lmap
 
@@ -51,6 +52,12 @@ class TokenizedText(NamedTuple):
             f"\tsp_sb_mapping: {self.sp_sb_mapping}\n"
             f")"
         )
+
+    def get_sp_to_sb_map(self) -> dict[str, list[str]]:
+        out_d = {}
+        for sp, sb in zip(self.sp_tokens, self.sb_tokens):
+            out_d[sp] = sb
+        return out_d
 
 
 def translate_sp_idx_to_sb_idx(sb_tokens: List[List[str]], st: int, ed: int):
@@ -115,3 +122,31 @@ class TrialLogger:
     def log_score(self, q_indices, d_indices, score):
         j = {'q_indices': q_indices, "d_indices": d_indices, "score": score}
         self.f.write(json.dumps(j) + "\n")
+
+
+class TextRep:
+    def __init__(self, tokenized_text: TokenizedText):
+        self.tokenized_text = tokenized_text
+        self.counter = Counter(self.tokenized_text.sp_tokens)
+
+        indices = {t: list() for t in self.counter}
+        for idx, sp_token in enumerate(self.tokenized_text.sp_tokens):
+            indices[sp_token].append(idx)
+        self.indices: Dict[str, List[int]] = indices
+        self.keys = list(self.indices.keys())
+        self.keys.sort()
+
+    def get_bow(self):
+        for term, cnt in self.counter.items():
+            yield term, cnt, self.indices[term]
+
+    def get_terms(self):
+        return self.keys
+
+    @classmethod
+    def from_text(cls, tokenizer, text):
+        tt = TokenizedText.from_text(tokenizer, text)
+        return TextRep(tt)
+
+    def get_sp_size(self):
+        return len(self.tokenized_text.sp_tokens)

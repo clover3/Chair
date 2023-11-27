@@ -44,6 +44,19 @@ class TwoSegConcatLogitCombineTwoModel(ModelV2IF):
         model = keras.Model(inputs=inputs, outputs=output, name="bert_model")
         return model
 
+    def define_local_only_model(self):
+        l_input_ids, l_token_type_ids = define_bert_input(self.window_length, "")
+        # [batch_size, dim]
+        inputs = [l_input_ids, l_token_type_ids]
+        feature_rep = self.bert_cls.apply(inputs)
+        B, _ = get_shape_list2(l_input_ids)
+        # [batch_size, num_window, dim2 ]
+        hidden = self.dense1(feature_rep)
+        local_decisions = self.dense2(hidden)
+        inputs = (l_input_ids, l_token_type_ids)
+        model = keras.Model(inputs=inputs, outputs=local_decisions, name="bert_model")
+        return model
+
     def apply_predictor(self, l_input_ids, l_token_type_ids):
         inputs = [l_input_ids, l_token_type_ids]
         feature_rep = split_stack_flatten_encode_stack(

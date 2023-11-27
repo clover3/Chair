@@ -1,8 +1,10 @@
+from krovetzstemmer import Stemmer
 from transformers import AutoTokenizer
 
 from adhoc.bm25_class import BM25FromTokenizeFn
 from adhoc.bm25_retriever import BM25Retriever, build_bm25_scoring_fn
 from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
+from data_generator.tokenizer_wo_tf import get_tokenizer
 from dataset_specific.msmarco.passage.doc_indexing.retriever import load_bm25_resources, get_bm25_stats_from_conf
 from typing import List, Callable
 
@@ -21,8 +23,18 @@ def get_tokenize_fn(conf) -> Callable[[str], List[str]]:
     elif conf.tokenizer == "BertTokenize1":
         tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         return tokenizer.tokenize
+    elif conf.tokenizer == "BertTokenize2":
+        tokenizer = get_tokenizer()
+        return tokenizer.basic_tokenizer.tokenize
+    elif conf.tokenizer == "BertTokenize2+Stem":
+        tokenizer = get_tokenizer()
+        stemmer = Stemmer()
+        def tokenize(text):
+            tokens = tokenizer.basic_tokenizer.tokenize(text)
+            return [stemmer.stem(t) for t in tokens]
+        return tokenize
     else:
-        pass
+        raise ValueError(f"{conf.tokenizer} is not expected")
 
 
 def get_bm25_scorer_from_conf(conf, avdl=None) -> BM25FromTokenizeFn:

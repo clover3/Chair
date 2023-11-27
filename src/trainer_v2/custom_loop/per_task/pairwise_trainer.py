@@ -9,7 +9,7 @@ from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
 from trainer_v2.custom_loop.modeling_common.tf_helper import apply_gradient_warning_less
 from trainer_v2.custom_loop.prediction_trainer import TrainerCommon, ModelV2IF
 from trainer_v2.custom_loop.run_config2 import RunConfig2
-from trainer_v2.custom_loop.trainer_if import EmptyEvalObject
+from trainer_v2.custom_loop.trainer_if import EmptyEvalObject, EvalObjectIF
 
 
 class TrainerForLossReturningModel(TrainerCommon):
@@ -99,4 +99,38 @@ class PairwiseEvaler(EvalerIF):
         metrics["pairwise_acc"] = self.pairwise_acc
         return metrics
 
-    
+
+class LossOnlyEvalObject(EvalObjectIF):
+    def __init__(self, model, eval_batches, strategy, eval_steps=10):
+        self.model = model
+        self.eval_batches = eval_batches
+        self.strategy = strategy
+        self.eval_steps = eval_steps
+        self.metrics: Dict[str, tf.keras.metrics.Metric] = {}
+        self.loss_metric = tf.keras.metrics.Mean(name="loss")
+
+    def do_eval(self):
+        for m in self.metrics.values():
+            m.reset_state()
+        max_step = sum(1 for _ in self.eval_batches)
+        if self.eval_steps >= 0:
+            slice_step = self.eval_steps
+        else:
+            slice_step = max_step
+
+        iterator = iter(self.eval_batches)
+        loss_obj = []
+        for idx in range(slice_step):
+            args = next(iterator),
+            _pred_like, loss = self.strategy.run(self.eval_fn, args=args)
+            loss_obj.append(loss)
+
+
+        return loss, {}
+
+    @tf.function
+    def eval_fn(self, item):
+        model = self.model
+        pred_like, loss = model(item, training=False)
+        return loss
+

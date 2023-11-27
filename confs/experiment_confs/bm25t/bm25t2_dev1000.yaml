@@ -1,0 +1,6 @@
+run_name: bm25t2
+bm25conf_path: confs/bm25_resource/bt2.yaml
+
+dataset_conf_path: confs/experiment_confs/mmp_dev_sample1000.yaml
+model_path: output/model/runs/mmp_pep10_point/model_20000
+cache_path: output/mmp/pep10_cache.sqlite

@@ -26,7 +26,7 @@ def main():
         print("No job")
         return
     model_path = conf.model_path
-    log_path = path_join(conf.save_dir, f"{job_no}.txt")
+    log_path = path_join(conf.score_save_dir, f"{job_no}.txt")
     with SubJobContext(job_name, job_no, max_job):
         predict_with_fixed_context_model_and_save(model_path, log_path, todo, 100, len(todo))
 

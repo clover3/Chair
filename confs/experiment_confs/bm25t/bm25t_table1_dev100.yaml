@@ -1,0 +1,9 @@
+
+bm25conf_path: confs/bm25_resource/sp_stem.yaml
+table_path: output/mmp/dev1000_d_terms_pep_table.tsv
+table_type: candidates
+method: bm25t_pep10
+mapping_val: 0.1
+
+run_name: bm25t_pep10
+dataset_conf_path: confs/experiment_confs/mmp_dev_sample100.yaml

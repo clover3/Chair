@@ -1,4 +1,0 @@
-run_name: bm25t2
-bm25conf_path: confs/bm25_resource/bt2.yaml
-
-dataset_conf_path: confs/experiment_confs/mmp_dev_sample1000.yaml

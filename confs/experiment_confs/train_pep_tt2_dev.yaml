@@ -1,0 +1,15 @@
+
+init_checkpoint: output/model/runs/mmp_pep10_point/model_20000
+q_term_path: data/msmarco/dev_sample1000/query_terms.txt
+d_term_path: output/mmp/d_terms_top100K.txt
+run_name: pep_tt
+score_save_dir: output/mmp/dev1000_d_terms_pep
+bm25conf_path: confs/bm25_resource/bt2.yaml
+
+batch_size: 16
+train_step: 5
+save_every_n_step: 1000
+eval_every_n_step: 1000
+steps_per_execution: 1
+dataset_path: data/msmarco/triples.train.full
+model_save_path: output/model/runs/pep_tt_2_dev
