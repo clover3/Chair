@@ -4,6 +4,7 @@ from omegaconf import OmegaConf
 
 from misc_lib import path_join
 from taskman_client.job_group_proxy import SubJobContext
+from taskman_client.wrapper3 import JobContext
 from trainer_v2.per_project.transparency.misc_common import read_lines
 from trainer_v2.per_project.transparency.mmp.pep.term_pair_common import predict_save_top_k
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_modeling import PEP_TT_ModelConfig
@@ -17,7 +18,7 @@ def main():
     q_terms = read_lines(conf.q_term_path)
     d_terms = read_lines(conf.d_term_path)
     job_size = int(conf.job_size)
-    job_name = conf.run_name
+    job_group_name = conf.run_name
     model_path = conf.model_path
     save_dir = conf.score_save_dir
 
@@ -35,7 +36,8 @@ def main():
     for q_term_i in range(st, ed):
         log_path = path_join(save_dir, f"{q_term_i}.txt")
         predict_term_pairs_fn = inf_helper.score_fn
-        with SubJobContext(job_name, q_term_i, max_job):
+        job_name = f"{job_group_name}_{q_term_i}"
+        with JobContext(job_name):
             predict_save_top_k(
                 predict_term_pairs_fn, q_terms[q_term_i], d_terms,
                 log_path, outer_batch_size=100)

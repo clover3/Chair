@@ -38,6 +38,16 @@ def load_mmp_test_queries(dataset_name) -> List[Tuple[str, str]]:
     return list(itr)
 
 
+def load_mmp_queries(dataset_name) -> List[Tuple[str, str]]:
+    if dataset_name.startswith("dev"):
+        tsv_path = path_join(data_path, "msmarco", dataset_name, "queries.tsv")
+    else:
+        tsv_path = get_mmp_test_queries_path(dataset_name)
+
+    itr = tsv_iter(tsv_path)
+    return list(itr)
+
+
 def get_mmp_test_qrel_binary_json_path(dataset_name):
     return path_join(data_path, "msmarco", "passage", dataset_name, "qrel_binary.json")
 

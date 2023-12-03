@@ -13,12 +13,17 @@ from trec.types import TrecRankedListEntry
 def eval_by_pytrec(judgment_path, ranked_list_path, metric, n_query_expected=None):
     ranked_list: Dict[str, List[TrecRankedListEntry]] = load_ranked_list_grouped(ranked_list_path)
     doc_scores = convert_ranked_list_to_dict(ranked_list)
+    qrels = load_qrels_as_structure_from_any(judgment_path)
+
+    return eval_by_pytrec_inner(qrels, doc_scores, metric, n_query_expected)
+
+
+def load_qrels_as_structure_from_any(judgment_path) -> Dict[str, Dict[str, int]]:
     if judgment_path.endswith(".json"):
         qrels = json.load(open(judgment_path, "r"))
     else:
         qrels = load_qrels_structured(judgment_path)
-
-    return eval_by_pytrec_inner(qrels, doc_scores, metric, n_query_expected)
+    return qrels
 
 
 def eval_by_pytrec_json_qrel(judgment_path, ranked_list_path, metric, n_query_expected=None):

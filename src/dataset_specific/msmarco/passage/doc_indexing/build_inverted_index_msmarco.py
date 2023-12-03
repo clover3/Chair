@@ -28,7 +28,6 @@ def msmarco_build_inverted_index() -> InvIndex:
     num_docs = 8841823
     tokenized_itr: Iterable[Tuple[str, List[str]]] = enum_msmarco_passage_tokenized()
 
-    iter_tokenized = [(doc_id, normalize_fn(doc_text)) for doc_id, doc_text in tokenized_itr]
     ignore_voca = set(mmp_inv_index_ignore_voca())
     return build_inverted_index(tokenized_itr, ignore_voca, num_docs, term_df_cut_to_discard, term_df_cut_to_warn)
 

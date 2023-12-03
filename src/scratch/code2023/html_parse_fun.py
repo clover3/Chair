@@ -22,6 +22,33 @@ def parse_student_html_first_col(file_path):
     return set(names)
 
 
+
+def parse_graduating_phd_file(file_path):
+    html = open(file_path, "r").read()
+    soup = BeautifulSoup(html, 'html.parser')
+    # Find the <a> tag within the <th> tag and extract the text
+    rows = soup.find_all('tr')
+    names_w_phone = []
+    names_wo_phone = []
+    for row in rows:
+        try:
+            # Extract the name from each row
+            name_tag = row.find('th', align="Left")
+            if name_tag:  # Check if the anchor tag exists in the 'th' tag
+                col1, col2, col3 = row.find_all('th', align="Left")
+                name = col1.text
+                phone = col2.text
+                if phone.strip():
+                    names_w_phone.append(name)
+                else:
+                    names_wo_phone.append(name)
+
+        except AttributeError:
+            pass
+
+    return set(names_w_phone), set(names_wo_phone)
+
+
 def parse_grad_student_file(file_path):
     html = open(file_path, "r").read()
     soup = BeautifulSoup(html, 'html.parser')
@@ -120,13 +147,15 @@ def parse_print():
 
     output = {k: parse_file(v) for k, v in path_d.items()}
 
-    print("Existing student")
+    print("Total PhD students at the time")
     for k, v in output.items():
         print(k, len(v))
+    print("Note: 2016 shows MS+PhD")
 
     new_2017 = output["2017"] - output["2016"]
     print(f"{len(new_2017)} new phd 2017")
 
+    print("How many 2017 students remain ")
     print("time / remain / disappear")
     for time_i in range(2018, 2024):
         point = str(time_i)
@@ -142,6 +171,7 @@ def parse_print():
         disappear = new_phd2016 - output[point]
         remain = new_phd2016.intersection(output[point])
         print(point, len(remain), len(disappear))
+
 
 
 if __name__ == "__main__":

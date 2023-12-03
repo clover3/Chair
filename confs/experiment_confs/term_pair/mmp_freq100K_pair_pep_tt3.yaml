@@ -1,0 +1,10 @@
+
+
+model_path: output/model/runs/pep_tt3/model_10000
+q_term_path: output/mmp/d_terms_top100K.txt
+d_term_path: output/mmp/d_terms_top100K.txt
+job_size: 100
+run_name: mmp_freq100K_pair_pep_tt3
+score_save_dir: output/mmp/mmp_freq100K_pair_pep_tt3
+table_save_path: output/mmp/table4_01.tsv
+constant_threshold: 0.1

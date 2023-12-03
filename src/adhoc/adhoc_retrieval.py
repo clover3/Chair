@@ -4,6 +4,7 @@ from adhoc.bm25_retriever import RetrieverIF
 from misc_lib import TimeEstimator, get_second
 
 
+# There is no i/o path dependency here
 def run_retrieval(
         retriever: RetrieverIF,
         queries: List[Tuple[str, str]],
@@ -11,7 +12,7 @@ def run_retrieval(
     ticker = TimeEstimator(len(queries))
     output: Dict[str, Dict[str, float]] = {}
     for qid, query_text in queries:
-        res: List[Tuple[str, float]] = retriever.retrieve(query_text)
+        res: List[Tuple[str, float]] = retriever.retrieve(query_text, max_doc_per_query)
         res.sort(key=get_second, reverse=True)
 
         per_query_res = {}

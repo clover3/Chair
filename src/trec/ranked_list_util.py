@@ -97,4 +97,12 @@ def batch_rerank(
     return tr_entries
 
 
+def json_qres_to_ranked_list(q_res: Dict[str, Dict[str, float]], run_name) -> List[TrecRankedListEntry]:
+    tr_entries: List[TrecRankedListEntry] = []
+    for qid, scored_docs in q_res.items():
+        rl = build_ranked_list(qid, run_name, list(scored_docs.items()))
+        tr_entries.extend(rl)
+    return tr_entries
+
+
 

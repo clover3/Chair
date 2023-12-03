@@ -1,0 +1,7 @@
+
+bm25conf_path: confs/bm25_resource/bt2.yaml
+table_path: none
+table_type: none
+method: bm25t_2_empty
+run_name: bm25t_2_empty
+dataset_conf_path: confs/datatset_conf/retrieval_mmp_dev100.yaml

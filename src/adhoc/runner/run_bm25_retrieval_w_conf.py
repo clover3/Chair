@@ -2,7 +2,7 @@ import sys
 
 from omegaconf import OmegaConf
 
-from adhoc.other.retriever_helper import get_bm25_retriever_from_conf
+from adhoc.other.bm25_retriever_helper import get_bm25_retriever_from_conf
 from adhoc.other.retriever_run_w_conf import run_retrieval_from_conf
 
 

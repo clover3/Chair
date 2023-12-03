@@ -4,7 +4,7 @@ import sys
 
 from omegaconf import OmegaConf
 
-from adhoc.other.retriever_helper import get_bm25_scorer_from_conf
+from adhoc.other.bm25_retriever_helper import get_bm25_scorer_from_conf
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.eval_helper.rerank_w_conf import run_rerank_with_conf_common, \
     point_to_batch_scorer

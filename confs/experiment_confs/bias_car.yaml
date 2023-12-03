@@ -1,0 +1,10 @@
+
+
+job_name: qd_inf_car
+model_path: output/model/runs/mmp1
+
+max_job: 53
+n_per_job: 1000
+query_path: output/mmp/bias/car_exp/car_queries_no_maker.tsv
+passage_path: output/mmp/bias/car_exp/car_maker_texts.tsv
+save_dir: output/mmp/bias/car_exp/relevant_pairs/

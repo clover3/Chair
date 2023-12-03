@@ -1,4 +1,5 @@
 import heapq
+import os.path
 from typing import List
 
 from list_lib import apply_batch
@@ -12,6 +13,10 @@ def predict_save_top_k(
         d_term_list: List[str],
         log_path,
         outer_batch_size, n_keep = 5000):
+
+    if os.path.exists(log_path):
+        print(f"{log_path} exists ")
+        return
     n_item = len(d_term_list)
     n_batch = n_item // outer_batch_size
 
