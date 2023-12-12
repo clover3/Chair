@@ -2,7 +2,7 @@ from cpath import output_path
 from misc_lib import path_join
 from table_lib import tsv_iter
 from trainer_v2.per_project.transparency.mmp.bias.analyze import analyze_inner
-from trainer_v2.per_project.transparency.mmp.bias.run_inf_w_keyword_swap_dev_split import load_car_bias_exp_resource_dev
+from trainer_v2.per_project.transparency.mmp.bias.exp1.run_inf_w_keyword_swap_dev_split import load_car_bias_exp_resource_dev
 
 
 def read_score_log():

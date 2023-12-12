@@ -77,6 +77,7 @@ def main():
                 "lime", "senli",
                 "deletion", "exact_match", "word_seg", "gpt-3.5-turbo", "slr"]
     run_list = ["davinci"]
+    run_list = ["nlits87"]
     # tag = "conflict"
     tag_list = ["mismatch", "conflict"]
     # metric_to_opt = 'f1'

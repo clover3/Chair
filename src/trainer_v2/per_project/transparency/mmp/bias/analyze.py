@@ -3,7 +3,7 @@ from list_lib import right
 from misc_lib import path_join, average, get_second
 from table_lib import tsv_iter
 from trainer_v2.per_project.transparency.mmp.bias.common import contain_any
-from trainer_v2.per_project.transparency.mmp.bias.run_inference_w_keyword_swap import load_car_bias_exp_resource
+from trainer_v2.per_project.transparency.mmp.bias.exp1.run_inference_w_keyword_swap import load_car_bias_exp_resource
 
 
 def read_score_log():

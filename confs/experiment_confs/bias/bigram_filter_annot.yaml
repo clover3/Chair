@@ -1,0 +1,5 @@
+
+src_bigram_path: output/mmp/bias/car_exp/brand_mention_bigrams.txt
+annot_save_path: output/mmp/bias/car_exp/brand_mentions_annot.tsv
+known_generic_terms_path: output/mmp/bias/car_exp/generic_terms.txt
+

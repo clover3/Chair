@@ -20,23 +20,25 @@ def request(engine, history, new_msg):
     )
     return obj
 
+
 def main():
     proxy = OpenAIProxy(ENGINE_GPT_3_5)
 
-    last_msg = "I don;'."
-    prompt_prefix = "Counter argue this (limit 30 words): \n"
+    last_msg = "You should not upload a paper to arxiv before the peer-review to main anonymity"
+    prompt_prefix = "Counter argue this. (limit 30 words): \n"
+    team_A = "A"
+    team_B = "B"
     # prompt_prefix = " (40 단어 제한): \n"
-    print("A: " + last_msg)
-    history = []
+    print(f"{team_A}: " + last_msg)
     for i in range(10):
-        for team in ["B", "A"]:
+        for team in [team_B, team_A]:
             prompt = prompt_prefix + last_msg
             # res = proxy.request(prompt)
-            res = request(ENGINE_GPT_3_5, history, prompt)
-            history.append(last_msg)
+            res = request(ENGINE_GPT_3_5, [], prompt)
             # print(res)
             res_text = parse_chat_gpt_response(res)
             last_msg = str(res_text)
+            print(prompt)
             print(f"{team} : " + res_text)
 
 

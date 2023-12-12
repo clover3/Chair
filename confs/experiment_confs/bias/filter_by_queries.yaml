@@ -1,0 +1,4 @@
+
+entry_jsonl_path: output/mmp/bias/car_exp/relevant_filtered.jsonl
+manual_filtered_queries: output/mmp/bias/car_exp/relevant_filtered_queries_manual.txt
+filtered_jsonl_save_path: output/mmp/bias/car_exp/relevant_filtered_q_filtered.jsonl

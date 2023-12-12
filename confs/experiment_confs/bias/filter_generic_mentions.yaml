@@ -1,0 +1,2 @@
+entry_jsonl_path: output/mmp/bias/car_exp/relevant_filtered_q_filtered.jsonl
+known_generic_terms_path: output/mmp/bias/car_exp/generic_terms.txt

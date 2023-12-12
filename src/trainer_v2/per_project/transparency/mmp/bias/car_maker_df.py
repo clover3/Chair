@@ -1,7 +1,6 @@
 from collections import Counter
 
-from tab_print import tab_print_dict
-from trainer_v2.per_project.transparency.mmp.bias.run_inference_w_keyword_swap import load_car_bias_exp_resource
+from trainer_v2.per_project.transparency.mmp.bias.exp1.run_inference_w_keyword_swap import load_car_bias_exp_resource
 
 
 def main():

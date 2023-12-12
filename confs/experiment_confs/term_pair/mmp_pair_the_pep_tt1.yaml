@@ -1,0 +1,7 @@
+
+
+model_path: output/model/runs/pep_tt1/model_10000
+pair_path: output/mmp/the_from_table4.tsv
+run_name: the_pep_tt1
+table_save_path: output/mmp/the_from_pep_tt1.tsv
+constant_threshold: 0.1

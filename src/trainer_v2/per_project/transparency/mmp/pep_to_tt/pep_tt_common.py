@@ -1,19 +1,19 @@
 import os
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Iterable
 
 import tensorflow as tf
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.hf_encode_helper import combine_with_sep_cls_and_pad
-from list_lib import left
-from misc_lib import path_join, get_second
+from list_lib import left, apply_batch
+from misc_lib import path_join, get_second, TimeEstimatorOpt
 from table_lib import tsv_iter
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.definitions import HFModelConfigType, ModelConfig512_1
 from trainer_v2.custom_loop.neural_network_def.two_seg_alt import CombineByScoreAdd
 from trainer_v2.custom_loop.neural_network_def.two_seg_two_model import TwoSegConcatLogitCombineTwoModel
-from trainer_v2.per_project.transparency.misc_common import read_lines
+from trainer_v2.per_project.transparency.misc_common import read_lines, save_tsv
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
@@ -99,3 +99,31 @@ def get_pep_predictor(conf):
         scores.sort(key=get_second, reverse=True)
         return left(scores)
     return get_pep_top_k
+
+
+def predict_pairs_save(
+        predict_term_pairs_fn,
+        term_pair_iter: Iterable[tuple[str, str]],
+        log_path,
+        outer_batch_size):
+
+    if os.path.exists(log_path):
+        print(f"{log_path} exists ")
+        return
+
+    if isinstance(term_pair_iter, list):
+        n_item = len(term_pair_iter)
+        n_batch = n_item // outer_batch_size
+    else:
+        n_batch = None
+
+    ticker = TimeEstimatorOpt(n_batch)
+    save_items = []
+    for batch_pairs in apply_batch(term_pair_iter, outer_batch_size):
+        scores = predict_term_pairs_fn(batch_pairs)
+
+        for (q_term, d_term), score in zip(batch_pairs, scores):
+            save_items.append((q_term, d_term, score))
+
+        ticker.tick()
+    save_tsv(save_items, log_path)

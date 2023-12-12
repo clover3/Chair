@@ -40,7 +40,7 @@ def compute_queries_over_docs(config, job_no):
     batch_size = 256
     qid_query_list: list[tuple[str, str]] = list(tsv_iter(config.query_path))
     doc_id_passage_list: list[tuple[str, str]] = list(tsv_iter(config.passage_path))
-    save_path = path_join(config.save_dir, f"{job_no}.sonl")
+    save_path = path_join(config.save_dir, f"{job_no}.jsonl")
     f = open(save_path, "w")
     n_per_job = config.n_per_job
     st = job_no * n_per_job

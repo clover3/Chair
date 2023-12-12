@@ -1,0 +1,10 @@
+
+
+bm25conf_path: confs/bm25_resource/bt2.yaml
+table_path: output/mmp/table4_01.tsv
+table_type: scores
+method: bm25t_table4
+
+run_name: bm25t_table4
+dataset_conf_path: confs/experiment_confs/trec_dl_2019.yaml
+outer_batch_size: 1000000000

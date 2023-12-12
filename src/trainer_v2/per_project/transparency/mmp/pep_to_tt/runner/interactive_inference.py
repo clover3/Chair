@@ -12,9 +12,9 @@ from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_modeling import PE
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
-def load_model(model_save_path):
+def load_model(model_save_path, task_model_cls=PEP_TT_Model_Single):
     model_config = PEP_TT_ModelConfig()
-    task_model = PEP_TT_Model_Single(model_config)
+    task_model = task_model_cls(model_config)
     task_model.build_model_for_inf(None)
 
     train_model = task_model.model
@@ -24,11 +24,12 @@ def load_model(model_save_path):
 
 
 class PEP_TT_Inference:
-    def __init__(self, model_config, model_path=None, batch_size=16, model=None):
+    def __init__(self, model_config,
+                 model_path=None, batch_size=16, model=None, task_model_cls=PEP_TT_Model_Single):
         self.max_seq_length = model_config.max_seq_length
         c_log.info("Defining network")
         if model is None:
-            model = load_model(model_path)
+            model = load_model(model_path, task_model_cls)
 
         self.model = model
         self.tokenizer = get_tokenizer()

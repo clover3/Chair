@@ -1,0 +1,8 @@
+
+
+model_path: output/model/runs/pep_tt_1/model_10000
+pair_path: output/mmp/bias/car_exp/car_words_scores.tsv
+run_name: car_pep_tt1
+score_save_dir: output/mmp/car_pairs
+table_save_path: output/mmp/car_pairs_tt1_10K.tsv
+constant_threshold: 0.1

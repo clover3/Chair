@@ -20,7 +20,7 @@ def find_indices(text_token, target_term):
 
 
 def load_car_maker_list():
-    term_list_path = path_join(output_path, "mmp", "bias", "car_maker_list.txt")
+    term_list_path = path_join(output_path, "mmp", "bias", "car_exp", "car_maker_list.txt")
     term_list = [line.lower().strip() for line in open(term_list_path, "r")]
     return term_list
 

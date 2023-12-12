@@ -1,0 +1,10 @@
+
+
+model_path: output/model/runs/pep_tt3/model_90000
+q_term_path: output/mmp/car.txt
+d_term_path: output/mmp/bias/car_exp/car_maker_list.txt
+job_size: 10
+run_name: car_pep_tt3
+score_save_dir: output/mmp/car_pairs
+table_save_path: output/mmp/car_pairs.tsv
+constant_threshold: 0.1

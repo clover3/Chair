@@ -1,4 +1,5 @@
 import sys
+from typing import Dict
 
 from omegaconf import OmegaConf
 
@@ -9,8 +10,6 @@ from trainer_v2.per_project.transparency.mmp.bm25t_3 import BM25T_3
 from trainer_v2.per_project.transparency.mmp.bm25t_helper import load_align_scores
 from trainer_v2.per_project.transparency.mmp.eval_helper.rerank_w_conf import run_rerank_with_conf_common
 from trainer_v2.per_project.transparency.mmp.parallel_helper import parallel_run
-from trainer_v2.per_project.transparency.mmp.retrieval_run.run_bm25t import load_table_from_conf, to_value_dict
-from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
 def get_bm25t_scorer_fn(conf):

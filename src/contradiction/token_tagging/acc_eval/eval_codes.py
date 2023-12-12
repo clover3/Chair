@@ -58,7 +58,7 @@ def calc_prec_rec_acc_flat(
             number_of_sents += 1
         except KeyError:
             pass
-
+    print(len(preds_all))
     assert len(preds_all) == len(labels_all)
     metrics: Dict = get_acc_prec_recall(preds_all, labels_all)
     return metrics

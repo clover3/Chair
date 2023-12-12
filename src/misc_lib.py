@@ -170,15 +170,29 @@ def path_join(*args):
     return os.path.join(*args)
 
 
+def make_parent_exists(target_path):
+    def make_dir_parent_exists(target_dir):
+        parent_path = os.path.dirname(target_dir)
+        if not os.path.exists(parent_path):
+            make_dir_parent_exists(parent_path)
+        exist_or_mkdir(target_dir)
+
+    parent_path = os.path.dirname(target_path)
+    make_dir_parent_exists(parent_path)
+
+
 def delete_if_exist(path):
     if os.path.exists(path):
         shutil.rmtree(path)
 
+
 def score_sort(list):
     return sorted(list, key = lambda x:-x[1])
 
+
 def print_shape(name, tensor):
     print("{} shape : {}".format(name, tensor.shape))
+
 
 def reverse_voca(word2idx):
     OOV = 1

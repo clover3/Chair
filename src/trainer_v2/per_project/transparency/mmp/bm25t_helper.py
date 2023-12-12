@@ -31,7 +31,10 @@ def load_mapping_from_align_scores(
 
 
 def load_align_scores(tsv_path) -> Dict[str, Dict[str, float]]:
-    rows = tsv_iter(tsv_path)
+    if tsv_path.lower() == "none":
+        rows = []
+    else:
+        rows = tsv_iter(tsv_path)
 
     n_entry = 0
     mapping: Dict[str, Dict[str, float]] = defaultdict(dict)

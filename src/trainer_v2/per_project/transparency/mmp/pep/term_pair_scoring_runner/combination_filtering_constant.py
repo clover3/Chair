@@ -24,7 +24,6 @@ def main():
 
     def bin_fn(n):
         interval = [0, 1, 5, 10, 50, 100, 500, 1000000]
-
         for i in range(len(interval) - 1):
             st = interval[i]
             ed = interval[i+1]

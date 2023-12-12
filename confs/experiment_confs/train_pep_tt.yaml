@@ -7,10 +7,11 @@ score_save_dir: output/mmp/dev1000_d_terms_pep
 bm25conf_path: confs/bm25_resource/bt2.yaml
 
 batch_size: 64
-train_step: 1000
-save_every_n_step: 1000
+train_step: 100000
+save_every_n_step: 10000
 eval_every_n_step: 1000
 steps_per_execution: 1
 learning_rate_scheduling: linear
-dataset_path: data/msmarco/triples.train.full
+train_data_dir: data/msmarco/triples.train.train
+eval_data_dir: data/msmarco/triples.train.eval
 model_save_path: output/model/runs/pep_tt_1

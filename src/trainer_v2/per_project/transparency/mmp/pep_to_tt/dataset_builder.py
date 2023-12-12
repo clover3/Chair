@@ -12,7 +12,7 @@ from data_generator.create_feature import create_int_feature, create_float_featu
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.hf_encode_helper import combine_with_sep_cls_and_pad
 from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
-from misc_lib import path_join
+from misc_lib import path_join, get_dir_files
 from table_lib import tsv_iter
 from tlm.data_gen.base import concat_tuple_windows
 from trainer_v2.chair_logging import c_log
@@ -255,17 +255,17 @@ class PEP_TT_DatasetBuilder:
 
     def get_pep_tt_dataset(
             self,
-            src_path,
+            dir_path,
             is_training,
         ) -> tf.data.Dataset:
-
-        file_path = path_join(src_path, "0")
-        raw_train_iter = tsv_iter(file_path)
+        file_list = get_dir_files(dir_path)
 
         def generator():
-            for (q, d_pos, d_neg) in raw_train_iter:
-                feature_d = self.encoder.encode_triplet(q, d_pos, d_neg)
-                yield feature_d
+            for file_path in file_list:
+                raw_train_iter = tsv_iter(file_path)
+                for (q, d_pos, d_neg) in raw_train_iter:
+                    feature_d = self.encoder.encode_triplet(q, d_pos, d_neg)
+                    yield feature_d
 
         output_signature = self.encoder.get_output_signature()
         dataset = tf.data.Dataset.from_generator(generator, output_signature=output_signature)
