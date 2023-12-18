@@ -10,29 +10,25 @@ from table_lib import tsv_iter
 from trainer_v2.per_project.transparency.misc_common import read_lines
 
 
-def main():
-    conf_path = sys.argv[1]
-    conf = OmegaConf.load(conf_path)
+
+def run_combination_filtering(conf):
     q_terms = read_lines(conf.q_term_path)
-    d_terms = read_lines(conf.d_term_path)
     table_save_path = conf.table_save_path
     constant_threshold = conf.constant_threshold
     save_dir = conf.score_save_dir
     num_items = len(q_terms)
-
     print("constant_threshold", constant_threshold)
 
     def bin_fn(n):
         interval = [0, 1, 5, 10, 50, 100, 500, 1000000]
         for i in range(len(interval) - 1):
             st = interval[i]
-            ed = interval[i+1]
+            ed = interval[i + 1]
             if st <= n < ed:
                 return "{} <= n < {}".format(st, ed)
         return "error"
 
     bin = BinHistogram(bin_fn)
-
     out_f = open(table_save_path, "w")
     n_done = 0
     n_term_pair = 0
@@ -57,10 +53,15 @@ def main():
             out_f.write(f"{q_term}\t{d_term}\t{score}\n")
 
         n_term_pair += len(selected_terms)
-
     print("n_term_pair", n_term_pair)
     print("n_done", n_done)
     tab_print_dict(bin.counter)
+
+
+def main():
+    conf_path = sys.argv[1]
+    conf = OmegaConf.load(conf_path)
+    run_combination_filtering(conf)
 
 
 if __name__ == "__main__":

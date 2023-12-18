@@ -112,6 +112,7 @@ def predict_pairs_save(
         return
 
     if isinstance(term_pair_iter, list):
+
         n_item = len(term_pair_iter)
         n_batch = n_item // outer_batch_size
     else:

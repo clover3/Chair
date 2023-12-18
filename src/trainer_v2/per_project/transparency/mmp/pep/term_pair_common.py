@@ -12,7 +12,10 @@ def predict_save_top_k(
         q_term: str,
         d_term_list: List[str],
         log_path,
-        outer_batch_size, n_keep = 5000):
+        outer_batch_size,
+        n_keep=5000,
+        verbose=True,
+    ):
 
     if os.path.exists(log_path):
         print(f"{log_path} exists ")
@@ -20,9 +23,8 @@ def predict_save_top_k(
     n_item = len(d_term_list)
     n_batch = n_item // outer_batch_size
 
-
     min_heap = []
-    ticker = TimeEstimatorOpt(n_batch)
+    ticker = TimeEstimatorOpt(n_batch) if verbose else TimeEstimatorOpt(None)
     for batch_terms in apply_batch(d_term_list, outer_batch_size):
         pairs = [(q_term, d_term) for d_term in batch_terms]
         scores = predict_term_pairs_fn(pairs)

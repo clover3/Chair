@@ -1,16 +1,20 @@
 import logging
 import sys
-
 from PyQt5.QtCore import QObject, pyqtSignal
 from plyer import notification
 
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QSystemTrayIcon, QMenu,
                              QAction, QVBoxLayout, QPushButton, QLabel, QWidget, QTextEdit)
+import ctypes
 
 from cpath import data_path
 from misc_lib import path_join
+from taskman_client.cloverweb_man.cloverweb_starter import keep_server_alive_loop
 from taskman_client.cloverweb_man.notification_handler import NotificationHandler
+import threading
+
+from taskman_client.cloverweb_man.tray_logger_module import tray_logger
 
 
 class QTextEditLoggingHandler(logging.Handler, QObject):
@@ -26,6 +30,28 @@ class QTextEditLoggingHandler(logging.Handler, QObject):
     def emit(self, record):
         msg = self.format(record)
         self.append_signal.emit(msg)
+
+
+def terminate_thread(thread):
+    """Terminates a python thread from another thread.
+
+    :param thread: a threading.Thread instance
+    """
+
+    print("terminate_thread")
+    if not thread.isAlive():
+        return
+
+    exc = ctypes.py_object(SystemExit)
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+        ctypes.c_long(thread.ident), exc)
+    if res == 0:
+        raise ValueError("nonexistent thread id")
+    elif res > 1:
+        # """if it returns a number greater than one, you're in trouble,
+        # and you should call it again with exc=NULL to revert the effect"""
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(thread.ident, None)
+        raise SystemError("PyThreadState_SetAsyncExc failed")
 
 
 class TrayApp(QMainWindow):
@@ -85,20 +111,24 @@ class TrayApp(QMainWindow):
         self.log_display = QTextEdit(self)
         self.layout.addWidget(self.log_display)
         logging.info("Logging before set up")
-        self.tray_logger = None
         self.setup_logging()
-        self.tray_logger.info("Logging after set up")
+        tray_logger.info("Logging after set up")
 
         self.tray_icon.activated.connect(self.on_tray_icon_activated)
 
         # Set the context menu to the tray icon
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.show()
+        self._stop_event = threading.Event()
+        self._server_starter_thread = threading.Thread(target=keep_server_alive_loop, args=(self.f_stop,))
+        self._server_starter_thread.start()
+
+    def f_stop(self):
+        return self._stop_event.is_set()
 
     def setup_logging(self):
-        self.tray_logger = logging.getLogger("Tray")
-        self.tray_logger.setLevel(logging.INFO)
-
+        tray_logger = logging.getLogger("Tray")
+        tray_logger.setLevel(logging.INFO)
         format_str = '%(levelname)s %(name)s %(asctime)s %(message)s'
         formatter = logging.Formatter(format_str,
                                       datefmt='%m-%d %H:%M:%S',
@@ -107,12 +137,18 @@ class TrayApp(QMainWindow):
         logTextBox = QTextEditLoggingHandler(self.log_display)
         logTextBox.setLevel(logging.INFO)
         logTextBox.setFormatter(formatter)
+        tray_logger.addHandler(logTextBox)
 
-        self.tray_logger.addHandler(logTextBox)
+
         ch = logging.StreamHandler(sys.stdout)
         ch.setFormatter(formatter)
-        self.tray_logger.addHandler(ch)
-        self.tray_logger.info("Application started")
+        ch.setLevel(logging.DEBUG)
+
+        clover_web_logger = logging.getLogger('CloverWeb')
+        clover_web_logger.setLevel(logging.DEBUG)
+        logTextBox.setLevel(logging.INFO)
+        clover_web_logger.addHandler(logTextBox)
+        clover_web_logger.addHandler(ch)
 
     def send_os_notification(self, title, message):
         notification.notify(
@@ -152,7 +188,10 @@ class TrayApp(QMainWindow):
 
     def closeEvent(self, event):
         """Reimplemented to stop the notification handler before closing."""
+        print("close_app")
+        self._stop_event.set()
         self.handler.stop()  # Ensure the handler's thread is stopped
+        tray_logger.debug("Stop event set")
         super().closeEvent(event)
 
     # Our custom slot that handles the tray icon activation

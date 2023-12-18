@@ -84,6 +84,7 @@ class BM25T_Retriever2(RetrieverIF):
             scoring_fn,
             tokenize_fn,
             table: Dict[str, Dict[str, float]],
+            stopwords,
     ):
         self.get_posting = get_posting
         self.scoring_fn = scoring_fn
@@ -95,6 +96,7 @@ class BM25T_Retriever2(RetrieverIF):
             d_term_score_pairs: List[Tuple[str, float]] = dict_to_tuple_list(entries)
             d_term_score_pairs.sort(key=get_second, reverse=True)
             self.extension_term_set_d[q_term] = d_term_score_pairs
+        self.stopwords = set(stopwords)
 
     def _not_used_get_low_df_terms(self, q_terms: Iterable[str], n_limit=10) -> List[str]:
         candidates = []
@@ -119,6 +121,8 @@ class BM25T_Retriever2(RetrieverIF):
         q_tokens = self.tokenize_fn(query)
         q_tf = Counter(q_tokens)
         q_terms = list(q_tf.keys())
+
+        q_terms = [term for term in q_terms if term not in self.stopwords]
         q_term_df_pairs = []
         for t in q_terms:
             df = self.df[t]

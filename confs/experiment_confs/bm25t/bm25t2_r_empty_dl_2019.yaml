@@ -1,0 +1,8 @@
+
+
+bm25conf_path: confs/bm25_resource/bt2.yaml
+table_path: none
+table_type: none
+method: bm25t3_empty
+run_name: bm25t3_empty
+dataset_conf_path: confs/datatset_conf/retrieval_trec_dl_2019.yaml

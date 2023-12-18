@@ -1,0 +1,8 @@
+
+model_path: output/model/runs/pep_tt5/model_{}
+pair_path: output/msmarco/passage/fidelity_2_2_pos_neg.tsv
+run_name: car_pep_tt5
+score_save_dir: output/mmp/fidelity2_2
+table_save_path: output/mmp/tables/fidelity2_2_tt5_{}.tsv
+constant_threshold: 0.1
+model_type: PEP_TT_Model_Single

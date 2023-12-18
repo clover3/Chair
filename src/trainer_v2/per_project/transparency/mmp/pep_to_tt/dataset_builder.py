@@ -263,7 +263,10 @@ class PEP_TT_DatasetBuilder:
         def generator():
             for file_path in file_list:
                 raw_train_iter = tsv_iter(file_path)
-                for (q, d_pos, d_neg) in raw_train_iter:
+                for row in raw_train_iter:
+                    q = row[0]
+                    d_pos = row[1]
+                    d_neg = row[2]
                     feature_d = self.encoder.encode_triplet(q, d_pos, d_neg)
                     yield feature_d
 

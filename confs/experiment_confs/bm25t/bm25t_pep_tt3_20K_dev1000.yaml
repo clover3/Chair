@@ -1,0 +1,9 @@
+
+bm25conf_path: confs/bm25_resource/bt2.yaml
+table_path: output/mmp/tables/mtc3_pep_tt3_20000.tsv
+table_type: scores
+method: bm25t_pep_tt3_20K
+
+run_name: bm25t_pep_tt3_20K
+dataset_conf_path: confs/experiment_confs/mmp_dev_sample1000.yaml
+outer_batch_size: 1000000000

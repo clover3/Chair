@@ -8,7 +8,7 @@ from taskman_client.wrapper3 import JobContext
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_common import predict_pairs_save
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_modeling import PEP_TT_ModelConfig, PEP_TT_Model, \
     PEP_TT_Model_Single_BERT_Init
-from trainer_v2.per_project.transparency.mmp.pep_to_tt.runner.interactive_inference import PEP_TT_Inference
+from trainer_v2.per_project.transparency.mmp.pep_to_tt.inf_helper import PEP_TT_Inference
 
 
 def main():

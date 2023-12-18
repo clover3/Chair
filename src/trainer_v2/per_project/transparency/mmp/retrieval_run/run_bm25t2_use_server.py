@@ -11,8 +11,7 @@ from adhoc.test_code.inv_index_test import InvIndexReaderClient
 from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
 from models.classic.stopword import load_stopwords
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.retrieval_run.retrieval_common import load_table, \
-    get_bm25t_retriever_in_memory
+from trainer_v2.per_project.transparency.mmp.retrieval_run.retrieval_common import load_table
 
 
 def get_bm25t_retriever_w_server(conf):
@@ -33,7 +32,7 @@ def main():
     c_log.setLevel(logging.INFO)
     conf_path = sys.argv[1]
     conf = OmegaConf.load(conf_path)
-    retriever = get_bm25t_retriever_in_memory(conf)
+    retriever = get_bm25t_retriever_w_server(conf)
     run_retrieval_eval_report_w_conf(conf, retriever)
 
 

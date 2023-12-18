@@ -7,29 +7,20 @@ import time
 import requests
 import urllib3
 
-logger = None
-
 
 def init_log():
-    global logger
-    logger = logging.getLogger('Cloverweb')
-    logger.setLevel(logging.INFO)
+    clover_web_logger = logging.getLogger('Tray')
+    clover_web_logger.setLevel(logging.INFO)
     format_str = '%(levelname)s\t%(name)s \t%(asctime)s %(message)s'
     formatter = logging.Formatter(format_str,
                                   datefmt='%m-%d %H:%M:%S',
                                   )
     ch = logging.StreamHandler(sys.stdout)
     ch.setFormatter(formatter)
-    logger.propagate = False
-    logger.addHandler(ch)
+    clover_web_logger.propagate = True
+    clover_web_logger.addHandler(ch)
 
 
-def tprint(msg):
-    global logger
-    if logger is None:
-        init_log()
-
-    logger.info(msg)
 
 
 def execute_gcloud_command(cmd):
@@ -58,14 +49,15 @@ def time_since(last_time):
 
 
 class KeepAlive:
-    def __init__(self, interval):
+    def __init__(self, interval, logger):
         self.last_request = None
         self.interval = interval
+        self.logger = logger
 
     def send_keep_alive(self):
         elapsed = time_since(self.last_request)
         if elapsed >= self.interval:
-            tprint("Send keep alive")
+            self.logger.info("Send keep alive")
             server_url = "http://clovertask2.xyz/"
             try:
                 receive = requests.get(server_url)
@@ -76,7 +68,7 @@ class KeepAlive:
                 print(e)
             self.last_request = time.time()
         else:
-            tprint("Skip keep alive")
+            self.logger.info("Skip keep alive")
 
 
 def parse_ip(s: str):
@@ -97,7 +89,7 @@ def replace_sync_script(file_path, ip):
         if "@" in line and ":" in line:
             name_at_server, dir_path = line.split(":")
             name, server = name_at_server.split("@")
-            tprint(name, server, dir_path)
+            print(name, server, dir_path)
             return "{}@{}:{}".format(name, ip, dir_path) + "\n"
         else:
             return line

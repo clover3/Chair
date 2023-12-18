@@ -1,0 +1,7 @@
+
+model_path: output/model/runs/pep_tt5/model_{}
+pair_path: output/mmp/bias/car_exp/car_words_scores.tsv
+run_name: car_pep_tt5
+score_save_dir: output/mmp/car_pairs
+table_save_path: output/mmp/car_pairs_tt5_{}.tsv
+constant_threshold: 0.1

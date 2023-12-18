@@ -28,6 +28,7 @@ class BM25IndexResource:
     index_name: str
     common_dir: str
     inv_index_path: str
+    tokenizer: str
     df_path: str
     dl_path: str = ""
     avdl: int = 0

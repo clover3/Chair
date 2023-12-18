@@ -1,0 +1,14 @@
+
+model_name: pep_tt3
+step: 90000
+model_step_name: ${model_name}_${step}
+
+model_path: output/model/runs/${model_name}/model_${step}
+q_term_path: data/msmarco/dev_sample1000/query_terms.txt
+d_term_dir: output/mmp/dev1000_d_terms_pep_tt3
+job_size: 100
+job_name_base: mct3_${model_step_name}
+score_save_dir: output/mmp/mct3_${model_step_name}
+table_save_path: output/mmp/tables/mtc3_${model_step_name}.tsv
+constant_threshold: 0.1
+model_type: PEP_TT_Model_Single

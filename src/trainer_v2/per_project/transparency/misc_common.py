@@ -87,6 +87,11 @@ def read_term_pair_table(score_path) -> List[Tuple[str, str]]:
     return term_pair
 
 
+def load_first_column(score_path: str) -> List[str]:
+    itr = load_tsv(score_path)
+    return [row[0] for row in itr]
+
+
 def save_term_pair_scores(
         score_itr: Union[
             Iterable[Tuple[str, str, float]],
