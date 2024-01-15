@@ -3,5 +3,5 @@ bm25conf_path: confs/bm25_resource/bt2.yaml
 run_name: lucene
 method: lucene
 
-dataset_conf_path: confs/datatset_conf/retrieval_trec_dl_2019_489204.yaml
+dataset_conf_path: confs/dataset_conf/retrieval_trec_dl_2019_489204.yaml
 outer_batch_size: 100000000

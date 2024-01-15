@@ -3,5 +3,5 @@ bm25conf_path: confs/bm25_resource/bt2_stem.yaml
 run_name: bt2_bm25_stem
 method: bt2_bm25_stem
 
-dataset_conf_path: confs/datatset_conf/retrieval_trec_dl_2019.yaml
+dataset_conf_path: confs/dataset_conf/retrieval_trec_dl_2019.yaml
 outer_batch_size: 100000000

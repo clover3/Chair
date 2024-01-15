@@ -4,5 +4,5 @@ table_path: none
 table_type: none
 method: bm25t_2_empty_sample
 run_name: bm25t_2_empty_sample
-dataset_conf_path: confs/datatset_conf/retrieval_mmp_dev100.yaml
+dataset_conf_path: confs/dataset_conf/retrieval_mmp_dev100.yaml
 

@@ -2,5 +2,5 @@
 bm25conf_path: confs/bm25_resource/bt2_stem.yaml
 run_name: bt2_bm25
 
-dataset_conf_path: confs/experiment_confs/mmp_dev_sample1000.yaml
+dataset_conf_path: confs/dataset_conf/mmp_dev_sample1000.yaml
 outer_batch_size: 100000000

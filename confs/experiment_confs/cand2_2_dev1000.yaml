@@ -6,4 +6,4 @@ run_name: bm25t_cand2_2
 mapping_val: 0.1
 cut: 0.1
 
-dataset_conf_path: confs/experiment_confs/mmp_dev_sample1000.yaml
+dataset_conf_path: confs/dataset_conf/mmp_dev_sample1000.yaml

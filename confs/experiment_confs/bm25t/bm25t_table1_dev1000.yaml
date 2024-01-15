@@ -6,4 +6,4 @@ method: bm25t_pep10
 mapping_val: 0.1
 
 run_name: bm25t_pep10
-dataset_conf_path: confs/experiment_confs/mmp_dev_sample1000.yaml
+dataset_conf_path: confs/dataset_conf/mmp_dev_sample1000.yaml

@@ -2,4 +2,4 @@
 bm25conf_path: confs/bm25_resource/bert_tokenize.yaml
 run_name: bt1_bm25
 
-dataset_conf_path: confs/datatset_conf/retrieval_mmp_dev100.yaml
+dataset_conf_path: confs/dataset_conf/retrieval_mmp_dev100.yaml

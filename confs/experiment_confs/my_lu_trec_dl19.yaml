@@ -3,7 +3,7 @@ bm25conf_path: confs/bm25_resource/lucene.yaml
 run_name: pyserini_posting
 method: pyserini_posting
 
-dataset_conf_path: confs/datatset_conf/retrieval_trec_dl_2019_43.yaml
+dataset_conf_path: confs/dataset_conf/retrieval_trec_dl_2019_43.yaml
 outer_batch_size: 100000000
 
 
