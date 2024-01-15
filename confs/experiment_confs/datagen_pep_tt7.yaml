@@ -1,0 +1,10 @@
+
+
+bm25conf_path: confs/bm25_resource/bt2.yaml
+voca_path: output/mmp/d_terms_top100K.txt
+lookup_todo_dir: output/mmp/pep_tt7_lookup_todo
+lookup_output_dir: output/mmp/pep_tt7_lookup_output
+raw_table_scores: output/mmp/mmp_freq100K_pair_pep_tt3
+
+val_lookup_todo_dir: output/mmp/pep_tt7_val_lookup_todo
+val_lookup_output_dir: output/mmp/pep_tt7_val_lookup_output

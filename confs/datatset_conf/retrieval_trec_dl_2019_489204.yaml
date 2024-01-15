@@ -1,0 +1,7 @@
+
+
+dataset_name: TREC_DL_2019
+queries_path: data/msmarco/passage/TREC_DL_2019/queries_2019/489204.tsv
+judgment_path: data/msmarco/passage/TREC_DL_2019/qrel.json
+metric: ndcg_cut_10
+max_doc_per_query: 1000

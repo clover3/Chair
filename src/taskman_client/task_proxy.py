@@ -144,6 +144,22 @@ class TaskManagerProxy(RESTProxy):
         r = self.post("/task/cancel_allocation", data)
         return r['job_id']
 
+    def make_success_notification(self):
+        data = {
+            'msg': "SUCCESSFUL_TERMINATE",
+        }
+        print(data)
+        r = self.post("/task/make_notification", data)
+        return r
+
+    def make_fail_notification(self):
+        data = {
+            'msg': "ABNORMAL_TERMINATE",
+        }
+        print(data)
+        r = self.post("/task/make_notification", data)
+        return r
+
 
 class TaskProxy:
     def __init__(self, host, port, machine, tpu_name=None, uuid_var=None):

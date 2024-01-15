@@ -1,0 +1,9 @@
+
+bm25conf_path: confs/bm25_resource/bt2.yaml
+table_path: output/mmp/table4_number.tsv
+table_type: scores
+method: bm25t_table4_number
+
+run_name: bm25t_table4_number
+dataset_conf_path: confs/experiment_confs/mmp_dev_sample1000.yaml
+outer_batch_size: 1000000000

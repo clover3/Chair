@@ -2,13 +2,14 @@ from omegaconf import OmegaConf
 
 from adhoc.bm25_retriever import build_bm25_scoring_fn
 from adhoc.other.bm25_retriever_helper import get_tokenize_fn
-from adhoc.other.bm25t_retriever import BM25T_Retriever2
+from adhoc.other.bm25t_retriever import BM25T_Retriever2, IndexReaderPython
 from dataset_specific.msmarco.passage.doc_indexing.retriever import load_bm25_resources
 from models.classic.stopword import load_stopwords
-from trainer_v2.per_project.transparency.mmp.bm25t_helper import load_align_scores
+from trainer_v2.per_project.transparency.mmp.table_readers import load_align_scores
+from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
-def load_table(conf):
+def load_table(conf) -> Dict[str, Dict[str, float]]:
     if conf.table_type == "none":
         table = {}
     else:
@@ -40,5 +41,6 @@ def get_bm25t_retriever_in_memory(conf):
         except KeyError:
             return []
 
+    index_reader = IndexReaderPython(get_posting, df, dl)
     stopwords = load_stopwords()
-    return BM25T_Retriever2(get_posting, df, dl, scoring_fn, tokenize_fn, table, stopwords)
+    return BM25T_Retriever2(index_reader, scoring_fn, tokenize_fn, table, stopwords)

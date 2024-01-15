@@ -71,4 +71,4 @@ class JobGroupProxy:
         return self.server_proxy.post("/task/sub_job_update", data)
 
     def sub_job_context(self, job_id):
-        return SubJobContext(self, job_id)
+        return SubJobContext(self, self.job_name, job_id, self.max_job)

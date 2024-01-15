@@ -9,6 +9,7 @@ from omegaconf import OmegaConf
 from misc_lib import path_join
 from taskman_client.ssh_utils.squeue_dev import RemoteSSHClient
 from taskman_client.ssh_utils.slurm_helper import submit_slurm_job
+from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
 
 
@@ -35,44 +36,33 @@ def check_files_existence(ssh_client, directory):
     return all_files_exist, missing_files
 
 
-def check_for_jobs_and_files_remote(hostname, username, directory, job_name, interval=60, key_file=None, password=None):
+def check_for_jobs_remote(hostname, username, job_name, interval=60, key_file=None, password=None):
     success = False
-
     while True:
         try:
             # Connect to the server
-            ssh_client = RemoteSSHClient(hostname, username, key_file, password)
+            with RemoteSSHClient(hostname, username, key_file, password) as ssh_client:
 
-            # Check for jobs
-            job_exists = False
-            squeue_data = ssh_client.squeue(username)
-            if isinstance(squeue_data, str):  # In case of error, squeue_data would be an error message string
-                logger.error(f"Error running squeue: {squeue_data}")
-            else:
-                for job in squeue_data:
-                    cur_job_name = job.get('NAME', '')
-                    if job_name in cur_job_name:
-                        job_exists = True
-                        logger.info("Job %s exists", cur_job_name)
-                        break
-
-            # If no job remains, check for files
-            if not job_exists:
-                all_files_exist, missing_files = check_files_existence(ssh_client, directory)
-                if all_files_exist:
-                    logger.info("All files from 0.txt to 1000.txt are present.")
-                    success = True
+                # Check for jobs
+                job_exists = False
+                squeue_data = ssh_client.squeue(username)
+                if isinstance(squeue_data, str):  # In case of error, squeue_data would be an error message string
+                    logger.error(f"Error running squeue: {squeue_data}")
                 else:
-                    logger.info(f"Some files are missing: {missing_files}")
-                    success = False
-                break
+                    for job in squeue_data:
+                        cur_job_name = job.get('NAME', '')
+                        if job_name in cur_job_name:
+                            job_exists = True
+                            logger.info("Job %s exists", cur_job_name)
+                            break
+
+                # If no job remains, check for files
+                if not job_exists:
+                    success = True
+                    break
 
         except Exception as e:
             logger.error(f"An error occurred: {e}")
-
-        finally:
-            # Close the SSH connection
-            ssh_client.close()
 
         # Wait for the specified interval before the next check
         logger.debug("Sleep %s sec", interval)
@@ -121,9 +111,8 @@ def table_eval_pipeline(conf_path):
     c_log.debug("benchmark_cmd %s", benchmark_cmd)
     option_str = "--mem=48g "
     try:
-        score_save_dir_abs = os.path.join(unity_base_path, conf.score_save_dir)
-        ret = check_for_jobs_and_files_remote(
-            hostname, username, score_save_dir_abs, job_name, interval=600)
+        ret = check_for_jobs_remote(
+            hostname, username, job_name, interval=600)
         if not ret:
             raise ValueError("check_for_jobs_and_files failed")
         ssh_client = RemoteSSHClient(hostname, username)
@@ -136,8 +125,12 @@ def table_eval_pipeline(conf_path):
         print(process.stdout, process.stderr, )
         print("return code", process.returncode)
         submit_slurm_job(None, benchmark_cmd, job_name + "_benchmark", sydney_base_path, option_str)
+        proxy = get_task_manager_proxy()
+        proxy.make_success_notification()
     except Exception as e:
         print("An error occurred:", e)
+        proxy = get_task_manager_proxy()
+        proxy.make_fail_notification()
         raise
 
 

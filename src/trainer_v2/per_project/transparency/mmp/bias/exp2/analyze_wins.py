@@ -45,8 +45,9 @@ def count_wins(passage_dict, score_log, term_list, target_term_a, target_term_b)
         scores = list(map(float, row[2:]))
         doc_text = passage_dict[doc_id]
         doc_tokens = doc_text.split()
-        originally_matched_terms = [(idx, term) for idx, term in enumerate(term_list) if term in doc_tokens]
-
+        originally_matched_terms = [term for idx, term in enumerate(term_list) if term in doc_tokens]
+        if target_term_a in originally_matched_terms or target_term_b in originally_matched_terms:
+            continue
         if max(scores) < 0:
             continue
         # print("Relevant")

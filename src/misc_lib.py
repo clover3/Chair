@@ -954,23 +954,35 @@ class CountWarning:
 
 
 class RecentCounter:
-    def __init__(self, interval, last_idx=None):
+    def __init__(self, interval: int, last_idx=None, step_list=None):
         self.last_idx = last_idx
         self.interval = interval
+        self.step_list = step_list
+        self.current_step_idx = 0  # New attribute to track the current step index
 
     def update_last(self, idx):
         self.last_idx = idx
 
     def is_over_interval(self, idx):
-        if self.last_idx is None:
-            self.update_last(idx)
-            return True
-        elapsed = idx - self.last_idx
-        if elapsed < self.interval:
+        # Check if step_list is provided
+        if self.step_list is not None:
+            # Check if we've reached the next step in step_list
+            if self.current_step_idx < len(self.step_list) and idx >= self.step_list[self.current_step_idx]:
+                self.update_last(idx)
+                self.current_step_idx += 1  # Move to the next step
+                return True
             return False
         else:
-            self.update_last(idx)
-            return True
+            # Original logic if step_list is None
+            if self.last_idx is None:
+                self.update_last(idx)
+                return True
+            elapsed = idx - self.last_idx
+            if elapsed < self.interval:
+                return False
+            else:
+                self.update_last(idx)
+                return True
 
 
 def warn_value_one_of(split, expected_value_list):

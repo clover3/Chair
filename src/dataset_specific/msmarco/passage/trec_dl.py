@@ -5,7 +5,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 from pytrec_eval import RelevanceEvaluator
 
 from adhoc.adhoc_retrieval import run_retrieval
-from adhoc.bm25_retriever import RetrieverIF
+from adhoc.retriever_if import RetrieverIF
 from adhoc.json_run_eval_helper import save_json_qres
 from dataset_specific.beir_eval.path_helper import get_json_qres_save_path
 from dataset_specific.msmarco.passage.path_helper import load_mmp_test_qrel_json, \

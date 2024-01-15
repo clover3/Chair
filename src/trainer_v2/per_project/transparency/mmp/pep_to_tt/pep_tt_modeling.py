@@ -201,8 +201,41 @@ class PEP_TT_Model_Single(PEP_TT_Model):
             score_d[role] = total_score
 
         score_stack = tf.stack([score_d["pos"], score_d["neg"]], axis=1)
-        losses = tf.maximum(1 - (score_d["pos"] - score_d["neg"]), 0)
-        loss = tf.reduce_mean(losses)
+        hinge_losses = tf.maximum(1 - (score_d["pos"] - score_d["neg"]), 0)
+        loss = tf.reduce_mean(hinge_losses)
+        outputs = score_stack, loss
+        model = tf.keras.Model(inputs=inputs_d, outputs=outputs, name="bert_model")
+        self.model: tf.keras.Model = model
+
+
+class PEP_TT_Model_Single2(PEP_TT_Model):
+    def build_pairwise_train_network(self):
+        max_seq_length = self.model_config.max_seq_length
+        inputs_d = define_inputs_single(max_seq_length)
+        # [batch_size, dim]
+
+        score_d = {}
+        for role in ["pos", "neg"]:
+            input_ids = inputs_d[f"{role}_input_ids"]
+            segment_ids = inputs_d[f"{role}_segment_ids"]
+            feature_rep = self.bert_cls.apply([input_ids, segment_ids])
+            hidden = self.dense1(feature_rep)
+            pep_pred = self.dense2(hidden)
+            probs = tf.nn.sigmoid(pep_pred)
+            norm_add_factor = inputs_d[f"{role}_norm_add_factor"]
+            multiplier = inputs_d[f"{role}_multiplier"]
+            value_score = inputs_d[f"{role}_value_score"]
+
+            total_score = bm25_like(probs, multiplier, norm_add_factor, value_score)
+            score_d[role] = total_score
+
+        score_stack = tf.stack([score_d["pos"], score_d["neg"]], axis=1)
+        hinge_losses = tf.maximum(1 - (score_d["pos"] - score_d["neg"]), 0)
+        loss = tf.reduce_mean(hinge_losses)
+
+        avg_output = tf.reduce_mean(score_stack)
+        reg_loss = avg_output * 0.2
+        loss = loss + reg_loss
         outputs = score_stack, loss
         model = tf.keras.Model(inputs=inputs_d, outputs=outputs, name="bert_model")
         self.model: tf.keras.Model = model

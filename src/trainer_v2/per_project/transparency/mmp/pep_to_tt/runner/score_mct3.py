@@ -1,7 +1,10 @@
+import logging
 import sys
 from omegaconf import OmegaConf
 
+from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.runner.score_given_pairs2 import score_given_pair_from_conf
+from trainer_v2.train_util.get_tpu_strategy import get_strategy2
 
 
 def build_mct3_config(model_name, step):
@@ -25,15 +28,19 @@ def build_mct3_config(model_name, step):
 
 
 def main():
+    c_log.setLevel(logging.INFO)
+    c_log.info(__file__)
     model_name = sys.argv[1]
-    step = sys.argv[2]
+    step = int(sys.argv[2])
     job_idx = int(sys.argv[3])
 
     # Build config
     conf = build_mct3_config(model_name, step)
-    # Convert to OmegaConf
     omega_conf = OmegaConf.create(conf)
-    score_given_pair_from_conf(job_idx, omega_conf)
+
+    strategy = get_strategy2(False, force_use_gpu=True)
+    with strategy.scope():
+        score_given_pair_from_conf(job_idx, omega_conf)
 
 
 

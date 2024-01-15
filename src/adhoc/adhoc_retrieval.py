@@ -1,6 +1,6 @@
 from typing import List, Tuple, Dict
 
-from adhoc.bm25_retriever import RetrieverIF
+from adhoc.retriever_if import RetrieverIF
 from misc_lib import TimeEstimator, get_second
 
 

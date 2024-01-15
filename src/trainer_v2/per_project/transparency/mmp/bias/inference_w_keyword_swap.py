@@ -33,9 +33,7 @@ def run_inference_inner(doc_iter, model_path, query_list, term_list_set, term_li
                 score_log_f.flush()
 
 
-def run_inference_inner2(qd_iter, model_path, term_list_set, term_list, score_log_f):
-    batch_size = 256
-
+def run_inference_inner2(score_fn, qd_iter, term_list_set, term_list, score_log_f):
     def car_maker_replace(text):
         tokens = text.split()
         matching_indices = find_indices(tokens, term_list_set)
@@ -48,18 +46,14 @@ def run_inference_inner2(qd_iter, model_path, term_list_set, term_list, score_lo
                 tokens_new[i] = term
             yield " ".join(tokens_new)
 
-    strategy = get_strategy()
-    with strategy.scope():
-        c_log.info("Building scorer")
-        score_fn = get_scorer(model_path, batch_size)
-        for entry in qd_iter:
-            doc_text = entry["doc_text"]
-            query_text = entry["query"]
-            text_list = list(car_maker_replace(doc_text))
-            tuple_itr = [(query_text, t) for t in text_list]
-            scores = score_fn(tuple_itr)
-            row = [str(entry["qid"]), str(entry["doc_id"])] + list(map(two_digit_float, scores))
-            score_log_f.write("\t".join(row) + "\n")
-            score_log_f.flush()
+    for entry in qd_iter:
+        doc_text = entry["doc_text"]
+        query_text = entry["query"]
+        text_list = list(car_maker_replace(doc_text))
+        tuple_itr = [(query_text, t) for t in text_list]
+        scores = score_fn(tuple_itr)
+        row = [str(entry["qid"]), str(entry["doc_id"])] + list(map(two_digit_float, scores))
+        score_log_f.write("\t".join(row) + "\n")
+        score_log_f.flush()
 
 

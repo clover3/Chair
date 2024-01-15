@@ -67,7 +67,6 @@ class RESTProxy:
         if len(url_postfix) > 0 and url_postfix[0] != '/':
             print("WARNING postfix should start with /")
         url = self.url_format + url_postfix
-
         response = requests.post(url, data=json.dumps(data), timeout=timeout)
         if response.status_code < 200 or response.status_code > 300:
             if response.status_code == 408:

@@ -15,7 +15,6 @@ class RemoteSSHClient:
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        # Set default key file path if not provided
         default_key_paths = [
             os.path.expanduser('~/.ssh/id_rsa'),
             os.path.expanduser('~/.ssh/id_dsa'),
@@ -29,7 +28,6 @@ class RemoteSSHClient:
                     key_file = key_path
                     break
 
-        # Connect using SSH key if available, otherwise use password
         if key_file and os.path.exists(key_file):
             logger.debug("Connecting to SSH with key file")
             self.client.connect(hostname, username=username, key_filename=key_file)
@@ -39,6 +37,13 @@ class RemoteSSHClient:
         else:
             logger.error("SSH connection requires either key_file or password")
             raise ValueError("Either key_file or password must be provided")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        logger.debug("Exiting SSH connection context")
+        self.close()
 
     def close(self):
         logger.debug("Closing SSH connection")

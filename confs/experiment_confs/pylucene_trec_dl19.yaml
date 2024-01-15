@@ -1,0 +1,8 @@
+
+run_name: pylucene
+method: pylucene
+
+dataset_conf_path: confs/datatset_conf/retrieval_trec_dl_2019.yaml
+outer_batch_size: 100000000
+
+

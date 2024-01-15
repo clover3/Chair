@@ -1,6 +1,7 @@
 from cpath import output_path
 from misc_lib import path_join
-from trainer_v2.per_project.transparency.mmp.bm25t_helper import load_mapping_from_align_candidate, run_dev_rerank_eval_with_bm25t, \
+from trainer_v2.per_project.transparency.mmp.bm25t_helper import run_dev_rerank_eval_with_bm25t
+from trainer_v2.per_project.transparency.mmp.table_readers import load_mapping_from_align_candidate, \
     load_binary_mapping_from_align_candidate
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper2 import get_cand2_1_path_helper
 

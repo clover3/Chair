@@ -2,7 +2,7 @@ import sys
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from misc_lib import get_second
-from trainer_v2.per_project.transparency.mmp.bm25t_helper import load_align_scores
+from trainer_v2.per_project.transparency.mmp.table_readers import load_align_scores
 
 
 def main():

@@ -1,9 +1,9 @@
 import sys
-
 from omegaconf import OmegaConf
 
 from misc_lib import path_join, TimeEstimator
 from taskman_client.wrapper3 import JobContext
+from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.misc_common import read_lines, load_first_column
 from trainer_v2.per_project.transparency.mmp.pep.term_pair_common import predict_save_top_k
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.inf_helper import PEP_TT_Inference
@@ -11,6 +11,7 @@ from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_modeling import PE
 
 
 def score_given_pair_from_conf(slurm_job_idx, conf):
+    c_log.info("score_given_pair_from_conf. slurm_job_idx=%d", slurm_job_idx)
     model_path = conf.model_path
     job_name_base = conf.job_name_base
     save_dir = conf.score_save_dir
@@ -29,7 +30,7 @@ def score_given_pair_from_conf(slurm_job_idx, conf):
         n_iter = ed - st
         ticker = TimeEstimator(n_iter)
         for q_term_i in range(st, ed):
-            print(f"Term {q_term_i}")
+            c_log.info(f"Term {q_term_i}")
             target_term_table_path = path_join(conf.d_term_dir, f"{q_term_i}.txt")
             log_path = path_join(save_dir, f"{q_term_i}.txt")
             try:
@@ -38,7 +39,7 @@ def score_given_pair_from_conf(slurm_job_idx, conf):
                     predict_term_pairs_fn, q_terms[q_term_i], d_terms,
                     log_path, outer_batch_size=100, verbose=False)
             except FileNotFoundError:
-                print(f"Term {q_term_i} is not found")
+                c_log.warn(f"Term {q_term_i} is not found")
                 pass
 
             ticker.tick()

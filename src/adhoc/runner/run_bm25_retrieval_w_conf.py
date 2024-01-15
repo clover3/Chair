@@ -2,8 +2,8 @@ import sys
 
 from omegaconf import OmegaConf
 
+from adhoc.eval_helper.retreival_exp_helper import run_retrieval_eval_report_w_conf
 from adhoc.other.bm25_retriever_helper import get_bm25_retriever_from_conf
-from adhoc.other.retriever_run_w_conf import run_retrieval_from_conf
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
     # dataset_conf_path
     bm25_conf = OmegaConf.load(conf.bm25conf_path)
     retriever = get_bm25_retriever_from_conf(bm25_conf)
-    run_retrieval_from_conf(conf, retriever)
+    run_retrieval_eval_report_w_conf(conf, retriever)
 
 
 if __name__ == "__main__":

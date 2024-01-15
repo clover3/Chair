@@ -1,6 +1,7 @@
 import sys
 
-from adhoc.bm25_retriever import BM25RetrieverKNTokenize, build_bm25_scoring_fn, RetrieverIF
+from adhoc.bm25_retriever import BM25RetrieverKNTokenize, build_bm25_scoring_fn
+from adhoc.retriever_if import RetrieverIF
 from adhoc.other.bm25t_retriever import BM25T_Retriever
 from cache import load_pickle_from
 from dataset_specific.beir_eval.beir_common import beir_dataset_list_not_large
@@ -9,7 +10,7 @@ from dataset_specific.beir_eval.run_helper import run_retrieval_and_eval_on_beir
 from misc_lib import average
 
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.bm25t_helper import load_binary_mapping_from_align_scores
+from trainer_v2.per_project.transparency.mmp.table_readers import load_binary_mapping_from_align_scores
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 

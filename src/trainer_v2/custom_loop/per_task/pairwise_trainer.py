@@ -106,8 +106,8 @@ class LossOnlyEvalObject(EvalObjectIF):
         self.eval_batches = eval_batches
         self.strategy = strategy
         self.eval_steps = eval_steps
-        self.metrics: Dict[str, tf.keras.metrics.Metric] = {}
         self.loss_metric = tf.keras.metrics.Mean(name="loss")
+        self.metrics: Dict[str, tf.keras.metrics.Metric] = {"loss": self.loss_metric}
 
     def do_eval(self):
         for m in self.metrics.values():
@@ -117,20 +117,21 @@ class LossOnlyEvalObject(EvalObjectIF):
             slice_step = self.eval_steps
         else:
             slice_step = max_step
-
         iterator = iter(self.eval_batches)
-        loss_obj = []
-        for idx in range(slice_step):
-            args = next(iterator),
-            _pred_like, loss = self.strategy.run(self.eval_fn, args=args)
-            loss_obj.append(loss)
+        try:
+            for idx in range(slice_step):
+                args = next(iterator),
+                _per_replica = self.strategy.run(self.eval_fn, args=args)
+        except StopIteration:
+            pass
 
-
+        loss = self.loss_metric.result().numpy()
         return loss, {}
 
     @tf.function
     def eval_fn(self, item):
         model = self.model
         pred_like, loss = model(item, training=False)
-        return loss
+        self.loss_metric.update_state(loss)
+        return pred_like, loss
 

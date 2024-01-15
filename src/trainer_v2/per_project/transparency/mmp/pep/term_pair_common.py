@@ -4,6 +4,7 @@ from typing import List
 
 from list_lib import apply_batch
 from misc_lib import TimeEstimatorOpt
+from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.misc_common import save_tsv
 
 
@@ -18,7 +19,7 @@ def predict_save_top_k(
     ):
 
     if os.path.exists(log_path):
-        print(f"{log_path} exists ")
+        c_log.info(f"{log_path} exists ")
         return
     n_item = len(d_term_list)
     n_batch = n_item // outer_batch_size

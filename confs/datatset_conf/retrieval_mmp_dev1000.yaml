@@ -3,5 +3,5 @@
 dataset_name: dev_sample1000
 queries_path: data/msmarco/dev_sample1000/queries.tsv
 judgment_path: data/msmarco/qrels.dev.tsv
-metric: ndcg_cut_10
+metric: recip_rank
 max_doc_per_query: 1000

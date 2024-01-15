@@ -1,0 +1,4 @@
+
+method: pyserini
+run_name: pyserini
+dataset_conf_path: confs/datatset_conf/retrieval_mmp_dev1000.yaml

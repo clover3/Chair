@@ -21,8 +21,10 @@ def main():
     job_name = conf.run_name
 
     model_config = PEP_TT_ModelConfig()
-    inf_helper = PEP_TT_Inference(model_config,
-                                  model_path, task_model_cls=PEP_TT_Model_Single_BERT_Init)
+    inf_helper = PEP_TT_Inference(
+        model_config,
+        model_path,
+        task_model_cls=PEP_TT_Model_Single_BERT_Init)
 
     predict_term_pairs_fn = inf_helper.score_fn
     with JobContext(job_name):

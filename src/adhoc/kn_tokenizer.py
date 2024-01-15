@@ -1,13 +1,14 @@
-from typing import List
-import nltk as nltk
-from krovetzstemmer import Stemmer
 from collections import Counter
-from typing import List, Iterable, Callable, Dict, Tuple, Set
+from typing import List, Iterable
+
+import nltk as nltk
+
 from models.classic.stopword import load_stopwords
 
 
 class KrovetzNLTKTokenizer:
     def __init__(self, drop_stopwords=False):
+        from krovetzstemmer import Stemmer
         self.stemmer = Stemmer()
         if drop_stopwords:
             self.stopword = load_stopwords()

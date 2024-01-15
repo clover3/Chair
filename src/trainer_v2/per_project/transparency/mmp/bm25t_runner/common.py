@@ -11,7 +11,7 @@ from dataset_specific.msmarco.passage.path_helper import get_rerank_payload_save
 from misc_lib import path_join, select_third_fourth
 from table_lib import tsv_iter
 from trainer_v2.per_project.transparency.mmp.bm25t import BM25T
-from trainer_v2.per_project.transparency.mmp.bm25t_helper import load_mapping_from_align_scores, \
+from trainer_v2.per_project.transparency.mmp.table_readers import load_mapping_from_align_scores, \
     load_mapping_from_align_candidate
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import predict_qd_itr_save_score_lines
 

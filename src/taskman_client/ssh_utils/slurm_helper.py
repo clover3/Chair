@@ -28,7 +28,7 @@ def submit_slurm_job(client, command, job_name, base_path, option_str=""):
     def execute_command(exec_command):
         if client:
             # Remote execution
-            stdin, stdout, stderr = client.client.exec_command(exec_command)
+            stdin, stdout, stderr = client.exec_command(exec_command)
             return stdout.read().decode('utf-8'), stderr.read().decode('utf-8')
         else:
             # Local execution

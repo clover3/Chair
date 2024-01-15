@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from adhoc.bm25_retriever import RetrieverIF
+from adhoc.retriever_if import RetrieverIF
 from adhoc.json_run_eval_helper import save_json_qres
 from adhoc.adhoc_retrieval import run_retrieval
 from table_lib import tsv_iter

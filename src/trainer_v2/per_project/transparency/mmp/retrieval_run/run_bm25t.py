@@ -9,9 +9,9 @@ from adhoc.other.bm25t_retriever import BM25T_Retriever
 from dataset_specific.msmarco.passage.doc_indexing.index_path_helper import BM25IndexResource
 from dataset_specific.msmarco.passage.doc_indexing.retriever import load_bm25_resources
 from dataset_specific.msmarco.passage.path_helper import TREC_DL_2019
-from dataset_specific.msmarco.passage.trec_dl import run_mmp_test_retrieval_eval_report
-from trainer_v2.per_project.transparency.mmp.bm25t_helper import load_binary_mapping_from_align_scores, \
-    load_binary_mapping_from_align_candidate
+from dataset_specific.msmarco.passage.trec_dl import run_mmp_retrieval_eval_report
+from trainer_v2.per_project.transparency.mmp.table_readers import load_binary_mapping_from_align_candidate, \
+    load_binary_mapping_from_align_scores
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper2 import load_omega_config_with_dataclass
 
 
@@ -51,7 +51,7 @@ def main():
     dataset = TREC_DL_2019
     method = conf.method
     retriever = get_bm25t_retriever_from_conf(conf)
-    run_mmp_test_retrieval_eval_report(dataset, method, retriever)
+    run_mmp_retrieval_eval_report(dataset, method, retriever)
 
 
 if __name__ == "__main__":

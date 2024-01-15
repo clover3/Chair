@@ -47,7 +47,7 @@ class PerPairCandidates:
     q_term_index_path: str = ""
 
 
-def path_join(*args) -> pathlib.Path:
+def path_join2(*args) -> pathlib.Path:
     cur_path = pathlib.Path(args[0])
     for item in args[1:]:
         cur_path = cur_path.joinpath(item)
@@ -66,7 +66,7 @@ class MMPGAlignPathHelper:
         self.per_pair_candidates = per_pair_candidates
 
     def load_mmp_tfs(self, qid):
-        file_path = path_join(self.per_corpus.tfs_save_path_by_qid, str(qid))
+        file_path = path_join2(self.per_corpus.tfs_save_path_by_qid, str(qid))
         return load_pickle_from(file_path)
 
     def load_qtfs(self, split, i):
@@ -92,7 +92,7 @@ class MMPGAlignPathHelper:
     def get_fidelity_save_path(self, q_term, d_term):
         save_name = get_fidelity_save_name(q_term, d_term)
         dir_path = self.per_pair_candidates.fidelity_save_dir
-        save_path = path_join(dir_path, save_name)
+        save_path = path_join2(dir_path, save_name)
         return save_path
 
     def get_sub_dir_partition_path(self, dir_name, partition_no):
@@ -130,14 +130,14 @@ def get_mmp_galign_path_helper(
 
 
 def get_mmp_train_corpus_config():
-    per_corpus_config_path = path_join(yconfig_dir_path, "mmp_train.yaml")
+    per_corpus_config_path = path_join2(yconfig_dir_path, "mmp_train.yaml")
     return load_omega_config_with_dataclass(per_corpus_config_path, PerCorpusPathConfig)
 
 
 def get_cand2_1_path_helper():
-    per_corpus_config_path = path_join(yconfig_dir_path, "mmp_train.yaml")
-    per_model_config_path = path_join(yconfig_dir_path, "mmp1.yaml")
-    per_candidate_config_path = path_join(yconfig_dir_path, "candidates2_1.yaml")
+    per_corpus_config_path = path_join2(yconfig_dir_path, "mmp_train.yaml")
+    per_model_config_path = path_join2(yconfig_dir_path, "mmp1.yaml")
+    per_candidate_config_path = path_join2(yconfig_dir_path, "candidates2_1.yaml")
     path_helper = get_mmp_galign_path_helper(
         per_corpus_config_path,
         per_model_config_path,
@@ -147,9 +147,9 @@ def get_cand2_1_path_helper():
 
 
 def get_cand2_1_debug_path_helper():
-    per_corpus_config_path = path_join(yconfig_dir_path, "mmp_train.yaml")
-    per_model_config_path = path_join(yconfig_dir_path, "mmp1.yaml")
-    per_candidate_config_path = path_join(yconfig_dir_path, "candidates2_1_debug.yaml")
+    per_corpus_config_path = path_join2(yconfig_dir_path, "mmp_train.yaml")
+    per_model_config_path = path_join2(yconfig_dir_path, "mmp1.yaml")
+    per_candidate_config_path = path_join2(yconfig_dir_path, "candidates2_1_debug.yaml")
     path_helper = get_mmp_galign_path_helper(
         per_corpus_config_path,
         per_model_config_path,
@@ -159,9 +159,9 @@ def get_cand2_1_debug_path_helper():
 
 
 def get_cand2_1_spearman_path_helper():
-    per_corpus_config_path = path_join(yconfig_dir_path, "mmp_train.yaml")
-    per_model_config_path = path_join(yconfig_dir_path, "mmp1.yaml")
-    per_candidate_config_path = path_join(yconfig_dir_path, "candidates2_1_spearman.yaml")
+    per_corpus_config_path = path_join2(yconfig_dir_path, "mmp_train.yaml")
+    per_model_config_path = path_join2(yconfig_dir_path, "mmp1.yaml")
+    per_candidate_config_path = path_join2(yconfig_dir_path, "candidates2_1_spearman.yaml")
     path_helper = get_mmp_galign_path_helper(
         per_corpus_config_path,
         per_model_config_path,
@@ -171,9 +171,9 @@ def get_cand2_1_spearman_path_helper():
 
 
 def get_cand2_2_path_helper():
-    per_corpus_config_path = path_join(yconfig_dir_path, "mmp_train.yaml")
-    per_model_config_path = path_join(yconfig_dir_path, "mmp1.yaml")
-    per_candidate_config_path = path_join(yconfig_dir_path, "candidates2_2.yaml")
+    per_corpus_config_path = path_join2(yconfig_dir_path, "mmp_train.yaml")
+    per_model_config_path = path_join2(yconfig_dir_path, "mmp1.yaml")
+    per_candidate_config_path = path_join2(yconfig_dir_path, "candidates2_2.yaml")
     path_helper = get_mmp_galign_path_helper(
         per_corpus_config_path,
         per_model_config_path,
@@ -183,9 +183,9 @@ def get_cand2_2_path_helper():
 
 
 def get_cand2_2_list_path_helper():
-    per_corpus_config_path = path_join(yconfig_dir_path, "mmp_train.yaml")
-    per_model_config_path = path_join(yconfig_dir_path, "mmp1.yaml")
-    per_candidate_config_path = path_join(yconfig_dir_path, "candidates2_2_list.yaml")
+    per_corpus_config_path = path_join2(yconfig_dir_path, "mmp_train.yaml")
+    per_model_config_path = path_join2(yconfig_dir_path, "mmp1.yaml")
+    per_candidate_config_path = path_join2(yconfig_dir_path, "candidates2_2_list.yaml")
     path_helper = get_mmp_galign_path_helper(
         per_corpus_config_path,
         per_model_config_path,
@@ -195,9 +195,9 @@ def get_cand2_2_list_path_helper():
 
 
 def get_cand4_path_helper():
-    per_corpus_config_path = path_join(yconfig_dir_path, "mmp_train.yaml")
-    per_model_config_path = path_join(yconfig_dir_path, "mmp1.yaml")
-    per_candidate_config_path = path_join(yconfig_dir_path, "candidate4.yaml")
+    per_corpus_config_path = path_join2(yconfig_dir_path, "mmp_train.yaml")
+    per_model_config_path = path_join2(yconfig_dir_path, "mmp1.yaml")
+    per_candidate_config_path = path_join2(yconfig_dir_path, "candidate4.yaml")
     path_helper = get_mmp_galign_path_helper(
         per_corpus_config_path,
         per_model_config_path,

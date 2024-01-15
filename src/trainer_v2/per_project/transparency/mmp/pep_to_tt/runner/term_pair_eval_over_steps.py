@@ -17,7 +17,7 @@ def main():
     print(pred_table_path_format)
 
     columns = ['accuracy', 'precision', 'recall', 'f1']
-    table = [["steps"] + columns]
+    table1 = [["steps"] + columns]
     for step in range(10000, 90001, 10000):
         pred_table_path = pred_table_path_format.format(step)
         row = [str(step)]

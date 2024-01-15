@@ -11,7 +11,7 @@ class DoNotNeed(Exception):
     pass
 
 
-def read_lines(file_path, st, ed):
+def _read_lines_st_ed(file_path, st, ed):
     f = open(file_path, "r")
     for line in itertools.islice(f, st, ed):
         yield line
@@ -31,7 +31,7 @@ def do_tokenize(job_id, file_path, total_lines):
 
     ticker = TimeEstimator(lines_per_job)
     tokenized_lines = []
-    for line in read_lines(file_path, st, ed):
+    for line in _read_lines_st_ed(file_path, st, ed):
         tokenized_lines.append(tokenizer.tokenize(line))
         ticker.tick()
     return tokenized_lines
