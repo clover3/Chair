@@ -13,7 +13,7 @@ def main():
     tsv_path = sys.argv[2]
     ret = list(tsv_iter(tsv_path))
 
-    head = ["q_term", "d_term", "org_score", "newe_score"]
+    head = ["q_term", "d_term", "org_score", "new_score"]
     table = [head]
     suc = SuccessCounter()
     for q_term, d_term, score2 in ret:

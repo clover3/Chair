@@ -23,14 +23,13 @@ class ModelConfig16_1(HFModelConfigType):
 
 def load_model(
         new_model_config: HFModelConfigType, model_save_path):
+    print("loading model from {}".format(model_save_path))
     task_model = TwoSegConcatLogitCombineTwoModel(
         new_model_config, CombineByScoreAdd)
     task_model.build_model(None)
-
     model = task_model.point_model
-
     checkpoint = tf.train.Checkpoint(model)
-    checkpoint.restore(model_save_path).expect_partial()
+    checkpoint.restore(model_save_path) #.expect_partial()
     local_decision_layer = get_local_decision_layer_from_model_by_shape(
         model, new_model_config.num_classes)
     new_outputs = [local_decision_layer.output, model.outputs]

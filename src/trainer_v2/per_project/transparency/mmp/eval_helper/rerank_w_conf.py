@@ -34,11 +34,12 @@ def run_rerank_with_conf_common(
     c_log.setLevel(logging.DEBUG)
     # run config
     score_fn = get_scorer_fn(conf)
-
+    c_log.info("run_rerank_with_conf_common")
     run_rerank_with_conf2(score_fn, conf, do_not_report)
 
 
-def run_rerank_with_conf2(score_fn, conf, do_not_report):
+def run_rerank_with_conf2(score_fn, conf, do_not_report=False):
+
     run_name = conf.run_name
     # Dataset config
     dataset_conf_path = conf.dataset_conf_path
@@ -65,3 +66,22 @@ def run_rerank_with_conf2(score_fn, conf, do_not_report):
     build_ranked_list_from_line_scores_and_eval(
         run_name, dataset_name, judgment_path, quad_tsv_path, scores_path,
         metric, do_not_report)
+
+
+def run_build_ranked_list_from_line_scores_and_eval(conf):
+    run_name = conf.run_name
+    # Dataset config
+    dataset_conf_path = conf.dataset_conf_path
+    dataset_conf = OmegaConf.load(dataset_conf_path)
+    dataset_name = dataset_conf.dataset_name
+    data_size = dataset_conf.data_size
+    quad_tsv_path = dataset_conf.rerank_payload_path
+    metric = dataset_conf.metric
+    judgment_path = dataset_conf.judgment_path
+    scores_path = get_line_scores_path(run_name, dataset_name)
+    # Prediction
+    # Evaluation
+    build_ranked_list_from_line_scores_and_eval(
+        run_name, dataset_name, judgment_path, quad_tsv_path, scores_path,
+        metric)
+

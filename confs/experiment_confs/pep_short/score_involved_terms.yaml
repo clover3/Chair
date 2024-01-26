@@ -1,0 +1,5 @@
+
+
+table_path: output/mmp/involved_pep10.txt
+model_path: output/model/runs/pep_short1/model_2500
+save_path: output/mmp/involved_pep_short1.txt

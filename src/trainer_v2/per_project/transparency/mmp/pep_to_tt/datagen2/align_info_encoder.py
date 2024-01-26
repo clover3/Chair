@@ -13,8 +13,7 @@ from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.hf_encode_helper import combine_with_sep_cls_and_pad
 from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
 from trainer_v2.per_project.transparency.mmp.pep.seg_enum_helper import TextRep
-from trainer_v2.per_project.transparency.mmp.pep_to_tt.dataset_builder import DocScoringSingle, \
-    TTSingleTrainFeature
+from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_encoders import TTSingleTrainFeature, DocScoringSingle
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_modeling import PEP_TT_ModelConfig
 
 

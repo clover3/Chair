@@ -10,7 +10,7 @@ from cpath import output_path
 from misc_lib import path_join, TimeEstimator, two_digit_float
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.bias.common import find_indices
-from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer
+from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer_tf_load_model
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
@@ -41,7 +41,7 @@ def run_inference_inner(doc_iter, model_path, query_list, term_list_set, term_li
     strategy = get_strategy()
     with strategy.scope():
         c_log.info("Building scorer")
-        score_fn = get_scorer(model_path, batch_size)
+        score_fn = get_scorer_tf_load_model(model_path, batch_size)
         candidates = []
         for doc_idx, doc_text in doc_iter():
             payload = [(query, doc_text) for query in query_list]

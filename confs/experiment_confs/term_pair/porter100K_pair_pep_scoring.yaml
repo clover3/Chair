@@ -1,0 +1,9 @@
+
+model_path: output/model/runs/mmp_pep10_point/model_20000
+q_term_path: output/mmp/porter_100K_terms.txt
+d_term_path: output/mmp/porter_100K_terms.txt
+job_size: 10
+run_name: porter100K_pair_pep
+score_save_dir: output/mmp/porter100K_pep
+table_save_path: output/mmp/porter100K_pep_table.tsv
+constant_threshold: 0

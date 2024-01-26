@@ -1,0 +1,16 @@
+
+project_root: .
+index_name: stem
+common_dir: not_used
+tokenizer: KrovetzNLTK
+
+inv_index_path: ${project_root}/data/cache/mmp_inv_index_krovetz2.pickle
+df_path: ${project_root}/data/cache/msmarco_passage_df.pickle
+# Document length would be equal to not stemmed version
+dl_path: ${project_root}/output/mmp/no_stem/dl
+avdl: 52
+stopword_path: ${project_root}/data/lucene_stopwords.txt
+
+k1: 1.2
+k2: 100
+b: 0.75

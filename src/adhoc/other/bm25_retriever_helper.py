@@ -9,14 +9,29 @@ from dataset_specific.msmarco.passage.doc_indexing.retriever import load_bm25_re
 from typing import List, Callable
 
 
-def get_bm25_retriever_from_conf(conf, avdl=None, stopwords=None) -> BM25Retriever:
+def get_bm25_retriever_from_conf(conf, avdl=None) -> BM25Retriever:
+    stopwords = get_stopwords_from_conf(conf)
     avdl, cdf, df, dl, inv_index = load_bm25_resources(conf, avdl)
     tokenize_fn = get_tokenize_fn(conf)
+    scoring_fn = build_bm25_scoring_fn_from_conf(conf, avdl, cdf)
+    return BM25Retriever(tokenize_fn, inv_index, df, dl, scoring_fn, stopwords)
+
+
+def get_stopwords_from_conf(conf):
+    try:
+        f = open(conf.stopword_path, "r")
+        stopwords = {line.strip() for line in f}
+    except KeyError:
+        stopwords = set()
+    return stopwords
+
+
+def build_bm25_scoring_fn_from_conf(conf, avdl, cdf):
     try:
         scoring_fn = build_bm25_scoring_fn(cdf, avdl, conf.b, conf.k1, conf.k2)
     except KeyError:
         scoring_fn = build_bm25_scoring_fn(cdf, avdl)
-    return BM25Retriever(tokenize_fn, inv_index, df, dl, scoring_fn, stopwords)
+    return scoring_fn
 
 
 def get_tokenize_fn(conf) -> Callable[[str], List[str]]:
@@ -36,9 +51,17 @@ def get_tokenize_fn(conf) -> Callable[[str], List[str]]:
             tokens = tokenizer.basic_tokenizer.tokenize(text)
             return [stemmer.stem(t) for t in tokens]
         return tokenize
+    elif conf.tokenizer == "space":
+        def tokenize(text):
+            return text.split()
+        return tokenize
     elif conf.tokenizer == "lucene":
         from pyserini.analysis import Analyzer, get_lucene_analyzer
         analyzer = Analyzer(get_lucene_analyzer())
+        return analyzer.analyze
+    elif conf.tokenizer == "lucene_krovetz":
+        from pyserini.analysis import Analyzer, get_lucene_analyzer
+        analyzer = Analyzer(get_lucene_analyzer(stemmer='krovetz'))
         return analyzer.analyze
     else:
         raise ValueError(f"{conf.tokenizer} is not expected")

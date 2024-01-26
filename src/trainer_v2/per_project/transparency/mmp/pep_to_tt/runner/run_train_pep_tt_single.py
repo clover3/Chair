@@ -11,7 +11,7 @@ from trainer_v2.custom_loop.per_task.pairwise_trainer import TrainerForLossRetur
 from trainer_v2.custom_loop.run_config2 import RunConfig2, CommonRunConfig, TrainConfig, DeviceConfig, \
     DatasetConfig
 from trainer_v2.custom_loop.train_loop import tf_run_train
-from trainer_v2.per_project.transparency.mmp.pep_to_tt.dataset_builder import PEP_TT_EncoderSingle, \
+from trainer_v2.per_project.transparency.mmp.pep_to_tt.dataset_builder import get_pep_tt_single_encoder, \
     PEP_TT_DatasetBuilder
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_modeling import PEP_TT_ModelConfig, \
     PEP_TT_Model_Single
@@ -28,7 +28,10 @@ def get_run_config(omega_conf):
         init_checkpoint=omega_conf.init_checkpoint
     )
     device_config = DeviceConfig()
-    dataset_config = DatasetConfig(omega_conf.dataset_path, omega_conf.dataset_path)
+    dataset_config = DatasetConfig(
+        omega_conf.dataset_path,
+        omega_conf.dataset_path
+    )
     run_config = RunConfig2(common_run_config=common_run_config,
                             dataset_config=dataset_config,
                             train_config=train_config,
@@ -46,12 +49,12 @@ def main():
     model_config = PEP_TT_ModelConfig()
 
     task_model = PEP_TT_Model_Single(model_config)
-    encoder = PEP_TT_EncoderSingle(model_config, conf)
+    encoder = get_pep_tt_single_encoder(model_config, conf)
     builder = PEP_TT_DatasetBuilder(encoder, run_config.common_run_config.batch_size)
 
     if run_config.is_training():
         trainer: TrainerForLossReturningModel = \
-            TrainerForLossReturningModel(run_config, task_model, PairwiseEvaler())
+            TrainerForLossReturningModel(run_config, task_model, PairwiseEvaler(run_config))
         ret = tf_run_train(run_config, trainer, builder.get_pep_tt_dataset)
     else:
         evaler = NotImplemented

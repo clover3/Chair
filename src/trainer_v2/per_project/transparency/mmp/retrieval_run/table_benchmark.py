@@ -18,7 +18,7 @@ def main():
     conf = OmegaConf.create(
         {
             "bm25conf_path": path_join(yconfig_dir_path, "bm25_resource", "bt2.yaml"),
-            "dataset_conf_path": path_join(yconfig_dir_path, "datatset_conf", "retrieval_mmp_dev100.yaml"),
+            "dataset_conf_path": path_join(yconfig_dir_path, "dataset_conf", "retrieval_mmp_dev100.yaml"),
             "table_path": table_path,
             "table_type": "Score",
             "method": run_name,

@@ -7,7 +7,7 @@ import tensorflow as tf
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.hf_encode_helper import combine_with_sep_cls_and_pad
 from list_lib import left, apply_batch
-from misc_lib import path_join, get_second, TimeEstimatorOpt
+from misc_lib import path_join, get_second, TimeEstimatorOpt, get_dir_files
 from table_lib import tsv_iter
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.definitions import HFModelConfigType, ModelConfig512_1
@@ -59,20 +59,37 @@ def build_term_pair_scorer(model_path):
 
 def load_term_pair_table(conf) -> Dict[str, Dict[str, float]]:
     save_dir = conf.score_save_dir
-    q_terms = read_lines(conf.q_term_path)
-    n_pair = 0
-    output_d: Dict[str, Dict[str, float]] = defaultdict(dict)
-    for q_term_i in range(len(q_terms)):
-        log_path = path_join(save_dir, f"{q_term_i}.txt")
-        if not os.path.exists(log_path):
-            continue
-        q_term = q_terms[q_term_i]
-        d_term_scores = [(row[0], float(row[1])) for row in tsv_iter(log_path)]
-        d_term_scores_d = dict(d_term_scores)
-        output_d[q_term] = d_term_scores_d
-        n_pair += len(d_term_scores_d)
+    def get_format(conf):
+        try:
+            format = conf.score_save_format
+        except:
+            format = "separate"
+        return format
 
-    c_log.info("Loaded %d pairs over %d terms", n_pair, len(q_terms))
+    n_pair = 0
+    format = get_format(conf)
+    if format == "separate":
+        q_terms = read_lines(conf.q_term_path)
+        output_d: Dict[str, Dict[str, float]] = defaultdict(dict)
+        for q_term_i in range(len(q_terms)):
+            log_path = path_join(save_dir, f"{q_term_i}.txt")
+            if not os.path.exists(log_path):
+                continue
+            q_term = q_terms[q_term_i]
+            d_term_scores = [(row[0], float(row[1])) for row in tsv_iter(log_path)]
+            d_term_scores_d = dict(d_term_scores)
+            output_d[q_term] = d_term_scores_d
+            n_pair += len(d_term_scores_d)
+    elif format == "triple":
+        output_d: Dict[str, Dict[str, float]] = defaultdict(dict)
+        for file_path in get_dir_files(save_dir):
+            for q_term, d_term, score_s in tsv_iter(file_path):
+                output_d[q_term][d_term] = float(score_s)
+                n_pair += 1
+    else:
+        raise ValueError()
+
+    c_log.info("Loaded %d pairs over %d terms", n_pair, len(output_d))
     return output_d
 
 

@@ -1,22 +1,17 @@
-import random
 from collections import defaultdict
 from typing import List, Iterable, Callable, Dict, Tuple, Set
-
-from dataset_specific.msmarco.passage.passage_resource_loader import load_qrel
 from table_lib import tsv_iter
 from misc_lib import path_join, TimeEstimator
-from trec.types import QRelsDict
 
 
 def sample_query_doc(
         top1000_iter: Iterable,
         n_query: int,
         corpus_save_path,
-        query_save_path):
-    max_doc_per_query = 1000
-
+        query_save_path,
+        max_doc_per_query=1000
+):
     f_out = open(corpus_save_path, "w")
-
     sample_qid_dict = {}
     qid_clustered = defaultdict(list)
 

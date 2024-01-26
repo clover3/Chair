@@ -1,17 +1,15 @@
 import os
 
-from cpath import get_bert_config_path
-from trainer_v2.custom_loop.definitions import ModelConfig256_1, ModelConfig512_1
+from trainer_v2.custom_loop.definitions import ModelConfig512_1
 from trainer_v2.custom_loop.modeling_common.adam_decay import AdamWeightDecay
-from trainer_v2.custom_loop.modeling_common.bert_common import load_bert_config
 from trainer_v2.per_project.transparency.mmp.modeling.pairwise_modeling import get_transformer_pairwise_model
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from trainer_v2.custom_loop.dataset_factories import get_classification_dataset, get_pairwise_dataset
+from trainer_v2.custom_loop.dataset_factories import get_pairwise_dataset
 from trainer_v2.custom_loop.train_loop_helper import get_strategy_from_config
 import sys
-from trainer_v2.chair_logging import c_log, IgnoreFilter, IgnoreFilterRE
+from trainer_v2.chair_logging import c_log
 import tensorflow as tf
 
 from taskman_client.wrapper3 import report_run3
@@ -24,7 +22,7 @@ def main(args):
     c_log.info(__file__)
     run_config: RunConfig2 = get_run_config2(args)
     run_config.print_info()
-    model_config = ModelConfig256_1()
+    model_config = ModelConfig512_1()
 
     def build_dataset(input_files, is_for_training):
         return get_pairwise_dataset(
@@ -57,7 +55,6 @@ def main(args):
             validation_steps=100,
             callbacks=[cp_callback]
         )
-
 
 
 if __name__ == "__main__":

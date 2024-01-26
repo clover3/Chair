@@ -61,6 +61,10 @@ class PartitionedEncoderIF(ABC):
         pass
 
     @abstractmethod
+    def encode_to_ids(self, e: BothSegPartitionedPair):
+        pass
+
+    @abstractmethod
     def encode_paired(
             self, pos: BothSegPartitionedPair, neg: BothSegPartitionedPair) -> OrderedDict:
         pass
@@ -71,7 +75,7 @@ class PartitionedEncoder(PartitionedEncoderIF):
         self.tokenizer = tokenizer
         self.partition_len = segment_len
 
-    def encode_to_ids(self, e: BothSegPartitionedPair):
+    def encode_to_ids(self, e: BothSegPartitionedPair) -> tuple[list, list]:
         partition_len = self.partition_len
         tuple_list = []
         for part_no in [0, 1]:

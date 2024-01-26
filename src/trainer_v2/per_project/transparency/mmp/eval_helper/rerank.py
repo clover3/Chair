@@ -1,6 +1,4 @@
-from typing import List
 from typing import List, Iterable, Callable, Dict, Tuple, Set
-
 from transformers import TFBertMainLayer
 from tensorflow import keras
 
@@ -39,9 +37,15 @@ def build_inference_model2(paired_model):
         'token_type_ids': segment_ids1
     }
 
+    paired_model.summary()
     old_bert_layer = paired_model.layers[4]
+    print("old_bert_layer", old_bert_layer)
+
+    old_bert_config = old_bert_layer._config
+    print(type(old_bert_config))
+    print("old_bert_layer._config", old_bert_config, isinstance(old_bert_config, dict))
     dense_layer = paired_model.layers[6]
-    new_bert_layer = TFBertMainLayer(old_bert_layer._config, name="bert")
+    new_bert_layer = TFBertMainLayer(old_bert_config, name="bert")
     param_values = keras.backend.batch_get_value(old_bert_layer.weights)
     _ = new_bert_layer(get_dummy_input_for_bert_layer())
     keras.backend.batch_set_value(zip(new_bert_layer.weights, param_values))
@@ -53,8 +57,7 @@ def build_inference_model2(paired_model):
     return new_model
 
 
-def get_scorer(model_path, batch_size=16):
-    max_seq_length = 256
+def get_scorer_tf_load_model(model_path, batch_size=16, max_seq_length=256):
     c_log.info("Loading model from %s", model_path)
     paired_model = tf.keras.models.load_model(model_path, compile=False)
     inference_model = build_inference_model2(paired_model)

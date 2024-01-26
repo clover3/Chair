@@ -1,0 +1,3 @@
+input_file: data/msmarco/triples.train.small.tsv
+line_per_job: 100000
+save_dir: output/mmp/bt2/align_cands

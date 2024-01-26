@@ -11,7 +11,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 def get_term_pair_predictor_fixed_context(
         model_path,
-):
+) -> Callable[[List[Tuple[str, str]]], List[float]]:
     strategy = get_strategy()
     with strategy.scope():
         model_config = ModelConfig256_1()
@@ -20,7 +20,7 @@ def get_term_pair_predictor_fixed_context(
 
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
 
-    def score_term_pairs(term_pairs: List[Tuple[str, str]]):
+    def score_term_pairs(term_pairs: List[Tuple[str, str]]) -> List[float]:
         payload = []
         info = []
         for q_term, d_term in term_pairs:
@@ -74,13 +74,19 @@ def predict_with_fixed_context_model_and_save(
         n_item=None
 ):
     predict_term_pairs = get_term_pair_predictor_fixed_context(model_path)
-    out_f = open(log_path, "w")
+    predict_term_pairs_and_save(predict_term_pairs, candidate_itr, log_path, outer_batch_size, n_item)
 
+
+def predict_term_pairs_and_save(
+        predict_term_pairs: Callable[[List[Tuple[str, str]]], List[float]],
+        candidate_itr,
+        log_path,
+        outer_batch_size, n_item):
+    out_f = open(log_path, "w")
     if n_item is not None:
         n_batch = n_item // outer_batch_size
     else:
         n_batch = None
-
     ticker = TimeEstimatorOpt(n_batch)
     for batch in apply_batch(candidate_itr, outer_batch_size):
         scores = predict_term_pairs(batch)

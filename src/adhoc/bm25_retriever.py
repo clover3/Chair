@@ -40,8 +40,6 @@ class BM25Retriever(RetrieverIF):
         q_tokens = [t for t in q_tokens if not t in self.stopwords]
         q_tf = Counter(q_tokens)
         doc_score = Counter()
-        # indexing_q_terms: List[str] = self.get_low_df_terms(q_tf.keys())
-        # non_indexing_q_terms = [term for term in q_tf.keys() if term not in indexing_q_terms]
         for term in q_tf:
             qf = q_tf[term]
             postings = self.get_posting(term)
@@ -52,17 +50,6 @@ class BM25Retriever(RetrieverIF):
                 per_q_term_score = self.scoring_fn(tf, qf, dl, qdf)
                 doc_score[doc_id] += per_q_term_score
         #
-        # for term in non_indexing_q_terms:
-        #     qf = q_tf[term]
-        #     postings = self.get_posting(term)
-        #     qdf = len(postings)
-        #     for doc_id, cnt in postings:
-        #         if doc_id in doc_score:
-        #             tf = cnt
-        #             dl = self.dl_d[doc_id]
-        #             per_q_term_score = self.scoring_fn(tf, qf, dl, qdf)
-        #             doc_score[doc_id] += per_q_term_score
-
         return list(doc_score.items())
 
 

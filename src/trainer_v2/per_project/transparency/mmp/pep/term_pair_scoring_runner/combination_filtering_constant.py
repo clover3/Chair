@@ -11,7 +11,7 @@ from trainer_v2.per_project.transparency.misc_common import read_lines
 
 
 
-def run_combination_filtering(conf):
+def run_combination_filtering_per_query_term(conf):
     q_terms = read_lines(conf.q_term_path)
     table_save_path = conf.table_save_path
     constant_threshold = conf.constant_threshold
@@ -61,7 +61,7 @@ def run_combination_filtering(conf):
 def main():
     conf_path = sys.argv[1]
     conf = OmegaConf.load(conf_path)
-    run_combination_filtering(conf)
+    run_combination_filtering_per_query_term(conf)
 
 
 if __name__ == "__main__":

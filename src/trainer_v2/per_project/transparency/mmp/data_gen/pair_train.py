@@ -6,7 +6,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 from data_generator.create_feature import create_int_feature
 
 
-def get_encode_fn_for_pair_train():
+def get_encode_fn_for_pair_train(max_length=256):
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
 
     def encode_text_pair(query, document):
@@ -14,7 +14,7 @@ def get_encode_fn_for_pair_train():
             query,
             document,
             padding="max_length",
-            max_length=256,
+            max_length=max_length,
             truncation=True,
         )
 

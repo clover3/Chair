@@ -1,0 +1,7 @@
+
+
+
+run_name: pep10
+model_path: output/model/runs/mmp_pep10/model_20000
+dataset_conf_path: confs/dataset_conf/mmp_dev_sample_C.yaml
+outer_batch_size: 1024

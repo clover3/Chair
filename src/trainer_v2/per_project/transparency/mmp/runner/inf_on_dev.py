@@ -8,7 +8,7 @@ from misc_lib import select_third_fourth
 from taskman_client.task_proxy import get_task_proxy
 from trainer_v2.chair_logging import c_log
 from list_lib import apply_batch
-from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer
+from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer_tf_load_model
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
@@ -32,7 +32,7 @@ def main():
     strategy = get_strategy()
     with strategy.scope():
         c_log.info("Building scorer")
-        score_fn = get_scorer(model_path, batch_size)
+        score_fn = get_scorer_tf_load_model(model_path, batch_size)
         n_batch = int(data_size / flush_block_size)
         ticker = TimeEstimator(n_batch)
         for batch in apply_batch(tuple_itr, flush_block_size):

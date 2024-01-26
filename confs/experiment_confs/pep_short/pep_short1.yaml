@@ -1,0 +1,14 @@
+
+init_checkpoint: output/model/runs/mmp_pep10/model_20000
+run_name: pep_short1
+
+
+# 50398
+batch_size: 16
+train_step: 3000
+save_every_n_step: 500
+eval_every_n_step: 100
+steps_per_execution: 1
+dataset_path: output/mmp/pep_short_train/
+eval_dataset_path: output/mmp/pep_short_holdout/
+model_save_path: output/model/runs/pep_short1

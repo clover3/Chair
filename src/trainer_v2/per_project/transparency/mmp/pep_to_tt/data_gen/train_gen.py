@@ -10,7 +10,7 @@ from table_lib import tsv_iter
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from tf_util.record_writer_wrap import write_records_w_encode_fn
-from trainer_v2.per_project.transparency.mmp.pep_to_tt.dataset_builder import PEP_TT_EncoderSingle, \
+from trainer_v2.per_project.transparency.mmp.pep_to_tt.dataset_builder import get_pep_tt_single_encoder, \
     PEP_TT_DatasetBuilder
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_modeling import PEP_TT_ModelConfig
 
@@ -18,7 +18,7 @@ from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_modeling import PE
 def main():
     conf = OmegaConf.load(sys.argv[1])
     model_config = PEP_TT_ModelConfig()
-    encoder = PEP_TT_EncoderSingle(model_config, conf)
+    encoder = get_pep_tt_single_encoder(model_config, conf)
 
     data_name = "pep_tt2"
     job_no = int(sys.argv[2])

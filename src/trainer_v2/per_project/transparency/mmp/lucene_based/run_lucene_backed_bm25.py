@@ -5,7 +5,8 @@ from omegaconf import OmegaConf
 from pyserini.index.lucene import IndexReader
 from adhoc.bm25_retriever import build_bm25_scoring_fn
 from adhoc.eval_helper.retreival_exp_helper import run_retrieval_eval_report_w_conf
-from adhoc.other.bm25t_retriever import BM25T_Retriever2, IndexReaderIF, DocID
+from adhoc.other.bm25t_retriever import BM25T_Retriever2
+from adhoc.other.index_reader_wrap import DocID, IndexReaderIF
 from adhoc.other.lucene_posting_retriever import LuceneBackBM25T_Retriever
 from adhoc.retriever_if import RetrieverIF
 from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf

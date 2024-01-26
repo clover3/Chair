@@ -1,7 +1,7 @@
 from collections import defaultdict, Counter
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
-from adhoc.other.bm25t_retriever import IndexReaderIF
+from adhoc.other.index_reader_wrap import IndexReaderIF
 from adhoc.other.postings_search_dev import join_postings_naive
 from adhoc.retriever_if import RetrieverIF
 from misc_lib import get_second, dict_to_tuple_list
@@ -33,7 +33,7 @@ class LuceneBackBM25T_Retriever(RetrieverIF):
         ret = self._retrieve_inner(query, n_retrieve)
         inn_doc_ids, scores = zip(*ret)
 
-        ext_doc_ids = list(map(self.translate_doc_id_fn, inn_doc_ids))
+        ext_doc_ids = list(map(self.translate_doc_idrge_fn, inn_doc_ids))
         return list(zip(ext_doc_ids, scores))
 
     def _retrieve_inner(self, query, n_retrieve=1000) -> List[Tuple[int, float]]:

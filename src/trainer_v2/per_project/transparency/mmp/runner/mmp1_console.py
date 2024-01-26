@@ -1,5 +1,5 @@
 from cpath import pjoin, data_path, get_canonical_model_path
-from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer
+from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer_tf_load_model
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
@@ -9,7 +9,7 @@ def main():
     model_path = get_canonical_model_path("mmp1")
     strategy = get_strategy()
     with strategy.scope():
-        score_fn = get_scorer(model_path, batch_size)
+        score_fn = get_scorer_tf_load_model(model_path, batch_size)
 
     while True:
         query = input("Query: ")

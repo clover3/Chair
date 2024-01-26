@@ -1,0 +1,5 @@
+table_path: output/mmp/pep_tt_porter/align_for_triples.train.small.tsv
+job_size: 50000
+run_name: triplet_align_cand
+score_save_dir: output/mmp/pep_tt_porter/align_triplets
+model_path: output/model/runs/mmp_pep10_point/model_20000

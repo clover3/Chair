@@ -1,49 +1,12 @@
-import tensorflow as tf
-from abc import abstractmethod, ABC
 from collections import Counter, defaultdict
-from typing import List, Iterable, Callable, Dict, Tuple, Set, TypeVar, Union
 
+from adhoc.other.index_reader_wrap import DocID, IndexReaderIF
 from adhoc.retriever_if import RetrieverIF
 from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
-from list_lib import left
 from misc_lib import get_second, dict_to_tuple_list
-from typing import List, Iterable, Dict, Tuple, Set
+from typing import List, Dict, Tuple
 
 from trainer_v2.chair_logging import c_log
-
-
-
-DocID = Union[int, str]
-
-class IndexReaderIF(ABC):
-    @abstractmethod
-    def get_df(self, term) -> int:
-        pass
-
-    @abstractmethod
-    def get_dl(self, doc_id) -> int:
-        pass
-
-    @abstractmethod
-    def get_postings(self, term) -> List[Tuple[DocID, int]]:
-        pass
-
-
-class IndexReaderPython(IndexReaderIF):
-    def __init__(self, get_posting_fn, df, dl_d):
-        self.get_posting = get_posting_fn
-        self.df = df
-        self.dl_d = dl_d
-
-
-    def get_df(self, term) -> int:
-        return self.df[term]
-
-    def get_dl(self, doc_id) -> int:
-        return self.dl_d[doc_id]
-
-    def get_postings(self, term) -> List[Tuple[DocID, int]]:
-        return self.get_posting(term)
 
 
 class BM25T_Retriever(RetrieverIF):

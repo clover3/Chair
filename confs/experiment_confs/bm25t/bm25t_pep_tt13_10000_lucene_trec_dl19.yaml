@@ -1,0 +1,10 @@
+
+
+bm25conf_path: confs/bm25_resource/lucene.yaml
+table_path: output/mmp/tables/mtc4_pep_tt13_10000_norm.tsv
+table_type: scores
+method: bm25t_lu_pep_tt13_10K_norm
+run_name: bm25t_lu_pep_tt13_10K_norm
+
+dataset_conf_path: confs/dataset_conf/retrieval_trec_dl_2019_43.yaml
+outer_batch_size: 1000000000

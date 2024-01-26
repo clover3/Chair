@@ -1,0 +1,7 @@
+
+bm25conf_path: confs/bm25_resource/stem_stop.yaml
+run_name: nltk_stem
+method: nltk_stem
+
+dataset_conf_path: confs/dataset_conf/retrieval_trec_dl_2019.yaml
+outer_batch_size: 100000000

@@ -6,7 +6,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 from adhoc.bm25_retriever import build_bm25_scoring_fn
 from adhoc.other.bm25t_retriever import BM25T_Retriever
-from dataset_specific.msmarco.passage.doc_indexing.index_path_helper import BM25IndexResource
+from adhoc.conf_helper import BM25IndexResource
 from dataset_specific.msmarco.passage.doc_indexing.retriever import load_bm25_resources
 from dataset_specific.msmarco.passage.path_helper import TREC_DL_2019
 from dataset_specific.msmarco.passage.trec_dl import run_mmp_retrieval_eval_report

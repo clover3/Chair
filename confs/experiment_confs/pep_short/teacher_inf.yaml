@@ -1,0 +1,3 @@
+model_path: output/model/runs/mmp_pep10/model_20000
+payload_dir: output/mmp/bt2/align_cands_enum
+scored_terms_dir: output/mmp/bt2/align_cands_enum_scored

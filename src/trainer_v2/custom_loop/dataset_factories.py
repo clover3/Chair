@@ -204,7 +204,7 @@ def get_pairwise_dataset(
         add_dummy_y=True,
         segment_ids_for_token_type_ids=False,
     ) -> tf.data.Dataset:
-
+    print("get_pairwise_dataset: segment_ids_for_token_type_ids=", segment_ids_for_token_type_ids)
     def decode_record(record):
         name_to_features = {
         }
@@ -216,7 +216,7 @@ def get_pairwise_dataset(
                 name_to_features[f'segment_ids{i + 1}'] = fixed_len_feature()
             else:
                 name_to_features[f'token_type_ids{i+1}'] = fixed_len_feature()
-
+        print(name_to_features)
         record = tf.io.parse_single_example(record, name_to_features)
         if add_dummy_y:
             record = reform_example(record)

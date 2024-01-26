@@ -14,6 +14,7 @@ def load_ts_concat_local_decision_model(
     model = task_model.point_model
     checkpoint = tf.train.Checkpoint(model)
     checkpoint.restore(model_save_path).expect_partial()
+    model.summary()
     local_decision_layer = get_local_decision_layer_from_model_by_shape(
         model, new_model_config.num_classes)
     new_outputs = [local_decision_layer.output, model.outputs]

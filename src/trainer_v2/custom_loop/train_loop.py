@@ -90,7 +90,7 @@ def tf_run_train(run_config: RunConfig2,
                 batch_item = next(train_itr)
                 per_replica_losses = strategy.run(trainer.train_step, args=(batch_item, ))
                 loss = strategy.reduce(
-                    tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None)
+                    tf.distribute.ReduceOp.MEAN, per_replica_losses, axis=None)
                 total_loss += loss
                 n_step += 1.
 

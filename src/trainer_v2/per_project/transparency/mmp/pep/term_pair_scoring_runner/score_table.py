@@ -14,7 +14,8 @@ def main():
     num_items = len(candidate_pairs)
     model_path = conf.model_path
     log_path = conf.save_path
-    predict_with_fixed_context_model_and_save(model_path, log_path, candidate_pairs, 100, num_items)
+    predict_with_fixed_context_model_and_save(
+        model_path, log_path, candidate_pairs, 100, num_items)
 
 
 if __name__ == "__main__":

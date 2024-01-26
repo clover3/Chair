@@ -1,0 +1,7 @@
+
+
+dataset_name: dev_sample_C
+queries_path: data/msmarco/dev_sample_C/queries.tsv
+judgment_path: data/msmarco/qrels.dev.tsv
+metric: recip_rank
+max_doc_per_query: 1000

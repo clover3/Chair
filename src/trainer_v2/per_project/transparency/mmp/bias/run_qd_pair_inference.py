@@ -10,7 +10,7 @@ from misc_lib import path_join
 from table_lib import tsv_iter
 from taskman_client.job_group_proxy import SubJobContext
 from trainer_v2.chair_logging import c_log
-from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer
+from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer_tf_load_model
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
@@ -49,7 +49,7 @@ def compute_queries_over_docs(config, job_no):
     strategy = get_strategy()
     with strategy.scope():
         c_log.info("Building scorer")
-        score_fn = get_scorer(model_path, batch_size)
+        score_fn = get_scorer_tf_load_model(model_path, batch_size)
 
     doc_todo: list[tuple[str, str]] = [doc_id_passage_list[doc_idx] for doc_idx in range(st, ed)]
     matching_pairs: Iterable[Dict] = filter_high_score(score_fn, qid_query_list, doc_todo)

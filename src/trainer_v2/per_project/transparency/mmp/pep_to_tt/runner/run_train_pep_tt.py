@@ -7,8 +7,8 @@ from trainer_v2.custom_loop.eval_loop import tf_run_eval
 from trainer_v2.custom_loop.per_task.pairwise_trainer import TrainerForLossReturningModel, PairwiseEvaler
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.custom_loop.train_loop import tf_run_train
-from trainer_v2.per_project.transparency.mmp.pep_to_tt.dataset_builder import PEP_TT_DatasetBuilder, \
-    PEP_TT_EncoderMulti
+from trainer_v2.per_project.transparency.mmp.pep_to_tt.dataset_builder import PEP_TT_DatasetBuilder
+from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_encoders import PEP_TT_EncoderMulti
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.omega_conf_run_config import get_run_config_from_omega_conf
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_modeling import PEP_TT_ModelConfig, \
     PEP_TT_Model

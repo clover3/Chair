@@ -1,10 +1,10 @@
 from omegaconf import OmegaConf
 
-from adhoc.bm25_retriever import build_bm25_scoring_fn
-from adhoc.other.bm25_retriever_helper import get_tokenize_fn
-from adhoc.other.bm25t_retriever import BM25T_Retriever2, IndexReaderPython
+from adhoc.other.bm25_retriever_helper import get_tokenize_fn, \
+    get_stopwords_from_conf, build_bm25_scoring_fn_from_conf
+from adhoc.other.bm25t_retriever import BM25T_Retriever2
+from adhoc.other.index_reader_wrap import IndexReaderPython
 from dataset_specific.msmarco.passage.doc_indexing.retriever import load_bm25_resources
-from models.classic.stopword import load_stopwords
 from trainer_v2.per_project.transparency.mmp.table_readers import load_align_scores
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
@@ -30,10 +30,10 @@ def get_bm25t_retriever_in_memory(conf):
     table = load_table(conf)
 
     bm25_conf = OmegaConf.load(conf.bm25conf_path)
-    avdl, cdf, df, dl, inv_index = load_bm25_resources(bm25_conf)
-    dl, inv_index = convert_doc_ids_integer(dl, inv_index)
-    scoring_fn = build_bm25_scoring_fn(cdf, avdl)
+    stopwords = get_stopwords_from_conf(bm25_conf)
+    avdl, cdf, df, dl, inv_index = load_bm25_resources(bm25_conf, None)
     tokenize_fn = get_tokenize_fn(bm25_conf)
+    scoring_fn = build_bm25_scoring_fn_from_conf(bm25_conf, avdl, cdf)
 
     def get_posting(term):
         try:
@@ -42,5 +42,4 @@ def get_bm25t_retriever_in_memory(conf):
             return []
 
     index_reader = IndexReaderPython(get_posting, df, dl)
-    stopwords = load_stopwords()
     return BM25T_Retriever2(index_reader, scoring_fn, tokenize_fn, table, stopwords)

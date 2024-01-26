@@ -1,0 +1,5 @@
+
+
+p_to_k_table: output/mmp/porter_to_krovetz.txt
+src_pair_path: output/mmp/pep_tt_porter/align_for_triples.train.small.tsv
+converted_path: output/mmp/pep_tt_porter/align_k_for_triples.train.small.tsv

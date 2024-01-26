@@ -58,7 +58,7 @@ class CluewebTokenReader:
             yield doc
         print()
 
-def batch_iter_from_entry_iter(batch_size, entry_iter):
+def batch_iter_from_entry_iter_other(batch_size, entry_iter):
     batch = []
     for entry in entry_iter:
         batch.append(entry)
@@ -100,7 +100,7 @@ def run(token_path, ranked_list_path, start_model_path, output_path):
         entry_itr = [encode(tokens) for tokens in tokens_list]
         print("len(tokens_list)", len(tokens_list))
         result = []
-        for idx, batch in enumerate(batch_iter_from_entry_iter(batch_size, entry_itr)):
+        for idx, batch in enumerate(batch_iter_from_entry_iter_other(batch_size, entry_itr)):
             result.append(predictor.run(batch))
             if idx % 100 == 0:
                 print(idx)

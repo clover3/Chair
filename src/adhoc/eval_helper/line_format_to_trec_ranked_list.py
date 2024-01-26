@@ -28,7 +28,11 @@ def build_ranked_list_from_qid_pid_scores(qid_pid_path, run_name, save_path, sco
 def read_scores(scores_path):
     scores = []
     for line in open(scores_path, "r"):
-        scores.append(float(line))
+        try:
+            s = float(line)
+        except ValueError:
+            s = eval(line)[0]
+        scores.append(s)
     return scores
 
 

@@ -5,10 +5,12 @@ from typing import List, Iterable, Callable, Tuple
 
 import tensorflow as tf
 from omegaconf import OmegaConf
+from omegaconf.errors import ConfigAttributeError
 
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.es_common.es_two_seg_common import BothSegPartitionedPair
-from data_generator2.segmented_enc.es_common.partitioned_encoder import PartitionedEncoder
+from data_generator2.segmented_enc.es_common.partitioned_encoder import PartitionedEncoder, PartitionedEncoderIF, \
+    PartitionedEncoderCompressMask
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.definitions import ModelConfig512_1
 from trainer_v2.custom_loop.neural_network_def.two_seg_alt import CombineByScoreAdd
@@ -18,6 +20,27 @@ from trainer_v2.per_project.transparency.mmp.pep.pep_rerank import partition_que
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
+def get_encode_fn(conf, segment_len, tokenizer) -> Callable[[BothSegPartitionedPair], Tuple] :
+    try:
+        if conf.partitioner == "compress":
+            encoder: PartitionedEncoderIF = PartitionedEncoderCompressMask(tokenizer, segment_len)
+            c_log.info("Use PartitionedEncoderCompressMask")
+        else:
+            encoder: PartitionedEncoderIF = PartitionedEncoder(tokenizer, segment_len)
+    except ConfigAttributeError:
+        encoder: PartitionedEncoderIF = PartitionedEncoder(tokenizer, segment_len)
+    encode_fn: Callable[[BothSegPartitionedPair], Tuple] = encoder.encode_to_ids
+    return encode_fn
+
+
+def load_two_seg_concat_model(conf, model_config):
+    task_model = TwoSegConcatLogitCombineTwoModel(model_config, CombineByScoreAdd)
+    task_model.build_model(None)
+    c_log.info("Loading model from %s", conf.model_path)
+    task_model.load_checkpoint(conf.model_path)
+    return task_model.point_model
+
+
 def get_pep_scorer_from_two_model(
         conf,
         batch_size=16,
@@ -25,14 +48,16 @@ def get_pep_scorer_from_two_model(
     model_config = ModelConfig512_1()
     max_seq_length = model_config.max_seq_length
     segment_len = int(max_seq_length / 2)
+    c_log.info("Defining network")
     inference_model = load_two_seg_concat_model(conf, model_config)
+    inference_model.summary()
 
     tokenizer = get_tokenizer()
     partitioner = QDPartitioning(tokenizer)
-    encoder = PartitionedEncoder(tokenizer, segment_len)
-    encode_fn: Callable[[BothSegPartitionedPair], Tuple] = encoder.encode_to_ids
+
+    encode_fn = get_encode_fn(conf, segment_len, tokenizer)
     SpecI = tf.TensorSpec([max_seq_length], dtype=tf.int32)
-    sig = (SpecI, SpecI,),
+    sig = (SpecI, SpecI,), 
 
     def score_fn(qd_list: List[Tuple[str, str]]):
         def generator():
@@ -49,16 +74,7 @@ def get_pep_scorer_from_two_model(
         output = inference_model.predict(dataset)
         return output[:, 0]
 
-    c_log.info("Defining network")
     return score_fn
-
-
-def load_two_seg_concat_model(conf, model_config):
-    task_model = TwoSegConcatLogitCombineTwoModel(model_config, CombineByScoreAdd)
-    task_model.build_model(None)
-    c_log.info("Loading model from %s", conf.model_path)
-    task_model.load_checkpoint(conf.model_path)
-    return task_model.point_model
 
 
 def main():

@@ -12,7 +12,7 @@ from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.eval_helper.mmp_eval_line_format import eval_dev_mrr, \
     predict_and_batch_save_scores
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import batch_score_and_save_score_lines
-from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer
+from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer_tf_load_model
 from trainer_v2.train_util.arg_flags import flags_parser
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 from typing import List, Iterable, Callable, Dict, Tuple, Set
@@ -31,7 +31,7 @@ class PredWorker(WorkerInterface):
         strategy = get_strategy(use_tpu, config['tpu_name'])
         with strategy.scope():
             c_log.info("Building scorer")
-            self.score_fn = get_scorer(model_path)
+            self.score_fn = get_scorer_tf_load_model(model_path)
 
     def work(self, job_id):
         quad_tsv_path = os.path.join(self.quad_tsv_dir, str(job_id))

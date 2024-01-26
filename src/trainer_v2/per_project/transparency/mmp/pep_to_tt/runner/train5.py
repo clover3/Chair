@@ -10,7 +10,7 @@ from trainer_v2.custom_loop.run_config2 import RunConfig2, get_run_config2
 from trainer_v2.custom_loop.train_loop import tf_run_train
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.dataset_builder import read_pep_tt_dataset
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_modeling import PEP_TT_ModelConfig, \
-    PEP_TT_Model_Single
+    PEP_TT_Model_Single2
 from trainer_v2.train_util.arg_flags import flags_parser
 
 
@@ -22,7 +22,7 @@ def main(args):
     run_config.print_info()
     model_config = PEP_TT_ModelConfig()
 
-    task_model = PEP_TT_Model_Single(model_config)
+    task_model = PEP_TT_Model_Single2(model_config)
     seq_len = model_config.max_seq_length
 
     def build_dataset(input_files, is_for_training):

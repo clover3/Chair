@@ -18,6 +18,7 @@ class PEP_TT_ModelConfig(ModelConfigType):
     max_seq_length = 16
     num_classes = 1
     max_num_terms = 10
+    reg_weight = 0
 
 
 def define_inputs(max_term_cnt, max_seq_len) -> dict[str, tf.keras.layers.Input]:
@@ -215,6 +216,7 @@ class PEP_TT_Model_Single2(PEP_TT_Model):
         # [batch_size, dim]
 
         score_d = {}
+        probs_d = {}
         for role in ["pos", "neg"]:
             input_ids = inputs_d[f"{role}_input_ids"]
             segment_ids = inputs_d[f"{role}_segment_ids"]
@@ -222,6 +224,8 @@ class PEP_TT_Model_Single2(PEP_TT_Model):
             hidden = self.dense1(feature_rep)
             pep_pred = self.dense2(hidden)
             probs = tf.nn.sigmoid(pep_pred)
+            probs_d[role] = probs
+
             norm_add_factor = inputs_d[f"{role}_norm_add_factor"]
             multiplier = inputs_d[f"{role}_multiplier"]
             value_score = inputs_d[f"{role}_value_score"]
@@ -233,8 +237,8 @@ class PEP_TT_Model_Single2(PEP_TT_Model):
         hinge_losses = tf.maximum(1 - (score_d["pos"] - score_d["neg"]), 0)
         loss = tf.reduce_mean(hinge_losses)
 
-        avg_output = tf.reduce_mean(score_stack)
-        reg_loss = avg_output * 0.2
+        avg_probs = tf.reduce_mean(probs_d.values())
+        reg_loss = avg_probs * self.model_config.reg_weight
         loss = loss + reg_loss
         outputs = score_stack, loss
         model = tf.keras.Model(inputs=inputs_d, outputs=outputs, name="bert_model")

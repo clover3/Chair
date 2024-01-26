@@ -9,7 +9,7 @@ from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.bias.common import find_indices
 from trainer_v2.per_project.transparency.mmp.bias.common import load_car_maker_list, \
     load_second_column_from_bias_dir
-from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer
+from trainer_v2.per_project.transparency.mmp.eval_helper.rerank import get_scorer_tf_load_model
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
@@ -55,7 +55,7 @@ def main():
     strategy = get_strategy()
     with strategy.scope():
         c_log.info("Building scorer")
-        score_fn = get_scorer(model_path, batch_size)
+        score_fn = get_scorer_tf_load_model(model_path, batch_size)
 
         for doc_idx, doc_text in doc_iter():
             payload = [(query, doc_text) for query in query_list]

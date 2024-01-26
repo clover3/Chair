@@ -13,7 +13,6 @@ def get_word_embedding(word):
         outputs = model(input_ids)
 
     out_a, out_b = outputs
-    # return outputs[0][0, 0, :]
     return outputs[1]
 
 

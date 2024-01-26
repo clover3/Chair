@@ -1,0 +1,9 @@
+
+bm25conf_path: confs/bm25_resource/lucene_krovetz.yaml
+run_name: mem_lucene_krovetz
+method: mem_lucene_krovetz
+
+dataset_conf_path: confs/dataset_conf/retrieval_trec_dl_2019_43.yaml
+outer_batch_size: 100000000
+
+

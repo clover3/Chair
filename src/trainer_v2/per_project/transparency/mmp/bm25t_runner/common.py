@@ -4,8 +4,7 @@ from adhoc.bm25_class import BM25
 from adhoc.eval_helper.line_format_to_trec_ranked_list import build_ranked_list_from_qid_pid_scores
 from adhoc.eval_helper.pytrec_helper import eval_by_pytrec_json_qrel
 from cpath import output_path
-from dataset_specific.msmarco.passage.doc_indexing.index_path_helper import load_omega_config_with_dataclass, \
-    BM25IndexResource
+from adhoc.conf_helper import BM25IndexResource, load_omega_config
 from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
 from dataset_specific.msmarco.passage.path_helper import get_rerank_payload_save_path, get_mmp_test_qrel_json_path
 from misc_lib import path_join, select_third_fourth
@@ -34,7 +33,7 @@ def bm25t_nltk_stem_rerank_run_and_eval(dataset, table_name, mapping):
     metric = "ndcg_cut_10"
     base_run_name = "TREC_DL_2019_BM25_sp_stem"
     bm25_conf_path = path_join("confs", "bm25_resource", "stem.yaml")
-    bm25_conf = load_omega_config_with_dataclass(bm25_conf_path, BM25IndexResource)
+    bm25_conf = load_omega_config(bm25_conf_path, BM25IndexResource)
     avdl, cdf, df, dl = get_bm25_stats_from_conf(bm25_conf)
     bm25 = BM25(df, cdf, avdl, 0.1, 100, 1.4)
     bm25t = BM25T(mapping, bm25.core)

@@ -3,6 +3,7 @@ project_root: .
 index_name: lucene
 common_dir: not_used
 tokenizer: lucene
+stopword_path: data/lucene_stopwords.txt
 inv_index_path: ${project_root}/output/mmp/lucene/inv_index.pickle
 df_path: ${project_root}/output/mmp/lucene/df.pickle
 dl_path: ${project_root}/output/mmp/lucene/dl

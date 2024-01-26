@@ -31,10 +31,7 @@ class LuceneSearcher(RetrieverIF):
     def retrieve(self, query_str: str, max_item: int) -> List[Tuple[str, float]]:
         c_log.info("Query: %s", query_str)
         parser = QueryParser("contents", self.analyzer)
-        try:
-            query = parser.parse(query_str)
-        except lucene.JavaError:
-            query = parser.parse(QueryParser.escape(query_str))
+        query = parser.parse(QueryParser.escape(query_str))
 
         scoreDocs = self.searcher.search(query, max_item).scoreDocs
 
