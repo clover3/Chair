@@ -1,15 +1,15 @@
 from trainer_v2.per_project.transparency.misc_common import read_lines
 from cpath import output_path
 from misc_lib import path_join
-from utils.open_ai_api import ENGINE_GPT_3_5, OpenAIProxy, parse_chat_gpt_response
+from utils.open_ai_api import ENGINE_GPT_3_5, OpenAIProxy, parse_chat_gpt_response, ENGINE_GPT4
 
 
 def main():
     text_path = path_join(output_path, "mmp", "bias", "car_exp", "generic_mention_text.txt")
     lines = read_lines(text_path)
     postfix_question = "\n-\nYou you think this text contains any information that is more relevant to a specific car maker (brand)? Answer Yes/No"
-    proxy = OpenAIProxy(ENGINE_GPT_3_5)
-    save_path = path_join(output_path, "mmp", "bias", "car_exp", "generic_mention_text_gpt_label.txt")
+    proxy = OpenAIProxy(ENGINE_GPT4)
+    save_path = path_join(output_path, "mmp", "bias", "car_exp", "generic_mention_text_gpt4_label.txt")
     f = open(save_path, "w")
 
     for line in lines:

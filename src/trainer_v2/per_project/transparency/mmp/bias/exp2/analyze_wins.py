@@ -64,12 +64,12 @@ def count_wins(passage_dict, score_log, term_list, target_term_a, target_term_b)
         # print("ford > honda", )
         # print("Original: " + ", ".join(right(originally_matched_terms)))
 
-        if win and target_term_a in doc_text.lower():
-            pass
-        elif not win and target_term_b in doc_text.lower():
-            pass
-        else:
-            counter[win] += 1
+        # if win and target_term_a in doc_text.lower():
+        #     pass
+        # elif not win and target_term_b in doc_text.lower():
+        #     pass
+        # else:
+        counter[win] += 1
 
         # print("High scored: ")
         # s = ", ".join(["{0} ({1:.2f})".format(term, score) for term, score in entry_list])
