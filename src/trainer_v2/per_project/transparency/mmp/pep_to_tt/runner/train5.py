@@ -21,7 +21,7 @@ def main(args):
     run_config: RunConfig2 = get_run_config2(args)
     run_config.print_info()
     model_config = PEP_TT_ModelConfig()
-
+    c_log.info("Train with 0 reg loss")
     task_model = PEP_TT_Model_Single2(model_config)
     seq_len = model_config.max_seq_length
 

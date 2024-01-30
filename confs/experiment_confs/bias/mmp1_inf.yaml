@@ -1,0 +1,4 @@
+model_path: output/model/runs/mmp1
+source_path: output/mmp/bias/car_exp/generic_mention_selected.jsonl
+score_log_path: output/mmp/bias/car_exp/exp3/mmp1.tsv
+

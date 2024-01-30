@@ -6,10 +6,11 @@ from list_lib import apply_batch
 from misc_lib import TimeEstimatorOpt
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.misc_common import save_tsv
+from typing import List, Iterable, Callable, Dict, Tuple, Set, Iterator
 
 
 def predict_save_top_k(
-        predict_term_pairs_fn,
+        predict_term_pairs_fn: Callable[[list[tuple[str, str]]], list[float]],
         q_term: str,
         d_term_list: List[str],
         log_path,

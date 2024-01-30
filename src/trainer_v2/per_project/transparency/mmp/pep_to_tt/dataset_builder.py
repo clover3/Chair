@@ -6,6 +6,7 @@ import tensorflow as tf
 from omegaconf import OmegaConf
 
 from adhoc.bm25_class import BM25Bare
+from adhoc.other.bm25_retriever_helper import get_tokenize_fn
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
 from list_lib import left
@@ -97,7 +98,8 @@ def get_pep_tt_single_encoder_for_with_align_info(
     avdl, cdf, df, dl_d = get_bm25_stats_from_conf(bm25_conf, None)
     get_pep_top_k = None
     bm25 = BM25Bare(df, len(dl_d), avdl, bm25_conf.k1, bm25_conf.k2, bm25_conf.b)
-    bm25_analyzer = BM25_MatchAnalyzer(bm25, get_pep_top_k, bert_tokenizer.basic_tokenizer.tokenize)
+    bm25_tokenizer = get_tokenize_fn(bm25_conf)
+    bm25_analyzer = BM25_MatchAnalyzer(bm25, get_pep_top_k, bm25_tokenizer)
     term_to_subword = bert_tokenizer.tokenize
     return PEP_TT_EncoderSingle(bert_tokenizer, model_config, bm25_analyzer, term_to_subword)
 

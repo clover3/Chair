@@ -6,3 +6,4 @@ model_path: output/model/runs/pep_tt5/model_1000
 
 candidate_dir: output/mmp/luk/align_cands_enum
 score_save_dir: output/mmp/luk/align_cands_enum_scored
+

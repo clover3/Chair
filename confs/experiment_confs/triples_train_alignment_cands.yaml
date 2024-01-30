@@ -6,3 +6,5 @@ model_path: output/model/runs/pep_tt5/model_1000
 
 candidate_dir: output/mmp/bt2/align_cands_enum2
 score_save_dir: output/mmp/bt2/align_cands_enum2_scored
+tokenizer: BertTokenize2
+tfrecord_save_dir: output/tfrecord/pep_tt8

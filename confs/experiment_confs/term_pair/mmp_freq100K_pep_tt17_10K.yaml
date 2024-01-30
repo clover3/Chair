@@ -1,0 +1,12 @@
+
+
+model_path: output/model/runs/pep_tt7/model_1000
+q_term_path: output/mmp/lucene_krovetz/freq100K.txt
+d_term_path: output/mmp/lucene_krovetz/freq100K.txt
+job_size: 100
+run_name: mmp_freq100K_pair_pep_tt17_10K
+score_save_dir: output/mmp/mmp_freq100K_pair_pep_tt17_10K
+table_save_path: output/mmp/tables/pep_tt17_10K.tsv
+constant_threshold: 0.1
+model_type: PEP_TT_Model_Single
+short_job_name: tt17_10K

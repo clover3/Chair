@@ -44,8 +44,8 @@ def main():
     align_info_conf = OmegaConf.load(conf.align_info_conf)
 
     model_config = PEP_TT_ModelConfig()
-    data_name = "pep_tt8"
     job_no = int(sys.argv[2])
+    c_log.info("Job %d", job_no)
 
     n_partition_per_job = 100
     n_item_per_job = n_partition_per_job * align_info_conf.line_per_job
@@ -74,8 +74,7 @@ def main():
             feature_d = encoder.encode_triplet(q, d_pos, d_neg)
             yield feature_d
 
-    save_dir = at_output_dir("tfrecord", data_name)
-    save_path = path_join(save_dir, str(job_no))
+    save_path = path_join( conf.tfrecord_save_dir, str(job_no))
     encoder = get_pep_tt_single_encoder_for_with_align_info(model_config, conf)
 
     def encode_fn(d) -> OrderedDict:
