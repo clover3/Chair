@@ -24,25 +24,23 @@ def score_given_pair_from_conf(slurm_job_idx, conf):
         model_type=conf.model_type)
     st = slurm_job_idx * job_size
     ed = min(st + job_size, len(q_terms))
-    job_name = f"{job_name_base}_{slurm_job_idx}"
-    with JobContext(job_name):
-        predict_term_pairs_fn = inf_helper.score_fn
-        n_iter = ed - st
-        ticker = TimeEstimator(n_iter)
-        for q_term_i in range(st, ed):
-            c_log.info(f"Term {q_term_i}")
-            target_term_table_path = path_join(conf.d_term_dir, f"{q_term_i}.txt")
-            log_path = path_join(save_dir, f"{q_term_i}.txt")
-            try:
-                d_terms = load_first_column(target_term_table_path)
-                predict_save_top_k(
-                    predict_term_pairs_fn, q_terms[q_term_i], d_terms,
-                    log_path, outer_batch_size=100, verbose=False)
-            except FileNotFoundError:
-                c_log.warn(f"Term {q_term_i} is not found")
-                pass
+    predict_term_pairs_fn = inf_helper.score_fn
+    n_iter = ed - st
+    ticker = TimeEstimator(n_iter)
+    for q_term_i in range(st, ed):
+        c_log.info(f"Term {q_term_i}")
+        target_term_table_path = path_join(conf.d_term_dir, f"{q_term_i}.txt")
+        log_path = path_join(save_dir, f"{q_term_i}.txt")
+        try:
+            d_terms = load_first_column(target_term_table_path)
+            predict_save_top_k(
+                predict_term_pairs_fn, q_terms[q_term_i], d_terms,
+                log_path, outer_batch_size=100, verbose=False)
+        except FileNotFoundError:
+            c_log.warn(f"Term {q_term_i} is not found")
+            pass
 
-            ticker.tick()
+        ticker.tick()
 
 
 def main():

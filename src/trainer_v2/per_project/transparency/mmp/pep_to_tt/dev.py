@@ -6,7 +6,7 @@ from omegaconf import OmegaConf
 
 from adhoc.bm25_class import BM25Bare
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
+from adhoc.other.bm25_retriever_helper import get_bm25_stats_from_conf
 from dataset_specific.msmarco.passage.path_helper import get_train_triples_partition_path
 from list_lib import apply_batch
 from table_lib import tsv_iter

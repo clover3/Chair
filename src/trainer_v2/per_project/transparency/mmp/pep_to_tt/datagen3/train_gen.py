@@ -38,14 +38,8 @@ def iter_partitions_and_info(
         yield partition, output_d
 
 
-
-def main():
-    conf = OmegaConf.load(sys.argv[1])
+def run_pep_tt_encoding_jobs(encoder, conf, job_no):
     align_info_conf = OmegaConf.load(conf.align_info_conf)
-
-    model_config = PEP_TT_ModelConfig()
-    job_no = int(sys.argv[2])
-    c_log.info("Job %d", job_no)
 
     n_partition_per_job = 100
     n_item_per_job = n_partition_per_job * align_info_conf.line_per_job
@@ -74,8 +68,7 @@ def main():
             feature_d = encoder.encode_triplet(q, d_pos, d_neg)
             yield feature_d
 
-    save_path = path_join( conf.tfrecord_save_dir, str(job_no))
-    encoder = get_pep_tt_single_encoder_for_with_align_info(model_config, conf)
+    save_path = path_join(conf.tfrecord_save_dir, str(job_no))
 
     def encode_fn(d) -> OrderedDict:
         return encoder.to_tf_feature(d)
@@ -85,6 +78,16 @@ def main():
             yield from encode_partition(encoder, partition, output_d)
 
     write_records_w_encode_fn(save_path, encode_fn, feature_itr(), n_item_per_job)
+
+
+
+def main():
+    conf = OmegaConf.load(sys.argv[1])
+    model_config = PEP_TT_ModelConfig()
+    job_no = int(sys.argv[2])
+    c_log.info("Job %d", job_no)
+    encoder = get_pep_tt_single_encoder_for_with_align_info(model_config, conf)
+    run_pep_tt_encoding_jobs(encoder, conf, job_no)
 
 
 if __name__ == "__main__":

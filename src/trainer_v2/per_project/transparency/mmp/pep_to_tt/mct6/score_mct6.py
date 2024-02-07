@@ -2,6 +2,7 @@ import logging
 import sys
 from omegaconf import OmegaConf
 
+from taskman_client.job_group_proxy import SubJobContext
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.runner.score_given_pairs2 import score_given_pair_from_conf
 from trainer_v2.train_util.get_tpu_strategy import get_strategy2
@@ -15,16 +16,17 @@ def build_mct6_config(model_name, step):
         "model_step_name": f"{model_name}_{step}",
         "model_path": f"output/model/runs/{model_name}/model_{step}",
         "q_term_path": "output/mmp/lucene_krovetz/freq100K.txt",
-        "d_term_dir": f"output/mmp/mmp_freq100K_pair_pep_tt17_10K",
+        "d_term_dir": f"output/mmp/mmp_freq100K_pair_pep_tt16_100K",
         "job_size": 100,
+        "num_jobs": 100,
         "job_name_base": f"mct6_{model_name}_{step}",
         "score_save_dir": f"output/mmp/mct6_{model_name}_{step}",
         "table_save_path": f"output/mmp/tables/mtc6_{model_name}_{step}.tsv",
         "constant_threshold": 0.1,
         "model_type": "PEP_TT_Model_Single"
     }
-
-    return conf
+    omega_conf = OmegaConf.create(conf)
+    return omega_conf
 
 
 def main():
@@ -36,11 +38,12 @@ def main():
 
     # Build config
     conf = build_mct6_config(model_name, step)
-    omega_conf = OmegaConf.create(conf)
-
-    strategy = get_strategy2(False, force_use_gpu=True)
-    with strategy.scope():
-        score_given_pair_from_conf(job_idx, omega_conf)
+    job_name_base = conf.job_name_base
+    max_job = 100
+    with SubJobContext(job_name_base, job_idx, max_job):
+        strategy = get_strategy2(False, force_use_gpu=True)
+        with strategy.scope():
+            score_given_pair_from_conf(job_idx, conf)
 
 
 

@@ -11,7 +11,7 @@ from adhoc.bm25_class import BM25Bare
 from data_generator.create_feature import create_int_feature, create_float_feature
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.hf_encode_helper import combine_with_sep_cls_and_pad
-from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
+from adhoc.other.bm25_retriever_helper import get_bm25_stats_from_conf
 from trainer_v2.per_project.transparency.mmp.pep.seg_enum_helper import TextRep
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_encoders import TTSingleTrainFeature, DocScoringSingle
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_modeling import PEP_TT_ModelConfig

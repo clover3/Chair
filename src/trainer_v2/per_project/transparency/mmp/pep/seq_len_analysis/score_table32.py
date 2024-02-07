@@ -1,3 +1,5 @@
+import abc
+import dataclasses
 import sys
 from typing import List, Callable, Tuple
 
@@ -13,20 +15,42 @@ from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 
 
-class ModelConfig32_1(HFModelConfigType):
+@dataclasses.dataclass
+class TermPairPredictionConfig(HFModelConfigType):
+    __metaclass__ = abc.ABCMeta
+    max_seq_length = abc.abstractproperty()
+    num_classes = abc.abstractproperty()
+    model_type = abc.abstractproperty()
+    n_mask_prepad = abc.abstractproperty()
+    n_mask_postpad = abc.abstractproperty()
+
+
+class ModelConfig64_1(HFModelConfigType):
     max_seq_length = 32
     num_classes = 1
     model_type = "bert-base-uncased"
 
 
+
+class PredictionConfig32_1(TermPairPredictionConfig):
+    max_seq_length = 32
+    num_classes = 1
+    model_type = "bert-base-uncased"
+    n_mask_prepad = 4
+    n_mask_postpad = 24
+
+
 def get_term_pair_predictor_fixed_context(
         model_path,
+        config: TermPairPredictionConfig,
 ) -> Callable[[List[Tuple[str, str]]], List[float]]:
+    n_mask_prepad = config.n_mask_prepad
+    n_mask_postpad = config.n_mask_postpad
+
     strategy = get_strategy()
     with strategy.scope():
-        model_config = ModelConfig32_1()
-        model = load_ts_concat_local_decision_model(model_config, model_path)
-        pep = PEPLocalDecision(model_config, model_path=None, model=model)
+        model = load_ts_concat_local_decision_model(config, model_path)
+        pep = PEPLocalDecision(config, model_path=None, model=model)
 
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
 
@@ -37,7 +61,7 @@ def get_term_pair_predictor_fixed_context(
             q_tokens = tokenizer.tokenize(q_term)
             d_tokens = tokenizer.tokenize(d_term)
             q_tokens = ["[MASK]"] + q_tokens + ["[MASK]"]
-            d_tokens = ["[MASK]"] * 4 + d_tokens + ["[MASK]"] * 24
+            d_tokens = ["[MASK]"] * n_mask_prepad + d_tokens + ["[MASK]"] * n_mask_postpad
 
             info.append((q_term, d_term))
             payload.append((q_tokens, d_tokens))
@@ -49,13 +73,14 @@ def get_term_pair_predictor_fixed_context(
 
 
 def predict_with_fixed_context_model_and_save(
+        config,
         model_path,
         log_path,
         candidate_itr: List[Tuple[str, str]],
         outer_batch_size,
         n_item=None
 ):
-    predict_term_pairs = get_term_pair_predictor_fixed_context(model_path)
+    predict_term_pairs = get_term_pair_predictor_fixed_context(model_path, config)
     predict_term_pairs_and_save(predict_term_pairs, candidate_itr, log_path, outer_batch_size, n_item)
 
 
@@ -66,7 +91,9 @@ def main():
     num_items = len(candidate_pairs)
     model_path = conf.model_path
     log_path = conf.save_path
+    config = PredictionConfig32_1()
     predict_with_fixed_context_model_and_save(
+        config,
         model_path, log_path, candidate_pairs, 100, num_items)
 
 

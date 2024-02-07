@@ -15,9 +15,8 @@ def main():
             ret.append(row)
 
         return ret
+
     # Example usage
-
-
     series1 = load_table(sys.argv[1])
     series1_d = dict(series1)
     series2 = load_table(sys.argv[2])

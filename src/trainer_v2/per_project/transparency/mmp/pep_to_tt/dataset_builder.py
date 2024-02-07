@@ -6,9 +6,8 @@ import tensorflow as tf
 from omegaconf import OmegaConf
 
 from adhoc.bm25_class import BM25Bare
-from adhoc.other.bm25_retriever_helper import get_tokenize_fn
+from adhoc.other.bm25_retriever_helper import get_tokenize_fn, get_bm25_stats_from_conf
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
 from list_lib import left
 from misc_lib import get_dir_files, batch_iter_from_entry_iter, path_join, get_second
 from table_lib import tsv_iter
@@ -16,8 +15,10 @@ from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.dataset_factories import create_dataset_common
 from trainer_v2.custom_loop.run_config2 import RunConfig2
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.bm25_match_analyzer import BM25_MatchAnalyzer
+from trainer_v2.per_project.transparency.mmp.pep_to_tt.bm25_match_analyzer2 import BM25_MatchAnalyzer2
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_common import get_pep_predictor
-from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_encoders import PEP_TT_EncoderSingle, PEP_TT_EncoderIF
+from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_encoders import PEP_TT_EncoderSingle, PEP_TT_EncoderIF, \
+    PEP_TT_Encoder2
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_modeling import PEP_TT_ModelConfig
 
 
@@ -59,6 +60,28 @@ def read_pep_tt_dataset(
     int_list_items = ["pos_input_ids", "pos_segment_ids", "neg_input_ids", "neg_segment_ids"]
     float_items = ["pos_multiplier", "pos_value_score", "pos_norm_add_factor",
                    "neg_multiplier", "neg_value_score", "neg_norm_add_factor"]
+
+    return read_dataset_int_list_float_items(
+        file_path, run_config, seq_len, is_for_training, int_list_items, float_items)
+
+
+def read_pep_tt_dataset2(
+        file_path,
+        run_config: RunConfig2,
+        seq_len,
+        is_for_training,
+    ) -> tf.data.Dataset:
+    int_list_items = ["pos_input_ids", "pos_segment_ids", "neg_input_ids", "neg_segment_ids"]
+    float_items = ["pos_multiplier", "pos_value_score", "pos_norm_add_factor", "pos_tf",
+                   "neg_multiplier", "neg_value_score", "neg_norm_add_factor", "neg_tf"]
+
+    return read_dataset_int_list_float_items(
+        file_path, run_config, seq_len, is_for_training, int_list_items, float_items)
+
+
+def read_dataset_int_list_float_items(
+        file_path, run_config, seq_len, is_for_training,
+        int_list_items, float_items):
 
     def decode_record(record):
         name_to_features = {}
@@ -102,6 +125,20 @@ def get_pep_tt_single_encoder_for_with_align_info(
     bm25_analyzer = BM25_MatchAnalyzer(bm25, get_pep_top_k, bm25_tokenizer)
     term_to_subword = bert_tokenizer.tokenize
     return PEP_TT_EncoderSingle(bert_tokenizer, model_config, bm25_analyzer, term_to_subword)
+
+
+def get_pep_tt_single_encoder2(
+        model_config: PEP_TT_ModelConfig,
+        conf):
+    bert_tokenizer = get_tokenizer()
+    bm25_conf = OmegaConf.load(conf.bm25conf_path)
+    avdl, cdf, df, dl_d = get_bm25_stats_from_conf(bm25_conf, None)
+    get_pep_top_k = None
+    bm25 = BM25Bare(df, len(dl_d), avdl, bm25_conf.k1, bm25_conf.k2, bm25_conf.b)
+    bm25_tokenizer = get_tokenize_fn(bm25_conf)
+    bm25_analyzer = BM25_MatchAnalyzer2(bm25, get_pep_top_k, bm25_tokenizer)
+    term_to_subword = bert_tokenizer.tokenize
+    return PEP_TT_Encoder2(bert_tokenizer, model_config, bm25_analyzer, term_to_subword)
 
 
 def load_table(file_path):

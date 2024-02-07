@@ -21,6 +21,7 @@ def load_mapping_from_align_scores(
 
 
 def load_align_scores(tsv_path) -> Dict[str, Dict[str, float]]:
+    c_log.info("Loading table from %s", tsv_path)
     if tsv_path.lower() == "none":
         rows = []
     else:

@@ -9,7 +9,7 @@ from adhoc.other.bm25t_retriever import BM25T_Retriever2
 from adhoc.other.index_reader_wrap import DocID, IndexReaderIF
 from adhoc.other.lucene_posting_retriever import LuceneBackBM25T_Retriever
 from adhoc.retriever_if import RetrieverIF
-from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
+from adhoc.other.bm25_retriever_helper import get_bm25_stats_from_conf
 from trainer_v2.chair_logging import c_log
 
 

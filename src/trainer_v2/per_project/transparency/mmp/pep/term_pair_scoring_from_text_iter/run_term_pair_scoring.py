@@ -8,7 +8,7 @@ from cache import save_to_pickle
 from data_generator.tokenizer_wo_tf import get_tokenizer
 from data_generator2.segmented_enc.es_common.evidence_selector_by_attn import get_merged_attn_scores
 from data_generator2.segmented_enc.es_common.pep_attn_common import PairWithAttn
-from data_generator2.segmented_enc.es_mmp.pep_attn_common import iter_attention_mmp_pos_neg_paried
+from data_generator2.segmented_enc.es_mmp.pep_attn_common import iter_attention_mmp_pos_neg_paired
 from misc_lib import TELI
 from taskman_client.wrapper3 import JobContext
 from trainer.promise import PromiseKeeper
@@ -133,7 +133,7 @@ def main():
     partition_no = int(sys.argv[3])
 
     with JobContext(f"TermPair_{partition_no}"):
-        pos_neg_pair_itr = iter_attention_mmp_pos_neg_paried(partition_no)
+        pos_neg_pair_itr = iter_attention_mmp_pos_neg_paired(partition_no)
         analyze(model_path, log_path, pos_neg_pair_itr)
 
 

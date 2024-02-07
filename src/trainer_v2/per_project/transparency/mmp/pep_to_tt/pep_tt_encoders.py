@@ -15,6 +15,7 @@ from table_lib import tsv_iter
 from tlm.data_gen.base import concat_tuple_windows
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.bm25_match_analyzer import TermAlignInfo
+from trainer_v2.per_project.transparency.mmp.pep_to_tt.bm25_match_analyzer2 import TermAlignInfo2
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_modeling import PEP_TT_ModelConfig
 
 from typing import List, Iterable, Callable, Dict, Tuple, Set, Iterator
@@ -30,6 +31,22 @@ class TTSingleTrainFeature(TypedDict):
     neg_multiplier: float
     neg_value_score: float
     neg_norm_add_factor: float
+
+
+class TTSingleTrainFeature2(TypedDict):
+    pos_input_ids: list[int]
+    pos_segment_ids: list[int]
+    pos_multiplier: float
+    pos_value_score: float
+    pos_norm_add_factor: float
+    pos_tf: float
+
+    neg_input_ids: list[int]
+    neg_segment_ids: list[int]
+    neg_multiplier: float
+    neg_value_score: float
+    neg_norm_add_factor: float
+    neg_tf: float
 
 
 @dataclasses.dataclass
@@ -52,6 +69,15 @@ class DocScoringSingle:
     multiplier: float   # factors of BM25 that are multiplied to term frequency to  get score
     norm_add_factor: float  # K-value, which works for the document length penalty.
 
+
+@dataclasses.dataclass
+class DocScoringSingle2:
+    value_score: float  # Scores from exact match
+    q_term: str   # query term that we want to train
+    d_term: str   # document term that we want to train
+    multiplier: float   # factors of BM25 that are multiplied to term frequency to  get score
+    norm_add_factor: float  # K-value, which works for the document length penalty.
+    tf: int
 
 class PEP_TT_EncoderIF(ABC):
     @abstractmethod
@@ -147,6 +173,106 @@ class PEP_TT_EncoderSingle(PEP_TT_EncoderIF):
         return output_signature
 
     def to_tf_feature(self, feature: TTSingleTrainFeature) -> collections.OrderedDict:
+        # Feature values are either int list or float value
+        features = collections.OrderedDict()
+        for k, v in feature.items():
+            if type(v) == list:
+                features[k] = create_int_feature(v)
+            elif type(v) == float:
+                features[k] = create_float_feature([v])
+            else:
+                raise ValueError()
+        return features
+
+
+class PEP_TT_Encoder2(PEP_TT_EncoderIF):
+    def __init__(self,
+                 bert_tokenizer,
+                 model_config: PEP_TT_ModelConfig,
+                 bm25_analyzer2,
+                 term_to_subwords
+                 ):
+        self.model_config = model_config
+        self.tokenizer = bert_tokenizer
+        self.bm25_analyzer = bm25_analyzer2
+        self.term_to_subwords = term_to_subwords
+    def _encode_one(self, s: DocScoringSingle2) -> dict[str, list]:
+        max_seq_len = self.model_config.max_seq_length
+        q_term_sb_rep = self.term_to_subwords(s.q_term)
+        d_term_sb_rep = self.term_to_subwords(s.d_term)
+        input_ids, segment_ids = combine_with_sep_cls_and_pad(
+            self.tokenizer, q_term_sb_rep, d_term_sb_rep, max_seq_len)
+        return {
+            "input_ids": input_ids,
+            "segment_ids": segment_ids,
+            "tf": float(s.tf),
+            "multiplier": s.multiplier,
+            "value_score": s.value_score,
+            "norm_add_factor": s.norm_add_factor,
+        }
+
+    def _encode_pair(self, s_pos, s_neg) -> dict[str, list]:
+        doc_d = {
+            "pos": s_pos,
+            "neg": s_neg,
+        }
+        all_features = {}
+        for role, doc in doc_d.items():  # For pos neg
+            for key, value in self._encode_one(doc).items():
+                all_features[f"{role}_{key}"] = value
+
+        return all_features
+
+    def _get_doc_score_factors(self, q: str, d: str) -> DocScoringSingle2:
+        K, per_unknown_tf, value_score = self.bm25_analyzer.apply(q, d)
+
+        random.shuffle(per_unknown_tf)
+        if per_unknown_tf:
+            item: TermAlignInfo2 = per_unknown_tf[0]
+            output = DocScoringSingle2(
+                value_score=value_score,
+                q_term=item.q_term,
+                d_term=item.d_term,
+                tf=item.tf,
+                multiplier=item.multiplier,
+                norm_add_factor=K
+            )
+        else:
+            output = DocScoringSingle2(
+                value_score=value_score,
+                q_term="",
+                d_term="",
+                tf=0,
+                multiplier=0.,
+                norm_add_factor=K
+            )
+        return output
+
+    def encode_triplet(self, q: str, d_pos: str, d_neg: str) -> TTSingleTrainFeature2:
+        s_pos = self._get_doc_score_factors(q, d_pos)
+        s_neg = self._get_doc_score_factors(q, d_neg)
+        feature_d: TTSingleTrainFeature2 = self._encode_pair(s_pos, s_neg)
+        return feature_d
+
+    def get_output_signature(self):
+        max_seq_len = self.model_config.max_seq_length
+        ids_spec = tf.TensorSpec(shape=(max_seq_len,), dtype=tf.int32)
+        output_signature_per_qd = {
+            'input_ids': ids_spec,
+            'segment_ids': ids_spec,
+            'multiplier': tf.TensorSpec(shape=(), dtype=tf.float32),
+            'value_score': tf.TensorSpec(shape=(), dtype=tf.float32),
+            'norm_add_factor': tf.TensorSpec(shape=(), dtype=tf.float32),
+            'tf': tf.TensorSpec(shape=(), dtype=tf.float32),
+        }
+
+        output_signature = {}
+        for role in ["pos", "neg"]:
+            for key, value in output_signature_per_qd.items():
+                output_signature[f"{role}_{key}"] = value
+        return output_signature
+
+    def to_tf_feature(self, feature: TTSingleTrainFeature2) -> collections.OrderedDict:
         # Feature values are either int list or float value
         features = collections.OrderedDict()
         for k, v in feature.items():

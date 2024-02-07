@@ -53,6 +53,24 @@ def define_inputs_single(max_seq_len) -> dict[str, tf.keras.layers.Input]:
     return inputs_d
 
 
+def define_inputs_single2(max_seq_len) -> dict[str, tf.keras.layers.Input]:
+    inputs_d = {}
+    for role in ["pos", "neg"]:
+        inputs_d[f"{role}_input_ids"] = tf.keras.layers.Input(
+            shape=(max_seq_len,), dtype='int32', name=f"{role}_input_ids")
+        inputs_d[f"{role}_segment_ids"] = tf.keras.layers.Input(
+            shape=(max_seq_len,), dtype='int32', name=f"{role}_segment_ids")
+        inputs_d[f"{role}_multiplier"] = tf.keras.layers.Input(
+            shape=(), dtype='float32', name=f"{role}_multiplier")
+        inputs_d[f"{role}_norm_add_factor"] = tf.keras.layers.Input(
+            shape=(), dtype='float32', name=f"{role}_norm_add_factor")
+        inputs_d[f"{role}_value_score"] = tf.keras.layers.Input(
+            shape=(), dtype='float32', name=f"{role}_value_score")
+        inputs_d[f"{role}_tf"] = tf.keras.layers.Input(
+            shape=(), dtype='float32', name=f"{role}_tf")
+    return inputs_d
+
+
 def weighted_sum(scores):
     weights = tf.nn.softmax(scores, axis=1)
     return tf.reduce_sum(scores * weights, axis=1)
@@ -172,9 +190,9 @@ class PEP_TT_Model(ModelV2IF):
         checkpoint.restore(init_checkpoint)
 
 
-def bm25_like(probs, multiplier, norm_add_factor, value_score):
-    nom = probs + tf.expand_dims(norm_add_factor, axis=1) + 1e-8  # [B, 1]
-    denom = probs * tf.expand_dims(multiplier, axis=1)  # [B, 1]
+def bm25_like(tf_like, multiplier, norm_add_factor, value_score):
+    nom = tf_like + tf.expand_dims(norm_add_factor, axis=1) + 1e-8  # [B, 1]
+    denom = tf_like * tf.expand_dims(multiplier, axis=1)  # [B, 1]
     new_align_score = denom / nom
     total_score = new_align_score + tf.expand_dims(value_score, axis=1)
     return total_score
@@ -231,6 +249,44 @@ class PEP_TT_Model_Single2(PEP_TT_Model):
             value_score = inputs_d[f"{role}_value_score"]
 
             total_score = bm25_like(probs, multiplier, norm_add_factor, value_score)
+            score_d[role] = total_score
+
+        score_stack = tf.stack([score_d["pos"], score_d["neg"]], axis=1)
+        hinge_losses = tf.maximum(1 - (score_d["pos"] - score_d["neg"]), 0)
+        loss = tf.reduce_mean(hinge_losses)
+
+        avg_probs = tf.reduce_mean(probs_d.values())
+        reg_loss = avg_probs * self.model_config.reg_weight
+        loss = loss + reg_loss
+        outputs = score_stack, loss
+        model = tf.keras.Model(inputs=inputs_d, outputs=outputs, name="bert_model")
+        self.model: tf.keras.Model = model
+
+
+class PEP_TT_Model_Single3(PEP_TT_Model):
+    def build_pairwise_train_network(self):
+        max_seq_length = self.model_config.max_seq_length
+        inputs_d = define_inputs_single2(max_seq_length)
+        # [batch_size, dim]
+
+        score_d = {}
+        probs_d = {}
+        for role in ["pos", "neg"]:
+            input_ids = inputs_d[f"{role}_input_ids"]
+            segment_ids = inputs_d[f"{role}_segment_ids"]
+            feature_rep = self.bert_cls.apply([input_ids, segment_ids])
+            hidden = self.dense1(feature_rep)
+            pep_pred = self.dense2(hidden)
+            probs = tf.nn.sigmoid(pep_pred)
+            probs_d[role] = probs
+
+            tf_ = inputs_d[f"{role}_tf"]
+            norm_add_factor = inputs_d[f"{role}_norm_add_factor"]
+            multiplier = inputs_d[f"{role}_multiplier"]
+            value_score = inputs_d[f"{role}_value_score"]
+            weighted_tf = tf_ * probs
+
+            total_score = bm25_like(weighted_tf, multiplier, norm_add_factor, value_score)
             score_d[role] = total_score
 
         score_stack = tf.stack([score_d["pos"], score_d["neg"]], axis=1)

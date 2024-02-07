@@ -1,17 +1,20 @@
 from omegaconf import OmegaConf
 
 from adhoc.other.bm25_retriever_helper import get_tokenize_fn, \
-    get_stopwords_from_conf, build_bm25_scoring_fn_from_conf
+    get_stopwords_from_conf, build_bm25_scoring_fn_from_conf, load_bm25_resources
 from adhoc.other.bm25t_retriever import BM25T_Retriever2
 from adhoc.other.index_reader_wrap import IndexReaderPython
-from dataset_specific.msmarco.passage.doc_indexing.retriever import load_bm25_resources
-from trainer_v2.per_project.transparency.mmp.table_readers import load_align_scores
+from trainer_v2.per_project.transparency.mmp.table_readers import load_align_scores, load_mapping_from_align_scores
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
 def load_table(conf) -> Dict[str, Dict[str, float]]:
     if conf.table_type == "none":
         table = {}
+    elif conf.table_type == "mapping":
+        cut = 0
+        mapping_val = 0.1
+        table = load_mapping_from_align_scores(conf.table_path, cut, mapping_val)
     else:
         table = load_align_scores(conf.table_path)
     return table
@@ -28,8 +31,11 @@ def convert_doc_ids_integer(dl, inv_index):
 
 def get_bm25t_retriever_in_memory(conf):
     table = load_table(conf)
-
     bm25_conf = OmegaConf.load(conf.bm25conf_path)
+    return get_bm25t_in_memory_inner(bm25_conf, table)
+
+
+def get_bm25t_in_memory_inner(bm25_conf, table):
     stopwords = get_stopwords_from_conf(bm25_conf)
     avdl, cdf, df, dl, inv_index = load_bm25_resources(bm25_conf, None)
     tokenize_fn = get_tokenize_fn(bm25_conf)

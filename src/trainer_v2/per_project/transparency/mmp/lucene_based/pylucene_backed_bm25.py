@@ -14,7 +14,7 @@ from org.apache.lucene.store import FSDirectory
 from adhoc.bm25_retriever import build_bm25_scoring_fn
 from adhoc.other.index_reader_wrap import DocID, IndexReaderIF
 from adhoc.other.lucene_posting_retriever import LuceneBackBM25T_Retriever
-from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
+from adhoc.other.bm25_retriever_helper import get_bm25_stats_from_conf
 from trainer_v2.chair_logging import c_log
 
 

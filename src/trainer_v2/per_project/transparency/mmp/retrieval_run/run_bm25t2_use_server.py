@@ -5,11 +5,10 @@ from omegaconf import OmegaConf
 
 from adhoc.bm25_retriever import build_bm25_scoring_fn
 from adhoc.eval_helper.retreival_exp_helper import run_retrieval_eval_report_w_conf
-from adhoc.other.bm25_retriever_helper import get_tokenize_fn
+from adhoc.other.bm25_retriever_helper import get_tokenize_fn, get_bm25_stats_from_conf
 from adhoc.other.bm25t_retriever import BM25T_Retriever2
 from adhoc.other.index_reader_wrap import IndexReaderPython
 from adhoc.test_code.inv_index_test import InvIndexReaderClient
-from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
 from models.classic.stopword import load_stopwords
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.retrieval_run.retrieval_common import load_table

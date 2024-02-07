@@ -1,7 +1,7 @@
 from adhoc.bm25_class import BM25
 from adhoc.ks_tokenizer import KrovetzSpaceTokenizer
 from dataset_specific.msmarco.passage.doc_indexing.index_path_helper import get_bm25_sp_stem_resource_path_helper
-from dataset_specific.msmarco.passage.doc_indexing.retriever import load_bm25_resources, get_bm25_stats_from_conf
+from adhoc.other.bm25_retriever_helper import load_bm25_resources, get_bm25_stats_from_conf
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
 from dataset_specific.msmarco.passage.processed_resource_loader import load_msmarco_sub_samples_as_qd_pair
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import predict_qd_itr_save_score_lines

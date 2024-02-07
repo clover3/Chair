@@ -5,7 +5,7 @@ from adhoc.eval_helper.line_format_to_trec_ranked_list import build_ranked_list_
 from adhoc.eval_helper.pytrec_helper import eval_by_pytrec_json_qrel
 from cpath import output_path
 from adhoc.conf_helper import BM25IndexResource, load_omega_config
-from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
+from adhoc.other.bm25_retriever_helper import get_bm25_stats_from_conf
 from dataset_specific.msmarco.passage.path_helper import get_rerank_payload_save_path, get_mmp_test_qrel_json_path
 from misc_lib import path_join, select_third_fourth
 from table_lib import tsv_iter

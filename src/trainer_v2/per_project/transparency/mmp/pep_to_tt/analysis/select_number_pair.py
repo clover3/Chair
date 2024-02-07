@@ -3,6 +3,10 @@ import sys
 from table_lib import tsv_iter
 
 
+def pattern_match(is_number_like, q_term, d_term):
+    return is_number_like(q_term) and is_number_like(d_term)
+
+
 def main():
     def is_number_like(term: str) -> bool:
         for i in range(10):
@@ -12,7 +16,7 @@ def main():
         return False
 
     for q_term, d_term, score in tsv_iter(sys.argv[1]):
-        if is_number_like(q_term) and is_number_like(d_term):
+        if pattern_match(is_number_like, q_term, d_term):
             print("\t".join([q_term, d_term, score]))
 
 

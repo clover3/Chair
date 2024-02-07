@@ -5,7 +5,7 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 from adhoc.bm25_retriever import build_bm25_scoring_fn
 from adhoc.eval_helper.line_format_to_trec_ranked_list import build_ranked_list_from_line_scores_and_eval
 from dataset_specific.msmarco.passage.doc_indexing.index_path_helper import load_bm25_index_resource_conf
-from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
+from adhoc.other.bm25_retriever_helper import get_bm25_stats_from_conf
 from datastore.sql_based_cache_client import SQLBasedCacheClientS
 from misc_lib import select_third_fourth, TimeEstimator, remove_duplicate
 from table_lib import tsv_iter

@@ -4,8 +4,7 @@ from typing import Dict
 from omegaconf import OmegaConf
 
 from adhoc.bm25_class import BM25
-from adhoc.other.bm25_retriever_helper import get_tokenize_fn
-from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
+from adhoc.other.bm25_retriever_helper import get_tokenize_fn, get_bm25_stats_from_conf
 from taskman_client.wrapper3 import JobContext
 from trainer_v2.per_project.transparency.mmp.bm25t_3 import BM25T_3
 from trainer_v2.per_project.transparency.mmp.table_readers import load_align_scores

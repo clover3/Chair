@@ -2,7 +2,7 @@ from omegaconf import OmegaConf
 
 from adhoc.bm25_class import BM25Bare
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf
+from adhoc.other.bm25_retriever_helper import get_bm25_stats_from_conf
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.bm25_match_analyzer import BM25_MatchAnalyzer
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_common import get_pep_predictor
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_encoders import PEP_TT_EncoderSingle
