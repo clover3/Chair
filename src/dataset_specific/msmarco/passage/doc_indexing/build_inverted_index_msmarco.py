@@ -1,6 +1,6 @@
 from typing import List, Dict, Tuple, Iterable
 
-from adhoc.build_index import build_inverted_index
+from adhoc.build_index import build_inverted_index_with_df_cut
 from cache import save_to_pickle
 from dataset_specific.msmarco.passage.doc_indexing.resource_loader import enum_msmarco_passage_tokenized
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
@@ -29,7 +29,7 @@ def msmarco_build_inverted_index() -> InvIndex:
     tokenized_itr: Iterable[Tuple[str, List[str]]] = enum_msmarco_passage_tokenized()
 
     ignore_voca = set(mmp_inv_index_ignore_voca())
-    return build_inverted_index(tokenized_itr, ignore_voca, num_docs, term_df_cut_to_discard, term_df_cut_to_warn)
+    return build_inverted_index_with_df_cut(tokenized_itr, ignore_voca, num_docs, term_df_cut_to_discard, term_df_cut_to_warn)
 
 
 def main():

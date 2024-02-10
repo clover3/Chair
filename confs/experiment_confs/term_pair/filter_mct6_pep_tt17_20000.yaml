@@ -1,0 +1,3 @@
+src_table_path: output/mmp/tables/mtc6_pep_tt17_20000.tsv
+dst_table_path: output/mmp/tables/mtc6_pep_tt17_20000_05.tsv
+threshold: 0.5

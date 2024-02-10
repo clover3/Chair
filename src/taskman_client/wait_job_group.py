@@ -30,7 +30,7 @@ def wait_job_group(job_name):
 
         if any_change:
             print("started/done/max={}/{}/{}".
-                  format(info['started'], info['num_done'], info['max_job']))
+                  format(info['num_started'], info['num_done'], info['max_job']))
 
         time.sleep(10)
         info = proxy.query_job_group_status(job_name)

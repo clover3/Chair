@@ -1,0 +1,9 @@
+
+
+bm25conf_path: confs/bm25_resource/lucene_krovetz.yaml
+table_path: output/mmp/tables/empty.tsv
+table_type: mapping
+method: empty
+run_name: empty
+dataset_conf_path: confs/dataset_conf/retrieval_mmp_dev_C.yaml
+outer_batch_size: 1000000000

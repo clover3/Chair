@@ -1,0 +1,6 @@
+# @package data
+
+type: triplets
+
+TRAIN_DATA_DIR: data/msmarco/triples.train.mini.tsv
+VALIDATION_SIZE_FOR_LOSS: 60000

@@ -1,0 +1,10 @@
+
+
+model_path: output/model/runs/pep_tt17/model_20000
+pair_path: output/mmp/car_dev1000_d_terms_pep_paired.txt
+job_size: 100
+run_name: mmp_freq100K_pair_pep_tt17_20K
+table_save_path: output/mmp/tables/car_pep_tt17_20K.tsv
+model_type: PEP_TT_Model_Single
+short_job_name: car_tt17_20K
+

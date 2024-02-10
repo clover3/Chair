@@ -1,16 +1,25 @@
 from beir.retrieval.evaluation import EvaluateRetrieval
 
-from adhoc.json_run_eval_helper import save_json_qres
 from adhoc.adhoc_retrieval import run_retrieval
-from dataset_specific.beir_eval.beir_common import load_beir_dataset
+from adhoc.json_run_eval_helper import save_json_qres
+from adhoc.retriever_if import RetrieverIF
+from dataset_specific.beir_eval.beir_common import load_beir_queries_and_qrels
+from taskman_client.task_proxy import get_task_manager_proxy
 from trainer_v2.chair_logging import c_log
 
 
-def run_retrieval_and_eval(dataset, max_doc_per_list, method, qrels, queries, retriever):
+def run_retrieval_and_eval_on_beir(
+        dataset: str, split: str, method: str,
+        retriever: RetrieverIF,
+        max_doc_per_list: int, do_not_report: bool = False):
+    c_log.debug(f"Loading dataset")
+    queries, qrels = load_beir_queries_and_qrels(dataset, split)
+    c_log.info("%d queries", len(queries))
     c_log.info(f"run_retrieval")
-    output = run_retrieval(retriever, queries.items(), max_doc_per_list)
+    output = run_retrieval(retriever, queries, max_doc_per_list)
     run_name = f"{dataset}_{method}"
     save_json_qres(run_name, output)
+    c_log.debug(f"run_evaluation")
     ndcg, map_, recall, p = EvaluateRetrieval.evaluate(qrels, output, [1, 10, 100, 1000])
     results2 = EvaluateRetrieval.evaluate_custom(qrels, output, [1, 10, 100, 1000], metric="r_cap")
     eval_res = {
@@ -19,10 +28,11 @@ def run_retrieval_and_eval(dataset, max_doc_per_list, method, qrels, queries, re
         "R_cap@100": results2["R_cap@100"]
     }
     print(eval_res)
+    if not do_not_report:
+        metric = "NDCG@10"
+        score = eval_res[metric]
+        proxy = get_task_manager_proxy()
+        proxy.report_number(method, score, dataset, metric)
+        c_log.info(f"reported %s %f %s %s", method, score, dataset, metric)
 
-
-def run_retrieval_and_eval_on_beir(dataset, split, method, retriever, max_doc_per_list):
-    c_log.info(f"Loading dataset")
-    _, queries, qrels = load_beir_dataset(dataset, split)
-    run_retrieval_and_eval(dataset, max_doc_per_list, method, qrels, queries, retriever)
-
+    return eval_res

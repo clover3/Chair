@@ -1,12 +1,12 @@
+import os
 from krovetzstemmer import Stemmer
-from transformers import AutoTokenizer
-
 from adhoc.bm25_class import BM25FromTokenizeFn
 from adhoc.bm25_retriever import BM25Retriever, build_bm25_scoring_fn
 from adhoc.kn_tokenizer import KrovetzNLTKTokenizer
+from cache import load_pickle_from
 from data_generator.tokenizer_wo_tf import get_tokenizer
-from dataset_specific.msmarco.passage.doc_indexing.retriever import load_bm25_resources, get_bm25_stats_from_conf
-from typing import List, Callable
+from typing import List, Callable, Tuple, Dict
+from trainer_v2.chair_logging import c_log
 
 
 def get_bm25_retriever_from_conf(conf, avdl=None) -> BM25Retriever:
@@ -39,6 +39,7 @@ def get_tokenize_fn(conf) -> Callable[[str], List[str]]:
         tokenizer = KrovetzNLTKTokenizer()
         return tokenizer.tokenize_stem
     elif conf.tokenizer == "BertTokenize1":
+        from transformers import AutoTokenizer
         tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         return tokenizer.tokenize
     elif conf.tokenizer == "BertTokenize2":
@@ -74,3 +75,38 @@ def get_bm25_scorer_from_conf(conf, avdl=None) -> BM25FromTokenizeFn:
         tokenize_fn, df, len(dl), avdl)
 
 ##
+def load_bm25_resources(conf, avdl=None):
+    if not os.path.exists(conf.inv_index_path):
+        raise FileNotFoundError(conf.inv_index_path)
+    if not os.path.exists(conf.df_path):
+        raise FileNotFoundError(conf.df_path)
+    if not os.path.exists(conf.dl_path):
+        raise FileNotFoundError(conf.dl_path)
+    c_log.info("Loading document frequency (df) from %s", conf.df_path)
+    df = load_pickle_from(conf.df_path)
+    c_log.info("Loading document length (dl) from %s", conf.dl_path)
+    dl = load_pickle_from(conf.dl_path)
+    c_log.info("Loading inv_index form %s", conf.inv_index_path)
+    inv_index: Dict[str, List[Tuple[str, int]]] = load_pickle_from(conf.inv_index_path)
+    c_log.info("Done")
+    cdf = len(dl)
+    if avdl is None:
+        avdl = sum(dl.values()) / cdf
+    return avdl, cdf, df, dl, inv_index
+
+
+def get_bm25_stats_from_conf(conf, avdl=None) -> Tuple:
+    if not os.path.exists(conf.df_path):
+        raise FileNotFoundError(conf.df_path)
+    if not os.path.exists(conf.dl_path):
+        raise FileNotFoundError(conf.dl_path)
+
+    c_log.info("Loading document frequency (df)")
+    df = load_pickle_from(conf.df_path)
+    c_log.info("Loading document length (dl)")
+    dl = load_pickle_from(conf.dl_path)
+    c_log.info("Done")
+    cdf = len(dl)
+    if avdl is None:
+        avdl = sum(dl.values()) / cdf
+    return avdl, cdf, df, dl

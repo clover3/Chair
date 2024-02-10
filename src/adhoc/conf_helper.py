@@ -23,6 +23,18 @@ class BM25IndexResource:
     b: float = 0.75
 
 
+@dataclass
+class QLIndexResource:
+    project_root: Optional[str]
+    index_name: str
+    common_dir: str
+    tokenizer: str
+    inv_index_path: str
+    bg_prob_path: str
+    dl_path: str
+    stopword_path: Optional[str]
+    mu: float = 2500
+
 def load_omega_config(
         config_path,
         data_class=None,

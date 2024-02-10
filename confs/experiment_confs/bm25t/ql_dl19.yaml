@@ -1,0 +1,8 @@
+
+
+ql_conf_path: confs/bm25_resource/lucene_krovetz_ql.yaml
+method: ql
+
+run_name: ql
+dataset_conf_path: confs/dataset_conf/retrieval_trec_dl_2019_43.yaml
+outer_batch_size: 1000000000

@@ -1,0 +1,9 @@
+
+
+bm25conf_path: confs/bm25_resource/lucene_krovetz.yaml
+table_path: output/mmp/tables/mtc6_pep_tt17_30000.tsv
+table_type: score
+method: mtc6_pep_tt17_30K
+run_name: mtc6_pep_tt17_30K
+dataset_conf_path: confs/dataset_conf/retrieval_mmp_dev_C.yaml
+outer_batch_size: 1000000000

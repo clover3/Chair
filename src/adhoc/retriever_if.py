@@ -6,3 +6,9 @@ class RetrieverIF(ABC):
     @abstractmethod
     def retrieve(self, query, max_item: int) -> List[Tuple[str, float]]:
         pass
+
+
+class NullRetriever(RetrieverIF):
+    def retrieve(self, query, max_item: int) -> List[Tuple[str, float]]:
+        return []
+

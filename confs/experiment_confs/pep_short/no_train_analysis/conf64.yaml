@@ -1,0 +1,4 @@
+
+model_path: output/model/runs/mmp_pep10_point/model_20000
+table_path: output/mmp/dev1000_d_terms_pep_table_head.tsv
+save_path: output/mmp/tables/d1K_64.tsv

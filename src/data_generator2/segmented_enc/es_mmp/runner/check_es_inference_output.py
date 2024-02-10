@@ -29,4 +29,3 @@ if __name__ == "__main__":
     save_dir = sys.argv[1]
     job_no = int(sys.argv[2])
     do_for_partition(save_dir, job_no)
-

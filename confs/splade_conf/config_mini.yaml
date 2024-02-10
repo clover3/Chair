@@ -1,0 +1,17 @@
+# FILES
+defaults:  # (these specify which config FILES to use)
+  ############## TRAIN ###################################
+  - train/config: splade_mini
+  - train/data: msmarco_mini
+  - train/model: splade
+  ############### FLOPS ##################################
+  - flops: toy
+
+# Direct PARAMETER setting
+config:  # to be provided for each run
+  checkpoint_dir: /home/youngwookim_umass_edu/code/Chair/output/model/runs2/splade_mini
+  index_dir: ???
+  out_dir: ???
+  fp16: false
+  loss: InBatchPairwiseNLL
+  augment_pair: in_batch_negatives

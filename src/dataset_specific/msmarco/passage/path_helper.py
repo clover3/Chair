@@ -1,10 +1,11 @@
+import itertools
 import json
 
 from cpath import data_path, output_path
 from misc_lib import path_join
 from table_lib import tsv_iter
 from typing import List, Iterable, Callable, Dict, Tuple, Set
-
+from typing import List, Iterable, Callable, Dict, Tuple, Set, Iterator
 
 def get_mmp_train_grouped_sorted_path(job_no):
     quad_tsv_path = path_join(data_path, "msmarco", "passage", "group_sorted_10K", str(job_no))
@@ -84,6 +85,7 @@ def iter_train_triples_partition(part_no):
 
 
 def get_train_triples_small_path():
+    # about 40,000,000 lines
     tsv_path = path_join(data_path, "msmarco", "triples.train.small.tsv")
     return tsv_path
 
@@ -95,3 +97,18 @@ def get_msmarco_passage_collection_path():
 def get_rerank_payload_save_path(run_name):
     return path_join(output_path, "msmarco", "passage",
                      "rerank_payload", f"{run_name}.txt")
+
+
+def train_triples_small_partition_iter(job_no) -> Iterator[Tuple[str, str, str]]:
+    if job_no > 400:
+        raise IndexError()
+
+    # 100,000 * 400
+    triplet_path = get_train_triples_small_path()
+    f = open(triplet_path, "r")
+    job_size = 100000  # 600 sec
+    st = job_no * job_size
+    ed = st + job_size
+    for line in itertools.islice(f, st, ed):
+        q, dp, dn = line.split("\t")
+        yield q, dp, dn

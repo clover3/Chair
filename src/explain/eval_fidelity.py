@@ -151,4 +151,4 @@ def run(explain_tag, method_name, model_path):
 
 if __name__ == "__main__":
     args = nli_ex_prediction_parser.parse_args(sys.argv[1:])
-    run(args.tag, adhoc.build_index.build_inverted_index, args.common_model_dir_root)
+    run(args.tag, adhoc.build_index.build_inverted_index_with_df_cut, args.common_model_dir_root)

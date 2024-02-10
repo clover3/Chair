@@ -1,5 +1,4 @@
 import os
-from collections import defaultdict
 from typing import List, Dict
 
 import tensorflow as tf
@@ -14,6 +13,7 @@ from table_lib import tsv_iter
 from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.dataset_factories import create_dataset_common
 from trainer_v2.custom_loop.run_config2 import RunConfig2
+from trainer_v2.per_project.transparency.misc_common import load_table
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.bm25_match_analyzer import BM25_MatchAnalyzer
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.bm25_match_analyzer2 import BM25_MatchAnalyzer2
 from trainer_v2.per_project.transparency.mmp.pep_to_tt.pep_tt_common import get_pep_predictor
@@ -139,13 +139,6 @@ def get_pep_tt_single_encoder2(
     bm25_analyzer = BM25_MatchAnalyzer2(bm25, get_pep_top_k, bm25_tokenizer)
     term_to_subword = bert_tokenizer.tokenize
     return PEP_TT_Encoder2(bert_tokenizer, model_config, bm25_analyzer, term_to_subword)
-
-
-def load_table(file_path):
-    output_d = defaultdict(dict)
-    for q_term, d_term, score_s in tsv_iter(file_path):
-        output_d[q_term][d_term] = float(score_s)
-    return output_d
 
 
 class PEP_TT_DatasetBuilderWithAlignInfo:

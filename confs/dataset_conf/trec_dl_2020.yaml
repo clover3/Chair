@@ -1,0 +1,11 @@
+
+
+dataset_name: trec_dl20
+rerank_payload_path: output/mmp/rerank/trec_dl20/corpus.tsv
+judgment_path: data/msmarco/passage/TREC_DL_2020/qrel.json
+metric: ndcg_cut_10
+data_size: 54000
+
+src_ranked_list: output/ranked_list/TREC_DL_2020_empty.txt
+queries_path: data/msmarco/passage/TREC_DL_2020/queries_2020/valid.tsv
+corpus_path: data/msmarco/collection.tsv

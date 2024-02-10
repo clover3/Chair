@@ -86,17 +86,17 @@ def run(args):
     nli_setting = BertNLI()
     data_loader = get_modified_data_loader2(hp, nli_setting)
 
-    if adhoc.build_index.build_inverted_index in ['deletion_seq', "random", 'idf', 'deletion', 'LIME']:
+    if adhoc.build_index.build_inverted_index_with_df_cut in ['deletion_seq', "random", 'idf', 'deletion', 'LIME']:
         predictor = nli_baseline_predict
-    elif adhoc.build_index.build_inverted_index in  ["elrp", "deeplift", "saliency", "grad*input", "intgrad", ]:
+    elif adhoc.build_index.build_inverted_index_with_df_cut in  ["elrp", "deeplift", "saliency", "grad*input", "intgrad", ]:
         predictor = nli_attribution_predict
     else:
         raise Exception("method_name={} is not in the known method list.".format(
-            adhoc.build_index.build_inverted_index))
+            adhoc.build_index.build_inverted_index_with_df_cut))
 
     predictor(hp, nli_setting, data_loader,
               args.tag,
-              adhoc.build_index.build_inverted_index,
+              adhoc.build_index.build_inverted_index_with_df_cut,
               args.data_id,
               args.sub_range,
               args.common_model_dir_root

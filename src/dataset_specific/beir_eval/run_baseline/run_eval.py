@@ -2,16 +2,8 @@ import json
 import sys
 
 from beir.retrieval.evaluation import EvaluateRetrieval
-
-from adhoc.bm25_retriever import BM25RetrieverKNTokenize, build_bm25_scoring_fn
-from adhoc.retriever_if import RetrieverIF
-from cache import load_pickle_from
-from dataset_specific.beir_eval.beir_common import load_beir_dataset, beir_dataset_list_not_large
-from dataset_specific.beir_eval.path_helper import get_beir_inv_index_path, get_beir_df_path, get_beir_dl_path, \
-    get_json_qres_save_path
-from misc_lib import average, get_second, TimeEstimator
-from typing import List, Iterable, Callable, Dict, Tuple, Set
-
+from dataset_specific.beir_eval.beir_common import load_beir_queries_and_qrels
+from dataset_specific.beir_eval.path_helper import get_json_qres_save_path
 from trainer_v2.chair_logging import c_log
 
 
@@ -19,7 +11,7 @@ def run_eval(dataset, method):
     split = "test"
     c_log.info(f"Loading dataset")
     run_name = f"{dataset}_{method}"
-    _, queries, qrels = load_beir_dataset(dataset, split)
+    queries, qrels = load_beir_queries_and_qrels(dataset, split)
     json_qres_save_path = get_json_qres_save_path(run_name)
 
     output = json.load(open(json_qres_save_path, "r"))
@@ -35,7 +27,8 @@ def run_eval(dataset, method):
 
 def main():
     dataset = sys.argv[1]
-    method = "bm25"
+    method = sys.argv[2]
+
     run_eval(dataset, method)
 
 

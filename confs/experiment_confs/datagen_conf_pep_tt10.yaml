@@ -1,0 +1,8 @@
+
+init_checkpoint: output/model/runs/mmp_pep10_point/model_20000
+data_name: pep_tt10
+
+bm25conf_path: confs/bm25_resource/lucene_krovetz.yaml
+align_info_conf: confs/experiment_confs/triples_train_alignment_cands_luk.yaml
+# This has 1,000,000 q/d+/d- triplets
+tfrecord_save_dir: output/tfrecord/pep_tt10

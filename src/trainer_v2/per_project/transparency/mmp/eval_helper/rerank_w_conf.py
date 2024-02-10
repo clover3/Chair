@@ -38,7 +38,7 @@ def run_rerank_with_conf_common(
     run_rerank_with_conf2(score_fn, conf, do_not_report)
 
 
-def run_rerank_with_conf2(score_fn, conf, do_not_report=False):
+def run_rerank_with_conf2(score_fn: ScorerSig, conf, do_not_report=False):
 
     run_name = conf.run_name
     # Dataset config

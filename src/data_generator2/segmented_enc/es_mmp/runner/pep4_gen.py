@@ -40,6 +40,19 @@ def build_get_num_delete_fn(del_rate: float):
     return get_num_delete
 
 
+
+def iter_attention_data_pair(attn_save_dir, partition_no) -> Iterable[Tuple[PairData, np.array]]:
+    batch_no = 0
+    while True:
+        file_path = path_join(attn_save_dir, f"{partition_no}_{batch_no}")
+        if os.path.exists(file_path):
+            attn_data_pair: List[Tuple[PairData, np.array]] = load_pickle_from(file_path)
+            yield from attn_data_pair
+        else:
+            break
+        batch_no += 1
+
+
 def generate_train_data(job_no: int, del_rate: float, dataset_name: str):
     output_dir = at_output_dir("tfrecord", dataset_name)
     split = "train"
@@ -51,17 +64,6 @@ def generate_train_data(job_no: int, del_rate: float, dataset_name: str):
     encode_fn = encoder.encode
 
     attn_save_dir = path_join(output_path, "msmarco", "passage", "mmp1_attn")
-
-    def iter_attention_data_pair(partition_no) -> Iterable[Tuple[PairData, np.array]]:
-        batch_no = 0
-        while True:
-            file_path = path_join(attn_save_dir, f"{partition_no}_{batch_no}")
-            if os.path.exists(file_path):
-                attn_data_pair: List[Tuple[PairData, np.array]] = load_pickle_from(file_path)
-                yield from attn_data_pair
-            else:
-                break
-            batch_no += 1
 
     get_num_delete = build_get_num_delete_fn(del_rate)
     partition_todo = get_valid_mmp_partition(split)
@@ -76,7 +78,7 @@ def generate_train_data(job_no: int, del_rate: float, dataset_name: str):
 
         c_log.info("Partition %d", partition_no)
         data_size = 30000
-        attn_data_pair: Iterable[Tuple[PairData, np.array]] = iter_attention_data_pair(partition_no)
+        attn_data_pair: Iterable[Tuple[PairData, np.array]] = iter_attention_data_pair(attn_save_dir, partition_no)
 
         def partition_sel_indices(e: Tuple[PairData, np.array]) -> BothSegPartitionedPair:
             pair_data, attn = e

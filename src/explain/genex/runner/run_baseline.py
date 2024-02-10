@@ -22,18 +22,18 @@ def run(args):
     hp = hyperparams.HPGenEx()
     nli_setting = BertNLI()
 
-    if adhoc.build_index.build_inverted_index in ['deletion_seq', "random", 'idf', 'deletion', 'LIME',
+    if adhoc.build_index.build_inverted_index_with_df_cut in ['deletion_seq', "random", 'idf', 'deletion', 'LIME',
                             'term_deletion', 'replace_token', 'term_replace']:
         predictor = baseline_predict
-    elif adhoc.build_index.build_inverted_index in ["elrp", "deeplift", "saliency", "grad*input", "intgrad"]:
+    elif adhoc.build_index.build_inverted_index_with_df_cut in ["elrp", "deeplift", "saliency", "grad*input", "intgrad"]:
         predictor = nli_attribution_predict
     else:
         raise Exception("method_name={} is not in the known method list.".format(
-            adhoc.build_index.build_inverted_index))
+            adhoc.build_index.build_inverted_index_with_df_cut))
 
-    save_name = "{}_{}".format(args.data_name, adhoc.build_index.build_inverted_index)
+    save_name = "{}_{}".format(args.data_name, adhoc.build_index.build_inverted_index_with_df_cut)
     data = load_as_simple_format(args.data_name)
-    explains: List[np.array] = predictor(hp, nli_setting, data, adhoc.build_index.build_inverted_index, args.common_model_dir_root)
+    explains: List[np.array] = predictor(hp, nli_setting, data, adhoc.build_index.build_inverted_index_with_df_cut, args.common_model_dir_root)
 
     save_to_pickle(explains, save_name)
 

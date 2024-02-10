@@ -1,0 +1,6 @@
+
+
+model_path: output/model/runs2/mmp_pep14/model_20000
+table_path: output/mmp/car_dev1000_d_terms_pep_paired.txt
+save_path: output/mmp/tables/car_pep14_20K.tsv
+

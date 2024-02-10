@@ -1,0 +1,4 @@
+
+source_path: /home/youngwookim_umass_edu/code/Chair/output/mmp/bias/car_exp/generic_mention_selected.jsonl
+score_log_path: /home/youngwookim_umass_edu/code/Chair/output/mmp/bias/car_exp/exp3/ce_mini_lm.tsv
+

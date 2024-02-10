@@ -4,7 +4,7 @@ from adhoc.bm25_retriever import BM25RetrieverKNTokenize, build_bm25_scoring_fn
 from adhoc.retriever_if import RetrieverIF
 from adhoc.other.bm25t_retriever import BM25T_Retriever
 from cache import load_pickle_from
-from dataset_specific.beir_eval.beir_common import beir_dataset_list_not_large
+from dataset_specific.beir_eval.beir_common import beir_dataset_list_A
 from dataset_specific.beir_eval.path_helper import get_beir_inv_index_path, get_beir_df_path, get_beir_dl_path
 from dataset_specific.beir_eval.run_helper import run_retrieval_and_eval_on_beir
 from misc_lib import average

@@ -95,13 +95,23 @@ def get_g_task_proxy() -> TaskProxy:
     return g_task_proxy
 
 
+g_job_context_list = []
+
 class JobContext:
-    def __init__(self, run_name):
+    def __init__(self, run_name, suppress_inner_job=False):
         self.run_name = run_name
         machine = get_local_machine_name()
         self.task_proxy = TaskProxy(webtool_host, webtool_port, machine, None, None)
         self.server_active = False
+        self.suppress_inner_job = suppress_inner_job
+        self.inactive = False
+
     def __enter__(self):
+        global g_job_context_list
+        if g_job_context_list:
+            self.inactive = True
+            return self
+
         try:
             if 'SLURM_JOBID' in os.environ:
                 job_id = int(os.environ['SLURM_JOBID'])
@@ -113,11 +123,11 @@ class JobContext:
         except requests.exceptions.ConnectTimeout as e:
             print(e)
 
+        g_job_context_list.append(self)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-
-        if not self.server_active:
+        if not self.server_active or self.inactive:
             return
 
         if exc_type is None:
@@ -138,3 +148,5 @@ class JobContext:
             msg += tb_str + "\n"
             self.task_proxy.task_interrupted(self.run_name, msg)
 
+        global g_job_context_list
+        g_job_context_list.remove(self)

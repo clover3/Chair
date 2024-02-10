@@ -48,7 +48,6 @@ def keep_server_alive_loop(f_stop_fn=None):
     inst_name = "instance-1"
     keep_alive = KeepAlive(KEEP_ALIVE_INTERVAL, clover_web_logger)
     while not stop:
-        print("keep_server_alive_loop")
         # CHECK if GOSFORD is active
         if is_gosford_active():
             is_machine_off = check_is_machine_off(inst_name, clover_web_logger)

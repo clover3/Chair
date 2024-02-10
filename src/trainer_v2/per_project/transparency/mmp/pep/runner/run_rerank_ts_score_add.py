@@ -57,7 +57,8 @@ def get_pep_scorer_from_two_model(
 
     encode_fn = get_encode_fn(conf, segment_len, tokenizer)
     SpecI = tf.TensorSpec([max_seq_length], dtype=tf.int32)
-    sig = (SpecI, SpecI,), 
+    sig = (SpecI, SpecI,),
+    is_first_inf = True
 
     def score_fn(qd_list: List[Tuple[str, str]]):
         def generator():
@@ -72,6 +73,10 @@ def get_pep_scorer_from_two_model(
             output_signature=sig)
         dataset = dataset.batch(batch_size)
         output = inference_model.predict(dataset)
+        nonlocal is_first_inf
+        if is_first_inf:
+            c_log.info("First batch predict done. %d items", len(output))
+            is_first_inf = False
         return output[:, 0]
 
     return score_fn

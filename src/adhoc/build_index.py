@@ -27,7 +27,7 @@ def count_dl_from_tokenized(
     return dl
 
 
-def build_inverted_index(
+def build_inverted_index_with_df_cut(
         tokenized_itr: Iterable[Tuple[str, List[str]]],
         ignore_voca,
         num_docs=None,
@@ -145,7 +145,7 @@ def save_inv_index_to_pickle(conf, outputs):
 
 
 def save_df_dl(conf, outputs):
-    dl = outputs["dl"]
+    dl = outpeuts["dl"]
     df = outputs["df"]
     c_log.info("Saving df")
     dir_maybe = os.path.dirname(conf.df_path)

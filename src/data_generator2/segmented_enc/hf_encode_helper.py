@@ -17,12 +17,16 @@ def combine_with_sep_cls_old(tokenizer, tokens1, tokens2, max_seq_length):
     return encoded_input['input_ids'][0], encoded_input['token_type_ids'][0]
 
 
+
 def combine_with_sep_cls_inner(max_seq_length, tokens1, tokens2):
     max_seg2_len = max_seq_length - 3 - len(tokens1)
+    if len(tokens2) > max_seg2_len:
+        print("Cut {} to {}".format(len(tokens2), max_seg2_len))
     tokens2 = tokens2[:max_seg2_len]
     tokens = ["[CLS]"] + tokens1 + ["[SEP]"] + tokens2 + ["[SEP]"]
     segment_ids = [0] * (len(tokens1) + 2) \
                   + [1] * (len(tokens2) + 1)
+
     tokens = tokens[:max_seq_length]
     segment_ids = segment_ids[:max_seq_length]
     return tokens, segment_ids

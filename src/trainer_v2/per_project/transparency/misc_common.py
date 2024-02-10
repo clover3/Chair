@@ -1,7 +1,10 @@
 import csv
 import gzip
 import json
+from collections import defaultdict
 from typing import List, Iterable, Tuple, Union
+
+from table_lib import tsv_iter
 
 
 def save_tsv(entries, save_path):
@@ -115,3 +118,10 @@ def save_term_pair_scores(
 def read_lines(path):
     lines = open(path, "r").readlines()
     return [l.strip() for l in lines]
+
+
+def load_table(file_path):
+    output_d = defaultdict(dict)
+    for q_term, d_term, score_s in tsv_iter(file_path):
+        output_d[q_term][d_term] = float(score_s)
+    return output_d

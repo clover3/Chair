@@ -19,6 +19,7 @@ class NotificationHandler:
         self._thread = threading.Thread(target=self._run_pool_action_periodically)
         self.sound_dir = path_join(data_path, "sound_data")
         self.tray_logger = logging.getLogger("Tray")
+        self.tray_logger.setLevel(logging.DEBUG)
 
     def start(self):
         """Starts the periodic pooling."""
@@ -33,11 +34,17 @@ class NotificationHandler:
         self._thread.join()
 
     def _run_pool_action_periodically(self):
+        self.tray_logger.debug("_run_pool_action_periodically started")
         """Helper method to run pool_action periodically."""
-        while not self._stop_event.is_set():
-            self.tray_logger.debug("Handler loop")
-            self.pool_action()
-            self._stop_event.wait(self.interval)
+        try:
+            while not self._stop_event.is_set():
+                self.tray_logger.info("Handler loop")
+                self.pool_action()
+                self._stop_event.wait(self.interval)
+        except Exception as e:
+            print(e)
+            raise
+        self.tray_logger.debug("_run_pool_action_periodically terminate")
 
     def clear_notification(self, notification):
         body = json.dumps({'id': notification['id']})

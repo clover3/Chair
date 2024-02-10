@@ -33,12 +33,16 @@ def main():
     table_scores_d = parse_table_scores(table_scores)
     print(f"Loaded {len(table_scores_d)} entries for term={q_term}")
     win_rates_d = {t: float(s) for t, s in win_rates}
-    keys = list(win_rates_d.keys())
-    win_rate_l = [win_rates_d[key] for key in keys]
-    table_rate_l = [table_scores_d[key] for key in keys]
+    common_keys = list(win_rates_d.keys())
+    common_keys = [k for k in common_keys if k in table_scores_d]
+
+    if len(common_keys) != len(win_rates_d):
+        print("Only {} of {} terms are found".format(len(common_keys), len(win_rates_d)))
+
+    win_rate_l = [win_rates_d[key] for key in common_keys]
+    table_rate_l = [table_scores_d[key] for key in common_keys]
 
     print(pearsonr(win_rate_l, table_rate_l))
-    # print(spearmanr(win_rate_l, table_rate_l))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,15 @@
+# FILES
+defaults:  # (these specify which config FILES to use)
+  ############## TRAIN ###################################
+  - train/config: cross_encoder
+  - train/data: distil_from_ensemble_no_val
+  - train/model: cross_encoder
+  ############### FLOPS ##################################
+  - flops: msmarco
+
+# Direct PARAMETER setting
+config:  # to be provided for each run
+  checkpoint_dir: /home/youngwookim_umass_edu/code/Chair/output/model/runs2/splade_ce_dev
+  index_dir: ???
+  out_dir: ???
+  loss: DistilMarginMSE

@@ -19,6 +19,7 @@ def read_csv_as_dict(csv_path) -> List[Dict]:
 
 
 def tsv_iter(file_path) -> Iterable[Tuple]:
+    print('tsv_iter', file_path)
     return tsv_iter_gz(file_path)
 
 

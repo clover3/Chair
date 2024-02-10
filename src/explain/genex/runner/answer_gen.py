@@ -19,7 +19,7 @@ arg_parser.add_argument("--method_name", )
 
 def run(args):
     data_name = args.data_name
-    method_name = adhoc.build_index.build_inverted_index
+    method_name = adhoc.build_index.build_inverted_index_with_df_cut
     score_name = "{}_{}".format(data_name, method_name)
     config = DropStop
     try:

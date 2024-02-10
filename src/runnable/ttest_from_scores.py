@@ -13,11 +13,7 @@ def read(path):
         d[key] = score
     return d
 
-
-def main():
-    path1 = sys.argv[1]
-    path2 = sys.argv[2]
-
+def ttest_from_scores_path(path1, path2):
     score_d1 = read(path1)
     score_d2 = read(path2)
     # print
@@ -28,17 +24,20 @@ def main():
             pairs.append(e)
         except KeyError as e:
             pass
-
     if len(pairs) < len(score_d1) or len(pairs) < len(score_d2):
         print("{} matched from {} and {} scores".format(len(pairs), len(score_d1), len(score_d2)))
-
     l1, l2 = zip(*pairs)
-    print(l1)
-    print(l2)
     d, p_value = stats.ttest_rel(l1, l2)
     print("baseline:", average(l1))
     print("treatment:", average(l2))
     print(d, p_value)
+    return d, p_value
+
+
+def main():
+    path1 = sys.argv[1]
+    path2 = sys.argv[2]
+    ttest_from_scores_path(path1, path2)
 
 
 if __name__ == "__main__":

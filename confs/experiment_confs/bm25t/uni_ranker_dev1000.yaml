@@ -1,0 +1,10 @@
+
+q_term_path: output/mmp/d_terms_top100K.txt
+score_save_dir: output/mmp/dev1000_d_terms_pep
+bm25conf_path: confs/bm25_resource/bt2.yaml
+
+table_type: candidates
+method: uni_dev1000_pep10
+run_name: uni_dev1000_pep10
+dataset_conf_path: confs/dataset_conf/mmp_dev_sample1000.yaml
+table_pickle_path: output/mmp/dev1000_d_terms_pep.pkl

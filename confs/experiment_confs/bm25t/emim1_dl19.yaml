@@ -1,0 +1,10 @@
+
+
+bm25conf_path: confs/bm25_resource/lucene_krovetz.yaml
+table_path: output/mmp/lucene_krovetz/emim_1.tsv
+table_type: mapping
+method: emim1
+
+run_name: emim1
+dataset_conf_path: confs/dataset_conf/retrieval_trec_dl_2019_43.yaml
+outer_batch_size: 1000000000

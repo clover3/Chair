@@ -3,7 +3,7 @@ import sys
 
 from beir.retrieval.evaluation import EvaluateRetrieval
 
-from dataset_specific.beir_eval.beir_common import load_beir_dataset
+from dataset_specific.beir_eval.beir_common import load_beir_dataset, load_beir_queries_and_qrels
 from dataset_specific.beir_eval.path_helper import get_beir_inv_index_path, get_beir_dl_path, \
     get_json_qres_save_path
 from cpath import output_path
@@ -18,11 +18,9 @@ def run_eval(dataset, method):
     split = "test"
     c_log.info(f"Loading dataset")
     run_name = f"{dataset}_{method}"
-    _, queries, qrels = load_beir_dataset(dataset, split)
+    queries, qrels = load_beir_queries_and_qrels(dataset, split)
     json_qres_save_path = get_json_qres_save_path(run_name)
     save_path = path_join(output_path, "per_line_eval", f"{run_name}.{metric}")
-    f = open(save_path, "w")
-
     all_output = json.load(open(json_qres_save_path, "r"))
 
     table = []

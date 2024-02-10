@@ -67,7 +67,7 @@ class TrayApp(QMainWindow):
         # Create a system tray icon
         self.tray_icon = QSystemTrayIcon(self)
         # icon = self.style().standardIcon(QStyle.SP_FileDialogContentsView)
-        self.icon_path = path_join(data_path, "html", "task.png")
+        self.icon_path = path_join(data_path, "html", "task.ico")
         icon = QIcon(self.icon_path)
         self.tray_icon.setIcon(icon)
         self.setWindowIcon(icon)
@@ -123,22 +123,28 @@ class TrayApp(QMainWindow):
         self._server_starter_thread = threading.Thread(target=keep_server_alive_loop, args=(self.f_stop,))
         self._server_starter_thread.start()
 
+        notification.notify(
+            title="test notification",
+            message="message",
+            app_name=self.app_name,
+            app_icon=self.icon_path,
+            timeout=10  # the notification will stay for 10 seconds
+        )
     def f_stop(self):
         return self._stop_event.is_set()
 
     def setup_logging(self):
         tray_logger = logging.getLogger("Tray")
-        tray_logger.setLevel(logging.INFO)
+        tray_logger.setLevel(logging.DEBUG)
         format_str = '%(levelname)s %(name)s %(asctime)s %(message)s'
         formatter = logging.Formatter(format_str,
                                       datefmt='%m-%d %H:%M:%S',
                                       )
 
         logTextBox = QTextEditLoggingHandler(self.log_display)
-        logTextBox.setLevel(logging.INFO)
+        logTextBox.setLevel(logging.DEBUG)
         logTextBox.setFormatter(formatter)
         tray_logger.addHandler(logTextBox)
-
 
         ch = logging.StreamHandler(sys.stdout)
         ch.setFormatter(formatter)
@@ -146,18 +152,27 @@ class TrayApp(QMainWindow):
 
         clover_web_logger = logging.getLogger('CloverWeb')
         clover_web_logger.setLevel(logging.DEBUG)
-        logTextBox.setLevel(logging.INFO)
+        logTextBox.setLevel(logging.DEBUG)
         clover_web_logger.addHandler(logTextBox)
         clover_web_logger.addHandler(ch)
 
     def send_os_notification(self, title, message):
-        notification.notify(
-            title=title,
-            message=message,
-            app_name=self.app_name,
-            app_icon=self.icon_path,
-            timeout=10  # the notification will stay for 10 seconds
-        )
+        try:
+            notification.notify(
+                title=title,
+                message=message,
+                app_name=self.app_name,
+                app_icon=self.icon_path,
+                timeout=10  # the notification will stay for 10 seconds
+            )
+        except Exception:
+            notification.notify(
+                title=title,
+                message=message,
+                app_name=self.app_name,
+                timeout=10  # the notification will stay for 10 seconds
+            )
+
 
     def put_to_tray(self):
         self.hide()

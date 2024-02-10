@@ -1,0 +1,23 @@
+# FILES
+defaults:  # (these specify which config FILES to use)
+  ############## TRAIN ###################################
+  - train/config: splade
+  - train/data: distil_from_ensemble.yaml
+  - train/model: splade
+  ############### FLOPS ##################################
+  - flops: msmarco
+
+# Direct PARAMETER setting
+config:  # to be provided for each run
+  checkpoint_dir: /home/youngwookim_umass_edu/code/Chair/output/model/runs2/splade_dev
+  index_dir: ???
+  out_dir: ???
+  loss: DistilMarginMSE
+
+  regularizer:
+    FLOPS:
+      lambda_q: 0.1
+      lambda_d: 0.08
+      T: 50000
+      targeted_rep: rep
+      reg: FLOPS

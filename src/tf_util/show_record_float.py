@@ -13,17 +13,13 @@ def file_show(fn):
 
         print("---- record -----")
         for key in keys:
-            if key == "masked_lm_weights" or key == "label_ids":
-                v = feature[key].float_list.value
-            else:
-                v = feature[key].int64_list.value
             print(key)
-            print(v)
+            print(feature[key].int64_list.value)
+            print(feature[key].float_list.value)
 
         cnt += 1
         if cnt >= 5:
             break
-
 
 
 if __name__ == "__main__":

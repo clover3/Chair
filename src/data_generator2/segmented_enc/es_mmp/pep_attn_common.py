@@ -77,7 +77,7 @@ def is_pos(e: PairWithAttn):
     return pair.label == "1"
 
 
-def iter_attention_mmp_pos_neg_paried(partition_no):
+def iter_attention_mmp_pos_neg_paired(partition_no):
     attn_data_pair: Iterable[PairWithAttn] = iter_attention_data_pair(partition_no)
     grouped_itr: Iterable[List[PairWithAttn]] = group_iter(attn_data_pair, get_pair_key)
     pos_neg_itr: Iterable[Tuple[List[PairWithAttn], List[PairWithAttn]]] = map(
@@ -104,6 +104,6 @@ def generate_train_data(job_no: int, dataset_name: str, tfrecord_encoder: PairWi
 
         c_log.info("Partition %d", partition_no)
         data_size = 3000
-        pos_neg_pair_itr: Iterable[Tuple[PairWithAttn, PairWithAttn]] = iter_attention_mmp_pos_neg_paried(partition_no)
+        pos_neg_pair_itr: Iterable[Tuple[PairWithAttn, PairWithAttn]] = iter_attention_mmp_pos_neg_paired(partition_no)
         encode_fn: Callable[[Tuple[PairWithAttn, PairWithAttn]], OrderedDict] = tfrecord_encoder.encode_fn
         write_records_w_encode_fn(save_path, encode_fn, pos_neg_pair_itr, data_size)

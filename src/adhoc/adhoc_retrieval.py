@@ -9,7 +9,7 @@ def run_retrieval(
         retriever: RetrieverIF,
         queries: List[Tuple[str, str]],
         max_doc_per_query) -> Dict[str, Dict[str, float]]:
-    ticker = TimeEstimator(len(queries))
+    ticker = TimeEstimator(len(queries), sample_size=2)
     output: Dict[str, Dict[str, float]] = {}
     for qid, query_text in queries:
         res: List[Tuple[str, float]] = retriever.retrieve(query_text, max_doc_per_query)

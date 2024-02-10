@@ -6,11 +6,9 @@ from omegaconf import OmegaConf
 from adhoc.bm25 import BM25_verbose
 from adhoc.bm25_retriever import BM25Retriever, build_bm25_scoring_fn
 from adhoc.eval_helper.retreival_exp_helper import run_retrieval_eval_report_w_conf
-from adhoc.other.bm25_retriever_helper import get_bm25_retriever_from_conf, get_tokenize_fn
+from adhoc.other.bm25_retriever_helper import get_bm25_retriever_from_conf, get_tokenize_fn, load_bm25_resources, \
+    get_bm25_stats_from_conf
 import os
-
-from dataset_specific.msmarco.passage.doc_indexing.retriever import get_bm25_stats_from_conf, load_bm25_resources
-
 
 
 def build_bm25_scoring_fn(cdf, avdl):
