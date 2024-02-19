@@ -7,7 +7,7 @@ import winsound
 import requests
 
 from cpath import data_path
-from misc_lib import path_join
+from misc_lib import path_join, group_by
 
 
 class NotificationHandler:
@@ -64,7 +64,7 @@ class NotificationHandler:
             sound_path = os.path.join(self.sound_dir, file_name)
             winsound.PlaySound(sound_path, winsound.SND_FILENAME)
 
-    def handle_notification(self, notification):
+    def handle_one_notification(self, notification):
         msg = notification["msg"]
         run_name = notification["task"]
 
@@ -78,6 +78,28 @@ class NotificationHandler:
 
         self.clear_notification(notification)
 
+    def handle_notification_list(self, notification_list):
+        g = group_by(notification_list, lambda x: x['msg'])
+        for raw_msg, entries in g.items():
+            msg_type = raw_msg.strip()
+            task_name_list = [e["task"] for e in entries]
+            display_msg = msg_type + "\n"
+            if len(task_name_list) > 1:
+                display_msg += "{} tasks completed. \n"
+
+            display_msg += ", ".join(task_name_list)
+
+            if "ABNORMAL_TERMINATE" in raw_msg:
+                self.play_sound("ABNORMAL_TERMINATE")
+                self.send_os_notification(msg_type, display_msg)
+
+            if "SUCCESSFUL_TERMINATE" in raw_msg:
+                self.play_sound("SUCCESSFUL_TERMINATE")
+                self.send_os_notification(msg_type, display_msg)
+        for notification in notification_list:
+            self.tray_logger.info("handle notification %s", str(notification))
+            self.clear_notification(notification)
+
     def pool_action(self):
         url = f'{self.base_url}/task/pool'
         response = requests.post(url, data=[])
@@ -85,8 +107,7 @@ class NotificationHandler:
         if response.status_code == 200:  # HTTP OK
             data = response.json()
             self.tray_logger.debug("data %s", str(data))
-            for notification in data.get('notifications', []):
-                self.tray_logger.info("handle notification %s", str(notification))
-                self.handle_notification(notification)
+            notification_list = data.get('notifications', [])
+            self.handle_notification_list(notification_list)
         else:
             self.tray_logger.info(response.content)

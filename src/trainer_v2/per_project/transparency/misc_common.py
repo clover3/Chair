@@ -125,3 +125,19 @@ def load_table(file_path):
     for q_term, d_term, score_s in tsv_iter(file_path):
         output_d[q_term][d_term] = float(score_s)
     return output_d
+
+
+def load_str_float_table(file_path):
+    output_d = {}
+    for d_term, score_s in tsv_iter(file_path):
+        output_d[d_term] = float(score_s)
+    return output_d
+
+
+sota_retrieval_methods = [
+    "ce_msmarco_mini_lm",
+    "splade",
+    "tas_b",
+    "contriever",
+    "contriever-msmarco",
+]

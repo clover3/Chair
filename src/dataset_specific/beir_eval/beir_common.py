@@ -12,7 +12,24 @@ from beir.datasets.data_loader import GenericDataLoader
 DictSS = Dict[str, Dict]
 DictSI = Dict[str, Dict[str, int]]
 
+beir_dataset_name_map = {
+    "hotpotqa":"HotpotQA",
+    "dbpedia-entity": "DBPedia",
+    "nq": "NQ",
+    "webis-touche2020": "Touché-2020",
+    "scidocs": "SCIDOCS",
+    # "trec-covid-beir":,
+    "trec-covid": "TREC-COVID",
+    # "trec-covid-v2":,
+    "fiqa": "FiQA-2018",
+    "quora": "Quora",
+    "arguana": "ArguAna",
+    "scifact": "SciFact",
+    "nfcorpus": "NFCorpus",
+    "vihealthqa": "ViHealthQA"
+}
 
+# Total of 12
 beir_dataset_list_A = [
     # It excludes 4 non-public datasets and MSMARCO
     "hotpotqa",
@@ -20,9 +37,9 @@ beir_dataset_list_A = [
     "nq",
     "webis-touche2020",
     "scidocs",
-    "trec-covid-beir",
+    # "trec-covid-beir",
     "trec-covid",
-    "trec-covid-v2",
+    # "trec-covid-v2",
     "fiqa",
     "quora",
     "arguana",
@@ -33,7 +50,7 @@ beir_dataset_list_A = [
     # climate-fever
 ]
 
-
+# nq hotpotqa dbpedia-entity
 beir_gb_dataset_list = [
     # It excludes 4 non-public datasets and MSMARCO
     "hotpotqa",
@@ -44,7 +61,6 @@ beir_gb_dataset_list = [
 # nq: 4 hours
 # hotpotqa: 17 hours, (1110 min expected)
 # quora: 4 hours
-
 
 # webis-touche2020 scidocs trec-covid fiqa quora arguana scifact nfcorpus vihealthqa
 beir_mb_dataset_list = [
@@ -61,40 +77,39 @@ beir_mb_dataset_list = [
 ]
 
 avdl_luk = {
-    "hotpotqa": 30,
-    "dbpedia-entity": 32,
-    "nq": 53,
-    "webis-touche2020": 193,
-    "scidocs": 119,
-    "trec-covid-beir": 111,
-    "trec-covid": 111,
-    "trec-covid-v2": 147,
+    "hotpotqa": 32,
+    "dbpedia-entity": 35,
+    "nq": 56,
+    "webis-touche2020": 198,
+    "scidocs": 127,
+    "trec-covid": 121,
     "fiqa": 91,
     "quora": 8,
-    "arguana": 108,
-    "scifact": 151,
-    "nfcorpus":165,
-    "vihealthqa": 110
+    "arguana": 111,
+    "scifact": 161,
+    "nfcorpus":175,
+    "vihealthqa": 110,
 }
 
+# avdl_luk = {
+#     "hotpotqa": 30,
+#     "dbpedia-entity": 32,
+#     "nq": 53,
+#     "webis-touche2020": 193,
+#     "scidocs": 119,
+#     "trec-covid-beir": 111,
+#     "trec-covid": 111,
+#     "trec-covid-v2": 147,
+#     "fiqa": 91,
+#     "quora": 8,
+#     "arguana": 108,
+#     "scifact": 151,
+#     "nfcorpus":165,
+#     "vihealthqa": 110
+# }
 # Given information, we will construct a JSON dictionary where each key is the dataset name and its value is the ctf.
 
-ctf_luk = {
-    "arguana": 944123,
-    "dbpedia-entity": 152205479,
-    "fiqa": 5288635,
-    "hotpotqa": 158180692,
-    "nfcorpus": 601950,
-    "nq": 144050891,
-    "quora": 4390852,
-    "scidocs": 3065828,
-    "scifact": 784591,
-    "trec-covid": 19060122,
-    "trec-covid-beir": 19060122,
-    "trec-covid-v2": 19060115,
-    "vihealthqa": 1088953,
-    "webis-touche2020": 74066724,
-}
+
 
 
 def load_beir_dataset(dataset_name, split)\
@@ -139,9 +154,14 @@ def parse_beir_qrels(qrels_file) -> Dict[str, Dict[str, int]]:
 
 
 def load_beir_qrels(dataset_name, split) -> Dict[str, Dict[str, int]]:
+    file_path = get_beir_qrel_path(dataset_name, split)
+    return parse_beir_qrels(file_path)
+
+
+def get_beir_qrel_path(dataset_name, split):
     beir_root = path_join(data_path, "beir")
     file_path = path_join(beir_root, "datasets", dataset_name, "qrels", f"{split}.tsv")
-    return parse_beir_qrels(file_path)
+    return file_path
 
 
 def load_beir_queries_and_qrels(dataset_name, split) -> Tuple:

@@ -94,7 +94,6 @@ def get_scorer_fn_for_precomputing(conf) -> Callable[[Iterable[Tuple[str, str]]]
 
 
 def main():
-
     c_log.info(__file__)
     conf_path = sys.argv[1]
     conf = OmegaConf.load(conf_path)

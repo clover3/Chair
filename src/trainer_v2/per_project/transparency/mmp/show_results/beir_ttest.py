@@ -1,5 +1,5 @@
 from cpath import output_path
-from dataset_specific.beir_eval.beir_common import beir_mb_dataset_list
+from dataset_specific.beir_eval.beir_common import beir_mb_dataset_list, beir_dataset_list_A
 from misc_lib import path_join
 from runnable.ttest_from_scores import ttest_from_scores_path
 from tab_print import print_table
@@ -9,10 +9,10 @@ def main():
     metric = "NDCG@10"
 
     method1 = "empty"
-    method2 = "mtc6_pep_tt17_30000"
+    method2 = "rr_mtc6_pep_tt17_10000"
 
     table = []
-    for dataset in beir_mb_dataset_list:
+    for dataset in beir_dataset_list_A:
         def get_path(method):
             run_name = f"{dataset}_{method}"
             return path_join(output_path, "per_line_eval", f"{run_name}.{metric}")

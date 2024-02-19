@@ -1,0 +1,8 @@
+dataset_name: webis-touche2020
+data_size: 4900
+rerank_payload_path: output/mmp/rerank100/webis-touche2020/corpus.csv
+metric: ndcg_cut_10
+judgment_path: data/beir/datasets/webis-touche2020/qrels/test.tsv
+queries_path: ???
+src_ranked_list: output/ranked_list/webis-touche2020_empty.txt
+corpus_path: ???

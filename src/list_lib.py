@@ -212,3 +212,14 @@ def assert_length_equal(l1, l2):
     if not len(l1) == len(l2):
         msg = "Length {} does not equal {}".format(len(l1), len(l2))
         raise ValueError(msg)
+
+
+def frange(start, stop, step):
+    now = start
+    while now <= stop:
+        yield now
+        now = now + step
+
+
+def lfrange(start, stop, step):
+    return list(frange(start, stop, step))

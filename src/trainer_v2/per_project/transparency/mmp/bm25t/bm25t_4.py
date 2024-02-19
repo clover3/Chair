@@ -4,9 +4,11 @@ from typing import List, Iterable, Callable, Dict, Tuple, Set
 
 
 from adhoc.bm25 import BM25_verbose
+from misc_lib import TimeEstimator, TimeEstimatorOpt
 from trainer_v2.chair_logging import c_log
 
 
+# It has different constructor than BM25T_3
 class BM25T_4:
     def __init__(
             self,
@@ -45,11 +47,13 @@ class BM25T_4:
 
         return score
 
-    def score_batch(self, qd_list) -> List[float]:
+    def score_batch(self, qd_list, show_time=False) -> List[float]:
         output: List[float] = []
+        ticker = TimeEstimatorOpt(len(qd_list) if show_time else None)
         for q, d in qd_list:
             s = self.score(q, d)
             output.append(s)
+            ticker.tick()
         return output
 
     def score_from_tfs(self, q_tf: Dict[str, int], t_tf: Dict[str, int]):

@@ -105,4 +105,13 @@ def json_qres_to_ranked_list(q_res: Dict[str, Dict[str, float]], run_name) -> Li
     return tr_entries
 
 
+def ranked_list_to_dict(rlg: Dict[str, List[TrecRankedListEntry]]) -> Dict[str, Dict[str, float]]:
+    out_d = {}
+    for qid, entries in rlg.items():
+        per_q_d = {}
+        for e in entries:
+            per_q_d[e.doc_id] = e.score
+        out_d[qid] = per_q_d
+    return out_d
+
 

@@ -67,13 +67,44 @@ def load_qrels_with_subtopic(path) -> QRelsSubtopic:
     return q_group
 
 
+
 def load_qrels_structured(path) -> QRelsDict:
+    class EmptyLine(ValueError):
+        pass
+
+    class Heading(ValueError):
+        pass
+
     f = open(path, "r")
     q_dict = {}
-    for line in f:
-        q_id, _, doc_id, score = line.split()
-        if q_id not in q_dict:
-            q_dict[q_id] = {}
+    lines = f.readlines()
+    n_column = len(lines[0].split())
+    n_empty = 0
 
-        q_dict[q_id][doc_id] = int(score)
+    def parse_line(line):
+        if n_column == 3:
+            q_id, doc_id, score = line.split()
+        elif n_column == 4:
+            q_id, _, doc_id, score = line.split()
+        elif n_column == 0:
+            raise EmptyLine()
+        else:
+            raise ValueError()
+        return q_id, doc_id, score
+
+    for line in lines:
+        try:
+            q_id, doc_id, score = parse_line(line)
+            if q_id not in q_dict:
+                q_dict[q_id] = {}
+
+            q_dict[q_id][doc_id] = int(score)
+        except EmptyLine:
+            if n_empty > 0:
+                raise ValueError("Multiple empty line found")
+            n_empty += 1
+        except ValueError:
+            if score == "score":
+                pass
+
     return q_dict

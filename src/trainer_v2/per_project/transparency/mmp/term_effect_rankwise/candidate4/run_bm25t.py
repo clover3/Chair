@@ -1,4 +1,4 @@
-from trainer_v2.per_project.transparency.mmp.bm25t_helper import run_dev_rerank_eval_with_bm25t
+from trainer_v2.per_project.transparency.mmp.bm25t.bm25t_helper import run_dev_rerank_eval_with_bm25t
 from trainer_v2.per_project.transparency.mmp.table_readers import load_mapping_from_align_scores
 from trainer_v2.per_project.transparency.mmp.term_effect_rankwise.path_helper2 import get_cand2_1_path_helper, \
     get_cand4_path_helper

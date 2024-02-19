@@ -1,0 +1,8 @@
+dataset_name: quora
+data_size: 999827
+rerank_payload_path: output/mmp/rerank100/quora/corpus.csv
+metric: ndcg_cut_10
+judgment_path: data/beir/datasets/quora/qrels/test.tsv
+queries_path: ???
+src_ranked_list: output/ranked_list/quora_empty.txt
+corpus_path: ???

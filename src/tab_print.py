@@ -11,6 +11,25 @@ def print_table(rows):
         print(join_with_tab(row))
 
 
+def transpose(table):
+    """
+    Transpose the given table (a list of lists).
+
+    Args:
+    table (list[list[any]]): The table to transpose.
+
+    Returns:
+    list[list[any]]: The transposed table.
+    """
+    # Check if the table is empty
+    if not table:
+        return []
+
+    # Use zip function combined with * operator to unpack and then repack the table, effectively transposing it
+    return [list(row) for row in zip(*table)]
+
+
+
 def tab_print_dict(dict):
     for k, v in dict.items():
         print("{}\t{}".format(k, v))

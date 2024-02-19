@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from pytrec_eval import RelevanceEvaluator
 
@@ -44,11 +44,28 @@ def eval_by_pytrec_inner(qrels, doc_scores, metric, n_query_expected):
     return average(scores)
 
 
-def convert_ranked_list_to_dict(ranked_list: Dict[str, List[TrecRankedListEntry]]):
+def convert_ranked_list_to_dict(ranked_list: Union[Dict[str, List[TrecRankedListEntry]], List[TrecRankedListEntry]]):
+    if isinstance(ranked_list, dict):
+        return convert_dict_ranked_list_to_dict(ranked_list)
+    elif isinstance(ranked_list, List):
+        return convert_flat_ranked_list_to_dict(ranked_list)
+
+
+def convert_dict_ranked_list_to_dict(ranked_list):
     out_d = {}
     for qid, entries in ranked_list.items():
         per_q = {}
         for e in entries:
             per_q[e.doc_id] = e.score
         out_d[qid] = per_q
+    return out_d
+
+
+def convert_flat_ranked_list_to_dict(ranked_list: List[TrecRankedListEntry]):
+    out_d = {}
+    for e in ranked_list:
+        if e.query_id not in out_d:
+            out_d[e.query_id] = {}
+        per_q = out_d[e.query_id]
+        per_q[e.doc_id] = e.score
     return out_d

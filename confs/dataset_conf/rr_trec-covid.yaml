@@ -1,0 +1,8 @@
+dataset_name: trec-covid
+data_size: 5000
+rerank_payload_path: output/mmp/rerank100/trec-covid/corpus.csv
+metric: ndcg_cut_10
+judgment_path: data/beir/datasets/trec-covid/qrels/test.tsv
+queries_path: ???
+src_ranked_list: output/ranked_list/trec-covid_empty.txt
+corpus_path: ???

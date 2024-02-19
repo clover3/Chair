@@ -5,7 +5,7 @@ from krovetzstemmer import Stemmer
 
 from cpath import output_path
 from misc_lib import path_join
-from trainer_v2.per_project.transparency.mmp.bm25t import GlobalAlign
+from trainer_v2.per_project.transparency.mmp.bm25t.bm25t import GlobalAlign
 from trainer_v2.per_project.transparency.mmp.when_corpus_based.when_bm25t import load_global_aligns
 from typing import List, Iterable, Callable, Dict, Tuple, Set
 

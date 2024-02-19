@@ -1,25 +1,15 @@
 # LuK = Lucene tokenizer Krovetz stemmed
-import logging
 import sys
 
 from omegaconf import OmegaConf
 
+from adhoc.resource.dataset_conf_helper import get_rerank_dataset_conf_path
 from cpath import yconfig_dir_path
 from misc_lib import path_join
 from taskman_client.wrapper3 import JobContext
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.bm25t_runner.run_rerank4 import get_bm25t_scorer_fn
 from trainer_v2.per_project.transparency.mmp.eval_helper.rerank_w_conf import run_rerank_with_conf_common
-
-
-def get_rerank_dataset_conf_path(dataset):
-    dataset_conf_path = {
-        "trec_dl19": path_join(yconfig_dir_path, "dataset_conf", "trec_dl_2019.yaml"),
-        "trec_dl20": path_join(yconfig_dir_path, "dataset_conf", "trec_dl_2020.yaml"),
-        "dev_c": path_join(yconfig_dir_path, "dataset_conf", "mmp_dev_sample_C.yaml"),
-        "dev1000": path_join(yconfig_dir_path, "dataset_conf", "mmp_dev_sample1000.yaml"),
-    }[dataset.lower()]
-    return dataset_conf_path
 
 
 def run_bm25t_luk(run_name, table_path, dataset):

@@ -1,7 +1,7 @@
 from adhoc.bm25_class import BM25
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
 from taskman_client.task_proxy import get_task_manager_proxy
-from trainer_v2.per_project.transparency.mmp.bm25t import BM25T
+from trainer_v2.per_project.transparency.mmp.bm25t.bm25t import BM25T
 from trainer_v2.per_project.transparency.mmp.eval_helper.mmp_eval_line_format import predict_and_save_scores, \
     eval_dev_mrr
 

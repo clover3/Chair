@@ -1,5 +1,6 @@
 import csv
-from typing import List, Dict, Iterable, Tuple
+from dataclasses import dataclass
+from typing import List, Dict, Iterable, Tuple, Optional, Callable, Any
 
 
 def read_csv_as_dict(csv_path) -> List[Dict]:
@@ -19,8 +20,12 @@ def read_csv_as_dict(csv_path) -> List[Dict]:
 
 
 def tsv_iter(file_path) -> Iterable[Tuple]:
-    print('tsv_iter', file_path)
-    return tsv_iter_gz(file_path)
+    if file_path.endswith(".csv"):
+        f = open(file_path, "r", encoding="utf-8")
+        reader = csv.reader(f)
+        return reader
+    else:
+        return tsv_iter_gz(file_path)
 
 
 def tsv_iter_raw(file_path) -> Iterable[Tuple]:
@@ -52,3 +57,46 @@ def print_positive_entry(file_read):
         if score > 0:
             print("\t".join(e))
 
+
+@dataclass
+class TablePrintHelper:
+    column_keys: list[str]
+    row_keys: list[str]
+    column_key_to_name: Optional[dict[str, str]]
+    row_keys_to_name: Optional[dict[str, str]]
+    get_value_fn: Callable[[str, str], Any]
+    row_head: Optional[str]
+
+    def get_table(self):
+        head_val = self.row_head if self.row_head is not None else ""
+        head = [head_val]
+        if self.column_key_to_name is None:
+            columns = self.column_keys
+        else:
+            columns = [self.column_key_to_name[t] for t in self.column_keys]
+        head.extend(columns)
+
+        table = [head]
+        for row_key in self.row_keys:
+            row = []
+            row_key_out = row_key if self.row_keys_to_name is None else self.row_keys_to_name[row_key]
+            row.append(row_key_out)
+            for column_key in self.column_keys:
+                corr_val = self.get_value_fn(row_key, column_key)
+                row.append(corr_val)
+            table.append(row)
+        return table
+
+
+class DictCache:
+    def __init__(self, raw_get_val: Callable):
+        self.raw_get_val = raw_get_val
+        self.d = {}
+
+    def get_val(self, key):
+        if key in self.d:
+            return self.d[key]
+
+        v = self.raw_get_val(key)
+        self.d[key] = v
+        return v

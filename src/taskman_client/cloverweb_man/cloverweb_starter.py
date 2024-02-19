@@ -4,6 +4,7 @@ import subprocess
 import time
 
 import pandas
+import requests
 
 from taskman_client.cloverweb_man.cloverweb_common import list_instances, KeepAlive, start_instance
 
@@ -56,7 +57,11 @@ def keep_server_alive_loop(f_stop_fn=None):
                 stdout = start_instance(inst_name)
                 clover_web_logger.info(stdout)
             else:
-                keep_alive.send_keep_alive()
+                try:
+                    keep_alive.send_keep_alive()
+                except requests.exceptions.ConnectionError:
+                    clover_web_logger.warning("Server is not responding")
+
         else:
             clover_web_logger.debug("Locked")
         time.sleep(CHECK_INTERVAL)

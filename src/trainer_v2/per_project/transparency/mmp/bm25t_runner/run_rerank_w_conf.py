@@ -4,7 +4,7 @@ from omegaconf import OmegaConf
 
 from adhoc.bm25_class import BM25
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
-from trainer_v2.per_project.transparency.mmp.bm25t import BM25T
+from trainer_v2.per_project.transparency.mmp.bm25t.bm25t import BM25T
 from trainer_v2.per_project.transparency.mmp.eval_helper.rerank_w_conf import run_rerank_with_conf_common
 from trainer_v2.per_project.transparency.mmp.retrieval_run.run_bm25t import load_table_from_conf, to_value_dict
 

@@ -1,0 +1,8 @@
+dataset_name: dbpedia-entity
+data_size: 39904
+rerank_payload_path: output/mmp/rerank100/dbpedia-entity/corpus.csv
+metric: ndcg_cut_10
+judgment_path: data/beir/datasets/dbpedia-entity/qrels/test.tsv
+queries_path: ???
+src_ranked_list: output/ranked_list/dbpedia-entity_empty.txt
+corpus_path: ???

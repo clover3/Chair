@@ -14,15 +14,19 @@ from trec.types import TrecRankedListEntry
 def build_ranked_list_from_qid_pid_scores(qid_pid_path, run_name, save_path, scores_path):
     qid_pid: List[Tuple[str, str]] = list(select_first_second(tsv_iter(qid_pid_path)))
     scores = read_scores(scores_path)
-    items = [(qid, pid, score) for (qid, pid), score in zip(qid_pid, scores)]
+    all_entries = build_rankd_list_from_qid_pid_scores_inner(qid_pid, run_name, scores)
+    write_trec_ranked_list_entry(all_entries, save_path)
 
+
+def build_rankd_list_from_qid_pid_scores_inner(qid_pid, run_name, scores):
+    items = [(qid, pid, score) for (qid, pid), score in zip(qid_pid, scores)]
     grouped = group_by(items, get_first)
     all_entries: List[TrecRankedListEntry] = []
     for qid, entries in grouped.items():
         scored_docs = [(pid, score) for _, pid, score in entries]
         entries = build_ranked_list(qid, run_name, scored_docs)
         all_entries.extend(entries)
-    write_trec_ranked_list_entry(all_entries, save_path)
+    return all_entries
 
 
 def read_scores(scores_path):

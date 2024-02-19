@@ -1,0 +1,8 @@
+dataset_name: scidocs
+data_size: 99921
+rerank_payload_path: output/mmp/rerank100/scidocs/corpus.csv
+metric: ndcg_cut_10
+judgment_path: data/beir/datasets/scidocs/qrels/test.tsv
+queries_path: ???
+src_ranked_list: output/ranked_list/scidocs_empty.txt
+corpus_path: ???

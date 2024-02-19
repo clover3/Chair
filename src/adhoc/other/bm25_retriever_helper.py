@@ -1,4 +1,6 @@
 import os
+
+import omegaconf
 from krovetzstemmer import Stemmer
 from adhoc.bm25_class import BM25FromTokenizeFn
 from adhoc.bm25_retriever import BM25Retriever, build_bm25_scoring_fn
@@ -21,7 +23,7 @@ def get_stopwords_from_conf(conf):
     try:
         f = open(conf.stopword_path, "r")
         stopwords = {line.strip() for line in f}
-    except KeyError:
+    except omegaconf.errors.ConfigAttributeError:
         stopwords = set()
     return stopwords
 
@@ -35,37 +37,43 @@ def build_bm25_scoring_fn_from_conf(conf, avdl, cdf):
 
 
 def get_tokenize_fn(conf) -> Callable[[str], List[str]]:
-    if conf.tokenizer == "KrovetzNLTK":
+    tokenizer_name = conf.tokenizer
+    return get_tokenize_fn2(tokenizer_name)
+
+
+def get_tokenize_fn2(tokenizer_name):
+    if tokenizer_name == "KrovetzNLTK":
         tokenizer = KrovetzNLTKTokenizer()
         return tokenizer.tokenize_stem
-    elif conf.tokenizer == "BertTokenize1":
+    elif tokenizer_name == "BertTokenize1":
         from transformers import AutoTokenizer
         tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         return tokenizer.tokenize
-    elif conf.tokenizer == "BertTokenize2":
+    elif tokenizer_name == "BertTokenize2":
         tokenizer = get_tokenizer()
         return tokenizer.basic_tokenizer.tokenize
-    elif conf.tokenizer == "BertTokenize2+Stem":
+    elif tokenizer_name == "BertTokenize2+Stem":
         tokenizer = get_tokenizer()
         stemmer = Stemmer()
         def tokenize(text):
             tokens = tokenizer.basic_tokenizer.tokenize(text)
             return [stemmer.stem(t) for t in tokens]
         return tokenize
-    elif conf.tokenizer == "space":
+    elif tokenizer_name == "space":
         def tokenize(text):
             return text.split()
         return tokenize
-    elif conf.tokenizer == "lucene":
+    elif tokenizer_name == "lucene":
         from pyserini.analysis import Analyzer, get_lucene_analyzer
         analyzer = Analyzer(get_lucene_analyzer())
         return analyzer.analyze
-    elif conf.tokenizer == "lucene_krovetz":
+    elif tokenizer_name == "lucene_krovetz":
         from pyserini.analysis import Analyzer, get_lucene_analyzer
         analyzer = Analyzer(get_lucene_analyzer(stemmer='krovetz'))
         return analyzer.analyze
     else:
-        raise ValueError(f"{conf.tokenizer} is not expected")
+        raise ValueError(f"{tokenizer_name} is not expected")
+
 
 
 def get_bm25_scorer_from_conf(conf, avdl=None) -> BM25FromTokenizeFn:

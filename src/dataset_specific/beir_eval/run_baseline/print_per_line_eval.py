@@ -13,12 +13,14 @@ from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.misc_common import save_tsv
 
 
-def run_eval(dataset, method):
+def run_save_per_query_eval(dataset, method):
     metric = "NDCG@10"
     split = "test"
     c_log.info(f"Loading dataset")
     run_name = f"{dataset}_{method}"
     queries, qrels = load_beir_queries_and_qrels(dataset, split)
+    c_log.info(f"Done")
+
     json_qres_save_path = get_json_qres_save_path(run_name)
     save_path = path_join(output_path, "per_line_eval", f"{run_name}.{metric}")
     all_output = json.load(open(json_qres_save_path, "r"))
@@ -35,7 +37,7 @@ def run_eval(dataset, method):
 def main():
     dataset = sys.argv[1]
     method = sys.argv[2]
-    run_eval(dataset, method)
+    run_save_per_query_eval(dataset, method)
 
 
 if __name__ == "__main__":

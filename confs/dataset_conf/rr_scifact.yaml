@@ -1,0 +1,8 @@
+dataset_name: scifact
+data_size: 30000
+rerank_payload_path: output/mmp/rerank100/scifact/corpus.csv
+metric: ndcg_cut_10
+judgment_path: data/beir/datasets/scifact/qrels/test.tsv
+queries_path: ???
+src_ranked_list: output/ranked_list/scifact_empty.txt
+corpus_path: ???

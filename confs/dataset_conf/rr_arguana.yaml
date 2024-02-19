@@ -1,0 +1,8 @@
+dataset_name: arguana
+data_size: 140600
+rerank_payload_path: output/mmp/rerank100/arguana/corpus.csv
+metric: ndcg_cut_10
+judgment_path: data/beir/datasets/arguana/qrels/test.tsv
+queries_path: ???
+src_ranked_list: output/ranked_list/arguana_empty.txt
+corpus_path: ???

@@ -5,7 +5,7 @@ import time
 from _testcapi import INT_MAX
 from collections import Counter, OrderedDict, defaultdict
 from time import gmtime, strftime
-from typing import Iterable, TypeVar, Callable, Dict, List, Any, Tuple, Iterator, Union
+from typing import Iterable, TypeVar, Callable, Dict, List, Any, Tuple, Iterator, Union, Optional
 
 from base_type import FilePath
 
@@ -42,8 +42,9 @@ def tprint(*arg):
     print("{} : {}".format(tim_str, all_text))
 
 
+
 class TimeEstimator:
-    def __init__(self, total_repeat, name = "", sample_size = 10):
+    def __init__(self, total_repeat: int, name = "", sample_size = 10):
         self.time_analyzed = None
         self.time_count = 0
         self.total_repeat = total_repeat
@@ -58,6 +59,7 @@ class TimeEstimator:
         self.progress_tenth = 1
 
     def tick(self):
+        import sys
         self.time_count += 1
         if not self.time_analyzed:
             if self.time_count == self.base:
@@ -68,14 +70,16 @@ class TimeEstimator:
                 expected_sec = elapsed / self.sample_size * self.total_repeat
                 expected_min = int(expected_sec / 60)
                 print("Expected time for {} : {} min".format(self.name, expected_min))
+                sys.stdout.flush()
                 self.time_analyzed = True
         if self.total_repeat * self.progress_tenth / 10 < self.time_count:
             print("{}0% completed".format(self.progress_tenth))
+            sys.stdout.flush()
             self.progress_tenth += 1
 
 
 class TimeEstimatorOpt(TimeEstimator):
-    def __init__(self, total_repeat, name="", sample_size=10):
+    def __init__(self, total_repeat: Union[None, int], name="", sample_size=10):
         self.total_repeat = total_repeat
         if total_repeat is not None:
             super(TimeEstimatorOpt, self).__init__(total_repeat, name, sample_size)

@@ -50,3 +50,10 @@ def load_omega_config(
     if set_project_root:
         conf.project_root = project_root
     return conf
+
+
+def create_omega_config(value, data_class=None):
+    raw_conf = OmegaConf.create(value)
+    conf = OmegaConf.structured(data_class)
+    conf.merge_with(raw_conf)
+    return conf

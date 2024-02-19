@@ -97,8 +97,6 @@ class BM25T:
         return score_sum
 
 
-
-
 class BM25T_Custom:
     def __init__(self, mapping: Dict[str, Dict[str, float]],
                  bm25):

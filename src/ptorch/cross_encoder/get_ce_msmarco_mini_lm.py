@@ -2,7 +2,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import numpy
 from list_lib import right, left
-
+from typing import List, Iterable, Callable, Dict, Tuple, Set, Iterator
 
 def get_ce_msmarco_mini_lm_score_fn():
     model_name = "cross-encoder/ms-marco-MiniLM-L-6-v2"
@@ -13,7 +13,7 @@ def get_ce_msmarco_mini_lm_score_fn():
 
     model.eval()
 
-    def score_fn(qd_list):
+    def score_fn(qd_list: List[Tuple[str, str]]) -> List[float]:
         q_list = left(qd_list)
         d_list = right(qd_list)
         features = tokenizer(q_list, d_list, padding=True, truncation=True, return_tensors="pt")

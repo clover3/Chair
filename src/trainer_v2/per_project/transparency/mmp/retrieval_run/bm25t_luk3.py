@@ -14,6 +14,8 @@ from trainer_v2.per_project.transparency.mmp.retrieval_run.helper import get_dat
 from trainer_v2.per_project.transparency.mmp.retrieval_run.retrieval_common import get_bm25t_retriever3
 
 
+
+# It uses tf * weight, instead of weight alone
 def run_bm25t_luk(run_name, table_path, dataset):
     dataset_conf_path = get_dataset_conf_path(dataset)
 

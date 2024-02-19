@@ -1,4 +1,3 @@
-import tensorflow as tf
 from math import log
 
 k1 = 1.2

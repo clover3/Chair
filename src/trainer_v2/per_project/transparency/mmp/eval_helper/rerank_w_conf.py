@@ -1,5 +1,6 @@
 import logging
-from typing import List, Iterable, Callable, Tuple
+from dataclasses import dataclass, field
+from typing import List, Iterable, Callable, Tuple, TypedDict, Optional
 from typing import Union
 
 from omegaconf import OmegaConf, DictConfig
@@ -10,6 +11,7 @@ from table_lib import tsv_iter
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.eval_helper.eval_line_format import batch_score_and_save_score_lines
 from trainer_v2.per_project.transparency.mmp.eval_helper.mmp_eval_line_format import get_line_scores_path
+from utils.conf_helper import unpack_conf
 
 BatchScorer = Callable[[List[Tuple[str, str]]], Iterable[float]]
 PointScorer = Callable[[Tuple[str, str]], float]
@@ -39,16 +41,41 @@ def run_rerank_with_conf_common(
 
 
 def run_rerank_with_conf2(score_fn: ScorerSig, conf, do_not_report=False):
+    return run_rerank_with_u_conf2(score_fn, unpack_conf(conf), do_not_report)
 
+
+@dataclass
+class RerankDatasetConf:
+    dataset_name: str
+    data_size: int
+    rerank_payload_path: str
+    metric: str
+    judgment_path: str
+    queries_path: Optional[str]
+    src_ranked_list: Optional[str]
+    corpus_path: Optional[str]
+
+
+@dataclass
+class RerankRunConf:
+    run_name: str
+    method: Optional[str]
+    dataset_conf: RerankDatasetConf
+    outer_batch_size: int
+    do_not_report: bool = field(default_factory=lambda: False)
+
+
+def run_rerank_with_u_conf2(
+        score_fn: ScorerSig, conf: RerankRunConf, do_not_report=False):
     run_name = conf.run_name
     # Dataset config
-    dataset_conf_path = conf.dataset_conf_path
-    dataset_conf = OmegaConf.load(dataset_conf_path)
+    dataset_conf = conf.dataset_conf
     dataset_name = dataset_conf.dataset_name
     data_size = dataset_conf.data_size
     quad_tsv_path = dataset_conf.rerank_payload_path
     metric = dataset_conf.metric
     judgment_path = dataset_conf.judgment_path
+    do_not_report = do_not_report or conf.do_not_report
     scores_path = get_line_scores_path(run_name, dataset_name)
     # Prediction
     qd_iter: Iterable[Tuple[str, str]] = select_third_fourth(tsv_iter(quad_tsv_path))

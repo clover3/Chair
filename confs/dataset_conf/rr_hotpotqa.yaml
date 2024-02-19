@@ -1,0 +1,8 @@
+dataset_name: hotpotqa
+data_size: 740500
+rerank_payload_path: output/mmp/rerank100/hotpotqa/corpus.csv
+metric: ndcg_cut_10
+judgment_path: data/beir/datasets/hotpotqa/qrels/test.tsv
+queries_path: ???
+src_ranked_list: output/ranked_list/hotpotqa_empty.txt
+corpus_path: ???

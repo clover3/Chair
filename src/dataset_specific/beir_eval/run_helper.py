@@ -32,7 +32,9 @@ def run_retrieval_and_eval_on_beir(
         metric = "NDCG@10"
         score = eval_res[metric]
         proxy = get_task_manager_proxy()
-        proxy.report_number(method, score, dataset, metric)
-        c_log.info(f"reported %s %f %s %s", method, score, dataset, metric)
+
+        metric_report = "ndcg_cut_10"
+        proxy.report_number(method, score, dataset, metric_report)
+        c_log.info(f"reported %s %f %s %s", method, score, dataset, metric_report)
 
     return eval_res

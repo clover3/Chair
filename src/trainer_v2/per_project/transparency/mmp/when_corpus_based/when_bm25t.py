@@ -9,7 +9,7 @@ from cpath import output_path
 from dataset_specific.msmarco.passage.load_term_stats import load_msmarco_passage_term_stat
 from table_lib import tsv_iter
 from misc_lib import path_join
-from trainer_v2.per_project.transparency.mmp.bm25t import GlobalAlign, BM25T, BM25T_Custom
+from trainer_v2.per_project.transparency.mmp.bm25t.bm25t import GlobalAlign, BM25T, BM25T_Custom
 
 
 def get_mmp_bm25():

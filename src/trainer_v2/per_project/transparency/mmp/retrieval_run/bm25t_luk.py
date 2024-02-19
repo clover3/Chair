@@ -9,7 +9,6 @@ from omegaconf import OmegaConf
 from adhoc.eval_helper.retreival_exp_helper import run_retrieval_eval_report_w_conf
 from cpath import yconfig_dir_path
 from misc_lib import path_join
-from taskman_client.wrapper3 import JobContext
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.retrieval_run.helper import get_dataset_conf_path
 from trainer_v2.per_project.transparency.mmp.retrieval_run.retrieval_common import get_bm25t_retriever_in_memory

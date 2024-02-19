@@ -1,0 +1,10 @@
+
+
+dataset_name: mmp_dev_sample1K_A
+src_ranked_list: output/ranked_list/dev_sample1000_empty.txt
+rerank_payload_path: output/mmp/rerank/dev_sample1K_A/corpus.tsv
+judgment_path: data/msmarco/qrels.dev.tsv
+metric: recip_rank
+data_size: 1000000
+queries_path: data/msmarco/dev_sample1000/queries.tsv
+corpus_path: data/msmarco/collection.tsv

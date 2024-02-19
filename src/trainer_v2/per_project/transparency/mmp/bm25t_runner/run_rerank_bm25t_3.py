@@ -6,7 +6,7 @@ from omegaconf import OmegaConf
 from adhoc.bm25_class import BM25
 from adhoc.other.bm25_retriever_helper import get_tokenize_fn, get_bm25_stats_from_conf
 from taskman_client.wrapper3 import JobContext
-from trainer_v2.per_project.transparency.mmp.bm25t_3 import BM25T_3
+from trainer_v2.per_project.transparency.mmp.bm25t.bm25t_3 import BM25T_3
 from trainer_v2.per_project.transparency.mmp.table_readers import load_align_scores
 from trainer_v2.per_project.transparency.mmp.eval_helper.rerank_w_conf import run_rerank_with_conf_common
 from trainer_v2.per_project.transparency.mmp.parallel_helper import parallel_run

@@ -1,0 +1,8 @@
+dataset_name: nq
+data_size: 345200
+rerank_payload_path: output/mmp/rerank100/nq/corpus.csv
+metric: ndcg_cut_10
+judgment_path: data/beir/datasets/nq/qrels/test.tsv
+queries_path: ???
+src_ranked_list: output/ranked_list/nq_empty.txt
+corpus_path: ???
