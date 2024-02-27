@@ -1,12 +1,16 @@
+import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-
+from typing import List, Iterable, Callable, Dict, Tuple, Set, Iterator
 from cpath import get_bert_config_path
+from data_generator2.segmented_enc.hf_encode_helper import combine_with_sep_cls_and_pad
 from models.transformer.bert_common_v2 import get_shape_list2
 from trainer_v2.bert_for_tf2 import BertModelLayer
+from trainer_v2.chair_logging import c_log
 from trainer_v2.custom_loop.modeling_common.bert_common import BERT_CLS, define_bert_input, load_bert_config, \
     load_bert_checkpoint
 from trainer_v2.custom_loop.neural_network_def.segmented_enc import split_stack_flatten_encode_stack
+from trainer_v2.custom_loop.neural_network_def.two_seg_alt import CombineByScoreAdd
 from trainer_v2.custom_loop.prediction_trainer import ModelV2IF
 
 
@@ -43,6 +47,18 @@ class TSConcatDistil(ModelV2IF):
         output = self.apply_predictor(l_input_ids, l_token_type_ids)
         inputs = (l_input_ids, l_token_type_ids)
         model = keras.Model(inputs=inputs, outputs=output, name="bert_model")
+        return model
+
+    def define_part_model(self):
+        self.window_length = int(self.max_seq_length / self.num_window)
+        l_input_ids, l_token_type_ids = define_bert_input(self.window_length, "")
+        # [batch_size, dim]
+        inputs = [l_input_ids, l_token_type_ids]
+        feature_rep = self.bert_cls.apply(inputs)
+        hidden = self.dense1(feature_rep)
+        output = self.dense2(hidden)
+        inputs = (l_input_ids, l_token_type_ids)
+        model = keras.Model(inputs=inputs, outputs=output)
         return model
 
     def define_pairwise_train_model(self):
@@ -91,3 +107,39 @@ class TSConcatDistil(ModelV2IF):
 
 
 
+def load_part_model_from_ts_concat_distill(model_path, model_config):
+    task_model = TSConcatDistil(model_config, CombineByScoreAdd)
+    task_model.build_model(None)
+    part_model = task_model.define_part_model()
+    c_log.info("Loading model from %s", model_path)
+
+    checkpoint = tf.train.Checkpoint(task_model.pair_model)
+    checkpoint.restore(model_path).expect_partial()
+    return part_model
+
+
+class TSInference:
+    def __init__(self, model_config, model=None, batch_size=16, ):
+        self.max_seq_length = model_config.max_seq_length
+        self.window_length = int(self.max_seq_length / 2)
+
+        self.model = model
+        from data_generator.tokenizer_wo_tf import get_tokenizer
+        self.tokenizer = get_tokenizer()
+        self.batch_size = batch_size
+
+    def score_from_tokenized_fn(self, qd_list: List[Tuple[List[str], List[str]]]) -> List[float]:
+        def generator():
+            for q_term_tokens, d_term_tokens in qd_list:
+                input_ids, segment_ids = combine_with_sep_cls_and_pad(
+                    self.tokenizer, q_term_tokens, d_term_tokens, self.window_length)
+                yield (input_ids, segment_ids),
+
+        SpecI = tf.TensorSpec([self.window_length], dtype=tf.int32)
+        sig = (SpecI, SpecI,),
+        dataset = tf.data.Dataset.from_generator(
+            generator,
+            output_signature=sig)
+        dataset = dataset.batch(self.batch_size)
+        probs = self.model.predict(dataset)
+        return np.reshape(probs, [-1]).tolist()

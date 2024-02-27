@@ -6,7 +6,7 @@ from cpath import output_path
 from misc_lib import path_join
 from trainer_v2.chair_logging import c_log
 from trainer_v2.per_project.transparency.mmp.eval_helper.rerank_w_conf import run_rerank_with_conf_common
-from trainer_v2.per_project.transparency.mmp.pep.runner.run_rerank_ts_score_add import get_pep_scorer_from_two_model
+from trainer_v2.per_project.transparency.mmp.pep.pep_rerank import get_pep_scorer_from_two_model
 from trainer_v2.train_util.get_tpu_strategy import get_strategy
 
 

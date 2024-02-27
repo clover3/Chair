@@ -145,7 +145,7 @@ def save_inv_index_to_pickle(conf, outputs):
 
 
 def save_df_dl(conf, outputs):
-    dl = outpeuts["dl"]
+    dl = outputs["dl"]
     df = outputs["df"]
     c_log.info("Saving df")
     dir_maybe = os.path.dirname(conf.df_path)

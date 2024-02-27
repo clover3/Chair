@@ -14,7 +14,7 @@ def main():
     save_path = f"{file_name}_{pattern_name}{file_extension}"
 
     if os.path.exists(save_path):
-        print(f"File {save_path} exists. Termiante")
+        print(f"File {save_path} exists. Terminate")
         return
 
     tsv_writer = csv.writer(open(save_path, "w", newline=""), delimiter="\t")

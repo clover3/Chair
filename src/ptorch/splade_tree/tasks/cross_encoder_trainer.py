@@ -44,30 +44,6 @@ class CrossEncoderTransformerTrainer(TransformerTrainer):
             if self.regularizer is not None:
                 if "train" in self.regularizer:
                     total_loss = val_ranking_loss
-                    for reg in self.regularizer["train"]:
-                        lambda_q = self.regularizer["train"][reg]["lambdas"]["lambda_q"].get_lambda() if "lambda_q" in \
-                                                                                                         self.regularizer[
-                                                                                                             "train"][
-                                                                                                             reg][
-                                                                                                             "lambdas"] else False
-                        lambda_d = self.regularizer["train"][reg]["lambdas"]["lambda_d"].get_lambda() if "lambda_d" in \
-                                                                                                         self.regularizer[
-                                                                                                             "train"][
-                                                                                                             reg][
-                                                                                                             "lambdas"] else False
-                        targeted_rep = self.regularizer["train"][reg]["targeted_rep"]
-                        r_loss = 0
-                        if lambda_q:
-                            r_loss += (self.regularizer["train"][reg]["loss"](
-                                out["pos_q_{}".format(targeted_rep)]) * lambda_q).mean().item()
-
-                        if lambda_d:
-                            r_loss += ((self.regularizer["train"][reg]["loss"](
-                                out["pos_d_{}".format(targeted_rep)]) * lambda_d).mean().item() + (
-                                               self.regularizer["train"][reg]["loss"](
-                                                   out["neg_d_{}".format(targeted_rep)]) * lambda_d).mean().item()) / 2
-                        out_d["val_{}_loss".format(reg)] += r_loss
-                        total_loss += r_loss
                     out_d["val_total_loss"] += total_loss
         return {key: value / len(data_loader) for key, value in out_d.items()}
 

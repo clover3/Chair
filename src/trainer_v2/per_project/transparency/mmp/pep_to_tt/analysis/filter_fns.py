@@ -80,7 +80,13 @@ def get_filter(filter_name):
     return filter_fn
 
 
+def get_is_multi_tokens():
+    tokenizer = get_tokenizer()
+    def is_multi_token(term):
+        tokens = tokenizer.tokenize(term)
+        return len(tokens) > 1
 
+    return is_multi_token
 
 def get_filter_inner(filter_name) ->  Callable[[str, str], bool]:
     return {
@@ -88,6 +94,6 @@ def get_filter_inner(filter_name) ->  Callable[[str, str], bool]:
         'has_number': or_combine(is_number_like),
         'postfix_a': or_combine(postfix_a),
         "same": lambda qt, dt: qt == dt,
-
+        "multi_token": or_combine(get_is_multi_tokens()),
     }[filter_name]
 

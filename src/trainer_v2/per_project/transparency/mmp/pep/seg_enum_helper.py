@@ -39,6 +39,12 @@ class TokenizedText(NamedTuple):
             ed = self.get_sb_len()
         return st, ed
 
+    def get_sb_list_form_sp_indices(self, sp_indices) -> List[str]:
+        output = []
+        for i in sp_indices:
+            output.extend(self.sb_tokens[i])
+        return output
+
     def get_sb_len(self):
         return sum(map(len, self.sb_tokens))
 
