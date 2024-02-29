@@ -1,5 +1,6 @@
 import os
 from collections import Counter
+from openai import OpenAI
 
 import openai
 from cpath import output_path, data_path
@@ -18,8 +19,10 @@ def get_open_ai_api_key():
 
 class OpenAIProxy:
     def __init__(self, engine):
-        openai.organization = "org-H88LVGb8C9Zc6OlcieMZgW6e"
-        openai.api_key = get_open_ai_api_key()
+        # openai.organization = "org-H88LVGb8C9Zc6OlcieMZgW6e"
+        # openai.api_key = get_open_ai_api_key()
+        self.client = OpenAI(api_key=get_open_ai_api_key())
+
         self.engine = engine
         self.usage = Counter()
 
@@ -31,17 +34,19 @@ class OpenAIProxy:
             )
         else:
             messages = [{"role": "user", "content": prompt}]
-            obj = openai.ChatCompletion.create(
+            obj = self.client.chat.completions.create(
                 model=self.engine, messages=messages, timeout=20,
             )
-            n_tokens_used = obj['usage']['total_tokens']
+            print(obj)
+            n_tokens_used = obj.usage.total_tokens
             # print(n_tokens_used)
-            self.usage['n_tokens'] += n_tokens_used
-            self.usage['n_request'] += 1
+            # self.usage['n_tokens'] += n_tokens_used
+            # self.usage['n_request'] += 1
         return obj
 
     def request_get_text(self, prompt):
-        return parse_chat_gpt_response(self.request(prompt))
+        obj = self.request(prompt)
+        return obj.choices[0].message.content
 
     def __del__(self):
         print("Usage", self.usage)
@@ -53,13 +58,13 @@ def dev():
     instruction = "Fix the spelling mistakes"
     input_text = "What day of the wek is it?"
     prompt = instruction + "\n\n" + input_text
-    obj = openai.api_resources.Completion.create(engine=engine, prompt=prompt, logprobs=1)
-    print(obj)
-    print(obj['choices'][0])
+    # obj = openai.api_resources.Completion.create(engine=engine, prompt=prompt, logprobs=1)
+    # print(obj)
+    # print(obj['choices'][0])
 
 
 def dev_chat():
-    proxy = OpenAIProxy(ENGINE_GPT4)
+    proxy = OpenAIProxy(ENGINE_GPT_3_5)
     res = proxy.request("hi")
     print(res)
 

@@ -6,6 +6,7 @@ from ptorch.splade_tree.datasets.dataloaders import SiamesePairsDataLoader, Dist
     CollectionDataLoader, DataLoaderWrapper, CrossEncoderPairsDataLoader
 from ptorch.splade_tree.datasets.datasets import PreLoadedDataset, PairsDatasetPreLoad, DistilPairsDatasetPreLoad, \
     MsMarcoHardNegatives, CollectionDatasetPreLoad
+from ptorch.splade_tree.datasets.pep_dataloaders import PEPPairsDataLoader
 from ptorch.splade_tree.losses.regularization import init_regularizer, RegWeightScheduler
 from ptorch.splade_tree.tasks.transformer_evaluator import SparseApproxEvalWrapper
 from typing import List, Iterable, Callable, Dict, Tuple, Set, Iterator
@@ -79,7 +80,8 @@ def get_val_evaluator(config, exp_dict, model):
 
 
 def get_train_loader(config, data_train, drop_last, train_mode):
-    if config["matching_type"] in ["splade", "splade_doc"]:
+    matching_type = config["matching_type"]
+    if matching_type in ["splade", "splade_doc"]:
         if train_mode == "triplets":
             train_loader = SiamesePairsDataLoader(
                 dataset=data_train, batch_size=config["train_batch_size"], shuffle=True,
@@ -95,7 +97,7 @@ def get_train_loader(config, data_train, drop_last, train_mode):
                 max_length=config["max_length"], drop_last=drop_last)
         else:
             raise NotImplementedError
-    elif config["matching_type"] == "cross_encoder":
+    elif matching_type == "cross_encoder":
         if train_mode == "triplets_with_distil":
             train_loader = CrossEncoderPairsDataLoader(
                 dataset=data_train, batch_size=config["train_batch_size"], shuffle=True,
@@ -104,6 +106,13 @@ def get_train_loader(config, data_train, drop_last, train_mode):
                 max_length=config["max_length"], drop_last=drop_last)
         else:
             raise NotImplementedError
+    elif matching_type == "pep":
+        if train_mode == "triplets_with_distil":
+            train_loader = PEPPairsDataLoader(
+                dataset=data_train, batch_size=config["train_batch_size"], shuffle=True,
+                num_workers=4,
+                tokenizer_type=config["tokenizer_type"],
+                max_length=config["max_length"], drop_last=drop_last)
     else:
         raise NotImplementedError
     return train_loader
