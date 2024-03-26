@@ -1,3 +1,5 @@
+import os
+
 from omegaconf import OmegaConf
 
 
@@ -18,3 +20,4 @@ def unpack_conf(config):
             new_conf_d[k] = v
 
     return OmegaConf.create(new_conf_d)
+

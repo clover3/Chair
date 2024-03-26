@@ -12,5 +12,17 @@ if c2_log is None:
     ch = logging.StreamHandler(sys.stdout)
     ch.setFormatter(formatter)
     root_logger = logging.getLogger()
-    root_logger.addHandler(ch)
+    if len(root_logger.handlers) < 1:
+        root_logger.addHandler(ch)
     c2_log.info("C2 logging init")
+
+
+def reset_log_formatter():
+    format_str = '%(levelname)s\t%(name)s \t%(asctime)s %(message)s'
+    formatter = logging.Formatter(format_str,
+                                  datefmt='%m-%d %H:%M:%S',
+                                  )
+    ch = logging.StreamHandler(sys.stdout)
+    ch.setFormatter(formatter)
+    root_logger = logging.getLogger()
+    root_logger.handlers[0].setFormatter(formatter)

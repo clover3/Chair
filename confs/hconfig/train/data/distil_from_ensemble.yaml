@@ -6,6 +6,7 @@ TRAIN:
   D_COLLECTION_PATH: data/msmarco/full_collection
   Q_COLLECTION_PATH: data/msmarco/train_queries/queries
   QREL_PATH: data/msmarco/train_queries/qrels.json
+VALIDATION_SIZE_FOR_LOSS: 20
 
 VALIDATION_FULL_RANKING:
   D_COLLECTION_PATH: data/msmarco/val_retrieval/collection

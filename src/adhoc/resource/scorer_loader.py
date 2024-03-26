@@ -2,15 +2,19 @@ from adhoc.resource.bm25t_method_loader import get_bm25t, is_bm25t_method
 
 
 class RerankScorerWrap:
-    def __init__(self, score_fn, is_neural=False):
+    def __init__(self, score_fn, is_neural=False, batch_size=None):
         self.score_fn = score_fn
         self.is_neural = is_neural
+        if self.is_neural:
+            self.batch_size = 64
+        else:
+            self.batch_size = 1
+
+        if batch_size is not None:
+            self.batch_size = batch_size
 
     def get_outer_batch_size(self):
-        if self.is_neural:
-            return 64
-        else:  # Assume neural method
-            return 1  #000 * 1000
+        return self.batch_size
 
 
 # Actual implementations should be loaded locally
@@ -42,6 +46,10 @@ def get_rerank_scorer(method: str) -> RerankScorerWrap:
         from ptorch.try_public_models.tas_b import get_tas_b_as_reranker
         score_fn = get_tas_b_as_reranker()
         rerank_scorer = RerankScorerWrap(score_fn, True)
+    elif method.startswith("pepn_"):
+        from ptorch.pep.get_pep_nseg_scoring import get_pepn_score_fn_auto
+        score_fn = get_pepn_score_fn_auto()
+        rerank_scorer = RerankScorerWrap(score_fn, True, 10000)
     else:
         raise ValueError(f"Method {method} is not expected" )
 

@@ -1,0 +1,9 @@
+# @package _global_
+
+init_dict:
+  model_type_or_dir: bert-base-uncased
+  fp16: false
+  max_length: 256
+
+config:
+  tokenizer_type: bert-base-uncased

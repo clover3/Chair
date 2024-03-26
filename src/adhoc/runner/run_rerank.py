@@ -1,7 +1,6 @@
 import sys
 
 from omegaconf import OmegaConf
-
 from adhoc.conf_helper import create_omega_config
 from adhoc.resource.dataset_conf_helper import get_dataset_conf
 from adhoc.resource.scorer_loader import get_rerank_scorer, RerankScorerWrap

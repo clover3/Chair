@@ -1,0 +1,17 @@
+# @package config
+
+lr: 2e-5
+seed: 123
+gradient_accumulation_steps: 1
+weight_decay: 0.01
+pretrained_no_yamlconfig: false
+nb_iterations: 100
+train_batch_size: 4  # number of gpus needs to divide this
+eval_batch_size: 128
+record_frequency: 10
+train_monitoring_freq: 5
+warmup_steps: 600
+max_length: 256
+fp16: false
+matching_type: pep
+monitoring_ckpt: loss

@@ -5,7 +5,6 @@ from collections import defaultdict
 
 import torch
 from omegaconf import open_dict
-from tqdm.auto import tqdm
 
 from ..c2_log import c2_log
 from ..tasks import amp
@@ -24,6 +23,7 @@ def is_interesting_step(step_idx):
     elif step_idx % interval == 0:
         return True
     return False
+
 
 class TransformerTrainer(TrainerIter):
     def __init__(self, *args, **kwargs):
@@ -83,6 +83,7 @@ class TransformerTrainer(TrainerIter):
                 # training moving average for logging
                 if self.regularizer is not None:
                     if "train" in self.regularizer:
+                        reg_loss = 0
                         regularization_losses = {}
                         for reg in self.regularizer["train"]:
                             lambda_q = self.regularizer["train"][reg]["lambdas"]["lambda_q"].step() if "lambda_q" in \
@@ -111,7 +112,8 @@ class TransformerTrainer(TrainerIter):
                                                                        targeted_rep)]) * lambda_d).mean()) / 2
                             # NOTE: we take the rep of pos q for queries, but it would be equivalent to take the neg
                             # (because we consider triplets, so the rep of pos and neg are the same)
-                            loss += sum(regularization_losses.values())
+                            reg_loss += sum(regularization_losses.values())
+                        loss += reg_loss
                     with torch.no_grad():
                         monitor_losses = {}
                         for reg in self.regularizer["eval"]:

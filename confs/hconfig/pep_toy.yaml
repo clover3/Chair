@@ -1,0 +1,11 @@
+# FILES
+defaults:  # (these specify which config FILES to use)
+  - train/config: pep_toy
+  - train/data: toy
+  - train/model: bert_base
+  - _self_
+
+config:  # to be provided for each run
+  checkpoint_dir: /home/youngwookim_umass_edu/code/Chair/output/model/runs2/pep16_toy
+  out_dir: ???
+  loss: PairwiseNLL

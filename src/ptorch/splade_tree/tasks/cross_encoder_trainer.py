@@ -1,6 +1,7 @@
 import torch
 
 from ptorch.splade_tree.tasks.transformer_trainer import TransformerTrainer
+from .transformer_trainer2 import TransformerTrainer2
 from ..tasks import amp
 from ..tasks.base.trainer import TrainerIter
 from ..utils.metrics import init_eval
@@ -10,7 +11,7 @@ import os
 from collections import defaultdict
 
 
-class CrossEncoderTransformerTrainer(TransformerTrainer):
+class CrossEncoderTransformerTrainer(TransformerTrainer2):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -30,37 +31,3 @@ class CrossEncoderTransformerTrainer(TransformerTrainer):
             out["teacher_pos_score"] = batch["teacher_p_score"]
             out["teacher_neg_score"] = batch["teacher_n_score"]
         return out
-
-    def evaluate_loss(self, data_loader):
-        """loss evaluation
-        """
-        out_d = defaultdict(float)
-        for batch in data_loader:
-            for k, v in batch.items():
-                batch[k] = v.to(self.device)
-            out = self.forward(batch)
-            val_ranking_loss = self.loss(out).mean().item()
-            out_d["val_ranking_loss"] += val_ranking_loss
-            if self.regularizer is not None:
-                if "train" in self.regularizer:
-                    total_loss = val_ranking_loss
-                    out_d["val_total_loss"] += total_loss
-        return {key: value / len(data_loader) for key, value in out_d.items()}
-
-    def evaluate_full_ranking(self, i):
-        raise NotImplementedError
-
-    def save_checkpoint(self, **kwargs):
-        model_to_save = self.model.module if hasattr(self.model, "module") else self.model  # when using DataParallel
-        # it is practical (although redundant) to save model weights using huggingface API, because if the model has
-        # no other params, we can reload it easily with .from_pretrained()
-        output_dir = os.path.join(self.config["checkpoint_dir"], "model")
-        model_to_save.transformer_rep.transformer.save_pretrained(output_dir)
-        tokenizer = model_to_save.transformer_rep.tokenizer
-        tokenizer.save_pretrained(output_dir)
-        if model_to_save.transformer_rep_q is not None:
-            output_dir_q = os.path.join(self.config["checkpoint_dir"], "model_q")
-            model_to_save.transformer_rep_q.transformer.save_pretrained(output_dir_q)
-            tokenizer = model_to_save.transformer_rep_q.tokenizer
-            tokenizer.save_pretrained(output_dir_q)
-        super().save_checkpoint(**kwargs)

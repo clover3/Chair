@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 import unittest
 
-from ptorch.splade_tree.datasets.pep_dataloaders import PEPPairsDataLoader
+from ptorch.splade_tree.datasets.pep_dataloaders import PEPPairsDataLoaderDistil
 
 
 class TestDataLoader(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestDataLoader(unittest.TestCase):
         max_seq_length = 256
         tokenizer_type = "bert-base-uncased"
         self.batch_size = 10
-        self.dataloader = PEPPairsDataLoader(tokenizer_type, max_seq_length)
+        self.dataloader = PEPPairsDataLoaderDistil(tokenizer_type, max_seq_length)
 
     def test_batch_size(self):
         for data, targets in self.dataloader:

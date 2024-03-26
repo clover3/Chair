@@ -348,6 +348,20 @@ class SimpleMovingAverage:
         for _ in range(n_item):
             self.update(average)
 
+
+class GeoMovingAvg:
+    def __init__(self):
+        self.val = 0
+        self.is_first = True
+
+    def update(self, val):
+        if self.is_first:
+            self.val = val
+            self.is_first = False
+        else:
+            self.val = 0.99 * self.val + 0.01 * val
+
+
 class Averager:
     def __init__(self):
         self.history = []

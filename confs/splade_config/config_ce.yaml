@@ -6,6 +6,7 @@ defaults:  # (these specify which config FILES to use)
   - train/model: cross_encoder
   ############### FLOPS ##################################
   - flops: msmarco
+  - _self_
 
 # Direct PARAMETER setting
 config:  # to be provided for each run
