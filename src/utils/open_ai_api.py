@@ -25,8 +25,11 @@ class OpenAIProxy:
 
         self.engine = engine
         self.usage = Counter()
+        self.limit_per_msg = 5000
 
     def request(self, prompt):
+        if len(prompt) > self.limit_per_msg:
+            raise ValueError("{} exceeds limit {} ".format(len(prompt), self.limit_per_msg))
         if self.engine in [ENGINE_INSTRUCT]:
             obj = openai.api_resources.Completion.create(
                 engine=self.engine, prompt=prompt, logprobs=1,
@@ -39,9 +42,8 @@ class OpenAIProxy:
             )
             print(obj)
             n_tokens_used = obj.usage.total_tokens
-            # print(n_tokens_used)
-            # self.usage['n_tokens'] += n_tokens_used
-            # self.usage['n_request'] += 1
+            self.usage['n_tokens'] += n_tokens_used
+            self.usage['n_request'] += 1
         return obj
 
     def request_get_text(self, prompt):
@@ -50,6 +52,17 @@ class OpenAIProxy:
 
     def __del__(self):
         print("Usage", self.usage)
+
+
+class GPTPromptHelper:
+    def __init__(self, prompt_template):
+        self.open_ai_proxy = OpenAIProxy(ENGINE_GPT4)
+        self.prompt_template = prompt_template
+
+    def request(self, text):
+        prompt = self.prompt_template.format(text)
+        ret = self.open_ai_proxy.request_get_text(prompt)
+        return ret
 
 
 def dev():

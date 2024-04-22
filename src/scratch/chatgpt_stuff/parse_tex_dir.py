@@ -3,7 +3,7 @@ from cpath import output_path
 from misc_lib import path_join
 import re
 from scratch.chatgpt_stuff.segment_text import merge_segments_to_limit
-from utils.open_ai_api import OpenAIProxy, ENGINE_GPT_3_5
+from utils.open_ai_api import OpenAIProxy, ENGINE_GPT_3_5, ENGINE_GPT4
 
 
 def enumerate_files(path):
@@ -31,7 +31,7 @@ def drop_comment(s):
 
 class GPTChecker:
     def __init__(self):
-        self.open_ai_proxy = OpenAIProxy(ENGINE_GPT_3_5)
+        self.open_ai_proxy = OpenAIProxy(ENGINE_GPT4)
         self.prompt_prefix = "List any spelling mistakes or grammar mistakes in the following text. If no error, say NoError "
 
     def check(self, text):
@@ -49,7 +49,7 @@ def main():
     dir_path= r"C:\Users\leste\Downloads\Dissertation"
 
     start_after = (
-        r"C:\Users\leste\Downloads\Dissertation\1-1_background_motivations.tex",
+        r"C:\Users\leste\Downloads\Dissertation\6_0_alignment_main.tex",
         0
     )
     wait_start = start_after is not None
