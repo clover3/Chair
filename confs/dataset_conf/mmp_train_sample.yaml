@@ -1,0 +1,7 @@
+
+
+dataset_name: train_sample1000
+rerank_payload_path: data/msmarco/passage/train_sample/corpus.tsv
+judgment_path: data/msmarco/qrels.train.tsv
+metric: recip_rank
+data_size: 993192

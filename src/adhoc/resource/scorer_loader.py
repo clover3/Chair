@@ -1,4 +1,5 @@
 from adhoc.resource.bm25t_method_loader import get_bm25t, is_bm25t_method
+from adhoc.resource.qlt_method_loader import is_qlt_method, get_ql, get_qlt
 
 
 class RerankScorerWrap:
@@ -23,6 +24,12 @@ class RerankScorerWrap:
 def get_rerank_scorer(method: str) -> RerankScorerWrap:
     if is_bm25t_method(method):
         score_fn = get_bm25t(method)
+        rerank_scorer = RerankScorerWrap(score_fn, False)
+    elif method == "ql":
+        score_fn = get_ql(method)
+        rerank_scorer = RerankScorerWrap(score_fn, False)
+    elif is_qlt_method(method):
+        score_fn = get_qlt(method)
         rerank_scorer = RerankScorerWrap(score_fn, False)
     elif method == "ce_msmarco_mini_lm" or method == "ce":
         from ptorch.cross_encoder.get_ce_msmarco_mini_lm import get_ce_msmarco_mini_lm_score_fn

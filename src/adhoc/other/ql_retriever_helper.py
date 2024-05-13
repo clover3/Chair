@@ -29,6 +29,22 @@ def load_ql_resources(conf, avdl=None):
     return avdl, cdf, bg_prob, dl, inv_index
 
 
+def load_ql_stats(conf, avdl=None):
+    if not os.path.exists(conf.bg_prob_path):
+        raise FileNotFoundError(conf.bg_prob_path)
+    if not os.path.exists(conf.dl_path):
+        raise FileNotFoundError(conf.dl_path)
+    c_log.info("Loading bg_prob from %s", conf.bg_prob_path)
+    bg_prob = load_pickle_from(conf.bg_prob_path)
+    c_log.info("Loading document length (dl) from %s", conf.dl_path)
+    dl = load_pickle_from(conf.dl_path)
+    c_log.info("Done")
+    cdf = len(dl)
+    if avdl is None:
+        avdl = sum(dl.values()) / cdf
+    return avdl, cdf, bg_prob, dl
+
+
 def build_ql_scoring_fn_from_conf(conf):
     mu = conf.mu
 

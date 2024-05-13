@@ -8,4 +8,4 @@ inv_index_path: ${project_root}/output/mmp/lucene_krovetz/inv_index.pickle
 bg_prob_path: ${project_root}/output/mmp/lucene_krovetz/bg_prob.pickle
 dl_path: ${project_root}/output/mmp/lucene_krovetz/dl
 
-mu: 2500
+mu: 500

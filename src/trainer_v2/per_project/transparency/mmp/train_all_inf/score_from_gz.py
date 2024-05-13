@@ -23,9 +23,9 @@ def main():
     proxy = get_task_proxy()
     run_name = f"score_mmp_{job_no}"
     proxy.task_start(run_name)
-    quad_tsv_path = path_join(data_path, "msmarco", "passage", "group_sorted_10K", f"{job_no}.gz")
     model_path = path_join("models", "mmp1")
     scores_path = path_join(output_path, "msmarco", "passage", "mmp_train_split_all_scores", f"{job_no}.scores")
+    quad_tsv_path = path_join(data_path, "msmarco", "passage", "group_sorted_10K", f"{job_no}.gz")
     tuple_itr: Iterable[Tuple[str, str]] = select_third_fourth(tsv_iter_from_gz(quad_tsv_path))
     flush_block_size = 1024
     batch_size = 256

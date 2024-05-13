@@ -14,6 +14,7 @@ def get_rerank_dataset_conf_path(dataset):
         "trec_dl20": path_join(yconfig_dir_path, "dataset_conf", "trec_dl_2020.yaml"),
         "dev_c": path_join(yconfig_dir_path, "dataset_conf", "mmp_dev_sample_C.yaml"),
         "dev1000": path_join(yconfig_dir_path, "dataset_conf", "mmp_dev_sample1000.yaml"),
+        "mmp_train_sample": path_join(yconfig_dir_path, "dataset_conf", "mmp_train_sample.yaml"),
         "mmp_dev_sample1k_a": path_join(yconfig_dir_path, "dataset_conf", "mmp_dev_sample1K_A.yaml"),
     }[dataset.lower()]
     return dataset_conf_path

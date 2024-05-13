@@ -1,4 +1,3 @@
-import tensorflow as tf
 import math
 from collections import Counter
 from typing import List, Iterable, Callable, Dict, Tuple, Set, Iterator
@@ -11,11 +10,27 @@ def apply_smoothing(q_term_bg_prob, dl, mu, p_w_d_from_d):
     return p_w_d
 
 
+def apply_jm_smoothing(q_term_bg_prob, dl, _mu, p_w_d_from_d):
+    weight = 0.35
+    p_w_d_from_d = (1 - weight) * p_w_d_from_d
+    p_w_d_bg = weight * q_term_bg_prob
+    p_w_d = p_w_d_from_d + p_w_d_bg
+    return p_w_d
+
+
 def ql_scoring_inner(tf, qf, dl, bg_prob_val, mu):
     p_w_d_from_d = tf / dl  # P(w|d)
     p_w_d = apply_smoothing(bg_prob_val, dl, mu, p_w_d_from_d)
     log_p_w_d = math.log(p_w_d)
-    per_q_term_score = qf * log_p_w_d
+    # per_q_term_score = qf * log_p_w_d
+    per_q_term_score = log_p_w_d
+    return per_q_term_score
+
+
+def ql_scoring_from_p_qf(p_w_d_from_d, dl, bg_prob_val, mu):
+    p_w_d = apply_smoothing(bg_prob_val, dl, mu, p_w_d_from_d)
+    log_p_w_d = math.log(p_w_d)
+    per_q_term_score = log_p_w_d
     return per_q_term_score
 
 
@@ -73,7 +88,7 @@ def main():
     doc = "The price for this book is not hundress dollars"
     q_tokens = query.split()
     d_tokens = doc.split()
-    ret = log_p_q_d(bg_prob, translate, q_tokens, d_tokens)
+    ret = ql_translate_scoring(bg_prob, translate, q_tokens, d_tokens)
     print(ret)
 
 
