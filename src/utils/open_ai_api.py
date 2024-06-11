@@ -17,11 +17,19 @@ def get_open_ai_api_key():
     return s
 
 
+def get_open_ai_api_key_zamani():
+    s = open(path_join(data_path, "openai_api_key_zamani.txt"), "r").read().strip()
+    return s
+
+
 class OpenAIProxy:
-    def __init__(self, engine):
+    def __init__(self, engine, api_key=None):
         # openai.organization = "org-H88LVGb8C9Zc6OlcieMZgW6e"
         # openai.api_key = get_open_ai_api_key()
-        self.client = OpenAI(api_key=get_open_ai_api_key())
+
+        if api_key is None:
+            api_key = get_open_ai_api_key()
+        self.client = OpenAI(api_key=api_key)
 
         self.engine = engine
         self.usage = Counter()

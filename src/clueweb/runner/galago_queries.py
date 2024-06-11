@@ -1,7 +1,5 @@
-import xml.etree.ElementTree as ElementTree
-from typing import List, Iterable, NamedTuple
-
-from cpath import at_data_dir, at_output_dir
+from cpath import at_output_dir
+from dataset_specific.clueweb.query_loader import TrecQuery, load_queries
 from galagos.interface import DocQuery
 from galagos.parse import save_queries_to_file
 from galagos.tokenize_util import clean_text_for_query
@@ -10,36 +8,6 @@ from list_lib import lmap
 KEYWORD_QUERY = 1
 DESC_QUERY = 2
 all_years = range(2009, 2015)
-
-def load_xml(file_path):
-    content = open(file_path, "r").read()
-    root = ElementTree.fromstring(content)
-    return root
-
-
-class TrecQuery(NamedTuple):
-    query_id: str
-    query_type: str
-    keyword_query: str
-    desc_query: str
-
-
-def load_queries(year_list: Iterable[int]) -> List[TrecQuery]:
-    all_queries = []
-    for year in year_list:
-        query_path = at_data_dir("clueweb", "{}.topics.xml".format(year))
-        xml = load_xml(query_path)
-        root_tag = xml.tag
-        assert str(year) in root_tag
-        for idx, topic in enumerate(xml):
-            qid = topic.attrib['number']
-            query_type = topic.attrib['type']
-            keyword_query = topic.find('query').text
-            desc_query = topic.find('description').text
-            query = TrecQuery(qid, query_type, keyword_query, desc_query)
-            all_queries.append(query)
-
-    return all_queries
 
 
 def trec_query_to_galago_query(q: TrecQuery, query_type):
