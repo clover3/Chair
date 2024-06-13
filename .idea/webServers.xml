@@ -10,7 +10,7 @@
         </fileTransfer>
       </webServer>
       <webServer id="6a2e2c33-1c97-4b84-987a-3d00537e50ac" name="sydney">
-        <fileTransfer accessType="SFTP" host="sydney2.cs.umass.edu" port="22" sshConfigId="d44192b9-24ba-45b1-9ae9-ccc8cc4e8777" sshConfig="youngwookim@sydney2.cs.umass.edu:22 key" keyPair="true">
+        <fileTransfer accessType="SFTP" host="sydney-ng.cs.umass.edu" port="22" sshConfigId="d44192b9-24ba-45b1-9ae9-ccc8cc4e8777" sshConfig="youngwookim@sydney-ng.cs.umass.edu:22 key" keyPair="true">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>

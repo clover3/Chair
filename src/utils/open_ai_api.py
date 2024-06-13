@@ -22,6 +22,11 @@ def get_open_ai_api_key_zamani():
     return s
 
 
+def get_deep_infra_api_key():
+    s = open(path_join(data_path, "deep_infra_api_key.txt"), "r").read().strip()
+    return s
+
+
 class OpenAIProxy:
     def __init__(self, engine, api_key=None):
         # openai.organization = "org-H88LVGb8C9Zc6OlcieMZgW6e"
@@ -61,6 +66,20 @@ class OpenAIProxy:
     def __del__(self):
         print("Usage", self.usage)
 
+class DeepInfraOpenAIProxy(OpenAIProxy):
+    def __init__(self, engine):
+        # super(DeepInfraOpenAIProxy, self).__init__(engine)
+        openai = OpenAI(
+            api_key=get_deep_infra_api_key(),
+            base_url="https://api.deepinfra.com/v1/openai",
+        )
+        print(openai.api_key)
+        self.client = openai
+
+        self.engine = engine
+        self.usage = Counter()
+        self.limit_per_msg = 5000
+
 
 class GPTPromptHelper:
     def __init__(self, prompt_template):
@@ -90,6 +109,14 @@ def dev_chat():
     print(res)
 
 
+def dev_deep_infra_chat():
+    model = "meta-llama/Meta-Llama-3-70B-Instruct"
+    proxy = DeepInfraOpenAIProxy(model)
+    res = proxy.request("Sum the number of days in months that does not have m in its name")
+    print(res)
+
+
+
 def parse_log_probs(logprobs):
     tokens = logprobs['tokens']
     token_logprobs = logprobs['token_logprobs']
@@ -115,7 +142,7 @@ def get_parse_gpt_response_fn(model):
 
 
 def main():
-    dev_chat()
+    dev_deep_infra_chat()
 
 
 if __name__ == "__main__":
