@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Tuple, List
 
 from krovetzstemmer import Stemmer
-from scipy.stats import pearsonr, spearmanr
+from scipy.stats import pearsonr, spearmanr, kendalltau
 
 from misc_lib import path_join
 from trainer_v2.chair_logging import c_log
@@ -42,6 +42,16 @@ def spearman_r_wrap(scores1: List[float], scores2: List[float]) -> float:
         return 0
 
     r, p = spearmanr(scores1, scores2)
+    if math.isnan(r):
+        r = 0
+    return r
+
+
+def kendalltau_r_wrap(scores1: List[float], scores2: List[float]) -> float:
+    if len(scores1) == 1 and len(scores2) == 1:
+        return 0
+
+    r, p = kendalltau(scores1, scores2)
     if math.isnan(r):
         r = 0
     return r
