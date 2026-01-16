@@ -2,7 +2,7 @@ absl-py==0.14.1
 astunparse==1.6.3
 bert-for-tf2==0.14.9
 cachetools==4.2.4
-certifi==2021.10.8
+certifi==2022.12.7
 charset-normalizer==2.0.7
 colorama==0.4.4
 cycler==0.11.0
